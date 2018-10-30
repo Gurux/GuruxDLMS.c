@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{2a64cdb5-cc41-42e0-8159-9062c399dafb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\apdu.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bitarray.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cosem.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\date.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dlms.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dlmsSettings.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxarray.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxget.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxkey.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxobjects.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxset.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\helpers.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\message.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\objectarray.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\variant.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\replydata.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\datainfo.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\client.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bytebuffer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxvalueeventargs.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxinvoke.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\notify.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ciphering.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\parameters.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\server.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxmd5.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxsha256.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxsha1.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxaes.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\converters.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\apdu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bitarray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cosem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\crc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\date.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dlms.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dlmsSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\enums.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\errorCodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxarray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxkey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxobjects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\helpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\message.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\objectarray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\variant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\replydata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\datainfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bytebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxvalueeventargs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxinvoke.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\notify.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ciphering.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cipheringenums.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\snparameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\lnparameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\parameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxsha256.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxsha1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxaes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxmem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\converters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxignore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxmd5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

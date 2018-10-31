@@ -373,7 +373,7 @@ extern "C" {
         */
         gxObject base;
         dlmsVARIANT value;
-        char scaler;
+        signed char scaler;
         unsigned char unit;
         unsigned char unitRead;
     } gxRegister;
@@ -403,7 +403,7 @@ extern "C" {
         gxObject base;
         dlmsVARIANT currentAvarageValue;
         dlmsVARIANT lastAvarageValue;
-        char scaler;
+        signed char scaler;
         unsigned char unit;
         unsigned char unitRead;
         dlmsVARIANT status;
@@ -466,7 +466,7 @@ extern "C" {
         gxObject* sortObject;
         unsigned long profileEntries;
         unsigned long entriesInUse;
-        char sortObjectAttributeIndex;
+        unsigned char sortObjectAttributeIndex;
         unsigned short sortObjectDataIndex;
 
         /**
@@ -489,7 +489,7 @@ extern "C" {
         gxObject base;
 
         DLMS_CLOCK_BASE clockBase;
-        char deviation;
+        signed char deviation;
         unsigned char enabled;
         gxtime end;
         DLMS_CLOCK_STATUS status;
@@ -510,7 +510,7 @@ extern "C" {
         DLMS_OBJECT_TYPE objectType;
         unsigned char logicalName[6];
         dlmsVARIANT parameter;
-        char index;
+        unsigned char index;
         int identifier;
     } gxScriptAction;
 
@@ -1458,7 +1458,7 @@ extern "C" {
 
         gxArray tableCellValues;
         gxArray tableCellDefinition;
-        char scaler;
+        signed char scaler;
         unsigned char unit;
         unsigned char unitRead;
     } gxRegisterTable;
@@ -2124,8 +2124,8 @@ extern "C" {
     */
     typedef struct
     {
-        char commodityScale;
-        char priceScale;
+        signed char commodityScale;
+        signed char priceScale;
     } gxChargePerUnitScaling;
 
     /**

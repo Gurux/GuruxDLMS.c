@@ -273,7 +273,7 @@ extern "C" {
 
     int bb_getInt8(
         gxByteBuffer* arr,
-        char* value);
+        signed char* value);
 
     int bb_getInt16(
         gxByteBuffer* bb,

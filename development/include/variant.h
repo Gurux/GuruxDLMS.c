@@ -62,7 +62,7 @@ extern "C" {
         union
         {
             unsigned char bVal;
-            char cVal;
+            signed char cVal;
             short iVal;
             long lVal;
             long long llVal;

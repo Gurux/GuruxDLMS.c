@@ -595,13 +595,13 @@ int bb_getUInt8(
 
 int bb_getInt8(
     gxByteBuffer* arr,
-    char* value)
+    signed char* value)
 {
     if (arr->position >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = (char)((unsigned char*)arr->data)[arr->position];
+    *value = (signed char)((unsigned char*)arr->data)[arr->position];
     ++arr->position;
     return 0;
 }

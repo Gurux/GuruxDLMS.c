@@ -31,6 +31,23 @@
 
 #include "../include/communication.h"
 
+//Client don't need this. 
+unsigned char svr_isTarget(
+    dlmsSettings *settings,
+    unsigned long serverAddress,
+    unsigned long clientAddress)
+{
+    return 0;
+}
+
+//Client don't need this. 
+extern int svr_connected(
+    dlmsServerSettings *settings) {
+    return 0;
+
+}
+
+
 /**
 * Updates clock and reads it.
 */

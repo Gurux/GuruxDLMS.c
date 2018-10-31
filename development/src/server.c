@@ -2478,7 +2478,11 @@ int svr_handleRequest2(
         && settings->base.clientAddress == 0;
     if ((ret = dlms_getData2(&settings->base, &settings->receivedData, &settings->info, first)) != 0)
     {
-        if (ret == DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS)
+        if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS)
+        {
+            return 0;
+        }
+        else if (ret == DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS)
         {
             if (settings->info.preEstablished)
             {
@@ -2551,14 +2555,17 @@ int svr_handleRequest2(
             svr_disconnected(settings);
         }
         // Check is data send to this server.
-        if (!svr_isTarget(&settings->base, settings->base.serverAddress, settings->base.clientAddress))
+        if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER && settings->info.command == DLMS_COMMAND_AARQ)
         {
-            if ((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0)
+            if (!svr_isTarget(&settings->base, settings->base.serverAddress, settings->base.clientAddress))
             {
-                settings->base.serverAddress = settings->base.clientAddress = 0;
+                if ((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0)
+                {
+                    settings->base.serverAddress = settings->base.clientAddress = 0;
+                }
+                reply_clear2(&settings->info, 1);
+                return 0;
             }
-            reply_clear2(&settings->info, 1);
-            return 0;
         }
         if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
         {

@@ -1371,15 +1371,7 @@ int dlms_checkHdlcAddress(
             {
                 return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
             }
-            //If SNRM and client has not call disconnect and changes server ID.
-            if (ch == DLMS_COMMAND_SNRM)
-            {
-                settings->serverAddress = (unsigned short)target;
-            }
-            else
-            {
-                return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
-            }
+            return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
         }
         else
         {
@@ -1628,11 +1620,19 @@ void dlms_getDataFromFrame(
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     unsigned long offset = data->data.size;
-    unsigned long cnt = data->packetLength - reply->position;
+    unsigned long cnt;
 #else
     unsigned short offset = data->data.size;
-    unsigned short cnt = data->packetLength - reply->position;
+    unsigned short cnt;
 #endif
+    if (data->packetLength < reply->position)
+    {
+        cnt = 0;
+    }
+    else
+    {
+        cnt = data->packetLength - reply->position;
+    }
     if (cnt != 0)
     {
         bb_capacity(&data->data, offset + cnt);
@@ -1648,7 +1648,8 @@ int dlms_getHdlcData(
     gxByteBuffer* reply,
     gxReplyData* data,
     unsigned char* frame,
-    unsigned char preEstablished)
+    unsigned char preEstablished,
+    unsigned char first)
 {
     int ret;
     unsigned char ch;
@@ -1697,7 +1698,7 @@ int dlms_getHdlcData(
     {
         --reply->position;
         // If same data.
-        return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished);
+        return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
     }
     // Check frame length.
     if ((*frame & 0x7) != 0)
@@ -1725,7 +1726,7 @@ int dlms_getHdlcData(
     if (ch != HDLC_FRAME_START_END)
     {
         reply->position -= 2;
-        return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished);
+        return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
     }
 
     // Check addresses.
@@ -1739,13 +1740,20 @@ int dlms_getHdlcData(
         }
         else
         {
+            if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS &&
+                reply->position + 4 == reply->size)
+            {
+                data->packetLength = 0;
+                bb_clear(reply);
+                return ret;
+            }
             if (ret == DLMS_ERROR_CODE_FALSE)
             {
                 // If echo or reply to other meter.
-                return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished);
+                return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
             }
             reply->position = packetStartID + 1;
-            ret = dlms_getHdlcData(server, settings, reply, data, frame, preEstablished);
+            ret = dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
             return ret;
         }
     }
@@ -1772,7 +1780,7 @@ int dlms_getHdlcData(
         {
             return DLMS_ERROR_CODE_INVALID_FRAME_NUMBER;
         }
-        return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished);
+        return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
     }
     // Check that header CRC is correct.
     crc = countCRC(reply, packetStartID + 1,
@@ -1787,7 +1795,7 @@ int dlms_getHdlcData(
     {
         if (reply->size - reply->position > 8)
         {
-            return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished);
+            return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
         }
         return DLMS_ERROR_CODE_WRONG_CRC;
     }
@@ -1808,7 +1816,7 @@ int dlms_getHdlcData(
     }
     else
     {
-        data->packetLength = reply->size;
+        data->packetLength = eopPos - 2;
     }
 
     if ((*frame & HDLC_FRAME_TYPE_U_FRAME) == HDLC_FRAME_TYPE_U_FRAME)
@@ -1869,6 +1877,26 @@ int dlms_getHdlcData(
         else
         {
             dlms_checkLLCBytes(settings, reply);
+        }
+    }
+    if (first)
+    {
+        // Check is data send to this server.
+        if (!svr_isTarget(settings, settings->serverAddress, settings->clientAddress))
+        {
+            settings->serverAddress = 0;
+            settings->clientAddress = 0;
+            if (reply->size - reply->position > 8)
+            {
+                unsigned long pos = reply->position;
+                ret = dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
+                if (settings->serverAddress != 0 && settings->clientAddress != 0)
+                {
+                    reply->position = pos;
+                }
+                return ret;
+            }
+            return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
         }
     }
     return DLMS_ERROR_CODE_OK;
@@ -3084,7 +3112,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
                     return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
                 }
                 settings->connected |= DLMS_CONNECTION_STATE_DLMS;
-                if ((ret = svr_connected((dlmsServerSettings*) settings)) != 0)
+                if ((ret = svr_connected((dlmsServerSettings*)settings)) != 0)
                 {
                     return ret;
                 }
@@ -4132,7 +4160,7 @@ int dlms_getSnMessages(
 int dlms_getData2(
     dlmsSettings* settings,
     gxByteBuffer* reply,
-    gxReplyData* data, 
+    gxReplyData* data,
     unsigned char first)
 {
     int ret;
@@ -4140,7 +4168,7 @@ int dlms_getData2(
     // If DLMS frame is generated.
     if (settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
-        if ((ret = dlms_getHdlcData(settings->server, settings, reply, data, &frame, data->preEstablished)) != 0)
+        if ((ret = dlms_getHdlcData(settings->server, settings, reply, data, &frame, data->preEstablished, first)) != 0)
         {
             return ret;
         }
@@ -4180,7 +4208,7 @@ int dlms_getData2(
             return DLMS_ERROR_CODE_REJECTED;
         }
         return DLMS_ERROR_CODE_OK;
-    } 
+    }
     return dlms_getPdu(settings, data, first);
 }
 

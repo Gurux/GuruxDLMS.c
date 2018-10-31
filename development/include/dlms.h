@@ -147,7 +147,8 @@ extern "C" {
         gxByteBuffer* reply,
         gxReplyData* data,
         unsigned char* frame,
-        unsigned char preEstablished);
+        unsigned char preEstablished,
+        unsigned char first);
 
 #ifndef DLMS_IGNORE_WRAPPER
     int dlms_getTcpData(

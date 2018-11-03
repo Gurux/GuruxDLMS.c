@@ -48,7 +48,7 @@
 
 char bb_isAttached(gxByteBuffer* arr)
 {
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     //If byte buffer is attached.
     return (arr->capacity & 0x80000000) == 0x80000000;
 #else
@@ -62,12 +62,26 @@ unsigned long bb_getCapacity(gxByteBuffer* arr)
 unsigned short bb_getCapacity(gxByteBuffer* arr)
 #endif
 {
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+#if !defined(GX_DLMS_MICROCONTROLLER)&& (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     //If byte buffer is attached.
     return arr->capacity & 0x7FFFFFFF;
 #else
     return arr->capacity & 0x7FFF;
 #endif  
+}
+
+
+#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+unsigned long bb_size(gxByteBuffer* arr)
+#else
+unsigned short bb_size(gxByteBuffer* arr)
+#endif
+{
+    if (arr == NULL)
+    {
+        return 0;
+    }
+    return arr->size;
 }
 
 int bb_init(

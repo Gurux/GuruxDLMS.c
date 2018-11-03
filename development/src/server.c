@@ -256,11 +256,13 @@ void svr_setInitialize(dlmsServerSettings* settings)
         gxfree(settings->base.protocolVersion);
         settings->base.protocolVersion = NULL;
     }
+#ifndef DLMS_IGNORE_HIGH_GMAC
     if (settings->base.cipher.dedicatedKey != NULL)
     {
         bb_clear(settings->base.cipher.dedicatedKey);
         settings->base.cipher.dedicatedKey = NULL;
     }
+#endif //DLMS_IGNORE_HIGH_GMAC
     trans_clear(&settings->transaction);
     settings->base.blockIndex = 1;
     settings->base.count = 0;

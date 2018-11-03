@@ -1879,7 +1879,7 @@ int dlms_getHdlcData(
             dlms_checkLLCBytes(settings, reply);
         }
     }
-    if (first)
+    if (first || data->command == DLMS_COMMAND_SNRM)
     {
         // Check is data send to this server.
         if (!svr_isTarget(settings, settings->serverAddress, settings->clientAddress))
@@ -1888,7 +1888,11 @@ int dlms_getHdlcData(
             settings->clientAddress = 0;
             if (reply->size - reply->position > 8)
             {
+#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
                 unsigned long pos = reply->position;
+#else
+                unsigned short pos = reply->position;
+#endif //!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
                 ret = dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
                 if (settings->serverAddress != 0 && settings->clientAddress != 0)
                 {
@@ -2166,7 +2170,7 @@ int dlms_getWrapperFrame(
         if (ret == 0 && (ret = bb_setUInt16(reply, (unsigned short)data->size)) == 0)
         {
             // Data
-            ret = bb_set2(reply, data, data->position, (unsigned long)-1);
+            ret = bb_set2(reply, data, data->position, data->size - data->position);
         }
         // Remove sent data in server side.
         if (ret == 0 && settings->server)
@@ -2902,7 +2906,7 @@ int dlms_changeType(
 #else
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //GX_DLMS_MICROCONTROLLER       
-    }
+}
     info.type = type;
     if ((ret = dlms_getData(value, &info, newValue)) != 0)
     {
@@ -3080,6 +3084,9 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
     gxReplyData* data)
 {
     int ret = 0;
+#ifdef DLMS_IGNORE_HIGH_GMAC
+    ret = DLMS_ERROR_CODE_NOT_IMPLEMENTED;
+#else
     // If all frames are read.
     if ((data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
     {
@@ -3151,7 +3158,8 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
     else
     {
         data->data.position = (data->data.position - 1);
-    }
+}
+#endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
 }
 
@@ -3159,6 +3167,9 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
     gxReplyData* data, unsigned short index)
 {
     int ret = 0;
+#ifdef DLMS_IGNORE_HIGH_GMAC
+    ret = DLMS_ERROR_CODE_NOT_IMPLEMENTED;
+#else
     if ((data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
     {
         DLMS_SECURITY security;
@@ -3196,7 +3207,8 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
         data->cipherIndex = (unsigned short)data->data.size;
-    }
+}
+#endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
 }
 
@@ -3469,7 +3481,7 @@ int dlms_appendMultipleSNBlocks(
         }
     }
     maxSize -= hlp_getObjectCountSizeInBytes(maxSize);
-    if (p->data->size - p->data->position > maxSize)
+    if ((unsigned short) (p->data->size - p->data->position) > maxSize)
     {
         // More blocks.
         bb_setUInt8(reply, 0);
@@ -3933,7 +3945,7 @@ int dlms_getLNPdu(
                 if (ciphering)
                 {
                     totalLength += CIPHERING_HEADER_SIZE;
-                }
+            }
 #endif //DLMS_IGNORE_HIGH_GMAC
                 if (totalLength > p->settings->maxPduSize)
                 {
@@ -3942,10 +3954,10 @@ int dlms_getLNPdu(
                     if (ciphering)
                     {
                         len -= CIPHERING_HEADER_SIZE;
-                    }
+                }
 #endif //DLMS_IGNORE_HIGH_GMAC
                     len -= hlp_getObjectCountSizeInBytes(len);
-                }
+        }
                 hlp_setObjectCount(len, h);
                 if (p->settings->server)
                 {
@@ -3959,8 +3971,8 @@ int dlms_getLNPdu(
                 {
                     bb_set2(reply, p->data, p->data->position, len);
                 }
-            }
         }
+    }
         // Add data that fits to one block.
         if (len == 0)
         {
@@ -4034,7 +4046,7 @@ int dlms_getLNPdu(
             bb_clear(&tmp);
         }
 #endif //DLMS_IGNORE_HIGH_GMAC1
-    }
+}
     return 0;
 }
 
@@ -4378,7 +4390,7 @@ int dlms_secure(
 #else        
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_AES
-    }
+}
     // Get server Challenge.
     // Get shared secret
     bb_init(&challenge);

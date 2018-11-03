@@ -1127,7 +1127,7 @@ int svr_InitObjects(
     {
         const unsigned char ln[6] = { 1,0,0,2,0,255 };
         cosem_init2((gxObject*)&fw.base, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setString(&fw.value, FW, (int)strlen(FW));
+        var_setString(&fw.value, FW, (unsigned short)strlen(FW));
     }
     if ((ret = addRegisterObject(objects)) != 0)
     {
@@ -1630,7 +1630,7 @@ int getProfileGenericDataByRange(dlmsSettings* settings, gxValueEventArg* e)
     }
     if (it->vt == DLMS_DATA_TYPE_UINT32)
     {
-        time_init4(&start, (time_t) it->ulVal);
+        time_init4(&start, (time_t)it->ulVal);
     }
     else
     {
@@ -1877,8 +1877,10 @@ void svr_preWrite(
         {
             return;
         }
+#ifndef GX_DLMS_MICROCONTROLLER
         hlp_getLogicalNameToString(e->target->logicalName, str);
         printf("Writing %s\r\n", str);
+#endif //GX_DLMS_MICROCONTROLLER
 
     }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
@@ -1908,7 +1910,7 @@ void svr_preAction(
         {
             return;
         }
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+#ifndef GX_DLMS_MICROCONTROLLER
         hlp_getLogicalNameToString(e->target->logicalName, str);
         printf("Action %s:%d\n", str, e->index);
 #endif
@@ -2082,6 +2084,7 @@ void svr_postWrite(
     {
         if ((ret = vec_getByIndex(args, pos, &e)) == 0)
         {
+#ifndef GX_DLMS_MICROCONTROLLER
             if ((ret = obj_toString(e->target, &buff)) != 0)
             {
                 printf("svr_postWrite::obj_toString failed %d.", ret);
@@ -2089,6 +2092,7 @@ void svr_postWrite(
             }
             printf(buff);
             free(buff);
+#endif //GX_DLMS_MICROCONTROLLER
         }
     }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)      
@@ -2269,9 +2273,9 @@ unsigned char svr_isTarget(
     else  if (clientAddress == 48)
     {
         settings->cipher.invocationCounter = frameCounterGuarantor.value.lVal;
-}
+    }
 #endif //DLMS_ITALIAN_STANDARD
-
+ 
     //Check server address using serial number.
     if ((serverAddress & 0x3FFF) == sn % 10000 + 1000)
     {
@@ -2329,12 +2333,12 @@ DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
 #else
             expected = associationShortName.secret;
 #endif
-    }
+        }
         if (bb_compare(&expected, password->data, password->size) == 0)
         {
             return DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE;
         }
-}
+    }
 #endif //DLMS_ITALIAN_STANDARD
     // Other authentication levels are check on phase two.
     return DLMS_SOURCE_DIAGNOSTIC_NONE;

@@ -350,7 +350,7 @@ int getActivityCalendarWeekProfileTable(gxArray* list, gxByteBuffer* ba)
             (ret = arr_getByIndex(list, pos, (void**)&wp)) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = bb_setUInt8(ba, (unsigned char)wp->name.size)) != 0 ||
-            (ret = bb_set2(ba, &wp->name, 0, (unsigned long)-1)) != 0 ||
+            (ret = bb_set2(ba, &wp->name, 0, bb_size(&wp->name))) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_UINT8)) != 0 ||
             (ret = bb_setUInt8(ba, wp->monday)) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_UINT8)) != 0 ||
@@ -391,16 +391,16 @@ int getActivityCalendarSeasonProfile(gxArray* list, gxByteBuffer* ba)
             (ret = arr_getByIndex(list, pos, (void**)&sp)) != 0 ||
             //Add name.
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-            (ret = bb_setUInt8(ba, (unsigned char)sp->name.size)) != 0 ||
-            (ret = bb_set2(ba, &sp->name, 0, (unsigned long)-1)) != 0 ||
+            (ret = bb_setUInt8(ba, (unsigned char)bb_size(&sp->name))) != 0 ||
+            (ret = bb_set2(ba, &sp->name, 0, bb_size(&sp->name))) != 0 ||
             //Add start time.
             (ret = var_setDateTime(&tmp, &sp->start)) != 0 ||
             (ret = var_getBytes2(&tmp, DLMS_DATA_TYPE_OCTET_STRING, ba)) != 0 ||
             (ret = var_clear(&tmp)) != 0 ||
             //Add week day.
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-            (ret = bb_setUInt8(ba, (unsigned char)sp->weekName.size)) != 0 ||
-            (ret = bb_set2(ba, &sp->weekName, 0, (unsigned long)-1)) != 0)
+            (ret = bb_setUInt8(ba, (unsigned char)bb_size(&sp->weekName))) != 0 ||
+            (ret = bb_set2(ba, &sp->weekName, 0, bb_size(&sp->weekName))) != 0)
         {
             break;
         }
@@ -908,7 +908,7 @@ int getSNObjects(
     gxValueEventArg *e,
     gxByteBuffer* ba)
 {
-    unsigned long pduSize;
+    unsigned short pduSize;
     objectArray* list = &((gxAssociationShortName*)e->target)->objectList;
     unsigned short pos;
     int ret = DLMS_ERROR_CODE_OK;
@@ -932,7 +932,7 @@ int getSNObjects(
     {
         if (!(pos + 1 <= settings->index))
         {
-            pduSize = ba->size;
+            pduSize = (unsigned short) ba->size;
             if ((ret = oa_getByIndex(list, pos, &it)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 //Count
@@ -1635,8 +1635,8 @@ int cosem_getIP4Setup(
                 (ret = bb_setUInt8(data, (unsigned char)it->length)) != 0 ||
                 //Data
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-                (ret = bb_setUInt8(data, (unsigned char)it->data.size)) != 0 ||
-                (ret = bb_set2(data, &it->data, 0, (unsigned long)-1)) != 0)
+                (ret = bb_setUInt8(data, (unsigned char)bb_size(&it->data))) != 0 ||
+                (ret = bb_set2(data, &it->data, 0, bb_size(&it->data))) != 0)
             {
                 break;
             }
@@ -1802,7 +1802,7 @@ int getColumns(
     gxByteBuffer *ba,
     gxValueEventArg *e)
 {
-    unsigned long pduSize;
+    unsigned short pduSize;
     int pos, ret;
     gxKey *it;
     if ((ret = bb_capacity(ba, (list->size * 19) + 2)) != 0)
@@ -1823,7 +1823,7 @@ int getColumns(
     {
         if (!(pos + 1 <= settings->index))
         {
-            pduSize = ba->size;
+            pduSize = (unsigned short) ba->size;
             if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(ba, 4)) != 0 ||
@@ -2075,7 +2075,7 @@ int profileGeneric_getData(
     gxArray* columns,
     gxByteBuffer* data)
 {
-    unsigned long pduSize;
+    unsigned short pduSize;
     int ret = 0, pos;
     //Add count only for first time.
     if (!e->transaction)
@@ -2103,7 +2103,7 @@ int profileGeneric_getData(
     }
     for (pos = 0; pos != table->size; ++pos)
     {
-        pduSize = data->size;
+        pduSize = (unsigned short) data->size;
         if ((ret = cosem_getRow(table, pos, captureObjects, columns, data)) != 0)
         {
             break;
@@ -2612,11 +2612,11 @@ int cosem_getmMbusClient(
                 //
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = hlp_setObjectCount(((gxByteBuffer*)it->key)->size, data)) != 0 ||
-                (ret = bb_set2(data, (gxByteBuffer*)it->key, 0, (unsigned long)-1)) != 0 ||
+                (ret = bb_set2(data, (gxByteBuffer*)it->key, 0, bb_size((gxByteBuffer*)it->key))) != 0 ||
                 //
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = hlp_setObjectCount(((gxByteBuffer*)it->value)->size, data)) != 0 ||
-                (ret = bb_set2(data, (gxByteBuffer*)it->value, 0, (unsigned long)-1)) != 0)
+                (ret = bb_set2(data, (gxByteBuffer*)it->value, 0, bb_size((gxByteBuffer*)it->value))) != 0)
             {
                 break;
             }
@@ -2827,11 +2827,11 @@ int cosem_getPppSetup(
             //Add user name.
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = hlp_setObjectCount(object->userName.size, data)) != 0 ||
-            (ret = bb_set2(data, &object->userName, 0, (unsigned long)-1)) != 0 ||
+            (ret = bb_set2(data, &object->userName, 0, bb_size(&object->userName))) != 0 ||
             //Add pw.
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = hlp_setObjectCount(object->password.size, data)) != 0 ||
-            (ret = bb_set2(data, &object->password, 0, (unsigned long)-1)) != 0)
+            (ret = bb_set2(data, &object->password, 0, bb_size(&object->password))) != 0)
         {
             return ret;
         }
@@ -2900,7 +2900,7 @@ int cosem_getRegisterActivation(
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = bb_setUInt8(data, (unsigned char)((gxByteBuffer*)it->key)->size)) != 0 ||
-                (ret = bb_set2(data, ((gxByteBuffer*)it->key), 0, (unsigned long)-1)) != 0 ||
+                (ret = bb_set2(data, (gxByteBuffer*)it->key, 0, bb_size((gxByteBuffer*)it->key))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
                 (ret = bb_setUInt8(data, (unsigned char)((gxByteBuffer*)it->value)->size)) != 0)
             {
@@ -2927,7 +2927,7 @@ int cosem_getRegisterActivation(
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = hlp_setObjectCount(object->activeMask.size, data)) != 0 ||
-            (ret = bb_set2(data, &object->activeMask, 0, (unsigned long)-1)) != 0)
+            (ret = bb_set2(data, &object->activeMask, 0, bb_size(&object->activeMask))) != 0)
         {
             return ret;
         }
@@ -3062,7 +3062,7 @@ int cosem_getSapAssignment(
                 (ret = bb_setUInt16(data, it->id)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = hlp_setObjectCount(it->name.size, data)) != 0 ||
-                (ret = bb_set2(data, &it->name, 0, (unsigned long)-1)) != 0)
+                (ret = bb_set2(data, &it->name, 0, bb_size(&it->name))) != 0)
             {
                 break;
             }
@@ -3576,7 +3576,7 @@ int cosem_getZigbeeNetworkControl(
                 //mac address.
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = bb_setUInt8(data, (unsigned char)it->macAddress.size)) != 0 ||
-                (ret = bb_set2(data, &it->macAddress, 0, (unsigned long)-1)) != 0 ||
+                (ret = bb_set2(data, &it->macAddress, 0, bb_size(&it->macAddress))) != 0 ||
                 //status
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
                 (ret = bb_setUInt8(data, (unsigned char)it->status.size)) != 0 ||
@@ -3684,7 +3684,7 @@ int getUnitCharge(gxUnitCharge* target, dlmsVARIANT *value)
             //index
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = bb_setUInt8(data, (unsigned char)it->index.size)) != 0 ||
-            (ret = bb_set2(data, &it->index, 0, (unsigned long)-1)) != 0 ||
+            (ret = bb_set2(data, &it->index, 0, bb_size(&it->index))) != 0 ||
             //chargePerUnit
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_INT16)) != 0 ||
             (ret = bb_setInt16(data, it->chargePerUnit)) != 0)
@@ -3785,7 +3785,7 @@ int cosem_getTokenGateway(
             return ret;
         }
         data = e->value.byteArr;
-        ret = bb_set2(data, &object->token, 0, (unsigned long)-1);
+        ret = bb_set2(data, &object->token, 0, bb_size(&object->token));
         break;
     case 3:
         ret = var_setDateTimeAsOctetString(&e->value, &((gxTokenGateway*)e->target)->time);
@@ -4131,8 +4131,9 @@ int cosem_getAccount(
         }
         else
         {
-            if ((ret = hlp_setObjectCount((unsigned int)strlen(object->currency.name), data)) != 0 ||
-                (ret = bb_set(data, (unsigned char*)object->currency.name, (unsigned long)strlen(object->currency.name))) != 0)
+            unsigned int len = (unsigned int)strlen(object->currency.name);
+            if ((ret = hlp_setObjectCount(len, data)) != 0 ||
+                (ret = bb_set(data, (unsigned char*)object->currency.name, len)) != 0)
             {
                 return ret;
             }

@@ -251,7 +251,7 @@ int updateSeasonProfile(gxArray* profile, variantArray* data)
             return ret;
         }
         bb_init(&sp->name);
-        bb_set2(&sp->name, tmp->byteArr, 0, (unsigned long)-1);
+        bb_set2(&sp->name, tmp->byteArr, 0, bb_size(tmp->byteArr));
 
         ret = va_get(it->Arr, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -275,7 +275,7 @@ int updateSeasonProfile(gxArray* profile, variantArray* data)
             return ret;
         }
         bb_init(&sp->weekName);
-        bb_set2(&sp->weekName, tmp->byteArr, 0, (unsigned long)-1);
+        bb_set2(&sp->weekName, tmp->byteArr, 0, bb_size(tmp->byteArr));
         arr_push(profile, sp);
     }
     return ret;
@@ -303,7 +303,7 @@ int updateWeekProfileTable(gxArray* profile, variantArray* data)
             return ret;
         }
         bb_init(&wp->name);
-        bb_set2(&wp->name, tmp->byteArr, 0, (unsigned long)-1);
+        bb_set2(&wp->name, tmp->byteArr, 0, bb_size(tmp->byteArr));
 
         ret = va_get(it->Arr, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -456,7 +456,7 @@ int cosem_setActivityCalendar(gxActivityCalendar* object, unsigned char index, d
     if (index == 2)
     {
         bb_clear(&object->calendarNameActive);
-        bb_set2(&object->calendarNameActive, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->calendarNameActive, value->byteArr, 0, bb_size(value->byteArr));
     }
     else if (index == 3)
     {
@@ -473,7 +473,7 @@ int cosem_setActivityCalendar(gxActivityCalendar* object, unsigned char index, d
     else if (index == 6)
     {
         bb_clear(&object->calendarNamePassive);
-        bb_set2(&object->calendarNamePassive, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->calendarNamePassive, value->byteArr, 0, bb_size(value->byteArr));
     }
     else if (index == 7)
     {
@@ -1551,7 +1551,7 @@ int cosem_setAutoConnect(gxAutoConnect* object, unsigned char index, dlmsVARIANT
                 }
                 str = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
                 bb_init(str);
-                bb_set2(str, tmp->byteArr, 0, (unsigned long)-1);
+                bb_set2(str, tmp->byteArr, 0, bb_size(tmp->byteArr));
                 arr_push(&object->destinations, str);
             }
         }
@@ -1684,7 +1684,7 @@ int cosem_setMacAddressSetup(gxMacAddressSetup* object, unsigned char index, dlm
     if (index == 2)
     {
         bb_clear(&object->macAddress);
-        bb_set2(&object->macAddress, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->macAddress, value->byteArr, 0, bb_size(value->byteArr));
     }
     else
     {
@@ -1764,7 +1764,7 @@ int cosem_setGprsSetup(gxGPRSSetup* object, unsigned char index, dlmsVARIANT *va
         }
         else
         {
-            bb_set2(&object->apn, value->byteArr, 0, (unsigned long)-1);
+            bb_set2(&object->apn, value->byteArr, 0, bb_size(value->byteArr));
         }
     }
     else if (index == 3)
@@ -1869,11 +1869,11 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
         break;
     case 4:
         bb_clear(&object->clientSystemTitle);
-        bb_set2(&object->clientSystemTitle, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->clientSystemTitle, value->byteArr, 0, bb_size(value->byteArr));
         break;
     case 5:
         bb_clear(&object->serverSystemTitle);
-        bb_set2(&object->serverSystemTitle, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->serverSystemTitle, value->byteArr, 0, bb_size(value->byteArr));
         break;
     case 6:
         obj_clearCertificateInfo(&object->certificates);
@@ -2033,22 +2033,22 @@ int cosem_setIecLocalPortSetup(gxLocalPortSetup* object, unsigned char index, dl
     else if (index == 6)
     {
         bb_clear(&object->deviceAddress);
-        bb_set2(&object->deviceAddress, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->deviceAddress, value->byteArr, 0, bb_size(value->byteArr));
     }
     else if (index == 7)
     {
         bb_clear(&object->password1);
-        bb_set2(&object->password1, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->password1, value->byteArr, 0, bb_size(value->byteArr));
     }
     else if (index == 8)
     {
         bb_clear(&object->password2);
-        bb_set2(&object->password2, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->password2, value->byteArr, 0, bb_size(value->byteArr));
     }
     else if (index == 9)
     {
         bb_clear(&object->password5);
-        bb_set2(&object->password5, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->password5, value->byteArr, 0, bb_size(value->byteArr));
     }
     else
     {
@@ -2067,7 +2067,7 @@ int cosem_setIP4Setup(gxIp4Setup* object, unsigned char index, dlmsVARIANT *valu
     if (index == 2)
     {
         bb_clear(&object->dataLinkLayerReference);
-        bb_set2(&object->dataLinkLayerReference, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->dataLinkLayerReference, value->byteArr, 0, bb_size(value->byteArr));
     }
     else if (index == 3)
     {
@@ -2368,7 +2368,7 @@ int cosem_setmMbusClient(gxMBusClient* object, unsigned char index, dlmsVARIANT 
     if (index == 2)
     {
         bb_clear(&object->mBusPortReference);
-        bb_set2(&object->mBusPortReference, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->mBusPortReference, value->byteArr, 0, bb_size(value->byteArr));
     }
     else if (index == 3)
     {
@@ -2513,7 +2513,7 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
                 }
                 str = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
                 bb_init(str);
-                bb_set2(str, tmp->byteArr, 0, (unsigned long)-1);
+                bb_set2(str, tmp->byteArr, 0, bb_size(tmp->byteArr));
                 arr_push(&object->modemProfile, str);
             }
         }
@@ -2536,7 +2536,7 @@ int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT *valu
     if (index == 2)
     {
         bb_clear(&object->PHYReference);
-        bb_set2(&object->PHYReference, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->PHYReference, value->byteArr, 0, bb_size(value->byteArr));
     }
     else if (index == 3)
     {
@@ -2635,7 +2635,7 @@ int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT *valu
             return ret;
         }
         bb_clear(&object->userName);
-        bb_set2(&object->userName, tmp->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->userName, tmp->byteArr, 0, bb_size(tmp->byteArr));
         //Get password.
         ret = va_get(value->Arr, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -2643,7 +2643,7 @@ int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT *valu
             return ret;
         }
         bb_clear(&object->password);
-        bb_set2(&object->password, tmp->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->password, tmp->byteArr, 0, bb_size(tmp->byteArr));
     }
     else
     {
@@ -2733,7 +2733,7 @@ int cosem_setRegisterActivation(gxRegisterActivation* object, unsigned char inde
     else if (index == 4)
     {
         bb_clear(&object->activeMask);
-        bb_set2(&object->activeMask, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->activeMask, value->byteArr, 0, bb_size(value->byteArr));
     }
     else
     {
@@ -3244,7 +3244,7 @@ int cosem_setTcpUdpSetup(gxTcpUdpSetup* object, unsigned char index, dlmsVARIANT
     else if (index == 3)
     {
         bb_clear(&object->ipReference);
-        bb_set2(&object->ipReference, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->ipReference, value->byteArr, 0, bb_size(value->byteArr));
     }
     else if (index == 4)
     {
@@ -3623,7 +3623,7 @@ int setUnitCharge(gxUnitCharge* target, dlmsVARIANT *value)
         {
             return ret;
         }
-        bb_set2(&ct->index, tmp->byteArr, 0, (unsigned long)-1);
+        bb_set2(&ct->index, tmp->byteArr, 0, bb_size(tmp->byteArr));
         //chargePerUnit
         ret = va_get(it2->Arr, &tmp);
         if (ret != 0)
@@ -4096,14 +4096,14 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
                     gxfree(item);
                     return ret;
                 }
-                bb_set2(&item->identification, tmp->byteArr, 0, (unsigned long)-1);
+                bb_set2(&item->identification, tmp->byteArr, 0, bb_size(tmp->byteArr));
                 ret = va_get(it->Arr, &tmp);
                 if (ret != 0)
                 {
                     gxfree(item);
                     return ret;
                 }
-                bb_set2(&item->signature, tmp->byteArr, 0, (unsigned long)-1);
+                bb_set2(&item->signature, tmp->byteArr, 0, bb_size(tmp->byteArr));
                 arr_push(&object->imageActivateInfo, item);
             }
         }
@@ -4497,7 +4497,7 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
     {
     case 2:
         bb_clear(&object->token);
-        bb_set2(&object->token, value->byteArr, 0, (unsigned long)-1);
+        bb_set2(&object->token, value->byteArr, 0, bb_size(value->byteArr));
         break;
     case 3:
         if (value->byteArr == NULL)

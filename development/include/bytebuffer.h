@@ -89,6 +89,18 @@ extern "C" {
         unsigned short capacity);
 #endif
 
+ /*
+ * Get size.
+ */
+#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+    unsigned long bb_size(
+        gxByteBuffer* bb);
+#else
+    unsigned short bb_size(
+        gxByteBuffer* bb);
+#endif
+
+
     /*
     * Fill buffer it with zeros.
     */

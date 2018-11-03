@@ -212,6 +212,9 @@ int apdu_getInitiateRequest(
     bb_setUInt8(data, DLMS_COMMAND_INITIATE_REQUEST);
     // Usage field for the response allowed component.
 
+#ifdef DLMS_IGNORE_HIGH_GMAC
+    bb_setUInt8(data, 0);
+#else
     // Usage field for dedicated-key component.
     if (settings->cipher.security == DLMS_SECURITY_NONE || settings->cipher.dedicatedKey == NULL || settings->cipher.dedicatedKey->size == 0)
     {
@@ -223,6 +226,7 @@ int apdu_getInitiateRequest(
         hlp_setObjectCount(settings->cipher.dedicatedKey->size, data);
         bb_set(data, settings->cipher.dedicatedKey->data, settings->cipher.dedicatedKey->size);
     }
+#endif //DLMS_IGNORE_HIGH_GMAC
 
     // encoding of the response-allowed component (bool DEFAULT TRUE)
     // usage flag (FALSE, default value TRUE conveyed)
@@ -410,6 +414,9 @@ int apdu_parseUserInformation(
             return ret;
         }
         // Dedicated key.
+#ifdef DLMS_IGNORE_HIGH_GMAC
+
+#else
         if (tag != 0)
         {
             if ((ret = bb_getUInt8(data, &len)) != 0)
@@ -433,6 +440,7 @@ int apdu_parseUserInformation(
             gxfree(settings->cipher.dedicatedKey);
             settings->cipher.dedicatedKey = NULL;
         }
+#endif //DLMS_IGNORE_HIGH_GMAC
         // Optional usage field of the negotiated quality of service
         // component
         if ((ret = bb_getUInt8(data, &tag)) != 0)

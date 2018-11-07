@@ -231,3 +231,4 @@ GuruxDLMSClientExample/VS/GuruxDLMClientExample.VC.db
 GuruxDLMSServerExample/VS/data.csv
 *.db-shm
 *.db-wal
+*.zip

@@ -80,7 +80,8 @@ void gxmd5_II(unsigned int *a, unsigned int b, unsigned int c, unsigned int d, u
 
 void gxmd5_decode(unsigned int * output, unsigned char *input, unsigned int len)
 {
-    for (unsigned int i = 0, j = 0; j < len; i++, j += 4)
+    unsigned int i, j;
+    for (i = 0, j = 0; j < len; i++, j += 4)
     {
         output[i] = (input[j]) | (((unsigned int)input[j + 1]) << 8) |
             (((unsigned int)input[j + 2]) << 16) | (((unsigned int)input[j + 3]) << 24);
@@ -89,8 +90,8 @@ void gxmd5_decode(unsigned int * output, unsigned char *input, unsigned int len)
 
 void gxmd5_encode(unsigned char * output, unsigned int *input, unsigned int len)
 {
-    unsigned int pos = 0;
-    for (unsigned int i = 0; i != len; ++i)
+    unsigned int i, pos = 0;
+    for (i = 0; i != len; ++i)
     {
         output[pos] = input[i] & 0xff;
         ++pos;

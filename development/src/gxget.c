@@ -48,7 +48,7 @@
 #include "../include/dlms.h"
 #include "../include/gxkey.h"
 #include "../include/helpers.h"
-#include "../include/server.h"
+#include "../include/serverevents.h"
 
 int cosem_getByteBuffer(dlmsVARIANT* target)
 {
@@ -485,7 +485,7 @@ int cosem_getActivityCalendar(
     return ret;
 }
 #endif //DLMS_IGNORE_ACTIVITY_CALENDAR
-
+#ifndef DLMS_IGNORE_SERVER
 int getLNAccessRights(
     dlmsSettings* settings,
     gxObject *object,
@@ -553,6 +553,7 @@ int getLNAccessRights(
 #endif //INDIAN_STANDARD
     return 0;
 }
+#endif //DLMS_IGNORE_SERVER
 
 unsigned char dlms_isPduFull(
     dlmsSettings* settings,
@@ -567,8 +568,6 @@ unsigned char dlms_isPduFull(
             ret = data->size > (unsigned short)(bb_getCapacity(data) - PDU_MAX_HEADER_SIZE - CIPHERING_HEADER_SIZE);
         }
         else
-#else
-        (settings);
 #endif //DLMS_IGNORE_HIGH_GMAC
         {
             ret = data->size > (unsigned short)(bb_getCapacity(data) - PDU_MAX_HEADER_SIZE);
@@ -581,6 +580,7 @@ unsigned char dlms_isPduFull(
     return ret;
 }
 
+#ifndef DLMS_IGNORE_SERVER
 // Returns LN Association View.
 int getLNObjects(
     dlmsSettings* settings,
@@ -658,6 +658,7 @@ int getLNObjects(
     }
     return ret;
 }
+#endif //DLMS_IGNORE_SERVER
 
 /*
 * Returns User list.
@@ -716,6 +717,7 @@ int cosem_getAssociationLogicalName(
     int ret = 0;
     if (e->index == 2)
     {
+#ifndef DLMS_IGNORE_SERVER
         if ((ret = cosem_getByteBuffer(&e->value)) != 0)
         {
             return ret;
@@ -723,6 +725,7 @@ int cosem_getAssociationLogicalName(
         gxByteBuffer *data = e->value.byteArr;
         e->byteArray = 1;
         ret = getLNObjects(settings, e, data);
+#endif //DLMS_IGNORE_SERVER
     }
     else if (e->index == 3)
     {
@@ -973,6 +976,7 @@ int getSNObjects(
     return ret;
 }
 
+#ifndef DLMS_IGNORE_SERVER
 int getSNAccessRights(
     dlmsSettings* settings,
     gxObject* object,
@@ -1089,6 +1093,7 @@ int cosem_getAssociationShortName(
     e->byteArray = 1;
     return ret;
 }
+#endif //DLMS_IGNORE_SERVER
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 #ifndef DLMS_IGNORE_AUTO_ANSWER
@@ -3505,11 +3510,11 @@ int cosem_getPushSetup(
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //Start date time.
-                (ret = var_setDateTime(&tmp, (gxtime*)it->key)) != 0 ||
+                (ret = var_setDateTimeAsOctetString(&tmp, (gxtime*)it->key)) != 0 ||
                 (ret = var_getBytes(&tmp, data)) != 0 ||
                 (ret = var_clear(&tmp)) != 0 ||
                 //End date time.
-                (ret = var_setDateTime(&tmp, (gxtime*)it->value)) != 0 ||
+                (ret = var_setDateTimeAsOctetString(&tmp, (gxtime*)it->value)) != 0 ||
                 (ret = var_getBytes(&tmp, data)) != 0 ||
                 (ret = var_clear(&tmp)) != 0)
             {
@@ -4226,10 +4231,12 @@ int cosem_getValue(
         break;
 #endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#ifndef DLMS_IGNORE_SERVER
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
         ret = cosem_getAssociationShortName(settings, e);
         break;
-#endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //DLMS_IGNORE_SERVER
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #ifndef DLMS_IGNORE_AUTO_ANSWER
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
         ret = cosem_getAutoAnswer(e);

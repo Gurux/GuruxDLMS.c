@@ -39,12 +39,14 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-    /**
+#ifndef DLMS_IGNORE_CLIENT
+        /**
      * Generates Aarq.
      */
     int apdu_generateAarq(
         dlmsSettings* settings,
         gxByteBuffer* data);
+#endif //DLMS_IGNORE_CLIENT
 
     /**
      * Parse APDU.
@@ -70,7 +72,7 @@ extern "C" {
     * Generate user information.
     *
     * @param settings
-    *            DLMS settings->
+    *            DLMS settings
     * @param cipher
     * @param data
     *            Generated user information.

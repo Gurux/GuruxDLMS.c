@@ -850,16 +850,15 @@ extern "C" {
          */
         DLMS_COMMAND_INITIATE_RESPONSE = 0x8,
 
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         /**
          * Read request.
          */
         DLMS_COMMAND_READ_REQUEST = 0x5,
-
         /**
          * Read response.
          */
         DLMS_COMMAND_READ_RESPONSE = 0xC,
-
         /**
          * Write request.
          */
@@ -869,6 +868,7 @@ extern "C" {
          * Write response.
          */
         DLMS_COMMAND_WRITE_RESPONSE = 0xD,
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
         /**
          * Get request.

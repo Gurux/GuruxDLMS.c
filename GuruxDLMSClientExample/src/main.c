@@ -41,12 +41,29 @@ unsigned char svr_isTarget(
 }
 
 //Client don't need this. 
-extern int svr_connected(
+int svr_connected(
     dlmsServerSettings *settings) {
     return 0;
 
 }
 
+//Client don't need this. 
+DLMS_ACCESS_MODE svr_getAttributeAccess(
+    dlmsSettings *settings,
+    gxObject *obj,
+    unsigned char index)
+{
+    return DLMS_ACCESS_MODE_READ_WRITE;
+}
+
+//Client don't need this. 
+DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
+    dlmsSettings *settings,
+    gxObject *obj,
+    unsigned char index)
+{
+    return DLMS_METHOD_ACCESS_MODE_ACCESS;
+}
 
 /**
 * Updates clock and reads it.

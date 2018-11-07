@@ -30,6 +30,9 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
+#include "../include/gxignore.h"
+#ifndef DLMS_IGNORE_SERVER
+
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include <assert.h>
 #endif
@@ -48,7 +51,7 @@
 #include "../include/ciphering.h"
 #include "../include/gxget.h"
 #include "../include/gxkey.h"
-#include "../include/server.h"
+#include "../include/serverevents.h"
 
 #ifndef DLMS_IGNORE_CHARGE
 
@@ -971,3 +974,4 @@ int cosem_invoke(
     }
     return ret;
 }
+#endif //DLMS_IGNORE_SERVER

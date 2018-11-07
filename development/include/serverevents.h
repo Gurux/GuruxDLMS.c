@@ -30,58 +30,18 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef SERVER_EVENTS_H
+#define SERVER_EVENTS_H
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
 #include "gxignore.h"
-#include "dlms.h"
+#ifndef DLMS_IGNORE_SERVER
+#include "dlmssettings.h"
 
-    int svr_initialize(
-        dlmsServerSettings* settings);
-
-    int svr_handleRequest(
-        dlmsServerSettings* settings,
-        gxByteBuffer* data,
-        gxByteBuffer* reply);
-
-    int svr_handleRequest2(
-        dlmsServerSettings* settings,
-        unsigned char* buff,
-        unsigned short size,
-        gxByteBuffer* reply);
-
-    //Handle only one received byte.
-    int svr_handleRequest3(
-        dlmsServerSettings* settings,
-        unsigned char data,
-        gxByteBuffer* reply);
-
-    void svr_reset(
-        dlmsServerSettings* settings);
-
-    /*
-    Run the background processes.
-    */
-    int svr_run(
-        dlmsServerSettings* settings);
-
-    /**
-    * Check is data sent to this server.
-    *
-    * @param serverAddress
-    *            Server address.
-    * @param clientAddress
-    *            Client address.
-    * @return True, if data is sent to this server.
-    */
-    extern unsigned char svr_isTarget(
-        dlmsSettings *settings, 
-        unsigned long serverAddress,
-        unsigned long clientAddress);
+  
 
     /**
     * Get attribute access level.
@@ -230,18 +190,8 @@ extern "C" {
         dlmsSettings* settings,
         gxValueEventCollection* args);
 
-
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    /**
-    * Update short names.
-    */
-    int svr_updateShortNames(
-        dlmsServerSettings* settings,
-        unsigned char force);
-#endif  //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-
 #ifdef  __cplusplus
 }
 #endif
-
-#endif //SERVER_H
+#endif //DLMS_IGNORE_SERVER
+#endif //SERVER_EVENTS_H

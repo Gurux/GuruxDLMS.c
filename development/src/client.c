@@ -31,6 +31,7 @@
 //---------------------------------------------------------------------------
 
 #include "../include/gxignore.h"
+#ifndef DLMS_IGNORE_CLIENT
 #include "../include/gxmem.h"
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -1413,29 +1414,4 @@ int cl_methodSN(
 }
 
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-
-
-#if !defined(DLMS_SERVER)
-/**
-* Get attribute access level.
-*/
-DLMS_ACCESS_MODE svr_getAttributeAccess(
-    dlmsSettings *settings,
-    gxObject *obj,
-    unsigned char index)
-{
-    return DLMS_ACCESS_MODE_NONE;
-}
-
-/**
-* Get method access level.
-*/
-DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
-    dlmsSettings *settings,
-    gxObject *obj,
-    unsigned char index)
-{
-    return DLMS_METHOD_ACCESS_MODE_NONE;
-}
-
-#endif //DLMS_SERVER
+#endif //DLMS_IGNORE_CLIENT

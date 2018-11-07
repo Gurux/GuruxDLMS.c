@@ -34,11 +34,13 @@
 #ifndef CONVERTERRS_H
 #define CONVERTERRS_H
 
-#ifndef GX_DLMS_MICROCONTROLLER
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
+#include "errorcodes.h"
+
+#ifndef GX_DLMS_MICROCONTROLLER
 #include "enums.h"
 #include "variant.h"
 #include "gxarray.h"
@@ -61,10 +63,10 @@ extern "C" {
     int obj_toString(
         gxObject* object,
         char** buff);
-
+#endif //GX_DLMS_MICROCONTROLLER
+    const char* err_toString(int err);
 #ifdef  __cplusplus
 }
 #endif
-#endif //GX_DLMS_MICROCONTROLLER
 
 #endif //CONVERTERRS_H

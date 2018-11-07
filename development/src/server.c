@@ -47,6 +47,9 @@
 #include "../include/gxset.h"
 #include "../include/gxget.h"
 #include "../include/gxinvoke.h"
+#include "../include/serverevents.h"
+#include "../include/gxignore.h"
+#ifndef DLMS_IGNORE_SERVER
 
 typedef struct
 {
@@ -594,12 +597,14 @@ int svr_reportError(
     gxByteBuffer data;
     switch (command)
     {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_READ_REQUEST:
         cmd = DLMS_COMMAND_READ_RESPONSE;
         break;
     case DLMS_COMMAND_WRITE_REQUEST:
         cmd = DLMS_COMMAND_WRITE_RESPONSE;
         break;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_GET_REQUEST:
         cmd = DLMS_COMMAND_GET_RESPONSE;
         break;
@@ -2715,3 +2720,4 @@ int svr_run(
 {
     return handleInactivityTimeout(settings);
 }
+#endif //DLMS_IGNORE_SERVER

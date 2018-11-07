@@ -60,7 +60,6 @@
 #ifndef DLMS_IGNORE_HIGH_AES
 #include "../include/gxaes.h"
 #endif  //DLMS_IGNORE_HIGH_AES
-#include "../include/server.h"
 
 unsigned char pduAttributes[PDU_MAX_HEADER_SIZE];
 static const unsigned char LLC_SEND_BYTES[3] = { 0xE6, 0xE6, 0x00 };
@@ -98,30 +97,38 @@ unsigned char dlms_getGloMessage(DLMS_COMMAND command)
     unsigned char cmd;
     switch (command)
     {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_READ_REQUEST:
         cmd = DLMS_COMMAND_GLO_READ_REQUEST;
         break;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_GET_REQUEST:
         cmd = DLMS_COMMAND_GLO_GET_REQUEST;
         break;
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_WRITE_REQUEST:
         cmd = DLMS_COMMAND_GLO_WRITE_REQUEST;
         break;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_SET_REQUEST:
         cmd = DLMS_COMMAND_GLO_SET_REQUEST;
         break;
     case DLMS_COMMAND_METHOD_REQUEST:
         cmd = DLMS_COMMAND_GLO_METHOD_REQUEST;
         break;
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_READ_RESPONSE:
         cmd = DLMS_COMMAND_GLO_READ_RESPONSE;
         break;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_GET_RESPONSE:
         cmd = DLMS_COMMAND_GLO_GET_RESPONSE;
         break;
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_WRITE_RESPONSE:
         cmd = DLMS_COMMAND_GLO_WRITE_RESPONSE;
         break;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_COMMAND_SET_RESPONSE:
         cmd = DLMS_COMMAND_GLO_SET_RESPONSE;
         break;
@@ -1879,8 +1886,9 @@ int dlms_getHdlcData(
             dlms_checkLLCBytes(settings, reply);
         }
     }
-    if (first || data->command == DLMS_COMMAND_SNRM)
+    if (settings->server && (first || data->command == DLMS_COMMAND_SNRM))
     {
+#ifndef DLMS_IGNORE_SERVER
         // Check is data send to this server.
         if (!svr_isTarget(settings, settings->serverAddress, settings->clientAddress))
         {
@@ -1902,6 +1910,7 @@ int dlms_getHdlcData(
             }
             return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
         }
+#endif //DLMS_IGNORE_SERVER
     }
     return DLMS_ERROR_CODE_OK;
 }
@@ -2095,6 +2104,7 @@ int dlms_receiverReady(
     }
     else
     {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         if (settings->server)
         {
             cmd = DLMS_COMMAND_READ_RESPONSE;
@@ -2103,6 +2113,9 @@ int dlms_receiverReady(
         {
             cmd = DLMS_COMMAND_READ_REQUEST;
         }
+#else
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }
     bb_init(&bb);
     if (settings->useLogicalNameReferencing)
@@ -2906,7 +2919,7 @@ int dlms_changeType(
 #else
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //GX_DLMS_MICROCONTROLLER       
-}
+    }
     info.type = type;
     if ((ret = dlms_getData(value, &info, newValue)) != 0)
     {
@@ -3069,8 +3082,11 @@ int dlms_handleGbt(
     }
     // Get data if all data is read or we want to peek data.
     if (data->data.position != data->data.size
-        && (data->command == DLMS_COMMAND_READ_RESPONSE
-            || data->command == DLMS_COMMAND_GET_RESPONSE)
+        && (
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+            data->command == DLMS_COMMAND_READ_RESPONSE ||
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+            data->command == DLMS_COMMAND_GET_RESPONSE)
         && (data->moreData == DLMS_DATA_REQUEST_TYPES_NONE
             || data->peek))
     {
@@ -3107,6 +3123,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
         //If pre-set connection is made.
         else if (settings->sourceSystemTitle.size == 0)
         {
+#ifndef DLMS_IGNORE_SERVER
             if (settings->server && settings->connected == DLMS_CONNECTION_STATE_NONE && !data->preEstablished)
             {
                 // Check is data send to this server.
@@ -3124,6 +3141,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
                     return ret;
                 }
             }
+#endif //DLMS_IGNORE_SERVER
             if ((ret = cip_decrypt(&settings->cipher,
                 settings->preEstablishedSystemTitle,
                 &settings->cipher.blockCipherKey,
@@ -3158,7 +3176,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
     else
     {
         data->data.position = (data->data.position - 1);
-}
+    }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
 }
@@ -3176,7 +3194,7 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
         gxByteBuffer bb;
         --data->data.position;
         bb_init(&bb);
-        bb_set2(&bb, &data->data, 0, (unsigned long)-1);
+        bb_set2(&bb, &data->data, 0, bb_size(&data->data));
         data->data.position = data->data.size = index;
         if (settings->cipher.dedicatedKey != NULL && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
         {
@@ -3202,12 +3220,12 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
                 return ret;
             }
         }
-        bb_set2(&data->data, &bb, bb.position, (unsigned long)-1);
+        bb_set2(&data->data, &bb, bb.position, bb.size - bb.position);
         bb_clear(&bb);
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
         data->cipherIndex = (unsigned short)data->data.size;
-}
+    }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
 }
@@ -3240,6 +3258,7 @@ int dlms_getPdu(
         data->command = cmd;
         switch (cmd)
         {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         case DLMS_COMMAND_READ_RESPONSE:
             if ((ret = dlms_handleReadResponse(settings, data, index)) != 0)
             {
@@ -3250,6 +3269,7 @@ int dlms_getPdu(
                 return ret;
             }
             break;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         case DLMS_COMMAND_GET_RESPONSE:
             if ((ret = dlms_handleGetResponse(settings, data, index)) != 0)
             {
@@ -3263,9 +3283,11 @@ int dlms_getPdu(
         case DLMS_COMMAND_SET_RESPONSE:
             ret = dlms_handleSetResponse(data);
             break;
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         case DLMS_COMMAND_WRITE_RESPONSE:
             ret = dlms_handleWriteResponse(data);
             break;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         case DLMS_COMMAND_METHOD_RESPONSE:
             ret = dlms_handleMethodResponse(data);
             break;
@@ -3286,8 +3308,10 @@ int dlms_getPdu(
             ServiceError.values()[data->data.getUInt8() - 1]);
             */
         case DLMS_COMMAND_GET_REQUEST:
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         case DLMS_COMMAND_READ_REQUEST:
         case DLMS_COMMAND_WRITE_REQUEST:
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         case DLMS_COMMAND_SET_REQUEST:
         case DLMS_COMMAND_METHOD_REQUEST:
         case DLMS_COMMAND_RELEASE_REQUEST:
@@ -3412,6 +3436,7 @@ int dlms_getPdu(
 #endif //DLMS_IGNORE_HIGH_GMAC
     }
 
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     // Get data only blocks if SN is used. This is faster.
     if (cmd == DLMS_COMMAND_READ_RESPONSE
         && data->commandType == DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT
@@ -3419,10 +3444,15 @@ int dlms_getPdu(
     {
         return 0;
     }
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
     // Get data if all data is read or we want to peek data.
     if (data->data.position != data->data.size
-        && (cmd == DLMS_COMMAND_READ_RESPONSE || cmd == DLMS_COMMAND_GET_RESPONSE)
+        && (
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+            cmd == DLMS_COMMAND_READ_RESPONSE ||
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+            cmd == DLMS_COMMAND_GET_RESPONSE)
         && (data->moreData == DLMS_DATA_REQUEST_TYPES_NONE
             || data->peek))
     {
@@ -3481,7 +3511,7 @@ int dlms_appendMultipleSNBlocks(
         }
     }
     maxSize -= hlp_getObjectCountSizeInBytes(maxSize);
-    if ((unsigned short) (p->data->size - p->data->position) > maxSize)
+    if ((unsigned short)(p->data->size - p->data->position) > maxSize)
     {
         // More blocks.
         bb_setUInt8(reply, 0);
@@ -3945,7 +3975,7 @@ int dlms_getLNPdu(
                 if (ciphering)
                 {
                     totalLength += CIPHERING_HEADER_SIZE;
-            }
+                }
 #endif //DLMS_IGNORE_HIGH_GMAC
                 if (totalLength > p->settings->maxPduSize)
                 {
@@ -3954,10 +3984,10 @@ int dlms_getLNPdu(
                     if (ciphering)
                     {
                         len -= CIPHERING_HEADER_SIZE;
-                }
+                    }
 #endif //DLMS_IGNORE_HIGH_GMAC
                     len -= hlp_getObjectCountSizeInBytes(len);
-        }
+                }
                 hlp_setObjectCount(len, h);
                 if (p->settings->server)
                 {
@@ -3971,8 +4001,8 @@ int dlms_getLNPdu(
                 {
                     bb_set2(reply, p->data, p->data->position, len);
                 }
+            }
         }
-    }
         // Add data that fits to one block.
         if (len == 0)
         {
@@ -4046,7 +4076,7 @@ int dlms_getLNPdu(
             bb_clear(&tmp);
         }
 #endif //DLMS_IGNORE_HIGH_GMAC1
-}
+    }
     return 0;
 }
 
@@ -4390,7 +4420,7 @@ int dlms_secure(
 #else        
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_AES
-}
+    }
     // Get server Challenge.
     // Get shared secret
     bb_init(&challenge);

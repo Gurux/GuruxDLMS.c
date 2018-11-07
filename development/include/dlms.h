@@ -49,6 +49,28 @@ extern "C" {
 #include "datainfo.h"
 #include "parameters.h"
 
+#ifndef DLMS_IGNORE_SERVER
+    /**
+  * Check is data sent to this server.
+  *
+  * @param serverAddress
+  *            Server address.
+  * @param clientAddress
+  *            Client address.
+  * @return True, if data is sent to this server.
+  */
+    extern unsigned char svr_isTarget(
+        dlmsSettings *settings,
+        unsigned long serverAddress,
+        unsigned long clientAddress);
+
+    /**
+  * called when client makes connection to the server.
+  */
+    extern int svr_connected(
+        dlmsServerSettings *settings);
+#endif //DLMS_IGNORE_SERVER
+
     //Makes sure that the basic settings are set.
     int dlms_checkInit(
         dlmsSettings* settings);

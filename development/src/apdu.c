@@ -43,6 +43,7 @@ static const unsigned char SHORT_NAME_OBJECT_ID[7] = { 0x60, 0x85, 0x74, 0x05, 0
 static const unsigned char LOGICAL_NAME_OBJECT_ID_WITH_CIPHERING[7] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x01, 0x03 };
 static const unsigned char SHORT_NAME_OBJECT_ID_WITH_CIPHERING[7] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x01, 0x04 };
 
+#ifndef DLMS_IGNORE_CLIENT
 /**
  * Retrieves the string that indicates the level of authentication, if any.
  */
@@ -94,6 +95,7 @@ int apdu_getAuthenticationString(
     }
     return 0;
 }
+#endif //DLMS_IGNORE_CLIENT
 
 /**
 * Code application context name.
@@ -261,6 +263,7 @@ int apdu_getInitiateRequest(
     return 0;
 }
 
+#ifndef DLMS_IGNORE_CLIENT
 /**
  * Generate user information.
  *
@@ -327,7 +330,7 @@ int apdu_generateUserInformation(
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
 }
-
+#endif //DLMS_IGNORE_CLIENT
 
 /**
  * Parse User Information from PDU.
@@ -897,7 +900,7 @@ int apdu_getUserInformation(
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
 }
-
+#ifndef DLMS_IGNORE_CLIENT
 int apdu_generateAarq(
     dlmsSettings* settings,
     gxByteBuffer* data)
@@ -930,6 +933,7 @@ int apdu_generateAarq(
     bb_setUInt8ByIndex(data, offset, (unsigned char)(data->size - offset - 1));
     return 0;
 }
+#endif //DLMS_IGNORE_CLIENT
 
 int apdu_handleResultComponent(DLMS_SOURCE_DIAGNOSTIC value)
 {
@@ -1319,6 +1323,7 @@ int apdu_parsePDU(
     return apdu_handleResultComponent(*diagnostic);
     }
 
+#ifndef DLMS_IGNORE_SERVER
 int apdu_generateAARE(
     dlmsSettings* settings,
     gxByteBuffer* data,
@@ -1451,3 +1456,4 @@ int apdu_generateAARE(
     bb_setUInt8ByIndex(data, (offset + 1), (unsigned char)(data->size - offset - 2));
     return 0;
 }
+#endif //DLMS_IGNORE_SERVER

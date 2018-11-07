@@ -37,6 +37,9 @@
 extern "C" {
 #endif
 
+#include "gxignore.h"
+#ifndef DLMS_IGNORE_CLIENT
+
 #include "dlms.h"
 
     int cl_getData(
@@ -258,5 +261,5 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
-
+#endif //DLMS_IGNORE_CLIENT
 #endif //CLIENT_H

@@ -33,11 +33,14 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include "gxignore.h"
+#ifndef DLMS_IGNORE_SERVER
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
-#include "gxignore.h"
+#include "serverevents.h"
 #include "dlms.h"
 
     int svr_initialize(
@@ -69,168 +72,6 @@ extern "C" {
     int svr_run(
         dlmsServerSettings* settings);
 
-    /**
-    * Check is data sent to this server.
-    *
-    * @param serverAddress
-    *            Server address.
-    * @param clientAddress
-    *            Client address.
-    * @return True, if data is sent to this server.
-    */
-    extern unsigned char svr_isTarget(
-        dlmsSettings *settings, 
-        unsigned long serverAddress,
-        unsigned long clientAddress);
-
-    /**
-    * Get attribute access level.
-    */
-    extern DLMS_ACCESS_MODE svr_getAttributeAccess(
-        dlmsSettings *settings,
-        gxObject *obj,
-        unsigned char index);
-
-    /**
-    * Get method access level.
-    */
-    extern DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
-        dlmsSettings *settings,
-        gxObject *obj,
-        unsigned char index);
-
-    /**
-    * called when client makes connection to the server.
-    */
-    extern int svr_connected(
-        dlmsServerSettings *settings);
-
-    /**
-        * Client has try to made invalid connection. Password is incorrect.
-        *
-        * @param connectionInfo
-        *            Connection information.
-        */
-    extern int svr_invalidConnection(
-        dlmsServerSettings *settings);
-
-    /**
-    * called when client clses connection to the server.
-    */
-    extern int svr_disconnected(
-        dlmsServerSettings *settings);
-
-    extern void svr_preGet(
-        dlmsSettings* settings,
-        gxValueEventCollection* args);
-
-    extern void svr_postGet(
-        dlmsSettings* settings,
-        gxValueEventCollection* args);
-
-    /**
-        * Read selected item(s).
-        *
-        * @param args
-        *            Handled read requests.
-        */
-    extern void svr_preRead(
-        dlmsSettings* settings,
-        gxValueEventCollection* args);
-
-    /**
-        * Write selected item(s).
-        *
-        * @param args
-        *            Handled write requests.
-        */
-    extern void svr_preWrite(
-        dlmsSettings* settings,
-        gxValueEventCollection* args);
-
-    /**
-         * Action is occurred.
-         *
-         * @param args
-         *            Handled action requests.
-         */
-    extern void svr_preAction(
-        dlmsSettings* settings,
-        gxValueEventCollection* args);
-
-    /**
-    * Read selected item(s).
-    *
-    * @param args
-    *            Handled read requests.
-    */
-    extern void svr_postRead(
-        dlmsSettings* settings,
-        gxValueEventCollection* args);
-
-    /**
-    * Write selected item(s).
-    *
-    * @param args
-    *            Handled write requests.
-    */
-    extern void svr_postWrite(
-        dlmsSettings* settings,
-        gxValueEventCollection* args);
-
-    /**
-    * Action is occurred.
-    *
-    * @param args
-    *            Handled action requests.
-    */
-    extern void svr_postAction(
-        dlmsSettings* settings,
-        gxValueEventCollection* args);
-
-    /**
-        * Check whether the authentication and password are correct.
-        *
-        * @param authentication
-        *            Authentication level.
-        * @param password
-        *            Password.
-        * @return Source diagnostic.
-        */
-    extern DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
-        dlmsServerSettings* settings,
-        DLMS_AUTHENTICATION authentication,
-        gxByteBuffer* password);
-
-    /**
-         * Find object.
-         *
-         * @param objectType
-         *            Object type.
-         * @param sn
-         *            Short Name. In Logical name referencing this is not used.
-         * @param ln
-         *            Logical Name. In Short Name referencing this is not used.
-         * @return Found object or NULL if object is not found.
-         */
-    extern int svr_findObject(
-        dlmsSettings* settings,
-        DLMS_OBJECT_TYPE objectType,
-        int sn,
-        unsigned char* ln,
-        gxValueEventArg *e);
-
-    /**
-    * This is reserved for future use.
-    *
-    * @param args
-    *            Handled data type requests.
-    */
-    extern void svr_getDataType(
-        dlmsSettings* settings,
-        gxValueEventCollection* args);
-
-
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     /**
     * Update short names.
@@ -243,5 +84,5 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
-
+#endif //DLMS_IGNORE_SERVER
 #endif //SERVER_H

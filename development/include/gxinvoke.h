@@ -36,6 +36,8 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
+#include "gxignore.h"
+#ifndef DLMS_IGNORE_SERVER
 
 #include "gxobjects.h"
 #include "dlmssettings.h"
@@ -47,5 +49,6 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
+#endif //DLMS_IGNORE_SERVER
 
 #endif //COSEM_INVOKE_H

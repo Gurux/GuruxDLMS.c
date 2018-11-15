@@ -390,7 +390,7 @@ int obj_clearActiveDevices(gxArray* list)
             return ret;
         }
         bb_clear(&it->macAddress);
-        bit_clear(&it->status);
+        ba_clear(&it->status);
     }
     arr_clear(list);
     return ret;
@@ -632,7 +632,7 @@ void obj_clear(gxObject* object)
                     bb_clear(&it->signature);
                 }
             }
-            bit_clear(&((gxImageTransfer*)object)->imageTransferredBlocksStatus);
+            ba_clear(&((gxImageTransfer*)object)->imageTransferredBlocksStatus);
             arr_clear(&((gxImageTransfer*)object)->imageActivateInfo);
             break;
         }
@@ -814,12 +814,12 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_CREDIT
         case DLMS_OBJECT_TYPE_CREDIT:
-            bit_clear(&((gxCredit*)object)->creditConfiguration);
+            ba_clear(&((gxCredit*)object)->creditConfiguration);
             break;
 #endif //DLMS_IGNORE_CREDIT
 #ifndef DLMS_IGNORE_CHARGE
         case DLMS_OBJECT_TYPE_CHARGE:
-            bit_clear(&((gxCharge*)object)->chargeConfiguration);
+            ba_clear(&((gxCharge*)object)->chargeConfiguration);
             arr_clear(&((gxCharge*)object)->unitChargeActive.chargeTables);
             arr_clear(&((gxCharge*)object)->unitChargePassive.chargeTables);
             break;
@@ -828,7 +828,7 @@ void obj_clear(gxObject* object)
         case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
             bb_clear(&((gxTokenGateway*)object)->token);
             arr_clear(&((gxTokenGateway*)object)->descriptions);
-            bit_clear(&((gxTokenGateway*)object)->dataValue);
+            ba_clear(&((gxTokenGateway*)object)->dataValue);
             break;
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
@@ -842,7 +842,7 @@ void obj_clear(gxObject* object)
         case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         {
             gxfree(((gxTariffPlan*)object)->calendarName);
-            bit_clear(&((gxTariffPlan*)object)->plan.weeklyActivation);
+            ba_clear(&((gxTariffPlan*)object)->plan.weeklyActivation);
             arr_clear(&((gxTariffPlan*)object)->plan.specialDays);
             break;
         }

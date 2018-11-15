@@ -1962,7 +1962,7 @@ void svr_preAction(
                     return;
                 }
                 fclose(f);
-                bit_clear(&i->imageTransferredBlocksStatus);
+                ba_clear(&i->imageTransferredBlocksStatus);
             }
             //Transfers one block of the Image to the server
             else if (e->index == 2)

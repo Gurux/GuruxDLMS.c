@@ -53,64 +53,64 @@ extern "C" {
     } bitArray;
 
     //Initialize gxByteBuffer.
-    void bit_init(
+    void ba_init(
         bitArray* arr);
 
     //How many bytes bit array will take.
-    unsigned short bit_getByteCount(
+    unsigned short ba_getByteCount(
         unsigned short bitCount);
 
     //Allocate new size for the array in bits.
-    void bit_capacity(
+    void ba_capacity(
         bitArray* arr,
         unsigned short capacity);
 
     //Push new data to the bit array.
-    void bit_set(
+    void ba_set(
         bitArray * arr,
         unsigned char item);
 
     //Push new data to the bit array.
-    void bit_setByIndex(
+    void ba_setByIndex(
         bitArray *arr,
         int index,
         unsigned char item);
 
     //Add bits from byte array to bit array.
-    int bit_add(
+    int ba_add(
         bitArray *arr,
         gxByteBuffer *bytes,
         unsigned short count,
         unsigned char intelByteOrder);
 
     //Copy bit array.
-    int bit_copy(
+    int ba_copy(
         bitArray *target,
         unsigned char *source,
         unsigned short count);
 
     //Clear bit array.
-    void bit_clear(
+    void ba_clear(
         bitArray* arr);
 
     //Get bit value.
-    int bit_get(
+    int ba_get(
         bitArray* arr,
         unsigned char* value);
 
     //Get bit value by index.
-    int bit_getByIndex(
+    int ba_getByIndex(
         bitArray* arr,
         int index,
         unsigned char* value);
 
     //Convert bit array to integer.
-    int bit_toInteger(
+    int ba_toInteger(
         bitArray *arr,
         int *value);
 
     //Get bit array as a string.
-    char* bit_toString(
+    char* ba_toString(
         bitArray* arr);
 
 #ifdef  __cplusplus

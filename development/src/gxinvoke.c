@@ -321,7 +321,7 @@ int invoke_ImageTransfer(
     {
         gxImageActivateInfo *it, *item = NULL;
         target->imageFirstNotTransferredBlockNumber = 0;
-        bit_clear(&target->imageTransferredBlocksStatus);
+        ba_clear(&target->imageTransferredBlocksStatus);
 
         dlmsVARIANT *imageIdentifier, *size;
         if ((ret = va_getByIndex(e->parameters.Arr, 0, &imageIdentifier)) != 0 ||
@@ -370,10 +370,10 @@ int invoke_ImageTransfer(
         target->imageTransferredBlocksStatus.position = 0;
 #endif //GX_DLMS_MICROCONTROLLER            
         target->imageTransferredBlocksStatus.size = 0;
-        bit_capacity(&target->imageTransferredBlocksStatus, (unsigned short)cnt);
+        ba_capacity(&target->imageTransferredBlocksStatus, (unsigned short)cnt);
         for (pos = 0; pos != cnt; ++pos)
         {
-            bit_set(&target->imageTransferredBlocksStatus, 0);
+            ba_set(&target->imageTransferredBlocksStatus, 0);
         }
     }
     //Image block transfer
@@ -385,7 +385,7 @@ int invoke_ImageTransfer(
             e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
             return ret;
         }
-        bit_setByIndex(&target->imageTransferredBlocksStatus, var_toInteger(imageIndex), 1);
+        ba_setByIndex(&target->imageTransferredBlocksStatus, var_toInteger(imageIndex), 1);
         target->imageFirstNotTransferredBlockNumber = var_toInteger(imageIndex) + 1;
         target->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
     }
@@ -606,7 +606,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
         }
         ad = (gxActiveDevice*)gxcalloc(1, sizeof(gxActiveDevice));
         bb_init(&ad->macAddress);
-        bit_init(&ad->status);
+        ba_init(&ad->status);
         bb_set(&ad->macAddress, it->byteArr->data, it->byteArr->size);
         arr_push(&object->activeDevices, ad);
     }

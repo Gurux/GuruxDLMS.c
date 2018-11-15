@@ -428,8 +428,8 @@ static int getBitString(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT * valu
         return 0;
     }
     value->bitArr = (bitArray*)gxmalloc(sizeof(bitArray));
-    bit_init(value->bitArr);
-    if ((ret = bit_add(value->bitArr, buff, cnt, 0)) != 0)
+    ba_init(value->bitArr);
+    if ((ret = ba_add(value->bitArr, buff, cnt, 0)) != 0)
     {
         return ret;
     }

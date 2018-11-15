@@ -117,17 +117,17 @@ int apdu_generateApplicationContextName(
         unsigned char pos, len = (unsigned char)strlen(settings->protocolVersion);
         int value;
         bitArray ba;
-        bit_init(&ba);
+        ba_init(&ba);
         bb_setUInt8(data, BER_TYPE_CONTEXT | PDU_TYPE_PROTOCOL_VERSION);
         bb_setUInt8(data, 2);
         bb_setUInt8(data, (unsigned char)(8 - len));
         for (pos = 0; pos != 8; ++pos)
         {
-            bit_set(&ba, settings->protocolVersion[pos] == '0' ? 0 : 1);
+            ba_set(&ba, settings->protocolVersion[pos] == '0' ? 0 : 1);
         }
-        bit_toInteger(&ba, &value);
+        ba_toInteger(&ba, &value);
         bb_setUInt8(data, (unsigned char)value);
-        bit_clear(&ba);
+        ba_clear(&ba);
     }
     unsigned char ciphered;
     // Application context name tag
@@ -981,14 +981,14 @@ int apdu_parseProtocolVersion(dlmsSettings* settings,
         return ret;
     }
     bitArray bb;
-    bit_init(&bb);
-    bit_copy(&bb, &value, 8 - unusedBits);
+    ba_init(&bb);
+    ba_copy(&bb, &value, 8 - unusedBits);
     if (settings->protocolVersion != NULL)
     {
         gxfree(settings->protocolVersion);
     }
-    settings->protocolVersion = bit_toString(&bb);
-    bit_clear(&bb);
+    settings->protocolVersion = ba_toString(&bb);
+    ba_clear(&bb);
     return 0;
 }
 

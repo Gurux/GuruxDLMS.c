@@ -2691,7 +2691,7 @@ int svr_handleRequest2(
 int handleInactivityTimeout(dlmsServerSettings* settings)
 {
     //Check inactivity timeout.
-    unsigned char inactivity;
+    unsigned char inactivity = 0;
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC &&
         settings->hdlc != NULL && settings->hdlc->inactivityTimeout != 0)

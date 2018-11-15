@@ -44,7 +44,7 @@
 #include "../include/helpers.h"
 
 //Returs needed amount of bytes to store bits.
-unsigned short bit_getByteCount(unsigned short bitCount)
+unsigned short ba_getByteCount(unsigned short bitCount)
 {
     double d = bitCount;
     if (bitCount != 0)
@@ -67,7 +67,7 @@ int getByteIndex(int bitCount)
 }
 
 //Initialize bit array.
-void bit_init(bitArray* arr)
+void ba_init(bitArray* arr)
 {
     arr->capacity = 0;
     arr->data = NULL;
@@ -78,7 +78,7 @@ void bit_init(bitArray* arr)
 }
 
 //Allocate new size for the array in bytes.
-void bit_capacity(bitArray *arr, unsigned short capacity)
+void ba_capacity(bitArray *arr, unsigned short capacity)
 {
     arr->capacity = capacity;
     if (capacity == 0)
@@ -93,24 +93,24 @@ void bit_capacity(bitArray *arr, unsigned short capacity)
     {
         if (arr->data == NULL)
         {
-            arr->data = (unsigned char*)gxmalloc(bit_getByteCount(arr->capacity));
+            arr->data = (unsigned char*)gxmalloc(ba_getByteCount(arr->capacity));
         }
         else
         {
-            arr->data = (unsigned char*)gxrealloc(arr->data, bit_getByteCount(arr->capacity));
+            arr->data = (unsigned char*)gxrealloc(arr->data, ba_getByteCount(arr->capacity));
         }
     }
 }
 
 //Push new data to the bit array.
-void bit_set(bitArray *arr, unsigned char item)
+void ba_set(bitArray *arr, unsigned char item)
 {
-    bit_setByIndex(arr, arr->size, item);
+    ba_setByIndex(arr, arr->size, item);
     ++arr->size;
 }
 
 //Set bit by index.
-void bit_setByIndex(bitArray *arr, int index, unsigned char item)
+void ba_setByIndex(bitArray *arr, int index, unsigned char item)
 {
     unsigned char newItem = 0;
     int byteIndex;
@@ -121,16 +121,16 @@ void bit_setByIndex(bitArray *arr, int index, unsigned char item)
         //If we are adding a bit to the higher than next byte.
         if (index >= arr->capacity)
         {
-            bit_setByIndex(arr, index, item);
+            ba_setByIndex(arr, index, item);
             return;
         }
         if (arr->data == NULL)
         {
-            arr->data = (unsigned char*)gxmalloc(bit_getByteCount(arr->capacity));
+            arr->data = (unsigned char*)gxmalloc(ba_getByteCount(arr->capacity));
         }
         else
         {
-            arr->data = (unsigned char*)gxrealloc(arr->data, bit_getByteCount(arr->capacity));
+            arr->data = (unsigned char*)gxrealloc(arr->data, ba_getByteCount(arr->capacity));
         }
         newItem = 1;
     }
@@ -146,7 +146,7 @@ void bit_setByIndex(bitArray *arr, int index, unsigned char item)
 }
 
 //Add bits from byte array to bit array.
-int bit_add(bitArray *arr, gxByteBuffer * bytes, unsigned short count, unsigned char intelByteOrder)
+int ba_add(bitArray *arr, gxByteBuffer * bytes, unsigned short count, unsigned char intelByteOrder)
 {
     unsigned short index, pos, bytePos;
     int ret;
@@ -157,7 +157,7 @@ int bit_add(bitArray *arr, gxByteBuffer * bytes, unsigned short count, unsigned 
     }
     if (intelByteOrder)
     {
-        index = (unsigned short) (bytes->position + bit_getByteCount(count) - 1);
+        index = (unsigned short) (bytes->position + ba_getByteCount(count) - 1);
     }
     else
     {
@@ -184,23 +184,23 @@ int bit_add(bitArray *arr, gxByteBuffer * bytes, unsigned short count, unsigned 
             }
             ++bytes->position;
         }
-        bit_setByIndex(arr, pos, (unsigned char)(ch & (1 << bytePos)));
+        ba_setByIndex(arr, pos, (unsigned char)(ch & (1 << bytePos)));
         --bytePos;
         ++arr->size;
     }
     return 0;
 }
 
-int bit_copy(
+int ba_copy(
     bitArray *target,
     unsigned char *source,
     unsigned short count)
 {
-    bit_clear(target);
+    ba_clear(target);
     if (count != 0)
     {
-        bit_capacity(target, count);
-        memcpy(target->data, source, bit_getByteCount(count));
+        ba_capacity(target, count);
+        memcpy(target->data, source, ba_getByteCount(count));
         target->size = count;
 #ifndef GX_DLMS_MICROCONTROLLER
         target->position = 0;
@@ -209,7 +209,7 @@ int bit_copy(
     return 0;
 }
 
-void bit_clear(bitArray *arr)
+void ba_clear(bitArray *arr)
 {
     if (arr->data != NULL)
     {
@@ -224,9 +224,9 @@ void bit_clear(bitArray *arr)
 }
 
 #ifndef GX_DLMS_MICROCONTROLLER
-int bit_get(bitArray *arr, unsigned char* value)
+int ba_get(bitArray *arr, unsigned char* value)
 {
-    int ret = bit_getByIndex(arr, arr->position, value);
+    int ret = ba_getByIndex(arr, arr->position, value);
     if (ret == 0)
     {
         ++arr->position;
@@ -235,7 +235,7 @@ int bit_get(bitArray *arr, unsigned char* value)
 }
 #endif //GX_DLMS_MICROCONTROLLER
 
-int bit_getByIndex(bitArray *arr, int index, unsigned char *value)
+int ba_getByIndex(bitArray *arr, int index, unsigned char *value)
 {
     char ch;
     if (index >= arr->size)
@@ -247,14 +247,14 @@ int bit_getByIndex(bitArray *arr, int index, unsigned char *value)
     return 0;
 }
 
-int bit_toInteger(bitArray *arr, int *value)
+int ba_toInteger(bitArray *arr, int *value)
 {
     *value = 0;
     unsigned char ch;
     int pos, ret;
     for (pos = 0; pos != arr->size; ++pos)
     {
-        if ((ret = bit_getByIndex(arr, pos, &ch)) != 0)
+        if ((ret = ba_getByIndex(arr, pos, &ch)) != 0)
         {
             return ret;
         }
@@ -264,7 +264,7 @@ int bit_toInteger(bitArray *arr, int *value)
 }
 
 
-char* bit_toString(bitArray *arr)
+char* ba_toString(bitArray *arr)
 {
     unsigned char ch;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -276,10 +276,10 @@ char* bit_toString(bitArray *arr)
     for (pos = 0; pos != arr->size; ++pos)
     {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        ret = bit_getByIndex(arr, pos, &ch);
+        ret = ba_getByIndex(arr, pos, &ch);
         assert(ret == 0);
 #else
-        bit_getByIndex(arr, pos, &ch);
+        ba_getByIndex(arr, pos, &ch);
 #endif
         buff[pos] = ch == 0 ? '0' : '1';
     }

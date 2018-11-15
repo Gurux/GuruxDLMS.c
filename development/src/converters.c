@@ -1258,7 +1258,7 @@ int obj_imageTransferToString(gxImageTransfer* object, char** buff)
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->imageBlockSize);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
-    bb_attachString(&ba, bit_toString(&object->imageTransferredBlocksStatus));
+    bb_attachString(&ba, ba_toString(&object->imageTransferredBlocksStatus));
     bb_addString(&ba, "\r\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->imageFirstNotTransferredBlockNumber);
     bb_addString(&ba, "\r\nIndex: 5 Value: ");

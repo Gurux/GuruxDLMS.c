@@ -363,7 +363,7 @@ int var_clear(dlmsVARIANT *data)
     {
         if (data->bitArr != NULL)
         {
-            bit_clear(data->bitArr);
+            ba_clear(data->bitArr);
             gxfree(data->bitArr);
         }
     }
@@ -765,7 +765,7 @@ int var_getBytes2(
     {
         if ((ret = hlp_setObjectCount(data->bitArr->size, ba)) == 0)
         {
-            ret = bb_set(ba, data->bitArr->data, bit_getByteCount(data->bitArr->size));
+            ret = bb_set(ba, data->bitArr->data, ba_getByteCount(data->bitArr->size));
         }
         break;
     }
@@ -1307,7 +1307,7 @@ static int convert(dlmsVARIANT *item, DLMS_DATA_TYPE type)
         }
         else if (tmp.vt == DLMS_DATA_TYPE_BIT_STRING)
         {
-            char* str = bit_toString(tmp.bitArr);
+            char* str = ba_toString(tmp.bitArr);
             bb_attachString(item->strVal, str);
             item->vt = type;
             var_clear(&tmp);
@@ -1858,8 +1858,8 @@ int var_copy(dlmsVARIANT *target, dlmsVARIANT *source)
     else if (source->vt == DLMS_DATA_TYPE_BIT_STRING)
     {
         target->bitArr = (bitArray*)gxmalloc(sizeof(bitArray));
-        bit_init(target->bitArr);
-        ret = bit_copy(target->bitArr, source->bitArr->data, (unsigned short)source->bitArr->size);
+        ba_init(target->bitArr);
+        ret = ba_copy(target->bitArr, source->bitArr->data, (unsigned short)source->bitArr->size);
     }
     else
     {

@@ -1731,7 +1731,7 @@ int cosem_getImageTransfer(
         if (object->imageTransferredBlocksStatus.size != 0)
         {
             ret = bb_set(e->value.byteArr, object->imageTransferredBlocksStatus.data,
-                bit_getByteCount(object->imageTransferredBlocksStatus.size));
+                ba_getByteCount(object->imageTransferredBlocksStatus.size));
         }
     }
     else if (e->index == 4)
@@ -3131,11 +3131,11 @@ int cosem_getSchedule(
                 //Add exec week days.
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
                 (ret = hlp_setObjectCount(se->execWeekdays.size, data)) != 0 ||
-                (ret = bb_set(data, se->execWeekdays.data, bit_getByteCount(se->execWeekdays.size))) != 0 ||
+                (ret = bb_set(data, se->execWeekdays.data, ba_getByteCount(se->execWeekdays.size))) != 0 ||
                 //Add exec spec days.
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
                 (ret = hlp_setObjectCount(se->execSpecDays.size, data)) != 0 ||
-                (ret = bb_set(data, se->execSpecDays.data, bit_getByteCount(se->execSpecDays.size))) != 0 ||
+                (ret = bb_set(data, se->execSpecDays.data, ba_getByteCount(se->execSpecDays.size))) != 0 ||
                 //Add begin date.
                 (ret = var_setDateTime(&tmp, &se->beginDate)) != 0 ||
                 (ret = var_getBytes(&tmp, data)) != 0 ||
@@ -3585,7 +3585,7 @@ int cosem_getZigbeeNetworkControl(
                 //status
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
                 (ret = bb_setUInt8(data, (unsigned char)it->status.size)) != 0 ||
-                (ret = bb_set(data, it->status.data, bit_getByteCount(it->status.size))) != 0 ||
+                (ret = bb_set(data, it->status.data, ba_getByteCount(it->status.size))) != 0 ||
                 //max RSSI
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_INT8)) != 0 ||
                 (ret = bb_setUInt8(data, it->maxRSSI)) != 0 ||
@@ -3746,7 +3746,7 @@ int cosem_getCharge(
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
             (ret = hlp_setObjectCount(object->chargeConfiguration.size, data)) != 0 ||
-            (ret = bb_set(data, object->chargeConfiguration.data, bit_getByteCount(object->chargeConfiguration.size))) != 0)
+            (ret = bb_set(data, object->chargeConfiguration.data, ba_getByteCount(object->chargeConfiguration.size))) != 0)
         {
             return ret;
         }
@@ -3841,7 +3841,7 @@ int cosem_getTokenGateway(
 
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
             (ret = hlp_setObjectCount(object->dataValue.size, data)) != 0 ||
-            (ret = bb_set(data, object->dataValue.data, bit_getByteCount(object->dataValue.size))) != 0)
+            (ret = bb_set(data, object->dataValue.data, ba_getByteCount(object->dataValue.size))) != 0)
         {
             return ret;
         }
@@ -3890,7 +3890,7 @@ int cosem_getCredit(
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
             (ret = hlp_setObjectCount(object->creditConfiguration.size, data)) != 0 ||
-            (ret = bb_set(data, object->creditConfiguration.data, bit_getByteCount(object->creditConfiguration.size))) != 0)
+            (ret = bb_set(data, object->creditConfiguration.data, ba_getByteCount(object->creditConfiguration.size))) != 0)
         {
             return ret;
         }
@@ -4041,7 +4041,7 @@ int cosem_getAccount(
             return ret;
         }
         bitArray ba;
-        bit_init(&ba);
+        ba_init(&ba);
         gxByteBuffer *data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
@@ -4555,7 +4555,7 @@ int cosem_getTariffPlan(gxValueEventArg *e)
 
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
             (ret = hlp_setObjectCount(object->plan.weeklyActivation.size, data)) != 0 ||
-            (ret = bb_set(data, object->plan.weeklyActivation.data, bit_getByteCount(object->plan.weeklyActivation.size))) != 0 ||
+            (ret = bb_set(data, object->plan.weeklyActivation.data, ba_getByteCount(object->plan.weeklyActivation.size))) != 0 ||
 
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = bb_setUInt8(data, (unsigned char)object->plan.specialDays.size)) != 0)

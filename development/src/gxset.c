@@ -879,7 +879,7 @@ int cosem_setAssociationLogicalName(
         {
             return ret;
         }
-        if ((ret = bit_toInteger(tmp->bitArr, &val)) != 0)
+        if ((ret = ba_toInteger(tmp->bitArr, &val)) != 0)
         {
             return ret;
         }
@@ -2921,8 +2921,8 @@ int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *valu
                     return ret;
                 }
                 se = (gxScheduleEntry*)gxmalloc(sizeof(gxScheduleEntry));
-                bit_init(&se->execWeekdays);
-                bit_init(&se->execSpecDays);
+                ba_init(&se->execWeekdays);
+                ba_init(&se->execSpecDays);
                 ret = va_get(tmp->Arr, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
@@ -2976,7 +2976,7 @@ int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *valu
                 }
                 if (it->bitArr != NULL)
                 {
-                    bit_copy(&se->execWeekdays, it->bitArr->data, (unsigned short)it->bitArr->size);
+                    ba_copy(&se->execWeekdays, it->bitArr->data, (unsigned short)it->bitArr->size);
                 }
                 ret = va_get(tmp->Arr, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -2985,7 +2985,7 @@ int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *valu
                 }
                 if (it->bitArr != NULL)
                 {
-                    bit_copy(&se->execSpecDays, it->bitArr->data, (unsigned short)it->bitArr->size);
+                    ba_copy(&se->execSpecDays, it->bitArr->data, (unsigned short)it->bitArr->size);
                 }
                 ret = va_get(tmp->Arr, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -3685,7 +3685,7 @@ int cosem_setCharge(gxCharge* object, unsigned char index, dlmsVARIANT *value)
     }
     else if (index == 9)
     {
-        ret = bit_copy(&object->chargeConfiguration, value->bitArr->data, (unsigned short)value->bitArr->size);
+        ret = ba_copy(&object->chargeConfiguration, value->bitArr->data, (unsigned short)value->bitArr->size);
     }
     else if (index == 10)
     {
@@ -3752,7 +3752,7 @@ int cosem_setCredit(gxCredit* object, unsigned char index, dlmsVARIANT *value)
     }
     else if (index == 7)
     {
-        ret = bit_copy(&object->creditConfiguration, value->bitArr->data, value->bitArr->size);
+        ret = ba_copy(&object->creditConfiguration, value->bitArr->data, value->bitArr->size);
     }
     else if (index == 8)
     {
@@ -3823,7 +3823,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT *value)
         else
         {
             int v;
-            if ((ret = bit_toInteger(value->bitArr, &v)) != 0)
+            if ((ret = ba_toInteger(value->bitArr, &v)) != 0)
             {
                 return DLMS_ERROR_CODE_READ_WRITE_DENIED;
             }
@@ -3925,7 +3925,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT *value)
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
             int v;
-            if ((ret = bit_toInteger(tmp2->bitArr, &v)) != 0)
+            if ((ret = ba_toInteger(tmp2->bitArr, &v)) != 0)
             {
                 return DLMS_ERROR_CODE_READ_WRITE_DENIED;
             }
@@ -4050,10 +4050,10 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
     }
     else if (index == 3)
     {
-        bit_clear(&object->imageTransferredBlocksStatus);
+        ba_clear(&object->imageTransferredBlocksStatus);
         if (value->bitArr != NULL)
         {
-            bit_copy(&object->imageTransferredBlocksStatus, value->bitArr->data, (unsigned short)value->bitArr->size);
+            ba_copy(&object->imageTransferredBlocksStatus, value->bitArr->data, (unsigned short)value->bitArr->size);
         }
     }
     else if (index == 4)
@@ -4546,10 +4546,10 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
         {
             return ret;
         }
-        bit_clear(&object->dataValue);
+        ba_clear(&object->dataValue);
         if (tmp->strVal != NULL && tmp->strVal->size != 0)
         {
-            bit_copy(&object->dataValue, tmp->bitArr->data, tmp->bitArr->size);
+            ba_copy(&object->dataValue, tmp->bitArr->data, tmp->bitArr->size);
         }
         break;
     default:
@@ -4668,9 +4668,9 @@ int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT *
             {
                 return ret;
             }
-            bit_clear(&object->plan.weeklyActivation);
+            ba_clear(&object->plan.weeklyActivation);
             if ((ret = va_getByIndex(value->Arr, 2, &tmp)) != 0 ||
-                (ret = bit_copy(&object->plan.weeklyActivation, tmp->bitArr->data, tmp->bitArr->size)) != 0)
+                (ret = ba_copy(&object->plan.weeklyActivation, tmp->bitArr->data, tmp->bitArr->size)) != 0)
             {
                 return ret;
             }

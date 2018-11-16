@@ -935,7 +935,7 @@ int getSNObjects(
     {
         if (!(pos + 1 <= settings->index))
         {
-            pduSize = (unsigned short) ba->size;
+            pduSize = (unsigned short)ba->size;
             if ((ret = oa_getByIndex(list, pos, &it)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 //Count
@@ -1828,7 +1828,7 @@ int getColumns(
     {
         if (!(pos + 1 <= settings->index))
         {
-            pduSize = (unsigned short) ba->size;
+            pduSize = (unsigned short)ba->size;
             if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(ba, 4)) != 0 ||
@@ -2108,7 +2108,7 @@ int profileGeneric_getData(
     }
     for (pos = 0; pos != table->size; ++pos)
     {
-        pduSize = (unsigned short) data->size;
+        pduSize = (unsigned short)data->size;
         if ((ret = cosem_getRow(table, pos, captureObjects, columns, data)) != 0)
         {
             break;
@@ -4637,7 +4637,7 @@ int cosem_getGsmDiagnostic(
         data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
-            (ret = bb_setUInt8(data, 4)) != 0 ||
+            (ret = bb_setUInt8(data, object->base.version == 0 ? 4 : 7)) != 0 ||
             //cellId.
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
             (ret = bb_setUInt16(data, object->cellInfo.cellId)) != 0 ||
@@ -4652,6 +4652,21 @@ int cosem_getGsmDiagnostic(
             (ret = bb_setUInt8(data, object->cellInfo.ber) != 0))
         {
             return ret;
+        }
+        if (object->base.version > 0)
+        {
+            if (//mobileCountryCode.
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
+                (ret = bb_setUInt16(data, object->cellInfo.mobileCountryCode)) != 0 ||
+                //MobileNetworkCode.
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
+                (ret = bb_setUInt16(data, object->cellInfo.mobileNetworkCode)) != 0 ||
+                //ChannelNumber.
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT32)) != 0 ||
+                (ret = bb_setUInt32(data, object->cellInfo.channelNumber)) != 0)
+            {
+                return ret;
+            }
         }
         break;
     case 7:
@@ -4672,7 +4687,7 @@ int cosem_getGsmDiagnostic(
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //cellId.
-                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT32)) != 0 ||
+                (ret = bb_setUInt8(data, object->base.version == 0 ? DLMS_DATA_TYPE_UINT16 : DLMS_DATA_TYPE_UINT32)) != 0 ||
                 (ret = bb_setUInt32(data, it->cellId)) != 0 ||
                 //SignalQuality.
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||

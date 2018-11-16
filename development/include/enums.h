@@ -2134,7 +2134,15 @@ extern "C" {
         /**
         * HSDPA
         */
-        DLMS_GSM_PACKET_SWITCH_STATUS_HSDPA
+        DLMS_GSM_PACKET_SWITCH_STATUS_HSDPA,
+        /**
+        * LTE
+        */
+        DLMS_GSM_PACKET_SWITCH_STATUS_LTE,
+        /**
+        * CDMA
+        */
+        DLMS_GSM_PACKET_SWITCH_STATUS_CDMA
     }DLMS_GSM_PACKET_SWITCH_STATUS;
 
     /**

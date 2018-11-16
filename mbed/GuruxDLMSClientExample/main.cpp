@@ -120,7 +120,7 @@ int readDLMSPacket(
     frameData.size = 0;
     frameData.position = 0;
     //Send data.
-    for (pos = 0; pos != data->size; pos)
+    for (pos = 0; pos != data->size; ++pos)
     {
         pc.putc(data->data[pos]);
     }

@@ -1356,25 +1356,38 @@ extern "C" {
     */
     typedef struct
     {
-        /**
+        /*
         * Cell ID.
         */
         unsigned short cellId;
 
-        /**
+        /*
         * Location area code (LAC).
         */
         unsigned short locationId;
 
-        /**
+        /*
         * Signal quality.
         */
         unsigned char signalQuality;
-        /**
+        /*
         * Bit Error Rate.
         */
         unsigned char ber;
+        /*
+        * Mobile Country Code.
+        */
+        unsigned short mobileCountryCode;
 
+        /*
+        * Mobile Network Code.
+        */
+        unsigned short mobileNetworkCode;
+
+        /*
+        * Absolute radio frequency channel number.
+        */
+        unsigned long channelNumber;
     }gxGSMCellInfo;
 
     /**

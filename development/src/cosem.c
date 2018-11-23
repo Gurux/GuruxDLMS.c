@@ -547,6 +547,7 @@ int cosem_init2(
     case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
         break;
     case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
+        object->version = 1;
         break;
     default:
         break;

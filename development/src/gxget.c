@@ -4636,13 +4636,32 @@ int cosem_getGsmDiagnostic(
         }
         data = e->value.byteArr;
         e->byteArray = 1;
-        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
-            (ret = bb_setUInt8(data, object->base.version == 0 ? 4 : 7)) != 0 ||
-            //cellId.
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
-            (ret = bb_setUInt16(data, object->cellInfo.cellId)) != 0 ||
-            //LocationId.
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0)
+        {
+            return ret;
+        }
+        if (object->base.version == 0)
+        {
+            if ((ret = bb_setUInt8(data, 4)) != 0 ||
+                //cellId.
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
+                (ret = bb_setUInt16(data, (unsigned short)object->cellInfo.cellId)) != 0)
+            {
+                return ret;
+            }
+        }
+        else
+        {
+            if ((ret = bb_setUInt8(data, 7)) != 0 ||
+                //cellId.
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT32)) != 0 ||
+                (ret = bb_setUInt32(data, object->cellInfo.cellId)) != 0)
+            {
+                return ret;
+            }
+        }
+        //LocationId.
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
             (ret = bb_setUInt16(data, object->cellInfo.locationId)) != 0 ||
             //SignalQuality.
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
@@ -4685,12 +4704,30 @@ int cosem_getGsmDiagnostic(
         {
             if ((ret = arr_getByIndex(&object->adjacentCells, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
-                (ret = bb_setUInt8(data, 2)) != 0 ||
+                (ret = bb_setUInt8(data, 2)) != 0)
+            {
+                break;
+            }
+            if (object->base.version == 0)
+            {
                 //cellId.
-                (ret = bb_setUInt8(data, object->base.version == 0 ? DLMS_DATA_TYPE_UINT16 : DLMS_DATA_TYPE_UINT32)) != 0 ||
-                (ret = bb_setUInt32(data, it->cellId)) != 0 ||
-                //SignalQuality.
-                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
+                if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
+                    (ret = bb_setUInt16(data, (unsigned short)it->cellId)) != 0)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                //cellId.
+                if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT32)) != 0 ||
+                    (ret = bb_setUInt32(data, it->cellId)) != 0)
+                {
+                    break;
+                }
+            }
+            //SignalQuality.
+            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
                 (ret = bb_setUInt8(data, it->signalQuality)) != 0)
             {
                 break;

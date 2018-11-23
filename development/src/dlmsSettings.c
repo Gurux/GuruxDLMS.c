@@ -332,3 +332,22 @@ void trans_clear(gxLongTransaction* trans)
     bb_clear(&trans->data);
     vec_clear(&trans->targets);
 }
+
+void updateInvokeId(
+    dlmsServerSettings* settings, 
+    unsigned char value)
+{
+    if ((value & 0x80) != 0) {
+        settings->base.priority = DLMS_PRIORITY_HIGH;
+    }
+    else {
+        settings->base.priority = DLMS_PRIORITY_NORMAL;
+    }
+    if ((value & 0x40) != 0) {
+        settings->base.serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
+    }
+    else {
+        settings->base.serviceClass = DLMS_SERVICE_CLASS_UN_CONFIRMED;
+    }
+    settings->base.invokeID = (unsigned char)(value & 0xF);
+}

@@ -931,6 +931,7 @@ int svr_handleSetRequest(
     {
         return ret;
     }
+    updateInvokeId(settings, invokeId);
     params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_SET_RESPONSE, type, NULL, data, 0);
     if (type == DLMS_SET_COMMAND_TYPE_NORMAL || type == DLMS_SET_COMMAND_TYPE_FIRST_DATABLOCK)
     {
@@ -1376,6 +1377,7 @@ int svr_handleGetRequest(
     {
         return ret;
     }
+    updateInvokeId(settings, invokeId);
     // GetRequest normal
     if (type == DLMS_GET_COMMAND_TYPE_NORMAL)
     {
@@ -2160,6 +2162,7 @@ int svr_handleMethodRequest(
     {
         return ret;
     }
+    updateInvokeId(settings, invokeId);
     // CI
     if ((ret = bb_getUInt16(data, &tmp)) != 0)
     {

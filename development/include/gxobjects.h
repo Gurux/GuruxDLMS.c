@@ -1359,7 +1359,7 @@ extern "C" {
         /*
         * Cell ID.
         */
-        unsigned short cellId;
+        unsigned long cellId;
 
         /*
         * Location area code (LAC).
@@ -1400,7 +1400,7 @@ extern "C" {
         /**
         * Four-byte cell ID.
         */
-        unsigned int cellId;
+        unsigned long cellId;
 
         /**
         * Signal quality.

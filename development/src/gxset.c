@@ -4187,7 +4187,7 @@ int cosem_setProfileGeneric(dlmsSettings* settings, gxProfileGeneric* object, un
                         {
                             gxtime tmp4;
                             struct tm tmp5;
-                            time_fromUnixTime((time_t) data->ulVal, &tmp5);
+                            time_fromUnixTime((time_t)data->ulVal, &tmp5);
                             time_init2(&tmp4, &tmp5);
                             var_setDateTime(data, &tmp4);
                         }
@@ -4413,7 +4413,7 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
             {
                 return ret;
             }
-            object->cellInfo.cellId = (unsigned short)var_toInteger(tmp);
+            object->cellInfo.cellId = (unsigned long)var_toInteger(tmp);
             if ((ret = va_getByIndex(value->Arr, 1, &tmp)) != 0)
             {
                 return ret;
@@ -4429,6 +4429,26 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
                 return ret;
             }
             object->cellInfo.ber = (unsigned char)var_toInteger(tmp);
+            if (object->base.version != 0)
+            {
+                if ((ret = va_getByIndex(value->Arr, 4, &tmp)) != 0)
+                {
+                    return ret;
+                }
+                object->cellInfo.mobileCountryCode = (unsigned short)var_toInteger(tmp);
+
+                if ((ret = va_getByIndex(value->Arr, 5, &tmp)) != 0)
+                {
+                    return ret;
+                }
+                object->cellInfo.mobileNetworkCode = (unsigned short)var_toInteger(tmp);
+
+                if ((ret = va_getByIndex(value->Arr, 6, &tmp)) != 0)
+                {
+                    return ret;
+                }
+                object->cellInfo.channelNumber = tmp->ulVal;
+            }
         }
         break;
     case 7:
@@ -4719,7 +4739,7 @@ int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT *
         object->activationTime.value.tm_hour = h;
         object->activationTime.value.tm_min = m;
         object->activationTime.value.tm_sec = s;
-    }
+        }
     break;
     default:
         return DLMS_ERROR_CODE_READ_WRITE_DENIED;

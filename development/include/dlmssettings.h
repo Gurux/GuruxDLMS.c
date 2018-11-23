@@ -258,6 +258,9 @@ extern "C" {
         dlmsSettings* settings,
         unsigned char frame);
 
+    void updateInvokeId(
+        dlmsServerSettings* settings, unsigned char value);
+
     // Increase receiver sequence.
     //
     // value: Frame value.

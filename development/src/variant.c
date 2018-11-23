@@ -263,17 +263,14 @@ int var_setString(dlmsVARIANT *data, const char* value, unsigned short count)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    if (count != 0)
+    if (data->vt != DLMS_DATA_TYPE_STRING)
     {
-        if (data->vt != DLMS_DATA_TYPE_STRING)
-        {
-            var_clear(data);
-            data->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(data->strVal);
-            data->vt = DLMS_DATA_TYPE_STRING;
-        }
-        bb_set(data->strVal, (const unsigned char*)value, count);
+        var_clear(data);
+        data->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        bb_init(data->strVal);
+        data->vt = DLMS_DATA_TYPE_STRING;
     }
+    bb_set(data->strVal, (const unsigned char*)value, count);
     return DLMS_ERROR_CODE_OK;
 }
 
@@ -463,6 +460,10 @@ int var_getDateTime2(
         bb_setUInt8(ba, 0xFF);
     }
     //Add ms.
+#ifndef DLMS_ITALIAN_STANDARD
+    //Italian standard uses 0 for ms.
+    bb_setUInt8(ba, 0x00);
+#else
     if ((dateTime->skip & DATETIME_SKIPS_MS) == 0)
     {
         bb_setUInt8(ba, 0x00);
@@ -471,6 +472,7 @@ int var_getDateTime2(
     {
         bb_setUInt8(ba, 0xFF);
     }
+#endif //DLMS_ITALIAN_STANDARD
 
     //Add Deviation
     if (dateTime->value.tm_year == -1 || (dateTime->skip & DATETIME_SKIPS_DEVITATION) != 0)

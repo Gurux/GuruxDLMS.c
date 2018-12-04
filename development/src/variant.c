@@ -460,7 +460,7 @@ int var_getDateTime2(
         bb_setUInt8(ba, 0xFF);
     }
     //Add ms.
-#ifndef DLMS_ITALIAN_STANDARD
+#ifdef DLMS_ITALIAN_STANDARD
     //Italian standard uses 0 for ms.
     bb_setUInt8(ba, 0x00);
 #else

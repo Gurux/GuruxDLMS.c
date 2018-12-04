@@ -904,7 +904,8 @@ int getFloat(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 int getTime(gxByteBuffer* buff, gxDataInfo *info, dlmsVARIANT *value)
 {
     int ret;
-    unsigned char ch, hour, minute, second, ms;
+    unsigned char ch, hour, minute, second;
+    int ms = -1;
     if (buff->size - buff->position < 4)
     {
         // If there is not enough data available.
@@ -931,7 +932,10 @@ int getTime(gxByteBuffer* buff, gxDataInfo *info, dlmsVARIANT *value)
     {
         return ret;
     }
-    ms = ch;
+    if (ch != 0xFF)
+    {
+        ms = ch * 10;
+    }
     value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
     time_init(value->dateTime, -1, -1, -1, hour, minute, second, ms, 0x8000);
     value->vt = DLMS_DATA_TYPE_TIME;
@@ -4119,16 +4123,7 @@ int dlms_getLnMessages(
                 ret = dlms_getHdlcFrame(p->settings, frame, &reply, it);
                 if (reply.position != reply.size)
                 {
-                    if (p->settings->server ||
-                        p->command == DLMS_COMMAND_SET_REQUEST ||
-                        p->command == DLMS_COMMAND_METHOD_REQUEST)
-                    {
-                        frame = 0;
-                    }
-                    else
-                    {
-                        frame = getNextSend(p->settings, 0);
-                    }
+                    frame = getNextSend(p->settings, 0);
                 }
             }
             mes_push(messages, it);

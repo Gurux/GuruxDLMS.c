@@ -80,6 +80,11 @@ extern "C" {
     int apdu_generateUserInformation(
         dlmsSettings* settings,
         gxByteBuffer* data);
+
+    int apdu_getUserInformation(
+        dlmsSettings* settings,
+        gxByteBuffer* data);
+    
 #ifdef  __cplusplus
 }
 #endif

@@ -38,11 +38,6 @@
 #include "../include/errorcodes.h"
 #include "../include/ciphering.h"
 
-static const unsigned char LOGICAL_NAME_OBJECT_ID[7] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x01, 0x01 };
-static const unsigned char SHORT_NAME_OBJECT_ID[7] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x01, 0x02 };
-static const unsigned char LOGICAL_NAME_OBJECT_ID_WITH_CIPHERING[7] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x01, 0x03 };
-static const unsigned char SHORT_NAME_OBJECT_ID_WITH_CIPHERING[7] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x01, 0x04 };
-
 #ifndef DLMS_IGNORE_CLIENT
 /**
  * Retrieves the string that indicates the level of authentication, if any.
@@ -142,26 +137,32 @@ int apdu_generateApplicationContextName(
 #else 
     ciphered = 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
+    bb_setUInt8(data, 0x60);
+    bb_setUInt8(data, 0x85);
+    bb_setUInt8(data, 0x74);
+    bb_setUInt8(data, 0x05);
+    bb_setUInt8(data, 0x08);
+    bb_setUInt8(data, 0x01);
     if (settings->useLogicalNameReferencing)
     {
         if (ciphered)
         {
-            bb_set(data, LOGICAL_NAME_OBJECT_ID_WITH_CIPHERING, sizeof(LOGICAL_NAME_OBJECT_ID_WITH_CIPHERING));
+            bb_setUInt8(data, 0x03);
         }
         else
         {
-            bb_set(data, LOGICAL_NAME_OBJECT_ID, sizeof(LOGICAL_NAME_OBJECT_ID));
+            bb_setUInt8(data, 0x01);
         }
     }
     else
     {
         if (ciphered)
         {
-            bb_set(data, SHORT_NAME_OBJECT_ID_WITH_CIPHERING, sizeof(SHORT_NAME_OBJECT_ID_WITH_CIPHERING));
+            bb_setUInt8(data, 0x04);
         }
         else
         {
-            bb_set(data, SHORT_NAME_OBJECT_ID, sizeof(SHORT_NAME_OBJECT_ID));
+            bb_setUInt8(data, 0x02);
         }
     }
     // Add system title.
@@ -184,7 +185,7 @@ int apdu_generateApplicationContextName(
 #endif //DLMS_IGNORE_HIGH_GMAC
 
     //Add CallingAEInvocationId.
-    if (!settings->server && settings->userId != -1)
+    if (!settings->server && settings->userId != -1 && settings->cipher.security != DLMS_SECURITY_NONE)
     {
         bb_setUInt8(data, (BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AE_INVOCATION_ID));
         //LEN
@@ -606,7 +607,8 @@ int apdu_parseUserInformation(
  */
 int apdu_parseApplicationContextName(
     dlmsSettings* settings,
-    gxByteBuffer* buff)
+    gxByteBuffer* buff,
+    unsigned char* ciphered)
 {
     int ret;
     unsigned char len, ch;
@@ -640,32 +642,80 @@ int apdu_parseApplicationContextName(
     {
         return ret;
     }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x60)
+    {
+        //Encoding failed. Not an Object ID.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x85)
+    {
+        //Encoding failed. Not an Object ID.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x74)
+    {
+        //Encoding failed. Not an Object ID.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x05)
+    {
+        //Encoding failed. Not an Object ID.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x08)
+    {
+        //Encoding failed. Not an Object ID.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x01)
+    {
+        //Encoding failed. Not an Object ID.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
     if (settings->useLogicalNameReferencing)
     {
-        if (bb_compare(buff, (unsigned char*)LOGICAL_NAME_OBJECT_ID, sizeof(LOGICAL_NAME_OBJECT_ID)))
+        *ciphered = ch == 3;
+        if (ch == 1 || *ciphered)
         {
             return 0;
         }
-        // If ciphering is used.
-        if (!bb_compare(buff, (unsigned char*)LOGICAL_NAME_OBJECT_ID_WITH_CIPHERING, sizeof(LOGICAL_NAME_OBJECT_ID_WITH_CIPHERING)))
-        {
-            return DLMS_ERROR_CODE_FALSE;
-        }
-        else
-        {
-            return 0;
-        }
+        return DLMS_ERROR_CODE_FALSE;
     }
-    if (bb_compare(buff, (unsigned char*)SHORT_NAME_OBJECT_ID, sizeof(SHORT_NAME_OBJECT_ID)))
+    *ciphered = ch == 4;
+    if (ch == 2 || *ciphered)
     {
         return 0;
     }
-    // If ciphering is used.
-    if (!bb_compare(buff, (unsigned char*)SHORT_NAME_OBJECT_ID_WITH_CIPHERING, sizeof(SHORT_NAME_OBJECT_ID_WITH_CIPHERING)))
-    {
-        return DLMS_ERROR_CODE_FALSE;
-    }
-    return 0;
+    return DLMS_ERROR_CODE_FALSE;
 }
 
 int apdu_validateAare(
@@ -794,7 +844,7 @@ int apdu_updateAuthentication(
     if (ch != 0x02)
     {
         return DLMS_ERROR_CODE_INVALID_TAG;
-}
+    }
     if ((ret = bb_getUInt8(buff, &ch)) != 0)
     {
         return ret;
@@ -983,11 +1033,17 @@ int apdu_parseProtocolVersion(dlmsSettings* settings,
     bitArray bb;
     ba_init(&bb);
     ba_copy(&bb, &value, 8 - unusedBits);
+    char* pv = ba_toString(&bb);
+    if (strcmp(pv, "100001") != 0)
+    {
+        gxfree(pv);
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     if (settings->protocolVersion != NULL)
     {
         gxfree(settings->protocolVersion);
     }
-    settings->protocolVersion = ba_toString(&bb);
+    settings->protocolVersion = pv;
     ba_clear(&bb);
     return 0;
 }
@@ -998,6 +1054,7 @@ int apdu_parsePDU(
     DLMS_ASSOCIATION_RESULT* result,
     DLMS_SOURCE_DIAGNOSTIC* diagnostic)
 {
+    unsigned char ciphered;
     unsigned short size;
     unsigned char len;
     unsigned char tag;
@@ -1029,8 +1086,9 @@ int apdu_parsePDU(
             //0xA1
         case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_APPLICATION_CONTEXT_NAME:
         {
-            if ((ret = apdu_parseApplicationContextName(settings, buff)) != 0)
+            if ((ret = apdu_parseApplicationContextName(settings, buff, &ciphered)) != 0)
             {
+                *diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
             }
@@ -1063,6 +1121,12 @@ int apdu_parsePDU(
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
                     return ret;
+                }
+                if (ciphered && len != 8)
+                {
+                    *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
+                    *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                    return 0;
                 }
                 buff->position += len;
             }
@@ -1110,6 +1174,12 @@ int apdu_parsePDU(
                 {
                     return DLMS_ERROR_CODE_INVALID_TAG;
                 }
+                if (ciphered && len != 8)
+                {
+                    *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
+                    *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                    return 0;
+                }
                 buff->position += len;
             }
             else
@@ -1145,22 +1215,27 @@ int apdu_parsePDU(
             {
                 return ret;
             }
-            // ACSE service user tag.
-            if ((ret = bb_getUInt8(buff, &tag)) != 0)
-            {
-                return ret;
-            }
-            if ((ret = bb_getUInt8(buff, &len)) != 0)
-            {
-                return ret;
-            }
             if (settings->server)
             {
-                //Ignore if client sends CalledAEQualifier.
+                if (len != 3)
+                {
+                    return DLMS_ERROR_CODE_INVALID_TAG;
+                }
+                // ACSE service user tag.
+                if ((ret = bb_getUInt8(buff, &tag)) != 0)
+                {
+                    return ret;
+                }
                 if (tag != BER_TYPE_INTEGER)
                 {
                     return DLMS_ERROR_CODE_INVALID_TAG;
                 }
+                if ((ret = bb_getUInt8(buff, &len)) != 0)
+                {
+                    return ret;
+                }
+
+                //Ignore if client sends CalledAEQualifier.
                 buff->position += len;
             }
             else
@@ -1201,6 +1276,12 @@ int apdu_parsePDU(
             if ((ret = bb_getUInt8(buff, &len)) != 0)
             {
                 return ret;
+            }
+            if (ciphered && len != 8)
+            {
+                *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
+                *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                return 0;
             }
             bb_clear(&settings->sourceSystemTitle);
             bb_set2(&settings->sourceSystemTitle, buff, buff->position, len);
@@ -1244,7 +1325,10 @@ int apdu_parsePDU(
             {
                 return ret;
             }
-            settings->userId = len;
+            if (ciphered)
+            {
+                settings->userId = len;
+            }
             break;
             //  0x8A or 0x88
         case (unsigned short)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS:
@@ -1279,6 +1363,12 @@ int apdu_parsePDU(
             {
                 return ret;
             }
+            if (settings->server && settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC && settings->sourceSystemTitle.size != 8)
+            {
+                *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
+                *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                return 0;
+            }
             break;
             // 0xAC
         case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AUTHENTICATION_VALUE:
@@ -1303,7 +1393,12 @@ int apdu_parsePDU(
             }
             break;
         case BER_TYPE_CONTEXT: //0x80
-            apdu_parseProtocolVersion(settings, buff);
+            if ((ret = apdu_parseProtocolVersion(settings, buff)) != 0)
+            {
+                *diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
+                *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                return 0;
+            }
             break;
         default:
             // Unknown tags.
@@ -1316,12 +1411,12 @@ int apdu_parsePDU(
                 buff->position = (buff->position + len);
             }
             break;
-            }
         }
+    }
     //All meters don't send user-information if connection is failed.
     //For this reason result component is check again.
     return apdu_handleResultComponent(*diagnostic);
-    }
+}
 
 #ifndef DLMS_IGNORE_SERVER
 int apdu_generateAARE(
@@ -1380,7 +1475,7 @@ int apdu_generateAARE(
 #endif //LMS_IGNORE_HIGH_GMAC
 
     //Add CalledAEInvocationId.
-    if (settings->userId != -1)
+    if (settings->userId != -1 && settings->cipher.security != DLMS_SECURITY_NONE)
     {
         bb_setUInt8(data, BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AE_QUALIFIER);
         //LEN

@@ -454,11 +454,11 @@ int svr_HandleAarqRequest(
             }
         }
     }
-    else
+    else if (diagnostic == DLMS_SOURCE_DIAGNOSTIC_NONE)
     {
         result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
         diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
-        bb_setUInt8(&error, 0xE);
+         bb_setUInt8(&error, 0xE);
         bb_setUInt8(&error, DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR);
         bb_setUInt8(&error, DLMS_SERVICE_ERROR_INITIATE);
         bb_setUInt8(&error, DLMS_INITIATE_OTHER);
@@ -944,8 +944,9 @@ int svr_handleSetRequest(
     }
     else
     {
+        // Access Error : Device reports Read-Write denied.
         resetBlockIndex(&settings->base);
-        p.status = DLMS_ERROR_CODE_HARDWARE_FAULT;
+        p.status = DLMS_ERROR_CODE_READ_WRITE_DENIED;
     }
     return dlms_getLNPdu(&p, data);
 }
@@ -1395,7 +1396,11 @@ int svr_handleGetRequest(
     }
     else
     {
-        ret = 1;
+        // Access Error : Device reports Read-Write denied.
+        gxLNParameters p;
+        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 1, NULL, data, DLMS_ERROR_CODE_READ_WRITE_DENIED);
+        bb_clear(data);
+        ret = dlms_getLNPdu(&p, data);
     }
     if (ret != 0)
     {
@@ -2302,12 +2307,29 @@ int svr_handleReleaseRequest(dlmsServerSettings* settings, gxByteBuffer* data) {
     {
         dlms_addLLCBytes(&settings->base, data);
     }
+    int ret;
+    gxByteBuffer tmp;
+    if ((ret = bb_init(&tmp)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = apdu_getUserInformation(&settings->base, &tmp)) != 0)
+    {
+        bb_clear(&tmp);
+        return ret;
+    }
     bb_setUInt8(data, 0x63);
-    // LEN.
-    bb_setUInt8(data, 0x03);
+    //Len.
+    bb_setUInt8(data, (unsigned char)(tmp.size + 3));
     bb_setUInt8(data, 0x80);
     bb_setUInt8(data, 0x01);
     bb_setUInt8(data, 0x00);
+    bb_setUInt8(data, 0xBE);
+    bb_setUInt8(data, (unsigned char)(tmp.size + 1));
+    bb_setUInt8(data, 4);
+    bb_setUInt8(data, (unsigned char)tmp.size);
+    bb_set(data, tmp.data, tmp.size);
+    bb_clear(&tmp);
     return 0;
 }
 

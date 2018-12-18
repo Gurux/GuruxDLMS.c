@@ -4042,7 +4042,7 @@ int dlms_getLNPdu(
             }
         }
 #ifndef DLMS_IGNORE_HIGH_GMAC
-        if (ciphering)
+        if (ciphering && p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
             gxByteBuffer tmp;
             gxByteBuffer* key;

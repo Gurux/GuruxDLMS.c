@@ -714,16 +714,7 @@ int cip_encrypt(
             output->size -= add;
         }
         aes_gcm_ghash(H, aad.data, aad.size, output->data + headerSize, input->size, S);
-        cip_gctr(tmp, J0, S, aad.size, output->data + output->size);
-        /*
-        //Encrypt the data.
-        aes_gcm_gctr(tmp, J0, input->data, input->size, output->data + headerSize);
-        memset(tmp2, 0, 16);
-        memcpy(tmp2, output->data + headerSize, input->size);
-        aes_gcm_ghash(H, aad.data, aad.size, tmp2, input->size, S);
-        cip_gctr(tmp, J0, S, aad.size, tmp2);
-        memcpy(output->data + output->size, tmp2, 12);
-        */
+        cip_gctr(tmp, J0, S, aad.size, output->data + output->size);     
         output->size += 12;
     }
     bb_clear(&nonse);

@@ -150,7 +150,7 @@ void ListenerThread(void* pVoid)
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
                 if (con->trace > GX_TRACE_LEVEL_WARNING)
                 {
-                    printf("\r\n<-%d:\t", ret);
+                    printf("\r\nRX %d:\t", ret);
                     for (pos = 0; pos != ret; ++pos)
                     {
                         printf("%.2X ", bb.data[bb.size + pos]);
@@ -175,7 +175,7 @@ void ListenerThread(void* pVoid)
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
                     if (con->trace > GX_TRACE_LEVEL_WARNING)
                     {
-                        printf("\r\n->%u:\t", (unsigned int)reply.size);
+                        printf("\r\nTX %u:\t", (unsigned int)reply.size);
                         for (pos = 0; pos != reply.size; ++pos)
                         {
                             printf("%.2X ", reply.data[pos]);

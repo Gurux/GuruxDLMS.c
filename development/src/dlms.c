@@ -3198,7 +3198,7 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
         gxByteBuffer bb;
         --data->data.position;
         bb_init(&bb);
-        bb_set2(&bb, &data->data, 0, bb_size(&data->data));
+        bb_set2(&bb, &data->data, data->data.position, bb_size(&data->data) - data->data.position);
         data->data.position = data->data.size = index;
         if (settings->cipher.dedicatedKey != NULL && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
         {

@@ -53,7 +53,7 @@ char bb_isAttached(gxByteBuffer* arr)
     return (arr->capacity & 0x80000000) == 0x80000000;
 #else
     return (arr->capacity & 0x8000) == 0x8000;
-#endif  
+#endif
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
@@ -67,7 +67,7 @@ unsigned short bb_getCapacity(gxByteBuffer* arr)
     return arr->capacity & 0x7FFFFFFF;
 #else
     return arr->capacity & 0x7FFF;
-#endif  
+#endif
 }
 
 
@@ -740,7 +740,7 @@ int bb_getUInt64ByIndex(
     //For this reason value is sifted on two parts.
     *value <<= 16;
     *value <<= 16;
-    *value = GETU32(arr->data + index + 4);
+    *value |= GETU32(arr->data + index + 4);
     return 0;
 }
 

@@ -1942,7 +1942,7 @@ int cosem_getColumns(
 {
     unsigned long pos, start = 0, count = 0;
     unsigned short addAllColumns = 1;
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;   
     gxKey *k;
     dlmsVARIANT *it;
     arr_empty(columns);

@@ -48,6 +48,10 @@ int apdu_getAuthenticationString(
 {
     unsigned char p[] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x02 };
     gxByteBuffer callingAuthenticationValue;
+
+    bb_init(&callingAuthenticationValue);        
+    bb_clear(&callingAuthenticationValue);       
+
     // If authentication is used.
     if (settings->authentication != DLMS_AUTHENTICATION_NONE)
     {
@@ -88,6 +92,7 @@ int apdu_getAuthenticationString(
         bb_setUInt8(data, (unsigned char)callingAuthenticationValue.size);
         bb_set2(data, &callingAuthenticationValue, 0, callingAuthenticationValue.size);
     }
+    bb_clear(&callingAuthenticationValue); 
     return 0;
 }
 #endif //DLMS_IGNORE_CLIENT

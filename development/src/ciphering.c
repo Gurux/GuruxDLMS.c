@@ -920,9 +920,12 @@ int cip_decryptKey(
     unsigned char k, v, n;
     unsigned short t;
     // Amount of 64-bit blocks.
+    if((data == NULL) || (output == NULL))
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     n = (unsigned char)(data->size >> 3);
-    if (data == NULL || data->size != n * 8 ||
-        output == NULL)
+    if (data->size != n * 8)   
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }

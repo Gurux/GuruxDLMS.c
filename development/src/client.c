@@ -49,8 +49,8 @@
 #include "../include/cosem.h"
 
 int cl_snrmRequest(dlmsSettings* settings, message* messages)
-{
-    int ret;
+{                    
+    int ret = DLMS_ERROR_CODE_FALSE;    
     gxByteBuffer bb;
     gxByteBuffer* reply;
     mes_clear(messages);
@@ -128,8 +128,8 @@ int cl_parseUAResponse(dlmsSettings *settings, gxByteBuffer *data)
 int cl_aarqRequest(
     dlmsSettings* settings,
     message* messages)
-{
-    int ret;
+{                    
+    int ret = DLMS_ERROR_CODE_FALSE;    
     gxByteBuffer buff;
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
     resetBlockIndex(settings);
@@ -175,8 +175,8 @@ int cl_aarqRequest(
 }
 
 int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
-{
-    int ret;
+{                        
+    int ret = DLMS_ERROR_CODE_FALSE;    
     DLMS_SOURCE_DIAGNOSTIC sd;
     DLMS_ASSOCIATION_RESULT result;
     if ((ret = apdu_parsePDU(settings, reply, &result, &sd)) != 0)
@@ -203,8 +203,8 @@ int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
 int cl_getApplicationAssociationRequest(
     dlmsSettings* settings,
     message* messages)
-{
-    int ret;
+{                      
+    int ret = DLMS_ERROR_CODE_FALSE;    
     gxByteBuffer challenge;
     gxByteBuffer *pw;
     dlmsVARIANT data;
@@ -276,8 +276,8 @@ int cl_parseApplicationAssociationResponse(
     unsigned char ch;
     unsigned char equals = 0;
     gxByteBuffer *secret;
-    gxByteBuffer challenge, bb;
-    int ret;
+    gxByteBuffer challenge, bb;                       
+    int ret = DLMS_ERROR_CODE_FALSE;   
     unsigned long ic = 0;
     dlmsVARIANT value;
     var_init(&value);
@@ -344,8 +344,8 @@ int cl_parseApplicationAssociationResponse(
 }
 
 int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
-{
-    int ret;
+{                       
+    int ret = DLMS_ERROR_CODE_FALSE;    
     if (settings->useLogicalNameReferencing)
     {
         static unsigned char ln[] = { 0, 0, 40, 0, 0, 0xFF };
@@ -366,8 +366,8 @@ int cl_parseLNObjects(gxByteBuffer* data, objectArray* objects)
     gxDataInfo info;
     DLMS_OBJECT_TYPE class_id;
     unsigned char version;
-    gxObject* object;
-    int ret;
+    gxObject* object;                        
+    int ret = DLMS_ERROR_CODE_FALSE;    
     unsigned short pos, count;
     dlmsVARIANT value;
     dlmsVARIANT *it1 = NULL, *it2 = NULL, *it3 = NULL, *ln = NULL;
@@ -454,8 +454,8 @@ int cl_parseSNObjects(gxByteBuffer* data, objectArray* objects)
     DLMS_OBJECT_TYPE class_id;
     dlmsVARIANT value;
     dlmsVARIANT *it1 = NULL, *it2 = NULL, *it3 = NULL, *ln = NULL;
-    gxObject* object;
-    int ret;
+    gxObject* object;                       
+    int ret = DLMS_ERROR_CODE_FALSE;   
     unsigned short count, pos;
     unsigned char size, version;
     oa_clear(objects);
@@ -530,8 +530,8 @@ int cl_parseSNObjects(gxByteBuffer* data, objectArray* objects)
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int cl_parseObjects(dlmsSettings* settings, gxByteBuffer* data)
-{
-    int ret;
+{                        
+    int ret = DLMS_ERROR_CODE_FALSE;    
     if (settings->useLogicalNameReferencing)
     {
         ret = cl_parseLNObjects(data, &settings->objects);
@@ -554,8 +554,8 @@ int cl_readSN(
     unsigned char attributeOrdinal,
     gxByteBuffer* data,
     message* messages)
-{
-    int ret;
+{                      
+    int ret = DLMS_ERROR_CODE_FALSE;   
     DLMS_VARIABLE_ACCESS_SPECIFICATION requestType;
     gxSNParameters p;
     gxByteBuffer attributeDescriptor;
@@ -594,14 +594,14 @@ int cl_readLN(
     gxByteBuffer* data,
     message* messages)
 {
-    int ret;
-    gxLNParameters p;
-    gxByteBuffer attributeDescriptor;
     if ((attributeOrdinal < 1))
     {
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+    }                         
+    int ret = DLMS_ERROR_CODE_FALSE; 
+    gxLNParameters p;
+    gxByteBuffer attributeDescriptor;
     bb_init(&attributeDescriptor);
     resetBlockIndex(settings);
     // CI
@@ -638,7 +638,7 @@ int cl_readList(
     gxListItem *it;
     gxObject *obj;
     unsigned short pos = 0, count;
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;    
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     unsigned short sn;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -732,14 +732,17 @@ int cl_read(
     unsigned char attributeOrdinal,
     message* messages)
 {
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;   
     if (object == NULL)
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     else if (settings->useLogicalNameReferencing)
     {
-        ret = cl_readLN(settings, object->logicalName, object->objectType, attributeOrdinal, NULL, messages);
+        gxByteBuffer tmp;
+        bb_init(&tmp);
+        ret = cl_readLN(settings, object->logicalName, object->objectType, attributeOrdinal, &tmp, messages);
+        bb_clear(&tmp);
     }
     else
     {
@@ -754,7 +757,7 @@ int cl_read(
 int cl_readRowsByEntry(dlmsSettings* settings, gxProfileGeneric* object, unsigned long index, unsigned long count, message* messages)
 {
     dlmsVARIANT tmp;
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;
     gxByteBuffer data;
     if (object == NULL)
     {
@@ -828,7 +831,7 @@ int cl_readRowsByRange(dlmsSettings* settings, gxProfileGeneric* object, struct 
     unsigned char* ln = LN;
     gxtime t;
     dlmsVARIANT tmp;
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;  
     gxByteBuffer data;
     if (object == NULL || start == NULL || end == NULL || messages == NULL)
     {
@@ -1038,7 +1041,7 @@ int cl_receiverReady(dlmsSettings* settings, DLMS_DATA_REQUEST_TYPES type, gxByt
 */
 int cl_releaseRequest(dlmsSettings* settings, message* packets)
 {
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;
     gxByteBuffer bb;
     mes_clear(packets);
     // If connection is not established, there is no need to send
@@ -1083,7 +1086,7 @@ int cl_releaseRequest(dlmsSettings* settings, message* packets)
 
 int cl_disconnectRequest(dlmsSettings* settings, message* packets)
 {
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;   
 #ifndef DLMS_IGNORE_WRAPPER
     gxByteBuffer bb;
 #endif //DLMS_IGNORE_WRAPPER
@@ -1135,7 +1138,7 @@ int cl_write(
     unsigned char index,
     message* messages)
 {
-    unsigned int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;   
     gxValueEventArg e;
     ve_init(&e);
     e.target = object;
@@ -1179,7 +1182,7 @@ int cl_writeLN(
     unsigned char byteArray,
     message* messages)
 {
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;  
     gxLNParameters p;
     gxByteBuffer bb, data;
     if (index < 1)
@@ -1226,7 +1229,7 @@ int cl_writeSN(
     dlmsVARIANT* value,
     message* messages)
 {
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;  
     gxSNParameters p;
     gxByteBuffer bb, data;
     if (index < 1)
@@ -1266,7 +1269,7 @@ int cl_method(
     dlmsVARIANT* data,
     message* messages)
 {
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;    
     if (settings->useLogicalNameReferencing)
     {
         ret = cl_methodLN(settings, object->logicalName, object->objectType, index, data, messages);
@@ -1290,7 +1293,7 @@ int cl_methodLN(
     dlmsVARIANT* value,
     message* messages)
 {
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;   
     gxLNParameters p;
     gxByteBuffer bb, data;
     if (index < 1)
@@ -1326,6 +1329,13 @@ int cl_methodLN(
     else
     {
         bb_setUInt8(&bb, 1);
+        if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+        {
+	    // Argument Type
+            bb_setUInt8(&bb, 0x09);
+	    // Argument Length                     
+            bb_setUInt8(&bb, value->byteArr->size);     
+        } 
     }
     params_initLN(&p, settings, 0,
         DLMS_COMMAND_METHOD_REQUEST, DLMS_ACTION_COMMAND_TYPE_NORMAL,
@@ -1345,7 +1355,7 @@ int cl_methodSN(
     dlmsVARIANT* value,
     message* messages)
 {
-    int ret;
+    int ret = DLMS_ERROR_CODE_FALSE;   
     unsigned char v, count;
     gxSNParameters p;
     unsigned char requestType;

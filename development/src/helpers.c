@@ -334,9 +334,13 @@ unsigned char getValue(char c)
 int hlp_hexToBytes(const char* str, unsigned char** buffer, unsigned char* count)
 {
     *count = 0;
-    if (buffer != NULL && *buffer != NULL)
+    if (buffer != NULL) 
     {
-        gxfree(*buffer);
+        if (*buffer != NULL)
+        {
+            gxfree(*buffer);
+        }
+        
     }
     if (str == NULL)
     {

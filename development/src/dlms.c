@@ -4130,6 +4130,7 @@ int dlms_getLnMessages(
         }
         bb_clear(&reply);
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    bb_clear(it);  //memory leak fixed
     return ret;
 }
 

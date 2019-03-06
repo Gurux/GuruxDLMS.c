@@ -651,7 +651,7 @@ int cip_encrypt(
     //Hash subkey.
     aes_encrypt(tmp, tmp[60], H, H);
     cip_init_j0(nonse.data, (unsigned char)nonse.size, H, J0);
-    bb_capacity(output, 10 + 16 + (2 * input->size));
+    bb_capacity(output, 40 + 16 + (2 * input->size));
     //Data is encrypted.
     if (type == DLMS_COUNT_TYPE_PACKET)
     {
@@ -660,6 +660,12 @@ int cip_encrypt(
         if (security != DLMS_SECURITY_ENCRYPTION)
         {
             len += 12;
+        }
+        if (tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
+            tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
+        {
+            hlp_setObjectCount(systemTitle->size, output);
+            bb_set(output, systemTitle->data, bb_size(systemTitle));
         }
         hlp_setObjectCount(len, output);
         bb_setUInt8(output, security);
@@ -714,7 +720,7 @@ int cip_encrypt(
             output->size -= add;
         }
         aes_gcm_ghash(H, aad.data, aad.size, output->data + headerSize, input->size, S);
-        cip_gctr(tmp, J0, S, aad.size, output->data + output->size);     
+        cip_gctr(tmp, J0, S, aad.size, output->data + output->size);
         output->size += 12;
     }
     bb_clear(&nonse);
@@ -747,13 +753,17 @@ int cip_decrypt(
     cmd = (DLMS_COMMAND)ch;
     switch (cmd)
     {
-    case DLMS_COMMAND_GLO_GENERAL_CIPHERING:
+    case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
+    case DLMS_COMMAND_GENERAL_DED_CIPHERING:
         if ((ret = hlp_getObjectCount2(data, &length)) != 0)
         {
             return ret;
         }
-        bb_set(&systemTitle, data->data + data->position, length);
-        title = &systemTitle;
+        if (length != 0)
+        {
+            bb_set2(&systemTitle, data, data->position, length);
+            title = &systemTitle;
+        }
         break;
     case DLMS_COMMAND_GLO_INITIATE_REQUEST:
     case DLMS_COMMAND_GLO_INITIATE_RESPONSE:
@@ -852,6 +862,7 @@ int cip_decrypt(
     {
         bb_clear(&ciphertext);
         bb_clear(&tag);
+        bb_clear(&systemTitle);
         return ret;
     }
     //Check tag.
@@ -861,6 +872,7 @@ int cip_decrypt(
         data->size = data->size - 12;
     }
     bb_clear(&ciphertext);
+    bb_clear(&systemTitle);
     bb_clear(&tag);
     return 0;
 }
@@ -920,7 +932,7 @@ int cip_decryptKey(
     unsigned char k, v, n;
     unsigned short t;
     // Amount of 64-bit blocks.
-    n = (unsigned char)(data->size >> 3);
+    n = (unsigned char)(bb_size(data) >> 3);
     if (data == NULL || data->size != n * 8 ||
         output == NULL)
     {
@@ -960,7 +972,7 @@ int cip_decryptKey(
     {
         output->size = 0;
         return DLMS_ERROR_CODE_FALSE;
-    }    
+    }
     return 0;
 }
 

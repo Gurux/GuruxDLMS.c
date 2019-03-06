@@ -54,6 +54,10 @@ extern "C" {
          */
         DLMS_COMMAND command;
         /**
+         * Encrypted DLMS command.
+         */
+        DLMS_COMMAND encryptedCommand;
+        /**
          * Request type.
          */
 		unsigned char requestType;
@@ -96,7 +100,8 @@ extern "C" {
         int count,
 		unsigned char commandType,
         gxByteBuffer* attributeDescriptor,
-        gxByteBuffer* data);
+        gxByteBuffer* data,
+        DLMS_COMMAND encryptedCommand);
 
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
@@ -113,6 +118,10 @@ extern "C" {
          * DLMS command.
          */
         DLMS_COMMAND command;
+        /**
+        * Encrypted DLMS command.
+        */
+        DLMS_COMMAND encryptedCommand;
         /**
          * Request type.
          */
@@ -159,7 +168,8 @@ extern "C" {
         unsigned char commandType,
         gxByteBuffer* attributeDescriptor,
         gxByteBuffer* data,
-        unsigned char status);
+        unsigned char status,
+        DLMS_COMMAND encryptedCommand);
 
 #ifdef  __cplusplus
 }

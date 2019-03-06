@@ -155,16 +155,16 @@ int cl_aarqRequest(
         if (settings->useLogicalNameReferencing)
         {
             gxLNParameters p;
-            params_initLN(&p, settings, 0, DLMS_COMMAND_AARQ, 0, &buff, NULL, 0xFF);
+            params_initLN(&p, settings, 0, DLMS_COMMAND_AARQ, 0, &buff, NULL, 0xFF, DLMS_COMMAND_NONE);
             ret = dlms_getLnMessages(&p, messages);
         }
         else
         {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
             gxSNParameters p;
-            params_initSN(&p, settings, DLMS_COMMAND_AARQ, 0, 0, NULL, &buff);
+            params_initSN(&p, settings, DLMS_COMMAND_AARQ, 0, 0, NULL, &buff, DLMS_COMMAND_NONE);
             ret = dlms_getSnMessages(&p, messages);
-#else 
+#else
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         }
@@ -578,7 +578,7 @@ int cl_readSN(
         requestType = DLMS_VARIABLE_ACCESS_SPECIFICATION_VARIABLE_NAME;
     }
     params_initSN(&p, settings, DLMS_COMMAND_READ_REQUEST, 1,
-        requestType, &attributeDescriptor, data);
+        requestType, &attributeDescriptor, data, DLMS_COMMAND_NONE);
     ret = dlms_getSnMessages(&p, messages);
     bb_clear(&attributeDescriptor);
     return ret;
@@ -624,7 +624,7 @@ int cl_readLN(
     }
     params_initLN(&p, settings, 0,
         DLMS_COMMAND_GET_REQUEST, DLMS_GET_COMMAND_TYPE_NORMAL,
-        &attributeDescriptor, data, 0xFF);
+        &attributeDescriptor, data, 0xFF, DLMS_COMMAND_NONE);
     ret = dlms_getLnMessages(&p, messages);
     bb_clear(&attributeDescriptor);
     return ret;
@@ -654,7 +654,7 @@ int cl_readList(
     {
         gxLNParameters p;
         params_initLN(&p, settings, 0, DLMS_COMMAND_GET_REQUEST, DLMS_GET_COMMAND_TYPE_WITH_LIST,
-            &bb, NULL, 0xff);
+            &bb, NULL, 0xff, DLMS_COMMAND_NONE);
         //Request service primitive shall always fit in a single APDU.
         count = (settings->maxPduSize - 12) / 10;
         if (list->size < count)
@@ -718,7 +718,7 @@ int cl_readList(
             sn += ((unsigned short)it->value - 1) * 8;
             bb_setUInt16(&bb, sn);
         }
-        params_initSN(&p, settings, DLMS_COMMAND_READ_REQUEST, list->size, 0xFF, &bb, NULL);
+        params_initSN(&p, settings, DLMS_COMMAND_READ_REQUEST, list->size, 0xFF, &bb, NULL, DLMS_COMMAND_NONE);
         ret = dlms_getSnMessages(&p, reply);
     }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1061,7 +1061,7 @@ int cl_releaseRequest(dlmsSettings* settings, message* packets)
         gxLNParameters p;
         params_initLN(&p, settings, 0,
             DLMS_COMMAND_RELEASE_REQUEST, DLMS_SET_COMMAND_TYPE_NORMAL,
-            &bb, NULL, 0xff);
+            &bb, NULL, 0xff, DLMS_COMMAND_NONE);
         ret = dlms_getLnMessages(&p, packets);
     }
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1071,10 +1071,10 @@ int cl_releaseRequest(dlmsSettings* settings, message* packets)
         params_initSN(&p, settings,
             DLMS_COMMAND_RELEASE_REQUEST, 1,
             DLMS_VARIABLE_ACCESS_SPECIFICATION_VARIABLE_NAME,
-            NULL, &bb);
+            NULL, &bb, DLMS_COMMAND_NONE);
         ret = dlms_getSnMessages(&p, packets);
     }
-#else 
+#else
     ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     bb_clear(&bb);
@@ -1211,7 +1211,7 @@ int cl_writeLN(
     bb_setUInt8(&bb, 0);
     params_initLN(&p, settings, 0,
         DLMS_COMMAND_SET_REQUEST, DLMS_SET_COMMAND_TYPE_NORMAL,
-        &bb, &data, 0xff);
+        &bb, &data, 0xff, DLMS_COMMAND_NONE);
     ret = dlms_getLnMessages(&p, messages);
     bb_clear(&data);
     bb_clear(&bb);
@@ -1250,7 +1250,7 @@ int cl_writeSN(
     params_initSN(&p, settings,
         DLMS_COMMAND_WRITE_REQUEST, 1,
         DLMS_VARIABLE_ACCESS_SPECIFICATION_VARIABLE_NAME,
-        &bb, &data);
+        &bb, &data, DLMS_COMMAND_NONE);
     ret = dlms_getSnMessages(&p, messages);
     bb_clear(&data);
     bb_clear(&bb);
@@ -1329,7 +1329,7 @@ int cl_methodLN(
     }
     params_initLN(&p, settings, 0,
         DLMS_COMMAND_METHOD_REQUEST, DLMS_ACTION_COMMAND_TYPE_NORMAL,
-        &bb, &data, 0xff);
+        &bb, &data, 0xff, DLMS_COMMAND_NONE);
     ret = dlms_getLnMessages(&p, messages);
     bb_clear(&data);
     bb_clear(&bb);
@@ -1406,7 +1406,7 @@ int cl_methodSN(
         bb_setUInt8(&bb, 1);
     }
     params_initSN(&p, settings, DLMS_COMMAND_READ_REQUEST, 1,
-        requestType, &bb, &data);
+        requestType, &bb, &data, DLMS_COMMAND_NONE);
     ret = dlms_getSnMessages(&p, messages);
     bb_clear(&data);
     bb_clear(&bb);

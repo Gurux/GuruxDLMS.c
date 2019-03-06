@@ -24,10 +24,10 @@
 #endif
 #include <tchar.h>
 #include <conio.h>
-#include <Winsock.h> //Add support for sockets	
+#include <Winsock.h> //Add support for sockets
 #include <time.h>
 #include <process.h>//Add support for threads
-#include <Winsock.h> //Add support for sockets	
+#include <Winsock.h> //Add support for sockets
 #include "../include/connection.h"
 #include "../../development/include/converters.h"
 #include "../../development/include/helpers.h"
@@ -93,7 +93,7 @@ gxAssociationLogicalName associationNone, highAssociation;
 #ifndef DLMS_ITALIAN_STANDARD
 //Association view for None and Low authentication if Logical name referencing is used.
 gxAssociationLogicalName lowAssociation;
-//Same Authentication view is used if short name referencing is used. 
+//Same Authentication view is used if short name referencing is used.
 //This is not needed if logical name referencing is used.
 #ifndef DLMS_INDIAN_STANDARD
 gxAssociationShortName associationShortName;
@@ -150,7 +150,7 @@ const gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &im
     &associationNone.base, &highAssociation.base,
 #if !defined(DLMS_ITALIAN_STANDARD)
     &lowAssociation.base,
-#endif 
+#endif
 
 #ifdef DLMS_INDIAN_STANDARD
     &instantData.base, &currentIR.base,
@@ -1254,10 +1254,6 @@ int svr_start(
     {
         return ret;
     }
-    //Uncomment this if preset key is used.
-    // con->settings.base.preEstablishedSystemTitle = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
-    // bb_init(con->settings.base.preEstablishedSystemTitle);
-    // bb_addString(con->settings.base.preEstablishedSystemTitle, "Gurux123");
     return DLMS_ERROR_CODE_OK;
 }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -1932,7 +1928,7 @@ void svr_preAction(
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             FILE *f;
             gxImageTransfer* i = (gxImageTransfer*)e->target;
-            //Image name and size to transfer 
+            //Image name and size to transfer
             if (e->index == 1)
             {
                 i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_NOT_INITIATED;
@@ -2076,7 +2072,7 @@ void svr_postWrite(
     gxValueEventCollection* args)
 {
     //Show updated values.
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)      
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     gxValueEventArg *e;
     int ret, pos;
     char* buff;
@@ -2095,7 +2091,7 @@ void svr_postWrite(
 #endif //GX_DLMS_MICROCONTROLLER
         }
     }
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)      
+#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 }
 
 void handleProfileGenericActions(
@@ -2104,7 +2100,7 @@ void handleProfileGenericActions(
     if (it->index == 1)
     {
         // Profile generic clear is called. Clear data.
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)      
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #if _MSC_VER > 1400
         FILE* f = NULL;
         fopen_s(&f, DATAFILE, "w");
@@ -2275,7 +2271,6 @@ unsigned char svr_isTarget(
         settings->cipher.invocationCounter = frameCounterGuarantor.value.lVal;
     }
 #endif //DLMS_ITALIAN_STANDARD
- 
     //Check server address using serial number.
     if ((serverAddress & 0x3FFF) == sn % 10000 + 1000)
     {
@@ -2291,7 +2286,6 @@ unsigned char svr_isTarget(
     {
         return 1;
     }
-
     return 0;
 }
 
@@ -2408,6 +2402,24 @@ int svr_connected(
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
     printf("Connected %d.\r\n", settings->base.connected);
 #endif
+#ifdef DLMS_ITALIAN_STANDARD
+    if (settings->base.clientAddress == 1)
+    {
+        if (settings->base.connected == DLMS_CONNECTION_STATE_HDLC)
+        {
+            bb_clear(settings->base.preEstablishedSystemTitle);
+            settings->base.preEstablishedSystemTitle = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
+            bb_init(settings->base.preEstablishedSystemTitle);
+            bb_addString(settings->base.preEstablishedSystemTitle, "Gurux123");
+            settings->base.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
+}
+        else
+        {
+            //Return error if client can connect only using pre-established connnection.
+            return DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        }
+    }
+#endif //DLMS_ITALIAN_STANDARD
     return 0;
 }
 

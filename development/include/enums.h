@@ -1006,11 +1006,6 @@ extern "C" {
         DLMS_COMMAND_GLO_SET_RESPONSE = 0xCD,
 
         /**
-         * Glo general ciphering.
-         */
-        DLMS_COMMAND_GLO_GENERAL_CIPHERING = 0xDB,
-
-        /**
          * Glo event notification request.
          */
         DLMS_COMMAND_GLO_EVENT_NOTIFICATION_REQUEST = 0xCA,
@@ -1097,6 +1092,25 @@ extern "C" {
         * Ded method response.
         */
         DLMS_COMMAND_DED_METHOD_RESPONSE = 0xD7,
+
+        /**
+        * Ded read request.
+        */
+        DLMS_COMMAND_DED_READ_REQUEST = 69,
+
+        /**
+        * Ded write request.
+        */
+        DLMS_COMMAND_DED_WRITE_REQUEST = 70,
+
+        /**
+        * Ded read response.
+        */
+        DLMS_COMMAND_DED_READ_RESPONSE = 76,
+        /**
+        * Ded write response.
+        */
+        DLMS_COMMAND_DED_WRITE_RESPONSE = 77,
 
 #endif //DLMS_IGNORE_HIGH_GMAC
 

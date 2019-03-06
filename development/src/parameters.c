@@ -40,11 +40,13 @@ void params_initSN(
     int count,
 	unsigned char commandType,
     gxByteBuffer* attributeDescriptor,
-    gxByteBuffer* data)
+    gxByteBuffer* data,
+    DLMS_COMMAND encryptedCommand)
 {
     target->settings = settings;
     target->blockIndex = (unsigned short)settings->blockIndex;
     target->command = command;
+    target->encryptedCommand = encryptedCommand;
     target->count = count;
     target->requestType = commandType;
     target->attributeDescriptor = attributeDescriptor;
@@ -63,12 +65,14 @@ void params_initLN(
     unsigned char commandType,
     gxByteBuffer* attributeDescriptor,
     gxByteBuffer* data,
-    unsigned char status)
+    unsigned char status,
+    DLMS_COMMAND encryptedCommand)
 {
     target->invokeId = invokeId;
     target->settings = settings;
     target->blockIndex = settings->blockIndex;
     target->command = command;
+    target->encryptedCommand = encryptedCommand;
     target->requestType = commandType;
     target->attributeDescriptor = attributeDescriptor;
     target->data = data;

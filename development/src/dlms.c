@@ -35,7 +35,7 @@
 #include <assert.h>
 #endif
 #include "../include/gxmem.h"
-#if _MSC_VER > 1400 
+#if _MSC_VER > 1400
 #include <crtdbg.h>
 #endif
 #include <string.h> /* memset */
@@ -89,63 +89,167 @@ int dlms_checkInit(dlmsSettings* settings)
 * Get used glo message.
 *
 * @param command
-*            Executed DLMS_COMMAND_
+*            Executed DLMS command.
 * @return Integer value of glo message.
 */
-unsigned char dlms_getGloMessage(DLMS_COMMAND command)
+unsigned char dlms_getGloMessage(dlmsSettings *settings, DLMS_COMMAND command, DLMS_COMMAND encryptedCommand)
 {
     unsigned char cmd;
-    switch (command)
+    unsigned glo = settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION;
+    unsigned ded = settings->cipher.dedicatedKey != NULL && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0;
+    if (encryptedCommand == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
+        encryptedCommand == DLMS_COMMAND_GENERAL_DED_CIPHERING)
     {
+        cmd = encryptedCommand;
+    }
+    else if (glo && encryptedCommand == DLMS_COMMAND_NONE)
+    {
+        if (ded)
+        {
+            cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
+        }
+        else
+        {
+            cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
+        }
+    }
+    else
+    {
+        switch (command)
+        {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    case DLMS_COMMAND_READ_REQUEST:
-        cmd = DLMS_COMMAND_GLO_READ_REQUEST;
-        break;
+        case DLMS_COMMAND_READ_REQUEST:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_READ_REQUEST;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_READ_REQUEST;
+            }
+            break;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    case DLMS_COMMAND_GET_REQUEST:
-        cmd = DLMS_COMMAND_GLO_GET_REQUEST;
-        break;
+        case DLMS_COMMAND_GET_REQUEST:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_GET_REQUEST;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_GET_REQUEST;
+            }
+            break;
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    case DLMS_COMMAND_WRITE_REQUEST:
-        cmd = DLMS_COMMAND_GLO_WRITE_REQUEST;
-        break;
+        case DLMS_COMMAND_WRITE_REQUEST:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_WRITE_REQUEST;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_WRITE_REQUEST;
+            }
+            break;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    case DLMS_COMMAND_SET_REQUEST:
-        cmd = DLMS_COMMAND_GLO_SET_REQUEST;
-        break;
-    case DLMS_COMMAND_METHOD_REQUEST:
-        cmd = DLMS_COMMAND_GLO_METHOD_REQUEST;
-        break;
+        case DLMS_COMMAND_SET_REQUEST:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_SET_REQUEST;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_SET_REQUEST;
+            }
+            break;
+        case DLMS_COMMAND_METHOD_REQUEST:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_METHOD_REQUEST;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_METHOD_REQUEST;
+            }
+            break;
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    case DLMS_COMMAND_READ_RESPONSE:
-        cmd = DLMS_COMMAND_GLO_READ_RESPONSE;
-        break;
+        case DLMS_COMMAND_READ_RESPONSE:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_READ_RESPONSE;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_READ_RESPONSE;
+            }
+            break;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    case DLMS_COMMAND_GET_RESPONSE:
-        cmd = DLMS_COMMAND_GLO_GET_RESPONSE;
-        break;
+        case DLMS_COMMAND_GET_RESPONSE:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_GET_RESPONSE;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_GET_RESPONSE;
+            }
+            break;
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    case DLMS_COMMAND_WRITE_RESPONSE:
-        cmd = DLMS_COMMAND_GLO_WRITE_RESPONSE;
-        break;
+        case DLMS_COMMAND_WRITE_RESPONSE:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_WRITE_RESPONSE;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_WRITE_RESPONSE;
+            }
+            break;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    case DLMS_COMMAND_SET_RESPONSE:
-        cmd = DLMS_COMMAND_GLO_SET_RESPONSE;
-        break;
-    case DLMS_COMMAND_METHOD_RESPONSE:
-        cmd = DLMS_COMMAND_GLO_METHOD_RESPONSE;
-        break;
-    case DLMS_COMMAND_DATA_NOTIFICATION:
-        cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
-        break;
-    case DLMS_COMMAND_RELEASE_REQUEST:
-        cmd = DLMS_COMMAND_RELEASE_REQUEST;
-        break;
-    case DLMS_COMMAND_RELEASE_RESPONSE:
-        cmd = DLMS_COMMAND_RELEASE_RESPONSE;
-        break;
-    default:
-        cmd = DLMS_COMMAND_NONE;
+        case DLMS_COMMAND_SET_RESPONSE:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_SET_RESPONSE;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_SET_RESPONSE;
+            }
+            break;
+        case DLMS_COMMAND_METHOD_RESPONSE:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_DED_METHOD_RESPONSE;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GLO_METHOD_RESPONSE;
+            }
+            break;
+        case DLMS_COMMAND_DATA_NOTIFICATION:
+            if (ded)
+            {
+                cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
+            }
+            break;
+        case DLMS_COMMAND_RELEASE_REQUEST:
+            cmd = DLMS_COMMAND_RELEASE_REQUEST;
+            break;
+        case DLMS_COMMAND_RELEASE_RESPONSE:
+            cmd = DLMS_COMMAND_RELEASE_RESPONSE;
+            break;
+        case DLMS_COMMAND_GENERAL_DED_CIPHERING:
+            cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
+            break;
+        case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
+            cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
+            break;
+        default:
+            cmd = DLMS_COMMAND_NONE;
+        }
     }
     return cmd;
 }
@@ -2135,16 +2239,16 @@ int dlms_receiverReady(
     if (settings->useLogicalNameReferencing)
     {
         gxLNParameters p;
-        params_initLN(&p, settings, 0, cmd, DLMS_GET_COMMAND_TYPE_NEXT_DATA_BLOCK, &bb, NULL, 0xFF);
+        params_initLN(&p, settings, 0, cmd, DLMS_GET_COMMAND_TYPE_NEXT_DATA_BLOCK, &bb, NULL, 0xFF, DLMS_COMMAND_NONE);
         ret = dlms_getLnMessages(&p, &tmp);
     }
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         gxSNParameters p;
-        params_initSN(&p, settings, cmd, 1, DLMS_VARIABLE_ACCESS_SPECIFICATION_BLOCK_NUMBER_ACCESS, &bb, NULL);
+        params_initSN(&p, settings, cmd, 1, DLMS_VARIABLE_ACCESS_SPECIFICATION_BLOCK_NUMBER_ACCESS, &bb, NULL, DLMS_COMMAND_NONE);
         ret = dlms_getSnMessages(&p, &tmp);
-#else 
+#else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }
@@ -2922,7 +3026,7 @@ int dlms_changeType(
         return DLMS_ERROR_CODE_OK;
 #else
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //GX_DLMS_MICROCONTROLLER       
+#endif //GX_DLMS_MICROCONTROLLER
     }
     info.type = type;
     if ((ret = dlms_getData(value, &info, newValue)) != 0)
@@ -3175,6 +3279,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
         {
             return ret;
         }
+        data->encryptedCommand = data->command;
         data->command = (DLMS_COMMAND)ch;
     }
     else
@@ -3495,7 +3600,7 @@ int dlms_appendMultipleSNBlocks(
     unsigned long maxSize;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     unsigned char ciphering = p->settings->cipher.security != DLMS_SECURITY_NONE;
-#else 
+#else
     unsigned char ciphering = 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
     unsigned long hSize = reply->size + 3;
@@ -3551,7 +3656,7 @@ int dlms_getSNPdu(
     unsigned char cipherSize = 0;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     unsigned char ciphering = p->command != DLMS_COMMAND_AARQ && p->command != DLMS_COMMAND_AARE && p->settings->cipher.security != DLMS_SECURITY_NONE;
-#else 
+#else
     unsigned char ciphering = 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
     gxByteBuffer *h;
@@ -3709,7 +3814,7 @@ int dlms_getSNPdu(
             p->settings->cipher.security,
             DLMS_COUNT_TYPE_PACKET,
             p->settings->cipher.invocationCounter + 1,
-            dlms_getGloMessage(p->command),
+            dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
             &p->settings->cipher.systemTitle,
             &p->settings->cipher.blockCipherKey,
             reply,
@@ -3779,9 +3884,9 @@ int dlms_getLNPdu(
 {
     int ret;
 #ifndef DLMS_IGNORE_HIGH_GMAC
-    unsigned char ciphering = p->command != DLMS_COMMAND_AARQ && p->command != DLMS_COMMAND_AARE &&
-        p->settings->cipher.security != DLMS_SECURITY_NONE;
-#else 
+    unsigned char ciphering = (p->command != DLMS_COMMAND_AARQ && p->command != DLMS_COMMAND_AARE &&
+        p->settings->cipher.security != DLMS_SECURITY_NONE) || p->encryptedCommand != DLMS_COMMAND_NONE;
+#else
     unsigned char ciphering = 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
     unsigned short len = 0;
@@ -4060,7 +4165,7 @@ int dlms_getLNPdu(
                 p->settings->cipher.security,
                 DLMS_COUNT_TYPE_PACKET,
                 p->settings->cipher.invocationCounter,
-                dlms_getGloMessage(p->command),
+                dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
                 &p->settings->cipher.systemTitle,
                 key,
                 reply,
@@ -4412,7 +4517,7 @@ int dlms_secure(
         bb_clear(&challenge);
         bb_clear(&s);
         return 0;
-#else        
+#else
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_AES
     }

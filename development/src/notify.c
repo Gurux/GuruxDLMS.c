@@ -86,7 +86,7 @@ int notify_generateDataNotificationMessages2(
     if (settings->useLogicalNameReferencing)
     {
         gxLNParameters p;
-        params_initLN(&p, settings, 0, DLMS_COMMAND_DATA_NOTIFICATION, 0, NULL, NULL, 0xff);
+        params_initLN(&p, settings, 0, DLMS_COMMAND_DATA_NOTIFICATION, 0, NULL, NULL, 0xff, DLMS_COMMAND_NONE);
         p.time = time;
         ret = dlms_getLnMessages(&p, messages);
     }
@@ -94,9 +94,9 @@ int notify_generateDataNotificationMessages2(
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         gxSNParameters p;
-        params_initSN(&p, settings, DLMS_COMMAND_DATA_NOTIFICATION, 1, 0, data, NULL);
+        params_initSN(&p, settings, DLMS_COMMAND_DATA_NOTIFICATION, 1, 0, data, NULL, DLMS_COMMAND_NONE);
         ret = dlms_getSnMessages(&p, messages);
-#else 
+#else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }

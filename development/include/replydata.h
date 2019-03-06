@@ -49,6 +49,10 @@ extern "C" {
          * Received command.
          */
         DLMS_COMMAND command;
+        /**
+         * Encrypted command.
+         */
+        DLMS_COMMAND encryptedCommand;
 
         unsigned char commandType;
 

@@ -36,8 +36,8 @@
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include <assert.h>
 #if _MSC_VER > 1400
-#include <stdlib.h>  
-#include <crtdbg.h> 
+#include <stdlib.h>
+#include <crtdbg.h>
 #endif
 #endif
 #include "../include/gxmem.h"
@@ -312,6 +312,10 @@ int svr_HandleAarqRequest(
     {
         svr_setInitialize(settings);
     }
+    else
+    {
+        settings->base.cipher.security = DLMS_SECURITY_NONE;
+    }
     //If client is not called SNRM.
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC && (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) == 0)
     {
@@ -486,14 +490,17 @@ int svr_handleSnrmRequest(
     int ret;
     unsigned char len;
     unsigned short serverAddress, clientAddress;
+    DLMS_SECURITY security;
     if ((ret = dlms_parseSnrmUaResponse(&settings->base, data)) != 0)
     {
         return ret;
     }
     bb_clear(data);
+    security = settings->base.cipher.security;
     serverAddress = settings->base.serverAddress;
     clientAddress = settings->base.clientAddress;
     svr_reset(settings);
+    settings->base.cipher.security = security;
     settings->base.serverAddress = serverAddress;
     settings->base.clientAddress = clientAddress;
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
@@ -624,7 +631,7 @@ int svr_reportError(
     {
         gxLNParameters p;
         params_initLN(&p, &settings->base, 0, cmd, 1,
-            NULL, NULL, error);
+            NULL, NULL, error, DLMS_COMMAND_NONE);
         ret = dlms_getLNPdu(&p, &data);
         if (ret != 0)
         {
@@ -639,7 +646,7 @@ int svr_reportError(
         gxByteBuffer bb;
         bb_init(&bb);
         bb_setUInt8(&bb, error);
-        params_initSN(&p, &settings->base, cmd, 1, 1, NULL, &bb);
+        params_initSN(&p, &settings->base, cmd, 1, 1, NULL, &bb, settings->info.encryptedCommand);
         p.lastBlock = settings->base.index == settings->base.count;
         ret = dlms_getSNPdu(&p, &data);
         bb_clear(&bb);
@@ -648,7 +655,7 @@ int svr_reportError(
             bb_clear(&data);
             return ret;
         }
-#else 
+#else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }
@@ -932,7 +939,7 @@ int svr_handleSetRequest(
         return ret;
     }
     updateInvokeId(settings, invokeId);
-    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_SET_RESPONSE, type, NULL, data, 0);
+    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_SET_RESPONSE, type, NULL, data, 0, settings->info.encryptedCommand);
     if (type == DLMS_SET_COMMAND_TYPE_NORMAL || type == DLMS_SET_COMMAND_TYPE_FIRST_DATABLOCK)
     {
         ret = svr_handleSetRequest2(settings, data, type, &p);
@@ -1089,7 +1096,7 @@ int svr_getRequestNormal(
         e->value.vt = DLMS_DATA_TYPE_NONE;
     }
     gxLNParameters p;
-    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 1, NULL, data, status);
+    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 1, NULL, data, status, settings->info.encryptedCommand);
     ret = dlms_getLNPdu(&p, data);
     if (settings->base.count != settings->base.index || data->size > settings->base.maxPduSize)
     {
@@ -1126,13 +1133,13 @@ int svr_getRequestNextDataBlock(
     if (index != settings->base.blockIndex)
     {
         params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 2,
-            NULL, NULL, DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID);
+            NULL, NULL, DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID, settings->info.encryptedCommand);
         return dlms_getLNPdu(&p, data);
     }
     else
     {
         ++settings->base.blockIndex;
-        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 2, NULL, data, DLMS_ERROR_CODE_OK);
+        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 2, NULL, data, DLMS_ERROR_CODE_OK, settings->info.encryptedCommand);
         // If transaction is not in progress.
         if (settings->transaction.command == DLMS_COMMAND_NONE)
         {
@@ -1297,7 +1304,7 @@ int svr_getRequestWithList(
         {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
             unsigned long pos2 = data->size;
-#else 
+#else
             unsigned short pos2 = data->size;
 #endif
             bb_setUInt8(data, 0);
@@ -1345,7 +1352,7 @@ int svr_getRequestWithList(
         }
     }
     svr_postRead(&settings->base, &list);
-    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 3, NULL, data, 0xFF);
+    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 3, NULL, data, 0xFF, settings->info.encryptedCommand);
     ret = dlms_getLNPdu(&p, data);
     vec_clear(&list);
     return ret;
@@ -1398,7 +1405,7 @@ int svr_handleGetRequest(
     {
         // Access Error : Device reports Read-Write denied.
         gxLNParameters p;
-        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 1, NULL, data, DLMS_ERROR_CODE_READ_WRITE_DENIED);
+        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 1, NULL, data, DLMS_ERROR_CODE_READ_WRITE_DENIED, settings->info.encryptedCommand);
         bb_clear(data);
         ret = dlms_getLNPdu(&p, data);
     }
@@ -1559,7 +1566,7 @@ int svr_getReadData(
     unsigned long pos;
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     unsigned long statusindex;
-#else 
+#else
     unsigned short statusindex;
 #endif
     unsigned char first = 1;
@@ -1648,7 +1655,7 @@ int svr_handleReadBlockNumberAccess(
         bb_setUInt8(&bb, DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID);
         params_initSN(&p, &settings->base,
             DLMS_COMMAND_READ_RESPONSE, 1,
-            DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL);
+            DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL, settings->info.encryptedCommand);
         ret = dlms_getSNPdu(&p, data);
         resetBlockIndex(&settings->base);
         bb_clear(&bb);
@@ -1706,7 +1713,7 @@ int svr_handleReadBlockNumberAccess(
     {
         ++settings->base.blockIndex;
         params_initSN(&p, &settings->base, DLMS_COMMAND_READ_RESPONSE, 1,
-            DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT, NULL, data);
+            DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT, NULL, data, settings->info.encryptedCommand);
         p.multipleBlocks = 1;
         p.lastBlock = settings->base.index == settings->base.count;
         ret = dlms_getSNPdu(&p, data);
@@ -1750,7 +1757,7 @@ int svr_handleReadDataBlockAccess(
         gxByteBuffer bb;
         bb_init(&bb);
         bb_setUInt8(&bb, DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID);
-        params_initSN(&p, &settings->base, command, 1, DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL);
+        params_initSN(&p, &settings->base, command, 1, DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL, settings->info.encryptedCommand);
         ret = dlms_getSNPdu(&p, data);
         resetBlockIndex(&settings->base);
         bb_clear(&bb);
@@ -1775,7 +1782,7 @@ int svr_handleReadDataBlockAccess(
         bb_init(&bb);
         bb_setUInt8(&bb, DLMS_ERROR_CODE_BLOCK_UNAVAILABLE);
         params_initSN(&p, &settings->base, command, cnt,
-            DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL);
+            DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL, settings->info.encryptedCommand);
         ret = dlms_getSNPdu(&p, data);
         bb_clear(&bb);
         resetBlockIndex(&settings->base);
@@ -1797,7 +1804,7 @@ int svr_handleReadDataBlockAccess(
         {
             type = DLMS_SINGLE_WRITE_RESPONSE_BLOCK_NUMBER;
         }
-        params_initSN(&p, &settings->base, command, cnt, type, NULL, &bb);
+        params_initSN(&p, &settings->base, command, cnt, type, NULL, &bb, settings->info.encryptedCommand);
         ret = dlms_getSNPdu(&p, data);
         bb_clear(&bb);
     }
@@ -1833,7 +1840,7 @@ int svr_returnSNError(
     bb_init(&bb);
     bb_setUInt8(&bb, error);
     params_initSN(&p, &settings->base, cmd, 1,
-        DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL);
+        DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL, settings->info.encryptedCommand);
     ret = dlms_getSNPdu(&p, data);
     resetBlockIndex(&settings->base);
     return ret;
@@ -1938,7 +1945,7 @@ int svr_handleReadRequest(
             }
 
             params_initSN(&p, &settings->base, DLMS_COMMAND_READ_RESPONSE, cnt,
-                requestType, NULL, data);
+                requestType, NULL, data, settings->info.encryptedCommand);
             p.multipleBlocks = multipleBlocks;
             p.lastBlock = settings->base.index == settings->base.count;
             ret = dlms_getSNPdu(&p, data);
@@ -2123,7 +2130,7 @@ int svr_handleWriteRequest(
             }
             bb_setUInt8(&bb, ch);
         }
-        params_initSN(&p, &settings->base, DLMS_COMMAND_WRITE_RESPONSE, cnt, 0xFF, NULL, &bb);
+        params_initSN(&p, &settings->base, DLMS_COMMAND_WRITE_RESPONSE, cnt, 0xFF, NULL, &bb, settings->info.encryptedCommand);
         p.lastBlock = settings->base.index == settings->base.count;
         ret = dlms_getSNPdu(&p, data);
         bb_clear(&bb);
@@ -2272,7 +2279,7 @@ int svr_handleMethodRequest(
     if (ret == 0)
     {
         gxLNParameters p;
-        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_METHOD_RESPONSE, 1, NULL, data, error);
+        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_METHOD_RESPONSE, 1, NULL, data, error, settings->info.encryptedCommand);
         ret = dlms_getLNPdu(&p, data);
         // If High level authentication fails.
         if (e->target->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME && id == 1)

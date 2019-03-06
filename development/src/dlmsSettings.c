@@ -59,6 +59,7 @@ void svr_init(
     unsigned short pduBufferSize)
 {
     cl_init(&settings->base, useLogicalNameReferencing, 0, 0, DLMS_AUTHENTICATION_NONE, NULL, interfaceType);
+    settings->base.proposedConformance |= DLMS_CONFORMANCE_GENERAL_PROTECTION;
     bb_attach(&settings->receivedData, frameBuffer, 0, frameBufferSize);
     reply_init(&settings->info);
     bb_attach(&settings->info.data, pduBuffer, 0, pduBufferSize);
@@ -114,15 +115,14 @@ void cl_init(
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
             DLMS_CONFORMANCE_SET | DLMS_CONFORMANCE_SELECTIVE_ACCESS |
             DLMS_CONFORMANCE_ACTION | DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
-            DLMS_CONFORMANCE_GET | DLMS_CONFORMANCE_GENERAL_PROTECTION);
+            DLMS_CONFORMANCE_GET);
     }
     else
     {
         settings->proposedConformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_INFORMATION_REPORT |
             DLMS_CONFORMANCE_READ | DLMS_CONFORMANCE_UN_CONFIRMED_WRITE |
             DLMS_CONFORMANCE_WRITE | DLMS_CONFORMANCE_PARAMETERIZED_ACCESS |
-            DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
-            DLMS_CONFORMANCE_GENERAL_PROTECTION);
+            DLMS_CONFORMANCE_MULTIPLE_REFERENCES);
     }
     settings->longInvokeID = 0;
     settings->maxInfoTX = settings->maxInfoRX = 0x80;
@@ -334,7 +334,7 @@ void trans_clear(gxLongTransaction* trans)
 }
 
 void updateInvokeId(
-    dlmsServerSettings* settings, 
+    dlmsServerSettings* settings,
     unsigned char value)
 {
     if ((value & 0x80) != 0) {

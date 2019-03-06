@@ -47,20 +47,16 @@ int apdu_getAuthenticationString(
     gxByteBuffer* data)
 {
     unsigned char p[] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x02 };
-    gxByteBuffer callingAuthenticationValue;
+    gxByteBuffer* callingAuthenticationValue = NULL;
     // If authentication is used.
     if (settings->authentication != DLMS_AUTHENTICATION_NONE)
     {
         // Add sender ACSE-requirements field component.
-        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT
-            | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS);
+        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS);
         bb_setUInt8(data, 2);
-        bb_setUInt8(data, BER_TYPE_BIT_STRING
-            | BER_TYPE_OCTET_STRING);
+        bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING);
         bb_setUInt8(data, 0x80);
-
-        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT
-            | (char)PDU_TYPE_MECHANISM_NAME);
+        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME);
         // Len
         bb_setUInt8(data, 7);
         // OBJECT IDENTIFIER
@@ -71,22 +67,25 @@ int apdu_getAuthenticationString(
         {
             if (settings->password.size != 0)
             {
-                callingAuthenticationValue = settings->password;
+                callingAuthenticationValue = &settings->password;
             }
         }
         else
         {
-            callingAuthenticationValue = settings->ctoSChallenge;
+            callingAuthenticationValue = &settings->ctoSChallenge;
         }
         // 0xAC
         bb_setUInt8(data, BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AUTHENTICATION_VALUE);
         // Len
-        bb_setUInt8(data, (unsigned char)(2 + callingAuthenticationValue.size));
+        bb_setUInt8(data, (unsigned char)(2 + bb_size(callingAuthenticationValue)));
         // Add authentication information.
         bb_setUInt8(data, BER_TYPE_CONTEXT);
         // Len.
-        bb_setUInt8(data, (unsigned char)callingAuthenticationValue.size);
-        bb_set2(data, &callingAuthenticationValue, 0, callingAuthenticationValue.size);
+        bb_setUInt8(data, (unsigned char)bb_size(callingAuthenticationValue));
+        if (callingAuthenticationValue != NULL)
+        {
+            bb_set(data, callingAuthenticationValue->data, bb_size(callingAuthenticationValue));
+        }
     }
     return 0;
 }
@@ -134,7 +133,7 @@ int apdu_generateApplicationContextName(
     bb_setUInt8(data, 0x07);
 #ifndef DLMS_IGNORE_HIGH_GMAC
     ciphered = isCiphered(&settings->cipher);
-#else 
+#else
     ciphered = 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
     bb_setUInt8(data, 0x60);
@@ -298,6 +297,7 @@ int apdu_generateUserInformation(
 #ifndef DLMS_IGNORE_HIGH_GMAC
     else
     {
+        unsigned char cmd = DLMS_COMMAND_GLO_INITIATE_REQUEST;
         gxByteBuffer tmp, crypted;
         bb_init(&tmp);
         if ((ret = apdu_getInitiateRequest(settings, &tmp)) != 0)
@@ -305,13 +305,24 @@ int apdu_generateUserInformation(
             bb_clear(&tmp);
             return ret;
         }
+        if ((settings->proposedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
+        {
+            if (bb_size(settings->cipher.dedicatedKey) == 0)
+            {
+                cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
+            }
+        }
         bb_init(&crypted);
         ret = cip_encrypt(
             &settings->cipher,
             settings->cipher.security,
             DLMS_COUNT_TYPE_PACKET,
             settings->cipher.invocationCounter,
-            DLMS_COMMAND_GLO_INITIATE_REQUEST,
+            cmd,
             &settings->cipher.systemTitle,
             &settings->cipher.blockCipherKey,
             &tmp,
@@ -375,7 +386,9 @@ int apdu_parseUserInformation(
     }
 #ifndef DLMS_IGNORE_HIGH_GMAC
     if (tag == DLMS_COMMAND_GLO_INITIATE_RESPONSE ||
-        tag == DLMS_COMMAND_GLO_INITIATE_REQUEST)
+        tag == DLMS_COMMAND_GLO_INITIATE_REQUEST ||
+        tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
+        tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
     {
         data->position = (data->position - 1);
         if ((ret = cip_decrypt(&settings->cipher,
@@ -933,14 +946,31 @@ int apdu_getUserInformation(
     if (isCiphered(&settings->cipher))
     {
         gxByteBuffer tmp;
+        unsigned char cmd;
+        if ((settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
+        {
+            if (bb_size(settings->cipher.dedicatedKey) != 0)
+            {
+                cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
+            }
+            else
+            {
+                cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
+            }
+        }
+        else
+        {
+            cmd = DLMS_COMMAND_GLO_INITIATE_RESPONSE;
+        }
         bb_init(&tmp);
         bb_set2(&tmp, data, data->position, data->size - data->position);
         bb_clear(data);
+
         ret = cip_encrypt(&settings->cipher,
             settings->cipher.security,
             DLMS_COUNT_TYPE_PACKET,
             settings->cipher.invocationCounter,
-            DLMS_COMMAND_GLO_INITIATE_RESPONSE,
+            cmd,
             &settings->cipher.systemTitle,
             &settings->cipher.blockCipherKey,
             &tmp,

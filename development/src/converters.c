@@ -1727,35 +1727,43 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
     return 0;
 }
 #endif //DLMS_IGNORE_PPP_SETUP
-#ifndef DLMS_IGNORE_PROFILE_GENERIC
-int obj_ProfileGenericToString(gxProfileGeneric* object, char** buff)
+
+int obj_CaptureObjectsToString(gxByteBuffer* ba, gxArray* objects)
 {
     gxKey *kv;
-    //gxObject *obj;
-    objectArray objects;
     int ret, pos;
+    objectArray tmp;
+    oa_init(&tmp);
+    oa_capacity(&tmp, objects->size);
+    for (pos = 0; pos != objects->size; ++pos)
+    {
+        ret = arr_getByIndex(objects, pos, (void**)&kv);
+        if (ret != 0)
+        {
+            return ret;
+        }
+        oa_push(&tmp, (gxObject*)kv->key);
+    }
+    ret = obj_objectsToString(ba, &tmp);
+    if (ret != 0)
+    {
+        return ret;
+    }
+    oa_empty(&tmp);
+    return 0;
+}
+
+#ifndef DLMS_IGNORE_PROFILE_GENERIC
+
+int obj_ProfileGenericToString(gxProfileGeneric* object, char** buff)
+{
+    int ret;
     gxByteBuffer ba;
     bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value: [\r\n");
     obj_rowsToString(&ba, &object->buffer);
     bb_addString(&ba, "]\r\nIndex: 3 Value: [");
-    oa_init(&objects);
-    oa_capacity(&objects, object->captureObjects.size);
-    for (pos = 0; pos != object->captureObjects.size; ++pos)
-    {
-        ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv);
-        if (ret != 0)
-        {
-            return ret;
-        }
-        oa_push(&objects, (gxObject*)kv->key);
-    }
-    ret = obj_objectsToString(&ba, &objects);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    oa_empty(&objects);
+    obj_CaptureObjectsToString(&ba, &object->captureObjects);
     bb_addString(&ba, "]\r\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->capturePeriod);
     bb_addString(&ba, "\r\nIndex: 5 Value: ");
@@ -1874,7 +1882,7 @@ int obj_chargeToString(gxCharge* object, char** buff)
     bb_addString(&ba, "\r\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->priority);
     bb_addString(&ba, "\r\nIndex: 5 Value: ");
-    //TODO: 
+    //TODO:
 //    bb_addIntAsString(&ba, object->unitChargeActive);
     bb_addString(&ba, "\r\nIndex: 6 Value: ");
     //  bb_addIntAsString(&ba, object->unitChargePassive);
@@ -1963,8 +1971,34 @@ int obj_GsmDiagnosticToString(gxGsmDiagnostic* object, char** buff)
     return 0;
 }
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
+
+#ifndef DLMS_IGNORE_COMPACT_DATA
+int obj_CompactDataToString(gxCompactData* object, char** buff)
+{
+    gxByteBuffer ba;
+    char* tmp;
+    bb_init(&ba);
+    bb_addString(&ba, "Index: 2 Value:");
+    tmp = bb_toHexString(&object->buffer);
+    bb_addString(&ba, tmp);
+    gxfree(tmp);
+    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    obj_CaptureObjectsToString(&ba, &object->captureObjects);
+    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addIntAsString(&ba, object->templateId);
+    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    tmp = bb_toHexString(&object->templateDescription);
+    bb_addString(&ba, tmp);
+    gxfree(tmp);
+    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addIntAsString(&ba, object->captureMethod);
+    *buff = bb_toString(&ba);
+    bb_clear(&ba);
+    return 0;
+}
+#endif //DLMS_IGNORE_COMPACT_DATA
 #ifdef DLMS_ITALIAN_STANDARD
-int cosem_TariffPlanToString(gxTariffPlan* object, char** buff)
+int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
 {
     int pos, ret;
     gxAdjacentCell *it;
@@ -2266,9 +2300,14 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_GsmDiagnosticToString((gxGsmDiagnostic*)object, buff);
         break;
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
+#ifndef DLMS_IGNORE_COMPACT_DATA
+    case DLMS_OBJECT_TYPE_COMPACT_DATA:
+        ret = obj_CompactDataToString((gxCompactData*)object, buff);
+        break;
+#endif //DLMS_IGNORE_COMPACT_DATA
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
-        ret = cosem_TariffPlanToString((gxTariffPlan*)object, buff);
+        ret = obj_TariffPlanToString((gxTariffPlan*)object, buff);
         break;
 #endif //DLMS_ITALIAN_STANDARD
     default: //Unknown type.

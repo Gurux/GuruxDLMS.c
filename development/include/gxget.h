@@ -170,7 +170,7 @@ extern "C" {
 
     int cosem_getGsmDiagnostic(
         gxValueEventArg *e);
-  
+
 #ifdef  __cplusplus
 }
 #endif

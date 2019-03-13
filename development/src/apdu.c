@@ -1082,7 +1082,7 @@ int apdu_parsePDU(
     dlmsSettings* settings,
     gxByteBuffer* buff,
     DLMS_ASSOCIATION_RESULT* result,
-    DLMS_SOURCE_DIAGNOSTIC* diagnostic)
+    unsigned char* diagnostic)
 {
     unsigned char ciphered;
     unsigned short size;
@@ -1425,8 +1425,8 @@ int apdu_parsePDU(
         case BER_TYPE_CONTEXT: //0x80
             if ((ret = apdu_parseProtocolVersion(settings, buff)) != 0)
             {
-                *diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
-                *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                *diagnostic = DLMS_ACSE_SERVICE_PROVIDER_NO_COMMON_ACSE_VERSION;
+                *result = DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED;
                 return 0;
             }
             break;

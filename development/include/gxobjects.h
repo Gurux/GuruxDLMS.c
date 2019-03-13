@@ -313,12 +313,12 @@ extern "C" {
     typedef struct
     {
 #ifdef DLMS_ITALIAN_STANDARD
-        unsigned short objectType; //DLMS_OBJECT_TYPE 
+        unsigned short objectType; //DLMS_OBJECT_TYPE
 #else
-        unsigned char objectType; //DLMS_OBJECT_TYPE 
+        unsigned char objectType; //DLMS_OBJECT_TYPE
 #endif //DLMS_ITALIAN_STANDARD
         unsigned int version : 7;
-        //Is this component free when collection is clear. 
+        //Is this component free when collection is clear.
         unsigned int free : 1;
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         unsigned short shortName;
@@ -2046,7 +2046,7 @@ extern "C" {
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
-        gxArray creditChargeConfigurations;//List<GXCreditChargeConfiguration> 
+        gxArray creditChargeConfigurations;//List<GXCreditChargeConfiguration>
 
         /**
         * Token gateway configurations.<br/>
@@ -2286,6 +2286,28 @@ extern "C" {
     } gxZigBeeNetworkControl;
 
 #endif //DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
+
+#ifndef DLMS_IGNORE_COMPACT_DATA
+
+    /**
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCompactData
+    */
+    typedef struct
+    {
+        /**
+        * Base class where class is derived.
+        */
+        gxObject base;
+
+        gxByteBuffer buffer;
+        gxArray captureObjects; //gxkey<gxObject*, gxCaptureObject*>
+        unsigned char templateId;
+        gxByteBuffer templateDescription;
+        DLMS_CAPTURE_METHOD captureMethod;
+    } gxCompactData;
+#endif //DLMS_IGNORE_COMPACT_DATA
 
 #ifdef DLMS_ITALIAN_STANDARD
 

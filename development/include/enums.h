@@ -81,6 +81,13 @@ extern "C" {
         DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED = 14
     } DLMS_SOURCE_DIAGNOSTIC;
 
+    typedef enum
+    {
+        DLMS_ACSE_SERVICE_PROVIDER_NULL = 0,
+        DLMS_ACSE_SERVICE_PROVIDER_NO_REASON_GIVEN = 1,
+        DLMS_ACSE_SERVICE_PROVIDER_NO_COMMON_ACSE_VERSION = 2
+    }DLMS_ACSE_SERVICE_PROVIDER;
+
     // Defines whether or not the device has been assigned an address
     // since last power up of the device.
     typedef enum
@@ -245,6 +252,7 @@ extern "C" {
         DLMS_OBJECT_TYPE_SMTP_SETUP = 46,
         DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC = 47,
         DLMS_OBJECT_TYPE_REGISTER_TABLE = 61,
+        DLMS_OBJECT_TYPE_COMPACT_DATA = 62,
         DLMS_OBJECT_TYPE_STATUS_MAPPING = 63,
         DLMS_OBJECT_TYPE_SECURITY_SETUP = 64,
         DLMS_OBJECT_TYPE_DISCONNECT_CONTROL = 70,
@@ -2407,6 +2415,14 @@ extern "C" {
         //Connection is made for DLMS level.
         DLMS_CONNECTION_STATE_DLMS = 2
     }DLMS_CONNECTION_STATE;
+
+    typedef enum {
+        //Data is captured with Capture-method.
+        DLMS_CAPTURE_METHOD_INVOKE,
+        //Data is captured upon reading.
+        DLMS_CAPTURE_METHOD_IMPLICIT
+    }DLMS_CAPTURE_METHOD;
+
 #ifdef  __cplusplus
 }
 #endif

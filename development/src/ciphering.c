@@ -479,23 +479,6 @@ static void cip_getGHash(
         cip_multiplyH(y, h, tmp);
         memcpy(y, tmp, 16);
     }
-    /*
-    unsigned short i;
-    unsigned char cnt;
-    unsigned char tmp[16];
-    for (i = 0; i < xlen; i += 16)
-    {
-        memset(tmp, 0, sizeof(tmp));
-        cnt = xlen - i;
-        if (cnt > 16)
-        {
-            cnt = 16;
-        }
-        memcpy(tmp, x + i, cnt);
-        cip_xor(y, tmp);
-        cip_multiplyH(y, h, tmp);
-        memcpy(y, tmp, 16);
-    }*/
 }
 
 static void cip_init_j0(

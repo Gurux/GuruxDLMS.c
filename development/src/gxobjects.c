@@ -838,6 +838,13 @@ void obj_clear(gxObject* object)
             arr_clear(&((gxGsmDiagnostic*)object)->adjacentCells);
             break;
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
+#ifndef DLMS_IGNORE_COMPACT_DATA
+        case DLMS_OBJECT_TYPE_COMPACT_DATA:
+            bb_clear(&((gxCompactData*)object)->buffer);
+            obj_clearProfileGenericCaptureObjects(&((gxCompactData*)object)->captureObjects);
+            bb_clear(&((gxCompactData*)object)->templateDescription);
+            break;
+#endif //DLMS_IGNORE_COMPACT_DATA
 #ifdef DLMS_ITALIAN_STANDARD
         case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         {
@@ -1064,6 +1071,8 @@ unsigned char obj_attributeCount(gxObject* object)
     case DLMS_OBJECT_TYPE_CHARGE:
         return 13;
     case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
+        return 6;
+    case DLMS_OBJECT_TYPE_COMPACT_DATA:
         return 6;
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
@@ -1370,6 +1379,8 @@ unsigned char obj_methodCount(gxObject* object)
         return 11;
     case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
         return 0;
+    case DLMS_OBJECT_TYPE_COMPACT_DATA:
+        return 2;
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         return 0;

@@ -1797,7 +1797,7 @@ int cosem_getImageTransfer(
 }
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
 
-#ifndef DLMS_IGNORE_PROFILE_GENERIC
+#if !DLMS_IGNORE_PROFILE_GENERIC && !DLMS_IGNORE_CONPACT_DATA
 int getColumns(
     dlmsSettings* settings,
     gxArray *list,
@@ -1984,9 +1984,13 @@ int cosem_getColumns(
             if (start != 1 || count != 0)
             {
                 addAllColumns = 0;
-                for (pos = 0; pos != count; ++pos)
+                if (count == 0)
                 {
-                    if ((ret = arr_getByIndex(captureObjects, start + pos - 1, (void**)&k)) != 0 ||
+                    count = captureObjects->size - start;
+                }
+                for (pos = start - 1; pos != count; ++pos)
+                {
+                    if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k)) != 0 ||
                         (ret = arr_push(columns, k)) != 0)
                     {
                         return ret;
@@ -2031,9 +2035,9 @@ int cosem_getRow(
     {
         return ret;
     }
-    if (captureObjects == NULL || captureObjects->size == 0)
+    if (columns->size != 0)
     {
-        if ((ret = hlp_setObjectCount(row->size, data)) != 0)
+        if ((ret = hlp_setObjectCount(columns->size, data)) != 0)
         {
             return ret;
         }
@@ -2045,8 +2049,17 @@ int cosem_getRow(
             return ret;
         }
     }
+    int colPos = 0;
     for (pos = 0; pos != row->size; ++pos)
     {
+        if (columns->size != 0)
+        {
+            if (captureObjects->data[pos] != columns->data[colPos])
+            {
+                continue;
+            }
+            ++colPos;
+        }
         if ((ret = va_getByIndex(row, pos, &col)) != 0)
         {
             return ret;
@@ -2074,9 +2087,9 @@ int profileGeneric_getData(
     gxValueEventArg *e,
     gxArray *table,
     gxArray *captureObjects,
-    gxArray* columns,
     gxByteBuffer* data)
 {
+    gxArray columns;
     unsigned short pduSize;
     int ret = 0, pos;
     //Add count only for first time.
@@ -2103,10 +2116,18 @@ int profileGeneric_getData(
             }
         }
     }
+    arr_init(&columns);
+    if (e->selector == 2)
+    {
+        if ((ret = cosem_getColumns(captureObjects, e->selector, &e->parameters, &columns)) != 0)
+        {
+            return ret;
+        }
+    }
     for (pos = 0; pos != table->size; ++pos)
     {
         pduSize = (unsigned short)data->size;
-        if ((ret = cosem_getRow(table, pos, captureObjects, columns, data)) != 0)
+        if ((ret = cosem_getRow(table, pos, captureObjects, &columns, data)) != 0)
         {
             break;
         }
@@ -2118,6 +2139,7 @@ int profileGeneric_getData(
         }
         ++settings->index;
     }
+    arr_empty(&columns);
     if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
     {
         data->size = pduSize;
@@ -2145,7 +2167,7 @@ int getProfileGenericData(
     //If all data is read.
     if (e->selector == 0 || e->parameters.vt == DLMS_DATA_TYPE_NONE || e->transactionEndIndex != 0)
     {
-        return profileGeneric_getData(settings, e, &object->buffer, NULL, &object->captureObjects, reply);
+        return profileGeneric_getData(settings, e, &object->buffer, &object->captureObjects, reply);
     }
     arr_init(&captureObjects);
     if ((ret = cosem_getColumns(&object->captureObjects, e->selector, &e->parameters, &captureObjects)) == 0)
@@ -4174,6 +4196,54 @@ int cosem_getAccount(
 }
 #endif //DLMS_IGNORE_ACCOUNT
 
+#ifndef DLMS_IGNORE_COMPACT_DATA
+int cosem_getCompactData(
+    dlmsSettings* settings,
+    gxValueEventArg *e)
+{
+    gxByteBuffer* data;
+    gxCompactData* object = (gxCompactData*)e->target;
+    int ret;
+    switch (e->index)
+    {
+    case 2:
+        if ((ret = cosem_getByteBuffer(&e->value)) != 0)
+        {
+            return ret;
+        }
+        data = e->value.byteArr;
+        bb_set(data, object->buffer.data, object->buffer.size);
+        break;
+    case 3:
+        if ((ret = cosem_getByteBuffer(&e->value)) != 0)
+        {
+            return ret;
+        }
+        data = e->value.byteArr;
+        e->byteArray = 1;
+        ret = getColumns(settings, &object->captureObjects, data, e);
+        break;
+    case 4:
+        ret = var_setUInt8(&e->value, object->templateId);
+        break;
+    case 5:
+        if ((ret = cosem_getByteBuffer(&e->value)) != 0)
+        {
+            return ret;
+        }
+        gxByteBuffer *data = e->value.byteArr;
+        bb_set(data, object->templateDescription.data, object->templateDescription.size);
+        break;
+    case 6:
+        ret = var_setEnum(&e->value, object->captureMethod);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_COMPACT_DATA
+
 int cosem_getValue(
     dlmsSettings* settings,
     gxValueEventArg *e)
@@ -4464,6 +4534,11 @@ int cosem_getValue(
         ret = cosem_getGsmDiagnostic(e);
         break;
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
+#ifndef DLMS_IGNORE_COMPACT_DATA
+    case DLMS_OBJECT_TYPE_COMPACT_DATA:
+        ret = cosem_getCompactData(settings, e);
+        break;
+#endif //DLMS_IGNORE_COMPACT_DATA
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = cosem_getTariffPlan(e);

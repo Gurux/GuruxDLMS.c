@@ -4115,16 +4115,99 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
     return DLMS_ERROR_CODE_OK;
 }
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
+int setCaptureObjects(
+    dlmsSettings* settings,
+    gxArray* objects,
+    dlmsVARIANT *value)
+{
+    DLMS_OBJECT_TYPE type;
+    dlmsVARIANT *tmp, *tmp2;
+    gxObject *obj;
+    gxCaptureObject *co;
+    int pos, ret;
+    ret = obj_clearProfileGenericCaptureObjects(objects);
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+        return ret;
+    }
+    arr_capacity(objects, value->Arr->size);
+    if (value->Arr != NULL)
+    {
+        for (pos = 0; pos != value->Arr->size; ++pos)
+        {
+            ret = va_get(value->Arr, &tmp);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            if (tmp->Arr->size != 4)
+            {
+                //Invalid structure format.
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            ret = va_get(tmp->Arr, &tmp2);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            type = (DLMS_OBJECT_TYPE)var_toInteger(tmp2);
+            //Get LN.
+            ret = va_get(tmp->Arr, &tmp2);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            ret = oa_findByLN(&settings->objects, type, tmp2->byteArr->data, &obj);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            if (obj == NULL)
+            {
+                ret = cosem_createObject(type, &obj);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    return ret;
+                }
+                ret = cosem_setLogicalName(obj, tmp2->byteArr->data);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    return ret;
+                }
+            }
+            co = (gxCaptureObject*)gxmalloc(sizeof(gxCaptureObject));
+            ret = va_get(tmp->Arr, &tmp2);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            co->attributeIndex = (unsigned char)var_toInteger(tmp2);
+            ret = va_get(tmp->Arr, &tmp2);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            co->dataIndex = (unsigned char)var_toInteger(tmp2);
+            arr_push(objects, key_init(obj, co));
+        }
+    }
+    //Trim array.
+    arr_capacity(objects, objects->size);
+    return 0;
+}
+
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
-int cosem_setProfileGeneric(dlmsSettings* settings, gxProfileGeneric* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setProfileGeneric(
+    dlmsSettings* settings,
+    gxProfileGeneric* object,
+    unsigned char index,
+    dlmsVARIANT *value)
 {
     static unsigned char UNIX_TIME[6] = { 0, 0, 1, 1, 0, 255 };
 
     int ret, pos, pos2;
     DLMS_OBJECT_TYPE type;
-    dlmsVARIANT *tmp, *tmp2, *row, *data;
-    gxObject *obj;
-    gxCaptureObject *co;
+    dlmsVARIANT *tmp, *row, *data;
     variantArray *va;
     if (index == 2)
     {
@@ -4207,79 +4290,13 @@ int cosem_setProfileGeneric(dlmsSettings* settings, gxProfileGeneric* object, un
     }
     else if (index == 3)
     {
-        ret = obj_clearProfileGenericCaptureObjects(&object->captureObjects);
-        if (ret != DLMS_ERROR_CODE_OK)
-        {
-            return ret;
-        }
+        object->entriesInUse = 0;
         ret = obj_clearProfileGenericBuffer(&object->buffer);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
-        object->entriesInUse = 0;
-        if (value->Arr != NULL)
-        {
-            for (pos = 0; pos != value->Arr->size; ++pos)
-            {
-                ret = va_get(value->Arr, &tmp);
-                if (ret != DLMS_ERROR_CODE_OK)
-                {
-                    return ret;
-                }
-                if (tmp->Arr->size != 4)
-                {
-                    //Invalid structure format.
-                    return DLMS_ERROR_CODE_INVALID_PARAMETER;
-                }
-                ret = va_get(tmp->Arr, &tmp2);
-                if (ret != DLMS_ERROR_CODE_OK)
-                {
-                    return ret;
-                }
-                type = (DLMS_OBJECT_TYPE)var_toInteger(tmp2);
-                //Get LN.
-                ret = va_get(tmp->Arr, &tmp2);
-                if (ret != DLMS_ERROR_CODE_OK)
-                {
-                    return ret;
-                }
-                ret = oa_findByLN(&settings->objects, type, tmp2->byteArr->data, &obj);
-                if (ret != DLMS_ERROR_CODE_OK)
-                {
-                    return ret;
-                }
-                if (obj == NULL)
-                {
-                    ret = cosem_createObject(type, &obj);
-                    if (ret != DLMS_ERROR_CODE_OK)
-                    {
-                        return ret;
-                    }
-                    ret = cosem_setLogicalName(obj, tmp2->byteArr->data);
-                    if (ret != DLMS_ERROR_CODE_OK)
-                    {
-                        return ret;
-                    }
-                }
-                co = (gxCaptureObject*)gxmalloc(sizeof(gxCaptureObject));
-                ret = va_get(tmp->Arr, &tmp2);
-                if (ret != DLMS_ERROR_CODE_OK)
-                {
-                    return ret;
-                }
-                co->attributeIndex = (unsigned char)var_toInteger(tmp2);
-                ret = va_get(tmp->Arr, &tmp2);
-                if (ret != DLMS_ERROR_CODE_OK)
-                {
-                    return ret;
-                }
-                co->dataIndex = (unsigned char)var_toInteger(tmp2);
-                arr_push(&object->captureObjects, key_init(obj, co));
-            }
-        }
-        //Trim array.
-        arr_capacity(&object->captureObjects, object->captureObjects.size);
+        ret = setCaptureObjects(settings, &object->captureObjects, value);
     }
     else if (index == 4)
     {
@@ -4580,8 +4597,47 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
 }
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 
-#ifdef DLMS_ITALIAN_STANDARD
+#ifndef DLMS_IGNORE_COMPACT_DATA
+int cosem_setCompactData(
+    dlmsSettings* settings,
+    gxCompactData* object,
+    unsigned char index,
+    dlmsVARIANT *value)
+{
+    int ret = DLMS_ERROR_CODE_OK;
+    switch (index)
+    {
+    case 2:
+        bb_clear(&object->buffer);
+        if (value->byteArr != NULL)
+        {
+            ret = bb_set(&object->buffer, value->byteArr->data, value->byteArr->size);
+        }
+        break;
+    case 3:
+        ret = setCaptureObjects(settings, &object->captureObjects, value);
+        break;
+    case 4:
+        object->templateId = var_toInteger(value);
+        break;
+    case 5:
+        bb_clear(&object->templateDescription);
+        if (value->byteArr != NULL)
+        {
+            ret = bb_set(&object->templateDescription, value->byteArr->data, value->byteArr->size);
+        }
+        break;
+    case 6:
+        object->captureMethod = (DLMS_CAPTURE_METHOD)var_toInteger(value);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_COMPACT_DATA
 
+#ifdef DLMS_ITALIAN_STANDARD
 int updateInterval(gxInterval* interval, gxByteBuffer* value)
 {
     int ret;
@@ -5032,6 +5088,11 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg *e)
         ret = cosem_setGsmDiagnostic((gxGsmDiagnostic*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
+#ifndef DLMS_IGNORE_COMPACT_DATA
+    case DLMS_OBJECT_TYPE_COMPACT_DATA:
+        ret = cosem_setCompactData(settings, (gxCompactData*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_COMPACT_DATA
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = cosem_setTariffPlan((gxTariffPlan*)e->target, e->index, &e->value);

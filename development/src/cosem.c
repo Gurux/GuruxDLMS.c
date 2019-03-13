@@ -64,22 +64,22 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxRegister);
         break;
 #endif //DLMS_IGNORE_REGISTER
-#ifndef DLMS_IGNORE_CLOCK    
+#ifndef DLMS_IGNORE_CLOCK
     case DLMS_OBJECT_TYPE_CLOCK:
         size = sizeof(gxClock);
         break;
 #endif //DLMS_IGNORE_CLOCK
-#ifndef DLMS_IGNORE_ACTION_SCHEDULE    
+#ifndef DLMS_IGNORE_ACTION_SCHEDULE
     case DLMS_OBJECT_TYPE_ACTION_SCHEDULE:
         size = sizeof(gxActionSchedule);
         break;
 #endif //DLMS_IGNORE_ACTION_SCHEDULE
-#ifndef DLMS_IGNORE_ACTIVITY_CALENDAR    
+#ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
     case DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR:
         size = sizeof(gxActivityCalendar);
         break;
 #endif //DLMS_IGNORE_ACTIVITY_CALENDAR
-#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME    
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
     case DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME:
         size = sizeof(gxAssociationLogicalName);
         break;
@@ -89,7 +89,7 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxAssociationShortName);
         break;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-#ifndef DLMS_IGNORE_AUTO_ANSWER    
+#ifndef DLMS_IGNORE_AUTO_ANSWER
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
         size = sizeof(gxAutoAnswer);
         break;
@@ -99,17 +99,17 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxAutoConnect);
         break;
 #endif //DLMS_IGNORE_AUTO_CONNECT
-#ifndef DLMS_IGNORE_DEMAND_REGISTER    
+#ifndef DLMS_IGNORE_DEMAND_REGISTER
     case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
         size = sizeof(gxDemandRegister);
         break;
 #endif //DLMS_IGNORE_DEMAND_REGISTER
-#ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP    
+#ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP
     case DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP:
         size = sizeof(gxMacAddressSetup);
         break;
 #endif //DLMS_IGNORE_MAC_ADDRESS_SETUP
-#ifndef DLMS_IGNORE_EXTENDED_REGISTER    
+#ifndef DLMS_IGNORE_EXTENDED_REGISTER
     case DLMS_OBJECT_TYPE_EXTENDED_REGISTER:
         size = sizeof(gxExtendedRegister);
         break;
@@ -119,52 +119,52 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxGPRSSetup);
         break;
 #endif //DLMS_IGNORE_GPRS_SETUP
-#ifndef DLMS_IGNORE_SECURITY_SETUP    
+#ifndef DLMS_IGNORE_SECURITY_SETUP
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
         size = sizeof(gxSecuritySetup);
         break;
 #endif //DLMS_IGNORE_SECURITY_SETUP
-#ifndef DLMS_IGNORE_IEC_HDLC_SETUP    
+#ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
         size = sizeof(gxIecHdlcSetup);
         break;
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
-#ifndef DLMS_IGNORE_IEC_LOCAL_PORT_SETUP    
+#ifndef DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
     case DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP:
         size = sizeof(gxLocalPortSetup);
         break;
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
-#ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP    
+#ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
         size = sizeof(gxIecTwistedPairSetup);
         break;
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
-#ifndef DLMS_IGNORE_IP4_SETUP    
+#ifndef DLMS_IGNORE_IP4_SETUP
     case DLMS_OBJECT_TYPE_IP4_SETUP:
         size = sizeof(gxIp4Setup);
         break;
 #endif //DLMS_IGNORE_IP4_SETUP
-#ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP    
+#ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         size = sizeof(gxMbusSlavePortSetup);
         break;
 #endif //DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
-#ifndef DLMS_IGNORE_IMAGE_TRANSFER    
+#ifndef DLMS_IGNORE_IMAGE_TRANSFER
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
         size = sizeof(gxImageTransfer);
         break;
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
-#ifndef DLMS_IGNORE_DISCONNECT_CONTROL    
+#ifndef DLMS_IGNORE_DISCONNECT_CONTROL
     case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
         size = sizeof(gxDisconnectControl);
         break;
 #endif //DLMS_IGNORE_DISCONNECT_CONTROL
-#ifndef DLMS_IGNORE_LIMITER    
+#ifndef DLMS_IGNORE_LIMITER
     case DLMS_OBJECT_TYPE_LIMITER:
         size = sizeof(gxLimiter);
         break;
 #endif //DLMS_IGNORE_LIMITER
-#ifndef DLMS_IGNORE_MBUS_CLIENT    
+#ifndef DLMS_IGNORE_MBUS_CLIENT
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
         size = sizeof(gxMBusClient);
         break;
@@ -174,136 +174,141 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxModemConfiguration);
         break;
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
-#ifndef DLMS_IGNORE_PPP_SETUP    
+#ifndef DLMS_IGNORE_PPP_SETUP
     case DLMS_OBJECT_TYPE_PPP_SETUP:
         size = sizeof(gxPppSetup);
         break;
 #endif //DLMS_IGNORE_PPP_SETUP
-#ifndef DLMS_IGNORE_PROFILE_GENERIC    
+#ifndef DLMS_IGNORE_PROFILE_GENERIC
     case DLMS_OBJECT_TYPE_PROFILE_GENERIC:
         size = sizeof(gxProfileGeneric);
         break;
 #endif //DLMS_IGNORE_PROFILE_GENERIC
-#ifndef DLMS_IGNORE_REGISTER_ACTIVATION    
+#ifndef DLMS_IGNORE_REGISTER_ACTIVATION
     case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
         size = sizeof(gxRegisterActivation);
         break;
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
-#ifndef DLMS_IGNORE_REGISTER_MONITOR    
+#ifndef DLMS_IGNORE_REGISTER_MONITOR
     case DLMS_OBJECT_TYPE_REGISTER_MONITOR:
         size = sizeof(gxRegisterMonitor);
         break;
 #endif //DLMS_IGNORE_REGISTER_MONITOR
-#ifndef DLMS_IGNORE_REGISTER_TABLE    
+#ifndef DLMS_IGNORE_REGISTER_TABLE
     case DLMS_OBJECT_TYPE_REGISTER_TABLE:
         size = sizeof(gxRegisterTable);
         break;
 #endif //DLMS_IGNORE_REGISTER_TABLE
-#ifndef DLMS_IGNORE_ZIG_BEE_SAS_STARTUP    
+#ifndef DLMS_IGNORE_ZIG_BEE_SAS_STARTUP
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_STARTUP:
         size = sizeof(gxZigBeeSasStartup);
         break;
 #endif //DLMS_IGNORE_ZIG_BEE_SAS_STARTUP
-#ifndef DLMS_IGNORE_ZIG_BEE_SAS_JOIN    
+#ifndef DLMS_IGNORE_ZIG_BEE_SAS_JOIN
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN:
         size = sizeof(gxZigBeeSasJoin);
         break;
 #endif //ZIG_BEE_SAS_JOIN
-#ifndef DLMS_IGNORE_ZIG_BEE_SAS_APS_FRAGMENTATION    
+#ifndef DLMS_IGNORE_ZIG_BEE_SAS_APS_FRAGMENTATION
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION:
         size = sizeof(gxZigBeeSasApsFragmentation);
         break;
 #endif //DLMS_IGNORE_ZIG_BEE_SAS_APS_FRAGMENTATION
-#ifndef DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL    
+#ifndef DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
     case DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL:
         size = sizeof(gxZigBeeNetworkControl);
         break;
 #endif //DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
-#ifndef DLMS_IGNORE_SAP_ASSIGNMENT    
+#ifndef DLMS_IGNORE_SAP_ASSIGNMENT
     case DLMS_OBJECT_TYPE_SAP_ASSIGNMENT:
         size = sizeof(gxSapAssignment);
         break;
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
-#ifndef DLMS_IGNORE_SCHEDULE    
+#ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
         size = sizeof(gxSchedule);
         break;
 #endif //DLMS_IGNORE_SCHEDULE
-#ifndef DLMS_IGNORE_SCRIPT_TABLE    
+#ifndef DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SCRIPT_TABLE:
         size = sizeof(gxScriptTable);
         break;
 #endif //DLMS_IGNORE_SCRIPT_TABLE
-#ifndef DLMS_IGNORE_SMTP_SETUP    
+#ifndef DLMS_IGNORE_SMTP_SETUP
     case DLMS_OBJECT_TYPE_SMTP_SETUP:
         size = sizeof(gxSmtpSetup);
         break;
 #endif //DLMS_IGNORE_SMTP_SETUP
-#ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE    
+#ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
     case DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE:
         size = sizeof(gxSpecialDaysTable);
         break;
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
-#ifndef DLMS_IGNORE_STATUS_MAPPING    
+#ifndef DLMS_IGNORE_STATUS_MAPPING
     case DLMS_OBJECT_TYPE_STATUS_MAPPING:
         size = sizeof(gxStatusMapping);
         break;
 #endif //DLMS_IGNORE_STATUS_MAPPING
-#ifndef DLMS_IGNORE_TCP_UDP_SETUP    
+#ifndef DLMS_IGNORE_TCP_UDP_SETUP
     case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
         size = sizeof(gxTcpUdpSetup);
         break;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
-#ifndef DLMS_IGNORE_UTILITY_TABLES    
+#ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         size = sizeof(gxUtilityTables);
         break;
 #endif //DLMS_IGNORE_UTILITY_TABLES
-#ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP    
+#ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
         size = sizeof(gxMBusMasterPortSetup);
         break;
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
-#ifndef DLMS_IGNORE_MESSAGE_HANDLER    
+#ifndef DLMS_IGNORE_MESSAGE_HANDLER
     case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
         size = sizeof(gxMessageHandler);
         break;
 #endif //DLMS_IGNORE_MESSAGE_HANDLER
-#ifndef DLMS_IGNORE_PUSH_SETUP    
+#ifndef DLMS_IGNORE_PUSH_SETUP
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
         size = sizeof(gxPushSetup);
         break;
 #endif //DLMS_IGNORE_PUSH_SETUP
-#ifndef DLMS_IGNORE_DATA_PROTECTION    
+#ifndef DLMS_IGNORE_DATA_PROTECTION
     case DLMS_OBJECT_TYPE_DATA_PROTECTION:
         size = sizeof(gxDataProtection);
         break;
 #endif //DLMS_IGNORE_DATA_PROTECTION
-#ifndef DLMS_IGNORE_ACCOUNT    
+#ifndef DLMS_IGNORE_ACCOUNT
     case DLMS_OBJECT_TYPE_ACCOUNT:
         size = sizeof(gxAccount);
         break;
 #endif //DLMS_IGNORE_ACCOUNT
-#ifndef DLMS_IGNORE_CREDIT    
+#ifndef DLMS_IGNORE_CREDIT
     case DLMS_OBJECT_TYPE_CREDIT:
         size = sizeof(gxCredit);
         break;
 #endif //DLMS_IGNORE_CREDIT
-#ifndef DLMS_IGNORE_CHARGE    
+#ifndef DLMS_IGNORE_CHARGE
     case DLMS_OBJECT_TYPE_CHARGE:
         size = sizeof(gxCharge);
         break;
 #endif //DLMS_IGNORE_CHARGE
-#ifndef DLMS_IGNORE_TOKEN_GATEWAY    
+#ifndef DLMS_IGNORE_TOKEN_GATEWAY
     case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
         size = sizeof(gxTokenGateway);
         break;
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
-#ifndef DLMS_IGNORE_GSM_DIAGNOSTIC    
+#ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
     case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
         size = sizeof(gxGsmDiagnostic);
         break;
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
+#ifndef DLMS_IGNORE_COMPACT_DATA
+    case DLMS_OBJECT_TYPE_COMPACT_DATA:
+        size = sizeof(gxCompactData);
+        break;
+#endif //DLMS_IGNORE_COMPACT_DATA
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         size = sizeof(gxTariffPlan);

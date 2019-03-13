@@ -2407,12 +2407,18 @@ int svr_connected(
     {
         if (settings->base.connected == DLMS_CONNECTION_STATE_HDLC)
         {
-            bb_clear(settings->base.preEstablishedSystemTitle);
-            settings->base.preEstablishedSystemTitle = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
-            bb_init(settings->base.preEstablishedSystemTitle);
+            if (settings->base.preEstablishedSystemTitle != NULL)
+            {
+                bb_clear(settings->base.preEstablishedSystemTitle);
+            }
+            else
+            {
+                settings->base.preEstablishedSystemTitle = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
+                bb_init(settings->base.preEstablishedSystemTitle);
+            }
             bb_addString(settings->base.preEstablishedSystemTitle, "Gurux123");
             settings->base.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
-}
+        }
         else
         {
             //Return error if client can connect only using pre-established connnection.

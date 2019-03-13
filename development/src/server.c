@@ -306,7 +306,7 @@ int svr_HandleAarqRequest(
     int ret;
     gxByteBuffer error;
     DLMS_ASSOCIATION_RESULT result;
-    DLMS_SOURCE_DIAGNOSTIC diagnostic;
+    unsigned char diagnostic;
     // Reset settings for wrapper.
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
     {

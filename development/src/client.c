@@ -177,13 +177,13 @@ int cl_aarqRequest(
 int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
 {
     int ret;
-    DLMS_SOURCE_DIAGNOSTIC sd;
+    unsigned char sd;
     DLMS_ASSOCIATION_RESULT result;
     if ((ret = apdu_parsePDU(settings, reply, &result, &sd)) != 0)
     {
         return ret;
     }
-    settings->isAuthenticationRequired = sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
+    settings->isAuthenticationRequired = result == DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED && sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
     if (!settings->isAuthenticationRequired)
     {
         settings->connected |= DLMS_CONNECTION_STATE_DLMS;
@@ -753,6 +753,11 @@ int cl_read(
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 int cl_readRowsByEntry(dlmsSettings* settings, gxProfileGeneric* object, unsigned long index, unsigned long count, message* messages)
 {
+    return cl_readRowsByEntry2(settings, object, index, count, 1, 0, messages);
+}
+
+int cl_readRowsByEntry2(dlmsSettings* settings, gxProfileGeneric* object, unsigned long index, unsigned long count, unsigned short colStart, unsigned short colEnd, message* messages)
+{
     dlmsVARIANT tmp;
     int ret;
     gxByteBuffer data;
@@ -788,16 +793,15 @@ int cl_readRowsByEntry(dlmsSettings* settings, gxProfileGeneric* object, unsigne
         bb_clear(&data);
         return ret;
     }
-    //Read all columns.
-    var_setUInt16(&tmp, 1);
+    //Add columns.
+    var_setUInt16(&tmp, colStart);
     if ((ret = dlms_setData(&data, tmp.vt, &tmp)) != 0)
     {
         var_clear(&tmp);
         bb_clear(&data);
         return ret;
     }
-
-    var_setUInt16(&tmp, 0);
+    var_setUInt16(&tmp, colEnd);
     if ((ret = dlms_setData(&data, tmp.vt, &tmp)) != 0)
     {
         var_clear(&tmp);
@@ -805,7 +809,6 @@ int cl_readRowsByEntry(dlmsSettings* settings, gxProfileGeneric* object, unsigne
         return ret;
     }
     var_clear(&tmp);
-
     if (settings->useLogicalNameReferencing)
     {
         ret = cl_readLN(settings, object->base.logicalName, object->base.objectType, 2, &data, messages);

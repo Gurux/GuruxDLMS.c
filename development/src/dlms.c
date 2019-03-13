@@ -3339,6 +3339,42 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
     return ret;
 }
 
+int dlms_handleGeneralCiphering(
+    dlmsSettings* settings,
+    gxReplyData* data)
+{
+    unsigned char ch;
+    int ret;
+    // If all frames are read.
+    if ((data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
+    {
+        --data->data.position;
+        DLMS_SECURITY security;
+        if ((ret = cip_decrypt(&settings->cipher,
+            &settings->sourceSystemTitle,
+            &settings->cipher.blockCipherKey,
+            &data->data,
+            &security)) != 0)
+        {
+            return ret;
+        }
+        // Get command
+        if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
+        {
+            return ret;
+        }
+        data->command = DLMS_COMMAND_NONE;
+        if (security != DLMS_SECURITY_NONE)
+        {
+            if ((ret = dlms_getPdu(settings, data, 0)) != 0)
+            {
+                return ret;
+            }
+        }
+    }
+    return 0;
+}
+
 int dlms_getPdu(
     dlmsSettings* settings,
     gxReplyData* data,
@@ -3436,6 +3472,9 @@ int dlms_getPdu(
         case DLMS_COMMAND_GLO_GET_REQUEST:
         case DLMS_COMMAND_GLO_SET_REQUEST:
         case DLMS_COMMAND_GLO_METHOD_REQUEST:
+        case DLMS_COMMAND_DED_GET_REQUEST:
+        case DLMS_COMMAND_DED_SET_REQUEST:
+        case DLMS_COMMAND_DED_METHOD_REQUEST:
             ret = dlms_handledGloDedRequest(settings, data);
             // Server handles this.
             break;
@@ -3444,19 +3483,11 @@ int dlms_getPdu(
         case DLMS_COMMAND_GLO_GET_RESPONSE:
         case DLMS_COMMAND_GLO_SET_RESPONSE:
         case DLMS_COMMAND_GLO_METHOD_RESPONSE:
-            // If all frames are read.
-            ret = dlms_handledGloDedResponse(settings, data, index);
-            break;
-        case DLMS_COMMAND_DED_GET_REQUEST:
-        case DLMS_COMMAND_DED_SET_REQUEST:
-        case DLMS_COMMAND_DED_METHOD_REQUEST:
-            ret = dlms_handledGloDedRequest(settings, data);
-            // Server handles this.
-            break;
         case DLMS_COMMAND_DED_GET_RESPONSE:
         case DLMS_COMMAND_DED_SET_RESPONSE:
         case DLMS_COMMAND_DED_METHOD_RESPONSE:
         case DLMS_COMMAND_DED_EVENT_NOTIFICATION:
+            // If all frames are read.
             ret = dlms_handledGloDedResponse(settings, data, index);
             break;
         case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
@@ -3480,6 +3511,9 @@ int dlms_getPdu(
             break;
         case DLMS_COMMAND_INFORMATION_REPORT:
             // Client handles this.
+            break;
+        case DLMS_COMMAND_GENERAL_CIPHERING:
+            ret = dlms_handleGeneralCiphering(settings, data);
             break;
         default:
             // Invalid command.

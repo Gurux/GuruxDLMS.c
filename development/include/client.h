@@ -116,6 +116,15 @@ extern "C" {
         unsigned long count,
         message* messages);
 
+    int cl_readRowsByEntry2(
+        dlmsSettings* settings,
+        gxProfileGeneric* object,
+        unsigned long index,
+        unsigned long count,
+        unsigned short colStart,
+        unsigned short colEnd,
+        message* messages);
+
     int cl_readRowsByRange(
         dlmsSettings* settings,
         gxProfileGeneric* object,

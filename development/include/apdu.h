@@ -55,7 +55,7 @@ extern "C" {
         dlmsSettings* settings,
         gxByteBuffer* buff,
         DLMS_ASSOCIATION_RESULT* result,
-        DLMS_SOURCE_DIAGNOSTIC* diagnostic);
+        unsigned char* diagnostic);
 
     /**
      * Server generates AARE message.
@@ -84,7 +84,7 @@ extern "C" {
     int apdu_getUserInformation(
         dlmsSettings* settings,
         gxByteBuffer* data);
-    
+
 #ifdef  __cplusplus
 }
 #endif

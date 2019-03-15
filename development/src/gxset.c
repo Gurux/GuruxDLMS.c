@@ -2928,7 +2928,7 @@ int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *valu
                 {
                     return ret;
                 }
-                se->index = (unsigned char)var_toInteger(it);
+                se->index = (unsigned short)var_toInteger(it);
                 ret = va_get(tmp->Arr, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
@@ -2948,7 +2948,7 @@ int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *valu
                 {
                     return ret;
                 }
-                se->scriptSelector = (unsigned char)var_toInteger(it);
+                se->scriptSelector = (unsigned short)var_toInteger(it);
 
                 ret = va_get(tmp->Arr, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -2967,7 +2967,7 @@ int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *valu
                 {
                     return ret;
                 }
-                se->validityWindow = (unsigned char)var_toInteger(it);
+                se->validityWindow = (unsigned short)var_toInteger(it);
 
                 ret = va_get(tmp->Arr, &it);
                 if (ret != DLMS_ERROR_CODE_OK)

@@ -98,6 +98,14 @@ int com_readRowsByEntry(
     unsigned long index,
     unsigned long count);
 
+int com_readRowsByEntry2(
+    connection *connection,
+    gxProfileGeneric* object,
+    unsigned long index,
+    unsigned long count,
+    unsigned short colStartIndex,
+    unsigned short colEndIndex);
+
 int com_readRowsByRange(
     connection *connection,
     gxProfileGeneric* object,

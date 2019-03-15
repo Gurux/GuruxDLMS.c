@@ -951,7 +951,13 @@ int svr_handleSetRequest(
     }
     else
     {
+        p.requestType = 1;
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+    }
+    if (ret != 0)
+    {
         // Access Error : Device reports Read-Write denied.
+        bb_clear(data);
         resetBlockIndex(&settings->base);
         p.status = DLMS_ERROR_CODE_READ_WRITE_DENIED;
     }
@@ -1403,19 +1409,16 @@ int svr_handleGetRequest(
     }
     else
     {
-        // Access Error : Device reports Read-Write denied.
-        gxLNParameters p;
-        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 1, NULL, data, DLMS_ERROR_CODE_READ_WRITE_DENIED, settings->info.encryptedCommand);
-        bb_clear(data);
-        ret = dlms_getLNPdu(&p, data);
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        type = 1;
     }
     if (ret != 0)
     {
-        return svr_generateConfirmedServiceError(
-            settings,
-            2,
-            DLMS_SERVICE_ERROR_SERVICE, DLMS_SERVICE_UNSUPPORTED,
-            data);
+        // Access Error : Device reports Read-Write denied.
+        gxLNParameters p;
+        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, type, NULL, data, DLMS_ERROR_CODE_READ_WRITE_DENIED, settings->info.encryptedCommand);
+        bb_clear(data);
+        ret = dlms_getLNPdu(&p, data);
     }
     return ret;
 }

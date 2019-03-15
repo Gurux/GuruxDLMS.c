@@ -1120,6 +1120,12 @@ extern "C" {
         */
         DLMS_COMMAND_DED_WRITE_RESPONSE = 77,
 
+        /*Ded initiate request.*/
+        DLMS_COMMAND_DED_INITIATE_REQUEST = 65,
+        /*Ded initiate response.*/
+        DLMS_COMMAND_DED_INITIATE_RESPONSE = 72,
+
+
 #endif //DLMS_IGNORE_HIGH_GMAC
 
         /**

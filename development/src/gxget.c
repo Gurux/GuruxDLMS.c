@@ -3128,8 +3128,8 @@ int cosem_getSchedule(
                 (ret = bb_setUInt8(data, 10)) != 0 ||
                 (ret = arr_getByIndex(&object->entries, pos, (void**)&se)) != 0 ||
                 //Add index.
-                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
-                (ret = bb_setUInt8(data, se->index)) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
+                (ret = bb_setUInt16(data, se->index)) != 0 ||
                 //Add enable.
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BOOLEAN)) != 0 ||
                 (ret = bb_setUInt8(data, se->enable)) != 0 ||
@@ -3138,15 +3138,15 @@ int cosem_getSchedule(
                 (ret = bb_setUInt8(data, 6)) != 0 ||
                 (ret = bb_set(data, se->logicalName, 6)) != 0 ||
                 //Add script selector.
-                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
-                (ret = bb_setUInt8(data, se->scriptSelector)) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
+                (ret = bb_setUInt16(data, se->scriptSelector)) != 0 ||
                 //Add switch time.
                 (ret = var_setDateTime(&tmp, &se->switchTime)) != 0 ||
                 (ret = var_getBytes(&tmp, data)) != 0 ||
                 (ret = var_clear(&tmp)) != 0 ||
                 //Add validity window.
-                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
-                (ret = bb_setUInt8(data, se->validityWindow)) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
+                (ret = bb_setUInt16(data, se->validityWindow)) != 0 ||
                 //Add exec week days.
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
                 (ret = hlp_setObjectCount(se->execWeekdays.size, data)) != 0 ||

@@ -547,7 +547,7 @@ extern "C" {
         /**
         * Schedule entry index.
         */
-        unsigned char index;
+        unsigned short index;
 
         /**
         * Is Schedule entry enabled.
@@ -562,7 +562,7 @@ extern "C" {
         /**
         * Script identifier of the script to be executed.
         */
-        unsigned char scriptSelector;
+        unsigned short scriptSelector;
 
         /**
         *
@@ -572,7 +572,7 @@ extern "C" {
         /**
         * Defines a period in minutes, in which an entry shall be processed after power fail.
         */
-        unsigned char validityWindow;
+        unsigned short validityWindow;
 
         /**
         * Days of the week on which the entry is valid.

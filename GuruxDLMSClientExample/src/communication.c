@@ -1016,6 +1016,39 @@ int com_readRowsByEntry(
     return ret;
 }
 
+int com_readRowsByEntry2(
+    connection *connection,
+    gxProfileGeneric* object,
+    unsigned long index,
+    unsigned long count,
+    unsigned short colStartIndex,
+    unsigned short colEndIndex)
+{
+    int ret;
+    message data;
+    gxReplyData reply;
+    gxByteBuffer bb;
+    char* str;
+    mes_init(&data);
+    reply_init(&reply);
+    if ((ret = cl_readRowsByEntry2(&connection->settings, object, index, count, colStartIndex, colEndIndex, &data)) != 0 ||
+        (ret = com_readDataBlock(connection, &data, &reply)) != 0)
+    {
+        printf("ReadObject failed %s\r\n", hlp_getErrorMessage(ret));
+    }
+    else
+    {
+        bb_init(&bb);
+        var_toString(&reply.dataValue, &bb);
+        str = bb_toString(&bb);
+        printf(str);
+        bb_clear(&bb);
+    }
+    mes_clear(&data);
+    reply_clear(&reply);
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////
 int com_readRowsByRange(
     connection *connection,
@@ -1379,7 +1412,7 @@ int com_readValues(connection *connection)
                 }
                 ret = 0;
             }
-                }
+        }
         bb_clear(&attributes);
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {

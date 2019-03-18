@@ -121,6 +121,7 @@ gxIp4Setup ip4Setup;
 gxPushSetup pushSetup;
 gxScriptTable scriptTable;
 gxIecHdlcSetup iecHdlcSetup;
+gxCompactData compactData;
 
 int imageSize = 0;
 #ifdef DLMS_INDIAN_STANDARD
@@ -146,7 +147,7 @@ gxSecuritySetup securitySetup;
 const gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &imageTransfer.base, &activePowerL1.base, &clock1.base, &udpSetup.base, &profileGeneric.base,
     &autoConnect.base, &activityCalendar.base, &localPortSetup.base, &demandRegister.base, &registerMonitor.base,
     &actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
-    &disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base, &iecHdlcSetup.base,
+    &disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base, &iecHdlcSetup.base, &compactData.base,
     &associationNone.base, &highAssociation.base,
 #if !defined(DLMS_ITALIAN_STANDARD)
     &lowAssociation.base,
@@ -179,7 +180,7 @@ const gxObject* SN_OBJECTS[] = { &associationShortName.base, &ldn.base, &id1.bas
 &activePowerL1.base, &clock1.base, &udpSetup.base, &profileGeneric.base,
 &autoConnect.base, &activityCalendar.base, &localPortSetup.base, &demandRegister.base, &registerMonitor.base,
 &actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
-&disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base, &iecHdlcSetup.base };
+&disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base, &iecHdlcSetup.base, &compactData.base };
 #endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
 
 #if !defined(DLMS_ITALIAN_STANDARD)
@@ -194,7 +195,7 @@ const gxObject* HIGH_OBJECTS[] = {
 &autoConnect.base, &activityCalendar.base, &localPortSetup.base, &demandRegister.base, &registerMonitor.base,
 &actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
 &disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base,
-&iecHdlcSetup.base,
+&iecHdlcSetup.base, &compactData.base,
 #ifdef DLMS_INDIAN_STANDARD
 &instantData.base, &currentIR.base, &currentIY.base, &currentIB.base, &voltageVRN.base, &voltageVYN.base, &voltageVBN.base, &voltageVRY.base, &voltageVBY.base, &spfR.base, &spfY.base, &spfB.base, &spfBF.base, &frequency.base, &apparentPower.base, &signedActivePower.base, &signedReactivePower.base, &numberOfPowerFailures.base, &cumulativePowerFailureDuration.base, &cumulativeTamperCount.base, &cumulativeBillingCount.base, &cumulativeProgrammingCount.base, &billingDate.base, &cumulativeEnergy.base
 #endif //DLMS_INDIAN_STANDARD
@@ -861,6 +862,20 @@ int addIecHdlcSetup(
 }
 
 ///////////////////////////////////////////////////////////////////////
+//Add compact data object.
+///////////////////////////////////////////////////////////////////////
+int addCompactData(
+    objectArray *objects)
+{
+    unsigned char ln[6] = { 0,0,66,0,1,255 };
+    cosem_init2(&compactData.base, DLMS_OBJECT_TYPE_COMPACT_DATA, ln);
+    compactData.templateId = 66;
+    //Buffer is captured when invoke is called.
+    compactData.captureMethod = DLMS_CAPTURE_METHOD_INVOKE;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
 //Add SAP Assignment object.
 ///////////////////////////////////////////////////////////////////////
 int addSapAssignment(
@@ -1215,6 +1230,10 @@ int svr_InitObjects(
         return ret;
     }
     if ((ret = addIecHdlcSetup(objects)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = addCompactData(objects)) != 0)
     {
         return ret;
     }

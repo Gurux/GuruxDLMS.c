@@ -99,6 +99,7 @@ extern "C" {
 // #define DLMS_IGNORE_CREDIT
 // #define DLMS_IGNORE_CHARGE
 // #define DLMS_IGNORE_TOKEN_GATEWAY
+// DLMS_IGNORE_COMPACT_DATA
 
 #ifdef  __cplusplus
 }

@@ -1469,25 +1469,88 @@ int cosem_getGprsSetup(
 int cosem_getSecuritySetup(
     gxValueEventArg *e)
 {
+    int ret;
     gxSecuritySetup* object = (gxSecuritySetup*)e->target;
     if (e->index == 2)
     {
-        return var_setEnum(&e->value, object->securityPolicy);
+        ret = var_setEnum(&e->value, object->securityPolicy);
     }
     else if (e->index == 3)
     {
-        return var_setEnum(&e->value, object->securitySuite);
+        ret = var_setEnum(&e->value, object->securitySuite);
     }
     else if (e->index == 4)
     {
-        return var_addOctetString(&e->value, &object->clientSystemTitle);
+        ret = var_addOctetString(&e->value, &object->clientSystemTitle);
     }
     else if (e->index == 5)
     {
-        return var_addOctetString(&e->value, &object->serverSystemTitle);
+        ret = var_addOctetString(&e->value, &object->serverSystemTitle);
     }
-    return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    else if (e->index == 6)
+    {
+        gxCertificateInfo* it;
+        int pos, len;
+        if ((ret = cosem_getByteBuffer(&e->value)) != 0)
+        {
+            return ret;
+        }
+        gxByteBuffer *data = e->value.byteArr;
+        e->byteArray = 1;
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
+            (ret = hlp_setObjectCount(object->certificates.size, data)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos != object->certificates.size; ++pos)
+        {
+            if ((ret = arr_getByIndex(&object->certificates, pos, (void**)&it)) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+                (ret = hlp_setObjectCount(6, data)) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ENUM)) != 0 ||
+                (ret = bb_setUInt8(data, it->entity)) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ENUM)) != 0 ||
+                (ret = bb_setUInt8(data, it->type)) != 0)
+            {
+                break;
+            }
+            len = (int)strlen(it->serialNumber);
+            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                (ret = bb_setUInt8(data, len)) != 0 ||
+                (ret = bb_set(data, (unsigned char*)it->serialNumber, len)) != 0)
+            {
+                break;
+            }
+            len = (int)strlen(it->issuer);
+            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                (ret = bb_setUInt8(data, len)) != 0 ||
+                (ret = bb_set(data, (unsigned char*)it->issuer, len)) != 0)
+            {
+                break;
+            }
+            len = (int)strlen(it->subject);
+            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                (ret = bb_setUInt8(data, len)) != 0 ||
+                (ret = bb_set(data, (unsigned char*)it->subject, len)) != 0)
+            {
+                break;
+            }
+            len = (int)strlen(it->subjectAltName);
+            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                (ret = bb_setUInt8(data, len)) != 0 ||
+                (ret = bb_set(data, (unsigned char*)it->subjectAltName, len)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
 }
+
 #endif //DLMS_IGNORE_SECURITY_SETUP
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
 int cosem_getIecHdlcSetup(
@@ -4212,6 +4275,9 @@ int cosem_getCompactData(
             return ret;
         }
         data = e->value.byteArr;
+        e->byteArray = 1;
+        ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING);
+        hlp_setObjectCount(object->buffer.size, data);
         bb_set(data, object->buffer.data, object->buffer.size);
         break;
     case 3:
@@ -4232,6 +4298,9 @@ int cosem_getCompactData(
             return ret;
         }
         gxByteBuffer *data = e->value.byteArr;
+        e->byteArray = 1;
+        ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING);
+        hlp_setObjectCount(object->templateDescription.size, data);
         bb_set(data, object->templateDescription.data, object->templateDescription.size);
         break;
     case 6:

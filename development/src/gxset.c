@@ -47,6 +47,8 @@
 #include "../include/dlms.h"
 #include "../include/gxkey.h"
 #include "../include/cosem.h"
+#include "../include/gxget.h"
+#include "../include/server.h"
 
 #ifndef DLMS_IGNORE_DATA
 
@@ -4598,6 +4600,65 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
+
+int compactData_updateTemplateDescription(
+    dlmsSettings* settings,
+    gxCompactData* object)
+{
+    int ret, pos;
+    gxByteBuffer tmp;
+    gxKey *kv;
+    gxValueEventArg e;
+    gxValueEventCollection args;
+    bb_clear(&object->buffer);
+    bb_clear(&object->templateDescription);
+    ve_init(&e);
+    e.action = 1;
+    e.target = &object->base;
+    e.index = 2;
+    vec_init(&args);
+    vec_push(&args, &e);
+    // svr_preGet(settings, &args);
+    bb_init(&tmp);
+    if (!e.handled)
+    {
+        ret = bb_setUInt8(&object->templateDescription, DLMS_DATA_TYPE_STRUCTURE);
+        hlp_setObjectCount(object->captureObjects.size, &object->templateDescription);
+        for (pos = 0; pos != object->captureObjects.size; ++pos)
+        {
+            ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                bb_clear(&object->buffer);
+                return ret;
+            }
+            e.target = (gxObject*)kv->key;
+            e.index = ((gxCaptureObject*)kv->value)->attributeIndex;
+            if ((ret = cosem_getValue(settings, &e)) != 0)
+            {
+                var_clear(&e.value);
+                bb_clear(&object->buffer);
+                return ret;
+            }
+            if ((ret = dlms_setData(&tmp, e.value.vt, &e.value)) != 0)
+            {
+                var_clear(&e.value);
+                bb_clear(&tmp);
+                bb_clear(&object->buffer);
+                return ret;
+            }
+            var_clear(&e.value);
+            bb_setUInt8(&object->templateDescription, tmp.data[0]);
+            bb_clear(&tmp);
+        }
+    }
+    bb_clear(&tmp);
+    //  svr_postGet(settings, &args);
+    vec_empty(&args);
+    return 0;
+    return 0;
+}
+
 int cosem_setCompactData(
     dlmsSettings* settings,
     gxCompactData* object,
@@ -4616,6 +4677,10 @@ int cosem_setCompactData(
         break;
     case 3:
         ret = setCaptureObjects(settings, &object->captureObjects, value);
+        if (ret == 0)
+        {
+            ret = compactData_updateTemplateDescription(settings, object);
+        }
         break;
     case 4:
         object->templateId = var_toInteger(value);

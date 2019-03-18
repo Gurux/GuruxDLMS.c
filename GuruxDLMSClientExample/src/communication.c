@@ -1412,7 +1412,7 @@ int com_readValues(connection *connection)
                 }
                 ret = 0;
             }
-        }
+                }
         bb_clear(&attributes);
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {

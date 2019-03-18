@@ -177,6 +177,13 @@ extern "C" {
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
     int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
+
+#ifndef DLMS_IGNORE_COMPACT_DATA
+    int compactData_updateTemplateDescription(
+        dlmsSettings* settings,
+        gxCompactData* object);
+#endif //DLMS_IGNORE_COMPACT_DATA
+
     int cosem_setValue(dlmsSettings* settings, gxValueEventArg *e);
 
 #ifdef  __cplusplus

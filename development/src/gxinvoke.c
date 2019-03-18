@@ -368,7 +368,7 @@ int invoke_ImageTransfer(
         }
 #ifndef GX_DLMS_MICROCONTROLLER
         target->imageTransferredBlocksStatus.position = 0;
-#endif //GX_DLMS_MICROCONTROLLER            
+#endif //GX_DLMS_MICROCONTROLLER
         target->imageTransferredBlocksStatus.size = 0;
         ba_capacity(&target->imageTransferredBlocksStatus, (unsigned short)cnt);
         for (pos = 0; pos != cnt; ++pos)
@@ -802,7 +802,7 @@ int capture(dlmsSettings* settings,
     e.index = 2;
     vec_init(&args);
     vec_push(&args, &e);
-    svr_preGet(settings, &args);
+    // svr_preGet(settings, &args);
     if (!e.handled)
     {
         gxValueEventArg e2;
@@ -836,7 +836,7 @@ int capture(dlmsSettings* settings,
         arr_push(&object->buffer, row);
         object->entriesInUse = object->buffer.size;
     }
-    svr_postGet(settings, &args);
+    //svr_postGet(settings, &args);
     vec_empty(&args);
     return 0;
 }
@@ -866,6 +866,97 @@ int invoke_ProfileGeneric(
 }
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
+
+#ifndef DLMS_IGNORE_COMPACT_DATA
+/*
+* Copies the values of the objects to capture into the buffer by reading
+* capture objects.
+*/
+int captureCompactData(dlmsSettings* settings,
+    gxCompactData* object)
+{
+    int ret, pos;
+    gxByteBuffer tmp;
+    gxKey *kv;
+    gxValueEventArg e;
+    gxValueEventCollection args;
+    bb_clear(&object->buffer);
+    ve_init(&e);
+    e.action = 1;
+    e.target = &object->base;
+    e.index = 2;
+    vec_init(&args);
+    vec_push(&args, &e);
+    // svr_preGet(settings, &args);
+    bb_init(&tmp);
+    if (!e.handled)
+    {
+        for (pos = 0; pos != object->captureObjects.size; ++pos)
+        {
+            ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                bb_clear(&object->buffer);
+                return ret;
+            }
+            e.target = (gxObject*)kv->key;
+            e.index = ((gxCaptureObject*)kv->value)->attributeIndex;
+            if ((ret = cosem_getValue(settings, &e)) != 0)
+            {
+                var_clear(&e.value);
+                bb_clear(&object->buffer);
+                return ret;
+            }
+            if ((ret = dlms_setData(&tmp, e.value.vt, &e.value)) != 0)
+            {
+                var_clear(&e.value);
+                bb_clear(&tmp);
+                bb_clear(&object->buffer);
+                return ret;
+            }
+            var_clear(&e.value);
+            if (tmp.size == 1)
+            {
+                bb_setUInt8(&object->buffer, 0);
+            }
+            else
+            {
+                bb_set(&object->buffer, tmp.data + 1, tmp.size - 1);
+            }
+            bb_clear(&tmp);
+        }
+    }
+    bb_clear(&tmp);
+    // svr_postGet(settings, &args);
+    vec_empty(&args);
+    return 0;
+}
+
+int invoke_CompactData(
+    dlmsServerSettings* settings,
+    gxCompactData* object,
+    unsigned char index)
+{
+    int ret = 0;
+    //Reset.
+    if (index == 1)
+    {
+        ret = bb_clear(&object->buffer);
+    }
+    //Capture.
+    else if (index == 2)
+    {
+        // Capture.
+        ret = captureCompactData(&settings->base, object);
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_COMPACT_DATA
+
 int cosem_invoke(
     dlmsServerSettings* settings,
     gxValueEventArg *e)
@@ -885,7 +976,7 @@ int cosem_invoke(
             e->index);
         break;
 #endif //DLMS_IGNORE_REGISTER
-#ifndef DLMS_IGNORE_CLOCK    
+#ifndef DLMS_IGNORE_CLOCK
     case DLMS_OBJECT_TYPE_CLOCK:
         ret = invoke_Clock(
             (gxClock*)e->target,
@@ -928,7 +1019,7 @@ int cosem_invoke(
             &e->value);
         break;
 #endif //DLMS_IGNORE_CHARGE
-#ifndef DLMS_IGNORE_CREDIT  
+#ifndef DLMS_IGNORE_CREDIT
     case DLMS_OBJECT_TYPE_CREDIT:
         ret = invoke_Credit(
             (gxCredit*)e->target,
@@ -944,7 +1035,7 @@ int cosem_invoke(
             &e->value);
         break;
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME    
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         ret = invoke_AssociationShortName(settings, e);
@@ -956,17 +1047,21 @@ int cosem_invoke(
         ret = invoke_AssociationLogicalName(settings, e);
         break;
 #endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
-#ifndef DLMS_IGNORE_IMAGE_TRANSFER    
+#ifndef DLMS_IGNORE_IMAGE_TRANSFER
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
         ret = invoke_ImageTransfer((gxImageTransfer*)e->target, e);
         break;
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
-#ifndef DLMS_IGNORE_SAP_ASSIGNMENT    
+#ifndef DLMS_IGNORE_SAP_ASSIGNMENT
     case DLMS_OBJECT_TYPE_SAP_ASSIGNMENT:
         ret = invoke_SapAssigment((gxSapAssignment*)e->target, e);
         break;
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
-
+#ifndef DLMS_IGNORE_COMPACT_DATA
+    case DLMS_OBJECT_TYPE_COMPACT_DATA:
+        ret = invoke_CompactData(settings, (gxCompactData*)e->target, e->index);
+        break;
+#endif //DLMS_IGNORE_COMPACT_DATA
         //There are no actions on data component.
     default:
         //Unknown type.

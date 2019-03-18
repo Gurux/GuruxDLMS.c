@@ -41,8 +41,6 @@ extern "C" {
 #ifndef DLMS_IGNORE_SERVER
 #include "dlmssettings.h"
 
-  
-
     /**
     * Get attribute access level.
     */

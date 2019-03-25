@@ -3243,7 +3243,6 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
                     }
                     return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
                 }
-                settings->connected |= DLMS_CONNECTION_STATE_DLMS;
                 if ((ret = svr_connected((dlmsServerSettings*)settings)) != 0)
                 {
                     return ret;

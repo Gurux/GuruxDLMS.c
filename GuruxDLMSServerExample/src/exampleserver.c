@@ -2424,7 +2424,7 @@ int svr_connected(
 #ifdef DLMS_ITALIAN_STANDARD
     if (settings->base.clientAddress == 1)
     {
-        if (settings->base.connected == DLMS_CONNECTION_STATE_HDLC)
+        if (settings->base.connected != DLMS_CONNECTION_STATE_DLMS)
         {
             if (settings->base.preEstablishedSystemTitle != NULL)
             {
@@ -2435,7 +2435,7 @@ int svr_connected(
                 settings->base.preEstablishedSystemTitle = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
                 bb_init(settings->base.preEstablishedSystemTitle);
             }
-            bb_addString(settings->base.preEstablishedSystemTitle, "Gurux123");
+            bb_addString(settings->base.preEstablishedSystemTitle, "ABCDEFGH");
             settings->base.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
         }
         else
@@ -2444,6 +2444,7 @@ int svr_connected(
             return DLMS_ERROR_CODE_READ_WRITE_DENIED;
         }
     }
+#else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;
 }

@@ -907,7 +907,17 @@ int captureCompactData(dlmsSettings* settings,
                 bb_clear(&object->buffer);
                 return ret;
             }
-            if ((ret = dlms_setData(&tmp, e.value.vt, &e.value)) != 0)
+            if (e.byteArray && e.value.vt  == DLMS_DATA_TYPE_OCTET_STRING)
+            {
+                if ((ret = bb_set(&tmp, e.value.byteArr->data, bb_size(e.value.byteArr))) != 0)
+                {
+                    var_clear(&e.value);
+                    bb_clear(&tmp);
+                    bb_clear(&object->buffer);
+                    return ret;
+                }
+            }
+            else if ((ret = dlms_setData(&tmp, e.value.vt, &e.value)) != 0)
             {
                 var_clear(&e.value);
                 bb_clear(&tmp);

@@ -787,6 +787,10 @@ int cip_decrypt(
     {
         return ret;
     }
+    if (settings->security == DLMS_SECURITY_NONE)
+    {
+        settings->security = *security;
+    }
     settings->invocationCounter = frameCounter + 1;
     if (*security == DLMS_SECURITY_AUTHENTICATION)
     {

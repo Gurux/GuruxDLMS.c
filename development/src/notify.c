@@ -86,7 +86,7 @@ int notify_generateDataNotificationMessages2(
     if (settings->useLogicalNameReferencing)
     {
         gxLNParameters p;
-        params_initLN(&p, settings, 0, DLMS_COMMAND_DATA_NOTIFICATION, 0, NULL, NULL, 0xff, DLMS_COMMAND_NONE);
+        params_initLN(&p, settings, 0, DLMS_COMMAND_DATA_NOTIFICATION, 0, data, NULL, 0xff, DLMS_COMMAND_NONE);
         p.time = time;
         ret = dlms_getLnMessages(&p, messages);
     }

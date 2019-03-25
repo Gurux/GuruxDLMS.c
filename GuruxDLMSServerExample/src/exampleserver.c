@@ -1902,7 +1902,7 @@ void svr_preWrite(
 }
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-int sendPush(gxPushSetup* push);
+int sendPush(dlmsSettings* settings, gxPushSetup* push);
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 //In this example we wait 5 seconds before image is verified or activated.
@@ -1938,7 +1938,7 @@ void svr_preAction(
         if (e->target->objectType == DLMS_OBJECT_TYPE_PUSH_SETUP && e->index == 1)
         {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            sendPush((gxPushSetup*)e->target);
+            sendPush(settings, (gxPushSetup*)e->target);
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             e->handled = 1;
         }
@@ -2210,11 +2210,12 @@ int connectServer(
 }
 
 int sendPush(
+    dlmsSettings* settings,
     gxPushSetup* push)
 {
     char *p, *host;
     int ret, pos, port, s;
-    dlmsSettings cl;
+//    dlmsSettings cl;
     message messages;
     gxByteBuffer *bb;
 
@@ -2231,8 +2232,8 @@ int sendPush(
     mes_init(&messages);
     if ((ret = connectServer(host, port, &s)) == 0)
     {
-        cl_init(&cl, 1, 1, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_WRAPPER);
-        if ((ret = notify_generatePushSetupMessages(&cl, NULL, push, &messages)) == 0)
+//        cl_init(&cl, 1, 1, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_WRAPPER);
+        if ((ret = notify_generatePushSetupMessages(settings, NULL, push, &messages)) == 0)
         {
             for (pos = 0; pos != messages.size; ++pos)
             {
@@ -2244,7 +2245,7 @@ int sendPush(
                 }
             }
         }
-        cl_clear(&cl);
+//        cl_clear(&cl);
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         closesocket(s);
 #else

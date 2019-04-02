@@ -71,14 +71,7 @@ int cosem_getData(gxValueEventArg *e)
     int ret = DLMS_ERROR_CODE_OK;
     if (e->index == 2)
     {
-        e->byteArray = 1;
-        if ((ret = cosem_getByteBuffer(&e->value)) != 0)
-        {
-            return ret;
-        }
-        gxByteBuffer *data = e->value.byteArr;
-        e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
-        ret = dlms_setData(data, ((gxData*)e->target)->value.vt, &((gxData*)e->target)->value);
+        return var_copy(&e->value, &((gxRegister*)e->target)->value);
     }
     else
     {

@@ -4640,16 +4640,30 @@ int compactData_updateTemplateDescription(
                 bb_clear(&object->buffer);
                 return ret;
             }
-            if ((ret = dlms_setData(&tmp, e.value.vt, &e.value)) != 0)
+            if (e.byteArray)
             {
-                var_clear(&e.value);
+                if (bb_size(e.value.byteArr) == 0)
+                {
+                    bb_setUInt8(&object->templateDescription, 0);
+                }
+                else
+                {
+                    bb_setUInt8(&object->templateDescription, e.value.byteArr->data[0]);
+                }
+            }
+            else
+            {
+                if ((ret = dlms_setData(&tmp, e.value.vt, &e.value)) != 0)
+                {
+                    var_clear(&e.value);
+                    bb_clear(&tmp);
+                    bb_clear(&object->buffer);
+                    return ret;
+                }
+                bb_setUInt8(&object->templateDescription, tmp.data[0]);
                 bb_clear(&tmp);
-                bb_clear(&object->buffer);
-                return ret;
             }
             var_clear(&e.value);
-            bb_setUInt8(&object->templateDescription, tmp.data[0]);
-            bb_clear(&tmp);
         }
     }
     bb_clear(&tmp);

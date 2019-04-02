@@ -71,7 +71,7 @@ int cosem_getData(gxValueEventArg *e)
     int ret = DLMS_ERROR_CODE_OK;
     if (e->index == 2)
     {
-        return var_copy(&e->value, &((gxRegister*)e->target)->value);
+        return var_copy(&e->value, &((gxData*)e->target)->value);
     }
     else
     {

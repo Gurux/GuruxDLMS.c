@@ -46,6 +46,14 @@ extern "C" {
         dlmsServerSettings* settings,
         gxValueEventArg *e);
 
+    /*
+    * Copies the values of the objects to capture into the buffer by reading
+    * capture objects.
+    */
+    int cosem_captureCompactData(
+        dlmsSettings* settings,
+        gxCompactData* object);
+
 #ifdef  __cplusplus
 }
 #endif

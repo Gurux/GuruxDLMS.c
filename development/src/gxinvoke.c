@@ -872,7 +872,7 @@ int invoke_ProfileGeneric(
 * Copies the values of the objects to capture into the buffer by reading
 * capture objects.
 */
-int captureCompactData(dlmsSettings* settings,
+int cosem_captureCompactData(dlmsSettings* settings,
     gxCompactData* object)
 {
     int ret, pos;
@@ -957,7 +957,7 @@ int invoke_CompactData(
     else if (index == 2)
     {
         // Capture.
-        ret = captureCompactData(&settings->base, object);
+        ret = cosem_captureCompactData(&settings->base, object);
     }
     else
     {

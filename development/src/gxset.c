@@ -4648,7 +4648,60 @@ int compactData_updateTemplateDescription(
                 }
                 else
                 {
-                    bb_setUInt8(&object->templateDescription, e.value.byteArr->data[0]);
+                    if (e.value.byteArr->data[0] == DLMS_DATA_TYPE_ARRAY ||
+                        e.value.byteArr->data[0] == DLMS_DATA_TYPE_STRUCTURE)
+                    {
+                        gxDataInfo info;
+                        dlmsVARIANT value;
+                        unsigned short count;
+                        di_init(&info);
+                        var_init(&value);
+                        e.value.byteArr->position = 1;
+                        if ((ret = hlp_getObjectCount2(e.value.byteArr, &count)) != 0 ||
+                            ((gxCaptureObject*)kv->value)->dataIndex >= count)
+                        {
+                            var_clear(&e.value);
+                            bb_clear(&object->buffer);
+                            return DLMS_ERROR_CODE_OUTOFMEMORY;
+                        }
+                        for (unsigned char pos = 0; pos < ((gxCaptureObject*)kv->value)->dataIndex + 1; ++pos)
+                        {
+                            var_clear(&value);
+                            if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0)
+                            {
+                                var_clear(&value);
+                                var_clear(&e.value);
+                                bb_clear(&object->buffer);
+                                return ret;
+                            }
+                        }
+                        if (info.type == DLMS_DATA_TYPE_STRUCTURE)
+                        {
+                            dlmsVARIANT* value2;
+                            bb_setUInt8(&object->templateDescription, DLMS_DATA_TYPE_STRUCTURE);
+                            bb_setUInt8(&object->templateDescription, (unsigned char) value.Arr->size);
+                            for (unsigned short pos = 0; pos < value.Arr->size; ++pos)
+                            {
+                                if ((ret = va_getByIndex(value.Arr, pos, &value2)) != 0)
+                                {
+                                    var_clear(&value);
+                                    var_clear(&e.value);
+                                    bb_clear(&object->buffer);
+                                    return ret;
+                                }
+                                bb_setUInt8(&object->templateDescription, value2->vt);
+                            }
+                        }
+                        else
+                        {
+                            bb_setUInt8(&object->templateDescription, info.type);
+                        }
+                        var_clear(&value);
+                    }
+                    else
+                    {
+                        bb_setUInt8(&object->templateDescription, e.value.byteArr->data[0]);
+                    }
                 }
             }
             else
@@ -4691,7 +4744,7 @@ int cosem_setCompactData(
         break;
     case 3:
         ret = setCaptureObjects(settings, &object->captureObjects, value);
-        if (ret == 0)
+        if (ret == 0 && settings->server)
         {
             ret = compactData_updateTemplateDescription(settings, object);
         }

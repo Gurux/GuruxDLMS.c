@@ -875,7 +875,8 @@ int invoke_ProfileGeneric(
 int cosem_captureCompactData(dlmsSettings* settings,
     gxCompactData* object)
 {
-    int ret, pos;
+    int ret;
+    unsigned short pos, pos2;
     gxByteBuffer tmp;
     gxKey *kv;
     gxValueEventArg e;
@@ -903,19 +904,106 @@ int cosem_captureCompactData(dlmsSettings* settings,
             e.index = ((gxCaptureObject*)kv->value)->attributeIndex;
             if ((ret = cosem_getValue(settings, &e)) != 0)
             {
+                bb_clear(&tmp);
                 var_clear(&e.value);
                 bb_clear(&object->buffer);
                 return ret;
             }
-            if (e.byteArray && e.value.vt  == DLMS_DATA_TYPE_OCTET_STRING)
+            if (e.byteArray && e.value.vt == DLMS_DATA_TYPE_OCTET_STRING)
             {
-                if ((ret = bb_set(&tmp, e.value.byteArr->data, bb_size(e.value.byteArr))) != 0)
+                gxDataInfo info;
+                dlmsVARIANT value;
+                di_init(&info);
+                var_init(&value);
+                if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0)
                 {
+                    var_clear(&value);
                     var_clear(&e.value);
                     bb_clear(&tmp);
                     bb_clear(&object->buffer);
                     return ret;
                 }
+                if (value.vt == DLMS_DATA_TYPE_STRUCTURE ||
+                    value.vt == DLMS_DATA_TYPE_ARRAY)
+                {
+                    dlmsVARIANT* value2;
+                    pos2 = ((gxCaptureObject*)kv->value)->dataIndex;
+                    if ((ret = va_getByIndex(value.Arr, pos2, &value2)) != 0)
+                    {
+                        var_clear(&value);
+                        var_clear(&e.value);
+                        bb_clear(&tmp);
+                        bb_clear(&object->buffer);
+                        return ret;
+                    }
+                    if (value2->vt == DLMS_DATA_TYPE_STRUCTURE)
+                    {
+                        dlmsVARIANT* value3;
+                        for (pos2 = 0; pos2 != value2->Arr->size; ++pos2)
+                        {
+                            if ((ret = va_getByIndex(value2->Arr, pos2, &value3)) != 0 ||
+                                (ret = dlms_setData(&tmp, value3->vt, value3)) != 0)
+                            {
+                                var_clear(&value);
+                                var_clear(&e.value);
+                                bb_clear(&tmp);
+                                bb_clear(&object->buffer);
+                                return ret;
+                            }
+                            if (tmp.size == 1)
+                            {
+                                bb_setUInt8(&object->buffer, 0);
+                            }
+                            else
+                            {
+                                bb_set(&object->buffer, tmp.data + 1, tmp.size - 1);
+                            }
+                            bb_clear(&tmp);
+                        }
+                    }
+                    else
+                    {
+                        if ((ret = dlms_setData(&tmp, value2->vt, value2)) != 0)
+                        {
+                            var_clear(&value);
+                            var_clear(&e.value);
+                            bb_clear(&tmp);
+                            bb_clear(&object->buffer);
+                            return ret;
+                        }
+                        if (tmp.size == 1)
+                        {
+                            bb_setUInt8(&object->buffer, 0);
+                        }
+                        else
+                        {
+                            bb_set(&object->buffer, tmp.data + 1, tmp.size - 1);
+                        }
+                    }
+                }
+                else
+                {
+                    if ((ret = dlms_setData(&tmp, e.value.vt, &e.value)) != 0)
+                    {
+                        var_clear(&value);
+                        var_clear(&e.value);
+                        bb_clear(&tmp);
+                        bb_clear(&object->buffer);
+                        return ret;
+                    }
+                    var_clear(&e.value);
+                    if (tmp.size == 1)
+                    {
+                        bb_setUInt8(&object->buffer, 0);
+                    }
+                    else
+                    {
+                        bb_set(&object->buffer, tmp.data + 1, tmp.size - 1);
+                    }
+                }
+                var_clear(&value);
+                bb_clear(&tmp);
+                continue;
             }
             else if ((ret = dlms_setData(&tmp, e.value.vt, &e.value)) != 0)
             {

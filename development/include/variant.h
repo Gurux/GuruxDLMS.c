@@ -46,7 +46,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
-#define VECTOR_ARRAY_CAPACITY 10
+#define VARIANT_ARRAY_CAPACITY 10
 
     typedef struct
     {
@@ -272,7 +272,7 @@ extern "C" {
     //attach static array.
     void var_attachArray(
         dlmsVARIANT * data,
-        const dlmsVARIANT** arr,
+        const variantArray* arr,
         const unsigned short count);
 
     //attach static structure.

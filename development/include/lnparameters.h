@@ -66,10 +66,15 @@ typedef struct
      * Data.
      */
     gxByteBuffer m_Data;
+
     /**
      * Send date and time. This is used in Data notification messages.
      */
+#ifdef DLMS_USE_EPOCH_TIME
+    unsigned long time;
+#else
     struct tm time;
+#endif //DLMS_USE_EPOCH_TIME
     /**
      * Reply status.
      */

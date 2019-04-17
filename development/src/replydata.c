@@ -62,7 +62,11 @@ void reply_init(gxReplyData* reply)
     reply->dataType = DLMS_DATA_TYPE_NONE;
     reply->gbt = 0;
     reply->cipherIndex = 0;
+#ifdef DLMS_USE_EPOCH_TIME
+    reply->time = 0;
+#else
     reply->time = NULL;
+#endif // DLMS_USE_EPOCH_TIME
     reply->preEstablished = 0;
 }
 
@@ -84,11 +88,15 @@ void reply_clear2(gxReplyData* reply, unsigned char clearData)
     reply->dataType = DLMS_DATA_TYPE_NONE;
     reply->gbt = 0;
     reply->cipherIndex = 0;
+#ifdef DLMS_USE_EPOCH_TIME
+    reply->time = 0;
+#else
     if (reply->time != NULL)
     {
         gxfree(reply->time);
         reply->time = NULL;
     }
+#endif // DLMS_USE_EPOCH_TIME
 }
 
 void reply_clear(gxReplyData* reply)

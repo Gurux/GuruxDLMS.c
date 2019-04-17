@@ -42,10 +42,11 @@ extern "C" {
 #include "bytebuffer.h"
 #endif //GX_DLMS_MICROCONTROLLER
 
-    //If OS
+#ifndef DLMS_USE_EPOCH_TIME
 #include <time.h>
+#endif
 
-    //Get UTC offset in minutes.
+	//Get UTC offset in minutes.
     void time_getUtcOffset(short* hours, short* minutes);
 
     // DataType enumerates skipped fields from date time.
@@ -76,7 +77,11 @@ extern "C" {
     typedef struct
     {
         unsigned char skip; //DATETIME_SKIPS
+#ifdef DLMS_USE_EPOCH_TIME
+        unsigned long value;
+#else
         struct tm value;
+#endif
         short deviation;
         unsigned char daylightSavingsBegin;
         unsigned char daylightSavingsEnd;
@@ -86,14 +91,14 @@ extern "C" {
     // Constructor.
     void time_init(
         gxtime* time,
-        int year,
-        int month,
-        int day,
-        int hour,
-        int minute,
-        int second,
-        int millisecond,
-        int devitation);
+        short year,
+        short month,
+        short day,
+        short hour,
+        short minute,
+        short second,
+        short millisecond,
+        short devitation);
 
     void time_init2(
         gxtime* time,
@@ -113,7 +118,7 @@ extern "C" {
     //Constructor from Unix time.
     void time_init4(
         gxtime* time,
-        time_t value);
+        unsigned long value);
 
 
     void time_clear(
@@ -136,6 +141,40 @@ extern "C" {
     //Reason for this is that all compilers's or HWs don't support time at all.
     extern void time_now(
         gxtime* value);
+
+	/*
+	Get years from time.
+	*/
+	unsigned char time_getYears(
+        const gxtime* value);
+	/*
+	Get months from time.
+	*/
+	unsigned char time_getMonths(
+        const gxtime* value);
+	/*
+	Get days from time.
+	*/
+	unsigned char time_getDays(
+        const gxtime* value);
+
+	/*
+	Get hours from time.
+	*/
+	unsigned char time_getHours(
+        const gxtime* value);
+
+	/*
+	Get minutes from time.
+	*/
+	unsigned char time_getMinutes(
+        const gxtime* value);
+
+	/*
+	Get seconds from time.
+	*/
+	unsigned char time_getSeconds(
+        const gxtime* value);
 
     /*
     Adds amount of days to current time.
@@ -190,13 +229,13 @@ extern "C" {
 
     //Save time to char buffer.
     int time_toString2(
-        gxtime* time,
+        const gxtime* time,
         char* buff,
         unsigned short len);
 
     //Save time to bytebuffer.
     int time_toString(
-        gxtime* time,
+        const gxtime* time,
         gxByteBuffer* arr);
 #endif //GX_DLMS_MICROCONTROLLER
 
@@ -206,18 +245,63 @@ extern "C" {
         int minutes,
         int seconds);
 
+    //Compare times.
     int time_compare(
         gxtime* value1,
         gxtime* value2);
 
-    //Get date time from Epoch time.
+    //Compare time and EPOCH time.
+    int time_compare2(
+        gxtime* value1,
+        unsigned long value2);
+
+    //Get date-time from EPOCH time.
     int time_fromUnixTime(
-        const time_t epoch, 
+        unsigned long epoch,
+        struct tm* time);
+
+    //Get date-time from EPOCH time.
+    int time_fromUnixTime2(
+        unsigned long epoch,
+        unsigned short* year,
+        unsigned char* month,
+        unsigned char* day,
+        unsigned char* hour,
+        unsigned char* minute,
+        unsigned char* second,
+        unsigned char* dayOfWeek);
+
+    //Get date-time from EPOCH time.
+    int time_fromUnixTime3(
+        const gxtime* time,
+        unsigned short* year,
+        unsigned char* month,
+        unsigned char* day,
+        unsigned char* hour,
+        unsigned char* minute,
+        unsigned char* second,
+        unsigned char* dayOfWeek);
+
+    // Convert date time to Epoch time.
+    unsigned long time_toUnixTime(
         struct tm* time);
 
     // Convert date time to Epoch time.
-    time_t time_toUnixTime(
-        struct tm* time);
+    unsigned long time_toUnixTime2(
+        gxtime* time);
+
+    //Get day of week.
+    unsigned char time_dayOfWeek(
+        unsigned short year, 
+        unsigned char month, 
+        unsigned char day);
+
+    //Get deviation.
+    int time_getDeviation(
+        gxtime* value1);
+
+    //Convert date time to UTC date time.
+    int time_toUTC(gxtime* value);
 
 #ifdef  __cplusplus
 }

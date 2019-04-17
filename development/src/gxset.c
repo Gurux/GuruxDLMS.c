@@ -52,7 +52,7 @@
 
 #ifndef DLMS_IGNORE_DATA
 
-int cosem_setData(gxData* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setData(gxData* object, unsigned char index, dlmsVARIANT* value)
 {
     if (index == 2)
     {
@@ -63,10 +63,10 @@ int cosem_setData(gxData* object, unsigned char index, dlmsVARIANT *value)
 #endif //DLMS_IGNORE_DATA
 
 #ifndef DLMS_IGNORE_REGISTER
-int cosem_setRegister(gxRegister* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setRegister(gxRegister* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret;
-    dlmsVARIANT *tmp;
+    dlmsVARIANT* tmp;
     if (index == 2)
     {
         return var_copy(&object->value, value);
@@ -100,11 +100,11 @@ int cosem_setRegister(gxRegister* object, unsigned char index, dlmsVARIANT *valu
 #endif //DLMS_IGNORE_REGISTER
 
 #ifndef DLMS_IGNORE_REGISTER_TABLE
-int cosem_setRegistertable(gxRegisterTable* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setRegistertable(gxRegisterTable* object, unsigned char index, dlmsVARIANT* value)
 {
     //TODO:
     int ret;
-    dlmsVARIANT *tmp;
+    dlmsVARIANT* tmp;
     if (index == 2)
     {
         //        return var_copy(&object->value, value);
@@ -138,7 +138,7 @@ int cosem_setRegistertable(gxRegisterTable* object, unsigned char index, dlmsVAR
 #endif //DLMS_IGNORE_REGISTER_TABLE
 
 #ifndef DLMS_IGNORE_CLOCK
-int cosem_setClock(gxClock* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret;
     dlmsVARIANT tmp;
@@ -154,6 +154,13 @@ int cosem_setClock(gxClock* object, unsigned char index, dlmsVARIANT *value)
                 return ret;
             }
             time_copy(&object->time, tmp.dateTime);
+            //If user set's new time transform it to the same time zone as the server is.
+            if (settings->server)
+            {
+                //Convert time to UCT if time zone is given.
+                time_toUTC(&object->time);
+                clock_updateDST(object, &object->time);
+            }
             var_clear(&tmp);
         }
         else
@@ -163,7 +170,7 @@ int cosem_setClock(gxClock* object, unsigned char index, dlmsVARIANT *value)
     }
     else if (index == 3)
     {
-        object->timeZone = (unsigned short)var_toInteger(value);
+        object->timeZone = (short)var_toInteger(value);
     }
     else if (index == 4)
     {
@@ -210,10 +217,12 @@ int cosem_setClock(gxClock* object, unsigned char index, dlmsVARIANT *value)
     else if (index == 7)
     {
         object->deviation = (char)var_toInteger(value);
+        clock_updateDST(object, &object->time);
     }
     else if (index == 8)
     {
         object->enabled = (unsigned char)var_toInteger(value);
+        clock_updateDST(object, &object->time);
     }
     else if (index == 9)
     {
@@ -225,21 +234,77 @@ int cosem_setClock(gxClock* object, unsigned char index, dlmsVARIANT *value)
     }
     return DLMS_ERROR_CODE_OK;
 }
+
+void clock_updateDST(gxClock* object, gxtime* value)
+{
+    if (object->enabled && object->deviation != -32768 && time_compare(&object->begin, value) != 1 && time_compare(&object->end, value) != -1)
+    {
+        object->status |= DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
+    }
+    else
+    {
+        object->status &= ~DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
+    }
+    object->time.status = object->status;
+}
+
+int clock_utcToMeterTime(gxClock* object, gxtime* value)
+{
+    if (value->deviation == 0 && object->timeZone != 0 && object->timeZone != -32768) //-32768 = 0x8000
+    {
+#ifdef DLMS_USE_UTC_TIME
+        time_addMinutes(value, object->timeZone);
+#else
+        time_addMinutes(value, -object->timeZone);
+#endif //DLMS_USE_UTC_TIME
+        value->deviation = object->timeZone;
+    }
+    //If DST is enabled for the meter and it's not set for the time.
+    if ((object->time.status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0)
+    {
+#ifdef DLMS_USE_UTC_TIME
+        time_addMinutes(value, object->deviation);
+        value->deviation += object->deviation;
+#else
+        time_addMinutes(value, object->deviation);
+        value->deviation -= object->deviation;
+#endif //DLMS_USE_UTC_TIME
+        value->status |= DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
+    }
+    else if ((object->time.status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) == 0)
+    {
+        value->status &= ~DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
+    }
+    else if ((object->time.status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0 && (value->status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0)
+    {
+#ifdef DLMS_USE_UTC_TIME
+        value->deviation += object->deviation;
+#else
+        value->deviation -= object->deviation;
+#endif //DLMS_USE_UTC_TIME
+}
+    return 0;
+}
+
 #endif //DLMS_IGNORE_CLOCK
 
 #ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
 
-int updateSeasonProfile(gxArray* profile, variantArray* data)
+int updateSeasonProfile(gxArray * profile, variantArray * data)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
     gxSeasonProfile* sp;
     dlmsVARIANT tm;
-    dlmsVARIANT *tmp, *it;
+    dlmsVARIANT* tmp, * it;
     obj_clearSeasonProfile(profile);
     var_init(&tm);
     for (pos = 0; pos != data->size; ++pos)
     {
         sp = (gxSeasonProfile*)gxmalloc(sizeof(gxSeasonProfile));
+        if (sp == NULL)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
         ret = va_get(data, &it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
@@ -283,11 +348,11 @@ int updateSeasonProfile(gxArray* profile, variantArray* data)
     return ret;
 }
 
-int updateWeekProfileTable(gxArray* profile, variantArray* data)
+int updateWeekProfileTable(gxArray * profile, variantArray * data)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
     gxWeekProfile* wp;
-    dlmsVARIANT *tmp, *it;
+    dlmsVARIANT* tmp, * it;
     obj_clearWeekProfileTable(profile);
     for (pos = 0; pos != data->size; ++pos)
     {
@@ -367,10 +432,10 @@ int updateWeekProfileTable(gxArray* profile, variantArray* data)
     return ret;
 }
 
-int updateDayProfileTableActive(gxArray* profile, variantArray* data)
+int updateDayProfileTableActive(gxArray * profile, variantArray * data)
 {
     int ret = DLMS_ERROR_CODE_OK, pos, pos2;
-    dlmsVARIANT *tmp, *tmp2, *it, *it2;
+    dlmsVARIANT* tmp, * tmp2, * it, * it2;
     dlmsVARIANT tm;
     gxDayProfile* dp;
     gxDayProfileAction* ac;
@@ -402,6 +467,10 @@ int updateDayProfileTableActive(gxArray* profile, variantArray* data)
         for (pos2 = 0; pos2 != tmp->Arr->size; ++pos2)
         {
             ac = (gxDayProfileAction*)gxmalloc(sizeof(gxDayProfileAction));
+            if (ac == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
             ret = va_get(tmp->Arr, &it2);
             if (ret != DLMS_ERROR_CODE_OK)
             {
@@ -451,7 +520,7 @@ int updateDayProfileTableActive(gxArray* profile, variantArray* data)
     return ret;
 }
 
-int cosem_setActivityCalendar(gxActivityCalendar* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setActivityCalendar(gxActivityCalendar * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret = DLMS_ERROR_CODE_OK;
     dlmsVARIANT tm;
@@ -518,12 +587,12 @@ int cosem_setActivityCalendar(gxActivityCalendar* object, unsigned char index, d
 
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
 int cosem_setActionSchedule(
-    gxActionSchedule* object,
+    gxActionSchedule * object,
     unsigned char index,
-    dlmsVARIANT *value)
+    dlmsVARIANT * value)
 {
     int ret, pos;
-    dlmsVARIANT *tmp, *tmp2;
+    dlmsVARIANT* tmp, * tmp2;
     dlmsVARIANT time, date;
     gxtime* tm;
     if (index == 2)
@@ -580,10 +649,17 @@ int cosem_setActionSchedule(
                 {
                     return ret;
                 }
+#ifdef DLMS_USE_EPOCH_TIME
+                time_addHours(date.dateTime, time_getHours(time.dateTime));
+                time_addMinutes(date.dateTime, time_getMinutes(time.dateTime));
+                time_addSeconds(date.dateTime, time_getSeconds(time.dateTime));
+                date.dateTime->skip = (DATETIME_SKIPS)(date.dateTime->skip & time.dateTime->skip);
+#else 
                 date.dateTime->value.tm_hour = time.dateTime->value.tm_hour;
                 date.dateTime->value.tm_min = time.dateTime->value.tm_min;
                 date.dateTime->value.tm_sec = time.dateTime->value.tm_sec;
                 date.dateTime->skip = (DATETIME_SKIPS)(date.dateTime->skip & time.dateTime->skip);
+#endif // DLMS_USE_EPOCH_TIME
                 tm = (gxtime*)gxmalloc(sizeof(gxtime));
                 time_copy(tm, date.dateTime);
                 arr_push(&object->executionTime, tm);
@@ -601,13 +677,13 @@ int cosem_setActionSchedule(
 #endif //DLMS_IGNORE_ACTION_SCHEDULE
 
 int cosem_setAssociationLogicalName(
-    dlmsSettings* settings,
-    gxAssociationLogicalName* object,
+    dlmsSettings * settings,
+    gxAssociationLogicalName * object,
     unsigned char index,
-    dlmsVARIANT *value)
+    dlmsVARIANT * value)
 {
     int ret, pos = 0, version;
-    dlmsVARIANT *tmp, *tmp2;
+    dlmsVARIANT* tmp, * tmp2;
     //gxByteBuffer bb;
     DLMS_OBJECT_TYPE type;
     gxObject* obj = NULL;
@@ -1139,6 +1215,10 @@ int cosem_setAssociationLogicalName(
                     return ret;
                 }
                 it = (gxKey2*)gxmalloc(sizeof(gxKey2));
+                if (it == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 it->key = (unsigned char)var_toInteger(tmp2);
                 ret = va_get(tmp->Arr, &tmp2);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -1146,6 +1226,10 @@ int cosem_setAssociationLogicalName(
                     return ret;
                 }
                 it->value = gxmalloc(tmp->strVal->size + 1);
+                if (it->value == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 ((char*)it->value)[tmp->strVal->size] = 0;
                 memcpy(it->value, tmp->strVal->data, tmp->strVal->size);
                 arr_push(&object->userList, it);
@@ -1174,6 +1258,10 @@ int cosem_setAssociationLogicalName(
             if (tmp->strVal != NULL && tmp->strVal->size != 0)
             {
                 object->currentUser.value = gxmalloc(tmp->strVal->size + 1);
+                if (object->currentUser.value == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 memcpy(object->currentUser.value, tmp->strVal, tmp->strVal->size);
             }
         }
@@ -1191,12 +1279,12 @@ int cosem_setAssociationLogicalName(
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int updateSNAccessRights(
-    objectArray* objectList,
-    variantArray* data)
+    objectArray * objectList,
+    variantArray * data)
 {
     unsigned short sn;
     int pos, ret;
-    dlmsVARIANT *it, *tmp;
+    dlmsVARIANT* it, * tmp;
     gxObject* obj = NULL;
     for (pos = 0; pos != data->size; ++pos)
     {
@@ -1289,15 +1377,15 @@ int updateSNAccessRights(
 }
 
 int cosem_setAssociationShortName(
-    dlmsSettings* settings,
-    gxAssociationShortName* object,
+    dlmsSettings * settings,
+    gxAssociationShortName * object,
     unsigned char index,
-    dlmsVARIANT *value)
+    dlmsVARIANT * value)
 {
     unsigned short sn;
     DLMS_OBJECT_TYPE type;
     int pos, ret, version;
-    dlmsVARIANT *tmp, *tmp2;
+    dlmsVARIANT* tmp, * tmp2;
     gxObject* obj = NULL;
     if (index == 2)
     {
@@ -1389,12 +1477,12 @@ int cosem_setAssociationShortName(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 #ifndef DLMS_IGNORE_AUTO_ANSWER
-int cosem_setAutoAnswer(gxAutoAnswer* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setAutoAnswer(gxAutoAnswer * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos;
-    dlmsVARIANT *tmp, *tmp3;
+    dlmsVARIANT* tmp, * tmp3;
     dlmsVARIANT start, end;
-    gxtime* s, *e;
+    gxtime* s, * e;
     if (index == 2)
     {
         object->mode = (DLMS_AUTO_CONNECT_MODE)var_toInteger(value);
@@ -1475,13 +1563,13 @@ int cosem_setAutoAnswer(gxAutoAnswer* object, unsigned char index, dlmsVARIANT *
 #endif //DLMS_IGNORE_AUTO_ANSWER
 
 #ifndef DLMS_IGNORE_AUTO_CONNECT
-int cosem_setAutoConnect(gxAutoConnect* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setAutoConnect(gxAutoConnect * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos;
-    dlmsVARIANT *tmp, *tmp3;
+    dlmsVARIANT* tmp, * tmp3;
     dlmsVARIANT start, end;
     gxByteBuffer* str;
-    gxtime* s, *e;
+    gxtime* s, * e;
     if (index == 2)
     {
         object->mode = (DLMS_AUTO_CONNECT_MODE)var_toInteger(value);
@@ -1567,10 +1655,10 @@ int cosem_setAutoConnect(gxAutoConnect* object, unsigned char index, dlmsVARIANT
 #endif //DLMS_IGNORE_AUTO_CONNECT
 
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
-int cosem_setDemandRegister(gxDemandRegister* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setDemandRegister(gxDemandRegister * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret;
-    dlmsVARIANT *tmp;
+    dlmsVARIANT* tmp;
     dlmsVARIANT tmp2;
     if (index == 2)
     {
@@ -1681,7 +1769,7 @@ int cosem_setDemandRegister(gxDemandRegister* object, unsigned char index, dlmsV
 #endif //DLMS_IGNORE_DEMAND_REGISTER
 
 #ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP
-int cosem_setMacAddressSetup(gxMacAddressSetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setMacAddressSetup(gxMacAddressSetup * object, unsigned char index, dlmsVARIANT * value)
 {
     if (index == 2)
     {
@@ -1697,10 +1785,10 @@ int cosem_setMacAddressSetup(gxMacAddressSetup* object, unsigned char index, dlm
 #endif //DLMS_IGNORE_MAC_ADDRESS_SETUP
 
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
-int cosem_setExtendedRegister(gxExtendedRegister* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setExtendedRegister(gxExtendedRegister * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret = DLMS_ERROR_CODE_OK;
-    dlmsVARIANT *tmp;
+    dlmsVARIANT* tmp;
     dlmsVARIANT tmp2;
     if (index == 2)
     {
@@ -1753,10 +1841,10 @@ int cosem_setExtendedRegister(gxExtendedRegister* object, unsigned char index, d
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
 
 #ifndef DLMS_IGNORE_GPRS_SETUP
-int cosem_setGprsSetup(gxGPRSSetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setGprsSetup(gxGPRSSetup * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret;
-    dlmsVARIANT *tmp, *tmp3;
+    dlmsVARIANT* tmp, * tmp3;
     if (index == 2)
     {
         bb_clear(&object->apn);
@@ -1856,11 +1944,11 @@ int cosem_setGprsSetup(gxGPRSSetup* object, unsigned char index, dlmsVARIANT *va
 #endif //DLMS_IGNORE_GPRS_SETUP
 
 #ifndef DLMS_IGNORE_SECURITY_SETUP
-int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setSecuritySetup(gxSecuritySetup * object, unsigned char index, dlmsVARIANT * value)
 {
     int pos, ret;
-    gxCertificateInfo *it;
-    dlmsVARIANT *tmp, *tmp3;
+    gxCertificateInfo* it;
+    dlmsVARIANT* tmp, * tmp3;
     switch (index)
     {
     case 2:
@@ -1888,6 +1976,10 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
                     return ret;
                 }
                 it = (gxCertificateInfo*)gxmalloc(sizeof(gxCertificateInfo));
+                if (it == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 //entity
                 if ((ret = va_getByIndex(tmp->Arr, 0, &tmp3)) != DLMS_ERROR_CODE_OK)
                 {
@@ -1911,6 +2003,10 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
                 if (tmp3->byteArr != NULL && tmp3->byteArr->size != 0)
                 {
                     it->serialNumber = gxmalloc(tmp3->byteArr->size + 1);
+                    if (it->serialNumber == NULL)
+                    {
+                        return DLMS_ERROR_CODE_OUTOFMEMORY;
+                    }
                     memcpy(it->serialNumber, tmp3->byteArr->data, tmp3->byteArr->size);
                     it->serialNumber[tmp3->byteArr->size] = 0;
                 }
@@ -1928,6 +2024,10 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
                 if (tmp3->byteArr != NULL && tmp3->byteArr->size != 0)
                 {
                     it->issuer = gxmalloc(tmp3->byteArr->size + 1);
+                    if (it->issuer == NULL)
+                    {
+                        return DLMS_ERROR_CODE_OUTOFMEMORY;
+                    }
                     memcpy(it->issuer, tmp3->byteArr->data, tmp3->byteArr->size);
                     it->issuer[tmp3->byteArr->size] = 0;
                 }
@@ -1965,6 +2065,10 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
                 if (tmp3->byteArr != NULL && tmp3->byteArr->size != 0)
                 {
                     it->subjectAltName = gxmalloc(tmp3->byteArr->size + 1);
+                    if (it->subjectAltName == NULL)
+                    {
+                        return DLMS_ERROR_CODE_OUTOFMEMORY;
+                    }
                     memcpy(it->subjectAltName, tmp3->byteArr->data, tmp3->byteArr->size);
                     it->subjectAltName[tmp3->byteArr->size] = 0;
                 }
@@ -1984,7 +2088,7 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
 #endif //DLMS_IGNORE_SECURITY_SETUP
 
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
-int cosem_setIecHdlcSetup(gxIecHdlcSetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setIecHdlcSetup(gxIecHdlcSetup * object, unsigned char index, dlmsVARIANT * value)
 {
     if (index == 2)
     {
@@ -2026,7 +2130,7 @@ int cosem_setIecHdlcSetup(gxIecHdlcSetup* object, unsigned char index, dlmsVARIA
 }
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
 #ifndef DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
-int cosem_setIecLocalPortSetup(gxLocalPortSetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setIecLocalPortSetup(gxLocalPortSetup * object, unsigned char index, dlmsVARIANT * value)
 {
     if (index == 2)
     {
@@ -2072,10 +2176,10 @@ int cosem_setIecLocalPortSetup(gxLocalPortSetup* object, unsigned char index, dl
 }
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
-int cosem_setIP4Setup(gxIp4Setup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setIP4Setup(gxIp4Setup * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos;
-    dlmsVARIANT *tmp, *tmp3;
+    dlmsVARIANT* tmp, * tmp3;
     gxip4SetupIpOption* ipItem;
 
     if (index == 2)
@@ -2099,7 +2203,7 @@ int cosem_setIP4Setup(gxIp4Setup* object, unsigned char index, dlmsVARIANT *valu
                 {
                     return ret;
                 }
-                tmp3 = (dlmsVARIANT *)gxmalloc(sizeof(dlmsVARIANT));
+                tmp3 = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
                 var_copy(tmp, tmp3);
                 va_push(&object->multicastIPAddress, tmp3);
             }
@@ -2123,6 +2227,11 @@ int cosem_setIP4Setup(gxIp4Setup* object, unsigned char index, dlmsVARIANT *valu
                     return ret;
                 }
                 ipItem = (gxip4SetupIpOption*)gxmalloc(sizeof(gxip4SetupIpOption));
+                if (ipItem == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+
                 bb_init(&ipItem->data);
                 ipItem->type = (DLMS_IP_OPTION_TYPE)var_toInteger(tmp3);
                 ret = va_get(tmp->Arr, &tmp3);
@@ -2169,7 +2278,7 @@ int cosem_setIP4Setup(gxIp4Setup* object, unsigned char index, dlmsVARIANT *valu
 }
 #endif //DLMS_IGNORE_IP4_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
-int cosem_setMbusSlavePortSetup(gxMbusSlavePortSetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setMbusSlavePortSetup(gxMbusSlavePortSetup * object, unsigned char index, dlmsVARIANT * value)
 {
     if (index == 2)
     {
@@ -2195,7 +2304,7 @@ int cosem_setMbusSlavePortSetup(gxMbusSlavePortSetup* object, unsigned char inde
 }
 #endif //DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 #ifndef DLMS_IGNORE_DISCONNECT_CONTROL
-int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setDisconnectControl(gxDisconnectControl * object, unsigned char index, dlmsVARIANT * value)
 {
     if (index == 2)
     {
@@ -2217,11 +2326,11 @@ int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index,
 }
 #endif //DLMS_IGNORE_DISCONNECT_CONTROL
 #ifndef DLMS_IGNORE_LIMITER
-int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setLimiter(dlmsSettings * settings, gxLimiter * object, unsigned char index, dlmsVARIANT * value)
 {
     DLMS_OBJECT_TYPE ot;
     int ret, pos;
-    dlmsVARIANT *tmp, *tmp3;
+    dlmsVARIANT* tmp, * tmp3;
     dlmsVARIANT tmp2;
     if (index == 2)
     {
@@ -2374,11 +2483,11 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
 }
 #endif //DLMS_IGNORE_LIMITER
 #ifndef DLMS_IGNORE_MBUS_CLIENT
-int cosem_setmMbusClient(gxMBusClient* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setmMbusClient(gxMBusClient * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
-    dlmsVARIANT *tmp, *tmp3;
-    gxByteBuffer *start, *end;
+    dlmsVARIANT* tmp, * tmp3;
+    gxByteBuffer* start, * end;
     if (index == 2)
     {
         bb_clear(&object->mBusPortReference);
@@ -2462,10 +2571,10 @@ int cosem_setmMbusClient(gxMBusClient* object, unsigned char index, dlmsVARIANT 
 }
 #endif //DLMS_IGNORE_MBUS_CLIENT
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
-int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setModemConfiguration(gxModemConfiguration * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos;
-    dlmsVARIANT *tmp, *tmp3;
+    dlmsVARIANT* tmp, * tmp3;
     gxModemInitialisation* modemInit;
     gxByteBuffer* str;
 
@@ -2491,6 +2600,11 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
                     return ret;
                 }
                 modemInit = (gxModemInitialisation*)gxmalloc(sizeof(gxModemInitialisation));
+                if (modemInit == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+
                 bb_init(&modemInit->request);
                 bb_init(&modemInit->response);
                 bb_set(&modemInit->request, tmp3->byteArr->data, tmp3->byteArr->size);
@@ -2540,10 +2654,10 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
 }
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_PPP_SETUP
-int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setPppSetup(gxPppSetup * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
-    dlmsVARIANT *tmp, *tmp3;
+    dlmsVARIANT* tmp, * tmp3;
     gxpppSetupLcpOption* lcpItem;
     gxpppSetupIPCPOption* ipcpItem;
 
@@ -2571,6 +2685,11 @@ int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT *valu
                 }
 
                 lcpItem = (gxpppSetupLcpOption*)gxmalloc(sizeof(gxpppSetupLcpOption));
+                if (lcpItem == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+
                 var_init(&lcpItem->data);
                 lcpItem->type = (DLMS_PPP_SETUP_LCP_OPTION_TYPE)var_toInteger(tmp3);
                 ret = va_get(tmp->Arr, &tmp3);
@@ -2615,6 +2734,11 @@ int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT *valu
                     return ret;
                 }
                 ipcpItem = (gxpppSetupIPCPOption*)gxmalloc(sizeof(gxpppSetupIPCPOption));
+                if (ipcpItem == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+
                 var_init(&ipcpItem->data);
                 ipcpItem->type = (DLMS_PPP_SETUP_IPCP_OPTION_TYPE)var_toInteger(tmp3);
                 ret = va_get(tmp->Arr, &tmp3);
@@ -2667,11 +2791,11 @@ int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT *valu
 }
 #endif //DLMS_IGNORE_PPP_SETUP
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
-int cosem_setRegisterActivation(gxRegisterActivation* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setRegisterActivation(gxRegisterActivation * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos, pos2;
-    dlmsVARIANT *tmp, *tmp3;
-    gxByteBuffer *start, *end;
+    dlmsVARIANT* tmp, * tmp3;
+    gxByteBuffer* start, * end;
     gxObjectDefinition* objectDefinition;
 
     if (index == 2)
@@ -2757,10 +2881,10 @@ int cosem_setRegisterActivation(gxRegisterActivation* object, unsigned char inde
 }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
-int cosem_setRegisterMonitor(gxRegisterMonitor* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setRegisterMonitor(gxRegisterMonitor * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos;
-    dlmsVARIANT *tmp, *tmp3, *tmp4;
+    dlmsVARIANT* tmp, * tmp3, * tmp4;
     gxActionSet* actionSet;
 
     if (index == 2)
@@ -2776,7 +2900,7 @@ int cosem_setRegisterMonitor(gxRegisterMonitor* object, unsigned char index, dlm
                 {
                     return ret;
                 }
-                tmp3 = (dlmsVARIANT *)gxmalloc(sizeof(dlmsVARIANT));
+                tmp3 = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
                 var_init(tmp3);
                 ret = var_copy(tmp3, tmp);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -2872,10 +2996,10 @@ int cosem_setRegisterMonitor(gxRegisterMonitor* object, unsigned char index, dlm
 }
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
-int cosem_setSapAssignment(gxSapAssignment* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setSapAssignment(gxSapAssignment * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
-    dlmsVARIANT *tmp, *tmp2;
+    dlmsVARIANT* tmp, * tmp2;
     gxSapItem* it;
     if (index == 2)
     {
@@ -2895,6 +3019,10 @@ int cosem_setSapAssignment(gxSapAssignment* object, unsigned char index, dlmsVAR
                     return ret;
                 }
                 it = (gxSapItem*)gxmalloc(sizeof(gxSapItem));
+                if (it == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 bb_init(&it->name);
                 it->id = (unsigned short)var_toInteger(tmp2);
                 ret = va_get(tmp->Arr, &tmp2);
@@ -2915,11 +3043,11 @@ int cosem_setSapAssignment(gxSapAssignment* object, unsigned char index, dlmsVAR
 }
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 #ifndef DLMS_IGNORE_SCHEDULE
-int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setSchedule(gxSchedule * object, unsigned char index, dlmsVARIANT * value)
 {
     gxScheduleEntry* se;
     int ret, pos;
-    dlmsVARIANT *tmp, *it;
+    dlmsVARIANT* tmp, * it;
     dlmsVARIANT tmp3;
     if (index == 2)
     {
@@ -2935,6 +3063,10 @@ int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *valu
                     return ret;
                 }
                 se = (gxScheduleEntry*)gxmalloc(sizeof(gxScheduleEntry));
+                if (se == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 ba_init(&se->execWeekdays);
                 ba_init(&se->execSpecDays);
                 ret = va_get(tmp->Arr, &it);
@@ -2955,8 +3087,7 @@ int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *valu
                 {
                     return ret;
                 }
-                memcpy(se->logicalName, it->byteArr->data, it->byteArr->size);
-
+                memcpy(se->logicalName, it->byteArr->data, bb_size(it->byteArr));
                 ret = va_get(tmp->Arr, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
@@ -3035,10 +3166,10 @@ int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *valu
 }
 #endif //DLMS_IGNORE_SCHEDULE
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
-int cosem_setScriptTable(gxScriptTable* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setScriptTable(gxScriptTable * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos, pos2;
-    dlmsVARIANT *tmp, *tmp2, *tmp3;
+    dlmsVARIANT* tmp, * tmp2, * tmp3;
     gxScriptAction* scriptAction;
     gxScript* script;
 
@@ -3142,6 +3273,10 @@ int cosem_setScriptTable(gxScriptTable* object, unsigned char index, dlmsVARIANT
                     return ret;
                 }
                 script = (gxScript*)gxmalloc(sizeof(gxScript));
+                if (script == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 arr_init(&script->actions);
                 script->id = (unsigned short)var_toInteger(tmp3);
                 arr_push(&object->scripts, script);
@@ -3151,6 +3286,10 @@ int cosem_setScriptTable(gxScriptTable* object, unsigned char index, dlmsVARIANT
                     return ret;
                 }
                 scriptAction = (gxScriptAction*)gxmalloc(sizeof(gxScriptAction));
+                if (scriptAction == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 var_init(&scriptAction->parameter);
                 scriptAction->type = (DLMS_SCRIPT_ACTION_TYPE)var_toInteger(tmp3);
                 ret = va_get(tmp2->Arr, &tmp3);
@@ -3190,10 +3329,10 @@ int cosem_setScriptTable(gxScriptTable* object, unsigned char index, dlmsVARIANT
 }
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
-int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setSpecialDaysTable(gxSpecialDaysTable * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos;
-    dlmsVARIANT *tmp, *tmp3;
+    dlmsVARIANT* tmp, * tmp3;
     dlmsVARIANT tmp2;
     gxSpecialDay* specialDay;
 
@@ -3249,7 +3388,7 @@ int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, d
 }
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
-int cosem_setTcpUdpSetup(gxTcpUdpSetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setTcpUdpSetup(gxTcpUdpSetup * object, unsigned char index, dlmsVARIANT * value)
 {
     if (index == 2)
     {
@@ -3280,7 +3419,7 @@ int cosem_setTcpUdpSetup(gxTcpUdpSetup* object, unsigned char index, dlmsVARIANT
 }
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
-int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup * object, unsigned char index, dlmsVARIANT * value)
 {
     if (index == 2)
     {
@@ -3295,12 +3434,12 @@ int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char in
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 
 #ifndef DLMS_IGNORE_MESSAGE_HANDLER
-int cosem_setMessageHandler(gxMessageHandler* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setMessageHandler(gxMessageHandler * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos;
-    dlmsVARIANT *tmp, *tmp2;
+    dlmsVARIANT* tmp, * tmp2;
     dlmsVARIANT start, end;
-    gxtime* s, *e;
+    gxtime* s, * e;
     if (index == 2)
     {
         var_init(&start);
@@ -3394,14 +3533,14 @@ int cosem_setMessageHandler(gxMessageHandler* object, unsigned char index, dlmsV
 }
 #endif //DLMS_IGNORE_MESSAGE_HANDLER
 #ifndef DLMS_IGNORE_PUSH_SETUP
-int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setPushSetup(dlmsSettings * settings, gxPushSetup * object, unsigned char index, dlmsVARIANT * value)
 {
-    gxObject *obj;
+    gxObject* obj;
     int ret, pos;
     gxCaptureObject* it;
-    dlmsVARIANT *tmp, *tmp3;
+    dlmsVARIANT* tmp, * tmp3;
     dlmsVARIANT start, end;
-    gxtime *s, *e;
+    gxtime* s, * e;
     DLMS_OBJECT_TYPE type;
     if (index == 2)
     {
@@ -3442,7 +3581,10 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                     memcpy(obj->logicalName, tmp3->byteArr->data, tmp3->byteArr->size);
                 }
                 it = (gxCaptureObject*)gxmalloc(sizeof(gxCaptureObject));
-
+                if (it == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 ret = va_get(tmp->Arr, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
@@ -3554,10 +3696,10 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
 }
 #endif //DLMS_IGNORE_PUSH_SETUP
 #ifndef DLMS_IGNORE_CHARGE
-int setUnitCharge(gxUnitCharge* target, dlmsVARIANT *value)
+int setUnitCharge(gxUnitCharge * target, dlmsVARIANT * value)
 {
-    gxChargeTable *ct;
-    dlmsVARIANT *it, *it2, *tmp;
+    gxChargeTable* ct;
+    dlmsVARIANT* it, * it2, * tmp;
     int ret, pos;
     ret = obj_clearChargeTables(&target->chargeTables);
     if (ret != 0)
@@ -3650,7 +3792,7 @@ int setUnitCharge(gxUnitCharge* target, dlmsVARIANT *value)
     return ret;
 }
 
-int cosem_setCharge(gxCharge* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setCharge(gxCharge * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret = 0;
     dlmsVARIANT tmp;
@@ -3740,7 +3882,7 @@ int cosem_setCharge(gxCharge* object, unsigned char index, dlmsVARIANT *value)
 }
 #endif //DLMS_IGNORE_CHARGE
 #ifndef DLMS_IGNORE_CREDIT
-int cosem_setCredit(gxCredit* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setCredit(gxCredit * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret = 0;
     dlmsVARIANT tmp;
@@ -3798,14 +3940,14 @@ int cosem_setCredit(gxCredit* object, unsigned char index, dlmsVARIANT *value)
 }
 #endif //DLMS_IGNORE_CREDIT
 #ifndef DLMS_IGNORE_ACCOUNT
-int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setAccount(gxAccount * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret = 0, pos;
-    unsigned char *ba;
-    dlmsVARIANT *it, *tmp2;
+    unsigned char* ba;
+    dlmsVARIANT* it, * tmp2;
     dlmsVARIANT tmp;
-    gxCreditChargeConfiguration *ccc;
-    gxTokenGatewayConfiguration *gwc;
+    gxCreditChargeConfiguration* ccc;
+    gxTokenGatewayConfiguration* gwc;
 
     if (index == 2)
     {
@@ -4053,10 +4195,10 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT *value)
 }
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
-int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setImageTransfer(gxImageTransfer * object, unsigned char index, dlmsVARIANT * value)
 {
     int pos, ret;
-    dlmsVARIANT *it, *tmp;
+    dlmsVARIANT* it, * tmp;
     gxImageActivateInfo* item;
     if (index == 2)
     {
@@ -4132,14 +4274,14 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
 
 #if !defined(DLMS_IGNORE_PROFILE_GENERIC) && !defined(DLMS_IGNORE_CONPACT_DATA)
 int setCaptureObjects(
-    dlmsSettings* settings,
-    gxArray* objects,
-    dlmsVARIANT *value)
+    dlmsSettings * settings,
+    gxArray * objects,
+    dlmsVARIANT * value)
 {
     DLMS_OBJECT_TYPE type;
-    dlmsVARIANT *tmp, *tmp2;
-    gxObject *obj;
-    gxCaptureObject *co;
+    dlmsVARIANT* tmp, * tmp2;
+    gxObject* obj;
+    gxCaptureObject* co;
     int pos, ret;
     ret = obj_clearProfileGenericCaptureObjects(objects);
     if (ret != DLMS_ERROR_CODE_OK)
@@ -4215,17 +4357,17 @@ int setCaptureObjects(
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 int cosem_setProfileGeneric(
-    dlmsSettings* settings,
-    gxProfileGeneric* object,
+    dlmsSettings * settings,
+    gxProfileGeneric * object,
     unsigned char index,
-    dlmsVARIANT *value)
+    dlmsVARIANT * value)
 {
     static unsigned char UNIX_TIME[6] = { 0, 0, 1, 1, 0, 255 };
 
     int ret, pos, pos2;
     DLMS_OBJECT_TYPE type;
-    dlmsVARIANT *tmp, *row, *data;
-    variantArray *va;
+    dlmsVARIANT* tmp, * row, * data;
+    variantArray* va;
     if (index == 2)
     {
         if (object->captureObjects.size == 0)
@@ -4265,7 +4407,7 @@ int cosem_setProfileGeneric(
                     if (data->vt == DLMS_DATA_TYPE_OCTET_STRING || data->vt == DLMS_DATA_TYPE_UINT32)
                     {
                         gxKey* k;
-                        if ((ret = arr_getByIndex(&object->captureObjects, pos2, (void**)&k)) != 0)
+                        if ((ret = arr_getByIndex(&object->captureObjects, pos2, (void**)& k)) != 0)
                         {
                             return ret;
                         }
@@ -4286,15 +4428,13 @@ int cosem_setProfileGeneric(
                             memcmp(((gxObject*)k->key)->logicalName, UNIX_TIME, 6) == 0)
                         {
                             gxtime tmp4;
-                            struct tm tmp5;
-                            time_fromUnixTime((time_t)data->ulVal, &tmp5);
-                            time_init2(&tmp4, &tmp5);
+                            time_init4(&tmp4, data->ulVal);
                             var_setDateTime(data, &tmp4);
                         }
                     }
                 }
                 //Attach rows from parser.
-                va = (variantArray *)gxmalloc(sizeof(variantArray));
+                va = (variantArray*)gxmalloc(sizeof(variantArray));
                 va_init(va);
                 va_attach(va, row->Arr);
                 va->position = 0;
@@ -4398,20 +4538,24 @@ int cosem_setProfileGeneric(
 }
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
-int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setGsmDiagnostic(gxGsmDiagnostic * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos;
     dlmsVARIANT tmp2;
-    dlmsVARIANT *tmp, *it;
+    dlmsVARIANT* tmp, * it;
     switch (index)
     {
     case 2:
         if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
         {
             gxfree(object->operatorName);
-            if (value->byteArr != NULL && value->byteArr->size != 0)
+            if (value->byteArr != NULL && bb_size(value->byteArr) != 0)
             {
-                object->operatorName = gxmalloc(value->byteArr->size + 1);
+                object->operatorName = (char*) gxmalloc(value->byteArr->size + 1);
+                if (object->operatorName == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 memcpy(object->operatorName, value->strVal, value->byteArr->size);
                 object->operatorName[value->byteArr->size] = '\0';
             }
@@ -4419,9 +4563,13 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
         else if (value->vt == DLMS_DATA_TYPE_STRING)
         {
             gxfree(object->operatorName);
-            if (value->strVal != NULL && value->strVal->size != 0)
+            if (value->strVal != NULL && bb_size(value->strVal) != 0)
             {
-                object->operatorName = gxmalloc(value->strVal->size + 1);
+                object->operatorName = (char*) gxmalloc(value->strVal->size + 1);
+                if (object->operatorName == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 memcpy(object->operatorName, value->strVal, value->strVal->size);
                 object->operatorName[value->strVal->size] = '\0';
             }
@@ -4542,11 +4690,11 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
 }
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
 #ifndef DLMS_IGNORE_TOKEN_GATEWAY
-int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setTokenGateway(gxTokenGateway * object, unsigned char index, dlmsVARIANT * value)
 {
     int ret, pos;
     dlmsVARIANT tmp2;
-    dlmsVARIANT *tmp, *it;
+    dlmsVARIANT* tmp, * it;
     switch (index)
     {
     case 2:
@@ -4617,12 +4765,12 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
 #ifndef DLMS_IGNORE_COMPACT_DATA
 
 int compactData_updateTemplateDescription(
-    dlmsSettings* settings,
-    gxCompactData* object)
+    dlmsSettings * settings,
+    gxCompactData * object)
 {
     int ret, pos;
     gxByteBuffer tmp;
-    gxKey *kv;
+    gxKey* kv;
     gxValueEventArg e;
     gxValueEventCollection args;
     bb_clear(&object->buffer);
@@ -4645,7 +4793,7 @@ int compactData_updateTemplateDescription(
         hlp_setObjectCount(object->captureObjects.size, &object->templateDescription);
         for (pos = 0; pos != object->captureObjects.size; ++pos)
         {
-            ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv);
+            ret = arr_getByIndex(&object->captureObjects, pos, (void**)& kv);
             if (ret != DLMS_ERROR_CODE_OK)
             {
                 bb_clear(&object->buffer);
@@ -4687,58 +4835,18 @@ int compactData_updateTemplateDescription(
                         if (((gxCaptureObject*)kv->value)->dataIndex == 0)
                         {
                             bb_setUInt8(&object->templateDescription, e.value.byteArr->data[0]);
-							if (e.value.byteArr->data[0] == DLMS_DATA_TYPE_ARRAY)
-							{
-								bb_setUInt16(&object->templateDescription, e.value.byteArr->data[1]);
-							}
-							else
-							{
-								bb_setUInt8(&object->templateDescription, e.value.byteArr->data[1]);
-							}
-							for (unsigned char pos = 0; pos < count; ++pos)
-							{
-								di_init(&info);
-								var_clear(&value);
-								if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0)
-								{
-									var_clear(&value);
-									var_clear(&e.value);
-									bb_clear(&object->buffer);
-									return ret;
-								}
-								if (info.type == DLMS_DATA_TYPE_STRUCTURE || info.type == DLMS_DATA_TYPE_ARRAY)
-								{
-									dlmsVARIANT* value2;
-									bb_setUInt8(&object->templateDescription, info.type);
-									bb_setUInt8(&object->templateDescription, (unsigned char)value.Arr->size);
-									for (unsigned short pos = 0; pos < value.Arr->size; ++pos)
-									{
-										if ((ret = va_getByIndex(value.Arr, pos, &value2)) != 0)
-										{
-											var_clear(&value);
-											var_clear(&e.value);
-											bb_clear(&object->buffer);
-											return ret;
-										}
-										bb_setUInt8(&object->templateDescription, value2->vt);
-									}
-								}
-								else
-								{
-									bb_setUInt8(&object->templateDescription, info.type);
-								}
-								if (e.value.byteArr->data[0] == DLMS_DATA_TYPE_ARRAY)
-								{
-									break;
-								}
-							}
-                        }
-                        else
-                        {
-                            for (unsigned char pos = 0; pos < ((gxCaptureObject*)kv->value)->dataIndex; ++pos)
+                            if (e.value.byteArr->data[0] == DLMS_DATA_TYPE_ARRAY)
                             {
+                                bb_setUInt16(&object->templateDescription, e.value.byteArr->data[1]);
+                            }
+                            else
+                            {
+                                bb_setUInt8(&object->templateDescription, e.value.byteArr->data[1]);
+                            }
+                            for (unsigned char pos = 0; pos < count; ++pos)
+                            {
+                                di_init(&info);
                                 var_clear(&value);
-								di_init(&info);
                                 if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0)
                                 {
                                     var_clear(&value);
@@ -4746,10 +4854,50 @@ int compactData_updateTemplateDescription(
                                     bb_clear(&object->buffer);
                                     return ret;
                                 }
-								if (!info.compleate)
-								{
-									return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-								}
+                                if (info.type == DLMS_DATA_TYPE_STRUCTURE || info.type == DLMS_DATA_TYPE_ARRAY)
+                                {
+                                    dlmsVARIANT* value2;
+                                    bb_setUInt8(&object->templateDescription, info.type);
+                                    bb_setUInt8(&object->templateDescription, (unsigned char)value.Arr->size);
+                                    for (unsigned short pos = 0; pos < value.Arr->size; ++pos)
+                                    {
+                                        if ((ret = va_getByIndex(value.Arr, pos, &value2)) != 0)
+                                        {
+                                            var_clear(&value);
+                                            var_clear(&e.value);
+                                            bb_clear(&object->buffer);
+                                            return ret;
+                                        }
+                                        bb_setUInt8(&object->templateDescription, value2->vt);
+                                    }
+                                }
+                                else
+                                {
+                                    bb_setUInt8(&object->templateDescription, info.type);
+                                }
+                                if (e.value.byteArr->data[0] == DLMS_DATA_TYPE_ARRAY)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for (unsigned char pos = 0; pos < ((gxCaptureObject*)kv->value)->dataIndex; ++pos)
+                            {
+                                var_clear(&value);
+                                di_init(&info);
+                                if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0)
+                                {
+                                    var_clear(&value);
+                                    var_clear(&e.value);
+                                    bb_clear(&object->buffer);
+                                    return ret;
+                                }
+                                if (!info.complete)
+                                {
+                                    return DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                                }
                             }
                             if (info.type == DLMS_DATA_TYPE_STRUCTURE)
                             {
@@ -4804,10 +4952,10 @@ int compactData_updateTemplateDescription(
 }
 
 int cosem_setCompactData(
-    dlmsSettings* settings,
-    gxCompactData* object,
+    dlmsSettings * settings,
+    gxCompactData * object,
     unsigned char index,
-    dlmsVARIANT *value)
+    dlmsVARIANT * value)
 {
     int ret = DLMS_ERROR_CODE_OK;
     switch (index)
@@ -4847,7 +4995,7 @@ int cosem_setCompactData(
 #endif //DLMS_IGNORE_COMPACT_DATA
 
 #ifdef DLMS_ITALIAN_STANDARD
-int updateInterval(gxInterval* interval, gxByteBuffer* value)
+int updateInterval(gxInterval * interval, gxByteBuffer * value)
 {
     int ret;
     unsigned char b;
@@ -4876,10 +5024,10 @@ int updateInterval(gxInterval* interval, gxByteBuffer* value)
     return 0;
 }
 
-int updateSeason(gxBandDescriptor* season, variantArray* value)
+int updateSeason(gxBandDescriptor * season, variantArray * value)
 {
     int ret;
-    dlmsVARIANT *tmp;
+    dlmsVARIANT* tmp;
     if (value->size == 5)
     {
         if ((ret = va_getByIndex(value, 0, &tmp)) != 0)
@@ -4909,10 +5057,10 @@ int updateSeason(gxBandDescriptor* season, variantArray* value)
     return ret;
 }
 
-int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT *value)
+int cosem_setTariffPlan(gxTariffPlan * object, unsigned char index, dlmsVARIANT * value)
 {
     dlmsVARIANT tmp3;
-    dlmsVARIANT *tmp, *tmp2;
+    dlmsVARIANT* tmp, * tmp2;
     int ret, pos, h, m, s;
     switch (index)
     {
@@ -5014,7 +5162,7 @@ int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT *
 
 #endif //DLMS_ITALIAN_STANDARD
 
-int cosem_setValue(dlmsSettings* settings, gxValueEventArg *e)
+int cosem_setValue(dlmsSettings * settings, gxValueEventArg * e)
 {
     int ret = DLMS_ERROR_CODE_OK;
     if (e->index == 1)
@@ -5040,7 +5188,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg *e)
 #endif //DLMS_IGNORE_REGISTER
 #ifndef DLMS_IGNORE_CLOCK
     case DLMS_OBJECT_TYPE_CLOCK:
-        ret = cosem_setClock((gxClock*)e->target, e->index, &e->value);
+        ret = cosem_setClock(settings, (gxClock*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_CLOCK
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE

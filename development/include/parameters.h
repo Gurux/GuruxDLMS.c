@@ -72,7 +72,11 @@ extern "C" {
         /**
          * Send date and time. This is used in Data notification messages.
          */
+#ifdef DLMS_USE_EPOCH_TIME
+        unsigned long time;
+#else
         struct tm* time;
+#endif //DLMS_USE_EPOCH_TIME
         /**
          * Item Count.
          */
@@ -137,7 +141,11 @@ extern "C" {
         /**
          * Send date and time. This is used in Data notification messages.
          */
+#ifdef DLMS_USE_EPOCH_TIME
+        unsigned long time;
+#else 
         struct tm* time;
+#endif // DLMS_USE_EPOCH_TIME
         /**
          * Reply status.
          */

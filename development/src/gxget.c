@@ -4253,6 +4253,41 @@ int cosem_getAccount(
 #endif //DLMS_IGNORE_ACCOUNT
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
+
+//Convert compact data buffer to array of values.
+int compactData_getValues(
+    dlmsSettings* settings,
+    gxByteBuffer* templateDescription,
+    gxByteBuffer* buffer,
+    variantArray* values)
+{
+    int ret, pos;
+    gxDataInfo info;
+    dlmsVARIANT tmp;
+    dlmsVARIANT* tmp2;
+    gxByteBuffer data;
+    //If templateDescription or buffer is not given.
+    if (values == NULL || bb_size(templateDescription) == 0 || bb_size(buffer) == 0)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    va_clear(values);
+    bb_init(&data);
+    bb_set(&data, templateDescription->data, templateDescription->size);
+    hlp_setObjectCount(buffer->size, &data);
+    bb_set(&data, buffer->data, buffer->size);
+    var_init(&tmp);
+    di_init(&info);
+    info.type = DLMS_DATA_TYPE_COMPACT_ARRAY;
+    if ((ret = dlms_getData(&data, &info, &tmp)) == 0 && tmp.Arr != NULL)
+    {
+        va_attach(values, tmp.Arr);
+    }
+    var_clear(&tmp);
+    bb_clear(&data);
+    return ret;
+}
+
 int cosem_getCompactData(
     dlmsSettings* settings,
     gxValueEventArg *e)

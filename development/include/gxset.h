@@ -49,7 +49,7 @@ extern "C" {
 #endif //DLMS_IGNORE_REGISTER
 
 #ifndef DLMS_IGNORE_CLOCK
-    int cosem_setClock(gxClock* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_CLOCK
 
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE

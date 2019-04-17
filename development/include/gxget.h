@@ -46,8 +46,21 @@ extern "C" {
     int cosem_getRegister(
         gxValueEventArg *e);
 
+#ifndef DLMS_IGNORE_CLOCK
     int cosem_getClock(
         gxValueEventArg *e);
+
+    //Update Daylight Saving time flag if DST is used.
+    void clock_updateDST(
+        gxClock* object,
+        gxtime* value);
+
+    //Convert UTC date time to meter date time.
+    int clock_utcToMeterTime(
+        gxClock* object, 
+        gxtime* value);
+    
+#endif // DLMS_IGNORE_CLOCK
 
     int cosem_getActionSchedule(
         gxValueEventArg *e);
@@ -170,6 +183,16 @@ extern "C" {
 
     int cosem_getGsmDiagnostic(
         gxValueEventArg *e);
+
+
+#ifndef DLMS_IGNORE_COMPACT_DATA
+    //Convert compact data buffer to array of values.
+    int compactData_getValues(
+        dlmsSettings* settings,
+        gxByteBuffer* templateDescription,
+        gxByteBuffer* buffer, 
+        variantArray* values);
+#endif //DLMS_IGNORE_COMPACT_DATA
 
 #ifdef  __cplusplus
 }

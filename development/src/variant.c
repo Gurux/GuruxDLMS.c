@@ -51,7 +51,7 @@
 #include "../include/errorcodes.h"
 #include "../include/helpers.h"
 
-int var_setEnum(dlmsVARIANT *data, unsigned char value)
+int var_setEnum(dlmsVARIANT* data, unsigned char value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_ENUM;
@@ -59,7 +59,7 @@ int var_setEnum(dlmsVARIANT *data, unsigned char value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setUInt8(dlmsVARIANT *data, unsigned char value)
+int var_setUInt8(dlmsVARIANT* data, unsigned char value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_UINT8;
@@ -67,7 +67,7 @@ int var_setUInt8(dlmsVARIANT *data, unsigned char value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setUInt16(dlmsVARIANT *data, unsigned short value)
+int var_setUInt16(dlmsVARIANT* data, unsigned short value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_UINT16;
@@ -75,7 +75,7 @@ int var_setUInt16(dlmsVARIANT *data, unsigned short value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setUInt32(dlmsVARIANT *data, unsigned long value)
+int var_setUInt32(dlmsVARIANT* data, unsigned long value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_UINT32;
@@ -83,7 +83,7 @@ int var_setUInt32(dlmsVARIANT *data, unsigned long value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setUInt64(dlmsVARIANT *data, unsigned long long value)
+int var_setUInt64(dlmsVARIANT* data, unsigned long long value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_UINT64;
@@ -91,7 +91,7 @@ int var_setUInt64(dlmsVARIANT *data, unsigned long long value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setInt8(dlmsVARIANT *data, char value)
+int var_setInt8(dlmsVARIANT* data, char value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_INT8;
@@ -99,7 +99,7 @@ int var_setInt8(dlmsVARIANT *data, char value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setInt16(dlmsVARIANT *data, short value)
+int var_setInt16(dlmsVARIANT* data, short value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_INT16;
@@ -107,7 +107,7 @@ int var_setInt16(dlmsVARIANT *data, short value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setInt32(dlmsVARIANT *data, long value)
+int var_setInt32(dlmsVARIANT* data, long value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_INT32;
@@ -115,7 +115,7 @@ int var_setInt32(dlmsVARIANT *data, long value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setInt64(dlmsVARIANT *data, long long value)
+int var_setInt64(dlmsVARIANT* data, long long value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_INT64;
@@ -123,7 +123,7 @@ int var_setInt64(dlmsVARIANT *data, long long value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setDouble(dlmsVARIANT *data, double value)
+int var_setDouble(dlmsVARIANT* data, double value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_FLOAT64;
@@ -131,7 +131,7 @@ int var_setDouble(dlmsVARIANT *data, double value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getUInt8(dlmsVARIANT *data, unsigned char* value)
+int var_getUInt8(dlmsVARIANT* data, unsigned char* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -144,7 +144,7 @@ int var_getUInt8(dlmsVARIANT *data, unsigned char* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getUInt16(dlmsVARIANT *data, unsigned short* value)
+int var_getUInt16(dlmsVARIANT* data, unsigned short* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -157,7 +157,7 @@ int var_getUInt16(dlmsVARIANT *data, unsigned short* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getUInt32(dlmsVARIANT *data, unsigned long* value)
+int var_getUInt32(dlmsVARIANT* data, unsigned long* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -170,7 +170,7 @@ int var_getUInt32(dlmsVARIANT *data, unsigned long* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getUInt64(dlmsVARIANT *data, unsigned long long* value)
+int var_getUInt64(dlmsVARIANT* data, unsigned long long* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -183,7 +183,7 @@ int var_getUInt64(dlmsVARIANT *data, unsigned long long* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getInt8(dlmsVARIANT *data, char* value)
+int var_getInt8(dlmsVARIANT* data, char* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -196,7 +196,7 @@ int var_getInt8(dlmsVARIANT *data, char* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getInt16(dlmsVARIANT *data, short* value)
+int var_getInt16(dlmsVARIANT* data, short* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -209,7 +209,7 @@ int var_getInt16(dlmsVARIANT *data, short* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getInt32(dlmsVARIANT *data, long* value)
+int var_getInt32(dlmsVARIANT* data, long* value)
 {
     var_clear(data);
     if (data->vt == DLMS_DATA_TYPE_NONE)
@@ -223,7 +223,7 @@ int var_getInt32(dlmsVARIANT *data, long* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getInt64(dlmsVARIANT *data, long long* value)
+int var_getInt64(dlmsVARIANT* data, long long* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -236,7 +236,7 @@ int var_getInt64(dlmsVARIANT *data, long long* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_addBytes(dlmsVARIANT *data, const unsigned char* value, unsigned short count)
+int var_addBytes(dlmsVARIANT* data, const unsigned char* value, unsigned short count)
 {
     if (count < 0)
     {
@@ -256,7 +256,7 @@ int var_addBytes(dlmsVARIANT *data, const unsigned char* value, unsigned short c
     return bb_set(data->byteArr, value, count);
 }
 
-int var_setString(dlmsVARIANT *data, const char* value, unsigned short count)
+int var_setString(dlmsVARIANT* data, const char* value, unsigned short count)
 {
     var_clear(data);
     if (count < 0)
@@ -275,7 +275,7 @@ int var_setString(dlmsVARIANT *data, const char* value, unsigned short count)
 }
 
 int var_addOctetString(
-    dlmsVARIANT *data,
+    dlmsVARIANT* data,
     gxByteBuffer* ba)
 {
     var_clear(data);
@@ -283,8 +283,8 @@ int var_addOctetString(
 }
 
 int var_addByteArray(
-    dlmsVARIANT *data,
-    gxByteBuffer* ba,
+    dlmsVARIANT * data,
+    gxByteBuffer * ba,
     unsigned short index,
     unsigned short count)
 {
@@ -292,7 +292,7 @@ int var_addByteArray(
 }
 
 //Initialize variant.
-int var_init(dlmsVARIANT *data)
+int var_init(dlmsVARIANT * data)
 {
     data->vt = DLMS_DATA_TYPE_NONE;
     data->byteArr = NULL;
@@ -300,7 +300,7 @@ int var_init(dlmsVARIANT *data)
 }
 
 void var_attachArray(dlmsVARIANT * data,
-    const dlmsVARIANT** arr,
+    const variantArray * arr,
     const unsigned short count)
 {
     data->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
@@ -308,11 +308,11 @@ void var_attachArray(dlmsVARIANT * data,
     data->Arr->capacity = 0x8000 + count;
     data->Arr->size = count;
     data->Arr->position = 0;
-    data->Arr->data = (void**)arr;
+    data->Arr->data = (void**)arr->data;
 }
 
 void var_attachStructure(dlmsVARIANT * data,
-    const dlmsVARIANT** arr,
+    const dlmsVARIANT * *arr,
     const unsigned short count)
 {
     data->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
@@ -324,10 +324,9 @@ void var_attachStructure(dlmsVARIANT * data,
 }
 
 //Clear variant.
-int var_clear(dlmsVARIANT *data)
+int var_clear(dlmsVARIANT * data)
 {
-    if (data->vt == DLMS_DATA_TYPE_OCTET_STRING ||
-        data->vt == DLMS_DATA_TYPE_COMPACT_ARRAY)
+    if (data->vt == DLMS_DATA_TYPE_OCTET_STRING)
     {
         if (data->byteArr != NULL)
         {
@@ -348,7 +347,8 @@ int var_clear(dlmsVARIANT *data)
         }
     }
     else if (data->vt == DLMS_DATA_TYPE_ARRAY ||
-        data->vt == DLMS_DATA_TYPE_STRUCTURE)
+        data->vt == DLMS_DATA_TYPE_STRUCTURE ||
+        data->vt == DLMS_DATA_TYPE_COMPACT_ARRAY)
     {
         if (data->Arr != NULL)
         {
@@ -380,15 +380,63 @@ int var_clear(dlmsVARIANT *data)
 }
 
 int var_getDateTime2(
-    gxtime *dateTime,
-    gxByteBuffer* ba)
+    gxtime * dateTime,
+    gxByteBuffer * ba)
 {
     unsigned short year = 0xFFFF;
+    unsigned char month = 0xFF, day = 0xFF, hour = 0xFF, minute = 0xFF, second = 0xFF, dayOfWeek = 0xFF;
+#ifdef DLMS_USE_EPOCH_TIME
+    time_fromUnixTime2(dateTime->value, &year, &month,
+        &day, &hour, &minute, &second, &dayOfWeek);
+    //Add year.
+    if ((dateTime->skip & DATETIME_SKIPS_YEAR) != 0)
+    {
+        year = 0xFFFF;
+    }
+    if ((dateTime->skip & (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY)) != 0)
+    {
+        dayOfWeek = 0xFFFF;
+    }
+#else
+    if (dateTime->value.tm_isdst && (dateTime->status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) == 0)
+    {
+        time_addMinutes(dateTime, -60);
+    }
     //Add year.
     if (dateTime->value.tm_year != -1 && (dateTime->skip & DATETIME_SKIPS_YEAR) == 0)
     {
         year = (unsigned short)(1900 + dateTime->value.tm_year);
     }
+    if (dateTime->value.tm_mon != -1 && (dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
+    {
+        month = (unsigned char)dateTime->value.tm_mon + 1;
+    }
+    if (dateTime->value.tm_mday != -1 && (dateTime->skip & DATETIME_SKIPS_DAY) == 0)
+    {
+        day = (unsigned char)dateTime->value.tm_mday;
+    }
+    //Add week day
+    if ((dateTime->value.tm_wday != -1 && dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
+    {
+        dayOfWeek = dateTime->value.tm_wday;
+    }
+    //Add Hours
+    if (dateTime->value.tm_hour != -1 && (dateTime->skip & DATETIME_SKIPS_HOUR) == 0)
+    {
+        hour = dateTime->value.tm_hour;
+    }
+    //Add Minutes
+    if (dateTime->value.tm_min != -1 && (dateTime->skip & DATETIME_SKIPS_MINUTE) == 0)
+    {
+        minute = dateTime->value.tm_min;
+    }
+    //Add seconds.
+    if (dateTime->value.tm_sec != -1 && (dateTime->skip & DATETIME_SKIPS_SECOND) == 0)
+    {
+        second = dateTime->value.tm_sec;
+    }
+#endif // DLMS_USE_EPOCH_TIME
+    //Add year.
     bb_setUInt16(ba, year);
     //Add month
     if (dateTime->daylightSavingsBegin)
@@ -399,33 +447,32 @@ int var_getDateTime2(
     {
         bb_setUInt8(ba, 0xFD);
     }
-    else if (dateTime->value.tm_mon != -1 && (dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
+    else if ((dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)(dateTime->value.tm_mon + 1));
+        bb_setUInt8(ba, month);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
     //Add day
-    if (dateTime->value.tm_mday != -1 && (dateTime->skip & DATETIME_SKIPS_DAY) == 0)
+    if ((dateTime->skip & DATETIME_SKIPS_DAY) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)dateTime->value.tm_mday);
+        bb_setUInt8(ba, day);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
     //Add week day
-    if (dateTime->value.tm_wday != -1 && (dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
+    if ((dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
     {
-        unsigned char val = (unsigned char)dateTime->value.tm_wday;
         //If Sunday.
-        if (val == 0)
+        if (dayOfWeek == 0)
         {
-            val = 7;
+            dayOfWeek = 7;
         }
-        bb_setUInt8(ba, val);
+        bb_setUInt8(ba, dayOfWeek);
     }
     else
     {
@@ -433,27 +480,27 @@ int var_getDateTime2(
     }
 
     //Add Hours
-    if (dateTime->value.tm_hour != -1 && (dateTime->skip & DATETIME_SKIPS_HOUR) == 0)
+    if ((dateTime->skip & DATETIME_SKIPS_HOUR) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)dateTime->value.tm_hour);
+        bb_setUInt8(ba, hour);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
     //Add Minutes
-    if (dateTime->value.tm_min != -1 && (dateTime->skip & DATETIME_SKIPS_MINUTE) == 0)
+    if ((dateTime->skip & DATETIME_SKIPS_MINUTE) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)dateTime->value.tm_min);
+        bb_setUInt8(ba, minute);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
     //Add seconds.
-    if (dateTime->value.tm_sec != -1 && (dateTime->skip & DATETIME_SKIPS_SECOND) == 0)
+    if ((dateTime->skip & DATETIME_SKIPS_SECOND) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)dateTime->value.tm_sec);
+        bb_setUInt8(ba, second);
     }
     else
     {
@@ -473,9 +520,8 @@ int var_getDateTime2(
         bb_setUInt8(ba, 0xFF);
     }
 #endif //DLMS_ITALIAN_STANDARD
-
     //Add Deviation
-    if (dateTime->value.tm_year == -1 || (dateTime->skip & DATETIME_SKIPS_DEVITATION) != 0)
+    if (year == 0xFFFF || (dateTime->skip & DATETIME_SKIPS_DEVITATION) != 0)
     {
         bb_setInt16(ba, 0x8000);//(not specified)
     }
@@ -484,106 +530,162 @@ int var_getDateTime2(
         bb_setInt16(ba, dateTime->deviation);
     }
     //Add clock status
-    if (dateTime->value.tm_isdst)
-    {
-        bb_setUInt8(ba, dateTime->status | DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE);
-    }
-    else
-    {
-        bb_setUInt8(ba, dateTime->status);
-    }
+    bb_setUInt8(ba, dateTime->status);
     return 0;
 }
 
 int var_getDate(
-    gxtime * date,
-    gxByteBuffer* ba)
+    gxtime * dateTime,
+    gxByteBuffer * ba)
 {
     unsigned short year = 0xFFFF;
+    unsigned char month = 0xFF, day = 0xFF, dayOfWeek = 0xFF;
+#ifdef DLMS_USE_EPOCH_TIME
+    time_fromUnixTime2(dateTime->value, &year, &month,
+        &day, NULL, NULL, NULL, &dayOfWeek);
     //Add year.
-    if (date->value.tm_year != -1 && (date->skip & DATETIME_SKIPS_YEAR) == 0)
+    if ((dateTime->skip & DATETIME_SKIPS_YEAR) != 0)
     {
-        year = (unsigned short)(1900 + date->value.tm_year);
+        year = 0xFFFF;
     }
+#else
+    //Add year.
+    if (dateTime->value.tm_year != -1 && (dateTime->skip & DATETIME_SKIPS_YEAR) == 0)
+    {
+        year = (unsigned short)(1900 + dateTime->value.tm_year);
+    }
+    if (dateTime->value.tm_mon != -1 && (dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
+    {
+        month = (unsigned char)dateTime->value.tm_mon + 1;
+    }
+    if (dateTime->value.tm_mday != -1 && (dateTime->skip & DATETIME_SKIPS_DAY) == 0)
+    {
+        day = (unsigned char)dateTime->value.tm_mday;
+    }
+    //Add week day
+    if ((dateTime->value.tm_wday != -1 && dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
+    {
+        dayOfWeek = dateTime->value.tm_wday;
+    }
+#endif // DLMS_USE_EPOCH_TIME
+    //Add year.
     bb_setUInt16(ba, year);
     //Add month
-    if (date->daylightSavingsBegin)
+    if (dateTime->daylightSavingsBegin)
     {
         bb_setUInt8(ba, 0xFE);
     }
-    else if (date->daylightSavingsEnd)
+    else if (dateTime->daylightSavingsEnd)
     {
         bb_setUInt8(ba, 0xFD);
     }
-    else if (date->value.tm_mon != -1 && (date->skip & DATETIME_SKIPS_MONTH) == 0)
+    else if ((dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)(date->value.tm_mon + 1));
+        bb_setUInt8(ba, month);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
     //Add day
-    if (date->value.tm_mday != -1 && (date->skip & DATETIME_SKIPS_DAY) == 0)
+    if ((dateTime->skip & DATETIME_SKIPS_DAY) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)date->value.tm_mday);
+        bb_setUInt8(ba, day);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
     //Add week day
-    bb_setUInt8(ba, 0xFF);
+    if ((dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
+    {
+        //If Sunday.
+        if (dayOfWeek == 0)
+        {
+            dayOfWeek = 7;
+        }
+        bb_setUInt8(ba, dayOfWeek);
+    }
+    else
+    {
+        bb_setUInt8(ba, 0xFF);
+    }
     return 0;
 }
 
 int var_getTime(
-    gxtime * date,
-    gxByteBuffer* ba)
+    gxtime * dateTime,
+    gxByteBuffer * ba)
 {
+    unsigned char hour, minute, second;
+#ifdef DLMS_USE_EPOCH_TIME
+    time_fromUnixTime2(dateTime->value, NULL, NULL,
+        NULL, &hour, &minute, &second, NULL);
+#else
     //Add Hours
-    if (date->value.tm_hour != -1 && (date->skip & DATETIME_SKIPS_HOUR) == 0)
+    if (dateTime->value.tm_hour != -1 && (dateTime->skip & DATETIME_SKIPS_HOUR) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)date->value.tm_hour);
+        hour = dateTime->value.tm_hour;
+    }
+    //Add Minutes
+    if (dateTime->value.tm_min != -1 && (dateTime->skip & DATETIME_SKIPS_MINUTE) == 0)
+    {
+        minute = dateTime->value.tm_min;
+    }
+    //Add seconds.
+    if (dateTime->value.tm_sec != -1 && (dateTime->skip & DATETIME_SKIPS_SECOND) == 0)
+    {
+        second = dateTime->value.tm_sec;
+    }
+#endif // DLMS_USE_EPOCH_TIME
+    //Add Hours
+    if ((dateTime->skip & DATETIME_SKIPS_HOUR) == 0)
+    {
+        bb_setUInt8(ba, hour);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
     //Add Minutes
-    if (date->value.tm_min != -1 && (date->skip & DATETIME_SKIPS_MINUTE) == 0)
+    if ((dateTime->skip & DATETIME_SKIPS_MINUTE) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)date->value.tm_min);
+        bb_setUInt8(ba, minute);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
     //Add seconds.
-    if (date->value.tm_sec != -1 && (date->skip & DATETIME_SKIPS_SECOND) == 0)
+    if ((dateTime->skip & DATETIME_SKIPS_SECOND) == 0)
     {
-        bb_setUInt8(ba, (unsigned char)date->value.tm_sec);
+        bb_setUInt8(ba, second);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
     //Add ms.
-    if ((date->skip & DATETIME_SKIPS_MS) == 0)
+#ifdef DLMS_ITALIAN_STANDARD
+    //Italian standard uses 0 for ms.
+    bb_setUInt8(ba, 0x00);
+#else
+    if ((dateTime->skip & DATETIME_SKIPS_MS) == 0)
     {
-        bb_setUInt8(ba, 0);
+        bb_setUInt8(ba, 0x00);
     }
     else
     {
         bb_setUInt8(ba, 0xFF);
     }
+#endif //DLMS_ITALIAN_STANDARD
     return 0;
 }
 
 //Get bytes from variant value.
 int var_getBytes(
-    dlmsVARIANT *data,
-    gxByteBuffer* ba)
+    dlmsVARIANT * data,
+    gxByteBuffer * ba)
 {
     return var_getBytes2(data, data->vt, ba);
 }
@@ -596,7 +698,7 @@ int var_getBytes(
 * value
 *            Added value.
 */
-int var_setOctetString(gxByteBuffer* buff, dlmsVARIANT* value)
+int var_setOctetString(gxByteBuffer * buff, dlmsVARIANT * value)
 {
     if (value->vt == DLMS_DATA_TYPE_STRING)
     {
@@ -633,9 +735,9 @@ int var_setOctetString(gxByteBuffer* buff, dlmsVARIANT* value)
 
 //Returns bytes as Big Endian byteorder.
 int var_getBytes2(
-    dlmsVARIANT *data,
+    dlmsVARIANT * data,
     DLMS_DATA_TYPE type,
-    gxByteBuffer* ba)
+    gxByteBuffer * ba)
 {
     int ret, pos;
     if (type == DLMS_DATA_TYPE_STRUCTURE ||
@@ -837,7 +939,7 @@ int var_getSize(DLMS_DATA_TYPE vt)
 }
 
 //Convert variant value to integer.
-int var_toInteger(dlmsVARIANT *data)
+int var_toInteger(dlmsVARIANT * data)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -921,18 +1023,18 @@ int var_toInteger(dlmsVARIANT *data)
     return 0;
 }
 
-char va_isAttached(variantArray* arr)
+char va_isAttached(variantArray * arr)
 {
     return (arr->capacity & 0x8000) == 0x8000;
 }
 
-unsigned short va_getCapacity(variantArray* arr)
+unsigned short va_getCapacity(variantArray * arr)
 {
     return arr->capacity & 0x7FFF;
 }
 
 //Initialize variantArray.
-void va_init(variantArray* arr)
+void va_init(variantArray * arr)
 {
     arr->capacity = 0;
     arr->data = NULL;
@@ -941,7 +1043,7 @@ void va_init(variantArray* arr)
 }
 
 //Allocate new size for the array in bytes.
-void va_capacity(variantArray* arr, unsigned short capacity)
+void va_capacity(variantArray * arr, unsigned short capacity)
 {
     if (!va_isAttached(arr))
     {
@@ -961,7 +1063,7 @@ void va_capacity(variantArray* arr, unsigned short capacity)
             }
             else
             {
-                arr->data = (void**)gxrealloc(arr->data, capacity * sizeof(dlmsVARIANT *));
+                arr->data = (void**)gxrealloc(arr->data, capacity * sizeof(dlmsVARIANT*));
             }
         }
         arr->capacity = capacity;
@@ -969,21 +1071,21 @@ void va_capacity(variantArray* arr, unsigned short capacity)
 }
 
 //Push new data to the variantArray.
-int va_push(variantArray * arr, dlmsVARIANT *item)
+int va_push(variantArray * arr, dlmsVARIANT * item)
 {
-    dlmsVARIANT ** p;
+    dlmsVARIANT** p;
     if (!va_isAttached(arr))
     {
         if (arr->size >= arr->capacity)
         {
-            arr->capacity += VECTOR_ARRAY_CAPACITY;
+            arr->capacity += VARIANT_ARRAY_CAPACITY;
             if (arr->size == 0)
             {
-                arr->data = (void**)gxmalloc(arr->capacity * sizeof(dlmsVARIANT *));
+                arr->data = (void**)gxmalloc(arr->capacity * sizeof(dlmsVARIANT*));
             }
             else
             {
-                arr->data = (void**)gxrealloc(arr->data, arr->capacity * sizeof(dlmsVARIANT *));
+                arr->data = (void**)gxrealloc(arr->data, arr->capacity * sizeof(dlmsVARIANT*));
             }
         }
     }
@@ -991,14 +1093,14 @@ int va_push(variantArray * arr, dlmsVARIANT *item)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    p = (dlmsVARIANT **)arr->data;
+    p = (dlmsVARIANT * *)arr->data;
     p[arr->size] = item;
     ++arr->size;
     return 0;
 }
 
 void va_clear(
-    variantArray* arr)
+    variantArray * arr)
 {
     int pos;
     unsigned char attached = va_isAttached(arr);
@@ -1006,7 +1108,7 @@ void va_clear(
     {
         for (pos = 0; pos != arr->size; ++pos)
         {
-            var_clear((dlmsVARIANT *)arr->data[pos]);
+            var_clear((dlmsVARIANT*)arr->data[pos]);
             gxfree(arr->data[pos]);
         }
         gxfree(arr->data);
@@ -1021,8 +1123,8 @@ void va_clear(
 }
 
 void va_attach(
-    variantArray* trg,
-    variantArray* src)
+    variantArray * trg,
+    variantArray * src)
 {
     trg->capacity = src->capacity;
     trg->data = src->data;
@@ -1033,14 +1135,14 @@ void va_attach(
 }
 
 //Get item from variant array.
-int va_get(variantArray* arr, dlmsVARIANT ** item)
+int va_get(variantArray * arr, dlmsVARIANT * *item)
 {
-    dlmsVARIANT ** p;
+    dlmsVARIANT** p;
     if (arr->position >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    p = (dlmsVARIANT **)arr->data;
+    p = (dlmsVARIANT * *)arr->data;
     *item = p[arr->position];
     ++arr->position;
     return DLMS_ERROR_CODE_OK;
@@ -1048,24 +1150,24 @@ int va_get(variantArray* arr, dlmsVARIANT ** item)
 
 
 //Get item from variant array by index.
-int va_getByIndex(variantArray* arr, int index, dlmsVARIANT ** item)
+int va_getByIndex(variantArray * arr, int index, dlmsVARIANT * *item)
 {
-    dlmsVARIANT ** p;
+    dlmsVARIANT** p;
     if (index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    p = (dlmsVARIANT **)arr->data;
+    p = (dlmsVARIANT * *)arr->data;
     *item = p[index];
     return DLMS_ERROR_CODE_OK;
 }
 
 int va_copyArray(
-    variantArray* target,
-    variantArray* source)
+    variantArray * target,
+    variantArray * source)
 {
     int ret = DLMS_ERROR_CODE_OK;
-    dlmsVARIANT *tmp, *tmp2;
+    dlmsVARIANT* tmp, * tmp2;
     int pos;
     va_clear(target);
     for (pos = 0; pos != source->size; ++pos)
@@ -1075,7 +1177,7 @@ int va_copyArray(
         {
             return ret;
         }
-        tmp2 = (dlmsVARIANT *)gxmalloc(sizeof(dlmsVARIANT));
+        tmp2 = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
         var_init(tmp2);
         ret = var_copy(tmp2, tmp);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -1088,7 +1190,7 @@ int va_copyArray(
 }
 
 //Note! var_toString do not clear existing bytearray.
-int var_toString(dlmsVARIANT *item, gxByteBuffer* value)
+int var_toString(dlmsVARIANT * item, gxByteBuffer * value)
 {
     int ret = DLMS_ERROR_CODE_OK;
     dlmsVARIANT tmp;
@@ -1109,10 +1211,10 @@ int var_toString(dlmsVARIANT *item, gxByteBuffer* value)
 
 //Note! va_toString do not clear existing bytearray.
 int va_toString(
-    variantArray *items,
-    gxByteBuffer* ba)
+    variantArray * items,
+    gxByteBuffer * ba)
 {
-    dlmsVARIANT * it;
+    dlmsVARIANT* it;
     int pos, ret = DLMS_ERROR_CODE_OK;
     for (pos = 0; pos != items->size; ++pos)
     {
@@ -1132,14 +1234,14 @@ int va_toString(
     return ret;
 }
 
-static int convert(dlmsVARIANT *item, DLMS_DATA_TYPE type)
+static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
 {
     unsigned char ch;
     int ret, fromSize, toSize;
     unsigned short pos;
     char buff[250];
     dlmsVARIANT tmp, tmp3;
-    dlmsVARIANT *it;
+    dlmsVARIANT* it;
     if (item->vt == type)
     {
         return DLMS_ERROR_CODE_OK;
@@ -1185,6 +1287,8 @@ static int convert(dlmsVARIANT *item, DLMS_DATA_TYPE type)
                 }
             }
             bb_setUInt8(item->strVal, '}');
+            bb_setUInt8(item->strVal, '\0');
+            --item->strVal->size;
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
@@ -1499,7 +1603,7 @@ static int convert(dlmsVARIANT *item, DLMS_DATA_TYPE type)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_changeType(dlmsVARIANT *value, DLMS_DATA_TYPE newType)
+int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
 {
     if (newType == value->vt)
     {
@@ -1764,10 +1868,10 @@ int var_changeType(dlmsVARIANT *value, DLMS_DATA_TYPE newType)
 }
 
 //copy variant.
-int var_copy(dlmsVARIANT *target, dlmsVARIANT *source)
+int var_copy(dlmsVARIANT * target, dlmsVARIANT * source)
 {
-    dlmsVARIANT *it;
-    dlmsVARIANT *item;
+    dlmsVARIANT* it;
+    dlmsVARIANT* item;
     int ret = DLMS_ERROR_CODE_OK, pos;
     unsigned char attaced = 0;
     if ((target->vt == DLMS_DATA_TYPE_ARRAY || target->vt == DLMS_DATA_TYPE_STRUCTURE) && va_isAttached(target->Arr))
@@ -1829,7 +1933,7 @@ int var_copy(dlmsVARIANT *target, dlmsVARIANT *source)
                 }
                 else
                 {
-                    item = (dlmsVARIANT *)gxmalloc(sizeof(dlmsVARIANT));
+                    item = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
                     ret = var_init(item);
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
@@ -1875,7 +1979,7 @@ int var_copy(dlmsVARIANT *target, dlmsVARIANT *source)
     return ret;
 }
 
-int var_setDateTime(dlmsVARIANT *target, gxtime* value)
+int var_setDateTime(dlmsVARIANT * target, gxtime * value)
 {
     int ret;
     ret = var_clear(target);
@@ -1889,7 +1993,7 @@ int var_setDateTime(dlmsVARIANT *target, gxtime* value)
     return ret;
 }
 
-int var_setDate(dlmsVARIANT *target, gxtime* value)
+int var_setDate(dlmsVARIANT * target, gxtime * value)
 {
     int ret;
     ret = var_clear(target);
@@ -1903,7 +2007,7 @@ int var_setDate(dlmsVARIANT *target, gxtime* value)
     return ret;
 }
 
-int var_setTime(dlmsVARIANT *target, gxtime* value)
+int var_setTime(dlmsVARIANT * target, gxtime * value)
 {
     int ret;
     ret = var_clear(target);
@@ -1918,8 +2022,8 @@ int var_setTime(dlmsVARIANT *target, gxtime* value)
 }
 
 int var_setDateTimeAsOctetString(
-    dlmsVARIANT *target,
-    gxtime* value)
+    dlmsVARIANT * target,
+    gxtime * value)
 {
     int ret;
     ret = var_clear(target);
@@ -1939,8 +2043,8 @@ int var_setDateTimeAsOctetString(
 }
 
 int var_setDateAsOctetString(
-    dlmsVARIANT *target,
-    gxtime* value)
+    dlmsVARIANT * target,
+    gxtime * value)
 {
     int ret;
     ret = var_clear(target);
@@ -1960,8 +2064,8 @@ int var_setDateAsOctetString(
 }
 
 int var_setTimeAsOctetString(
-    dlmsVARIANT *target,
-    gxtime* value)
+    dlmsVARIANT * target,
+    gxtime * value)
 {
     int ret;
     ret = var_clear(target);
@@ -1980,7 +2084,7 @@ int var_setTimeAsOctetString(
     return 0;
 }
 
-int var_setBoolean(dlmsVARIANT *target, char value)
+int var_setBoolean(dlmsVARIANT * target, char value)
 {
     int ret;
     ret = var_clear(target);
@@ -1994,7 +2098,7 @@ int var_setBoolean(dlmsVARIANT *target, char value)
 }
 
 void var_attach(
-    dlmsVARIANT *target,
+    dlmsVARIANT * target,
     gxByteBuffer * source)
 {
     target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
@@ -2007,7 +2111,7 @@ void var_attach(
     target->vt = DLMS_DATA_TYPE_OCTET_STRING;
 }
 
-int var_getDateTime(dlmsVARIANT *target, gxtime* value)
+int var_getDateTime(dlmsVARIANT * target, gxtime * value)
 {
     if (target->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -2030,7 +2134,7 @@ int var_getDateTime(dlmsVARIANT *target, gxtime* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-double var_toDouble(dlmsVARIANT *target)
+double var_toDouble(dlmsVARIANT * target)
 {
     switch (target->vt)
     {
@@ -2111,7 +2215,7 @@ double var_toDouble(dlmsVARIANT *target)
 
 #ifndef GX_DLMS_MICROCONTROLLER
 //Print content of the variant to cout.
-int var_print(const char* format, dlmsVARIANT *target)
+int var_print(const char* format, dlmsVARIANT * target)
 {
     int ret = DLMS_ERROR_CODE_OK;
     dlmsVARIANT tmp;
@@ -2124,8 +2228,9 @@ int var_print(const char* format, dlmsVARIANT *target)
         {
             if (format == NULL)
             {
-                printf(format, tmp.strVal->data);
+                format = "%s\r\n";
             }
+            printf(format, tmp.strVal->data);
         }
     }
     var_clear(&tmp);
@@ -2133,10 +2238,11 @@ int var_print(const char* format, dlmsVARIANT *target)
 }
 
 int va_print(
-    variantArray *items)
+    variantArray * items)
 {
-    dlmsVARIANT * it;
+    dlmsVARIANT* it;
     int pos, ret = DLMS_ERROR_CODE_OK;
+    char* format = "%s,\r\n";
     for (pos = 0; pos != items->size; ++pos)
     {
         if ((ret = va_getByIndex(items, pos, &it)) != 0)
@@ -2144,7 +2250,11 @@ int va_print(
             return ret;
         }
 
-        if ((ret = var_print(NULL, it)) != 0)
+        if (pos + 1 == items->size)
+        {
+            format = NULL;
+        }
+        if ((ret = var_print(format, it)) != 0)
         {
             return ret;
         }

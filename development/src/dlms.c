@@ -92,7 +92,7 @@ int dlms_checkInit(dlmsSettings* settings)
 *            Executed DLMS command.
 * @return Integer value of glo message.
 */
-unsigned char dlms_getGloMessage(dlmsSettings *settings, DLMS_COMMAND command, DLMS_COMMAND encryptedCommand)
+unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, DLMS_COMMAND encryptedCommand)
 {
     unsigned char cmd;
     unsigned glo = settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION;
@@ -255,7 +255,7 @@ unsigned char dlms_getGloMessage(dlmsSettings *settings, DLMS_COMMAND command, D
 }
 #endif //DLMS_IGNORE_HIGH_GMAC
 
-unsigned char dlms_getInvokeIDPriority(dlmsSettings *settings)
+unsigned char dlms_getInvokeIDPriority(dlmsSettings* settings)
 {
     unsigned char value = 0;
     if (settings->priority == DLMS_PRIORITY_HIGH)
@@ -277,7 +277,7 @@ unsigned char dlms_getInvokeIDPriority(dlmsSettings *settings)
 *            DLMS settings->
 * @return Invoke ID and priority.
 */
-long dlms_getLongInvokeIDPriority(dlmsSettings *settings)
+long dlms_getLongInvokeIDPriority(dlmsSettings* settings)
 {
     long value = 0;
     if (settings->priority == DLMS_PRIORITY_HIGH)
@@ -294,7 +294,7 @@ long dlms_getLongInvokeIDPriority(dlmsSettings *settings)
 }
 
 int dlms_getMaxPduSize(
-    dlmsSettings * settings,
+    dlmsSettings* settings,
     gxByteBuffer* data,
     gxByteBuffer* bb)
 {
@@ -318,16 +318,16 @@ int dlms_getMaxPduSize(
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int dlms_setData2(
-    unsigned char *buff,
+    unsigned char* buff,
     unsigned long length,
     DLMS_DATA_TYPE type,
-    dlmsVARIANT *value)
+    dlmsVARIANT * value)
 #else
 int dlms_setData2(
-    unsigned char *buff,
+    unsigned char* buff,
     unsigned short length,
     DLMS_DATA_TYPE type,
-    dlmsVARIANT *value)
+    dlmsVARIANT * value)
 #endif
 {
     gxByteBuffer bb;
@@ -335,7 +335,7 @@ int dlms_setData2(
     return dlms_setData(&bb, type, value);
 }
 
-int dlms_setData(gxByteBuffer *buff, DLMS_DATA_TYPE type, dlmsVARIANT *value)
+int dlms_setData(gxByteBuffer * buff, DLMS_DATA_TYPE type, dlmsVARIANT * value)
 {
     int ret;
     ret = var_changeType(value, type);
@@ -346,7 +346,7 @@ int dlms_setData(gxByteBuffer *buff, DLMS_DATA_TYPE type, dlmsVARIANT *value)
     return var_getBytes2(value, type, buff);
 }
 
-int getCount(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getCount(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     if (hlp_getObjectCount2(buff, &info->count) != 0)
     {
@@ -374,9 +374,9 @@ int getCount(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            starting index.
 * Returns  CGXDLMSVariant array.
 */
-int getArray(gxByteBuffer *buff, gxDataInfo *info, unsigned short index, dlmsVARIANT *value)
+int getArray(gxByteBuffer * buff, gxDataInfo * info, unsigned short index, dlmsVARIANT * value)
 {
-    dlmsVARIANT *tmp;
+    dlmsVARIANT* tmp;
     gxDataInfo info2;
     unsigned long size;
     unsigned short pos, startIndex;
@@ -407,7 +407,7 @@ int getArray(gxByteBuffer *buff, gxDataInfo *info, unsigned short index, dlmsVAR
     size = buff->size - buff->position;
     if (info->count != 0 && size < 1)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     startIndex = index;
@@ -427,12 +427,12 @@ int getArray(gxByteBuffer *buff, gxDataInfo *info, unsigned short index, dlmsVAR
             gxfree(tmp);
             return ret;
         }
-        if (!info2.compleate)
+        if (!info2.complete)
         {
             var_clear(tmp);
             gxfree(tmp);
             buff->position = startIndex;
-            info->compleate = 0;
+            info->complete = 0;
             break;
         }
         else
@@ -458,13 +458,13 @@ int getArray(gxByteBuffer *buff, gxDataInfo *info, unsigned short index, dlmsVAR
 *            Data info.
 * Returns  parsed UInt32 value.
 */
-int getUInt32(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT * value)
+int getUInt32(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 4)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     value->vt = DLMS_DATA_TYPE_UINT32;
@@ -484,13 +484,13 @@ int getUInt32(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT * value)
 *            Data info.
 * Returns  parsed Int32 value.
 */
-int getInt32(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT * value)
+int getInt32(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 4)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     value->vt = DLMS_DATA_TYPE_INT32;
@@ -508,7 +508,7 @@ int getInt32(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT * value)
 * info : Data info.
 * Returns parsed bit std::string value.
 */
-static int getBitString(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT * value)
+static int getBitString(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     double t;
     unsigned short byteCnt;
@@ -528,7 +528,7 @@ static int getBitString(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT * valu
     // If there is not enough data available.
     if (buff->size - buff->position < byteCnt)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     value->bitArr = (bitArray*)gxmalloc(sizeof(bitArray));
@@ -540,14 +540,14 @@ static int getBitString(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT * valu
     return 0;
 }
 
-static int getBool(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+static int getBool(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     unsigned char ch;
     // If there is not enough data available.
     if (buff->size - buff->position < 1)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getUInt8(buff, &ch)) != 0)
@@ -568,7 +568,7 @@ static int getBool(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  parsed std::string value.
 */
-int getString(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType, dlmsVARIANT *value)
+int getString(gxByteBuffer * buff, gxDataInfo * info, unsigned char knownType, dlmsVARIANT * value)
 {
     unsigned short len = 0;
     if (knownType)
@@ -584,7 +584,7 @@ int getString(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType, dlm
         // If there is not enough data available.
         if (buff->size - buff->position < (unsigned short)len)
         {
-            info->compleate = 0;
+            info->complete = 0;
             return 0;
         }
     }
@@ -614,10 +614,10 @@ int getString(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType, dlm
 * Returns  parsed UTF std::string value.
 */
 int getUtfString(
-    gxByteBuffer *buff,
-    gxDataInfo *info,
+    gxByteBuffer * buff,
+    gxDataInfo * info,
     unsigned char knownType,
-    dlmsVARIANT *value)
+    dlmsVARIANT * value)
 {
     unsigned short len = 0;
     var_clear(value);
@@ -634,7 +634,7 @@ int getUtfString(
         // If there is not enough data available.
         if (buff->size - buff->position < (unsigned short)(2 * len))
         {
-            info->compleate = 0;
+            info->complete = 0;
             return 0;
         }
     }
@@ -666,7 +666,7 @@ int getUtfString(
 *            Data info.
 * Returns  parsed octet std::string value.
 */
-int getOctetString(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType, dlmsVARIANT *value)
+int getOctetString(gxByteBuffer * buff, gxDataInfo * info, unsigned char knownType, dlmsVARIANT * value)
 {
     unsigned short len;
     int ret = 0;
@@ -683,7 +683,7 @@ int getOctetString(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType
         // If there is not enough data available.
         if (buff->size - buff->position < len)
         {
-            info->compleate = 0;
+            info->complete = 0;
             return 0;
         }
     }
@@ -712,7 +712,7 @@ int getOctetString(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType
 *            Data info.
 * Returns  parsed BCD value.
 */
-int getBcd(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType, dlmsVARIANT *value)
+int getBcd(gxByteBuffer * buff, gxDataInfo * info, unsigned char knownType, dlmsVARIANT * value)
 {
     unsigned char idHigh, idLow;
     static const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
@@ -735,7 +735,7 @@ int getBcd(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType, dlmsVA
         // If there is not enough data available.
         if ((buff->size - buff->position) < (unsigned short)len)
         {
-            info->compleate = 0;
+            info->complete = 0;
             return 0;
         }
     }
@@ -764,13 +764,13 @@ int getBcd(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType, dlmsVA
 *            Data info.
 * Returns  parsed UInt8 value.
 */
-int getUInt8(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getUInt8(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 1)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getUInt8(buff, &value->bVal)) != 0)
@@ -790,13 +790,13 @@ int getUInt8(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  parsed Int16 value.
 */
-int getInt16(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getInt16(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 2)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getInt16(buff, &value->iVal)) != 0)
@@ -816,13 +816,13 @@ int getInt16(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  parsed Int8 value.
 */
-int getInt8(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getInt8(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 1)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getInt8(buff, &value->cVal)) != 0)
@@ -843,13 +843,13 @@ int getInt8(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  parsed UInt16 value.
 */
-int getUInt16(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getUInt16(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 2)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getUInt16(buff, &value->uiVal)) != 0)
@@ -870,13 +870,13 @@ int getUInt16(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  parsed Int64 value.
 */
-int getInt64(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getInt64(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 8)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getInt64(buff, &value->llVal)) != 0)
@@ -897,13 +897,13 @@ int getInt64(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  parsed UInt64 value.
 */
-int getUInt64(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getUInt64(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 8)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getUInt64(buff, &value->ullVal)) != 0)
@@ -924,13 +924,13 @@ int getUInt64(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  parsed enumeration value.
 */
-int getEnum(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getEnum(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 1)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getUInt8(buff, &value->bVal)) != 0)
@@ -951,13 +951,13 @@ int getEnum(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  Parsed double value.
 */
-int getDouble(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getDouble(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 8)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getDouble(buff, &value->dblVal)) != 0)
@@ -977,13 +977,13 @@ int getDouble(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  Parsed float value.
 */
-int getFloat(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getFloat(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     // If there is not enough data available.
     if (buff->size - buff->position < 4)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     if ((ret = bb_getFloat(buff, &value->fltVal)) != 0)
@@ -1005,7 +1005,7 @@ int getFloat(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  Parsed time.
 */
-int getTime(gxByteBuffer* buff, gxDataInfo *info, dlmsVARIANT *value)
+int getTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret;
     unsigned char ch, hour, minute, second;
@@ -1013,7 +1013,7 @@ int getTime(gxByteBuffer* buff, gxDataInfo *info, dlmsVARIANT *value)
     if (buff->size - buff->position < 4)
     {
         // If there is not enough data available.
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     // Get time.
@@ -1055,7 +1055,7 @@ int getTime(gxByteBuffer* buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  Parsed date.
 */
-int getDate(gxByteBuffer* buff, gxDataInfo *info, dlmsVARIANT *value)
+int getDate(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     int ret, month, day;
     unsigned short year;
@@ -1063,7 +1063,7 @@ int getDate(gxByteBuffer* buff, gxDataInfo *info, dlmsVARIANT *value)
     if (buff->size - buff->position < 5)
     {
         // If there is not enough data available.
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     // Get year.
@@ -1103,15 +1103,19 @@ int getDate(gxByteBuffer* buff, gxDataInfo *info, dlmsVARIANT *value)
 *            Data info.
 * Returns  Parsed date and time.
 */
-int getDateTime(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+int getDateTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 {
     unsigned short year;
+#ifdef DLMS_USE_EPOCH_TIME
+    int ret, status;
+#else
     int ret, ms, status;
+#endif // DLMS_USE_EPOCH_TIME
     unsigned char ch;
     // If there is not enough data available.
     if (buff->size - buff->position < 12)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     // Get year.
@@ -1120,6 +1124,100 @@ int getDateTime(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
         return ret;
     }
     value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
+#ifdef DLMS_USE_EPOCH_TIME
+    short deviation;
+    unsigned char mon = 0, day = 0, hour = 0, min = 0, sec = 0, wday = 0, skip = 0;
+    // Get month
+    if ((ret = bb_getUInt8(buff, &mon)) != 0)
+    {
+        return ret;
+    }
+    // Get day
+    if ((ret = bb_getUInt8(buff, &day)) != 0)
+    {
+        return ret;
+    }
+    // Skip week day
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    // Get time.
+    if ((ret = bb_getUInt8(buff, &hour)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = bb_getUInt8(buff, &min)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = bb_getUInt8(buff, &sec)) != 0)
+    {
+        return ret;
+    }
+    //Get ms.
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = bb_getInt16(buff, &deviation)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    status = ch;
+    value->dateTime->status = (DLMS_CLOCK_STATUS)status;
+    skip = DATETIME_SKIPS_MS;
+    if (year < 1 || year == 0xFFFF)
+    {
+        skip |= DATETIME_SKIPS_YEAR;
+        year = 2000;
+    }
+    if (wday < 0 || wday > 7)
+    {
+        wday = 0;
+        skip |= DATETIME_SKIPS_DAYOFWEEK;
+    }
+    unsigned char daylightSavingsBegin = mon == 0xFE;
+    unsigned char daylightSavingsEnd = mon == 0xFD;
+    if (mon < 1 || mon > 12)
+    {
+        skip |= DATETIME_SKIPS_MONTH;
+        mon = 1;
+    }
+    if (day == -1 || day == 0 || day > 31)
+    {
+        skip |= DATETIME_SKIPS_DAY;
+        day = 1;
+    }
+    else if (day < 0)
+    {
+        //TODO: day = cal.GetActualMaximum(Calendar.DATE) + day + 3;
+    }
+    if (hour < 0 || hour > 24)
+    {
+        skip |= DATETIME_SKIPS_HOUR;
+        hour = 0;
+    }
+    if (min < 0 || min > 60)
+    {
+        skip |= DATETIME_SKIPS_MINUTE;
+        min = 0;
+    }
+    if (sec < 0 || sec > 60)
+    {
+        skip |= DATETIME_SKIPS_SECOND;
+        sec = 0;
+    }
+    time_init(value->dateTime, year, mon, day, hour, min, sec, 0, deviation);
+    value->dateTime->skip = skip;
+    value->dateTime->status = status;
+    value->dateTime->daylightSavingsBegin = daylightSavingsBegin;
+    value->dateTime->daylightSavingsEnd = daylightSavingsEnd;
+#else
     value->dateTime->value.tm_yday = 0;
     value->dateTime->value.tm_year = year;
     // Get month
@@ -1229,14 +1327,438 @@ int getDateTime(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
         value->dateTime->skip = (DATETIME_SKIPS)(value->dateTime->skip | DATETIME_SKIPS_SECOND);
         value->dateTime->value.tm_sec = 0;
     }
-    value->dateTime->value.tm_isdst = (status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0;
+    value->dateTime->value.tm_isdst = (status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE);
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     mktime(&value->dateTime->value);
 #endif
+#endif //DLMS_USE_EPOCH_TIME
     return 0;
 }
 
-int dlms_getData(gxByteBuffer* data, gxDataInfo *info, dlmsVARIANT *value)
+
+int getCompactArrayItem(
+    gxByteBuffer * buff,
+    DLMS_DATA_TYPE dt,
+    variantArray * list,
+    unsigned long len)
+{
+    int ret;
+    gxDataInfo tmp;
+    di_init(&tmp);
+    tmp.type = dt;
+    unsigned long start = buff->position;
+    dlmsVARIANT* value = gxmalloc(sizeof(dlmsVARIANT));
+    if (value == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    var_init(value);
+    if (dt == DLMS_DATA_TYPE_STRING)
+    {
+        while (buff->position - start < len)
+        {
+            var_clear(value);
+            di_init(&tmp);
+            tmp.type = dt;
+            if ((ret = getString(buff, &tmp, 0, value)) != 0)
+            {
+                return ret;
+            }
+            va_push(list, value);
+            if (!tmp.complete)
+            {
+                break;
+            }
+        }
+    }
+    else if (dt == DLMS_DATA_TYPE_OCTET_STRING)
+    {
+        while (buff->position - start < len)
+        {
+            var_clear(value);
+            di_init(&tmp);
+            tmp.type = dt;
+            if ((ret = getOctetString(buff, &tmp, 0, value)) != 0)
+            {
+                return ret;
+            }
+            va_push(list, value);
+            if (!tmp.complete)
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        while (buff->position - start < len)
+        {
+            var_clear(value);
+            di_init(&tmp);
+            tmp.type = dt;
+            if ((ret = dlms_getData(buff, &tmp, value)) != 0)
+            {
+                return ret;
+            }
+            va_push(list, value);
+            if (!tmp.complete)
+            {
+                break;
+            }
+        }
+    }
+    return 0;
+}
+
+int getCompactArrayItem2(
+    gxByteBuffer * buff,
+    variantArray * dt,
+    variantArray * list,
+    int len)
+{
+    int ret, pos;
+    dlmsVARIANT* tmp = gxmalloc(sizeof(dlmsVARIANT));
+    if (tmp == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    dlmsVARIANT* it;
+    var_init(tmp);
+    tmp->vt = DLMS_DATA_TYPE_ARRAY;
+    tmp->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
+    if (tmp->Arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    va_init(tmp->Arr);
+    for (pos = 0; pos != dt->size; ++pos)
+    {
+        if ((ret = va_getByIndex(dt, pos, &it)) != 0)
+        {
+            var_clear(tmp);
+            gxfree(tmp);
+            return ret;
+        }
+        if (it->vt == DLMS_DATA_TYPE_ARRAY || it->vt == DLMS_DATA_TYPE_STRUCTURE)
+        {
+            if ((ret = getCompactArrayItem2(buff, it->Arr, tmp->Arr, 1)) != 0)
+            {
+                var_clear(tmp);
+                gxfree(tmp);
+                return ret;
+            }
+        }
+        else
+        {
+            if ((ret = getCompactArrayItem(buff, (DLMS_DATA_TYPE)it->bVal, tmp->Arr, 1)) != 0)
+            {
+                var_clear(tmp);
+                gxfree(tmp);
+                return ret;
+            }
+        }
+    }
+    va_push(list, tmp);
+    return 0;
+}
+
+int getDataTypes(
+    gxByteBuffer * buff,
+    variantArray * cols,
+    int len)
+{
+    int ret;
+    unsigned char ch;
+    unsigned short cnt;
+    DLMS_DATA_TYPE dt;
+    if (cols->size == 0)
+    {
+        va_capacity(cols, len);
+    }
+    for (int pos = 0; pos != len; ++pos)
+    {
+        if ((ret = bb_getUInt8(buff, &ch)) != 0)
+        {
+            return ret;
+        }
+        dt = (DLMS_DATA_TYPE)ch;
+        if (dt == DLMS_DATA_TYPE_ARRAY)
+        {
+            if ((ret = bb_getUInt16(buff, &cnt)) != 0)
+            {
+                return ret;
+            }
+            dlmsVARIANT tmp;
+            dlmsVARIANT* it;
+            var_init(&tmp);
+            tmp.Arr = (variantArray*)gxmalloc(sizeof(variantArray));
+            tmp.vt = DLMS_DATA_TYPE_ARRAY;
+            if (tmp.Arr == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            va_init(tmp.Arr);
+            getDataTypes(buff, tmp.Arr, 1);
+            if ((ret = va_getByIndex(tmp.Arr, 0, &it)) != 0)
+            {
+                va_clear(cols);
+                return ret;
+            }
+            dlmsVARIANT* tmp2 = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
+            if (tmp2 == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            var_init(tmp2);
+            tmp2->vt = DLMS_DATA_TYPE_ARRAY;
+            tmp2->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
+            if (tmp2->Arr == NULL)
+            {
+                var_clear(tmp2);
+                gxfree(tmp2);
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            va_init(tmp2->Arr);
+            for (int i = 0; i != cnt; ++i)
+            {
+                dlmsVARIANT* tmp3 = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
+                if (tmp3 == NULL)
+                {
+                    var_clear(tmp2);
+                    gxfree(tmp2);
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                var_init(tmp3);
+                if ((ret = var_copy(tmp3, it)) != 0)
+                {
+                    var_clear(tmp3);
+                    gxfree(tmp3);
+                    var_clear(tmp2);
+                    gxfree(tmp2);
+                    return ret;
+                }
+                va_push(tmp2->Arr, tmp3);
+            }
+            var_clear(&tmp);
+            va_push(cols, tmp2);
+        }
+        else if (dt == DLMS_DATA_TYPE_STRUCTURE)
+        {
+            dlmsVARIANT* tmp = gxmalloc(sizeof(dlmsVARIANT));
+            if (tmp == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            var_init(tmp);
+            if ((ret = bb_getUInt8(buff, &ch)) != 0)
+            {
+                va_clear(cols);
+                var_clear(tmp);
+                gxfree(tmp);
+                return ret;
+            }
+            tmp->vt = DLMS_DATA_TYPE_STRUCTURE;
+            tmp->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
+            if (tmp->Arr == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            va_init(tmp->Arr);
+            getDataTypes(buff, tmp->Arr, ch);
+            va_push(cols, tmp);
+        }
+        else
+        {
+            dlmsVARIANT* tmp = gxmalloc(sizeof(dlmsVARIANT));
+            if (tmp == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            var_init(tmp);
+            if (cols->size == 0)
+            {
+                va_capacity(cols, 1);
+            }
+            var_setUInt8(tmp, dt);
+            va_push(cols, tmp);
+        }
+    }
+    return 0;
+}
+
+//Get compact array value from DLMS data.
+int getCompactArray(
+    dlmsSettings * settings,
+    gxByteBuffer * buff,
+    gxDataInfo * info,
+    dlmsVARIANT * value,
+    unsigned char onlyDataTypes)
+{
+    int ret, pos;
+    unsigned short len;
+    unsigned char ch;
+    var_clear(value);
+    // If there is not enough data available.
+    if (buff->size - buff->position < 2)
+    {
+        info->complete = 0;
+        return 0;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    DLMS_DATA_TYPE dt = (DLMS_DATA_TYPE)ch;
+    if (dt == DLMS_DATA_TYPE_ARRAY)
+    {
+        //Invalid compact array data.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = hlp_getObjectCount2(buff, &len)) != 0)
+    {
+        return ret;
+    }
+    value->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
+    value->vt = DLMS_DATA_TYPE_ARRAY;
+    if (value->Arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    va_init(value->Arr);
+    if (dt == DLMS_DATA_TYPE_STRUCTURE)
+    {
+        // Get data types.
+        variantArray cols;
+        va_init(&cols);
+        if ((ret = getDataTypes(buff, &cols, len)) != 0)
+        {
+            va_clear(&cols);
+            return ret;
+        }
+        if (onlyDataTypes)
+        {
+            va_attach(value->Arr, &cols);
+            return 0;
+        }
+        if (buff->position == buff->size)
+        {
+            len = 0;
+        }
+        else
+        {
+            if ((ret = hlp_getObjectCount2(buff, &len)) != 0)
+            {
+                va_clear(&cols);
+                return ret;
+            }
+        }
+        int start = buff->position;
+        while (buff->position - start < len)
+        {
+            dlmsVARIANT* it, * it2, * it3, *it4;
+            variantArray* row = (variantArray*)gxmalloc(sizeof(variantArray));
+            if (row == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            va_init(row);
+            for (pos = 0; pos != cols.size; ++pos)
+            {
+                if ((ret = va_getByIndex(&cols, pos, &it)) != 0)
+                {
+                    va_clear(&cols);
+                    va_clear(row);
+                    gxfree(row);
+                    return ret;
+                }
+                if (it->vt == DLMS_DATA_TYPE_STRUCTURE)
+                {
+                    if ((ret = getCompactArrayItem2(buff, it->Arr, row, 1)) != 0)
+                    {
+                        va_clear(&cols);
+                        va_clear(row);
+                        gxfree(row);
+                        return ret;
+                    }
+                }
+                else if (it->vt == DLMS_DATA_TYPE_ARRAY)
+                {
+                    int pos1;
+                    variantArray tmp2;
+                    va_init(&tmp2);
+                    getCompactArrayItem2(buff, it->Arr, &tmp2, 1);
+                    if ((ret = va_getByIndex(&tmp2, 0, &it2)) != 0)
+                    {
+                        va_clear(&tmp2);
+                        va_clear(&cols);
+                        va_clear(row);
+                        gxfree(row);
+                        return ret;
+                    }
+                    for (pos1 = 0; pos1 != it2->Arr->size; ++pos1)
+                    {
+                        if ((ret = va_getByIndex(it2->Arr, pos1, &it3)) != 0)
+                        {
+                            va_clear(&tmp2);
+                            va_clear(&cols);
+                            va_clear(row);
+                            gxfree(row);
+                            return ret;
+                        }
+                        it4 = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
+                        if (it4 == NULL)
+                        {
+                            return DLMS_ERROR_CODE_OUTOFMEMORY;
+                        }
+                        var_init(it4);
+                        if ((ret = var_copy(it4, it3)) != 0)
+                        {
+                            return ret;
+                        }
+                        va_push(row, it4);
+                    }
+                    va_clear(&tmp2);
+                }
+                else
+                {
+                    if ((ret = getCompactArrayItem(buff, (DLMS_DATA_TYPE)it->bVal, row, 1)) != 0)
+                    {
+                        va_clear(&cols);
+                        va_clear(row);
+                        gxfree(row);
+                        return ret;
+                    }
+                }
+                if (buff->position == buff->size)
+                {
+                    break;
+                }
+            }
+            //If all columns are read.
+            if (row->size >= cols.size)
+            {
+                dlmsVARIANT* tmp = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
+                if (tmp == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                var_clear(tmp);
+                tmp->Arr = row;
+                tmp->vt = DLMS_DATA_TYPE_ARRAY;
+                va_push(value->Arr, tmp);
+            }
+            else
+            {
+                break;
+            }
+        }
+        va_clear(&cols);
+        return 0;
+    }
+    return getCompactArrayItem(buff, dt, value->Arr, len);
+}
+
+int dlms_getData(gxByteBuffer * data, gxDataInfo * info, dlmsVARIANT * value)
 {
     unsigned char ch, knownType;
     unsigned long startIndex = data->position;
@@ -1244,10 +1766,10 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo *info, dlmsVARIANT *value)
     var_clear(value);
     if (data->position == data->size)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
-    info->compleate = 1;
+    info->complete = 1;
     knownType = info->type != DLMS_DATA_TYPE_NONE;
     if (!knownType)
     {
@@ -1265,7 +1787,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo *info, dlmsVARIANT *value)
     }
     if (data->position == data->size)
     {
-        info->compleate = 0;
+        info->complete = 0;
         return 0;
     }
     switch (info->type)
@@ -1316,10 +1838,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo *info, dlmsVARIANT *value)
         ret = getUInt16(data, info, value);
         break;
     case DLMS_DATA_TYPE_COMPACT_ARRAY:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = getCompactArray(NULL, data, info, value, 0);
         break;
     case DLMS_DATA_TYPE_INT64:
         ret = getInt64(data, info, value);
@@ -1364,7 +1883,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo *info, dlmsVARIANT *value)
 }
 
 //Return DLMS_ERROR_CODE_FALSE if LLC bytes are not included.
-int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
+int dlms_checkLLCBytes(dlmsSettings * settings, gxByteBuffer * data)
 {
     if (settings->server)
     {
@@ -1387,8 +1906,8 @@ int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
 }
 
 int dlms_getHDLCAddress(
-    gxByteBuffer *buff,
-    unsigned long *address,
+    gxByteBuffer * buff,
+    unsigned long* address,
     unsigned char isClientAddress)
 {
     unsigned char ch;
@@ -1460,8 +1979,8 @@ int dlms_getHDLCAddress(
 */
 int dlms_checkHdlcAddress(
     unsigned char server,
-    dlmsSettings* settings,
-    gxByteBuffer* reply,
+    dlmsSettings * settings,
+    gxByteBuffer * reply,
     unsigned short index)
 {
     unsigned char ch;
@@ -1569,7 +2088,7 @@ int dlms_getAddress(long value, unsigned long* address, int* size)
 */
 int dlms_getAddressBytes(
     unsigned long value,
-    gxByteBuffer* bytes)
+    gxByteBuffer * bytes)
 {
     int ret, size;
     unsigned long address;
@@ -1597,10 +2116,10 @@ int dlms_getAddressBytes(
 }
 
 int dlms_getHdlcFrame(
-    dlmsSettings* settings,
+    dlmsSettings * settings,
     int frame,
-    gxByteBuffer* data,
-    gxByteBuffer* reply)
+    gxByteBuffer * data,
+    gxByteBuffer * reply)
 {
     unsigned short crc;
     int ret;
@@ -1721,17 +2240,17 @@ int dlms_getHdlcFrame(
                 //Remove sent data.
                 ret = bb_move(data, data->position, 0, data->size - data->position);
                 data->position = 0;
-            }
         }
     }
+}
     bb_clear(&primaryAddress);
     bb_clear(&secondaryAddress);
     return ret;
 }
 
 void dlms_getDataFromFrame(
-    gxByteBuffer* reply,
-    gxReplyData* data)
+    gxByteBuffer * reply,
+    gxReplyData * data)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     unsigned long offset = data->data.size;
@@ -1755,13 +2274,13 @@ void dlms_getDataFromFrame(
     }
     // Set position to begin of new data.
     data->data.position = offset;
-}
+    }
 
 int dlms_getHdlcData(
     unsigned char server,
-    dlmsSettings* settings,
-    gxByteBuffer* reply,
-    gxReplyData* data,
+    dlmsSettings * settings,
+    gxByteBuffer * reply,
+    gxReplyData * data,
     unsigned char* frame,
     unsigned char preEstablished,
     unsigned char first)
@@ -1945,7 +2464,7 @@ int dlms_getHdlcData(
                 return ret;
             }
         }
-        data->command = (DLMS_COMMAND)*frame;
+        data->command = (DLMS_COMMAND)* frame;
     }
     else if ((*frame & HDLC_FRAME_TYPE_S_FRAME) == HDLC_FRAME_TYPE_S_FRAME)
     {
@@ -1988,12 +2507,12 @@ int dlms_getHdlcData(
             {
                 data->moreData = DLMS_DATA_REQUEST_TYPES_FRAME;
             }
-        }
+            }
         else
         {
             dlms_checkLLCBytes(settings, reply);
         }
-    }
+        }
     if (settings->server && (first || data->command == DLMS_COMMAND_SNRM))
     {
 #ifndef DLMS_IGNORE_SERVER
@@ -2021,10 +2540,10 @@ int dlms_getHdlcData(
 #endif //DLMS_IGNORE_SERVER
     }
     return DLMS_ERROR_CODE_OK;
-}
+    }
 
-int dlms_checkWrapperAddress(dlmsSettings* settings,
-    gxByteBuffer *buff)
+int dlms_checkWrapperAddress(dlmsSettings * settings,
+    gxByteBuffer * buff)
 {
 #ifndef DLMS_IGNORE_WRAPPER
     int ret;
@@ -2099,9 +2618,9 @@ int dlms_checkWrapperAddress(dlmsSettings* settings,
 
 #ifndef DLMS_IGNORE_WRAPPER
 int dlms_getTcpData(
-    dlmsSettings* settings,
-    gxByteBuffer* buff,
-    gxReplyData* data)
+    dlmsSettings * settings,
+    gxByteBuffer * buff,
+    gxReplyData * data)
 {
     int ret, pos;
     unsigned short value;
@@ -2143,17 +2662,17 @@ int dlms_getTcpData(
                 data->packetLength = buff->position + value;
             }
             break;
-        }
+            }
         else
         {
             --buff->position;
         }
-    }
+        }
     return DLMS_ERROR_CODE_OK;
-}
+    }
 #endif //DLMS_IGNORE_WRAPPER
 
-int dlms_getDataFromBlock(gxByteBuffer* data, unsigned short index)
+int dlms_getDataFromBlock(gxByteBuffer * data, unsigned short index)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     unsigned long pos, len = data->position - index;
@@ -2176,9 +2695,9 @@ int dlms_getDataFromBlock(gxByteBuffer* data, unsigned short index)
 }
 
 int dlms_receiverReady(
-    dlmsSettings* settings,
+    dlmsSettings * settings,
     DLMS_DATA_REQUEST_TYPES type,
-    gxByteBuffer* reply)
+    gxByteBuffer * reply)
 {
     int ret;
     DLMS_COMMAND cmd;
@@ -2204,12 +2723,12 @@ int dlms_receiverReady(
         if (settings->server)
         {
             cmd = DLMS_COMMAND_GET_RESPONSE;
-        }
+    }
         else
         {
             cmd = DLMS_COMMAND_GET_REQUEST;
         }
-    }
+}
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -2259,13 +2778,13 @@ int dlms_receiverReady(
     bb_clear(&bb);
     mes_clear(&tmp);
     return ret;
-}
+    }
 
 #ifndef DLMS_IGNORE_WRAPPER
 int dlms_getWrapperFrame(
-    dlmsSettings* settings,
-    gxByteBuffer* data,
-    gxByteBuffer* reply)
+    dlmsSettings * settings,
+    gxByteBuffer * data,
+    gxByteBuffer * reply)
 {
     int ret;
     if ((ret = bb_clear(reply)) == 0 &&
@@ -2312,8 +2831,8 @@ int dlms_getWrapperFrame(
 #endif //DLMS_IGNORE_WRAPPER
 
 int dlms_handleGetResponse(
-    dlmsSettings* settings,
-    gxReplyData* reply,
+    dlmsSettings * settings,
+    gxReplyData * reply,
     unsigned short index)
 {
     int ret;
@@ -2452,7 +2971,7 @@ int dlms_handleGetResponse(
     return ret;
 }
 
-int handleWriteResponse(gxReplyData* data)
+int handleWriteResponse(gxReplyData * data)
 {
     unsigned char ch;
     int ret;
@@ -2480,7 +2999,7 @@ int handleWriteResponse(gxReplyData* data)
 }
 
 int dlms_handleWriteResponse(
-    gxReplyData* data)
+    gxReplyData * data)
 {
     unsigned char ch;
     int ret;
@@ -2507,8 +3026,8 @@ int dlms_handleWriteResponse(
     return DLMS_ERROR_CODE_OK;
 }
 
-int dlms_getValueFromData(dlmsSettings* settings,
-    gxReplyData* reply)
+int dlms_getValueFromData(dlmsSettings * settings,
+    gxReplyData * reply)
 {
     unsigned short index;
     int ret, pos;
@@ -2565,7 +3084,7 @@ int dlms_getValueFromData(dlmsSettings* settings,
         // Element count.
         reply->totalCount = info.count;
     }
-    else if (info.compleate
+    else if (info.complete
         && reply->command == DLMS_COMMAND_DATA_NOTIFICATION)
     {
         // If last item is null. This is a special case.
@@ -2575,7 +3094,7 @@ int dlms_getValueFromData(dlmsSettings* settings,
 
     // If last data frame of the data block is read.
     if (reply->command != DLMS_COMMAND_DATA_NOTIFICATION
-        && info.compleate && reply->moreData == DLMS_DATA_REQUEST_TYPES_NONE)
+        && info.complete && reply->moreData == DLMS_DATA_REQUEST_TYPES_NONE)
     {
         // If all blocks are read.
         resetBlockIndex(settings);
@@ -2585,8 +3104,8 @@ int dlms_getValueFromData(dlmsSettings* settings,
 }
 
 int dlms_readResponseDataBlockResult(
-    dlmsSettings* settings,
-    gxReplyData* reply,
+    dlmsSettings * settings,
+    gxReplyData * reply,
     unsigned short index)
 {
     int ret;
@@ -2648,8 +3167,8 @@ int dlms_readResponseDataBlockResult(
     return ret;
 }
 int dlms_handleReadResponse(
-    dlmsSettings* settings,
-    gxReplyData* reply,
+    dlmsSettings * settings,
+    gxReplyData * reply,
     unsigned short index)
 {
     int ret;
@@ -2773,7 +3292,7 @@ int dlms_handleReadResponse(
 }
 
 int dlms_handleMethodResponse(
-    gxReplyData* data)
+    gxReplyData * data)
 {
     int ret;
     unsigned char ch, type;
@@ -2871,7 +3390,7 @@ int dlms_handleMethodResponse(
     return DLMS_ERROR_CODE_OK;
 }
 
-int dlms_handlePush(gxReplyData* reply)
+int dlms_handlePush(gxReplyData * reply)
 {
     unsigned char ch;
     unsigned long ul;
@@ -2939,7 +3458,7 @@ int dlms_handlePush(gxReplyData* reply)
 }
 
 int dlms_handleSetResponse(
-    gxReplyData* data)
+    gxReplyData * data)
 {
     unsigned char ch, type, invokeId;
     int ret;
@@ -2984,9 +3503,9 @@ int dlms_handleSetResponse(
 
 
 int dlms_changeType2(
-    dlmsVARIANT *value,
+    dlmsVARIANT * value,
     DLMS_DATA_TYPE type,
-    dlmsVARIANT *newValue)
+    dlmsVARIANT * newValue)
 {
     gxByteBuffer bb;
     if (value->byteArr != NULL)
@@ -2998,9 +3517,9 @@ int dlms_changeType2(
 }
 
 int dlms_changeType(
-    gxByteBuffer* value,
+    gxByteBuffer * value,
     DLMS_DATA_TYPE type,
-    dlmsVARIANT *newValue)
+    dlmsVARIANT * newValue)
 {
     int ret;
     gxDataInfo info;
@@ -3017,7 +3536,7 @@ int dlms_changeType(
     if (type == DLMS_DATA_TYPE_NONE)
     {
 #ifndef GX_DLMS_MICROCONTROLLER
-        char *tmp = bb_toHexString(value);
+        char* tmp = bb_toHexString(value);
         newValue->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         bb_init(newValue->strVal);
         bb_addString(newValue->strVal, tmp);
@@ -3034,14 +3553,14 @@ int dlms_changeType(
         return ret;
     }
     value->position = 0;
-    if (!info.compleate)
+    if (!info.complete)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     if (type == DLMS_DATA_TYPE_OCTET_STRING && newValue->vt == DLMS_DATA_TYPE_OCTET_STRING)
     {
 #ifndef GX_DLMS_MICROCONTROLLER
-        char *tmp = bb_toHexString(value);
+        char* tmp = bb_toHexString(value);
         newValue->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         bb_init(newValue->strVal);
         bb_addString(newValue->strVal, tmp);
@@ -3052,7 +3571,7 @@ int dlms_changeType(
 #endif //GX_DLMS_MICROCONTROLLER
     }
     return 0;
-}
+    }
 
 /**
 * Handle data notification get data from block and/or update error status.
@@ -3061,8 +3580,8 @@ int dlms_changeType(
 *            Received data from the client.
 */
 int dlms_handleDataNotification(
-    dlmsSettings* settings,
-    gxReplyData* reply)
+    dlmsSettings * settings,
+    gxReplyData * reply)
 {
     unsigned long id;
     int ret;
@@ -3076,7 +3595,11 @@ int dlms_handleDataNotification(
         return ret;
     }
     // Get date time.
+#ifdef DLMS_USE_EPOCH_TIME
+    reply->time = 0;
+#else
     reply->time = NULL;
+#endif //DLMS_USE_EPOCH_TIME
     if ((ret = bb_getUInt8(&reply->data, &len)) != 0)
     {
         return ret;
@@ -3090,14 +3613,18 @@ int dlms_handleDataNotification(
         {
             return ret;
         }
-        *reply->time = t.dateTime->value;
+#ifdef DLMS_USE_EPOCH_TIME
+        reply->time = t.dateTime->value;
+#else
+        * reply->time = t.dateTime->value;
+#endif // DLMS_USE_EPOCH_TIME
     }
     if ((ret = dlms_getDataFromBlock(&reply->data, start)) != 0)
     {
         return ret;
     }
     return dlms_getValueFromData(settings, reply);
-}
+    }
 
 /**
 * Handle General block transfer message.
@@ -3108,8 +3635,8 @@ int dlms_handleDataNotification(
 *            received data.
 */
 int dlms_handleGbt(
-    dlmsSettings* settings,
-    gxReplyData* data)
+    dlmsSettings * settings,
+    gxReplyData * data)
 {
     int ret;
     unsigned char ch, window, bn, bna;
@@ -3204,8 +3731,8 @@ int dlms_handleGbt(
     return ret;
 }
 
-int dlms_handledGloDedRequest(dlmsSettings* settings,
-    gxReplyData* data)
+int dlms_handledGloDedRequest(dlmsSettings * settings,
+    gxReplyData * data)
 {
     int ret = 0;
 #ifdef DLMS_IGNORE_HIGH_GMAC
@@ -3280,17 +3807,17 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
         }
         data->encryptedCommand = data->command;
         data->command = (DLMS_COMMAND)ch;
-    }
+        }
     else
     {
         data->data.position = (data->data.position - 1);
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-}
+    }
 
-int dlms_handledGloDedResponse(dlmsSettings* settings,
-    gxReplyData* data, unsigned short index)
+int dlms_handledGloDedResponse(dlmsSettings * settings,
+    gxReplyData * data, unsigned short index)
 {
 #ifdef DLMS_IGNORE_HIGH_GMAC
     return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
@@ -3326,21 +3853,21 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
             {
                 bb_clear(&bb);
                 return ret;
-            }
         }
+    }
         bb_set2(&data->data, &bb, bb.position, bb.size - bb.position);
         bb_clear(&bb);
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
         data->cipherIndex = (unsigned short)data->data.size;
-    }
+}
     return ret;
 #endif //DLMS_IGNORE_HIGH_GMAC
 }
 
 int dlms_handleGeneralCiphering(
-    dlmsSettings* settings,
-    gxReplyData* data)
+    dlmsSettings * settings,
+    gxReplyData * data)
 {
 #ifdef DLMS_IGNORE_HIGH_GMAC
     return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
@@ -3379,8 +3906,8 @@ int dlms_handleGeneralCiphering(
 }
 
 int dlms_getPdu(
-    dlmsSettings* settings,
-    gxReplyData* data,
+    dlmsSettings * settings,
+    gxReplyData * data,
     unsigned char first)
 {
     int ret = DLMS_ERROR_CODE_OK;
@@ -3586,7 +4113,7 @@ int dlms_getPdu(
     // Get data only blocks if SN is used. This is faster.
     if (cmd == DLMS_COMMAND_READ_RESPONSE
         && data->commandType == DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT
-        && (data->moreData &  DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
+        && (data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
     {
         return 0;
     }
@@ -3616,8 +4143,8 @@ int dlms_getPdu(
 *            Data where bytes are added.
 */
 void dlms_addLLCBytes(
-    dlmsSettings* settings,
-    gxByteBuffer* data)
+    dlmsSettings * settings,
+    gxByteBuffer * data)
 {
     if (settings->server)
     {
@@ -3631,8 +4158,8 @@ void dlms_addLLCBytes(
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_appendMultipleSNBlocks(
-    gxSNParameters *p,
-    gxByteBuffer *reply)
+    gxSNParameters * p,
+    gxByteBuffer * reply)
 {
     unsigned long maxSize;
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -3686,8 +4213,8 @@ int dlms_appendMultipleSNBlocks(
 }
 
 int dlms_getSNPdu(
-    gxSNParameters* p,
-    gxByteBuffer* reply)
+    gxSNParameters * p,
+    gxByteBuffer * reply)
 {
     int ret, cnt = 0;
     unsigned char cipherSize = 0;
@@ -3696,7 +4223,7 @@ int dlms_getSNPdu(
 #else
     unsigned char ciphering = 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
-    gxByteBuffer *h;
+    gxByteBuffer* h;
     if (p->settings->server)
     {
         gxByteBuffer header;
@@ -3706,7 +4233,7 @@ int dlms_getSNPdu(
     else
     {
         h = reply;
-    }
+}
     if (!ciphering && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         dlms_addLLCBytes(p->settings, h);
@@ -3724,7 +4251,11 @@ int dlms_getSNPdu(
     {
         bb_setUInt8(h, (unsigned char)p->command);
         // Add date time.
+#ifdef DLMS_USE_EPOCH_TIME
+        if (p->time == 0)
+#else 
         if (p->time == NULL)
+#endif // DLMS_USE_EPOCH_TIME
         {
             bb_setUInt8(h, (unsigned char)DLMS_DATA_TYPE_NONE);
         }
@@ -3734,7 +4265,11 @@ int dlms_getSNPdu(
             int pos = reply->size;
             dlmsVARIANT tmp;
             tmp.dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
+#ifdef DLMS_USE_EPOCH_TIME
+            tmp.dateTime->value = p->time;
+#else
             tmp.dateTime->value = *p->time;
+#endif //DLMS_USE_EPOCH_TIME
             tmp.vt = DLMS_DATA_TYPE_DATETIME;
             if ((ret = dlms_setData(reply, DLMS_DATA_TYPE_OCTET_STRING, &tmp)) != 0)
             {
@@ -3871,7 +4406,7 @@ int dlms_getSNPdu(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 
@@ -3884,8 +4419,8 @@ int dlms_getSNPdu(
 *            Generated reply.
 */
 void dlms_multipleBlocks(
-    gxLNParameters *p,
-    gxByteBuffer *reply,
+    gxLNParameters * p,
+    gxByteBuffer * reply,
     unsigned char ciphering)
 {
     // Check is all data fit to one message if data is given.
@@ -3907,7 +4442,7 @@ void dlms_multipleBlocks(
     {
         // Add command type and invoke and priority.
         p->lastBlock = p->settings->index == p->settings->count && !(8 + reply->size + len > p->settings->maxPduSize);
-    }
+}
     if (p->lastBlock)
     {
         // Add command type and invoke and priority.
@@ -3916,8 +4451,8 @@ void dlms_multipleBlocks(
 }
 
 int dlms_getLNPdu(
-    gxLNParameters *p,
-    gxByteBuffer *reply)
+    gxLNParameters * p,
+    gxByteBuffer * reply)
 {
     int ret;
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -3936,12 +4471,12 @@ int dlms_getLNPdu(
         if ((ret = bb_set2(reply, p->attributeDescriptor, 0, p->attributeDescriptor->size)) != 0)
         {
             return ret;
-        }
     }
+}
     else
     {
         gxByteBuffer header;
-        gxByteBuffer *h;
+        gxByteBuffer* h;
         if (p->settings->server)
         {
             bb_attach(&header, pduAttributes, 0, sizeof(pduAttributes));
@@ -4000,10 +4535,14 @@ int dlms_getLNPdu(
                 else
                 {
                     bb_setUInt32(h, dlms_getLongInvokeIDPriority(p->settings));
-                }
             }
+        }
             // Add date time.
+#ifdef DLMS_USE_EPOCH_TIME
+            if (p->time == 0)
+#else 
             if (p->time == NULL)
+#endif // DLMS_USE_EPOCH_TIME
             {
                 bb_setUInt8(h, DLMS_DATA_TYPE_NONE);
             }
@@ -4013,7 +4552,11 @@ int dlms_getLNPdu(
                 unsigned short pos = (unsigned short)h->size;
                 dlmsVARIANT tmp;
                 tmp.dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
+#ifdef DLMS_USE_EPOCH_TIME
+                tmp.dateTime->value = p->time;
+#else 
                 tmp.dateTime->value = *p->time;
+#endif // DLMS_USE_EPOCH_TIME
                 tmp.vt = DLMS_DATA_TYPE_DATETIME;
                 if ((ret = dlms_setData(h, DLMS_DATA_TYPE_OCTET_STRING, &tmp)) != 0)
                 {
@@ -4023,7 +4566,7 @@ int dlms_getLNPdu(
                 var_clear(&tmp);
                 bb_move(h, pos + 1, pos, reply->size - pos - 1);
             }
-        }
+    }
         else if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
             // Get request size can be bigger than PDU size.
@@ -4222,17 +4765,17 @@ int dlms_getLNPdu(
             bb_clear(&tmp);
         }
 #endif //DLMS_IGNORE_HIGH_GMAC1
-    }
+}
     return 0;
 }
 
 int dlms_getLnMessages(
-    gxLNParameters *p,
-    message* messages)
+    gxLNParameters * p,
+    message * messages)
 {
     int ret;
     gxByteBuffer reply;
-    gxByteBuffer *it;
+    gxByteBuffer* it;
     unsigned char frame = 0;
     if (p->command == DLMS_COMMAND_DATA_NOTIFICATION ||
         p->command == DLMS_COMMAND_EVENT_NOTIFICATION)
@@ -4277,12 +4820,12 @@ int dlms_getLnMessages(
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getSnMessages(
-    gxSNParameters *p,
-    message* messages)
+    gxSNParameters * p,
+    message * messages)
 {
     int ret;
     gxByteBuffer data;
-    gxByteBuffer *it;
+    gxByteBuffer* it;
     unsigned char frame = 0x0;
     if (p->command == DLMS_COMMAND_AARQ)
     {
@@ -4337,9 +4880,9 @@ int dlms_getSnMessages(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_getData2(
-    dlmsSettings* settings,
-    gxByteBuffer* reply,
-    gxReplyData* data,
+    dlmsSettings * settings,
+    gxByteBuffer * reply,
+    gxReplyData * data,
     unsigned char first)
 {
     int ret;
@@ -4392,7 +4935,7 @@ int dlms_getData2(
 }
 
 int dlms_generateChallenge(
-    gxByteBuffer* challenge)
+    gxByteBuffer * challenge)
 {
     // Random challenge is 8 to 64 bytes.
     // Texas Instruments accepts only 16 byte long challenge.
@@ -4409,8 +4952,8 @@ int dlms_generateChallenge(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getActionInfo(
     DLMS_OBJECT_TYPE objectType,
-    unsigned char *value,
-    unsigned char *count)
+    unsigned char* value,
+    unsigned char* count)
 {
     switch (objectType)
     {
@@ -4516,11 +5059,11 @@ int dlms_getActionInfo(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_secure(
-    dlmsSettings* settings,
+    dlmsSettings * settings,
     long ic,
-    gxByteBuffer* data,
-    gxByteBuffer* secret,
-    gxByteBuffer* reply)
+    gxByteBuffer * data,
+    gxByteBuffer * secret,
+    gxByteBuffer * reply)
 {
     int ret = 0;
     gxByteBuffer challenge;
@@ -4557,7 +5100,7 @@ int dlms_secure(
 #else
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_AES
-    }
+        }
     // Get server Challenge.
     // Get shared secret
     bb_init(&challenge);
@@ -4626,11 +5169,11 @@ int dlms_secure(
 #endif //DLMS_IGNORE_HIGH_GMAC
     }
     return ret;
-}
+    }
 
 int dlms_parseSnrmUaResponse(
-    dlmsSettings* settings,
-    gxByteBuffer* data)
+    dlmsSettings * settings,
+    gxByteBuffer * data)
 {
     dlmsVARIANT value;
     unsigned char ch, id, len;
@@ -4722,7 +5265,7 @@ int dlms_parseSnrmUaResponse(
     return ret;
 }
 
-int dlms_appendHdlcParameter(gxByteBuffer* data, unsigned short value)
+int dlms_appendHdlcParameter(gxByteBuffer * data, unsigned short value)
 {
     if (value < 0x100)
     {

@@ -37,8 +37,6 @@
 extern "C" {
 #endif
 
-#define GXARRAY_CAPACITY 10
-
 typedef struct {
     void *key;
     void *value;

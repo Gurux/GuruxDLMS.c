@@ -101,6 +101,12 @@ extern "C" {
 // #define DLMS_IGNORE_TOKEN_GATEWAY
 // #define DLMS_IGNORE_COMPACT_DATA
 
+//Use EPOCH time. This can be used to improve memory usage.
+//#define DLMS_USE_EPOCH_TIME
+
+//Use UTC time.
+//#define DLMS_USE_UTC_TIME
+
 #ifdef  __cplusplus
 }
 #endif

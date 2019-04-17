@@ -30,12 +30,13 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-#include "../include/gxmem.h"
 #if _MSC_VER > 1400
+#include <stdio.h>
 #include <crtdbg.h>
 #endif
 #include <string.h>
 #include <math.h>
+#include "../include/gxmem.h"
 
 #ifndef GX_DLMS_MICROCONTROLLER
 #include <stdio.h> //printf needs this or error is generated.
@@ -331,7 +332,10 @@ unsigned char getValue(char c)
     return value;
 }
 
-int hlp_hexToBytes(const char* str, unsigned char** buffer, unsigned char* count)
+int hlp_hexToBytes(
+    const char* str, 
+    unsigned char** buffer, 
+    unsigned short* count)
 {
     *count = 0;
     if (buffer != NULL && *buffer != NULL)

@@ -48,7 +48,7 @@ typedef struct
     // Object data type.
     DLMS_DATA_TYPE type;
     // Is data parsed to the end.
-    unsigned char compleate;
+    unsigned char complete;
 } gxDataInfo;
 
 void di_init(gxDataInfo *info);

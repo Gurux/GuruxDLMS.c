@@ -446,7 +446,7 @@ int invoke_SapAssigment(
 					return ret;
 				}
 				it->name.position = 0;
-				if (bb_compare(&it->name, name->data, name->size))
+				if (name != NULL && bb_compare(&it->name, name->data, bb_size(name)))
 				{
 					ret = arr_removeByIndex(&target->sapAssignmentList, pos, (void**)& it);
 					bb_clear(&it->name);
@@ -690,7 +690,11 @@ int invoke_Clock(gxClock * object, unsigned char index, dlmsVARIANT * value)
 	// The default value is an instance specific constant.
 	if (index == 1)
 	{
-		int minutes = object->time.value.tm_min;
+#ifdef DLMS_USE_EPOCH_TIME
+        int minutes = time_getMinutes(&object->time);
+#else
+        int minutes = object->time.value.tm_min;
+#endif // DLMS_USE_EPOCH_TIME
 		if (minutes < 8)
 		{
 			minutes = 0;
@@ -710,23 +714,27 @@ int invoke_Clock(gxClock * object, unsigned char index, dlmsVARIANT * value)
 		else
 		{
 			minutes = 0;
-			++object->time.value.tm_hour;
-			//If OS
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-			mktime(&object->time.value);
-#endif
+            time_addHours(&object->time, 1);
 		}
-		time_addTime(&object->time, 0, -object->time.value.tm_min + minutes, -object->time.value.tm_sec);
+#ifdef DLMS_USE_EPOCH_TIME
+        time_addTime(&object->time, 0, -time_getMinutes(&object->time) + minutes, -time_getSeconds(&object->time));
+#else
+        time_addTime(&object->time, 0, -object->time.value.tm_min + minutes, -object->time.value.tm_sec);
+#endif // DLMS_USE_EPOCH_TIME
 	}
-	// Sets the meter�s time to the nearest minute.
+	// Sets the meter's time to the nearest minute.
 	else if (index == 3)
 	{
-		int s = object->time.value.tm_sec;
+#ifdef DLMS_USE_EPOCH_TIME
+        int s = time_getSeconds(&object->time);
+#else
+        int s = object->time.value.tm_sec;
+#endif // DLMS_USE_EPOCH_TIME
 		if (s > 30)
 		{
 			time_addTime(&object->time, 0, 1, 0);
 		}
-		time_addTime(&object->time, 0, 0, -object->time.value.tm_sec);
+		time_addTime(&object->time, 0, 0, -s);
 	}
 	//Adjust to preset time.
 	else if (index == 4)
@@ -810,6 +818,7 @@ int capture(dlmsSettings * settings,
 		gxValueEventArg e2;
 		ve_init(&e2);
 		row = (variantArray*)gxmalloc(sizeof(variantArray));
+        va_init(row);
 		for (pos = 0; pos != object->captureObjects.size; ++pos)
 		{
 			ret = arr_getByIndex(&object->captureObjects, pos, (void**)& kv);
@@ -939,7 +948,7 @@ int cosem_captureCompactData(dlmsSettings * settings,
 	gxCompactData * object)
 {
 	int ret = 0;
-	unsigned short pos, pos2;
+	unsigned short pos;
 	gxKey* kv;
 	gxValueEventArg e;
 	gxValueEventCollection args;

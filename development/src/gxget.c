@@ -4261,10 +4261,9 @@ int compactData_getValues(
     gxByteBuffer* buffer,
     variantArray* values)
 {
-    int ret, pos;
+    int ret;
     gxDataInfo info;
     dlmsVARIANT tmp;
-    dlmsVARIANT* tmp2;
     gxByteBuffer data;
     //If templateDescription or buffer is not given.
     if (values == NULL || bb_size(templateDescription) == 0 || bb_size(buffer) == 0)

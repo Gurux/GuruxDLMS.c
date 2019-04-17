@@ -427,13 +427,12 @@ void time_addDays(
     time_addHours(value, 24 * days);
 #else
     value->value.tm_mday += days;
-    //If OS
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     if (mktime(&value->value) == -1)
     {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
-    }
 #endif
+    }
 #endif //DLMS_USE_EPOCH_TIME
 }
 
@@ -445,13 +444,13 @@ void time_addHours(
     time_addMinutes(value, 60 * hours);
 #else
     value->value.tm_hour += hours;
-    //If OS
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     if (mktime(&value->value) == -1)
     {
+        //If OS
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
-    }
 #endif
+    }
 #endif //DLMS_USE_EPOCH_TIME
 }
 
@@ -463,13 +462,13 @@ void time_addMinutes(
     time_addSeconds(value, 60 * minutes);
 #else
     value->value.tm_min += minutes;
-    //If OS
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     if (mktime(&value->value) == -1)
     {
+        //If OS
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
-    }
 #endif
+    }
 #endif //DLMS_USE_EPOCH_TIME
 }
 
@@ -481,13 +480,13 @@ void time_addSeconds(
     value->value += seconds;
 #else
     value->value.tm_sec += seconds;
-    //If OS
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     if (mktime(&value->value) == -1)
     {
+        //If OS
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
-    }
 #endif
+    }
 #endif //DLMS_USE_EPOCH_TIME
 }
 
@@ -542,8 +541,11 @@ void time_init4(
     time_fromUnixTime(value, &time->value);
     if (value != 0 && mktime(&time->value) == -1)
     {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
+#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     }
+
 #endif //DLMS_USE_EPOCH_TIME
     time->daylightSavingsBegin = time->daylightSavingsEnd = 0;
 #ifdef DLMS_USE_EPOCH_TIME
@@ -888,10 +890,7 @@ void time_addTime(
     time->value.tm_hour += hours;
     time->value.tm_min += minutes;
     time->value.tm_sec += seconds;
-    //If OS
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     mktime(&time->value);
-#endif
 #endif // DLMS_USE_EPOCH_TIME
 }
 

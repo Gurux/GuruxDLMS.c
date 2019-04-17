@@ -1328,9 +1328,7 @@ int getDateTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
         value->dateTime->value.tm_sec = 0;
     }
     value->dateTime->value.tm_isdst = (status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE);
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     mktime(&value->dateTime->value);
-#endif
 #endif //DLMS_USE_EPOCH_TIME
     return 0;
 }

@@ -294,7 +294,7 @@ void time_now(
 {
     time_t tm1 = time(NULL);
 #ifdef DLMS_USE_EPOCH_TIME
-    time_init4(value, tm1);
+    time_init4(value, (unsigned long) tm1);
 #else
 #if _MSC_VER > 1000
     struct tm dt;
@@ -320,7 +320,6 @@ unsigned char time_getYears(
     unsigned long c = (20 * b - 2442) / 7305;
     unsigned long d = b - 365 * c - (c / 4);
     unsigned long e = d * 1000 / 30601;
-    unsigned long f = d - e * 30 - e * 601 / 1000;
     //January and February are counted as months 13 and 14 of the previous year
     if (e <= 13)
     {
@@ -351,7 +350,6 @@ unsigned char time_getMonths(
     unsigned long c = (20 * b - 2442) / 7305;
     unsigned long d = b - 365 * c - (c / 4);
     unsigned long e = d * 1000 / 30601;
-    unsigned long f = d - e * 30 - e * 601 / 1000;
     //January and February are counted as months 13 and 14 of the previous year
     if (e <= 13)
     {
@@ -490,6 +488,7 @@ void time_addSeconds(
 #endif //DLMS_USE_EPOCH_TIME
 }
 
+#ifndef DLMS_USE_EPOCH_TIME
 void time_init2(
     gxtime * time,
     struct tm* value)
@@ -529,6 +528,7 @@ void time_init2(
         value->tm_sec, 0, devitation);
 #endif //DLMS_USE_EPOCH_TIME
 }
+#endif //DLMS_USE_EPOCH_TIME
 
 void time_init4(
     gxtime * time,
@@ -755,7 +755,7 @@ int time_toString(
                 bb_addIntAsString(ba, year);
             }
         }
-        break;       
+        break;
         case GXDLMS_DATE_FORMAT_YMD:
         {
             if (year != -1 && (time->skip & DATETIME_SKIPS_YEAR) == 0)
@@ -1158,6 +1158,7 @@ unsigned char time_dayOfWeek(
     return ((h + 5) % 7) + 1;
 }
 
+#ifndef DLMS_USE_EPOCH_TIME
 //Get date time from Epoch time.
 int time_fromUnixTime(unsigned long epoch, struct tm* time)
 {
@@ -1189,6 +1190,7 @@ unsigned long time_toUnixTime(struct tm* time)
 {
     return (unsigned long)mktime(time);
 }
+#endif //DLMS_USE_EPOCH_TIME
 
 // Convert date time to Epoch time.
 unsigned long time_toUnixTime2(gxtime * time)
@@ -1197,17 +1199,17 @@ unsigned long time_toUnixTime2(gxtime * time)
     return time->value;
 #else
     return (unsigned long)mktime(&time->value);
-#endif //DLMS_USE_UTC_TIME
+#endif //DLMS_USE_UTC_TIME_ZONE
 }
 
 
 int time_getDeviation(gxtime * value1)
 {
-#ifdef DLMS_USE_UTC_TIME
+#ifdef DLMS_USE_UTC_TIME_ZONE
     return -value1->deviation;
 #else
     return value1->deviation;
-#endif //DLMS_USE_UTC_TIME
+#endif //DLMS_USE_UTC_TIME_ZONE
 }
 
 int time_toUTC(gxtime* value)

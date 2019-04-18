@@ -76,7 +76,7 @@ void params_initLN(
     target->requestType = commandType;
     target->attributeDescriptor = attributeDescriptor;
     target->data = data;
-    target->time = NULL;
+    target->time = 0;
     target->status = status;
     target->multipleBlocks = settings->count != settings->index;
     target->lastBlock = settings->count == settings->index;

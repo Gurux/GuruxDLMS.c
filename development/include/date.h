@@ -100,9 +100,11 @@ extern "C" {
         short millisecond,
         short devitation);
 
+#ifndef DLMS_USE_EPOCH_TIME
     void time_init2(
         gxtime* time,
         struct tm* value);
+#endif //DLMS_USE_EPOCH_TIME
 
     // Constructor.
     void time_init3(
@@ -255,10 +257,12 @@ extern "C" {
         gxtime* value1,
         unsigned long value2);
 
+#ifndef DLMS_USE_EPOCH_TIME
     //Get date-time from EPOCH time.
     int time_fromUnixTime(
         unsigned long epoch,
         struct tm* time);
+#endif //DLMS_USE_EPOCH_TIME
 
     //Get date-time from EPOCH time.
     int time_fromUnixTime2(
@@ -282,9 +286,11 @@ extern "C" {
         unsigned char* second,
         unsigned char* dayOfWeek);
 
+#ifndef DLMS_USE_EPOCH_TIME
     // Convert date time to Epoch time.
     unsigned long time_toUnixTime(
         struct tm* time);
+#endif //DLMS_USE_EPOCH_TIME
 
     // Convert date time to Epoch time.
     unsigned long time_toUnixTime2(

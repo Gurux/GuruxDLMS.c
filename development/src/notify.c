@@ -30,6 +30,7 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
+#include "../include/gxignore.h"
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include <assert.h>
 #endif
@@ -78,7 +79,11 @@ int notify_addData(
 
 int notify_generateDataNotificationMessages2(
     dlmsSettings* settings,
+#ifdef DLMS_USE_EPOCH_TIME
+    unsigned long time,
+#else
     struct tm* time,
+#endif //DLMS_USE_EPOCH_TIME
     gxByteBuffer* data,
     message* messages)
 {
@@ -106,7 +111,11 @@ int notify_generateDataNotificationMessages2(
 
 int notify_generateDataNotificationMessages(
     dlmsSettings* settings,
+#ifdef DLMS_USE_EPOCH_TIME
+    unsigned long date,
+#else
     struct tm* date,
+#endif //DLMS_USE_EPOCH_TIME
     gxArray* objects,
     message* messages)
 {
@@ -140,7 +149,11 @@ int notify_generateDataNotificationMessages(
 
 int notify_generatePushSetupMessages(
     dlmsSettings* settings,
+#ifdef DLMS_USE_EPOCH_TIME
+    unsigned long date,
+#else
     struct tm* date,
+#endif //DLMS_USE_EPOCH_TIME
     gxPushSetup* push,
     message* messages)
 {

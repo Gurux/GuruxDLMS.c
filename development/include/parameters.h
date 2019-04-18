@@ -36,7 +36,7 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
+#include "../include/gxignore.h"
 #include "dlmssettings.h"
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME

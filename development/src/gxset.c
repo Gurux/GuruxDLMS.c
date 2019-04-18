@@ -252,23 +252,23 @@ int clock_utcToMeterTime(gxClock* object, gxtime* value)
 {
     if (value->deviation == 0 && object->timeZone != 0 && object->timeZone != -32768) //-32768 = 0x8000
     {
-#ifdef DLMS_USE_UTC_TIME
+#ifdef DLMS_USE_UTC_TIME_ZONE
         time_addMinutes(value, object->timeZone);
 #else
         time_addMinutes(value, -object->timeZone);
-#endif //DLMS_USE_UTC_TIME
+#endif //DLMS_USE_UTC_TIME_ZONE
         value->deviation = object->timeZone;
     }
     //If DST is enabled for the meter and it's not set for the time.
     if ((object->time.status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0)
     {
-#ifdef DLMS_USE_UTC_TIME
+#ifdef DLMS_USE_UTC_TIME_ZONE
         time_addMinutes(value, object->deviation);
         value->deviation += object->deviation;
 #else
         time_addMinutes(value, object->deviation);
         value->deviation -= object->deviation;
-#endif //DLMS_USE_UTC_TIME
+#endif //DLMS_USE_UTC_TIME_ZONE
         value->status |= DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
     }
     else if ((object->time.status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) == 0)
@@ -277,11 +277,11 @@ int clock_utcToMeterTime(gxClock* object, gxtime* value)
     }
     else if ((object->time.status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0 && (value->status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0)
     {
-#ifdef DLMS_USE_UTC_TIME
+#ifdef DLMS_USE_UTC_TIME_ZONE
         value->deviation += object->deviation;
 #else
         value->deviation -= object->deviation;
-#endif //DLMS_USE_UTC_TIME
+#endif //DLMS_USE_UTC_TIME_ZONE
 }
     return 0;
 }

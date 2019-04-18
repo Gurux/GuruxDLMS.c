@@ -104,8 +104,8 @@ extern "C" {
 //Use EPOCH time. This can be used to improve memory usage.
 //#define DLMS_USE_EPOCH_TIME
 
-//Use UTC time.
-//#define DLMS_USE_UTC_TIME
+//Use UTC time zone. Read more: https://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSClock
+//#define DLMS_USE_UTC_TIME_ZONE
 
 #ifdef  __cplusplus
 }

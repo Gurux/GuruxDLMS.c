@@ -395,7 +395,7 @@ int var_getDateTime2(
     }
     if ((dateTime->skip & (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY)) != 0)
     {
-        dayOfWeek = 0xFFFF;
+        dayOfWeek = 0xFF;
     }
 #else
     if (dateTime->value.tm_isdst && (dateTime->status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) == 0)

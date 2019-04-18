@@ -2240,7 +2240,7 @@ int getProfileGenericData(
             {
                 if (it->vt == DLMS_DATA_TYPE_UINT32)
                 {
-                    time_init4(&start, (time_t)it->ulVal);
+                    time_init4(&start, it->ulVal);
                 }
                 else
                 {
@@ -2259,7 +2259,7 @@ int getProfileGenericData(
                 }
                 if (it->vt == DLMS_DATA_TYPE_UINT32)
                 {
-                    time_init4(&end, (time_t)it->ulVal);
+                    time_init4(&end, it->ulVal);
                 }
                 else
                 {

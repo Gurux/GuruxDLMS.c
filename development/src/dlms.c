@@ -1184,7 +1184,7 @@ int getDateTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
     }
     unsigned char daylightSavingsBegin = mon == 0xFE;
     unsigned char daylightSavingsEnd = mon == 0xFD;
-    if (mon > 12)
+    if (mon < 1 || mon > 12)
     {
         skip |= DATETIME_SKIPS_MONTH;
         mon = 1;
@@ -2683,10 +2683,6 @@ int dlms_getDataFromBlock(gxByteBuffer * data, unsigned short index)
         bb_clear(data);
         return 0;
     }
-    if (len < 0)
-    {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
     pos = data->position;
     bb_move(data, data->position, data->position - len, data->size - data->position);
     data->position = pos - len;
@@ -3350,20 +3346,6 @@ int dlms_handleMethodResponse(
             {
                 return DLMS_ERROR_CODE_INVALID_TAG;
             }
-            if (ch != 1)
-            {
-                //ParseApplicationAssociationResponse failed. Invalid tag.
-                return DLMS_ERROR_CODE_INVALID_TAG;
-            }
-            if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
-            {
-                return ret;
-            }
-            if (ch != 0)
-            {
-                return ch;
-            }
-            return dlms_getDataFromBlock(&data->data, 0);
         }
     }
     //Action-Response-With-Pblock

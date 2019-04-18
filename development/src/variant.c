@@ -1651,7 +1651,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_UINT32:
         switch (newType)
         {
@@ -1660,7 +1659,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_OCTET_STRING:
         switch (newType)
         {
@@ -1673,7 +1671,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
         switch (newType)
         {
@@ -1713,7 +1710,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_INT16:
         switch (newType)
         {
@@ -1722,7 +1718,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_UINT8:
         switch (newType)
         {
@@ -1731,7 +1726,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_UINT16:
         switch (newType)
         {
@@ -1740,7 +1734,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_INT64:
         switch (newType)
         {
@@ -1749,7 +1742,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_UINT64:
         switch (newType)
         {
@@ -1758,7 +1750,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_ENUM:
         switch (newType)
         {
@@ -1767,7 +1758,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_FLOAT32:
         switch (newType)
         {
@@ -1776,7 +1766,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_FLOAT64:
         switch (newType)
         {
@@ -1785,7 +1774,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        break;
     case DLMS_DATA_TYPE_DATETIME:
         switch (newType)
         {

@@ -1506,7 +1506,11 @@ int apdu_generateAARE(
 #endif //LMS_IGNORE_HIGH_GMAC
 
     //Add CalledAEInvocationId.
+#ifndef DLMS_IGNORE_HIGH_GMAC
     if (settings->userId != -1 && settings->cipher.security != DLMS_SECURITY_NONE)
+#else
+    if (settings->userId != -1)
+#endif
     {
         bb_setUInt8(data, BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AE_QUALIFIER);
         //LEN

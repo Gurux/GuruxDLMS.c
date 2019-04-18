@@ -313,10 +313,12 @@ int svr_HandleAarqRequest(
     {
         svr_setInitialize(settings);
     }
+#ifndef DLMS_IGNORE_HIGH_GMAC
     else
     {
         settings->base.cipher.security = DLMS_SECURITY_NONE;
     }
+#endif
     //If client is not called SNRM.
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC && (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) == 0)
     {
@@ -491,17 +493,23 @@ int svr_handleSnrmRequest(
     int ret;
     unsigned char len;
     unsigned short serverAddress, clientAddress;
+#ifndef DLMS_IGNORE_HIGH_GMAC
     DLMS_SECURITY security;
+#endif
     if ((ret = dlms_parseSnrmUaResponse(&settings->base, data)) != 0)
     {
         return ret;
     }
     bb_clear(data);
+#ifndef DLMS_IGNORE_HIGH_GMAC
     security = settings->base.cipher.security;
+#endif
     serverAddress = settings->base.serverAddress;
     clientAddress = settings->base.clientAddress;
     svr_reset(settings);
+#ifndef DLMS_IGNORE_HIGH_GMAC
     settings->base.cipher.security = security;
+#endif
     settings->base.serverAddress = serverAddress;
     settings->base.clientAddress = clientAddress;
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP

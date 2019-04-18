@@ -125,12 +125,23 @@ extern "C" {
         unsigned short colEnd,
         message* messages);
 
+
+#ifdef DLMS_USE_EPOCH_TIME
+    int cl_readRowsByRange(
+        dlmsSettings* settings,
+        gxProfileGeneric* object,
+        unsigned long start,
+        unsigned long end,
+        message* messages);
+#else
     int cl_readRowsByRange(
         dlmsSettings* settings,
         gxProfileGeneric* object,
         struct tm* start,
         struct tm* end,
         message* messages);
+#endif //DLMS_USE_EPOCH_TIME
+
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
     int cl_write(

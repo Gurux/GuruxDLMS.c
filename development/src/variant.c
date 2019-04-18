@@ -238,10 +238,6 @@ int var_getInt64(dlmsVARIANT* data, long long* value)
 
 int var_addBytes(dlmsVARIANT* data, const unsigned char* value, unsigned short count)
 {
-    if (count < 0)
-    {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
     if (data->vt != DLMS_DATA_TYPE_OCTET_STRING)
     {
         var_clear(data);
@@ -259,10 +255,6 @@ int var_addBytes(dlmsVARIANT* data, const unsigned char* value, unsigned short c
 int var_setString(dlmsVARIANT* data, const char* value, unsigned short count)
 {
     var_clear(data);
-    if (count < 0)
-    {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
     if (data->vt != DLMS_DATA_TYPE_STRING)
     {
         var_clear(data);
@@ -1639,7 +1631,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
     case DLMS_DATA_TYPE_FLOAT64:
 #endif //GX_DLMS_MICROCONTROLLER
         return convert(value, newType);
-        break;
     default:
         //Handled later.
         break;
@@ -1657,7 +1648,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1667,7 +1657,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1677,13 +1666,10 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_DATETIME:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         case DLMS_DATA_TYPE_DATE:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         case DLMS_DATA_TYPE_TIME:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1724,7 +1710,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1734,7 +1719,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1744,7 +1728,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1754,7 +1737,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1764,7 +1746,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1774,7 +1755,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1784,7 +1764,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1794,7 +1773,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -1804,7 +1782,6 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
         {
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-            break;
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }

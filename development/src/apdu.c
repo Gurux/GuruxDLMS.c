@@ -1016,10 +1016,10 @@ int apdu_generateAarq(
 }
 #endif //DLMS_IGNORE_CLIENT
 
-int apdu_handleResultComponent(DLMS_SOURCE_DIAGNOSTIC value)
+int apdu_handleResultComponent(unsigned char value)
 {
     int ret;
-    switch ((int)value)
+    switch (value)
     {
     case DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN:
         ret = DLMS_ERROR_CODE_NO_REASON_GIVEN;

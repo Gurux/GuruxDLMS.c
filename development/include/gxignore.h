@@ -41,7 +41,7 @@ extern "C" {
 // #define DLMS_IGNORE_WRAPPER
 // #define DLMS_IGNORE_SERVER
 // #define DLMS_IGNORE_CLIENT
-// #define GX_DLMS_MICROCONTROLLER
+#define GX_DLMS_MICROCONTROLLER
 // #define DLMS_IGNORE_HIGH_SHA256
 // #define DLMS_IGNORE_HIGH_SHA1
 // #define DLMS_IGNORE_HIGH_MD5
@@ -100,9 +100,9 @@ extern "C" {
 // #define DLMS_IGNORE_CHARGE
 // #define DLMS_IGNORE_TOKEN_GATEWAY
 // #define DLMS_IGNORE_COMPACT_DATA
-
+#define DLMS_ITALIAN_STANDARD
 //Use EPOCH time. This can be used to improve memory usage.
-//#define DLMS_USE_EPOCH_TIME
+#define DLMS_USE_EPOCH_TIME
 
 //Use UTC time zone. Read more: https://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSClock
 //#define DLMS_USE_UTC_TIME_ZONE

@@ -1126,14 +1126,15 @@ int getDateTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
     value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
 #ifdef DLMS_USE_EPOCH_TIME
     short deviation;
-    unsigned char mon = 0, day = 0, hour = 0, min = 0, sec = 0, wday = 0, skip = 0;
+    unsigned char mon = 0, hour = 0, min = 0, sec = 0, wday = 0, skip = 0;
+    char day = 0;
     // Get month
     if ((ret = bb_getUInt8(buff, &mon)) != 0)
     {
         return ret;
     }
     // Get day
-    if ((ret = bb_getUInt8(buff, &day)) != 0)
+    if ((ret = bb_getInt8(buff, &day)) != 0)
     {
         return ret;
     }
@@ -1176,14 +1177,14 @@ int getDateTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
         skip |= DATETIME_SKIPS_YEAR;
         year = 2000;
     }
-    if (wday < 0 || wday > 7)
+    if (wday > 7)
     {
         wday = 0;
         skip |= DATETIME_SKIPS_DAYOFWEEK;
     }
     unsigned char daylightSavingsBegin = mon == 0xFE;
     unsigned char daylightSavingsEnd = mon == 0xFD;
-    if (mon < 1 || mon > 12)
+    if (mon > 12)
     {
         skip |= DATETIME_SKIPS_MONTH;
         mon = 1;
@@ -1197,17 +1198,17 @@ int getDateTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
     {
         //TODO: day = cal.GetActualMaximum(Calendar.DATE) + day + 3;
     }
-    if (hour < 0 || hour > 24)
+    if (hour > 24)
     {
         skip |= DATETIME_SKIPS_HOUR;
         hour = 0;
     }
-    if (min < 0 || min > 60)
+    if (min > 60)
     {
         skip |= DATETIME_SKIPS_MINUTE;
         min = 0;
     }
-    if (sec < 0 || sec > 60)
+    if (sec > 60)
     {
         skip |= DATETIME_SKIPS_SECOND;
         sec = 0;
@@ -3250,7 +3251,6 @@ int dlms_handleReadResponse(
                 return ret;
             }
             return ch;
-            break;
         case DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT:
             if ((ret = dlms_readResponseDataBlockResult(settings, reply, index)) != 0)
             {
@@ -4251,7 +4251,7 @@ int dlms_getSNPdu(
         // Add date time.
 #ifdef DLMS_USE_EPOCH_TIME
         if (p->time == 0)
-#else 
+#else
         if (p->time == NULL)
 #endif // DLMS_USE_EPOCH_TIME
         {
@@ -4538,7 +4538,7 @@ int dlms_getLNPdu(
             // Add date time.
 #ifdef DLMS_USE_EPOCH_TIME
             if (p->time == 0)
-#else 
+#else
             if (p->time == NULL)
 #endif // DLMS_USE_EPOCH_TIME
             {
@@ -4552,7 +4552,7 @@ int dlms_getLNPdu(
                 tmp.dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
 #ifdef DLMS_USE_EPOCH_TIME
                 tmp.dateTime->value = p->time;
-#else 
+#else
                 tmp.dateTime->value = *p->time;
 #endif // DLMS_USE_EPOCH_TIME
                 tmp.vt = DLMS_DATA_TYPE_DATETIME;

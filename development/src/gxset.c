@@ -654,7 +654,7 @@ int cosem_setActionSchedule(
                 time_addMinutes(date.dateTime, time_getMinutes(time.dateTime));
                 time_addSeconds(date.dateTime, time_getSeconds(time.dateTime));
                 date.dateTime->skip = (DATETIME_SKIPS)(date.dateTime->skip & time.dateTime->skip);
-#else 
+#else
                 date.dateTime->value.tm_hour = time.dateTime->value.tm_hour;
                 date.dateTime->value.tm_min = time.dateTime->value.tm_min;
                 date.dateTime->value.tm_sec = time.dateTime->value.tm_sec;
@@ -4948,7 +4948,6 @@ int compactData_updateTemplateDescription(
     //  svr_postGet(settings, &args);
     vec_empty(&args);
     return 0;
-    return 0;
 }
 
 int cosem_setCompactData(
@@ -5135,9 +5134,30 @@ int cosem_setTariffPlan(gxTariffPlan * object, unsigned char index, dlmsVARIANT 
         {
             return ret;
         }
-        h = tmp3.dateTime->value.tm_hour;
-        m = tmp3.dateTime->value.tm_min;
-        s = tmp3.dateTime->value.tm_sec;
+        if ((tmp3.dateTime->skip & DATETIME_SKIPS_HOUR) == 0)
+        {
+            h = time_getHours(tmp3.dateTime);
+        }
+        else
+        {
+            h = 0;
+        }
+        if ((tmp3.dateTime->skip & DATETIME_SKIPS_MINUTE) == 0)
+        {
+            m = time_getMinutes(tmp3.dateTime);
+        }
+        else
+        {
+            m = 0;
+        }
+        if ((tmp3.dateTime->skip & DATETIME_SKIPS_SECOND) == 0)
+        {
+            s = time_getSeconds(tmp3.dateTime);
+        }
+        else
+        {
+            s = 0;
+        }
         if ((ret = va_getByIndex(value->Arr, 1, &tmp2)) != 0)
         {
             return ret;
@@ -5149,9 +5169,9 @@ int cosem_setTariffPlan(gxTariffPlan * object, unsigned char index, dlmsVARIANT 
         }
         time_copy(&object->activationTime, tmp3.dateTime);
         object->activationTime.skip &= ~(DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MS);
-        object->activationTime.value.tm_hour = h;
-        object->activationTime.value.tm_min = m;
-        object->activationTime.value.tm_sec = s;
+        time_addHours(&object->activationTime, h);
+        time_addMinutes(&object->activationTime, m);
+        time_addSeconds(&object->activationTime, s);
     }
     break;
     default:

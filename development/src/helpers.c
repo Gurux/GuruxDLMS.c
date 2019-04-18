@@ -333,8 +333,8 @@ unsigned char getValue(char c)
 }
 
 int hlp_hexToBytes(
-    const char* str, 
-    unsigned char** buffer, 
+    const char* str,
+    unsigned char** buffer,
     unsigned short* count)
 {
     *count = 0;
@@ -694,7 +694,7 @@ int hlp_intToString(char *str, int bufsize, long value, unsigned char isSigned)
         ++cnt;
     }
     //Find length.
-    while ((val = (val / 10)))
+    while ((val = (val / 10)) > 0)
     {
         ++str;
     }
@@ -761,7 +761,7 @@ int hlp_int64ToString(char *str, int bufsize, long long value, unsigned char isS
         ++cnt;
     }
     //Find length.
-    while ((val = (val / 10)))
+    while ((val = (val / 10)) > 0)
     {
         ++str;
     }

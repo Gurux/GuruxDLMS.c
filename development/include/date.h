@@ -298,8 +298,8 @@ extern "C" {
 
     //Get day of week.
     unsigned char time_dayOfWeek(
-        unsigned short year, 
-        unsigned char month, 
+        unsigned short year,
+        unsigned char month,
         unsigned char day);
 
     //Get deviation.

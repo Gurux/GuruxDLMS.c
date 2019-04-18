@@ -418,12 +418,12 @@ int invoke_SapAssigment(
 	//Image transfer initiate
 	if (e->index == 1)
 	{
-		if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp)))
+		if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp)) != 0)
 		{
 			return ret;
 		}
 		unsigned short id = tmp->uiVal;
-		if ((ret = va_getByIndex(e->parameters.Arr, 1, &tmp)))
+		if ((ret = va_getByIndex(e->parameters.Arr, 1, &tmp)) != 0)
 		{
 			return ret;
 		}

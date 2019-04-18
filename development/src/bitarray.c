@@ -151,7 +151,7 @@ int ba_add(bitArray *arr, gxByteBuffer * bytes, unsigned short count, unsigned c
     unsigned short index, pos, bytePos = 0;
     int ret;
     unsigned char ch = 0;
-    if (count == -1)
+    if (count == 0xFFFF)
     {
         count = (unsigned short) (bytes->size - bytes->position);
     }

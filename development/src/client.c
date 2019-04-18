@@ -827,7 +827,21 @@ int cl_readRowsByEntry2(dlmsSettings* settings, gxProfileGeneric* object, unsign
     return ret;
 }
 
-int cl_readRowsByRange(dlmsSettings* settings, gxProfileGeneric* object, struct tm* start, struct tm* end, message* messages)
+#ifdef DLMS_USE_EPOCH_TIME
+int cl_readRowsByRange(
+    dlmsSettings* settings,
+    gxProfileGeneric* object,
+    unsigned long start,
+    unsigned long end,
+    message* messages)
+#else
+int cl_readRowsByRange(
+    dlmsSettings* settings,
+    gxProfileGeneric* object,
+    struct tm* start,
+    struct tm* end,
+    message* messages)
+#endif //DLMS_USE_EPOCH_TIME
 {
     unsigned char unixTime = 0;
     static unsigned char LN[] = { 0, 0, 1, 0, 0, 255 };
@@ -837,7 +851,7 @@ int cl_readRowsByRange(dlmsSettings* settings, gxProfileGeneric* object, struct 
     dlmsVARIANT tmp;
     int ret;
     gxByteBuffer data;
-    if (object == NULL || start == NULL || end == NULL || messages == NULL)
+    if (object == NULL || start == 0 || end == 0 || messages == NULL)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
@@ -896,7 +910,11 @@ int cl_readRowsByRange(dlmsSettings* settings, gxProfileGeneric* object, struct 
     //Add start time
     if (unixTime)
     {
-        var_setUInt32(&tmp, (unsigned long) time_toUnixTime(start));
+#ifdef DLMS_USE_EPOCH_TIME
+        var_setUInt32(&tmp, start);
+#else
+        var_setUInt32(&tmp, time_toUnixTime(start));
+#endif //DLMS_USE_EPOCH_TIME
         if ((ret = dlms_setData(&data, DLMS_DATA_TYPE_UINT32, &tmp)) != 0)
         {
             var_clear(&tmp);
@@ -906,7 +924,11 @@ int cl_readRowsByRange(dlmsSettings* settings, gxProfileGeneric* object, struct 
     }
     else
     {
+#ifdef DLMS_USE_EPOCH_TIME
+        time_init4(&t, start);
+#else
         time_init2(&t, start);
+#endif //DLMS_USE_EPOCH_TIME
         var_setDateTime(&tmp, &t);
         if ((ret = dlms_setData(&data, DLMS_DATA_TYPE_OCTET_STRING, &tmp)) != 0)
         {
@@ -918,7 +940,11 @@ int cl_readRowsByRange(dlmsSettings* settings, gxProfileGeneric* object, struct 
     //Add end time
     if (unixTime)
     {
-        var_setUInt32(&tmp, (unsigned long) time_toUnixTime(end));
+#ifdef DLMS_USE_EPOCH_TIME
+        var_setUInt32(&tmp, end);
+#else
+        var_setUInt32(&tmp, time_toUnixTime(end));
+#endif //DLMS_USE_EPOCH_TIME
         if ((ret = dlms_setData(&data, DLMS_DATA_TYPE_UINT32, &tmp)) != 0)
         {
             var_clear(&tmp);
@@ -928,7 +954,11 @@ int cl_readRowsByRange(dlmsSettings* settings, gxProfileGeneric* object, struct 
     }
     else
     {
+#ifdef DLMS_USE_EPOCH_TIME
+        time_init4(&t, end);
+#else
         time_init2(&t, end);
+#endif //DLMS_USE_EPOCH_TIME
         var_setDateTime(&tmp, &t);
         if ((ret = dlms_setData(&data, DLMS_DATA_TYPE_OCTET_STRING, &tmp)) != 0)
         {

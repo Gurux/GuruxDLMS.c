@@ -473,7 +473,7 @@ int svr_HandleAarqRequest(
     {
         dlms_addLLCBytes(&settings->base, data);
     }
-    ret = apdu_generateAARE(&settings->base, data, result, diagnostic, &error, NULL);
+    ret = apdu_generateAARE(&settings->base, data, result, (DLMS_SOURCE_DIAGNOSTIC) diagnostic, &error, NULL);
     bb_clear(&error);
     return ret;
 }
@@ -1418,7 +1418,7 @@ int svr_handleGetRequest(
     else
     {
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
-        type = 1;
+        type = DLMS_GET_COMMAND_TYPE_NORMAL;
     }
     if (ret != 0)
     {

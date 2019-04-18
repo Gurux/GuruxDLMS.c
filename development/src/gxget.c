@@ -4324,7 +4324,7 @@ int cosem_getCompactData(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        data = e->value.byteArr;
         e->byteArray = 1;
         ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING);
         hlp_setObjectCount(object->templateDescription.size, data);
@@ -4836,7 +4836,7 @@ int cosem_getGsmDiagnostic(
             (ret = bb_setUInt8(data, object->cellInfo.signalQuality)) != 0 ||
             //Ber.
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
-            (ret = bb_setUInt8(data, object->cellInfo.ber) != 0))
+            (ret = bb_setUInt8(data, object->cellInfo.ber)) != 0)
         {
             return ret;
         }

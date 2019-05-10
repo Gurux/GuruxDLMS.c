@@ -881,22 +881,34 @@ int invoke_ProfileGeneric(
 #ifndef DLMS_IGNORE_COMPACT_DATA
 int compactDataAppend(dlmsVARIANT * value3, gxByteBuffer * bb)
 {
-	int ret;
-	gxByteBuffer tmp;
-	bb_init(&tmp);
-	if ((ret = dlms_setData(&tmp, value3->vt, value3)) != 0)
-	{
-		return ret;
-	}
-	if (tmp.size == 1)
-	{
-		bb_setUInt8(bb, 0);
-	}
-	else
-	{
-		bb_set(bb, tmp.data + 1, tmp.size - 1);
-	}
-	bb_clear(&tmp);
+    if (value3->vt == DLMS_DATA_TYPE_OCTET_STRING)
+    {
+        if (bb_size(value3->byteArr) == 1)
+        {
+            bb_setUInt8(bb, 0);
+        }
+        else
+        {
+            bb_set(bb, value3->byteArr->data + 1, value3->byteArr->size - 1);
+        }
+        return 0;
+    }
+    int ret;
+    gxByteBuffer tmp;
+    bb_init(&tmp);
+    if ((ret = dlms_setData(&tmp, value3->vt, value3)) != 0)
+    {
+        return ret;
+    }
+    if (tmp.size == 1)
+    {
+        bb_setUInt8(bb, 0);
+    }
+    else
+    {
+        bb_set(bb, tmp.data + 1, tmp.size - 1);
+    }
+    bb_clear(&tmp);
 	return 0;
 }
 

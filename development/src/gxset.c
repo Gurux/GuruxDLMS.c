@@ -4942,6 +4942,7 @@ int compactData_updateTemplateDescription(
                 bb_clear(&tmp);
             }
             var_clear(&e.value);
+            ve_clear(&e.value);
         }
     }
     bb_clear(&tmp);

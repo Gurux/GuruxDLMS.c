@@ -769,9 +769,7 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
         case DLMS_OBJECT_TYPE_UTILITY_TABLES:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(0);
-#endif
+            bb_clear(&((gxUtilityTables*)object)->buffer);
             break;
 #endif //DLMS_IGNORE_UTILITY_TABLES
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
@@ -1046,7 +1044,7 @@ unsigned char obj_attributeCount(gxObject* object)
     }
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
     {
-        return 1;
+        return 4;
     }
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
     {

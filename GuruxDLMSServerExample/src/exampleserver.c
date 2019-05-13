@@ -138,9 +138,8 @@ gxRegister billingDate, cumulativeEnergy;
 /*Italian Standard examples begin.*/
 #ifdef DLMS_ITALIAN_STANDARD
 gxData frameCounterThresholds, frameCounterOnLine, frameCounterOffLine, frameCounterGuarantor, frameCounterInstaller, frameCounterGateway, frameCounterBroadcast;
-#endif // DLMS_ITALIAN_STANDARD
-
 gxSecuritySetup securitySetup;
+#endif // DLMS_ITALIAN_STANDARD
 
 /*Italian Standard examples end.*/
 
@@ -150,7 +149,6 @@ const gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &im
     &actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
     &disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base, &iecHdlcSetup.base, &compactData.base,
     &associationNone.base, &highAssociation.base,
-    &securitySetup.base,
 #if !defined(DLMS_ITALIAN_STANDARD)
     &lowAssociation.base,
 #endif
@@ -164,6 +162,7 @@ const gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &im
 #endif //DLMS_INDIAN_STANDARD
 #ifdef DLMS_ITALIAN_STANDARD
     &frameCounterThresholds.base, &frameCounterOnLine.base, &frameCounterOffLine.base, &frameCounterGuarantor.base, &frameCounterInstaller.base, &frameCounterGateway.base, &frameCounterBroadcast.base,
+    &securitySetup.base,
 #endif // DLMS_ITALIAN_STANDARD
 #if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
     &associationShortName.base,
@@ -197,12 +196,12 @@ const gxObject* HIGH_OBJECTS[] = {
 &actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
 &disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base,
 &iecHdlcSetup.base, &compactData.base,
-&securitySetup.base,
 #ifdef DLMS_INDIAN_STANDARD
 &instantData.base, &currentIR.base, &currentIY.base, &currentIB.base, &voltageVRN.base, &voltageVYN.base, &voltageVBN.base, &voltageVRY.base, &voltageVBY.base, &spfR.base, &spfY.base, &spfB.base, &spfBF.base, &frequency.base, &apparentPower.base, &signedActivePower.base, &signedReactivePower.base, &numberOfPowerFailures.base, &cumulativePowerFailureDuration.base, &cumulativeTamperCount.base, &cumulativeBillingCount.base, &cumulativeProgrammingCount.base, &billingDate.base, &cumulativeEnergy.base
 #endif //DLMS_INDIAN_STANDARD
 #ifdef DLMS_ITALIAN_STANDARD
 &frameCounterThresholds.base, &frameCounterOnLine.base, &frameCounterOffLine.base, &frameCounterGuarantor.base, &frameCounterInstaller.base, &frameCounterGateway.base, &frameCounterBroadcast.base,
+&securitySetup.base,
 #endif // DLMS_ITALIAN_STANDARD
 };
 
@@ -236,7 +235,6 @@ int addNoneAssociation()
     oa_attach(&associationNone.objectList, NONE_OBJECTS, sizeof(NONE_OBJECTS) / sizeof(NONE_OBJECTS[0]));
     bb_addString(&associationNone.secret, "Gurux");
     associationNone.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_NONE;
-    memcpy(associationNone.securitySetupReference, securitySetup.base.logicalName, 6);
     return 0;
 }
 
@@ -252,7 +250,6 @@ int addLowAssociation()
     lowAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_LOW;
     //Use this if you  need to save heap.
     oa_attach(&lowAssociation.objectList, LOW_OBJECTS, sizeof(LOW_OBJECTS) / sizeof(LOW_OBJECTS[0]));
-    memcpy(lowAssociation.securitySetupReference, securitySetup.base.logicalName, 6);
     //All objects are add for this Association View later.
     return 0;
 }
@@ -269,7 +266,6 @@ int addHighAssociation()
     highAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH;
     //Use this if you  need to save heap.
     oa_attach(&highAssociation.objectList, HIGH_OBJECTS, sizeof(HIGH_OBJECTS) / sizeof(HIGH_OBJECTS[0]));
-    memcpy(highAssociation.securitySetupReference, securitySetup.base.logicalName, 6);
     //All objects are add for this Association View later.
     return 0;
 }
@@ -277,6 +273,10 @@ int addHighAssociation()
 int addItalianAssociation(objectArray *objects)
 {
 #define PDU_BUFFER_SIZE 229
+    {
+        const unsigned char ln[6] = { 0,0,43,0,1,255 };
+        cosem_init2(&securitySetup.base, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln);
+    }
     {
         const unsigned char ln[6] = { 0, 0, 40, 0, 16, 255 };
         cosem_init2(&associationNone.base, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
@@ -338,20 +338,6 @@ int addFrameCounters(objectArray *objects)
 }
 
 #endif //DLMS_ITALIAN_STANDARD
-
-///////////////////////////////////////////////////////////////////////
-//This method adds example security setup object.
-///////////////////////////////////////////////////////////////////////
-int addSecuritySetup(
-    objectArray *objects)
-{
-    const unsigned char ln[6] = { 0,0,43,0,1,255 };
-    cosem_init2(&securitySetup.base, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln);
-    bb_addString(&securitySetup.serverSystemTitle, "GRX");
-    bb_setUInt8(&securitySetup.serverSystemTitle, 0);
-    bb_setUInt32(&securitySetup.serverSystemTitle, sn);
-    return 0;
-}
 
 ///////////////////////////////////////////////////////////////////////
 //This method adds example register object.
@@ -1089,7 +1075,6 @@ int svr_InitObjects(
     char buff[17];
     oa_attach(objects, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
 
-    addSecuritySetup(objects);
 #if defined(DLMS_ITALIAN_STANDARD)
     if ((ret = addItalianAssociation(objects)) != 0)
     {

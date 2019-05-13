@@ -2277,6 +2277,31 @@ int cosem_setIP4Setup(gxIp4Setup * object, unsigned char index, dlmsVARIANT * va
     return DLMS_ERROR_CODE_OK;
 }
 #endif //DLMS_IGNORE_IP4_SETUP
+
+#ifndef DLMS_IGNORE_UTILITY_TABLES
+int cosem_setUtilityTables(gxUtilityTables* object, unsigned char index, dlmsVARIANT* value)
+{
+    if (index == 2)
+    {
+        object->tableId = (unsigned short)var_toInteger(value);
+    }
+    else if (index == 3)
+    {
+        //Skip length.
+    }
+    else if (index == 4)
+    {
+        bb_clear(&object->buffer);
+        bb_set2(&object->buffer, value->byteArr, 0, bb_size(value->byteArr));
+    }
+    else
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+#endif //DLMS_IGNORE_UTILITY_TABLES
+
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 int cosem_setMbusSlavePortSetup(gxMbusSlavePortSetup * object, unsigned char index, dlmsVARIANT * value)
 {
@@ -4942,7 +4967,7 @@ int compactData_updateTemplateDescription(
                 bb_clear(&tmp);
             }
             var_clear(&e.value);
-            ve_clear(&e.value);
+            ve_clear(&e);
         }
     }
     bb_clear(&tmp);
@@ -5412,10 +5437,7 @@ int cosem_setValue(dlmsSettings * settings, gxValueEventArg * e)
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
-        //TODO:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
+        ret = cosem_setUtilityTables((gxUtilityTables*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_UTILITY_TABLES
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP

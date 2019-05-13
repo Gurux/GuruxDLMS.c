@@ -1083,6 +1083,8 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
+        unsigned short tableId;
+        gxByteBuffer buffer;
     } gxUtilityTables;
 #endif //DLMS_IGNORE_UTILITY_TABLES
 

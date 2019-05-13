@@ -110,6 +110,10 @@ extern "C" {
     int cosem_setProfileGeneric(dlmsSettings* settings, gxProfileGeneric* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
+#ifndef DLMS_IGNORE_UTILITY_TABLES
+    int cosem_setUtilityTables(gxUtilityTables* object, unsigned char index, dlmsVARIANT* value);
+#endif //DLMS_IGNORE_UTILITY_TABLES
+
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
     int cosem_setMbusSlavePortSetup(gxMbusSlavePortSetup* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP

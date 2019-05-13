@@ -66,7 +66,7 @@ int cosem_getByteBuffer(dlmsVARIANT* target)
 }
 
 #ifndef DLMS_IGNORE_DATA
-int cosem_getData(gxValueEventArg *e)
+int cosem_getData(gxValueEventArg* e)
 {
     int ret = DLMS_ERROR_CODE_OK;
     if (e->index == 2)
@@ -82,7 +82,7 @@ int cosem_getData(gxValueEventArg *e)
 #endif //DLMS_IGNORE_DATA
 #ifndef DLMS_IGNORE_REGISTER
 int cosem_getRegister(
-    gxValueEventArg *e)
+    gxValueEventArg* e)
 {
     if (e->index == 2)
     {
@@ -96,7 +96,7 @@ int cosem_getRegister(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_INT8)) != 0 ||
@@ -116,7 +116,7 @@ int cosem_getRegister(
 #endif //DLMS_IGNORE_REGISTER
 #ifndef DLMS_IGNORE_REGISTER_TABLE
 int cosem_getRegisterTable(
-    gxValueEventArg *e)
+    gxValueEventArg* e)
 {
     int ret;
     if (e->index == 2)
@@ -131,7 +131,7 @@ int cosem_getRegisterTable(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_INT8)) != 0 ||
@@ -151,7 +151,7 @@ int cosem_getRegisterTable(
 #endif //DLMS_IGNORE_REGISTER_TABLE
 #ifndef DLMS_IGNORE_CLOCK
 int cosem_getClock(
-    gxValueEventArg *e)
+    gxValueEventArg* e)
 {
     int ret;
     if (e->index == 2)
@@ -195,10 +195,10 @@ int cosem_getClock(
 #endif //DLMS_IGNORE_CLOCK
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
 int cosem_getActionSchedule(
-    gxValueEventArg *e)
+    gxValueEventArg* e)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
-    gxtime *tm;
+    gxtime* tm;
     dlmsVARIANT tmp;
     if (e->index == 2)
     {
@@ -206,7 +206,7 @@ int cosem_getActionSchedule(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -231,7 +231,7 @@ int cosem_getActionSchedule(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(((gxActionSchedule*)e->target)->executionTime.size, data)) != 0 ||
@@ -244,7 +244,7 @@ int cosem_getActionSchedule(
         {
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
-                (ret = arr_getByIndex(&((gxActionSchedule*)e->target)->executionTime, pos, (void**)&tm)) != 0 ||
+                (ret = arr_getByIndex(&((gxActionSchedule*)e->target)->executionTime, pos, (void**)& tm)) != 0 ||
                 (ret = var_setDateTime(&tmp, tm)) != 0)
             {
                 break;
@@ -277,7 +277,7 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
 {
     dlmsVARIANT tmp;
     gxDayProfile* dp;
-    gxDayProfileAction *action;
+    gxDayProfileAction* action;
     int ret, pos, pos2;
     if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_ARRAY)) != 0 ||
         //Add count
@@ -290,7 +290,7 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
     {
         if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 2)) != 0 ||
-            (ret = arr_getByIndex(list, pos, (void**)&dp)) != 0 ||
+            (ret = arr_getByIndex(list, pos, (void**)& dp)) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_UINT8)) != 0 ||
             (ret = bb_setUInt8(ba, dp->dayId)) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -304,7 +304,7 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
         {
             if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(ba, 3)) != 0 ||
-                (ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action)) != 0 ||
+                (ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)& action)) != 0 ||
                 (ret = var_setTimeAsOctetString(&tmp, &action->startTime)) != 0 ||
                 (ret = var_getBytes2(&tmp, DLMS_DATA_TYPE_OCTET_STRING, ba)) != 0 ||
                 (ret = var_clear(&tmp)) != 0 ||
@@ -337,7 +337,7 @@ int getActivityCalendarWeekProfileTable(gxArray* list, gxByteBuffer* ba)
     {
         if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 8)) != 0 ||
-            (ret = arr_getByIndex(list, pos, (void**)&wp)) != 0 ||
+            (ret = arr_getByIndex(list, pos, (void**)& wp)) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = bb_setUInt8(ba, (unsigned char)wp->name.size)) != 0 ||
             (ret = bb_set2(ba, &wp->name, 0, bb_size(&wp->name))) != 0 ||
@@ -365,7 +365,7 @@ int getActivityCalendarWeekProfileTable(gxArray* list, gxByteBuffer* ba)
 int getActivityCalendarSeasonProfile(gxArray* list, gxByteBuffer* ba)
 {
     int pos, ret = 0;
-    gxSeasonProfile *sp;
+    gxSeasonProfile* sp;
     dlmsVARIANT tmp;
     if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_ARRAY)) != 0 ||
         //Add count
@@ -378,7 +378,7 @@ int getActivityCalendarSeasonProfile(gxArray* list, gxByteBuffer* ba)
     {
         if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 3)) != 0 ||
-            (ret = arr_getByIndex(list, pos, (void**)&sp)) != 0 ||
+            (ret = arr_getByIndex(list, pos, (void**)& sp)) != 0 ||
             //Add name.
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = bb_setUInt8(ba, (unsigned char)bb_size(&sp->name))) != 0 ||
@@ -412,7 +412,7 @@ int getActivityCalendarName(gxByteBuffer* name, gxByteBuffer* ba)
 }
 
 int cosem_getActivityCalendar(
-    gxValueEventArg *e)
+    gxValueEventArg* e)
 {
     int ret;
     if (e->index != 10)
@@ -422,7 +422,7 @@ int cosem_getActivityCalendar(
             return ret;
         }
     }
-    gxByteBuffer *data = e->value.byteArr;
+    gxByteBuffer* data = e->value.byteArr;
     gxActivityCalendar* object = (gxActivityCalendar*)e->target;
     if (e->index == 2)
     {
@@ -478,7 +478,7 @@ int cosem_getActivityCalendar(
 #ifndef DLMS_IGNORE_SERVER
 int getLNAccessRights(
     dlmsSettings* settings,
-    gxObject *object,
+    gxObject* object,
     gxByteBuffer* data)
 {
     unsigned char pos, cnt;
@@ -573,15 +573,15 @@ unsigned char dlms_isPduFull(
 #ifndef DLMS_IGNORE_SERVER
 // Returns LN Association View.
 int getLNObjects(
-    dlmsSettings* settings,
-    gxValueEventArg *e,
-    gxByteBuffer* data)
+    dlmsSettings * settings,
+    gxValueEventArg * e,
+    gxByteBuffer * data)
 {
     unsigned short pduSize;
-    gxAssociationLogicalName *object = (gxAssociationLogicalName*)e->target;
+    gxAssociationLogicalName* object = (gxAssociationLogicalName*)e->target;
     int ret;
     unsigned short pos;
-    gxObject *it;
+    gxObject* it;
     if ((ret = bb_capacity(data, settings->maxPduSize)) != 0)
     {
         return ret;
@@ -654,9 +654,9 @@ int getLNObjects(
 * Returns User list.
 */
 int getUserList(
-    dlmsSettings* settings,
-    gxValueEventArg *e,
-    gxByteBuffer *data)
+    dlmsSettings * settings,
+    gxValueEventArg * e,
+    gxByteBuffer * data)
 {
     unsigned char len, pos = 0;
     int ret;
@@ -676,7 +676,7 @@ int getUserList(
     {
         if (!(pos + 1 <= settings->index))
         {
-            if ((ret = arr_getByIndex(&target->userList, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&target->userList, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 // Count
                 (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -701,8 +701,8 @@ int getUserList(
 }
 
 int cosem_getAssociationLogicalName(
-    dlmsSettings* settings,
-    gxValueEventArg *e)
+    dlmsSettings * settings,
+    gxValueEventArg * e)
 {
     int ret = 0;
     if (e->index == 2)
@@ -712,7 +712,7 @@ int cosem_getAssociationLogicalName(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         ret = getLNObjects(settings, e, data);
 #endif //DLMS_IGNORE_SERVER
@@ -723,7 +723,7 @@ int cosem_getAssociationLogicalName(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             //Add count
@@ -742,7 +742,7 @@ int cosem_getAssociationLogicalName(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             //Add count
@@ -765,7 +765,7 @@ int cosem_getAssociationLogicalName(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         gxByteBuffer tmp;
         e->byteArray = 1;
         //Add count
@@ -799,7 +799,7 @@ int cosem_getAssociationLogicalName(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             //Add count
@@ -830,7 +830,7 @@ int cosem_getAssociationLogicalName(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = bb_setUInt8(data, 6)) != 0 ||
@@ -846,7 +846,7 @@ int cosem_getAssociationLogicalName(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         ret = getUserList(settings, e, data);
     }
     else if (e->index == 11)
@@ -855,7 +855,7 @@ int cosem_getAssociationLogicalName(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             // Add structure size.
@@ -897,9 +897,9 @@ int cosem_getAssociationLogicalName(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 // Returns SN Association View.
 int getSNObjects(
-    dlmsSettings* settings,
-    gxValueEventArg *e,
-    gxByteBuffer* ba)
+    dlmsSettings * settings,
+    gxValueEventArg * e,
+    gxByteBuffer * ba)
 {
     unsigned short pduSize;
     objectArray* list = &((gxAssociationShortName*)e->target)->objectList;
@@ -968,9 +968,9 @@ int getSNObjects(
 
 #ifndef DLMS_IGNORE_SERVER
 int getSNAccessRights(
-    dlmsSettings* settings,
-    gxObject* object,
-    gxByteBuffer* ba)
+    dlmsSettings * settings,
+    gxObject * object,
+    gxByteBuffer * ba)
 {
     int ret;
     unsigned char ch, pos, cnt;
@@ -1026,8 +1026,8 @@ int getSNAccessRights(
 }
 
 int cosem_getAssociationShortName(
-    dlmsSettings* settings,
-    gxValueEventArg *e)
+    dlmsSettings * settings,
+    gxValueEventArg * e)
 {
     int ret = DLMS_ERROR_CODE_OK;
     unsigned short pos;
@@ -1036,7 +1036,7 @@ int cosem_getAssociationShortName(
     {
         return ret;
     }
-    gxByteBuffer *data = e->value.byteArr;
+    gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
     {
         ret = getSNObjects(settings, e, data);
@@ -1088,7 +1088,7 @@ int cosem_getAssociationShortName(
 
 #ifndef DLMS_IGNORE_AUTO_ANSWER
 int cosem_getAutoAnswer(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0, pos;
     dlmsVARIANT tmp;
@@ -1104,7 +1104,7 @@ int cosem_getAutoAnswer(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->listeningWindow.size, data)) != 0 ||
@@ -1116,7 +1116,7 @@ int cosem_getAutoAnswer(
         {
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
-                (ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&kv)) != 0)
+                (ret = arr_getByIndex(&object->listeningWindow, pos, (void**)& kv)) != 0)
             {
                 var_clear(&tmp);
                 return ret;
@@ -1153,7 +1153,7 @@ int cosem_getAutoAnswer(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -1174,11 +1174,11 @@ int cosem_getAutoAnswer(
 #endif //DLMS_IGNORE_AUTO_ANSWER
 #ifndef DLMS_IGNORE_AUTO_CONNECT
 int cosem_getAutoConnect(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int pos, ret = DLMS_ERROR_CODE_OK;
-    gxByteBuffer *ba;
-    gxKey *k;
+    gxByteBuffer* ba;
+    gxKey* k;
     dlmsVARIANT tmp;
     gxAutoConnect* object = (gxAutoConnect*)e->target;
     if (e->index == 2)
@@ -1199,7 +1199,7 @@ int cosem_getAutoConnect(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             //Add count
@@ -1212,7 +1212,7 @@ int cosem_getAutoConnect(
         {
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
-                (ret = arr_getByIndex(&object->callingWindow, pos, (void**)&k)) != 0 ||
+                (ret = arr_getByIndex(&object->callingWindow, pos, (void**)& k)) != 0 ||
                 (ret = var_setDateTime(&tmp, (gxtime*)k->key)) != 0 ||
                 (ret = var_getBytes2(&tmp, DLMS_DATA_TYPE_OCTET_STRING, data)) != 0 ||
                 (ret = var_clear(&tmp)) != 0 ||
@@ -1231,7 +1231,7 @@ int cosem_getAutoConnect(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             //Add count
@@ -1242,7 +1242,7 @@ int cosem_getAutoConnect(
         for (pos = 0; pos != object->destinations.size; ++pos)
         {
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-                (ret = arr_getByIndex(&object->destinations, pos, (void**)&ba)) != 0 ||
+                (ret = arr_getByIndex(&object->destinations, pos, (void**)& ba)) != 0 ||
                 (ret = hlp_setObjectCount(ba->size, data)) != 0 ||
                 (ret = bb_set(data, ba->data, ba->size)) != 0)
             {
@@ -1259,7 +1259,7 @@ int cosem_getAutoConnect(
 #endif //DLMS_IGNORE_AUTO_CONNECT
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
 int cosem_getDemandRegister(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = DLMS_ERROR_CODE_OK;
     gxDemandRegister* object = (gxDemandRegister*)e->target;
@@ -1277,7 +1277,7 @@ int cosem_getDemandRegister(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -1318,7 +1318,7 @@ int cosem_getDemandRegister(
 #endif //DLMS_IGNORE_DEMAND_REGISTER
 #ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP
 int cosem_getMacAddressSetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0;
     gxMacAddressSetup* object = (gxMacAddressSetup*)e->target;
@@ -1335,7 +1335,7 @@ int cosem_getMacAddressSetup(
 #endif //DLMS_IGNORE_MAC_ADDRESS_SETUP
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
 int cosem_getExtendedRegister(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = DLMS_ERROR_CODE_OK;
     dlmsVARIANT tmp;
@@ -1350,7 +1350,7 @@ int cosem_getExtendedRegister(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -1372,7 +1372,7 @@ int cosem_getExtendedRegister(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         var_init(&tmp);
         ret = var_setDateTime(&tmp, &object->captureTime);
         if (ret == 0)
@@ -1391,7 +1391,7 @@ int cosem_getExtendedRegister(
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
 
 #ifndef DLMS_IGNORE_GPRS_SETUP
-int cosem_getQualityOfService(gxQualityOfService* service, gxByteBuffer* ba)
+int cosem_getQualityOfService(gxQualityOfService * service, gxByteBuffer * ba)
 {
     int ret;
     if ((ret = bb_setUInt8(ba, 5)) != 0 ||
@@ -1417,7 +1417,7 @@ int cosem_getQualityOfService(gxQualityOfService* service, gxByteBuffer* ba)
 }
 
 int cosem_getGprsSetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret;
     gxGPRSSetup* object = (gxGPRSSetup*)e->target;
@@ -1439,7 +1439,7 @@ int cosem_getGprsSetup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -1460,7 +1460,7 @@ int cosem_getGprsSetup(
 #endif //DLMS_IGNORE_GPRS_SETUP
 #ifndef DLMS_IGNORE_SECURITY_SETUP
 int cosem_getSecuritySetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret;
     gxSecuritySetup* object = (gxSecuritySetup*)e->target;
@@ -1488,7 +1488,7 @@ int cosem_getSecuritySetup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->certificates.size, data)) != 0)
@@ -1497,7 +1497,7 @@ int cosem_getSecuritySetup(
         }
         for (pos = 0; pos != object->certificates.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->certificates, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->certificates, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = hlp_setObjectCount(6, data)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ENUM)) != 0 ||
@@ -1547,7 +1547,7 @@ int cosem_getSecuritySetup(
 #endif //DLMS_IGNORE_SECURITY_SETUP
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
 int cosem_getIecHdlcSetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret;
     gxIecHdlcSetup* object = (gxIecHdlcSetup*)e->target;
@@ -1586,7 +1586,7 @@ int cosem_getIecHdlcSetup(
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
 #ifndef DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 int cosem_getIecLocalPortSetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret;
     gxLocalPortSetup* object = (gxLocalPortSetup*)e->target;
@@ -1631,10 +1631,10 @@ int cosem_getIecLocalPortSetup(
 #endif // DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
 int cosem_getIP4Setup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0, pos;
-    dlmsVARIANT *tmp;
+    dlmsVARIANT* tmp;
     gxip4SetupIpOption* it;
     gxIp4Setup* object = (gxIp4Setup*)e->target;
     if (e->index == 2)
@@ -1651,7 +1651,7 @@ int cosem_getIP4Setup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->multicastIPAddress.size, data)) != 0)
@@ -1673,7 +1673,7 @@ int cosem_getIP4Setup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->ipOptions.size, data)) != 0)
@@ -1682,7 +1682,7 @@ int cosem_getIP4Setup(
         }
         for (pos = 0; pos != object->ipOptions.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->ipOptions, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->ipOptions, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Type
@@ -1729,7 +1729,7 @@ int cosem_getIP4Setup(
 #endif //DLMS_IGNORE_IP4_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 int cosem_getMbusSlavePortSetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret;
     gxMbusSlavePortSetup* object = (gxMbusSlavePortSetup*)e->target;
@@ -1758,10 +1758,10 @@ int cosem_getMbusSlavePortSetup(
 #endif //DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
 int cosem_getImageTransfer(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0, pos;
-    gxImageActivateInfo *ai;
+    gxImageActivateInfo* ai;
     gxImageTransfer* object = (gxImageTransfer*)e->target;
     if (e->index == 2)
     {
@@ -1805,7 +1805,7 @@ int cosem_getImageTransfer(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         //ImageActivateInfo is returned only after verification is succeeded.
         if (object->imageTransferStatus != DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_SUCCESSFUL)
@@ -1825,7 +1825,7 @@ int cosem_getImageTransfer(
             }
             for (pos = 0; pos != object->imageActivateInfo.size; ++pos)
             {
-                if ((ret = arr_getByIndex(&object->imageActivateInfo, pos, (void**)&ai)) != 0 ||
+                if ((ret = arr_getByIndex(&object->imageActivateInfo, pos, (void**)& ai)) != 0 ||
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                     (ret = bb_setUInt8(data, 3)) != 0 ||
                     //Size
@@ -1855,14 +1855,14 @@ int cosem_getImageTransfer(
 
 #if !defined(DLMS_IGNORE_PROFILE_GENERIC) && !defined(DLMS_IGNORE_CONPACT_DATA)
 int getColumns(
-    dlmsSettings* settings,
-    gxArray *list,
-    gxByteBuffer *ba,
-    gxValueEventArg *e)
+    dlmsSettings * settings,
+    gxArray * list,
+    gxByteBuffer * ba,
+    gxValueEventArg * e)
 {
     unsigned short pduSize;
     int pos, ret;
-    gxKey *it;
+    gxKey* it;
     if ((ret = bb_capacity(ba, (list->size * 19) + 2)) != 0)
     {
         return ret;
@@ -1882,7 +1882,7 @@ int getColumns(
         if (!(pos + 1 <= settings->index))
         {
             pduSize = (unsigned short)ba->size;
-            if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(list, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(ba, 4)) != 0 ||
                 //ClassID
@@ -1930,13 +1930,13 @@ int getColumns(
      *            Selected columns.
      */
 int getSelectedColumns(
-    gxArray* captureObjects,
-    variantArray *cols,
-    gxArray *columns)
+    gxArray * captureObjects,
+    variantArray * cols,
+    gxArray * columns)
 {
-    gxKey *c;
-    dlmsVARIANT *it, *it2;
-    unsigned char *ln;
+    gxKey* c;
+    dlmsVARIANT* it, * it2;
+    unsigned char* ln;
     DLMS_OBJECT_TYPE ot;
     int ret, pos, pos2, dataIndex;
     unsigned char attributeIndex;
@@ -1970,7 +1970,7 @@ int getSelectedColumns(
         // Find columns and update only them.
         for (pos2 = 0; pos2 != captureObjects->size; ++pos2)
         {
-            if ((ret = arr_getByIndex(captureObjects, pos2, (void**)&c)) != 0)
+            if ((ret = arr_getByIndex(captureObjects, pos2, (void**)& c)) != 0)
             {
                 return ret;
             }
@@ -1991,16 +1991,16 @@ int getSelectedColumns(
 }
 
 int cosem_getColumns(
-    gxArray* captureObjects,
+    gxArray * captureObjects,
     unsigned char selector,
     dlmsVARIANT * parameters,
-    gxArray *columns)
+    gxArray * columns)
 {
     unsigned long pos, start = 0, count = 0;
     unsigned short addAllColumns = 1;
     int ret = 0;
-    gxKey *k;
-    dlmsVARIANT *it;
+    gxKey* k;
+    dlmsVARIANT* it;
     arr_empty(columns);
     if (parameters->vt == DLMS_DATA_TYPE_STRUCTURE)
     {
@@ -2046,7 +2046,7 @@ int cosem_getColumns(
                 }
                 for (pos = start - 1; pos != count; ++pos)
                 {
-                    if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k)) != 0 ||
+                    if ((ret = arr_getByIndex(captureObjects, pos, (void**)& k)) != 0 ||
                         (ret = arr_push(columns, k)) != 0)
                     {
                         return ret;
@@ -2059,7 +2059,7 @@ int cosem_getColumns(
         {
             for (pos = 0; pos != captureObjects->size; ++pos)
             {
-                if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k)) != 0)
+                if ((ret = arr_getByIndex(captureObjects, pos, (void**)& k)) != 0)
                 {
                     break;
                 }
@@ -2074,16 +2074,16 @@ int cosem_getColumns(
 }
 
 int cosem_getRow(
-    gxArray* table,
+    gxArray * table,
     int index,
-    gxArray *captureObjects,
-    gxArray* columns,
-    gxByteBuffer* data)
+    gxArray * captureObjects,
+    gxArray * columns,
+    gxByteBuffer * data)
 {
     int ret, pos;
-    dlmsVARIANT *col;
-    variantArray *row;
-    if ((ret = arr_getByIndex(table, index, (void**)&row)) != 0)
+    dlmsVARIANT* col;
+    variantArray* row;
+    if ((ret = arr_getByIndex(table, index, (void**)& row)) != 0)
     {
         return ret;
     }
@@ -2139,11 +2139,11 @@ int cosem_getRow(
 }
 
 int profileGeneric_getData(
-    dlmsSettings* settings,
-    gxValueEventArg *e,
-    gxArray *table,
-    gxArray *captureObjects,
-    gxByteBuffer* data)
+    dlmsSettings * settings,
+    gxValueEventArg * e,
+    gxArray * table,
+    gxArray * captureObjects,
+    gxByteBuffer * data)
 {
     gxArray columns;
     unsigned short pduSize;
@@ -2209,15 +2209,15 @@ int profileGeneric_getData(
 }
 
 int getProfileGenericData(
-    dlmsSettings* settings,
-    gxProfileGeneric* object,
-    gxValueEventArg *e,
-    gxByteBuffer* reply)
+    dlmsSettings * settings,
+    gxProfileGeneric * object,
+    gxValueEventArg * e,
+    gxByteBuffer * reply)
 {
     int ret;
     gxArray items;
-    variantArray *row;
-    dlmsVARIANT *it;
+    variantArray* row;
+    dlmsVARIANT* it;
     gxByteBuffer bb;
     gxArray captureObjects;
     //If all data is read.
@@ -2274,7 +2274,7 @@ int getProfileGenericData(
                 }
                 for (; settings->position < object->buffer.size; ++settings->position)
                 {
-                    if ((ret = arr_getByIndex(&object->buffer, settings->position, (void**)&row)) != 0 ||
+                    if ((ret = arr_getByIndex(&object->buffer, settings->position, (void**)& row)) != 0 ||
                         (ret = va_getByIndex(row, 0, &it)) != 0)
                     {
                         break;
@@ -2351,7 +2351,7 @@ int getProfileGenericData(
                     }
                     for (; settings->position < count; ++settings->position)
                     {
-                        if ((ret = arr_getByIndex(&object->buffer, settings->position + start - 1, (void**)&row)) != 0 ||
+                        if ((ret = arr_getByIndex(&object->buffer, settings->position + start - 1, (void**)& row)) != 0 ||
                             (ret = cosem_getRow(&object->buffer, settings->position, &captureObjects, &object->captureObjects, reply)) != 0)
                         {
                             break;
@@ -2372,8 +2372,8 @@ int getProfileGenericData(
 }
 
 int cosem_getProfileGeneric(
-    dlmsSettings* settings,
-    gxValueEventArg *e)
+    dlmsSettings * settings,
+    gxValueEventArg * e)
 {
     unsigned char empty[6] = { 0 };
     int ret = 0;
@@ -2384,7 +2384,7 @@ int cosem_getProfileGeneric(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         ret = getProfileGenericData(settings, object, e, data);
     }
@@ -2394,7 +2394,7 @@ int cosem_getProfileGeneric(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         ret = getColumns(settings, &object->captureObjects, data, e);
     }
@@ -2412,7 +2412,7 @@ int cosem_getProfileGeneric(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 4)) != 0)
@@ -2475,7 +2475,7 @@ int cosem_getProfileGeneric(
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_DISCONNECT_CONTROL
 int cosem_getDisconnectControl(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0;
     gxDisconnectControl* object = (gxDisconnectControl*)e->target;
@@ -2500,19 +2500,19 @@ int cosem_getDisconnectControl(
 #endif //DLMS_IGNORE_DISCONNECT_CONTROL
 #ifndef DLMS_IGNORE_LIMITER
 int cosem_getLimiter(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0, pos;
     unsigned char empty[6] = { 0 };
     dlmsVARIANT tmp;
-    dlmsVARIANT *it;
+    dlmsVARIANT* it;
     if (e->index == 2)
     {
         if ((ret = cosem_getByteBuffer(&e->value)) != 0)
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 3)) != 0 ||
@@ -2574,7 +2574,7 @@ int cosem_getLimiter(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 3)) != 0 ||
@@ -2599,7 +2599,7 @@ int cosem_getLimiter(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_clear(data)) != 0 ||
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -2626,7 +2626,7 @@ int cosem_getLimiter(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -2663,10 +2663,10 @@ int cosem_getLimiter(
 #endif //DLMS_IGNORE_LIMITER
 #ifndef DLMS_IGNORE_MBUS_CLIENT
 int cosem_getmMbusClient(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0, pos;
-    gxKey *it;
+    gxKey* it;
     if (e->index == 2)
     {
         ret = var_addOctetString(&e->value, &((gxMBusClient*)e->target)->mBusPortReference);
@@ -2677,7 +2677,7 @@ int cosem_getmMbusClient(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(((gxMBusClient*)e->target)->captureDefinition.size, data)) != 0)
@@ -2686,7 +2686,7 @@ int cosem_getmMbusClient(
         }
         for (pos = 0; pos != ((gxMBusClient*)e->target)->captureDefinition.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&((gxMBusClient*)e->target)->captureDefinition, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&((gxMBusClient*)e->target)->captureDefinition, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //
@@ -2747,11 +2747,11 @@ int cosem_getmMbusClient(
 #endif //DLMS_IGNORE_MBUS_CLIENT
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
 int cosem_getModemConfiguration(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0, pos;
-    gxModemInitialisation *mi;
-    gxByteBuffer *ba;
+    gxModemInitialisation* mi;
+    gxByteBuffer* ba;
     if (e->index == 2)
     {
         ret = var_setEnum(&e->value, ((gxModemConfiguration*)e->target)->communicationSpeed);
@@ -2762,7 +2762,7 @@ int cosem_getModemConfiguration(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(((gxModemConfiguration*)e->target)->initialisationStrings.size, data)) != 0)
@@ -2771,7 +2771,7 @@ int cosem_getModemConfiguration(
         }
         for (pos = 0; pos != ((gxModemConfiguration*)e->target)->initialisationStrings.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&((gxModemConfiguration*)e->target)->initialisationStrings, pos, (void**)&mi)) != 0 ||
+            if ((ret = arr_getByIndex(&((gxModemConfiguration*)e->target)->initialisationStrings, pos, (void**)& mi)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Add request.
@@ -2796,7 +2796,7 @@ int cosem_getModemConfiguration(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(((gxModemConfiguration*)e->target)->modemProfile.size, data)) != 0)
@@ -2805,7 +2805,7 @@ int cosem_getModemConfiguration(
         }
         for (pos = 0; pos != ((gxModemConfiguration*)e->target)->modemProfile.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&((gxModemConfiguration*)e->target)->modemProfile, pos, (void**)&ba)) != 0 ||
+            if ((ret = arr_getByIndex(&((gxModemConfiguration*)e->target)->modemProfile, pos, (void**)& ba)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = hlp_setObjectCount(ba->size, data)) != 0 ||
                 (ret = bb_set(data, ba->data, ba->size)) != 0)
@@ -2823,7 +2823,7 @@ int cosem_getModemConfiguration(
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_PPP_SETUP
 int cosem_getPppSetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0, pos;
     gxpppSetupLcpOption* lcpItem;
@@ -2839,7 +2839,7 @@ int cosem_getPppSetup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->lcpOptions.size, data)) != 0)
@@ -2849,7 +2849,7 @@ int cosem_getPppSetup(
 
         for (pos = 0; pos != object->lcpOptions.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->lcpOptions, pos, (void**)&lcpItem)) != 0 ||
+            if ((ret = arr_getByIndex(&object->lcpOptions, pos, (void**)& lcpItem)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Add type.
@@ -2870,7 +2870,7 @@ int cosem_getPppSetup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->ipcpOptions.size, data)) != 0)
@@ -2879,7 +2879,7 @@ int cosem_getPppSetup(
         }
         for (pos = 0; pos != object->ipcpOptions.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->ipcpOptions, pos, (void**)&ipcpItem)) != 0 ||
+            if ((ret = arr_getByIndex(&object->ipcpOptions, pos, (void**)& ipcpItem)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Add type.
@@ -2900,7 +2900,7 @@ int cosem_getPppSetup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -2925,11 +2925,11 @@ int cosem_getPppSetup(
 #endif //DLMS_IGNORE_PPP_SETUP
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
 int cosem_getRegisterActivation(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
-    gxObjectDefinition *od;
-    gxKey *it;
+    gxObjectDefinition* od;
+    gxKey* it;
     gxRegisterActivation* object = (gxRegisterActivation*)e->target;
     if (e->index == 2)
     {
@@ -2937,7 +2937,7 @@ int cosem_getRegisterActivation(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->registerAssignment.size, data)) != 0)
@@ -2946,7 +2946,7 @@ int cosem_getRegisterActivation(
         }
         for (pos = 0; pos != object->registerAssignment.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->registerAssignment, pos, (void**)&od)) != 0 ||
+            if ((ret = arr_getByIndex(&object->registerAssignment, pos, (void**)& od)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
@@ -2965,7 +2965,7 @@ int cosem_getRegisterActivation(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         unsigned long pos2;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -2975,7 +2975,7 @@ int cosem_getRegisterActivation(
         }
         for (pos = 0; pos != object->maskList.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->maskList, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->maskList, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
@@ -3002,7 +3002,7 @@ int cosem_getRegisterActivation(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
@@ -3021,7 +3021,7 @@ int cosem_getRegisterActivation(
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
 int cosem_getRegisterMonitor(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
     dlmsVARIANT* tmp;
@@ -3031,7 +3031,7 @@ int cosem_getRegisterMonitor(
     {
         return ret;
     }
-    gxByteBuffer *data = e->value.byteArr;
+    gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
     {
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -3079,7 +3079,7 @@ int cosem_getRegisterMonitor(
         {
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
-                (ret = arr_getByIndex(&object->actions, pos, (void**)&actionSet)) != 0 ||
+                (ret = arr_getByIndex(&object->actions, pos, (void**)& actionSet)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //Add LN.
@@ -3113,10 +3113,10 @@ int cosem_getRegisterMonitor(
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
 int cosem_getSapAssignment(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret, pos;
-    gxSapItem *it;
+    gxSapItem* it;
     gxSapAssignment* object = (gxSapAssignment*)e->target;
     if (e->index == 2)
     {
@@ -3124,7 +3124,7 @@ int cosem_getSapAssignment(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -3137,7 +3137,7 @@ int cosem_getSapAssignment(
         {
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
-                (ret = arr_getByIndex(&object->sapAssignmentList, pos, (void**)&it)) != 0 ||
+                (ret = arr_getByIndex(&object->sapAssignmentList, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(data, it->id)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
@@ -3157,10 +3157,10 @@ int cosem_getSapAssignment(
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 #ifndef DLMS_IGNORE_SCHEDULE
 int cosem_getSchedule(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int pos, ret = DLMS_ERROR_CODE_OK;
-    gxScheduleEntry *se;
+    gxScheduleEntry* se;
     dlmsVARIANT tmp;
     gxSchedule* object = (gxSchedule*)e->target;
     if (e->index == 2)
@@ -3169,7 +3169,7 @@ int cosem_getSchedule(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             //Add count
@@ -3182,7 +3182,7 @@ int cosem_getSchedule(
         {
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 10)) != 0 ||
-                (ret = arr_getByIndex(&object->entries, pos, (void**)&se)) != 0 ||
+                (ret = arr_getByIndex(&object->entries, pos, (void**)& se)) != 0 ||
                 //Add index.
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(data, se->index)) != 0 ||
@@ -3234,11 +3234,11 @@ int cosem_getSchedule(
 #endif //DLMS_IGNORE_SCHEDULE
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
 int cosem_getScriptTable(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret, pos, pos2;
-    gxScript *it;
-    gxScriptAction *a;
+    gxScript* it;
+    gxScriptAction* a;
     gxScriptTable* object = (gxScriptTable*)e->target;
     if (e->index == 2)
     {
@@ -3246,7 +3246,7 @@ int cosem_getScriptTable(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -3256,7 +3256,7 @@ int cosem_getScriptTable(
         }
         for (pos = 0; pos != object->scripts.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->scripts, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->scripts, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //Script_identifier:
@@ -3269,7 +3269,7 @@ int cosem_getScriptTable(
             }
             for (pos2 = 0; pos2 != it->actions.size; ++pos2)
             {
-                if ((ret = arr_getByIndex(&it->actions, pos2, (void**)&a)) != 0 ||
+                if ((ret = arr_getByIndex(&it->actions, pos2, (void**)& a)) != 0 ||
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                     (ret = bb_setUInt8(data, 5)) != 0 ||
                     //service_id
@@ -3302,7 +3302,7 @@ int cosem_getScriptTable(
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
 int cosem_getSpecialDaysTable(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret, pos;
     dlmsVARIANT tmp;
@@ -3312,7 +3312,7 @@ int cosem_getSpecialDaysTable(
     {
         return ret;
     }
-    gxByteBuffer *data = e->value.byteArr;
+    gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
     {
         e->byteArray = 1;
@@ -3324,7 +3324,7 @@ int cosem_getSpecialDaysTable(
         }
         for (pos = 0; pos != object->entries.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->entries, pos, (void**)&sd)) != 0 ||
+            if ((ret = arr_getByIndex(&object->entries, pos, (void**)& sd)) != 0 ||
                 (ret = var_setDate(&tmp, &sd->date)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
@@ -3351,7 +3351,7 @@ int cosem_getSpecialDaysTable(
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
 int cosem_getTcpUdpSetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret;
     gxTcpUdpSetup* object = (gxTcpUdpSetup*)e->target;
@@ -3382,9 +3382,37 @@ int cosem_getTcpUdpSetup(
     return ret;
 }
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
+
+#ifndef DLMS_IGNORE_UTILITY_TABLES
+int cosem_getUtilityTables(
+    gxValueEventArg * e)
+{
+    int ret = 0;
+    gxUtilityTables* object = (gxUtilityTables*)e->target;
+    if (e->index == 2)
+    {
+        ret = var_setUInt16(&e->value, object->tableId);
+    }
+    else if (e->index == 3)
+    {
+        //Skip length.
+    }
+    else if (e->index == 4)
+    {
+        bb_clear(&object->buffer);
+        ret = var_addBytes(&e->value, object->buffer.data, (unsigned short)object->buffer.size);
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_UTILITY_TABLES
+
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 int cosem_getMbusMasterPortSetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret;
     gxMBusMasterPortSetup* object = (gxMBusMasterPortSetup*)e->target;
@@ -3401,18 +3429,18 @@ int cosem_getMbusMasterPortSetup(
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 #ifndef DLMS_IGNORE_MESSAGE_HANDLER
 int cosem_getMessageHandler(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret, pos;
-    gxKey *it;
-    dlmsVARIANT *tmp;
+    gxKey* it;
+    dlmsVARIANT* tmp;
     dlmsVARIANT tmp2;
     gxMessageHandler* object = (gxMessageHandler*)e->target;
     if ((ret = cosem_getByteBuffer(&e->value)) != 0)
     {
         return ret;
     }
-    gxByteBuffer *data = e->value.byteArr;
+    gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
     {
         if ((ret = var_init(&tmp2)) != 0 ||
@@ -3423,7 +3451,7 @@ int cosem_getMessageHandler(
         }
         for (pos = 0; pos != object->listeningWindow.size; ++pos)
         {
-            if ((ret = arr_get(&object->listeningWindow, (void**)&it)) != 0 ||
+            if ((ret = arr_get(&object->listeningWindow, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //Add start
@@ -3465,7 +3493,7 @@ int cosem_getMessageHandler(
         }
         for (pos = 0; pos != object->sendersAndActions.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->sendersAndActions, pos, (void**)&tmp)) != 0 ||
+            if ((ret = arr_getByIndex(&object->sendersAndActions, pos, (void**)& tmp)) != 0 ||
                 (ret = var_getBytes(tmp, data)) != 0)
             {
                 break;
@@ -3482,10 +3510,10 @@ int cosem_getMessageHandler(
 #endif //DLMS_IGNORE_MESSAGE_HANDLER
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int cosem_getPushSetup(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0, pos;
-    gxKey *it;
+    gxKey* it;
     dlmsVARIANT tmp;
     gxPushSetup* object = (gxPushSetup*)e->target;
     if (e->index == 2)
@@ -3494,7 +3522,7 @@ int cosem_getPushSetup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->pushObjectList.size, data)) != 0)
@@ -3503,7 +3531,7 @@ int cosem_getPushSetup(
         }
         for (pos = 0; pos != object->pushObjectList.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 4)) != 0 ||
                 //Type.
@@ -3530,7 +3558,7 @@ int cosem_getPushSetup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 3)) != 0 ||
@@ -3571,7 +3599,7 @@ int cosem_getPushSetup(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->communicationWindow.size, data)) != 0 ||
@@ -3581,7 +3609,7 @@ int cosem_getPushSetup(
         }
         for (pos = 0; pos != object->communicationWindow.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //Start date time.
@@ -3619,11 +3647,11 @@ int cosem_getPushSetup(
 #endif //DLMS_IGNORE_PUSH_SETUP
 #ifndef DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
 int cosem_getZigbeeNetworkControl(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     gxZigBeeNetworkControl* object = (gxZigBeeNetworkControl*)e->target;
     int ret = 0, pos;
-    gxActiveDevice *it;
+    gxActiveDevice* it;
     dlmsVARIANT tmp;
     if (e->index == 2)
     {
@@ -3639,7 +3667,7 @@ int cosem_getZigbeeNetworkControl(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
             (ret = hlp_setObjectCount(object->activeDevices.size, data)) != 0 ||
@@ -3650,7 +3678,7 @@ int cosem_getZigbeeNetworkControl(
 
         for (pos = 0; pos != object->activeDevices.size; ++pos)
         {
-            if ((ret = arr_get(&object->activeDevices, (void**)&it)) != 0 ||
+            if ((ret = arr_get(&object->activeDevices, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 14)) != 0 ||
                 //mac address.
@@ -3712,15 +3740,15 @@ int cosem_getZigbeeNetworkControl(
 }
 #endif //DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
 #ifndef DLMS_IGNORE_CHARGE
-int getUnitCharge(gxUnitCharge* target, dlmsVARIANT *value)
+int getUnitCharge(gxUnitCharge * target, dlmsVARIANT * value)
 {
     int ret = 0, pos;
-    gxChargeTable *it;
+    gxChargeTable* it;
     if ((ret = cosem_getByteBuffer(value)) != 0)
     {
         return ret;
     }
-    gxByteBuffer *data = value->byteArr;
+    gxByteBuffer* data = value->byteArr;
 
     value->vt = DLMS_DATA_TYPE_OCTET_STRING;
     if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
@@ -3758,7 +3786,7 @@ int getUnitCharge(gxUnitCharge* target, dlmsVARIANT *value)
     }
     for (pos = 0; pos != target->chargeTables.size; ++pos)
     {
-        if ((ret = arr_get(&target->chargeTables, (void**)&it)) != 0 ||
+        if ((ret = arr_get(&target->chargeTables, (void**)& it)) != 0 ||
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
             //index
@@ -3776,7 +3804,7 @@ int getUnitCharge(gxUnitCharge* target, dlmsVARIANT *value)
 }
 
 int cosem_getCharge(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     gxCharge* object = (gxCharge*)e->target;
     int ret = 0;
@@ -3817,7 +3845,7 @@ int cosem_getCharge(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
             (ret = hlp_setObjectCount(object->chargeConfiguration.size, data)) != 0 ||
@@ -3851,10 +3879,10 @@ int cosem_getCharge(
 #endif //DLMS_IGNORE_CHARGE
 #ifndef DLMS_IGNORE_TOKEN_GATEWAY
 int cosem_getTokenGateway(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int pos, ret = 0;
-    gxByteBuffer *data;
+    gxByteBuffer* data;
     char* it;
     gxTokenGateway* object = (gxTokenGateway*)e->target;
     switch (e->index)
@@ -3885,7 +3913,7 @@ int cosem_getTokenGateway(
         }
         for (pos = 0; pos != object->descriptions.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->descriptions, pos, (void**)&it)) != 0)
+            if ((ret = arr_getByIndex(&object->descriptions, pos, (void**)& it)) != 0)
             {
                 break;
             }
@@ -3930,7 +3958,7 @@ int cosem_getTokenGateway(
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 #ifndef DLMS_IGNORE_CREDIT
 int cosem_getCredit(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     gxCredit* object = (gxCredit*)e->target;
     int ret = 0;
@@ -3960,7 +3988,7 @@ int cosem_getCredit(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
@@ -3995,12 +4023,12 @@ int cosem_getCredit(
 #endif //DLMS_IGNORE_CREDIT
 #ifndef DLMS_IGNORE_ACCOUNT
 int cosem_getAccount(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
     int ret = 0, pos;
     unsigned char* it;
-    gxCreditChargeConfiguration *ccc;
-    gxTokenGatewayConfiguration *gwc;
+    gxCreditChargeConfiguration* ccc;
+    gxTokenGatewayConfiguration* gwc;
     gxAccount* object = (gxAccount*)e->target;
     if (e->index == 2)
     {
@@ -4008,7 +4036,7 @@ int cosem_getAccount(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
@@ -4033,7 +4061,7 @@ int cosem_getAccount(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
@@ -4065,7 +4093,7 @@ int cosem_getAccount(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -4075,7 +4103,7 @@ int cosem_getAccount(
         }
         for (pos = 0; pos != object->creditReferences.size; ++pos)
         {
-            if ((ret = arr_get(&object->creditReferences, (void**)&it)) != 0 ||
+            if ((ret = arr_get(&object->creditReferences, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = bb_setUInt8(data, 6)) != 0 ||
                 (ret = bb_set(data, it, 6)) != 0)
@@ -4090,7 +4118,7 @@ int cosem_getAccount(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -4100,7 +4128,7 @@ int cosem_getAccount(
         }
         for (pos = 0; pos != object->chargeReferences.size; ++pos)
         {
-            if ((ret = arr_get(&object->chargeReferences, (void**)&it)) != 0 ||
+            if ((ret = arr_get(&object->chargeReferences, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = bb_setUInt8(data, 6)) != 0 ||
                 (ret = bb_set(data, it, 6)) != 0)
@@ -4117,7 +4145,7 @@ int cosem_getAccount(
         }
         bitArray ba;
         ba_init(&ba);
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -4127,7 +4155,7 @@ int cosem_getAccount(
         }
         for (pos = 0; pos != object->creditChargeConfigurations.size; ++pos)
         {
-            if ((ret = arr_get(&object->creditChargeConfigurations, (void**)&ccc)) != 0 ||
+            if ((ret = arr_get(&object->creditChargeConfigurations, (void**)& ccc)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = hlp_setObjectCount(3, data)) != 0 ||
                 //credit reference
@@ -4153,7 +4181,7 @@ int cosem_getAccount(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -4163,7 +4191,7 @@ int cosem_getAccount(
         }
         for (pos = 0; pos != object->tokenGatewayConfigurations.size; ++pos)
         {
-            if ((ret = arr_get(&object->tokenGatewayConfigurations, (void**)&gwc)) != 0 ||
+            if ((ret = arr_get(&object->tokenGatewayConfigurations, (void**)& gwc)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = hlp_setObjectCount(2, data)) != 0 ||
                 //credit reference
@@ -4192,7 +4220,7 @@ int cosem_getAccount(
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
@@ -4256,10 +4284,10 @@ int cosem_getAccount(
 
 //Convert compact data buffer to array of values.
 int compactData_getValues(
-    dlmsSettings* settings,
-    gxByteBuffer* templateDescription,
-    gxByteBuffer* buffer,
-    variantArray* values)
+    dlmsSettings * settings,
+    gxByteBuffer * templateDescription,
+    gxByteBuffer * buffer,
+    variantArray * values)
 {
     int ret;
     gxDataInfo info;
@@ -4288,8 +4316,8 @@ int compactData_getValues(
 }
 
 int cosem_getCompactData(
-    dlmsSettings* settings,
-    gxValueEventArg *e)
+    dlmsSettings * settings,
+    gxValueEventArg * e)
 {
     gxByteBuffer* data;
     gxCompactData* object = (gxCompactData*)e->target;
@@ -4341,17 +4369,17 @@ int cosem_getCompactData(
 #endif //DLMS_IGNORE_COMPACT_DATA
 
 int cosem_getValue(
-    dlmsSettings* settings,
-    gxValueEventArg *e)
+    dlmsSettings * settings,
+    gxValueEventArg * e)
 {
-    int ret = 0;
+    int ret = DLMS_ERROR_CODE_NOT_IMPLEMENTED;
     if (e->index == 1)
     {
         if ((ret = cosem_getByteBuffer(&e->value)) != 0)
         {
             return ret;
         }
-        gxByteBuffer *data = e->value.byteArr;
+        gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = bb_setUInt8(data, 6)) != 0 ||
@@ -4577,10 +4605,7 @@ int cosem_getValue(
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
-        //TODO:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
+        ret = cosem_getUtilityTables(e);
         break;
 #endif //DLMS_IGNORE_UTILITY_TABLES
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
@@ -4649,7 +4674,7 @@ int cosem_getValue(
 
 #ifdef DLMS_ITALIAN_STANDARD
 
-int getInterval(gxInterval* interval, gxByteBuffer* data)
+int getInterval(gxInterval * interval, gxByteBuffer * data)
 {
     int ret;
     unsigned char b = interval->startHour;
@@ -4669,7 +4694,7 @@ int getInterval(gxInterval* interval, gxByteBuffer* data)
     return ret;
 }
 
-int getSeason(gxBandDescriptor* season, gxByteBuffer* data)
+int getSeason(gxBandDescriptor * season, gxByteBuffer * data)
 {
     int ret;
     if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -4687,7 +4712,7 @@ int getSeason(gxBandDescriptor* season, gxByteBuffer* data)
     return ret;
 }
 
-int cosem_getTariffPlan(gxValueEventArg *e)
+int cosem_getTariffPlan(gxValueEventArg * e)
 {
     unsigned short it;
     int pos, ret;
@@ -4732,7 +4757,7 @@ int cosem_getTariffPlan(gxValueEventArg *e)
         }
         for (pos = 0; pos != object->plan.specialDays.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->plan.specialDays, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->plan.specialDays, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(data, it)) != 0)
             {
@@ -4770,10 +4795,10 @@ int cosem_getTariffPlan(gxValueEventArg *e)
 
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
 int cosem_getGsmDiagnostic(
-    gxValueEventArg *e)
+    gxValueEventArg * e)
 {
-    gxAdjacentCell *it;
-    gxByteBuffer *data;
+    gxAdjacentCell* it;
+    gxByteBuffer* data;
     gxGsmDiagnostic* object = (gxGsmDiagnostic*)e->target;
     int pos, ret;
     switch (e->index)
@@ -4870,7 +4895,7 @@ int cosem_getGsmDiagnostic(
         }
         for (pos = 0; pos != object->adjacentCells.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->adjacentCells, pos, (void**)&it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->adjacentCells, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0)
             {

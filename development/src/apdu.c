@@ -348,7 +348,8 @@ int apdu_generateUserInformation(
  */
 int apdu_parseUserInformation(
     dlmsSettings* settings,
-    gxByteBuffer* data)
+    gxByteBuffer* data,
+    unsigned char ciphered)
 {
     int ret;
     unsigned char tmp[3];
@@ -550,6 +551,11 @@ int apdu_parseUserInformation(
     if (settings->server)
     {
         settings->negotiatedConformance = (DLMS_CONFORMANCE)(v & settings->proposedConformance);
+        //Remove geneal protection if ciphered connection is not used.
+        if (!ciphered && (settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
+        {
+            settings->negotiatedConformance &= ~DLMS_CONFORMANCE_GENERAL_PROTECTION;
+        }
     }
     else
     {
@@ -1416,7 +1422,7 @@ int apdu_parsePDU(
             {
                 return apdu_handleResultComponent(*diagnostic);
             }
-            if (apdu_parseUserInformation(settings, buff) != 0)
+            if (apdu_parseUserInformation(settings, buff, ciphered) != 0)
             {
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 *diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;

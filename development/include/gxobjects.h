@@ -2376,14 +2376,6 @@ extern "C" {
         DLMS_DEFAULT_TARIFF_BAND intervalTariff;
         // Is interval used.
         unsigned char useInterval;
-        // Weekly Activation.
-        DLMS_WEEKLY_ACTIVATION weeklyActivation;
-        // Month of the year of the special day.
-        unsigned char specialDayMonth;
-        // Day of the month of the special day.
-        unsigned char specialDay;
-        // Day of the month of the special day.
-        unsigned char specialDayEnabled;
     } gxInterval;
 
     /**
@@ -2398,11 +2390,11 @@ extern "C" {
         // Month of the year when the season will become active.
         unsigned char month;
         // Working day intervals.
-        gxInterval workingDayIntervals;
+        gxInterval workingDayIntervals[5];
         // Saturday intervals.
-        gxInterval saturdayIntervals;
+        gxInterval saturdayIntervals[5];
         // Saturday intervals.
-        gxInterval holidayIntervals;
+        gxInterval holidayIntervals[5];
     } gxBandDescriptor;
 
     /**

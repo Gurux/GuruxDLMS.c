@@ -2018,7 +2018,6 @@ int obj_CompactDataToString(gxCompactData * object, char** buff)
 #ifdef DLMS_ITALIAN_STANDARD
 int obj_TariffPlanToString(gxTariffPlan * object, char** buff)
 {
-    gxAdjacentCell* it;
     gxByteBuffer ba;
     bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value:");

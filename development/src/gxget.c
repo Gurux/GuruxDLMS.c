@@ -1935,7 +1935,7 @@ int getSelectedColumns(
     gxArray * columns)
 {
     gxKey* c;
-    dlmsVARIANT* it, * it2;
+    dlmsVARIANT* it, *it2;
     unsigned char* ln;
     DLMS_OBJECT_TYPE ot;
     int ret, pos, pos2, dataIndex;
@@ -4674,20 +4674,29 @@ int cosem_getValue(
 
 #ifdef DLMS_ITALIAN_STANDARD
 
-int getInterval(gxInterval * interval, gxByteBuffer * data)
+unsigned char getInterval(gxInterval * interval)
+{
+    unsigned char b = (unsigned char)(interval->useInterval ? 1 : 0);
+    b |= (unsigned char)(interval->intervalTariff << 1);
+    b |= (unsigned char)(interval->startHour << 3);
+    return b;
+}
+
+int getIntervals(gxInterval * interval, gxByteBuffer * data)
 {
     int ret;
-    unsigned char b = interval->startHour;
-    b |= (unsigned char)(interval->intervalTariff << 5);
-    b |= (unsigned char)((interval->useInterval ? 1 : 0) << 7);
-    unsigned short v = interval->specialDayMonth;
-    v |= (unsigned short)(interval->specialDay << 8);
-    v |= (unsigned short)((interval->specialDayEnabled ? 1 : 0) << 15);
-    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
         (ret = bb_setUInt8(data, 5)) != 0 ||
-        (ret = bb_setUInt8(data, b)) != 0 ||
-        (ret = bb_setUInt16(data, interval->weeklyActivation)) != 0 ||
-        (ret = bb_setUInt16(data, v)) != 0)
+        (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
+        (ret = bb_setUInt8(data, getInterval(interval))) != 0 ||
+        (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
+        (ret = bb_setUInt8(data, getInterval(interval + 1))) != 0 ||
+        (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
+        (ret = bb_setUInt8(data, getInterval(interval + 2))) != 0 ||
+        (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
+        (ret = bb_setUInt8(data, getInterval(interval + 3))) != 0 ||
+        (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
+        (ret = bb_setUInt8(data, getInterval(interval + 4))) != 0)
     {
         return ret;
     }
@@ -4697,15 +4706,15 @@ int getInterval(gxInterval * interval, gxByteBuffer * data)
 int getSeason(gxBandDescriptor * season, gxByteBuffer * data)
 {
     int ret;
-    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
+    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
         (ret = bb_setUInt8(data, 5)) != 0 ||
         (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
         (ret = bb_setUInt8(data, season->dayOfMonth)) != 0 ||
         (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
         (ret = bb_setUInt8(data, season->month)) != 0 ||
-        (ret = getInterval(&season->workingDayIntervals, data)) != 0 ||
-        (ret = getInterval(&season->saturdayIntervals, data)) != 0 ||
-        (ret = getInterval(&season->holidayIntervals, data)) != 0)
+        (ret = getIntervals(season->workingDayIntervals, data)) != 0 ||
+        (ret = getIntervals(season->saturdayIntervals, data)) != 0 ||
+        (ret = getIntervals(season->holidayIntervals, data)) != 0)
     {
         return ret;
     }

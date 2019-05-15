@@ -5020,32 +5020,45 @@ int cosem_setCompactData(
 #endif //DLMS_IGNORE_COMPACT_DATA
 
 #ifdef DLMS_ITALIAN_STANDARD
-int updateInterval(gxInterval * interval, gxByteBuffer * value)
+int updateIntervals(gxInterval * interval, gxByteBuffer * value)
 {
     int ret;
     unsigned char b;
-    unsigned short v;
     if ((ret = bb_getUInt8(value, &b)) != 0)
     {
         return ret;
     }
-    interval->startHour = (unsigned char)(b & 0x1F);
-    interval->intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 5) & 0x3);
-    interval->useInterval = (b >> 7) != 0;
-
-    if ((ret = bb_getUInt16(value, &v)) != 0)
+    interval[0].startHour = (unsigned char)(b >> 3);
+    interval[0].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
+    interval[0].useInterval = (b & 0x1) != 0;
+    if ((ret = bb_getUInt8(value, &b)) != 0)
     {
         return ret;
     }
-    interval->weeklyActivation = (DLMS_WEEKLY_ACTIVATION)v;
-
-    if ((ret = bb_getUInt16(value, &v)) != 0)
+    interval[1].startHour = (unsigned char)(b >> 3);
+    interval[1].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
+    interval[1].useInterval = (b & 0x1) != 0;
+    if ((ret = bb_getUInt8(value, &b)) != 0)
     {
         return ret;
     }
-    interval->specialDayMonth = (unsigned char)(v & 0xF);
-    interval->specialDay = (unsigned char)((v >> 8) & 0xF);
-    interval->specialDayEnabled = (v >> 15) != 0;
+    interval[2].startHour = (unsigned char)(b >> 3);
+    interval[2].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
+    interval[2].useInterval = (b & 0x1) != 0;
+    if ((ret = bb_getUInt8(value, &b)) != 0)
+    {
+        return ret;
+    }
+    interval[3].startHour = (unsigned char)(b >> 3);
+    interval[3].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
+    interval[3].useInterval = (b & 0x1) != 0;
+    if ((ret = bb_getUInt8(value, &b)) != 0)
+    {
+        return ret;
+    }
+    interval[4].startHour = (unsigned char)(b >> 3);
+    interval[4].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
+    interval[4].useInterval = (b & 0x1) != 0;
     return 0;
 }
 
@@ -5066,11 +5079,11 @@ int updateSeason(gxBandDescriptor * season, variantArray * value)
         }
         season->month = tmp->bVal;
         if ((ret = va_getByIndex(value, 2, &tmp)) != 0 ||
-            (ret = updateInterval(&season->workingDayIntervals, tmp->byteArr)) != 0 ||
+            (ret = updateIntervals(season->workingDayIntervals, tmp->byteArr)) != 0 ||
             (ret = va_getByIndex(value, 3, &tmp)) != 0 ||
-            (ret = updateInterval(&season->saturdayIntervals, tmp->byteArr)) != 0 ||
+            (ret = updateIntervals(season->saturdayIntervals, tmp->byteArr)) != 0 ||
             (ret = va_getByIndex(value, 4, &tmp)) != 0 ||
-            (ret = updateInterval(&season->holidayIntervals, tmp->byteArr)) != 0)
+            (ret = updateIntervals(season->holidayIntervals, tmp->byteArr)) != 0)
         {
             return ret;
         }

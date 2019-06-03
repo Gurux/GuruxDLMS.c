@@ -357,6 +357,10 @@ int updateWeekProfileTable(gxArray * profile, variantArray * data)
     for (pos = 0; pos != data->size; ++pos)
     {
         wp = (gxWeekProfile*)gxmalloc(sizeof(gxWeekProfile));
+        if (wp == NULL)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
         ret = va_get(data, &it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
@@ -439,11 +443,14 @@ int updateDayProfileTableActive(gxArray * profile, variantArray * data)
     dlmsVARIANT tm;
     gxDayProfile* dp;
     gxDayProfileAction* ac;
-
     obj_clearDayProfileTable(profile);
     for (pos = 0; pos != data->size; ++pos)
     {
         dp = (gxDayProfile*)gxmalloc(sizeof(gxDayProfile));
+        if (dp == NULL)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
         arr_init(&dp->daySchedules);
         ret = va_get(data, &it);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -2841,6 +2848,10 @@ int cosem_setRegisterActivation(gxRegisterActivation * object, unsigned char ind
                     return ret;
                 }
                 objectDefinition = (gxObjectDefinition*)gxmalloc(sizeof(gxObjectDefinition));
+                if (objectDefinition == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
                 objectDefinition->classId = (DLMS_OBJECT_TYPE)var_toInteger(tmp3);
 
                 ret = va_get(tmp->Arr, &tmp3);

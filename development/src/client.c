@@ -179,7 +179,8 @@ int cl_parseAAREResponse(dlmsSettings * settings, gxByteBuffer * reply)
     int ret;
     unsigned char sd;
     DLMS_ASSOCIATION_RESULT result;
-    if ((ret = apdu_parsePDU(settings, reply, &result, &sd)) != 0)
+    unsigned char command = 0;
+    if ((ret = apdu_parsePDU(settings, reply, &result, &sd, &command)) != 0)
     {
         return ret;
     }

@@ -609,7 +609,7 @@ int var_getTime(
     gxtime * dateTime,
     gxByteBuffer * ba)
 {
-    unsigned char hour, minute, second;
+    unsigned char hour = 0xFF, minute = 0xFF, second = 0xFF;
 #ifdef DLMS_USE_EPOCH_TIME
     time_fromUnixTime2(dateTime->value, NULL, NULL,
         NULL, &hour, &minute, &second, NULL);
@@ -1228,7 +1228,6 @@ int va_toString(
 
 static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
 {
-    unsigned char ch;
     int ret, fromSize, toSize;
     unsigned short pos;
     char buff[250];
@@ -1427,20 +1426,9 @@ static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
         {
             if (tmp.byteArr != NULL)
             {
-                for (pos = 0; pos != tmp.byteArr->size; ++pos)
-                {
-                    ret = bb_getUInt8(tmp.byteArr, &ch);
-                    if (ret != DLMS_ERROR_CODE_OK)
-                    {
-                        return ret;
-                    }
-                    if (pos != 0)
-                    {
-                        bb_setUInt8(item->strVal, '.');
-                    }
-                    hlp_intToString(buff, 4, ch, 0);
-                    bb_addString(item->strVal, buff);
-                }
+                char* str = bb_toHexString(tmp.byteArr);
+                bb_addString(item->strVal, str);
+                gxfree(str);
             }
             item->vt = type;
             var_clear(&tmp);

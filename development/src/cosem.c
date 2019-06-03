@@ -478,6 +478,7 @@ int cosem_init2(
         ((gxIecHdlcSetup*)object)->maximumInfoLengthReceive = 128;
         ((gxIecHdlcSetup*)object)->interCharachterTimeout = 25;
         ((gxIecHdlcSetup*)object)->inactivityTimeout = 120;
+        ((gxIecHdlcSetup*)object)->deviceAddress = 0x10;
         break;
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
     case DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP:
@@ -532,6 +533,9 @@ int cosem_init2(
     case DLMS_OBJECT_TYPE_STATUS_MAPPING:
         break;
     case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
+        ((gxTcpUdpSetup*)object)->maximumSimultaneousConnections = 1;
+        ((gxTcpUdpSetup*)object)->maximumSegmentSize = 40;
+        ((gxTcpUdpSetup*)object)->inactivityTimeout = 180;
         break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         break;

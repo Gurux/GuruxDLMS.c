@@ -205,8 +205,8 @@ int apdu_generateApplicationContextName(
  * @param data
  */
 int apdu_getInitiateRequest(
-    dlmsSettings* settings,
-    gxByteBuffer* data)
+    dlmsSettings * settings,
+    gxByteBuffer * data)
 {
     gxByteBuffer bb;
     // Tag for xDLMS-Initiate request
@@ -273,8 +273,8 @@ int apdu_getInitiateRequest(
  *            Generated user information.
  */
 int apdu_generateUserInformation(
-    dlmsSettings* settings,
-    gxByteBuffer* data)
+    dlmsSettings * settings,
+    gxByteBuffer * data)
 {
     int ret = 0;
     bb_setUInt8(data, BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_USER_INFORMATION);
@@ -347,9 +347,10 @@ int apdu_generateUserInformation(
  * Parse User Information from PDU.
  */
 int apdu_parseUserInformation(
-    dlmsSettings* settings,
-    gxByteBuffer* data,
-    unsigned char ciphered)
+    dlmsSettings * settings,
+    gxByteBuffer * data,
+    unsigned char ciphered,
+    unsigned char* command)
 {
     int ret;
     unsigned char tmp[3];
@@ -392,6 +393,7 @@ int apdu_parseUserInformation(
         tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
         tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
     {
+        *command = (unsigned char)tag;
         data->position = (data->position - 1);
         if ((ret = cip_decrypt(&settings->cipher,
             &settings->sourceSystemTitle,
@@ -626,8 +628,8 @@ int apdu_parseUserInformation(
  *            Received data->
  */
 int apdu_parseApplicationContextName(
-    dlmsSettings* settings,
-    gxByteBuffer* buff,
+    dlmsSettings * settings,
+    gxByteBuffer * buff,
     unsigned char* ciphered)
 {
     int ret;
@@ -739,8 +741,8 @@ int apdu_parseApplicationContextName(
 }
 
 int apdu_validateAare(
-    dlmsSettings* settings,
-    gxByteBuffer* buff)
+    dlmsSettings * settings,
+    gxByteBuffer * buff)
 {
     int ret;
     unsigned char tag;
@@ -770,8 +772,8 @@ int apdu_validateAare(
 }
 
 int apdu_updatePassword(
-    dlmsSettings* settings,
-    gxByteBuffer* buff)
+    dlmsSettings * settings,
+    gxByteBuffer * buff)
 {
     int ret;
     unsigned char ch, len;
@@ -807,8 +809,8 @@ int apdu_updatePassword(
 }
 
 int apdu_updateAuthentication(
-    dlmsSettings* settings,
-    gxByteBuffer* buff)
+    dlmsSettings * settings,
+    gxByteBuffer * buff)
 {
     int ret;
     unsigned char ch;
@@ -909,8 +911,9 @@ int apdu_updateAuthentication(
 }
 
 int apdu_getUserInformation(
-    dlmsSettings* settings,
-    gxByteBuffer* data)
+    dlmsSettings * settings,
+    gxByteBuffer * data,
+    unsigned char command)
 {
     int ret = 0;
     gxByteBuffer bb;
@@ -954,16 +957,13 @@ int apdu_getUserInformation(
     {
         gxByteBuffer tmp;
         unsigned char cmd;
-        if ((settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
+        if (command == DLMS_COMMAND_GENERAL_DED_CIPHERING)
         {
-            if (bb_size(settings->cipher.dedicatedKey) != 0)
-            {
-                cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
-            }
-            else
-            {
-                cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
-            }
+            cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
+        }
+        else if (command == DLMS_COMMAND_GENERAL_GLO_CIPHERING)
+        {
+            cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
         }
         else
         {
@@ -972,7 +972,6 @@ int apdu_getUserInformation(
         bb_init(&tmp);
         bb_set2(&tmp, data, data->position, data->size - data->position);
         bb_clear(data);
-
         ret = cip_encrypt(&settings->cipher,
             settings->cipher.security,
             DLMS_COUNT_TYPE_PACKET,
@@ -989,8 +988,8 @@ int apdu_getUserInformation(
 }
 #ifndef DLMS_IGNORE_CLIENT
 int apdu_generateAarq(
-    dlmsSettings* settings,
-    gxByteBuffer* data)
+    dlmsSettings * settings,
+    gxByteBuffer * data)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     unsigned long offset;
@@ -1050,8 +1049,8 @@ int apdu_handleResultComponent(unsigned char value)
     return ret;
 }
 
-int apdu_parseProtocolVersion(dlmsSettings* settings,
-    gxByteBuffer* buff)
+int apdu_parseProtocolVersion(dlmsSettings * settings,
+    gxByteBuffer * buff)
 {
     unsigned char cnt, unusedBits, value;
     int ret;
@@ -1062,6 +1061,10 @@ int apdu_parseProtocolVersion(dlmsSettings* settings,
     if ((ret = bb_getUInt8(buff, &unusedBits)) != 0)
     {
         return ret;
+    }
+    if (unusedBits > 8)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     if ((ret = bb_getUInt8(buff, &value)) != 0)
     {
@@ -1086,18 +1089,29 @@ int apdu_parseProtocolVersion(dlmsSettings* settings,
 }
 
 int apdu_parsePDU(
-    dlmsSettings* settings,
-    gxByteBuffer* buff,
-    DLMS_ASSOCIATION_RESULT* result,
-    unsigned char* diagnostic)
+    dlmsSettings * settings,
+    gxByteBuffer * buff,
+    DLMS_ASSOCIATION_RESULT * result,
+    unsigned char* diagnostic,
+    unsigned char* command)
 {
-    unsigned char ciphered;
+    unsigned char ciphered = 0;
     unsigned short size;
     unsigned char len;
     unsigned char tag;
     int ret;
     *result = DLMS_ASSOCIATION_RESULT_ACCEPTED;
     *diagnostic = DLMS_SOURCE_DIAGNOSTIC_NONE;
+
+    unsigned char afu = 0;
+    typedef enum
+    {
+        DLMS_AFU_MISSING_NONE = 0x0,
+        DLMS_AFU_MISSING_SENDER_ACSE_REQUIREMENTS = 0x1,
+        DLMS_AFU_MISSING_MECHANISM_NAME = 0x2,
+        DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE = 0x4
+    }
+    DLMS_AFU_MISSING;
     // Get AARE tag and length
     if ((ret = apdu_validateAare(settings, buff)) != 0)
     {
@@ -1129,6 +1143,10 @@ int apdu_parsePDU(
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
             }
+            if (ciphered)
+            {
+                afu = DLMS_AFU_MISSING_SENDER_ACSE_REQUIREMENTS | DLMS_AFU_MISSING_MECHANISM_NAME | DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE;
+            }
         }
         break;
         // 0xA2
@@ -1158,12 +1176,6 @@ int apdu_parsePDU(
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
                     return ret;
-                }
-                if (ciphered && len != 8)
-                {
-                    *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
-                    *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
-                    return 0;
                 }
                 buff->position += len;
             }
@@ -1210,12 +1222,6 @@ int apdu_parsePDU(
                 if (tag != BER_TYPE_OCTET_STRING)
                 {
                     return DLMS_ERROR_CODE_INVALID_TAG;
-                }
-                if (ciphered && len != 8)
-                {
-                    *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
-                    *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
-                    return 0;
                 }
                 buff->position += len;
             }
@@ -1342,10 +1348,6 @@ int apdu_parsePDU(
             break;
             //Client AEInvocationId.
         case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AE_INVOCATION_ID:
-            //Client CalledAeInvocationId.
-        case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLED_AE_INVOCATION_ID://0xA5
-            //Server RespondingAEInvocationId.
-        case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | 7://0xA7
             if ((ret = bb_getUInt8(buff, &len)) != 0)
             {
                 return ret;
@@ -1365,6 +1367,125 @@ int apdu_parsePDU(
             if (ciphered)
             {
                 settings->userId = len;
+            }
+            break;
+            //Client CalledAeInvocationId.
+        case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLED_AE_INVOCATION_ID://0xA5
+            if (settings->server)
+            {
+                if ((ret = bb_getUInt8(buff, &len)) != 0)
+                {
+                    return ret;
+                }
+                //Invalid length.
+                if (len != 3)
+                {
+                    return DLMS_ERROR_CODE_INVALID_TAG;
+                }
+                if ((ret = bb_getUInt8(buff, &len)) != 0)
+                {
+                    return ret;
+                }
+                //Invalid length.
+                if (len != 2)
+                {
+                    return DLMS_ERROR_CODE_INVALID_TAG;
+                }
+
+                if ((ret = bb_getUInt8(buff, &len)) != 0)
+                {
+                    return ret;
+                }
+                //Invalid tag length.
+                if (len != 1)
+                {
+                    return DLMS_ERROR_CODE_INVALID_TAG;
+                }
+                //Get value.
+                if ((ret = bb_getUInt8(buff, &len)) != 0)
+                {
+                    return ret;
+                }
+            }
+            else
+            {
+                if ((ret = bb_getUInt8(buff, &len)) != 0)
+                {
+                    return ret;
+                }
+                if ((ret = bb_getUInt8(buff, &tag)) != 0)
+                {
+                    return ret;
+                }
+                if ((ret = bb_getUInt8(buff, &len)) != 0)
+                {
+                    return ret;
+                }
+                if ((ret = bb_getUInt8(buff, &len)) != 0)
+                {
+                    return ret;
+                }
+                if (ciphered)
+                {
+                    settings->userId = len;
+                }
+            }
+            break;
+            //Server RespondingAEInvocationId.
+        case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AE_QUALIFIER://0xA7
+            if ((ret = bb_getUInt8(buff, &len)) != 0)
+            {
+                return ret;
+            }
+            if ((ret = bb_getUInt8(buff, &tag)) != 0)
+            {
+                return ret;
+            }
+            if ((ret = bb_getUInt8(buff, &len)) != 0)
+            {
+                return ret;
+            }
+            if ((ret = bb_getUInt8(buff, &len)) != 0)
+            {
+                return ret;
+            }
+            if (ciphered)
+            {
+                settings->userId = len;
+            }
+            break;
+        case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AP_INVOCATION_ID://0xA8
+            if ((ret = bb_getUInt8(buff, &tag)) != 0)
+            {
+                return ret;
+            }
+            if (tag != 3)
+            {
+                return DLMS_ERROR_CODE_INVALID_TAG;
+            }
+
+            if ((ret = bb_getUInt8(buff, &len)) != 0)
+            {
+                return ret;
+            }
+            if (len != 2)
+            {
+                return DLMS_ERROR_CODE_INVALID_TAG;
+            }
+            //Invalid tag length.
+            if ((ret = bb_getUInt8(buff, &len)) != 0)
+            {
+                return ret;
+            }
+            if (len != 1)
+            {
+                return DLMS_ERROR_CODE_INVALID_TAG;
+            }
+
+            //Get value.
+            if ((ret = bb_getUInt8(buff, &len)) != 0)
+            {
+                return ret;
             }
             break;
             //  0x8A or 0x88
@@ -1392,6 +1513,10 @@ int apdu_parsePDU(
             {
                 return ret;
             }
+            if (ciphered && tag == 0x80)
+            {
+                afu &= ~DLMS_AFU_MISSING_SENDER_ACSE_REQUIREMENTS;
+            }
             break;
             //  0x8B or 0x89
         case (unsigned short)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_MECHANISM_NAME:
@@ -1406,12 +1531,20 @@ int apdu_parsePDU(
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
             }
+            if (ciphered)
+            {
+                afu &= ~DLMS_AFU_MISSING_MECHANISM_NAME;
+            }
             break;
             // 0xAC
         case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AUTHENTICATION_VALUE:
             if ((ret = apdu_updatePassword(settings, buff)) != 0)
             {
                 return ret;
+            }
+            if (ciphered)
+            {
+                afu &= ~DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE;
             }
             break;
             // 0xBE
@@ -1422,7 +1555,7 @@ int apdu_parsePDU(
             {
                 return apdu_handleResultComponent(*diagnostic);
             }
-            if (apdu_parseUserInformation(settings, buff, ciphered) != 0)
+            if (apdu_parseUserInformation(settings, buff, ciphered, command) != 0)
             {
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 *diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
@@ -1433,7 +1566,7 @@ int apdu_parsePDU(
             if (apdu_parseProtocolVersion(settings, buff) != 0)
             {
                 *diagnostic = DLMS_ACSE_SERVICE_PROVIDER_NO_COMMON_ACSE_VERSION;
-                *result = DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED;
+                *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
             }
             break;
@@ -1450,6 +1583,12 @@ int apdu_parsePDU(
             break;
         }
     }
+    if (afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
+    {
+        *result = DLMS_ASSOCIATION_RESULT_ACCEPTED;
+        *diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_MECHANISM_NAME_NOT_RECOGNISED;
+        return 0;
+    }
     //All meters don't send user-information if connection is failed.
     //For this reason result component is check again.
     return apdu_handleResultComponent(*diagnostic);
@@ -1462,7 +1601,8 @@ int apdu_generateAARE(
     DLMS_ASSOCIATION_RESULT result,
     DLMS_SOURCE_DIAGNOSTIC diagnostic,
     gxByteBuffer* errorData,
-    gxByteBuffer* encryptedData)
+    gxByteBuffer* encryptedData,
+    unsigned char command)
 {
     int ret;
     gxByteBuffer tmp;
@@ -1573,7 +1713,7 @@ int apdu_generateAARE(
             }
             else
             {
-                if ((ret = apdu_getUserInformation(settings, &tmp)) != 0)
+                if ((ret = apdu_getUserInformation(settings, &tmp, command)) != 0)
                 {
                     bb_clear(&tmp);
                     return ret;

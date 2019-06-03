@@ -1654,7 +1654,7 @@ int getCompactArray(
         int start = buff->position;
         while (buff->position - start < len)
         {
-            dlmsVARIANT* it, * it2, * it3, *it4;
+            dlmsVARIANT* it, * it2, * it3, * it4;
             variantArray* row = (variantArray*)gxmalloc(sizeof(variantArray));
             if (row == NULL)
             {
@@ -2239,9 +2239,9 @@ int dlms_getHdlcFrame(
                 //Remove sent data.
                 ret = bb_move(data, data->position, 0, data->size - data->position);
                 data->position = 0;
+            }
         }
     }
-}
     bb_clear(&primaryAddress);
     bb_clear(&secondaryAddress);
     return ret;
@@ -2273,7 +2273,7 @@ void dlms_getDataFromFrame(
     }
     // Set position to begin of new data.
     data->data.position = offset;
-    }
+}
 
 int dlms_getHdlcData(
     unsigned char server,
@@ -2506,12 +2506,12 @@ int dlms_getHdlcData(
             {
                 data->moreData = DLMS_DATA_REQUEST_TYPES_FRAME;
             }
-            }
+        }
         else
         {
             dlms_checkLLCBytes(settings, reply);
         }
-        }
+    }
     if (settings->server && (first || data->command == DLMS_COMMAND_SNRM))
     {
 #ifndef DLMS_IGNORE_SERVER
@@ -2539,7 +2539,7 @@ int dlms_getHdlcData(
 #endif //DLMS_IGNORE_SERVER
     }
     return DLMS_ERROR_CODE_OK;
-    }
+}
 
 int dlms_checkWrapperAddress(dlmsSettings * settings,
     gxByteBuffer * buff)
@@ -2661,14 +2661,14 @@ int dlms_getTcpData(
                 data->packetLength = buff->position + value;
             }
             break;
-            }
+        }
         else
         {
             --buff->position;
         }
-        }
-    return DLMS_ERROR_CODE_OK;
     }
+    return DLMS_ERROR_CODE_OK;
+}
 #endif //DLMS_IGNORE_WRAPPER
 
 int dlms_getDataFromBlock(gxByteBuffer * data, unsigned short index)
@@ -2718,12 +2718,12 @@ int dlms_receiverReady(
         if (settings->server)
         {
             cmd = DLMS_COMMAND_GET_RESPONSE;
-    }
+        }
         else
         {
             cmd = DLMS_COMMAND_GET_REQUEST;
         }
-}
+    }
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -2773,7 +2773,7 @@ int dlms_receiverReady(
     bb_clear(&bb);
     mes_clear(&tmp);
     return ret;
-    }
+}
 
 #ifndef DLMS_IGNORE_WRAPPER
 int dlms_getWrapperFrame(
@@ -3551,7 +3551,7 @@ int dlms_changeType(
 #endif //GX_DLMS_MICROCONTROLLER
     }
     return 0;
-    }
+}
 
 /**
 * Handle data notification get data from block and/or update error status.
@@ -3596,7 +3596,7 @@ int dlms_handleDataNotification(
 #ifdef DLMS_USE_EPOCH_TIME
         reply->time = t.dateTime->value;
 #else
-        * reply->time = t.dateTime->value;
+        *reply->time = t.dateTime->value;
 #endif // DLMS_USE_EPOCH_TIME
     }
     if ((ret = dlms_getDataFromBlock(&reply->data, start)) != 0)
@@ -3604,7 +3604,7 @@ int dlms_handleDataNotification(
         return ret;
     }
     return dlms_getValueFromData(settings, reply);
-    }
+}
 
 /**
 * Handle General block transfer message.
@@ -3787,14 +3787,14 @@ int dlms_handledGloDedRequest(dlmsSettings * settings,
         }
         data->encryptedCommand = data->command;
         data->command = (DLMS_COMMAND)ch;
-        }
+    }
     else
     {
         data->data.position = (data->data.position - 1);
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-    }
+}
 
 int dlms_handledGloDedResponse(dlmsSettings * settings,
     gxReplyData * data, unsigned short index)
@@ -3833,14 +3833,14 @@ int dlms_handledGloDedResponse(dlmsSettings * settings,
             {
                 bb_clear(&bb);
                 return ret;
+            }
         }
-    }
         bb_set2(&data->data, &bb, bb.position, bb.size - bb.position);
         bb_clear(&bb);
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
         data->cipherIndex = (unsigned short)data->data.size;
-}
+    }
     return ret;
 #endif //DLMS_IGNORE_HIGH_GMAC
 }
@@ -4213,7 +4213,7 @@ int dlms_getSNPdu(
     else
     {
         h = reply;
-}
+    }
     if (!ciphering && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         dlms_addLLCBytes(p->settings, h);
@@ -4386,7 +4386,7 @@ int dlms_getSNPdu(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 
@@ -4422,7 +4422,7 @@ void dlms_multipleBlocks(
     {
         // Add command type and invoke and priority.
         p->lastBlock = p->settings->index == p->settings->count && !(8 + reply->size + len > p->settings->maxPduSize);
-}
+    }
     if (p->lastBlock)
     {
         // Add command type and invoke and priority.
@@ -4451,8 +4451,8 @@ int dlms_getLNPdu(
         if ((ret = bb_set2(reply, p->attributeDescriptor, 0, p->attributeDescriptor->size)) != 0)
         {
             return ret;
+        }
     }
-}
     else
     {
         gxByteBuffer header;
@@ -4515,8 +4515,8 @@ int dlms_getLNPdu(
                 else
                 {
                     bb_setUInt32(h, dlms_getLongInvokeIDPriority(p->settings));
+                }
             }
-        }
             // Add date time.
 #ifdef DLMS_USE_EPOCH_TIME
             if (p->time == 0)
@@ -4546,7 +4546,7 @@ int dlms_getLNPdu(
                 var_clear(&tmp);
                 bb_move(h, pos + 1, pos, reply->size - pos - 1);
             }
-    }
+        }
         else if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
             // Get request size can be bigger than PDU size.
@@ -4745,7 +4745,7 @@ int dlms_getLNPdu(
             bb_clear(&tmp);
         }
 #endif //DLMS_IGNORE_HIGH_GMAC1
-}
+    }
     return 0;
 }
 
@@ -5080,7 +5080,7 @@ int dlms_secure(
 #else
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_AES
-        }
+    }
     // Get server Challenge.
     // Get shared secret
     bb_init(&challenge);
@@ -5149,7 +5149,7 @@ int dlms_secure(
 #endif //DLMS_IGNORE_HIGH_GMAC
     }
     return ret;
-    }
+}
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings * settings,

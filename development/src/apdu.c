@@ -205,8 +205,8 @@ int apdu_generateApplicationContextName(
  * @param data
  */
 int apdu_getInitiateRequest(
-    dlmsSettings * settings,
-    gxByteBuffer * data)
+    dlmsSettings* settings,
+    gxByteBuffer* data)
 {
     gxByteBuffer bb;
     // Tag for xDLMS-Initiate request
@@ -273,8 +273,8 @@ int apdu_getInitiateRequest(
  *            Generated user information.
  */
 int apdu_generateUserInformation(
-    dlmsSettings * settings,
-    gxByteBuffer * data)
+    dlmsSettings* settings,
+    gxByteBuffer* data)
 {
     int ret = 0;
     bb_setUInt8(data, BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_USER_INFORMATION);
@@ -347,8 +347,8 @@ int apdu_generateUserInformation(
  * Parse User Information from PDU.
  */
 int apdu_parseUserInformation(
-    dlmsSettings * settings,
-    gxByteBuffer * data,
+    dlmsSettings* settings,
+    gxByteBuffer* data,
     unsigned char ciphered,
     unsigned char* command)
 {
@@ -440,6 +440,11 @@ int apdu_parseUserInformation(
 #else
         if (tag != 0)
         {
+            //Return error if ciphering is not used.
+            if (!ciphered)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
             if ((ret = bb_getUInt8(data, &len)) != 0)
             {
                 return ret;
@@ -628,8 +633,8 @@ int apdu_parseUserInformation(
  *            Received data->
  */
 int apdu_parseApplicationContextName(
-    dlmsSettings * settings,
-    gxByteBuffer * buff,
+    dlmsSettings* settings,
+    gxByteBuffer* buff,
     unsigned char* ciphered)
 {
     int ret;
@@ -741,8 +746,8 @@ int apdu_parseApplicationContextName(
 }
 
 int apdu_validateAare(
-    dlmsSettings * settings,
-    gxByteBuffer * buff)
+    dlmsSettings* settings,
+    gxByteBuffer* buff)
 {
     int ret;
     unsigned char tag;
@@ -772,8 +777,8 @@ int apdu_validateAare(
 }
 
 int apdu_updatePassword(
-    dlmsSettings * settings,
-    gxByteBuffer * buff)
+    dlmsSettings* settings,
+    gxByteBuffer* buff)
 {
     int ret;
     unsigned char ch, len;
@@ -809,8 +814,8 @@ int apdu_updatePassword(
 }
 
 int apdu_updateAuthentication(
-    dlmsSettings * settings,
-    gxByteBuffer * buff)
+    dlmsSettings* settings,
+    gxByteBuffer* buff)
 {
     int ret;
     unsigned char ch;
@@ -911,8 +916,8 @@ int apdu_updateAuthentication(
 }
 
 int apdu_getUserInformation(
-    dlmsSettings * settings,
-    gxByteBuffer * data,
+    dlmsSettings* settings,
+    gxByteBuffer* data,
     unsigned char command)
 {
     int ret = 0;
@@ -988,8 +993,8 @@ int apdu_getUserInformation(
 }
 #ifndef DLMS_IGNORE_CLIENT
 int apdu_generateAarq(
-    dlmsSettings * settings,
-    gxByteBuffer * data)
+    dlmsSettings* settings,
+    gxByteBuffer* data)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     unsigned long offset;
@@ -1049,8 +1054,8 @@ int apdu_handleResultComponent(unsigned char value)
     return ret;
 }
 
-int apdu_parseProtocolVersion(dlmsSettings * settings,
-    gxByteBuffer * buff)
+int apdu_parseProtocolVersion(dlmsSettings* settings,
+    gxByteBuffer* buff)
 {
     unsigned char cnt, unusedBits, value;
     int ret;
@@ -1089,9 +1094,9 @@ int apdu_parseProtocolVersion(dlmsSettings * settings,
 }
 
 int apdu_parsePDU(
-    dlmsSettings * settings,
-    gxByteBuffer * buff,
-    DLMS_ASSOCIATION_RESULT * result,
+    dlmsSettings* settings,
+    gxByteBuffer* buff,
+    DLMS_ASSOCIATION_RESULT* result,
     unsigned char* diagnostic,
     unsigned char* command)
 {
@@ -1277,7 +1282,6 @@ int apdu_parsePDU(
                 {
                     return ret;
                 }
-
                 //Ignore if client sends CalledAEQualifier.
                 buff->position += len;
             }
@@ -1565,7 +1569,7 @@ int apdu_parsePDU(
         case BER_TYPE_CONTEXT: //0x80
             if (apdu_parseProtocolVersion(settings, buff) != 0)
             {
-                *diagnostic = DLMS_ACSE_SERVICE_PROVIDER_NO_COMMON_ACSE_VERSION;
+                *diagnostic = 0x80 | DLMS_ACSE_SERVICE_PROVIDER_NO_COMMON_ACSE_VERSION;
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
             }
@@ -1585,7 +1589,7 @@ int apdu_parsePDU(
     }
     if (afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
     {
-        *result = DLMS_ASSOCIATION_RESULT_ACCEPTED;
+        *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
         *diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_MECHANISM_NAME_NOT_RECOGNISED;
         return 0;
     }
@@ -1599,7 +1603,7 @@ int apdu_generateAARE(
     dlmsSettings* settings,
     gxByteBuffer* data,
     DLMS_ASSOCIATION_RESULT result,
-    DLMS_SOURCE_DIAGNOSTIC diagnostic,
+    unsigned char diagnostic,
     gxByteBuffer* errorData,
     gxByteBuffer* encryptedData,
     unsigned char command)
@@ -1630,8 +1634,18 @@ int apdu_generateAARE(
     bb_setUInt8(data, result);
     // SourceDiagnostic
     bb_setUInt8(data, 0xA3);
-    bb_setUInt8(data, 5); // len
-    bb_setUInt8(data, 0xA1); // Tag
+    // len
+    bb_setUInt8(data, 5);
+    // Tag
+    if ((diagnostic & 0x80) == 0)
+    {
+        bb_setUInt8(data, 0xA1);
+    }
+    else
+    {
+        bb_setUInt8(data, 0xA2);
+        diagnostic &= ~0x80;
+    }
     bb_setUInt8(data, 3); // len
     bb_setUInt8(data, 2); // Tag
     // Choice for result (INTEGER, universal)

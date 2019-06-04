@@ -475,7 +475,7 @@ int svr_HandleAarqRequest(
     {
         dlms_addLLCBytes(&settings->base, data);
     }
-    ret = apdu_generateAARE(&settings->base, data, result, (DLMS_SOURCE_DIAGNOSTIC)diagnostic, &error, NULL, command);
+    ret = apdu_generateAARE(&settings->base, data, result, diagnostic, &error, NULL, command);
     bb_clear(&error);
     return ret;
 }

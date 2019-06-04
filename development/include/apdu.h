@@ -65,7 +65,7 @@ extern "C" {
         dlmsSettings* settings,
         gxByteBuffer* data,
         DLMS_ASSOCIATION_RESULT result,
-        DLMS_SOURCE_DIAGNOSTIC diagnostic,
+        unsigned char diagnostic,
         gxByteBuffer* errorData,
         gxByteBuffer* encryptedData,
         unsigned char command);

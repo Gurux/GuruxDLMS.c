@@ -321,13 +321,13 @@ int dlms_setData2(
     unsigned char* buff,
     unsigned long length,
     DLMS_DATA_TYPE type,
-    dlmsVARIANT * value)
+    dlmsVARIANT* value)
 #else
 int dlms_setData2(
     unsigned char* buff,
     unsigned short length,
     DLMS_DATA_TYPE type,
-    dlmsVARIANT * value)
+    dlmsVARIANT* value)
 #endif
 {
     gxByteBuffer bb;
@@ -335,7 +335,7 @@ int dlms_setData2(
     return dlms_setData(&bb, type, value);
 }
 
-int dlms_setData(gxByteBuffer * buff, DLMS_DATA_TYPE type, dlmsVARIANT * value)
+int dlms_setData(gxByteBuffer* buff, DLMS_DATA_TYPE type, dlmsVARIANT* value)
 {
     int ret;
     ret = var_changeType(value, type);
@@ -346,7 +346,7 @@ int dlms_setData(gxByteBuffer * buff, DLMS_DATA_TYPE type, dlmsVARIANT * value)
     return var_getBytes2(value, type, buff);
 }
 
-int getCount(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getCount(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     if (hlp_getObjectCount2(buff, &info->count) != 0)
     {
@@ -374,7 +374,7 @@ int getCount(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            starting index.
 * Returns  CGXDLMSVariant array.
 */
-int getArray(gxByteBuffer * buff, gxDataInfo * info, unsigned short index, dlmsVARIANT * value)
+int getArray(gxByteBuffer* buff, gxDataInfo* info, unsigned short index, dlmsVARIANT* value)
 {
     dlmsVARIANT* tmp;
     gxDataInfo info2;
@@ -458,7 +458,7 @@ int getArray(gxByteBuffer * buff, gxDataInfo * info, unsigned short index, dlmsV
 *            Data info.
 * Returns  parsed UInt32 value.
 */
-int getUInt32(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getUInt32(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -484,7 +484,7 @@ int getUInt32(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  parsed Int32 value.
 */
-int getInt32(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getInt32(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -508,7 +508,7 @@ int getInt32(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 * info : Data info.
 * Returns parsed bit std::string value.
 */
-static int getBitString(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+static int getBitString(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     double t;
     unsigned short byteCnt;
@@ -540,7 +540,7 @@ static int getBitString(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * va
     return 0;
 }
 
-static int getBool(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+static int getBool(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     unsigned char ch;
@@ -568,7 +568,7 @@ static int getBool(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  parsed std::string value.
 */
-int getString(gxByteBuffer * buff, gxDataInfo * info, unsigned char knownType, dlmsVARIANT * value)
+int getString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVARIANT* value)
 {
     unsigned short len = 0;
     if (knownType)
@@ -614,10 +614,10 @@ int getString(gxByteBuffer * buff, gxDataInfo * info, unsigned char knownType, d
 * Returns  parsed UTF std::string value.
 */
 int getUtfString(
-    gxByteBuffer * buff,
-    gxDataInfo * info,
+    gxByteBuffer* buff,
+    gxDataInfo* info,
     unsigned char knownType,
-    dlmsVARIANT * value)
+    dlmsVARIANT* value)
 {
     unsigned short len = 0;
     var_clear(value);
@@ -666,7 +666,7 @@ int getUtfString(
 *            Data info.
 * Returns  parsed octet std::string value.
 */
-int getOctetString(gxByteBuffer * buff, gxDataInfo * info, unsigned char knownType, dlmsVARIANT * value)
+int getOctetString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVARIANT* value)
 {
     unsigned short len;
     int ret = 0;
@@ -712,7 +712,7 @@ int getOctetString(gxByteBuffer * buff, gxDataInfo * info, unsigned char knownTy
 *            Data info.
 * Returns  parsed BCD value.
 */
-int getBcd(gxByteBuffer * buff, gxDataInfo * info, unsigned char knownType, dlmsVARIANT * value)
+int getBcd(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVARIANT* value)
 {
     unsigned char idHigh, idLow;
     static const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
@@ -764,7 +764,7 @@ int getBcd(gxByteBuffer * buff, gxDataInfo * info, unsigned char knownType, dlms
 *            Data info.
 * Returns  parsed UInt8 value.
 */
-int getUInt8(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getUInt8(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -790,7 +790,7 @@ int getUInt8(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  parsed Int16 value.
 */
-int getInt16(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getInt16(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -816,7 +816,7 @@ int getInt16(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  parsed Int8 value.
 */
-int getInt8(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getInt8(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -843,7 +843,7 @@ int getInt8(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  parsed UInt16 value.
 */
-int getUInt16(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getUInt16(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -870,7 +870,7 @@ int getUInt16(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  parsed Int64 value.
 */
-int getInt64(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getInt64(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -897,7 +897,7 @@ int getInt64(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  parsed UInt64 value.
 */
-int getUInt64(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getUInt64(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -924,7 +924,7 @@ int getUInt64(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  parsed enumeration value.
 */
-int getEnum(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getEnum(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -951,7 +951,7 @@ int getEnum(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  Parsed double value.
 */
-int getDouble(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getDouble(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -977,7 +977,7 @@ int getDouble(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  Parsed float value.
 */
-int getFloat(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getFloat(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     // If there is not enough data available.
@@ -1005,7 +1005,7 @@ int getFloat(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  Parsed time.
 */
-int getTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     unsigned char ch, hour, minute, second;
@@ -1055,7 +1055,7 @@ int getTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  Parsed date.
 */
-int getDate(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret, month, day;
     unsigned short year;
@@ -1103,7 +1103,7 @@ int getDate(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 *            Data info.
 * Returns  Parsed date and time.
 */
-int getDateTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
+int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     unsigned short year;
 #ifdef DLMS_USE_EPOCH_TIME
@@ -1336,9 +1336,9 @@ int getDateTime(gxByteBuffer * buff, gxDataInfo * info, dlmsVARIANT * value)
 
 
 int getCompactArrayItem(
-    gxByteBuffer * buff,
+    gxByteBuffer* buff,
     DLMS_DATA_TYPE dt,
-    variantArray * list,
+    variantArray* list,
     unsigned long len)
 {
     int ret;
@@ -1410,9 +1410,9 @@ int getCompactArrayItem(
 }
 
 int getCompactArrayItem2(
-    gxByteBuffer * buff,
-    variantArray * dt,
-    variantArray * list,
+    gxByteBuffer* buff,
+    variantArray* dt,
+    variantArray* list,
     int len)
 {
     int ret, pos;
@@ -1462,8 +1462,8 @@ int getCompactArrayItem2(
 }
 
 int getDataTypes(
-    gxByteBuffer * buff,
-    variantArray * cols,
+    gxByteBuffer* buff,
+    variantArray* cols,
     int len)
 {
     int ret;
@@ -1587,10 +1587,10 @@ int getDataTypes(
 
 //Get compact array value from DLMS data.
 int getCompactArray(
-    dlmsSettings * settings,
-    gxByteBuffer * buff,
-    gxDataInfo * info,
-    dlmsVARIANT * value,
+    dlmsSettings* settings,
+    gxByteBuffer* buff,
+    gxDataInfo* info,
+    dlmsVARIANT* value,
     unsigned char onlyDataTypes)
 {
     int ret, pos;
@@ -1757,7 +1757,7 @@ int getCompactArray(
     return getCompactArrayItem(buff, dt, value->Arr, len);
 }
 
-int dlms_getData(gxByteBuffer * data, gxDataInfo * info, dlmsVARIANT * value)
+int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
 {
     unsigned char ch, knownType;
     unsigned long startIndex = data->position;
@@ -1882,7 +1882,7 @@ int dlms_getData(gxByteBuffer * data, gxDataInfo * info, dlmsVARIANT * value)
 }
 
 //Return DLMS_ERROR_CODE_FALSE if LLC bytes are not included.
-int dlms_checkLLCBytes(dlmsSettings * settings, gxByteBuffer * data)
+int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
 {
     if (settings->server)
     {
@@ -1905,7 +1905,7 @@ int dlms_checkLLCBytes(dlmsSettings * settings, gxByteBuffer * data)
 }
 
 int dlms_getHDLCAddress(
-    gxByteBuffer * buff,
+    gxByteBuffer* buff,
     unsigned long* address,
     unsigned char isClientAddress)
 {
@@ -1978,8 +1978,8 @@ int dlms_getHDLCAddress(
 */
 int dlms_checkHdlcAddress(
     unsigned char server,
-    dlmsSettings * settings,
-    gxByteBuffer * reply,
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
     unsigned short index)
 {
     unsigned char ch;
@@ -2087,7 +2087,7 @@ int dlms_getAddress(long value, unsigned long* address, int* size)
 */
 int dlms_getAddressBytes(
     unsigned long value,
-    gxByteBuffer * bytes)
+    gxByteBuffer* bytes)
 {
     int ret, size;
     unsigned long address;
@@ -2115,10 +2115,10 @@ int dlms_getAddressBytes(
 }
 
 int dlms_getHdlcFrame(
-    dlmsSettings * settings,
+    dlmsSettings* settings,
     int frame,
-    gxByteBuffer * data,
-    gxByteBuffer * reply)
+    gxByteBuffer* data,
+    gxByteBuffer* reply)
 {
     unsigned short crc;
     int ret;
@@ -2248,8 +2248,8 @@ int dlms_getHdlcFrame(
 }
 
 void dlms_getDataFromFrame(
-    gxByteBuffer * reply,
-    gxReplyData * data)
+    gxByteBuffer* reply,
+    gxReplyData* data)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     unsigned long offset = data->data.size;
@@ -2277,9 +2277,9 @@ void dlms_getDataFromFrame(
 
 int dlms_getHdlcData(
     unsigned char server,
-    dlmsSettings * settings,
-    gxByteBuffer * reply,
-    gxReplyData * data,
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data,
     unsigned char* frame,
     unsigned char preEstablished,
     unsigned char first)
@@ -2541,8 +2541,8 @@ int dlms_getHdlcData(
     return DLMS_ERROR_CODE_OK;
 }
 
-int dlms_checkWrapperAddress(dlmsSettings * settings,
-    gxByteBuffer * buff)
+int dlms_checkWrapperAddress(dlmsSettings* settings,
+    gxByteBuffer* buff)
 {
 #ifndef DLMS_IGNORE_WRAPPER
     int ret;
@@ -2617,9 +2617,9 @@ int dlms_checkWrapperAddress(dlmsSettings * settings,
 
 #ifndef DLMS_IGNORE_WRAPPER
 int dlms_getTcpData(
-    dlmsSettings * settings,
-    gxByteBuffer * buff,
-    gxReplyData * data)
+    dlmsSettings* settings,
+    gxByteBuffer* buff,
+    gxReplyData* data)
 {
     int ret, pos;
     unsigned short value;
@@ -2671,7 +2671,7 @@ int dlms_getTcpData(
 }
 #endif //DLMS_IGNORE_WRAPPER
 
-int dlms_getDataFromBlock(gxByteBuffer * data, unsigned short index)
+int dlms_getDataFromBlock(gxByteBuffer* data, unsigned short index)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     unsigned long pos, len = data->position - index;
@@ -2690,9 +2690,9 @@ int dlms_getDataFromBlock(gxByteBuffer * data, unsigned short index)
 }
 
 int dlms_receiverReady(
-    dlmsSettings * settings,
+    dlmsSettings* settings,
     DLMS_DATA_REQUEST_TYPES type,
-    gxByteBuffer * reply)
+    gxByteBuffer* reply)
 {
     int ret;
     DLMS_COMMAND cmd;
@@ -2777,9 +2777,9 @@ int dlms_receiverReady(
 
 #ifndef DLMS_IGNORE_WRAPPER
 int dlms_getWrapperFrame(
-    dlmsSettings * settings,
-    gxByteBuffer * data,
-    gxByteBuffer * reply)
+    dlmsSettings* settings,
+    gxByteBuffer* data,
+    gxByteBuffer* reply)
 {
     int ret;
     if ((ret = bb_clear(reply)) == 0 &&
@@ -2826,8 +2826,8 @@ int dlms_getWrapperFrame(
 #endif //DLMS_IGNORE_WRAPPER
 
 int dlms_handleGetResponse(
-    dlmsSettings * settings,
-    gxReplyData * reply,
+    dlmsSettings* settings,
+    gxReplyData* reply,
     unsigned short index)
 {
     int ret;
@@ -2966,7 +2966,7 @@ int dlms_handleGetResponse(
     return ret;
 }
 
-int handleWriteResponse(gxReplyData * data)
+int handleWriteResponse(gxReplyData* data)
 {
     unsigned char ch;
     int ret;
@@ -2994,7 +2994,7 @@ int handleWriteResponse(gxReplyData * data)
 }
 
 int dlms_handleWriteResponse(
-    gxReplyData * data)
+    gxReplyData* data)
 {
     unsigned char ch;
     int ret;
@@ -3021,8 +3021,8 @@ int dlms_handleWriteResponse(
     return DLMS_ERROR_CODE_OK;
 }
 
-int dlms_getValueFromData(dlmsSettings * settings,
-    gxReplyData * reply)
+int dlms_getValueFromData(dlmsSettings* settings,
+    gxReplyData* reply)
 {
     unsigned short index;
     int ret, pos;
@@ -3099,8 +3099,8 @@ int dlms_getValueFromData(dlmsSettings * settings,
 }
 
 int dlms_readResponseDataBlockResult(
-    dlmsSettings * settings,
-    gxReplyData * reply,
+    dlmsSettings* settings,
+    gxReplyData* reply,
     unsigned short index)
 {
     int ret;
@@ -3162,8 +3162,8 @@ int dlms_readResponseDataBlockResult(
     return ret;
 }
 int dlms_handleReadResponse(
-    dlmsSettings * settings,
-    gxReplyData * reply,
+    dlmsSettings* settings,
+    gxReplyData* reply,
     unsigned short index)
 {
     int ret;
@@ -3286,7 +3286,7 @@ int dlms_handleReadResponse(
 }
 
 int dlms_handleMethodResponse(
-    gxReplyData * data)
+    gxReplyData* data)
 {
     int ret;
     unsigned char ch, type;
@@ -3370,7 +3370,7 @@ int dlms_handleMethodResponse(
     return DLMS_ERROR_CODE_OK;
 }
 
-int dlms_handlePush(gxReplyData * reply)
+int dlms_handlePush(gxReplyData* reply)
 {
     unsigned char ch;
     unsigned long ul;
@@ -3438,7 +3438,7 @@ int dlms_handlePush(gxReplyData * reply)
 }
 
 int dlms_handleSetResponse(
-    gxReplyData * data)
+    gxReplyData* data)
 {
     unsigned char ch, type, invokeId;
     int ret;
@@ -3483,9 +3483,9 @@ int dlms_handleSetResponse(
 
 
 int dlms_changeType2(
-    dlmsVARIANT * value,
+    dlmsVARIANT* value,
     DLMS_DATA_TYPE type,
-    dlmsVARIANT * newValue)
+    dlmsVARIANT* newValue)
 {
     gxByteBuffer bb;
     if (value->byteArr != NULL)
@@ -3497,9 +3497,9 @@ int dlms_changeType2(
 }
 
 int dlms_changeType(
-    gxByteBuffer * value,
+    gxByteBuffer* value,
     DLMS_DATA_TYPE type,
-    dlmsVARIANT * newValue)
+    dlmsVARIANT* newValue)
 {
     int ret;
     gxDataInfo info;
@@ -3560,8 +3560,8 @@ int dlms_changeType(
 *            Received data from the client.
 */
 int dlms_handleDataNotification(
-    dlmsSettings * settings,
-    gxReplyData * reply)
+    dlmsSettings* settings,
+    gxReplyData* reply)
 {
     unsigned long id;
     int ret;
@@ -3578,7 +3578,7 @@ int dlms_handleDataNotification(
 #ifdef DLMS_USE_EPOCH_TIME
     reply->time = 0;
 #else
-    reply->time = NULL;
+    memset(&reply->time, 0, sizeof(struct tm));
 #endif //DLMS_USE_EPOCH_TIME
     if ((ret = bb_getUInt8(&reply->data, &len)) != 0)
     {
@@ -3596,7 +3596,7 @@ int dlms_handleDataNotification(
 #ifdef DLMS_USE_EPOCH_TIME
         reply->time = t.dateTime->value;
 #else
-        *reply->time = t.dateTime->value;
+        reply->time = t.dateTime->value;
 #endif // DLMS_USE_EPOCH_TIME
     }
     if ((ret = dlms_getDataFromBlock(&reply->data, start)) != 0)
@@ -3615,8 +3615,8 @@ int dlms_handleDataNotification(
 *            received data.
 */
 int dlms_handleGbt(
-    dlmsSettings * settings,
-    gxReplyData * data)
+    dlmsSettings* settings,
+    gxReplyData* data)
 {
     int ret;
     unsigned char ch, window, bn, bna;
@@ -3711,8 +3711,8 @@ int dlms_handleGbt(
     return ret;
 }
 
-int dlms_handledGloDedRequest(dlmsSettings * settings,
-    gxReplyData * data)
+int dlms_handledGloDedRequest(dlmsSettings* settings,
+    gxReplyData* data)
 {
     int ret = 0;
 #ifdef DLMS_IGNORE_HIGH_GMAC
@@ -3796,8 +3796,8 @@ int dlms_handledGloDedRequest(dlmsSettings * settings,
     return ret;
 }
 
-int dlms_handledGloDedResponse(dlmsSettings * settings,
-    gxReplyData * data, unsigned short index)
+int dlms_handledGloDedResponse(dlmsSettings* settings,
+    gxReplyData* data, unsigned short index)
 {
 #ifdef DLMS_IGNORE_HIGH_GMAC
     return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
@@ -3846,8 +3846,8 @@ int dlms_handledGloDedResponse(dlmsSettings * settings,
 }
 
 int dlms_handleGeneralCiphering(
-    dlmsSettings * settings,
-    gxReplyData * data)
+    dlmsSettings* settings,
+    gxReplyData* data)
 {
 #ifdef DLMS_IGNORE_HIGH_GMAC
     return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
@@ -3886,8 +3886,8 @@ int dlms_handleGeneralCiphering(
 }
 
 int dlms_getPdu(
-    dlmsSettings * settings,
-    gxReplyData * data,
+    dlmsSettings* settings,
+    gxReplyData* data,
     unsigned char first)
 {
     int ret = DLMS_ERROR_CODE_OK;
@@ -4123,8 +4123,8 @@ int dlms_getPdu(
 *            Data where bytes are added.
 */
 void dlms_addLLCBytes(
-    dlmsSettings * settings,
-    gxByteBuffer * data)
+    dlmsSettings* settings,
+    gxByteBuffer* data)
 {
     if (settings->server)
     {
@@ -4138,8 +4138,8 @@ void dlms_addLLCBytes(
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_appendMultipleSNBlocks(
-    gxSNParameters * p,
-    gxByteBuffer * reply)
+    gxSNParameters* p,
+    gxByteBuffer* reply)
 {
     unsigned long maxSize;
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -4193,8 +4193,8 @@ int dlms_appendMultipleSNBlocks(
 }
 
 int dlms_getSNPdu(
-    gxSNParameters * p,
-    gxByteBuffer * reply)
+    gxSNParameters* p,
+    gxByteBuffer* reply)
 {
     int ret, cnt = 0;
     unsigned char cipherSize = 0;
@@ -4399,8 +4399,8 @@ int dlms_getSNPdu(
 *            Generated reply.
 */
 void dlms_multipleBlocks(
-    gxLNParameters * p,
-    gxByteBuffer * reply,
+    gxLNParameters* p,
+    gxByteBuffer* reply,
     unsigned char ciphering)
 {
     // Check is all data fit to one message if data is given.
@@ -4431,8 +4431,8 @@ void dlms_multipleBlocks(
 }
 
 int dlms_getLNPdu(
-    gxLNParameters * p,
-    gxByteBuffer * reply)
+    gxLNParameters* p,
+    gxByteBuffer* reply)
 {
     int ret;
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -4750,8 +4750,8 @@ int dlms_getLNPdu(
 }
 
 int dlms_getLnMessages(
-    gxLNParameters * p,
-    message * messages)
+    gxLNParameters* p,
+    message* messages)
 {
     int ret;
     gxByteBuffer reply;
@@ -4800,8 +4800,8 @@ int dlms_getLnMessages(
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getSnMessages(
-    gxSNParameters * p,
-    message * messages)
+    gxSNParameters* p,
+    message* messages)
 {
     int ret;
     gxByteBuffer data;
@@ -4860,9 +4860,9 @@ int dlms_getSnMessages(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_getData2(
-    dlmsSettings * settings,
-    gxByteBuffer * reply,
-    gxReplyData * data,
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data,
     unsigned char first)
 {
     int ret;
@@ -4915,7 +4915,7 @@ int dlms_getData2(
 }
 
 int dlms_generateChallenge(
-    gxByteBuffer * challenge)
+    gxByteBuffer* challenge)
 {
     // Random challenge is 8 to 64 bytes.
     // Texas Instruments accepts only 16 byte long challenge.
@@ -5039,11 +5039,11 @@ int dlms_getActionInfo(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_secure(
-    dlmsSettings * settings,
+    dlmsSettings* settings,
     long ic,
-    gxByteBuffer * data,
-    gxByteBuffer * secret,
-    gxByteBuffer * reply)
+    gxByteBuffer* data,
+    gxByteBuffer* secret,
+    gxByteBuffer* reply)
 {
     int ret = 0;
     gxByteBuffer challenge;
@@ -5152,8 +5152,8 @@ int dlms_secure(
 }
 
 int dlms_parseSnrmUaResponse(
-    dlmsSettings * settings,
-    gxByteBuffer * data)
+    dlmsSettings* settings,
+    gxByteBuffer* data)
 {
     dlmsVARIANT value;
     unsigned char ch, id, len;
@@ -5245,7 +5245,7 @@ int dlms_parseSnrmUaResponse(
     return ret;
 }
 
-int dlms_appendHdlcParameter(gxByteBuffer * data, unsigned short value)
+int dlms_appendHdlcParameter(gxByteBuffer* data, unsigned short value)
 {
     if (value < 0x100)
     {

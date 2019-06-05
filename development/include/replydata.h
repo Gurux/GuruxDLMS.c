@@ -118,7 +118,7 @@ extern "C" {
 #ifdef DLMS_USE_EPOCH_TIME
         unsigned long time;
 #else
-        struct tm* time;
+        struct tm time;
 #endif // DLMS_USE_EPOCH_TIME
         /**
         * Pre-established connection.

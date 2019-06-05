@@ -56,9 +56,9 @@
 #ifndef DLMS_IGNORE_CHARGE
 
 int invoke_Charge(
-    gxCharge* object,
+    gxCharge * object,
     unsigned char index,
-    dlmsVARIANT* value)
+    dlmsVARIANT * value)
 {
     gxChargeTable* ct, * it;
     int ret = 0, pos;
@@ -198,9 +198,10 @@ int invoke_AssociationLogicalName(
         {
             return ret;
         }
-        equal = bb_compare(&settings->info.data,
-            e->parameters.byteArr->data,
-            e->parameters.byteArr->size);
+        equal = bb_size(e->parameters.byteArr) != 0 &&
+            bb_compare(&settings->info.data,
+                e->parameters.byteArr->data,
+                e->parameters.byteArr->size);
         bb_clear(&settings->info.data);
         if (equal)
         {
@@ -314,8 +315,8 @@ int invoke_AssociationLogicalName(
 
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
 int invoke_ImageTransfer(
-    gxImageTransfer * target,
-    gxValueEventArg * e)
+    gxImageTransfer* target,
+    gxValueEventArg* e)
 {
     int pos, ret;
     //Image transfer initiate
@@ -340,7 +341,8 @@ int invoke_ImageTransfer(
             {
                 return ret;
             }
-            if (bb_compare(&it->identification, imageIdentifier->byteArr->data, imageIdentifier->byteArr->size))
+            if (bb_size(imageIdentifier->byteArr) != 0 &&
+                bb_compare(&it->identification, imageIdentifier->byteArr->data, imageIdentifier->byteArr->size))
             {
                 item = it;
                 exists = 1;
@@ -409,8 +411,8 @@ int invoke_ImageTransfer(
 
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
 int invoke_SapAssigment(
-    gxSapAssignment * target,
-    gxValueEventArg * e)
+    gxSapAssignment* target,
+    gxValueEventArg* e)
 {
     dlmsVARIANT* tmp;
     int pos, ret;
@@ -474,8 +476,8 @@ int invoke_SapAssigment(
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int invoke_AssociationShortName(
-    dlmsServerSettings * settings,
-    gxValueEventArg * e)
+    dlmsServerSettings* settings,
+    gxValueEventArg* e)
 {
     int ret;
     unsigned char equal;
@@ -506,9 +508,10 @@ int invoke_AssociationShortName(
             bb_clear(&settings->info.data);
             return ret;
         }
-        equal = bb_compare(&settings->info.data,
-            e->parameters.byteArr->data,
-            e->parameters.byteArr->size);
+        equal = bb_size(e->parameters.byteArr) != 0 &&
+            bb_compare(&settings->info.data,
+                e->parameters.byteArr->data,
+                e->parameters.byteArr->size);
         bb_clear(&settings->info.data);
         if (equal)
         {
@@ -544,7 +547,7 @@ int invoke_AssociationShortName(
 }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
-int invoke_ScriptTable(dlmsServerSettings * settings, gxValueEventArg * e)
+int invoke_ScriptTable(dlmsServerSettings* settings, gxValueEventArg* e)
 {
     gxScriptAction* sa;
     int ret = 0, pos;
@@ -593,7 +596,7 @@ int invoke_ScriptTable(dlmsServerSettings * settings, gxValueEventArg * e)
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 
 #ifndef DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
-int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl * object, unsigned char index, dlmsVARIANT * value)
+int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret = 0, pos;
     dlmsVARIANT* it;
@@ -659,7 +662,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl * object, unsigned char i
 #endif //DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
 int invoke_ExtendedRegister(
-    gxExtendedRegister * object,
+    gxExtendedRegister* object,
     unsigned char index)
 {
     int ret = 0;
@@ -681,7 +684,7 @@ int invoke_ExtendedRegister(
 }
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
 #ifndef DLMS_IGNORE_CLOCK
-int invoke_Clock(gxClock * object, unsigned char index, dlmsVARIANT * value)
+int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret = 0;
     dlmsVARIANT* it;
@@ -721,7 +724,7 @@ int invoke_Clock(gxClock * object, unsigned char index, dlmsVARIANT * value)
 #else
         time_addTime(&object->time, 0, -object->time.value.tm_min + minutes, -object->time.value.tm_sec);
 #endif // DLMS_USE_EPOCH_TIME
-    }
+        }
     // Sets the meter's time to the nearest minute.
     else if (index == 3)
     {
@@ -735,7 +738,7 @@ int invoke_Clock(gxClock * object, unsigned char index, dlmsVARIANT * value)
             time_addTime(&object->time, 0, 1, 0);
         }
         time_addTime(&object->time, 0, 0, -s);
-    }
+}
     //Adjust to preset time.
     else if (index == 4)
     {
@@ -776,7 +779,7 @@ int invoke_Clock(gxClock * object, unsigned char index, dlmsVARIANT * value)
 #endif //DLMS_IGNORE_CLOCK
 #ifndef DLMS_IGNORE_REGISTER
 int invoke_Register(
-    gxRegister * object,
+    gxRegister* object,
     unsigned char index)
 {
     int ret = 0;
@@ -797,8 +800,8 @@ int invoke_Register(
 * Copies the values of the objects to capture into the buffer by reading
 * capture objects.
 */
-int capture(dlmsSettings * settings,
-    gxProfileGeneric * object)
+int capture(dlmsSettings* settings,
+    gxProfileGeneric* object)
 {
     int ret, pos;
     gxKey* kv;
@@ -853,8 +856,8 @@ int capture(dlmsSettings * settings,
 }
 
 int invoke_ProfileGeneric(
-    dlmsServerSettings * settings,
-    gxProfileGeneric * object,
+    dlmsServerSettings* settings,
+    gxProfileGeneric* object,
     unsigned char index)
 {
     int ret = 0;
@@ -879,7 +882,7 @@ int invoke_ProfileGeneric(
 
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
-int compactDataAppend(unsigned char byteArray, dlmsVARIANT * value3, gxByteBuffer * bb)
+int compactDataAppend(unsigned char byteArray, dlmsVARIANT* value3, gxByteBuffer* bb)
 {
     if (byteArray && value3->vt == DLMS_DATA_TYPE_OCTET_STRING)
     {
@@ -912,7 +915,7 @@ int compactDataAppend(unsigned char byteArray, dlmsVARIANT * value3, gxByteBuffe
     return 0;
 }
 
-int compactDataAppendArray(dlmsVARIANT * value, gxByteBuffer * bb, unsigned short dataIndex)
+int compactDataAppendArray(dlmsVARIANT* value, gxByteBuffer* bb, unsigned short dataIndex)
 {
     int ret, pos;
     int cnt = value->Arr->size;
@@ -956,8 +959,8 @@ int compactDataAppendArray(dlmsVARIANT * value, gxByteBuffer * bb, unsigned shor
 * Copies the values of the objects to capture into the buffer by reading
 * capture objects.
 */
-int cosem_captureCompactData(dlmsSettings * settings,
-    gxCompactData * object)
+int cosem_captureCompactData(dlmsSettings* settings,
+    gxCompactData* object)
 {
     int ret = 0;
     unsigned short pos;
@@ -1036,8 +1039,8 @@ int cosem_captureCompactData(dlmsSettings * settings,
 }
 
 int invoke_CompactData(
-    dlmsServerSettings * settings,
-    gxCompactData * object,
+    dlmsServerSettings* settings,
+    gxCompactData* object,
     unsigned char index)
 {
     int ret = 0;
@@ -1061,8 +1064,8 @@ int invoke_CompactData(
 #endif //DLMS_IGNORE_COMPACT_DATA
 
 int cosem_invoke(
-    dlmsServerSettings * settings,
-    gxValueEventArg * e)
+    dlmsServerSettings* settings,
+    gxValueEventArg* e)
 {
     int ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     //If invoke index is invalid.

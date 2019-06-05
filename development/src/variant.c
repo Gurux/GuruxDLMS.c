@@ -51,7 +51,7 @@
 #include "../include/errorcodes.h"
 #include "../include/helpers.h"
 
-int var_setEnum(dlmsVARIANT* data, unsigned char value)
+int var_setEnum(dlmsVARIANT * data, unsigned char value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_ENUM;
@@ -275,8 +275,8 @@ int var_addOctetString(
 }
 
 int var_addByteArray(
-    dlmsVARIANT * data,
-    gxByteBuffer * ba,
+    dlmsVARIANT* data,
+    gxByteBuffer* ba,
     unsigned short index,
     unsigned short count)
 {
@@ -284,15 +284,15 @@ int var_addByteArray(
 }
 
 //Initialize variant.
-int var_init(dlmsVARIANT * data)
+int var_init(dlmsVARIANT* data)
 {
     data->vt = DLMS_DATA_TYPE_NONE;
     data->byteArr = NULL;
     return DLMS_ERROR_CODE_OK;
 }
 
-void var_attachArray(dlmsVARIANT * data,
-    const variantArray * arr,
+void var_attachArray(dlmsVARIANT* data,
+    const variantArray* arr,
     const unsigned short count)
 {
     data->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
@@ -303,8 +303,8 @@ void var_attachArray(dlmsVARIANT * data,
     data->Arr->data = (void**)arr->data;
 }
 
-void var_attachStructure(dlmsVARIANT * data,
-    const dlmsVARIANT * *arr,
+void var_attachStructure(dlmsVARIANT* data,
+    const dlmsVARIANT** arr,
     const unsigned short count)
 {
     data->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
@@ -316,7 +316,7 @@ void var_attachStructure(dlmsVARIANT * data,
 }
 
 //Clear variant.
-int var_clear(dlmsVARIANT * data)
+int var_clear(dlmsVARIANT* data)
 {
     if (data->vt == DLMS_DATA_TYPE_OCTET_STRING)
     {
@@ -372,8 +372,8 @@ int var_clear(dlmsVARIANT * data)
 }
 
 int var_getDateTime2(
-    gxtime * dateTime,
-    gxByteBuffer * ba)
+    gxtime* dateTime,
+    gxByteBuffer* ba)
 {
     unsigned short year = 0xFFFF;
     unsigned char month = 0xFF, day = 0xFF, hour = 0xFF, minute = 0xFF, second = 0xFF, dayOfWeek = 0xFF;
@@ -527,8 +527,8 @@ int var_getDateTime2(
 }
 
 int var_getDate(
-    gxtime * dateTime,
-    gxByteBuffer * ba)
+    gxtime* dateTime,
+    gxByteBuffer* ba)
 {
     unsigned short year = 0xFFFF;
     unsigned char month = 0xFF, day = 0xFF, dayOfWeek = 0xFF;
@@ -606,8 +606,8 @@ int var_getDate(
 }
 
 int var_getTime(
-    gxtime * dateTime,
-    gxByteBuffer * ba)
+    gxtime* dateTime,
+    gxByteBuffer* ba)
 {
     unsigned char hour = 0xFF, minute = 0xFF, second = 0xFF;
 #ifdef DLMS_USE_EPOCH_TIME
@@ -676,8 +676,8 @@ int var_getTime(
 
 //Get bytes from variant value.
 int var_getBytes(
-    dlmsVARIANT * data,
-    gxByteBuffer * ba)
+    dlmsVARIANT* data,
+    gxByteBuffer* ba)
 {
     return var_getBytes2(data, data->vt, ba);
 }
@@ -690,7 +690,7 @@ int var_getBytes(
 * value
 *            Added value.
 */
-int var_setOctetString(gxByteBuffer * buff, dlmsVARIANT * value)
+int var_setOctetString(gxByteBuffer* buff, dlmsVARIANT* value)
 {
     if (value->vt == DLMS_DATA_TYPE_STRING)
     {
@@ -727,9 +727,9 @@ int var_setOctetString(gxByteBuffer * buff, dlmsVARIANT * value)
 
 //Returns bytes as Big Endian byteorder.
 int var_getBytes2(
-    dlmsVARIANT * data,
+    dlmsVARIANT* data,
     DLMS_DATA_TYPE type,
-    gxByteBuffer * ba)
+    gxByteBuffer* ba)
 {
     int ret, pos;
     if (type == DLMS_DATA_TYPE_STRUCTURE ||
@@ -931,7 +931,7 @@ int var_getSize(DLMS_DATA_TYPE vt)
 }
 
 //Convert variant value to integer.
-int var_toInteger(dlmsVARIANT * data)
+int var_toInteger(dlmsVARIANT* data)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -1015,18 +1015,18 @@ int var_toInteger(dlmsVARIANT * data)
     return 0;
 }
 
-char va_isAttached(variantArray * arr)
+char va_isAttached(variantArray* arr)
 {
     return (arr->capacity & 0x8000) == 0x8000;
 }
 
-unsigned short va_getCapacity(variantArray * arr)
+unsigned short va_getCapacity(variantArray* arr)
 {
     return arr->capacity & 0x7FFF;
 }
 
 //Initialize variantArray.
-void va_init(variantArray * arr)
+void va_init(variantArray* arr)
 {
     arr->capacity = 0;
     arr->data = NULL;
@@ -1035,7 +1035,7 @@ void va_init(variantArray * arr)
 }
 
 //Allocate new size for the array in bytes.
-void va_capacity(variantArray * arr, unsigned short capacity)
+int va_capacity(variantArray* arr, unsigned short capacity)
 {
     if (!va_isAttached(arr))
     {
@@ -1052,18 +1052,28 @@ void va_capacity(variantArray * arr, unsigned short capacity)
             if (arr->capacity == 0)
             {
                 arr->data = (void**)gxmalloc(capacity * sizeof(dlmsVARIANT*));
+                if (arr->data == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
             }
             else
             {
-                arr->data = (void**)gxrealloc(arr->data, capacity * sizeof(dlmsVARIANT*));
+                void** tmp = (void**)gxrealloc(arr->data, capacity * sizeof(dlmsVARIANT*));
+                if (tmp == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                arr->data = tmp;
             }
         }
         arr->capacity = capacity;
     }
+    return 0;
 }
 
 //Push new data to the variantArray.
-int va_push(variantArray * arr, dlmsVARIANT * item)
+int va_push(variantArray* arr, dlmsVARIANT* item)
 {
     dlmsVARIANT** p;
     if (!va_isAttached(arr))
@@ -1077,7 +1087,12 @@ int va_push(variantArray * arr, dlmsVARIANT * item)
             }
             else
             {
-                arr->data = (void**)gxrealloc(arr->data, arr->capacity * sizeof(dlmsVARIANT*));
+                void** tmp = (void**)gxrealloc(arr->data, arr->capacity * sizeof(dlmsVARIANT*));
+                if (tmp == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                arr->data = tmp;
             }
         }
     }
@@ -1092,7 +1107,7 @@ int va_push(variantArray * arr, dlmsVARIANT * item)
 }
 
 void va_clear(
-    variantArray * arr)
+    variantArray* arr)
 {
     int pos;
     unsigned char attached = va_isAttached(arr);
@@ -1115,8 +1130,8 @@ void va_clear(
 }
 
 void va_attach(
-    variantArray * trg,
-    variantArray * src)
+    variantArray* trg,
+    variantArray* src)
 {
     trg->capacity = src->capacity;
     trg->data = src->data;
@@ -1127,7 +1142,7 @@ void va_attach(
 }
 
 //Get item from variant array.
-int va_get(variantArray * arr, dlmsVARIANT * *item)
+int va_get(variantArray* arr, dlmsVARIANT** item)
 {
     dlmsVARIANT** p;
     if (arr->position >= arr->size)
@@ -1142,7 +1157,7 @@ int va_get(variantArray * arr, dlmsVARIANT * *item)
 
 
 //Get item from variant array by index.
-int va_getByIndex(variantArray * arr, int index, dlmsVARIANT * *item)
+int va_getByIndex(variantArray* arr, int index, dlmsVARIANT** item)
 {
     dlmsVARIANT** p;
     if (index >= arr->size)
@@ -1155,8 +1170,8 @@ int va_getByIndex(variantArray * arr, int index, dlmsVARIANT * *item)
 }
 
 int va_copyArray(
-    variantArray * target,
-    variantArray * source)
+    variantArray* target,
+    variantArray* source)
 {
     int ret = DLMS_ERROR_CODE_OK;
     dlmsVARIANT* tmp, * tmp2;
@@ -1182,7 +1197,7 @@ int va_copyArray(
 }
 
 //Note! var_toString do not clear existing bytearray.
-int var_toString(dlmsVARIANT * item, gxByteBuffer * value)
+int var_toString(dlmsVARIANT* item, gxByteBuffer* value)
 {
     int ret = DLMS_ERROR_CODE_OK;
     dlmsVARIANT tmp;
@@ -1203,8 +1218,8 @@ int var_toString(dlmsVARIANT * item, gxByteBuffer * value)
 
 //Note! va_toString do not clear existing bytearray.
 int va_toString(
-    variantArray * items,
-    gxByteBuffer * ba)
+    variantArray* items,
+    gxByteBuffer* ba)
 {
     dlmsVARIANT* it;
     int pos, ret = DLMS_ERROR_CODE_OK;
@@ -1226,7 +1241,7 @@ int va_toString(
     return ret;
 }
 
-static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
+static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
 {
     int ret, fromSize, toSize;
     unsigned short pos;
@@ -1385,7 +1400,7 @@ static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //GX_DLMS_MICROCONTROLLER
-        }
+    }
         else if (tmp.vt == DLMS_DATA_TYPE_FLOAT64)
         {
 #ifndef GX_DLMS_MICROCONTROLLER
@@ -1401,7 +1416,7 @@ static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //GX_DLMS_MICROCONTROLLER
-        }
+}
         else if (tmp.vt == DLMS_DATA_TYPE_BIT_STRING)
         {
             char* str = ba_toString(tmp.bitArr);
@@ -1424,6 +1439,7 @@ static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
         }
         else if (tmp.vt == DLMS_DATA_TYPE_OCTET_STRING)
         {
+#ifndef GX_DLMS_MICROCONTROLLER
             if (tmp.byteArr != NULL)
             {
                 char* str = bb_toHexString(tmp.byteArr);
@@ -1433,7 +1449,10 @@ static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
-        }
+#else
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //GX_DLMS_MICROCONTROLLER
+            }
         else if (tmp.vt == DLMS_DATA_TYPE_NONE)
         {
             item->vt = type;
@@ -1444,7 +1463,7 @@ static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
         {
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
         }
-    }
+        }
     else if (item->vt == DLMS_DATA_TYPE_STRING)
     {
         if (type == DLMS_DATA_TYPE_BOOLEAN)
@@ -1553,7 +1572,7 @@ static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
         }
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-    }
+        }
     fromSize = var_getSize(tmp.vt);
     toSize = var_getSize(item->vt);
     //If we try to change bigger valut to smaller check that value is not too big.
@@ -1581,9 +1600,9 @@ static int convert(dlmsVARIANT * item, DLMS_DATA_TYPE type)
     item->vt = type;
     var_clear(&tmp);
     return DLMS_ERROR_CODE_OK;
-}
+    }
 
-int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
+int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
 {
     if (newType == value->vt)
     {
@@ -1821,7 +1840,7 @@ int var_changeType(dlmsVARIANT * value, DLMS_DATA_TYPE newType)
 }
 
 //copy variant.
-int var_copy(dlmsVARIANT * target, dlmsVARIANT * source)
+int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
 {
     dlmsVARIANT* it;
     dlmsVARIANT* item;
@@ -1932,7 +1951,7 @@ int var_copy(dlmsVARIANT * target, dlmsVARIANT * source)
     return ret;
 }
 
-int var_setDateTime(dlmsVARIANT * target, gxtime * value)
+int var_setDateTime(dlmsVARIANT* target, gxtime* value)
 {
     int ret;
     ret = var_clear(target);
@@ -1946,7 +1965,7 @@ int var_setDateTime(dlmsVARIANT * target, gxtime * value)
     return ret;
 }
 
-int var_setDate(dlmsVARIANT * target, gxtime * value)
+int var_setDate(dlmsVARIANT* target, gxtime* value)
 {
     int ret;
     ret = var_clear(target);
@@ -1960,7 +1979,7 @@ int var_setDate(dlmsVARIANT * target, gxtime * value)
     return ret;
 }
 
-int var_setTime(dlmsVARIANT * target, gxtime * value)
+int var_setTime(dlmsVARIANT* target, gxtime* value)
 {
     int ret;
     ret = var_clear(target);
@@ -1975,8 +1994,8 @@ int var_setTime(dlmsVARIANT * target, gxtime * value)
 }
 
 int var_setDateTimeAsOctetString(
-    dlmsVARIANT * target,
-    gxtime * value)
+    dlmsVARIANT* target,
+    gxtime* value)
 {
     int ret;
     ret = var_clear(target);
@@ -1996,8 +2015,8 @@ int var_setDateTimeAsOctetString(
 }
 
 int var_setDateAsOctetString(
-    dlmsVARIANT * target,
-    gxtime * value)
+    dlmsVARIANT* target,
+    gxtime* value)
 {
     int ret;
     ret = var_clear(target);
@@ -2017,8 +2036,8 @@ int var_setDateAsOctetString(
 }
 
 int var_setTimeAsOctetString(
-    dlmsVARIANT * target,
-    gxtime * value)
+    dlmsVARIANT* target,
+    gxtime* value)
 {
     int ret;
     ret = var_clear(target);
@@ -2037,7 +2056,7 @@ int var_setTimeAsOctetString(
     return 0;
 }
 
-int var_setBoolean(dlmsVARIANT * target, char value)
+int var_setBoolean(dlmsVARIANT* target, char value)
 {
     int ret;
     ret = var_clear(target);
@@ -2051,8 +2070,8 @@ int var_setBoolean(dlmsVARIANT * target, char value)
 }
 
 void var_attach(
-    dlmsVARIANT * target,
-    gxByteBuffer * source)
+    dlmsVARIANT* target,
+    gxByteBuffer* source)
 {
     target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
     target->byteArr->data = source->data;
@@ -2064,7 +2083,7 @@ void var_attach(
     target->vt = DLMS_DATA_TYPE_OCTET_STRING;
 }
 
-int var_getDateTime(dlmsVARIANT * target, gxtime * value)
+int var_getDateTime(dlmsVARIANT* target, gxtime* value)
 {
     if (target->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -2087,7 +2106,7 @@ int var_getDateTime(dlmsVARIANT * target, gxtime * value)
     return DLMS_ERROR_CODE_OK;
 }
 
-double var_toDouble(dlmsVARIANT * target)
+double var_toDouble(dlmsVARIANT* target)
 {
     switch (target->vt)
     {
@@ -2168,7 +2187,7 @@ double var_toDouble(dlmsVARIANT * target)
 
 #ifndef GX_DLMS_MICROCONTROLLER
 //Print content of the variant to cout.
-int var_print(const char* format, dlmsVARIANT * target)
+int var_print(const char* format, dlmsVARIANT* target)
 {
     int ret = DLMS_ERROR_CODE_OK;
     dlmsVARIANT tmp;
@@ -2191,7 +2210,7 @@ int var_print(const char* format, dlmsVARIANT * target)
 }
 
 int va_print(
-    variantArray * items)
+    variantArray* items)
 {
     dlmsVARIANT* it;
     int pos, ret = DLMS_ERROR_CODE_OK;

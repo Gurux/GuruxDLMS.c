@@ -1108,7 +1108,6 @@ int apdu_parsePDU(
     *result = DLMS_ASSOCIATION_RESULT_ACCEPTED;
     *diagnostic = DLMS_SOURCE_DIAGNOSTIC_NONE;
 
-    unsigned char afu = 0;
     typedef enum
     {
         DLMS_AFU_MISSING_NONE = 0x0,
@@ -1117,6 +1116,7 @@ int apdu_parsePDU(
         DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE = 0x4
     }
     DLMS_AFU_MISSING;
+    DLMS_AFU_MISSING afu = DLMS_AFU_MISSING_NONE;
     // Get AARE tag and length
     if ((ret = apdu_validateAare(settings, buff)) != 0)
     {

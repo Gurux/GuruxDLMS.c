@@ -30,6 +30,7 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
+#include <string.h> /* memset */
 #include "../include/gxmem.h"
 #if _MSC_VER > 1400
 #include <crtdbg.h>
@@ -65,7 +66,7 @@ void reply_init(gxReplyData* reply)
 #ifdef DLMS_USE_EPOCH_TIME
     reply->time = 0;
 #else
-    reply->time = NULL;
+    memset(&reply->time, 0, sizeof(struct tm));
 #endif // DLMS_USE_EPOCH_TIME
     reply->preEstablished = 0;
 }
@@ -91,11 +92,7 @@ void reply_clear2(gxReplyData* reply, unsigned char clearData)
 #ifdef DLMS_USE_EPOCH_TIME
     reply->time = 0;
 #else
-    if (reply->time != NULL)
-    {
-        gxfree(reply->time);
-        reply->time = NULL;
-    }
+    memset(&reply->time, 0, sizeof(struct tm));
 #endif // DLMS_USE_EPOCH_TIME
 }
 

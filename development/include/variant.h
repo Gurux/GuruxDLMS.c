@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 #include "gxignore.h"
-#include "date.h" 
+#include "date.h"
 #include "enums.h"
 #include "errorcodes.h"
 #include "bytebuffer.h"
@@ -98,7 +98,7 @@ extern "C" {
 
 
     //Allocate new size for the array in bytes.
-    void va_capacity(
+    int va_capacity(
         variantArray *arr,
         unsigned short capacity);
 
@@ -357,7 +357,7 @@ extern "C" {
         variantArray *target);
 
 #endif //GX_DLMS_MICROCONTROLLER
-    
+
 #ifdef  __cplusplus
 }
 #endif

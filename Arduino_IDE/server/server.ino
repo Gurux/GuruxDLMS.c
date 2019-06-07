@@ -427,7 +427,7 @@ void setup() {
 }
 
 void loop() {
-  char tmp[HDLC_BUFFER_SIZE];
+  unsigned char tmp[HDLC_BUFFER_SIZE];
   unsigned short available;
   available = Serial.available();
   if (available > 0) {

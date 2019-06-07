@@ -1587,7 +1587,7 @@ int apdu_parsePDU(
             break;
         }
     }
-    if (afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
+    if (settings->authentication != DLMS_AUTHENTICATION_NONE && afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
     {
         *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
         *diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_MECHANISM_NAME_NOT_RECOGNISED;

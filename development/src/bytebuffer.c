@@ -205,17 +205,25 @@ int bb_insertUInt8(
 int bb_allocate(
     gxByteBuffer* arr,
     unsigned long index,
-    unsigned char dataSize)
+    unsigned long dataSize)
 #else
-int bb_setUInt8ByIndex(
+int bb_allocate(
     gxByteBuffer* arr,
     unsigned short index,
-    unsigned char dataSize)
+    unsigned short dataSize)
 #endif
 {
     if (!bb_isAttached(arr) && (arr->capacity == 0 || index + dataSize >= arr->capacity))
     {
-        arr->capacity += VECTOR_CAPACITY;
+        //If data is append fist time.
+        if (dataSize > VECTOR_CAPACITY || arr->capacity == 0)
+        {
+            arr->capacity += dataSize;
+        }
+        else
+        {
+            arr->capacity += VECTOR_CAPACITY;
+        }
         if (arr->size == 0)
         {
             arr->data = (unsigned char*)gxmalloc(arr->capacity);
@@ -230,7 +238,7 @@ int bb_setUInt8ByIndex(
             arr->data = tmp;
         }
     }
-    if (bb_getCapacity(arr) <= index + dataSize)
+    if (bb_getCapacity(arr) < index + dataSize)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }

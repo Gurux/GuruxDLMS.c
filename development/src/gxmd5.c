@@ -50,7 +50,7 @@ unsigned int gxmd5_H(unsigned int x, unsigned int y, unsigned int z)
     return x ^ y ^ z;
 }
 
-unsigned int gxmd5_I(unsigned int x, unsigned int y, unsigned int z)
+unsigned int gxmd5_I(unsigned long x, unsigned long y, unsigned long z)
 {
     return y ^ (x | ~z);
 }
@@ -60,34 +60,34 @@ unsigned int gxmd5_rotate_left(unsigned int x, int n)
     return (x << n) | (x >> (32 - n));
 }
 
-void gxmd5_FF(unsigned int *a, unsigned int b, unsigned int c, unsigned int d, unsigned int x, unsigned int s, unsigned long ac)
+void gxmd5_FF(unsigned long* a, unsigned long b, unsigned long c, unsigned long d, unsigned long x, unsigned long s, unsigned long ac)
 {
     *a = gxmd5_rotate_left(*a + gxmd5_F(b, c, d) + x + ac, s) + b;
 }
 
-void gxmd5_GG(unsigned int *a, unsigned int b, unsigned int c, unsigned int d, unsigned int x, unsigned int s, unsigned long ac) {
+void gxmd5_GG(unsigned long* a, unsigned long b, unsigned long c, unsigned long d, unsigned long x, unsigned long s, unsigned long ac) {
     *a = gxmd5_rotate_left(*a + gxmd5_G(b, c, d) + x + ac, s) + b;
 }
 
-void gxmd5_HH(unsigned int *a, unsigned int b, unsigned int c, unsigned int d, unsigned int x, unsigned int s, unsigned long ac) {
+void gxmd5_HH(unsigned long* a, unsigned long b, unsigned long c, unsigned long d, unsigned long x, unsigned long s, unsigned long ac) {
     *a = gxmd5_rotate_left(*a + gxmd5_H(b, c, d) + x + ac, s) + b;
 }
 
-void gxmd5_II(unsigned int *a, unsigned int b, unsigned int c, unsigned int d, unsigned int x, unsigned int s, unsigned long ac) {
+void gxmd5_II(unsigned long* a, unsigned long b, unsigned long c, unsigned long d, unsigned long x, unsigned long s, unsigned long ac) {
     *a = gxmd5_rotate_left(*a + gxmd5_I(b, c, d) + x + ac, s) + b;
 }
 
-void gxmd5_decode(unsigned int * output, unsigned char *input, unsigned int len)
+void gxmd5_decode(unsigned long* output, unsigned char* input, unsigned int len)
 {
     unsigned int i, j;
     for (i = 0, j = 0; j < len; i++, j += 4)
     {
-        output[i] = (input[j]) | (((unsigned int)input[j + 1]) << 8) |
-            (((unsigned int)input[j + 2]) << 16) | (((unsigned int)input[j + 3]) << 24);
+        output[i] = (input[j]) | (((unsigned long)input[j + 1]) << 8) |
+            (((unsigned long)input[j + 2]) << 16) | (((unsigned long)input[j + 3]) << 24);
     }
 }
 
-void gxmd5_encode(unsigned char * output, unsigned int *input, unsigned int len)
+void gxmd5_encode(unsigned char* output, unsigned long* input, unsigned int len)
 {
     unsigned int i, pos = 0;
     for (i = 0; i != len; ++i)
@@ -103,9 +103,9 @@ void gxmd5_encode(unsigned char * output, unsigned int *input, unsigned int len)
     }
 }
 
-void gxmd5_transform(unsigned char* block, unsigned int *state)
+void gxmd5_transform(unsigned char* block, unsigned long* state)
 {
-    unsigned int a = state[0], b = state[1], c = state[2], d = state[3], x[16];
+    unsigned long a = state[0], b = state[1], c = state[2], d = state[3], x[16];
     gxmd5_decode(x, block, 64);
 
     /* Round 1 */
@@ -186,7 +186,7 @@ void gxmd5_transform(unsigned char* block, unsigned int *state)
     state[3] += d;
 }
 
-int gxmd5_update(unsigned char* data, unsigned int len, unsigned char* buffer, unsigned int* count, unsigned int* state)
+int gxmd5_update(unsigned char* data, unsigned long len, unsigned char* buffer, unsigned long* count, unsigned long* state)
 {
     unsigned int i;
     // Number of bytes.
@@ -232,10 +232,10 @@ int gxmd5_encrypt(gxByteBuffer* data, gxByteBuffer* digest)
     // Number of bits (lo, hi)
     unsigned long count[2] = { 0, 0 };
     // Digest
-    unsigned int state[4] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
+    unsigned long state[4] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
     bb_capacity(digest, 16);
 
-    gxmd5_update(data->data, data->size, buffer, (unsigned int*)&count, (unsigned int*)&state);
+    gxmd5_update(data->data, data->size, buffer, count, state);
 
     static unsigned char padding[64] = {
         0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -245,15 +245,15 @@ int gxmd5_encrypt(gxByteBuffer* data, gxByteBuffer* digest)
 
     // Save number of bits
     unsigned char bits[8];
-    gxmd5_encode(bits, (unsigned int*)&count, 2);
+    gxmd5_encode(bits, count, 2);
 
     // Pad out to 56 mod 64.
     unsigned int index = count[0] / 8 % 64;
     unsigned int padLen = (index < 56) ? (56 - index) : (120 - index);
-    gxmd5_update(padding, padLen, buffer, (unsigned int*)&count, (unsigned int*)&state);
+    gxmd5_update(padding, padLen, buffer, count, state);
 
     // Append length (before padding)
-    gxmd5_update(bits, 8, buffer, (unsigned int*)&count, (unsigned int*)&state);
+    gxmd5_update(bits, 8, buffer, count, state);
 
     // Store state in digest
     gxmd5_encode(digest->data, state, 4);

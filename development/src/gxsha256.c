@@ -71,22 +71,22 @@ const unsigned long sha256_k[64] =
 }
 #define SHA2_PACK32(str, x)                   \
 {                                             \
-    *(x) =   ((unsigned int) *((str) + 3)      )    \
-           | ((unsigned int) *((str) + 2) <<  8)    \
-           | ((unsigned int) *((str) + 1) << 16)    \
-           | ((unsigned int) *((str) + 0) << 24);   \
+    *(x) =   ((unsigned long) *((str) + 3)      )    \
+           | ((unsigned long) *((str) + 2) <<  8)    \
+           | ((unsigned long) *((str) + 1) << 16)    \
+           | ((unsigned long) *((str) + 0) << 24);   \
 }
 
 
 void gxsha256_transform(unsigned long *h, const unsigned char *message, unsigned int block_nb)
 {
-    unsigned int w[64];
-    unsigned int wv[8];
-    unsigned int t1, t2;
+    unsigned long w[64];
+    unsigned long wv[8];
+    unsigned long t1, t2;
     const unsigned char *sub_block;
-    int i;
+    unsigned int i;
     int j;
-    for (i = 0; i < (int)block_nb; i++)
+    for (i = 0; i < block_nb; i++)
     {
         sub_block = message + (i << 6);
         for (j = 0; j < 16; j++)
@@ -150,7 +150,7 @@ int gxsha256_final(unsigned long *h, unsigned char *block, unsigned char *digest
 {
     unsigned int block_nb;
     unsigned int pm_len;
-    unsigned int len_b;
+    unsigned long len_b;
     int i;
     block_nb = (1 + ((64 - 9) < (len % 64)));
     len_b = (totalLen + len) << 3;

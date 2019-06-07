@@ -264,6 +264,7 @@ void svr_setInitialize(dlmsServerSettings * settings)
     if (settings->base.cipher.dedicatedKey != NULL)
     {
         bb_clear(settings->base.cipher.dedicatedKey);
+        gxfree(settings->base.cipher.dedicatedKey);
         settings->base.cipher.dedicatedKey = NULL;
     }
 #endif //DLMS_IGNORE_HIGH_GMAC

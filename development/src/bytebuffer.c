@@ -625,6 +625,15 @@ int bb_getInt16(
     return 0;
 }
 
+int bb_getUInt24(
+    gxByteBuffer* arr,
+    unsigned long* value)
+{
+    int ret = bb_getUInt24ByIndex(arr, arr->position, value);
+    arr->position += 3;
+    return ret;
+}
+
 int bb_getInt32(
     gxByteBuffer* arr,
     long* value)
@@ -633,6 +642,21 @@ int bb_getInt32(
     int ret = bb_getUInt32ByIndex(arr, arr->position, (unsigned long*)value);
     arr->position += 4;
     return ret;
+}
+
+int bb_getUInt24ByIndex(
+    gxByteBuffer* arr,
+    unsigned long index,
+    unsigned long* value)
+{
+    if (index + 3 > bb_size(arr))
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    *value = ((unsigned long)(arr->data)[index] << 16) |
+        ((unsigned long)(arr->data)[index + 1] << 8) |
+        ((unsigned long)(arr->data)[index + 2]);
+    return 0;
 }
 
 int bb_getUInt32ByIndex(

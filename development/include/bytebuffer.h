@@ -267,6 +267,10 @@ extern "C" {
         gxByteBuffer* bb,
         unsigned short* value);
 
+    int bb_getUInt24(
+        gxByteBuffer* bb,
+        unsigned long* value);
+
     int bb_getUInt32(
         gxByteBuffer* bb,
         unsigned long* value);
@@ -317,6 +321,11 @@ extern "C" {
         gxByteBuffer* bb,
         unsigned long index,
         unsigned short* value);
+
+    int bb_getUInt24ByIndex(
+        gxByteBuffer* bb,
+        unsigned long index,
+        unsigned long* value);
 
     int bb_getUInt32ByIndex(
         gxByteBuffer* bb,

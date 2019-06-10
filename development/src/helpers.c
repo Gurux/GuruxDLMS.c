@@ -194,6 +194,16 @@ int hlp_getObjectCount(gxByteBuffer* buff)
             }
             return value;
         }
+        else if (ch == 0x83)
+        {
+            unsigned long value;
+            ret = bb_getUInt24(buff, &value);
+            if (ret != 0)
+            {
+                return -1;
+            }
+            return value;
+        }
         else if (ch == 0x84)
         {
             unsigned long value;
@@ -231,6 +241,12 @@ int hlp_getObjectCount2(gxByteBuffer* buff, unsigned short* count)
         else if (ch == 0x82)
         {
             ret = bb_getUInt16(buff, count);
+        }
+        else if (ch == 0x83)
+        {
+            unsigned long value;
+            ret = bb_getUInt24(buff, &value);
+            *count = (unsigned short)value;
         }
         else if (ch == 0x84)
         {

@@ -934,7 +934,7 @@ unsigned char obj_attributeCount(gxObject* object)
     {
         if (object->version == 0)
         {
-            return 3;
+            return 5;
         }
         return 6;
     }

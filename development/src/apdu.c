@@ -1561,9 +1561,8 @@ int apdu_parsePDU(
             }
             if (apdu_parseUserInformation(settings, buff, ciphered, command) != 0)
             {
-                *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
-                *diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
-                return 0;
+                //Return confirmed service error.
+                return DLMS_ERROR_CODE_INVALID_TAG;
             }
             break;
         case BER_TYPE_CONTEXT: //0x80
@@ -1587,7 +1586,7 @@ int apdu_parsePDU(
             break;
         }
     }
-    if (settings->authentication != DLMS_AUTHENTICATION_NONE && afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
+    if (afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
     {
         *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
         *diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_MECHANISM_NAME_NOT_RECOGNISED;

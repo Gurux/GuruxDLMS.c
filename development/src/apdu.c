@@ -48,20 +48,20 @@ int apdu_getAuthenticationString(
 {
     unsigned char p[] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x02 };
     gxByteBuffer* callingAuthenticationValue = NULL;
+    // Add sender ACSE-requirements field component.
+    bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS);
+    bb_setUInt8(data, 2);
+    bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING);
+    bb_setUInt8(data, 0x80);
+    bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME);
+    // Len
+    bb_setUInt8(data, 7);
+    // OBJECT IDENTIFIER
+    bb_set(data, p, 6);
+    bb_setUInt8(data, settings->authentication);
     // If authentication is used.
     if (settings->authentication != DLMS_AUTHENTICATION_NONE)
     {
-        // Add sender ACSE-requirements field component.
-        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS);
-        bb_setUInt8(data, 2);
-        bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING);
-        bb_setUInt8(data, 0x80);
-        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME);
-        // Len
-        bb_setUInt8(data, 7);
-        // OBJECT IDENTIFIER
-        bb_set(data, p, 6);
-        bb_setUInt8(data, settings->authentication);
         // Add Calling authentication information.
         if (settings->authentication == DLMS_AUTHENTICATION_LOW)
         {
@@ -1368,10 +1368,6 @@ int apdu_parsePDU(
             {
                 return ret;
             }
-            if (ciphered)
-            {
-                settings->userId = len;
-            }
             break;
             //Client CalledAeInvocationId.
         case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLED_AE_INVOCATION_ID://0xA5
@@ -1586,10 +1582,11 @@ int apdu_parsePDU(
             break;
         }
     }
-    if (afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
+    if (afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED &&
+        !(afu == DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE && settings->authentication == DLMS_AUTHENTICATION_NONE))
     {
         *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
-        *diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_MECHANISM_NAME_NOT_RECOGNISED;
+        *diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE;
         return 0;
     }
     //All meters don't send user-information if connection is failed.

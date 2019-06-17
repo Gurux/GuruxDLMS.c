@@ -2746,15 +2746,30 @@ int cosem_getmMbusClient(
 }
 #endif //DLMS_IGNORE_MBUS_CLIENT
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
+
+int cosem_add(gxByteBuffer* data, char* value, unsigned char len)
+{
+    int ret;
+    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+        (ret = hlp_setObjectCount(len, data)) != 0 ||
+        (ret = bb_set(data, value, len)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+
 int cosem_getModemConfiguration(
+    dlmsSettings* settings,
     gxValueEventArg * e)
 {
     int ret = 0, pos;
     gxModemInitialisation* mi;
     gxByteBuffer* ba;
+    gxModemConfiguration* target = ((gxModemConfiguration*)e->target);
     if (e->index == 2)
     {
-        ret = var_setEnum(&e->value, ((gxModemConfiguration*)e->target)->communicationSpeed);
+        ret = var_setEnum(&e->value, target->communicationSpeed);
     }
     else if (e->index == 3)
     {
@@ -2765,13 +2780,13 @@ int cosem_getModemConfiguration(
         gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
-            (ret = hlp_setObjectCount(((gxModemConfiguration*)e->target)->initialisationStrings.size, data)) != 0)
+            (ret = hlp_setObjectCount(target->initialisationStrings.size, data)) != 0)
         {
             return ret;
         }
-        for (pos = 0; pos != ((gxModemConfiguration*)e->target)->initialisationStrings.size; ++pos)
+        for (pos = 0; pos != target->initialisationStrings.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&((gxModemConfiguration*)e->target)->initialisationStrings, pos, (void**)& mi)) != 0 ||
+            if ((ret = arr_getByIndex(&target->initialisationStrings, pos, (void**)& mi)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Add request.
@@ -2798,19 +2813,48 @@ int cosem_getModemConfiguration(
         }
         gxByteBuffer* data = e->value.byteArr;
         e->byteArray = 1;
-        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
-            (ret = hlp_setObjectCount(((gxModemConfiguration*)e->target)->modemProfile.size, data)) != 0)
+        //Modem profile is defined on DLMS standard. Add default values.
+        if (settings->server && target->modemProfile.size == 0)
         {
-            return ret;
-        }
-        for (pos = 0; pos != ((gxModemConfiguration*)e->target)->modemProfile.size; ++pos)
-        {
-            if ((ret = arr_getByIndex(&((gxModemConfiguration*)e->target)->modemProfile, pos, (void**)& ba)) != 0 ||
-                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-                (ret = hlp_setObjectCount(ba->size, data)) != 0 ||
-                (ret = bb_set(data, ba->data, ba->size)) != 0)
+            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
+                (ret = hlp_setObjectCount(17, data)) != 0 ||
+                (ret = cosem_add(data, "OK", 2) != 0) ||
+                (ret = cosem_add(data, "CONNECT", 7) != 0) ||
+                (ret = cosem_add(data, "RING", 4) != 0) ||
+                (ret = cosem_add(data, "NO CARRIER", 10) != 0) ||
+                (ret = cosem_add(data, "ERROR", 5) != 0) ||
+                (ret = cosem_add(data, "CONNECT 1200", 12) != 0) ||
+                (ret = cosem_add(data, "NO DIAL TONE", 12) != 0) ||
+                (ret = cosem_add(data, "BUSY", 4) != 0) ||
+                (ret = cosem_add(data, "NO ANSWER", 9) != 0) ||
+                (ret = cosem_add(data, "CONNECT 600", 11) != 0) ||
+                (ret = cosem_add(data, "CONNECT 2400", 11) != 0) ||
+                (ret = cosem_add(data, "CONNECT 4800", 11) != 0) ||
+                (ret = cosem_add(data, "CONNECT 9600", 11) != 0) ||
+                (ret = cosem_add(data, "CONNECT 14 400", 14) != 0) ||
+                (ret = cosem_add(data, "CONNECT 28 800", 14) != 0) ||
+                (ret = cosem_add(data, "CONNECT 33 600", 14) != 0) ||
+                (ret = cosem_add(data, "CONNECT 56 000", 14) != 0))
             {
-                break;
+                return ret;
+            }
+        }
+        else
+        {
+            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
+                (ret = hlp_setObjectCount(target->modemProfile.size, data)) != 0)
+            {
+                return ret;
+            }
+            for (pos = 0; pos != target->modemProfile.size; ++pos)
+            {
+                if ((ret = arr_getByIndex(&target->modemProfile, pos, (void**)& ba)) != 0 ||
+                    (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                    (ret = hlp_setObjectCount(ba->size, data)) != 0 ||
+                    (ret = bb_set(data, ba->data, ba->size)) != 0)
+                {
+                    break;
+                }
             }
         }
     }
@@ -4513,7 +4557,7 @@ int cosem_getValue(
 #endif //DLMS_IGNORE_MBUS_CLIENT
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
-        ret = cosem_getModemConfiguration(e);
+        ret = cosem_getModemConfiguration(settings, e);
         break;
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_PPP_SETUP

@@ -1177,7 +1177,7 @@ int time_fromUnixTime(unsigned long epoch, struct tm* time)
 #else
     time_t tmp = epoch;
 #if _MSC_VER > 1000
-    *time = *gmtime(&tmp);
+    return gmtime_s(time, &tmp);
 #else
     *time = *gmtime(&tmp);
 #endif

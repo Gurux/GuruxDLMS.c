@@ -57,9 +57,9 @@ extern "C" {
 
     //Convert UTC date time to meter date time.
     int clock_utcToMeterTime(
-        gxClock* object, 
+        gxClock* object,
         gxtime* value);
-    
+
 #endif // DLMS_IGNORE_CLOCK
 
     int cosem_getActionSchedule(
@@ -125,6 +125,7 @@ extern "C" {
         gxValueEventArg *e);
 
     int cosem_getModemConfiguration(
+        dlmsSettings* settings,
         gxValueEventArg *e);
 
     int cosem_getPppSetup(
@@ -190,7 +191,7 @@ extern "C" {
     int compactData_getValues(
         dlmsSettings* settings,
         gxByteBuffer* templateDescription,
-        gxByteBuffer* buffer, 
+        gxByteBuffer* buffer,
         variantArray* values);
 #endif //DLMS_IGNORE_COMPACT_DATA
 

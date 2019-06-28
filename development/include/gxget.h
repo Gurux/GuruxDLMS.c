@@ -41,14 +41,14 @@ extern "C" {
 #include "dlmssettings.h"
 
     int cosem_getData(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getRegister(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
 #ifndef DLMS_IGNORE_CLOCK
     int cosem_getClock(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     //Update Daylight Saving time flag if DST is used.
     void clock_updateDST(
@@ -63,136 +63,150 @@ extern "C" {
 #endif // DLMS_IGNORE_CLOCK
 
     int cosem_getActionSchedule(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getActivityCalendar(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getAssociationLogicalName(
         dlmsSettings* settings,
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     int cosem_getAssociationShortName(
         dlmsSettings* settings,
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
     int cosem_getAutoAnswer(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getAutoConnect(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getDemandRegister(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getMacAddressSetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getExtendedRegister(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getGprsSetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getSecuritySetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getIecHdlcSetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getIecLocalPortSetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getIP4Setup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getProfileGeneric(
         dlmsSettings* settings,
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getMbusSlavePortSetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getDisconnectControl(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getLimiter(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getmMbusClient(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getModemConfiguration(
         dlmsSettings* settings,
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getPppSetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getRegisterActivation(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getRegisterMonitor(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getSapAssignment(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getSchedule(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getScriptTable(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getSpecialDaysTable(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getTcpUdpSetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getMbusMasterPortSetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getMessageHandler(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getPushSetup(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getValue(
         dlmsSettings* settings,
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     int cosem_getColumns(
         gxArray* captureObjects,
         unsigned char selector,
-        dlmsVARIANT *parameters,
-        gxArray *columns);
+        dlmsVARIANT* parameters,
+        gxArray* columns);
 
     int cosem_getRow(
         gxArray* table,
         int index,
-        gxArray *captureObjects,
+        gxArray* captureObjects,
         gxArray* columns,
         gxByteBuffer* data);
 
     int cosem_getTariffPlan(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
 
     int cosem_getGsmDiagnostic(
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
+
     //Convert compact data buffer to array of values.
     int compactData_getValues(
         dlmsSettings* settings,
         gxByteBuffer* templateDescription,
         gxByteBuffer* buffer,
         variantArray* values);
+
+#ifdef DLMS_ITALIAN_STANDARD
+    //Convert compact data buffer to array of values.
+    //Some Italy meters require that there is a array count in data.
+    //This is against compact data structure defined in DLMS standard.
+    int compactData_getValues2(
+        dlmsSettings* settings,
+        gxByteBuffer* templateDescription,
+        gxByteBuffer* buffer,
+        variantArray* values,
+        unsigned char appendAA);
+#endif //DLMS_ITALIAN_STANDARD
+
 #endif //DLMS_IGNORE_COMPACT_DATA
 
 #ifdef  __cplusplus

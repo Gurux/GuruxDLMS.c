@@ -724,7 +724,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
 #else
         time_addTime(&object->time, 0, -object->time.value.tm_min + minutes, -object->time.value.tm_sec);
 #endif // DLMS_USE_EPOCH_TIME
-        }
+    }
     // Sets the meter's time to the nearest minute.
     else if (index == 3)
     {
@@ -738,7 +738,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
             time_addTime(&object->time, 0, 1, 0);
         }
         time_addTime(&object->time, 0, 0, -s);
-}
+    }
     //Adjust to preset time.
     else if (index == 4)
     {
@@ -1006,6 +1006,13 @@ int cosem_captureCompactData(dlmsSettings* settings,
                 if (value.vt == DLMS_DATA_TYPE_STRUCTURE ||
                     value.vt == DLMS_DATA_TYPE_ARRAY)
                 {
+#ifdef DLMS_ITALIAN_STANDARD
+                    //Some meters require that there is a array count in data.
+                    if (value.vt == DLMS_DATA_TYPE_ARRAY && object->appendAA)
+                    {
+                        bb_setUInt8(&object->buffer, value.Arr->size);
+                    }
+#endif //DLMS_ITALIAN_STANDARD
                     if ((ret = compactDataAppendArray(&value, &object->buffer, ((gxCaptureObject*)kv->value)->dataIndex)) != 0)
                     {
                         var_clear(&value);

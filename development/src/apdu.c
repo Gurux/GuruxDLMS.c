@@ -441,13 +441,17 @@ int apdu_parseUserInformation(
         if (tag != 0)
         {
             //Return error if ciphering is not used.
-            if (!ciphered)
+            if (!ciphered || settings->cipher.security != DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
             {
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
             if ((ret = bb_getUInt8(data, &len)) != 0)
             {
                 return ret;
+            }
+            if (len != 16)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
             if (settings->cipher.dedicatedKey == NULL)
             {
@@ -807,6 +811,10 @@ int apdu_updatePassword(
     }
     else
     {
+        if (len < 8 || len > 64)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
         bb_clear(&settings->ctoSChallenge);
         bb_set2(&settings->ctoSChallenge, buff, buff->position, len);
     }
@@ -1449,7 +1457,7 @@ int apdu_parsePDU(
             {
                 return ret;
             }
-            if (ciphered)
+            if (ciphered && len == 0)
             {
                 settings->userId = len;
             }

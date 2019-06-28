@@ -1685,8 +1685,24 @@ int getCompactArray(
                     int pos1;
                     variantArray tmp2;
                     va_init(&tmp2);
-                    getCompactArrayItem2(buff, it->Arr, &tmp2, 1);
-                    if ((ret = va_getByIndex(&tmp2, 0, &it2)) != 0)
+#ifdef DLMS_ITALIAN_STANDARD
+                    //Some Italy meters require that there is a array count in data.
+                    if (info->appendAA)
+                    {
+                        if ((ret = hlp_getObjectCount2(buff, &len)) != 0)
+                        {
+                            va_clear(&cols);
+                            return ret;
+                        }
+                        if (it->Arr->size != len)
+                        {
+                            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+                        }
+                    }
+#endif //DLMS_ITALIAN_STANDARD
+
+                    if ((ret = getCompactArrayItem2(buff, it->Arr, &tmp2, 1)) != 0 ||
+                        (ret = va_getByIndex(&tmp2, 0, &it2)) != 0)
                     {
                         va_clear(&tmp2);
                         va_clear(&cols);
@@ -3736,7 +3752,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
             }
         }
         //If pre-set connection is made.
-        else if (settings->sourceSystemTitle.size == 0)
+        else if (settings->preEstablishedSystemTitle != NULL && settings->sourceSystemTitle.size == 0)
         {
 #ifndef DLMS_IGNORE_SERVER
             if (settings->server && settings->connected == DLMS_CONNECTION_STATE_NONE && !data->preEstablished)
@@ -4091,7 +4107,7 @@ int dlms_getPdu(
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     // Get data only blocks if SN is used. This is faster.
-    if (cmd == DLMS_COMMAND_READ_RESPONSE
+    if (ret == 0 && cmd == DLMS_COMMAND_READ_RESPONSE
         && data->commandType == DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT
         && (data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
     {
@@ -4100,7 +4116,7 @@ int dlms_getPdu(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
     // Get data if all data is read or we want to peek data.
-    if (data->data.position != data->data.size
+    if (ret == 0 && data->data.position != data->data.size
         && (
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
             cmd == DLMS_COMMAND_READ_RESPONSE ||

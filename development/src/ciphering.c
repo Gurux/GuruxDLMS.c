@@ -48,7 +48,7 @@
 #include "../include/helpers.h"
 #include "../include/gxaes.h"
 
-void cip_init(ciphering* target)
+void cip_init(ciphering * target)
 {
     static const unsigned char DEFAUlT_BLOCK_CIPHER_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
     static const unsigned char DEFAULT_SYSTEM_TITLE[] = { 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48 };
@@ -87,9 +87,9 @@ void cip_clear(ciphering* target)
 
 int cip_getAuthenticatedData(
     DLMS_SECURITY security,
-    gxByteBuffer *authenticationKey,
-    gxByteBuffer *plainText,
-    gxByteBuffer *result)
+    gxByteBuffer* authenticationKey,
+    gxByteBuffer* plainText,
+    gxByteBuffer* result)
 {
     bb_clear(result);
     if (security == DLMS_SECURITY_AUTHENTICATION)
@@ -373,8 +373,8 @@ d##3 = TE0(s##3) ^ TE1(s##0) ^ TE2(s##1) ^ TE3(s##2) ^ rk[4 * i + 3]
 * @param val
 */
 static void cip_xor(
-    unsigned char *dst,
-    const unsigned char *src)
+    unsigned char* dst,
+    const unsigned char* src)
 {
     int pos;
     for (pos = 0; pos != 16; ++pos)
@@ -391,7 +391,7 @@ static void cip_xor(
     */
 }
 
-static void shift_right_block(unsigned char *v)
+static void shift_right_block(unsigned char* v)
 {
     unsigned long val = GETU32(v + 12);
     val >>= 1;
@@ -418,7 +418,7 @@ static void shift_right_block(unsigned char *v)
     PUT32(v, val);
 }
 
-static void cip_multiplyH(const unsigned char *x, const unsigned char* y, unsigned char * z)
+static void cip_multiplyH(const unsigned char* x, const unsigned char* y, unsigned char* z)
 {
     unsigned char tmp[16];
     int i, j;
@@ -452,10 +452,10 @@ static void cip_multiplyH(const unsigned char *x, const unsigned char* y, unsign
 * Count GHash.
 */
 static void cip_getGHash(
-    const unsigned char *h,
-    const unsigned char *x,
+    const unsigned char* h,
+    const unsigned char* x,
     int xlen,
-    unsigned char *y)
+    unsigned char* y)
 {
     int m, i;
     const unsigned char* xpos = x;
@@ -509,7 +509,7 @@ static void cip_init_j0(
     }
 }
 
-static void cip_inc32(unsigned char *block)
+static void cip_inc32(unsigned char* block)
 {
     unsigned long val;
     val = GETU32(block + 16 - 4);
@@ -517,12 +517,12 @@ static void cip_inc32(unsigned char *block)
     PUT32(block + 16 - 4, val);
 }
 
-static void cip_gctr(unsigned long *aes, const unsigned char *icb, const unsigned char *x, int xlen, unsigned char *y)
+static void cip_gctr(unsigned long* aes, const unsigned char* icb, const unsigned char* x, int xlen, unsigned char* y)
 {
     size_t i, n, last;
     unsigned char cb[16], tmp[16];
-    const unsigned char *xpos = x;
-    unsigned char *ypos = y;
+    const unsigned char* xpos = x;
+    unsigned char* ypos = y;
 
     if (xlen == 0)
     {
@@ -553,7 +553,7 @@ static void cip_gctr(unsigned long *aes, const unsigned char *icb, const unsigne
     }
 }
 
-static void aes_gcm_gctr(unsigned long *aes, const unsigned char *J0, const unsigned char *in, int len, unsigned char *out)
+static void aes_gcm_gctr(unsigned long* aes, const unsigned char* J0, const unsigned char* in, int len, unsigned char* out)
 {
     unsigned char J0inc[16];
     if (len == 0)
@@ -566,8 +566,8 @@ static void aes_gcm_gctr(unsigned long *aes, const unsigned char *J0, const unsi
     cip_gctr(aes, J0inc, in, len, out);
 }
 
-static void aes_gcm_ghash(const unsigned char *H, const unsigned char *aad, int aad_len,
-    const unsigned char *crypt, int crypt_len, unsigned char *S)
+static void aes_gcm_ghash(const unsigned char* H, const unsigned char* aad, int aad_len,
+    const unsigned char* crypt, int crypt_len, unsigned char* S)
 {
     unsigned char len_buf[16];
     cip_getGHash(H, aad, aad_len, S);
@@ -581,16 +581,17 @@ static void aes_gcm_ghash(const unsigned char *H, const unsigned char *aad, int 
     cip_getGHash(H, len_buf, sizeof(len_buf), S);
 }
 
-int cip_encrypt(
-    ciphering *settings,
+int cip_crypt(
+    ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
     unsigned long frameCounter,
     unsigned char tag,
-    gxByteBuffer *systemTitle,
-    gxByteBuffer *key,
-    gxByteBuffer *input,
-    gxByteBuffer *output)
+    gxByteBuffer* systemTitle,
+    gxByteBuffer* key,
+    gxByteBuffer* input,
+    gxByteBuffer* output,
+    unsigned char encrypt)
 {
     unsigned short headerSize = 0;
     int ret;
@@ -600,7 +601,7 @@ int cip_encrypt(
     unsigned char S[16] = { 0 };
     gxByteBuffer nonse;
     gxByteBuffer aad;
-    if (systemTitle == NULL || systemTitle->size != 8)
+    if (key == NULL || key->size != 16 || systemTitle == NULL || systemTitle->size != 8)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
@@ -702,8 +703,15 @@ int cip_encrypt(
             bb_zero(output, output->size, add);
             output->size -= add;
         }
-        aes_gcm_ghash(H, aad.data, aad.size, output->data + headerSize, input->size, S);
-        cip_gctr(tmp, J0, S, aad.size, output->data + output->size);
+        if (encrypt)
+        {
+            aes_gcm_ghash(H, aad.data, aad.size, output->data + headerSize, input->size, S);
+        }
+        else
+        {
+            aes_gcm_ghash(H, aad.data, aad.size, input->data + headerSize, input->size, S);
+        }
+        cip_gctr(tmp, J0, S, sizeof(S), output->data + output->size);
         output->size += 12;
     }
     bb_clear(&nonse);
@@ -711,12 +719,34 @@ int cip_encrypt(
     return 0;
 }
 
+int cip_encrypt(
+    ciphering* settings,
+    DLMS_SECURITY security,
+    DLMS_COUNT_TYPE type,
+    unsigned long frameCounter,
+    unsigned char tag,
+    gxByteBuffer* systemTitle,
+    gxByteBuffer* key,
+    gxByteBuffer* input,
+    gxByteBuffer* output)
+{
+    return cip_crypt(
+        settings,
+        security,
+        type,
+        frameCounter,
+        tag,
+        systemTitle,
+        key,
+        input,
+        output, 1);
+}
 int cip_decrypt(
-    ciphering *settings,
-    gxByteBuffer *title,
-    gxByteBuffer *key,
-    gxByteBuffer *data,
-    DLMS_SECURITY *security)
+    ciphering* settings,
+    gxByteBuffer* title,
+    gxByteBuffer* key,
+    gxByteBuffer* data,
+    DLMS_SECURITY* security)
 {
     unsigned short length;
     int ret;
@@ -782,9 +812,16 @@ int cip_decrypt(
     {
         return ret;
     }
-    *security = (DLMS_SECURITY)ch;
+    *security = (DLMS_SECURITY)ch & 0x30;
+    //If Key_Set or authentication or encryption is not used.
+    if (ch & 0x40 || *security == DLMS_SECURITY_NONE)
+    {
+        bb_clear(&systemTitle);
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     if ((ret = bb_getUInt32(data, &frameCounter)) != 0)
     {
+        bb_clear(&systemTitle);
         return ret;
     }
     if (settings->security == DLMS_SECURITY_NONE)
@@ -802,7 +839,7 @@ int cip_decrypt(
         //Skip tag from data.
         data->size = data->position + length;
         // Check tag.
-        if ((ret = cip_encrypt(
+        if ((ret = cip_crypt(
             settings,
             *security,
             DLMS_COUNT_TYPE_TAG,
@@ -811,7 +848,7 @@ int cip_decrypt(
             title,
             key,
             data,
-            &countTag)) == 0)
+            &countTag, 0)) == 0)
         {
             // Check tag.
             if (memcmp(tag.data, countTag.data, 12) != 0)
@@ -838,7 +875,7 @@ int cip_decrypt(
         bb_set2(&tag, data, data->position, 12);
     }
     bb_clear(data);
-    if ((ret = cip_encrypt(
+    if ((ret = cip_crypt(
         settings,
         *security,
         DLMS_COUNT_TYPE_DATA,
@@ -847,7 +884,7 @@ int cip_decrypt(
         title,
         key,
         &ciphertext,
-        data)) != 0)
+        data, 0)) != 0)
     {
         bb_clear(&ciphertext);
         bb_clear(&tag);
@@ -857,13 +894,18 @@ int cip_decrypt(
     //Check tag.
     if (*security == DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
     {
+        // Check tag.
+        if (memcmp(tag.data, data->data + data->size - 12, 12) != 0)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_TAG;
+        }
         //Remove tag.
         data->size = data->size - 12;
     }
     bb_clear(&ciphertext);
     bb_clear(&systemTitle);
     bb_clear(&tag);
-    return 0;
+    return ret;
 }
 
 static const unsigned char WRAP_IV[] = { 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6 };
@@ -948,7 +990,7 @@ int cip_decryptKey(
             t = n * j + i;
             for (k = 1; t != 0; k++)
             {
-                v = (unsigned char) t;
+                v = (unsigned char)t;
                 buf[sizeof(WRAP_IV) - k] ^= v;
                 t = (unsigned short)(t >> 8);
             }

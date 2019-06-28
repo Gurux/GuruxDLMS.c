@@ -2308,6 +2308,10 @@ extern "C" {
         unsigned char templateId;
         gxByteBuffer templateDescription;
         DLMS_CAPTURE_METHOD captureMethod;
+#ifdef DLMS_ITALIAN_STANDARD
+        //Some meters require that there is a array count in data.
+        unsigned char appendAA;
+#endif //DLMS_ITALIAN_STANDARD
     } gxCompactData;
 #endif //DLMS_IGNORE_COMPACT_DATA
 

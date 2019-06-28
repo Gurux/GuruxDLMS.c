@@ -498,6 +498,7 @@ int cosem_init2(
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
         break;
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
+        object->version = 1;
         break;
     case DLMS_OBJECT_TYPE_PPP_SETUP:
         break;

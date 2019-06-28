@@ -253,7 +253,7 @@ int svr_updateShortNames(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 
-void svr_setInitialize(dlmsServerSettings * settings)
+void svr_setInitialize(dlmsServerSettings* settings)
 {
     if (settings->base.protocolVersion != NULL)
     {
@@ -285,7 +285,7 @@ void svr_setInitialize(dlmsServerSettings * settings)
 }
 
 void svr_reset(
-    dlmsServerSettings * settings)
+    dlmsServerSettings* settings)
 {
     svr_setInitialize(settings);
     resetFrameSequence(&settings->base);
@@ -302,8 +302,8 @@ void svr_reset(
     * @return Reply to the client.
     */
 int svr_HandleAarqRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data)
 {
     unsigned char command = 0;
     int ret;
@@ -488,8 +488,8 @@ int svr_HandleAarqRequest(
  * @return Returns returned UA packet.
  */
 int svr_handleSnrmRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data)
 {
     int ret;
     unsigned char len;
@@ -567,8 +567,8 @@ int svr_handleSnrmRequest(
  * @return Disconnect request.
  */
 int svr_generateDisconnectRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data)
 {
     int len;
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
@@ -604,10 +604,10 @@ int svr_generateDisconnectRequest(
 }
 
 int svr_reportError(
-    dlmsServerSettings * settings,
+    dlmsServerSettings* settings,
     DLMS_COMMAND command,
     DLMS_ERROR_CODE error,
-    gxByteBuffer * reply)
+    gxByteBuffer* reply)
 {
     int ret;
     DLMS_COMMAND cmd;
@@ -632,8 +632,16 @@ int svr_reportError(
         cmd = DLMS_COMMAND_METHOD_RESPONSE;
         break;
     default:
-        // Return HW error and close connection.
-        cmd = DLMS_COMMAND_NONE;
+        if (settings->info.encryptedCommand != 0)
+        {
+            //Do nothing if ciphered content is invalid.
+            return 0;
+        }
+        else
+        {
+            // Return HW error and close connection.
+            cmd = DLMS_COMMAND_NONE;
+        }
         break;
     }
     bb_init(&data);
@@ -668,7 +676,7 @@ int svr_reportError(
 #else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    }
+        }
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         ret = dlms_getHdlcFrame(&settings->base, 0, &data, reply);
@@ -685,13 +693,13 @@ int svr_reportError(
     }
     bb_clear(&data);
     return ret;
-}
+    }
 
 int svr_handleSetRequest2(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data,
+    dlmsServerSettings* settings,
+    gxByteBuffer* data,
     unsigned char type,
-    gxLNParameters * p)
+    gxLNParameters* p)
 {
     gxValueEventArg* e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
     gxValueEventCollection list;
@@ -831,9 +839,9 @@ int svr_handleSetRequest2(
 }
 
 int svr_hanleSetRequestWithDataBlock(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data,
-    gxLNParameters * p)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data,
+    gxLNParameters* p)
 {
     int ret;
     unsigned long blockNumber;
@@ -903,11 +911,11 @@ int svr_hanleSetRequestWithDataBlock(
     * @return
     */
 int svr_generateConfirmedServiceError(
-    dlmsServerSettings * settings,
+    dlmsServerSettings* settings,
     DLMS_CONFIRMED_SERVICE_ERROR service,
     DLMS_SERVICE_ERROR type,
     unsigned char code,
-    gxByteBuffer * data)
+    gxByteBuffer* data)
 {
     bb_clear(data);
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
@@ -922,8 +930,8 @@ int svr_generateConfirmedServiceError(
 }
 
 int svr_handleSetRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data)
 {
     gxLNParameters p;
     unsigned char invokeId, type;
@@ -983,8 +991,8 @@ int svr_handleSetRequest(
 
 
 int svr_getRequestNormal(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data,
+    dlmsServerSettings* settings,
+    gxByteBuffer* data,
     unsigned char invokeId)
 {
     gxValueEventCollection list;
@@ -1138,8 +1146,8 @@ int svr_getRequestNormal(
 }
 
 int svr_getRequestNextDataBlock(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data,
+    dlmsServerSettings* settings,
+    gxByteBuffer* data,
     unsigned char invokeId)
 {
     gxValueEventArg* e;
@@ -1234,8 +1242,8 @@ int svr_getRequestNextDataBlock(
 }
 
 int svr_getRequestWithList(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data,
+    dlmsServerSettings* settings,
+    gxByteBuffer* data,
     unsigned char invokeId)
 {
     gxValueEventArg* e;
@@ -1382,8 +1390,8 @@ int svr_getRequestWithList(
 }
 
 int svr_handleGetRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data)
 {
     int ret;
     DLMS_GET_COMMAND_TYPE type;
@@ -1447,7 +1455,7 @@ int svr_handleGetRequest(
  *
  * @param sn
  */
-int svr_findSNObject(dlmsServerSettings * settings, int sn, gxSNInfo * i)
+int svr_findSNObject(dlmsServerSettings* settings, int sn, gxSNInfo* i)
 {
     unsigned short pos;
     int ret;
@@ -1495,12 +1503,12 @@ int svr_findSNObject(dlmsServerSettings * settings, int sn, gxSNInfo * i)
 }
 
 int svr_handleRead(
-    dlmsServerSettings * settings,
+    dlmsServerSettings* settings,
     DLMS_VARIABLE_ACCESS_SPECIFICATION type,
-    gxByteBuffer * data,
-    gxValueEventCollection * list,
-    gxValueEventCollection * reads,
-    gxValueEventCollection * actions)
+    gxByteBuffer* data,
+    gxValueEventCollection* list,
+    gxValueEventCollection* reads,
+    gxValueEventCollection* actions)
 {
     gxSNInfo info;
     gxValueEventArg* e;
@@ -1575,10 +1583,10 @@ int svr_handleRead(
 *            Response type.
 */
 int svr_getReadData(
-    dlmsServerSettings * settings,
-    gxValueEventCollection * list,
-    gxByteBuffer * data,
-    DLMS_SINGLE_READ_RESPONSE * type,
+    dlmsServerSettings* settings,
+    gxValueEventCollection* list,
+    gxByteBuffer* data,
+    DLMS_SINGLE_READ_RESPONSE* type,
     unsigned char* multipleBlocks)
 {
     int ret;
@@ -1656,8 +1664,8 @@ int svr_getReadData(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int svr_handleReadBlockNumberAccess(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data)
 {
     gxSNParameters p;
     gxValueEventArg* e;
@@ -1752,9 +1760,9 @@ int svr_handleReadBlockNumberAccess(
 }
 
 int svr_handleReadDataBlockAccess(
-    dlmsServerSettings * settings,
+    dlmsServerSettings* settings,
     DLMS_COMMAND command,
-    gxByteBuffer * data,
+    gxByteBuffer* data,
     int cnt)
 {
     gxSNParameters p;
@@ -1849,10 +1857,10 @@ int svr_handleReadDataBlockAccess(
 }
 
 int svr_returnSNError(
-    dlmsServerSettings * settings,
+    dlmsServerSettings* settings,
     DLMS_COMMAND cmd,
     DLMS_ERROR_CODE error,
-    gxByteBuffer * data)
+    gxByteBuffer* data)
 {
     int ret;
     gxByteBuffer bb;
@@ -1870,8 +1878,8 @@ int svr_returnSNError(
  * Handle read request.
  */
 int svr_handleReadRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data)
 {
     DLMS_SINGLE_READ_RESPONSE requestType;
     gxSNParameters p;
@@ -1997,8 +2005,8 @@ int svr_handleReadRequest(
 }
 
 int svr_handleWriteRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data)
 {
     gxSNParameters p;
     int ret = 0;
@@ -2172,8 +2180,8 @@ int svr_handleWriteRequest(
 * @return Reply.
 */
 int svr_handleMethodRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data)
 {
     DLMS_OBJECT_TYPE ci;
     gxValueEventArg* e;
@@ -2329,8 +2337,8 @@ int svr_handleMethodRequest(
 *            Received data.
 */
 int svr_handleReleaseRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data) {
+    dlmsServerSettings* settings,
+    gxByteBuffer* data) {
     bb_clear(data);
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
@@ -2363,10 +2371,10 @@ int svr_handleReleaseRequest(
 }
 
 int svr_handleCommand(
-    dlmsServerSettings * settings,
+    dlmsServerSettings* settings,
     DLMS_COMMAND cmd,
-    gxByteBuffer * data,
-    gxByteBuffer * reply)
+    gxByteBuffer* data,
+    gxByteBuffer* reply)
 {
     int ret = 0;
     unsigned char frame = 0;
@@ -2471,26 +2479,26 @@ int svr_handleCommand(
 }
 
 int svr_handleRequest(
-    dlmsServerSettings * settings,
-    gxByteBuffer * data,
-    gxByteBuffer * reply)
+    dlmsServerSettings* settings,
+    gxByteBuffer* data,
+    gxByteBuffer* reply)
 {
     return svr_handleRequest2(settings, data->data, (unsigned short)(data->size - data->position), reply);
 }
 
 int svr_handleRequest3(
-    dlmsServerSettings * settings,
+    dlmsServerSettings* settings,
     unsigned char data,
-    gxByteBuffer * reply)
+    gxByteBuffer* reply)
 {
     return svr_handleRequest2(settings, &data, 1, reply);
 }
 
 int svr_handleRequest2(
-    dlmsServerSettings * settings,
+    dlmsServerSettings* settings,
     unsigned char* buff,
     unsigned short size,
-    gxByteBuffer * reply)
+    gxByteBuffer* reply)
 {
     unsigned char first;
     int ret;
@@ -2742,7 +2750,7 @@ int svr_handleRequest2(
     return ret;
 }
 
-int handleInactivityTimeout(dlmsServerSettings * settings)
+int handleInactivityTimeout(dlmsServerSettings* settings)
 {
     //Check inactivity timeout.
     unsigned char inactivity = 0;
@@ -2770,7 +2778,7 @@ int handleInactivityTimeout(dlmsServerSettings * settings)
 }
 
 int svr_run(
-    dlmsServerSettings * settings)
+    dlmsServerSettings* settings)
 {
     return handleInactivityTimeout(settings);
 }

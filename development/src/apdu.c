@@ -46,19 +46,23 @@ int apdu_getAuthenticationString(
     dlmsSettings* settings,
     gxByteBuffer* data)
 {
-    unsigned char p[] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x02 };
     gxByteBuffer* callingAuthenticationValue = NULL;
-    // Add sender ACSE-requirements field component.
-    bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS);
-    bb_setUInt8(data, 2);
-    bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING);
-    bb_setUInt8(data, 0x80);
-    bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME);
-    // Len
-    bb_setUInt8(data, 7);
-    // OBJECT IDENTIFIER
-    bb_set(data, p, 6);
-    bb_setUInt8(data, settings->authentication);
+    if (settings->authentication != DLMS_AUTHENTICATION_NONE ||
+        settings->cipher.security != DLMS_SECURITY_NONE)
+    {
+        unsigned char p[] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x02 };
+        // Add sender ACSE-requirements field component.
+        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS);
+        bb_setUInt8(data, 2);
+        bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING);
+        bb_setUInt8(data, 0x80);
+        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME);
+        // Len
+        bb_setUInt8(data, 7);
+        // OBJECT IDENTIFIER
+        bb_set(data, p, 6);
+        bb_setUInt8(data, settings->authentication);
+    }
     // If authentication is used.
     if (settings->authentication != DLMS_AUTHENTICATION_NONE)
     {
@@ -1158,7 +1162,7 @@ int apdu_parsePDU(
             }
             if (ciphered)
             {
-                afu = (DLMS_AFU_MISSING) (DLMS_AFU_MISSING_SENDER_ACSE_REQUIREMENTS | DLMS_AFU_MISSING_MECHANISM_NAME | DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE);
+                afu = (DLMS_AFU_MISSING)(DLMS_AFU_MISSING_SENDER_ACSE_REQUIREMENTS | DLMS_AFU_MISSING_MECHANISM_NAME | DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE);
             }
         }
         break;

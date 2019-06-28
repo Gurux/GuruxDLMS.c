@@ -4350,7 +4350,9 @@ int compactData_getValues2(
     bb_set(&data, buffer->data, buffer->size);
     var_init(&tmp);
     di_init(&info);
+#ifdef DLMS_ITALIAN_STANDARD
     info.appendAA = appendAA;
+#endif //DLMS_ITALIAN_STANDARD
     info.type = DLMS_DATA_TYPE_COMPACT_ARRAY;
     if ((ret = dlms_getData(&data, &info, &tmp)) == 0 && tmp.Arr != NULL)
     {

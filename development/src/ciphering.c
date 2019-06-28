@@ -812,7 +812,7 @@ int cip_decrypt(
     {
         return ret;
     }
-    *security = (DLMS_SECURITY)ch & 0x30;
+    *security = (DLMS_SECURITY)(ch & 0x30);
     //If Key_Set or authentication or encryption is not used.
     if (ch & 0x40 || *security == DLMS_SECURITY_NONE)
     {

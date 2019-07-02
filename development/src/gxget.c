@@ -2944,20 +2944,28 @@ int cosem_getPppSetup(
         {
             return ret;
         }
-        gxByteBuffer* data = e->value.byteArr;
-        e->byteArray = 1;
-        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
-            (ret = bb_setUInt8(data, 2)) != 0 ||
-            //Add user name.
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-            (ret = hlp_setObjectCount(object->userName.size, data)) != 0 ||
-            (ret = bb_set2(data, &object->userName, 0, bb_size(&object->userName))) != 0 ||
-            //Add pw.
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-            (ret = hlp_setObjectCount(object->password.size, data)) != 0 ||
-            (ret = bb_set2(data, &object->password, 0, bb_size(&object->password))) != 0)
+        if (bb_size(&object->userName) == 0)
         {
-            return ret;
+            e->value.vt = DLMS_DATA_TYPE_NONE;
+            return 0;
+        }
+        else
+        {
+            gxByteBuffer* data = e->value.byteArr;
+            e->byteArray = 1;
+            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+                (ret = bb_setUInt8(data, 2)) != 0 ||
+                //Add user name.
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                (ret = hlp_setObjectCount(object->userName.size, data)) != 0 ||
+                (ret = bb_set2(data, &object->userName, 0, bb_size(&object->userName))) != 0 ||
+                //Add pw.
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                (ret = hlp_setObjectCount(object->password.size, data)) != 0 ||
+                (ret = bb_set2(data, &object->password, 0, bb_size(&object->password))) != 0)
+            {
+                return ret;
+            }
         }
     }
     else

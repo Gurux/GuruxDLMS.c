@@ -213,7 +213,7 @@ int bb_allocate(
     unsigned short dataSize)
 #endif
 {
-    if (!bb_isAttached(arr) && (arr->capacity == 0 || index + dataSize >= arr->capacity))
+    if (!bb_isAttached(arr) && (arr->capacity == 0 || index + dataSize > arr->capacity))
     {
         //If data is append fist time.
         if (dataSize > VECTOR_CAPACITY || arr->capacity == 0)
@@ -224,7 +224,7 @@ int bb_allocate(
         {
             arr->capacity += VECTOR_CAPACITY;
         }
-        if (arr->size == 0)
+        if (arr->capacity == 0)
         {
             arr->data = (unsigned char*)gxmalloc(arr->capacity);
         }

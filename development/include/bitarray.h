@@ -56,22 +56,39 @@ extern "C" {
     void ba_init(
         bitArray* arr);
 
+    //Attach bit array.
+    void ba_attach(
+        bitArray* arr,
+        unsigned char* value,
+        unsigned short count,
+        unsigned short capacity);
+
+    /*
+    * Is static buffer used.
+    */
+    char ba_isAttached(
+        bitArray* arr);
+
+    //Bit array capacity.
+    unsigned short ba_getCapacity(
+        bitArray* arr);
+
     //How many bytes bit array will take.
     unsigned short ba_getByteCount(
         unsigned short bitCount);
 
     //Allocate new size for the array in bits.
-    void ba_capacity(
+    int ba_capacity(
         bitArray* arr,
         unsigned short capacity);
 
     //Push new data to the bit array.
-    void ba_set(
+    int ba_set(
         bitArray * arr,
         unsigned char item);
 
     //Push new data to the bit array.
-    void ba_setByIndex(
+    int ba_setByIndex(
         bitArray *arr,
         int index,
         unsigned char item);
@@ -109,9 +126,13 @@ extern "C" {
         bitArray *arr,
         int *value);
 
+#ifndef DLMS_IGNORE_MALLOC
     //Get bit array as a string.
     char* ba_toString(
         bitArray* arr);
+#endif //DLMS_IGNORE_MALLOC
+
+#define BIT_ATTACH(X, V, S) ba_attach(&X, V, S, 8 * sizeof(V)/sizeof(V[0]))
 
 #ifdef  __cplusplus
 }

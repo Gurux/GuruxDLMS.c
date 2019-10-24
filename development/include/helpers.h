@@ -40,7 +40,9 @@ extern "C" {
 #include "bytebuffer.h"
 #include "variant.h"
 
-    //Get UInt32.
+static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0 };
+static const unsigned char EMPTY_LN[6] = { 0 };
+//Get UInt32.
 #define GETU32(pt) (((unsigned long)(pt)[0] << 24) | \
                     ((unsigned long)(pt)[1] << 16) | \
                     ((unsigned long)(pt)[2] <<  8) | \
@@ -56,14 +58,12 @@ extern "C" {
     //Check byte order.
     unsigned char hlp_isBigEndian(void);
 
-#ifndef GX_DLMS_MICROCONTROLLER
     char* hlp_getErrorMessage(short err);
-#endif //GX_DLMS_MICROCONTROLLER
 
-    //Returns items count. Use hlp_getObjectCount22. 
+    //Returns items count. Use hlp_getObjectCount22.
     int hlp_getObjectCount(gxByteBuffer * buff);
 
-    //Returns items count. 
+    //Returns items count.
     int hlp_getObjectCount2(
         gxByteBuffer * buff,
         unsigned short* count);
@@ -76,31 +76,48 @@ extern "C" {
         unsigned long count,
         gxByteBuffer * buff);
 
+#ifndef DLMS_IGNORE_MALLOC
+    /**
+    * Convert byte array to hex string. This method use malloc to allocate enough memory.
+    */
+    char* hlp_bytesToHex(const unsigned char* pBytes, int count);
+#endif //DLMS_IGNORE_MALLOC
+
     /**
     * Convert byte array to hex string.
     */
-    char* hlp_bytesToHex(const unsigned char* pBytes, int count);
+    int hlp_bytesToHex2(const unsigned char* bytes, unsigned short count, char* buff, unsigned short size);
+
+#ifndef DLMS_IGNORE_MALLOC
+    /**
+    * Convert hex string to byte array. This method use malloc to allocate enough memory.
+    */
+    int hlp_hexToBytes(
+        const char* str,
+        unsigned char** arr,
+        unsigned short* count);
+#endif //DLMS_IGNORE_MALLOC
 
     /**
     * Convert hex string to byte array.
     */
-    int hlp_hexToBytes(
-        const char* str, 
-        unsigned char** arr, 
+    int hlp_hexToBytes2(
+        const char* str,
+        unsigned char* arr,
         unsigned short* count);
 
+#if !defined(DLMS_IGNORE_MALLOC)
     //Set logical name from string.
     int hlp_setLogicalName(unsigned char ln[6], const char* name);
+#endif //!defined(DLMS_IGNORE_MALLOC)
 
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
     void hlp_trace(unsigned char* data, int index, int count, unsigned char send);
     //Get Logical Name from string.
     int hlp_parseLogicalName(gxByteBuffer * value, unsigned char ln[6]);
 
     //Set logical name from string.
     int hlp_setLogicalName2(dlmsVARIANT * ln, const char* name);
-
-    int hlp_getLogicalNameToString(const unsigned char value[6], char* ln);
 
     int hlp_appendLogicalName(gxByteBuffer * bb, const unsigned char value[6]);
 
@@ -110,8 +127,9 @@ extern "C" {
         const char* format,
         //Logical name.
         const unsigned char value[6]);
-#endif
+#endif //!defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
 
+    int hlp_getLogicalNameToString(const unsigned char value[6], char* ln);
 
     void hlp_replace(gxByteBuffer * str, char oldCh, char newCh);
 
@@ -137,13 +155,16 @@ extern "C" {
     *            Integer value.
     * @param isSigned
     *            Is value signed number.
+    * @param digits
+    *            number of digits in string.
     * @return Length of the string or -1 if error has occurred.
     */
     int hlp_intToString(
         char* str,
         int bufsize,
         long value,
-        unsigned char isSigned);
+        unsigned char isSigned,
+        unsigned char digits);
 
     /**
     * Convert string to integer.

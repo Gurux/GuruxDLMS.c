@@ -70,6 +70,10 @@ extern "C" {
         gxByteBuffer* arr);
 #endif
 
+    /*Returns amount of the available bytes.*/
+    unsigned short bb_available(
+        gxByteBuffer* arr);
+
     /*
     * Initialize gxByteBuffer.
     */
@@ -89,9 +93,9 @@ extern "C" {
         unsigned short capacity);
 #endif
 
- /*
- * Get size.
- */
+    /*
+    * Get size.
+    */
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     unsigned long bb_size(
         gxByteBuffer* bb);
@@ -105,12 +109,12 @@ extern "C" {
     * Fill buffer it with zeros.
     */
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    void bb_zero(
+    int bb_zero(
         gxByteBuffer* bb,
         unsigned long index,
         unsigned long count);
 #else
-    void bb_zero(
+    int bb_zero(
         gxByteBuffer* bb,
         unsigned short index,
         unsigned short count);
@@ -118,29 +122,29 @@ extern "C" {
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     int bb_insertUInt8(
-        gxByteBuffer * arr,
+        gxByteBuffer* arr,
         unsigned long index,
         unsigned char item);
 #else
     int bb_insertUInt8(
-        gxByteBuffer * arr,
+        gxByteBuffer* arr,
         unsigned short index,
         unsigned char item);
 #endif
 
     //Set new data to the gxByteBuffer.
     int bb_setUInt8(
-        gxByteBuffer *bb,
+        gxByteBuffer* bb,
         unsigned char item);
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     int bb_setUInt8ByIndex(
-        gxByteBuffer *arr,
+        gxByteBuffer* arr,
         unsigned long index,
         unsigned char item);
 #else
     int bb_setUInt8ByIndex(
-        gxByteBuffer *arr,
+        gxByteBuffer* arr,
         unsigned short index,
         unsigned char item);
 #endif
@@ -153,24 +157,33 @@ extern "C" {
         gxByteBuffer* bb,
         unsigned long item);
 
+#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     int bb_setUInt32ByIndex(
-        gxByteBuffer* bb,
+        gxByteBuffer* arr,
         unsigned long index,
         unsigned long item);
+#else
+    int bb_setUInt32ByIndex(
+        gxByteBuffer* arr,
+        unsigned short index,
+        unsigned long item);
+#endif //!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 
     int bb_setUInt64(
         gxByteBuffer* bb,
         unsigned long long item);
 
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_FLOAT32
     int bb_setFloat(
         gxByteBuffer* arr,
         float value);
+#endif //DLMS_IGNORE_FLOAT32
 
+#ifndef DLMS_IGNORE_FLOAT64
     int bb_setDouble(
         gxByteBuffer* arr,
         double value);
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_FLOAT64
 
     int bb_setInt8(
         gxByteBuffer* bb,
@@ -239,14 +252,14 @@ extern "C" {
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     void bb_attach(
-        gxByteBuffer *arr,
-        unsigned char * value,
+        gxByteBuffer* arr,
+        unsigned char* value,
         unsigned long count,
         unsigned long capacity);
 #else
     void bb_attach(
-        gxByteBuffer *arr,
-        unsigned char * value,
+        gxByteBuffer* arr,
+        unsigned char* value,
         unsigned short count,
         unsigned short capacity);
 #endif
@@ -307,15 +320,17 @@ extern "C" {
         gxByteBuffer* bb,
         unsigned long long* value);
 
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_FLOAT32
     int bb_getFloat(
         gxByteBuffer* bb,
         float* value);
+#endif //DLMS_IGNORE_FLOAT32
 
+#ifndef DLMS_IGNORE_FLOAT64
     int bb_getDouble(
         gxByteBuffer* bb,
         double* value);
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_FLOAT64
 
     int bb_getUInt16ByIndex(
         gxByteBuffer* bb,
@@ -342,12 +357,25 @@ extern "C" {
         unsigned long index,
         unsigned char* value);
 
+#ifndef DLMS_IGNORE_MALLOC
     //Add hex string to byte buffer.
     int bb_addHexString(
         gxByteBuffer* arr,
         const char* str);
+#endif //DLMS_IGNORE_MALLOC
 
-#ifndef GX_DLMS_MICROCONTROLLER
+    //Add hex string to byte buffer.
+    int bb_addLogicalName(
+        gxByteBuffer* arr,
+        const unsigned char* str);
+
+    //Get byte array as hex string.
+    int bb_toHexString2(
+        gxByteBuffer* arr,
+        char* buffer,
+        unsigned short size);
+
+#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
     //Get byte array as a string.
     char* bb_toString(
         gxByteBuffer* bb);
@@ -356,16 +384,23 @@ extern "C" {
     char* bb_toHexString(
         gxByteBuffer* bb);
 
+    //Add double value to byte array as a string.
+    void bb_addDoubleAsString(
+        gxByteBuffer* ba,
+        double value);
+#endif //!defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+
     //Add integer value to byte array as a string.
     void bb_addIntAsString(
         gxByteBuffer* ba,
         int value);
 
-    //Add double value to byte array as a string.
-    void bb_addDoubleAsString(
+    //Add integer value to byte array as a string.
+    void bb_addIntAsString2(
         gxByteBuffer* ba,
-        double value);
-#endif //GX_DLMS_MICROCONTROLLER
+        int value,
+        unsigned char digits);
+
     /**
         * Returns data as byte array.
         *
@@ -439,9 +474,10 @@ extern "C" {
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     //Print content of byte buffer to cout.
-    void bb_print(gxByteBuffer* bb);
+    void bb_print(gxByteBuffer * bb);
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
+#define BB_ATTACH(X, V, S) bb_attach(&X, V, S, sizeof(V))
 
 #ifdef  __cplusplus
 }

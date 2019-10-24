@@ -37,6 +37,14 @@
 #include <fcntl.h>
 #endif
 
+//Returns current time.
+//If you are not using operating system you have to implement this by yourself.
+//Reason for this is that all compilers's or HWs don't support time at all.
+void time_now(gxtime* value)
+{
+    time_initUnix(value, (unsigned long)time(NULL));
+}
+
 //Make connection using TCP/IP connection.
 int com_makeConnect(connection *connection, const char* address, int port)
 {

@@ -127,7 +127,6 @@ extern "C" {
         DLMS_DATA_REQUEST_TYPES type,
         gxByteBuffer* reply);
 
-
     /**
     * Get next logical name PDU.
     *
@@ -222,11 +221,12 @@ extern "C" {
     * @param data
     *            Data where bytes are added.
     */
-    void dlms_addLLCBytes(
+    int dlms_addLLCBytes(
         dlmsSettings* settings,
         gxByteBuffer* data);
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+
     /**
     * Get all Short Name messages. Client uses this to generate messages.
     *
@@ -275,6 +275,12 @@ extern "C" {
     int dlms_appendHdlcParameter(
         gxByteBuffer* data,
         unsigned short value);
+
+    //Is it possible to add more data to the PDU before it's full.
+    int dlms_isPduFull(
+        dlmsSettings* settings,
+        gxByteBuffer* data,
+        unsigned short* size);
 
 #ifdef  __cplusplus
 }

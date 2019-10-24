@@ -32,18 +32,88 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
+//Define ignored functionality.
+#define DLMS_IGNORE_WRAPPER
+#define DLMS_IGNORE_NOTIFY
+#define DLMS_IGNORE_SERVER
+#define GX_DLMS_MICROCONTROLLER
+#define DLMS_IGNORE_HIGH_SHA256
+#define DLMS_IGNORE_HIGH_SHA1
+#define DLMS_IGNORE_HIGH_MD5
+#define DLMS_IGNORE_AES
+#define DLMS_IGNORE_HIGH_GMAC
+// #define DLMS_IGNORE_DATA
+// #define DLMS_IGNORE_REGISTER
+#define DLMS_IGNORE_EXTENDED_REGISTER
+#define DLMS_IGNORE_DEMAND_REGISTER
+#define DLMS_IGNORE_REGISTER_ACTIVATION
+// #define DLMS_IGNORE_PROFILE_GENERIC
+// #define DLMS_IGNORE_CLOCK
+#define DLMS_IGNORE_SCRIPT_TABLE
+#define DLMS_IGNORE_SCHEDULE
+#define DLMS_IGNORE_SPECIAL_DAYS_TABLE
+#define DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+// #define DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
+#define DLMS_IGNORE_SAP_ASSIGNMENT
+#define DLMS_IGNORE_IMAGE_TRANSFER
+#define DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
+#define DLMS_IGNORE_ACTIVITY_CALENDAR
+#define DLMS_IGNORE_REGISTER_MONITOR
+#define DLMS_IGNORE_ACTION_SCHEDULE
+#define DLMS_IGNORE_IEC_HDLC_SETUP
+#define DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
+#define DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
+#define DLMS_IGNORE_UTILITY_TABLES
+#define DLMS_IGNORE_MODEM_CONFIGURATION
+#define DLMS_IGNORE_AUTO_ANSWER
+#define DLMS_IGNORE_AUTO_CONNECT
+#define DLMS_IGNORE_TCP_UDP_SETUP
+#define DLMS_IGNORE_IP4_SETUP
+#define DLMS_IGNORE_MAC_ADDRESS_SETUP
+#define DLMS_IGNORE_PPP_SETUP
+#define DLMS_IGNORE_GPRS_SETUP
+#define DLMS_IGNORE_SMTP_SETUP
+#define DLMS_IGNORE_GSM_DIAGNOSTIC
+#define DLMS_IGNORE_REGISTER_TABLE
+#define DLMS_IGNORE_STATUS_MAPPING
+#define DLMS_IGNORE_SECURITY_SETUP
+#define DLMS_IGNORE_DISCONNECT_CONTROL
+#define DLMS_IGNORE_LIMITER
+#define DLMS_IGNORE_MBUS_CLIENT
+#define DLMS_IGNORE_PUSH_SETUP
+#define DLMS_IGNORE_MESSAGE_HANDLER
+#define DLMS_IGNORE_PARAMETER_MONITOR
+#define DLMS_IGNORE_WIRELESS_MODE_Q_CHANNEL
+#define DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
+#define DLMS_IGNORE_ZIG_BEE_SAS_STARTUP
+#define DLMS_IGNORE_ZIG_BEE_SAS_JOIN
+#define DLMS_IGNORE_ZIG_BEE_SAS_APS_FRAGMENTATION
+#define DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
+#define DLMS_IGNORE_DATA_PROTECTION
+#define DLMS_IGNORE_ACCOUNT
+#define DLMS_IGNORE_CREDIT
+#define DLMS_IGNORE_CHARGE
+#define DLMS_IGNORE_TOKEN_GATEWAY
+#define DLMS_IGNORE_COMPACT_DATA
+
+//Use EPOCH time. This can be used to improve memory usage.
+#define DLMS_USE_EPOCH_TIME
+
+//Use UTC time zone. Read more: https://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSClock
+// #define DLMS_USE_UTC_TIME_ZONE
+
 #include "include/dlmssettings.h"
 #include "include/variant.h"
 #include "include/cosem.h"
 #include "include/client.h"
 #include "include/converters.h"
 #include "include/gxobjects.h"
-#include "include/gxobjects.h"
+#include "include/objectarray.h"
 
 //Received data.
 gxByteBuffer frameData;
 dlmsSettings meterSettings;
-
+/*
 //Client don't need this.
 unsigned char svr_isTarget(
   dlmsSettings *settings,
@@ -58,14 +128,14 @@ int svr_connected(
   dlmsServerSettings *settings) {
   return 0;
 }
-
+*/
 void time_now(
   gxtime* value)
 {
   //Get local time somewhere.
-  time_t tm1 = time(NULL);
-  struct tm dt = *localtime(&tm1);
-  time_init2(value, &dt);
+//MIKKO   time_t tm1 = time(NULL);
+//MIKKO   struct tm dt = *localtime(&tm1);
+  //MIKKO time_init2(value, &dt);
 }
 
 int com_readSerialPort(
@@ -427,15 +497,15 @@ int com_readRowsByEntry(
 ///////////////////////////////////////////////////////////////////////////////////
 int com_readRowsByRange(
   gxProfileGeneric* object,
-  struct tm* start,
-  struct tm* end)
+  gxtime* start,
+  gxtime* end)
 {
   int ret;
   message data;
   gxReplyData reply;
   mes_init(&data);
   reply_init(&reply);
-  if ((ret = cl_readRowsByRange(&meterSettings, object, start, end, &data)) != 0 ||
+  if ((ret = cl_readRowsByRange2(&meterSettings, object, start, end, &data)) != 0 ||
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
       (ret = cl_updateValue(&meterSettings, (gxObject*)object, 2, &reply.dataValue)) != 0)
   {
@@ -605,7 +675,7 @@ int com_readProfileGenerics()
     time_now(&startTime);
     endTime = startTime;
     time_clearTime(&startTime);
-    ret = com_readRowsByRange(pg, &startTime.value, &endTime.value);
+    ret = com_readRowsByRange(pg, &startTime, &endTime);
   }
   //Do not clear objects list because it will free also objects from association view list.
   oa_empty(&objects);

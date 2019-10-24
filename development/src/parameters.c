@@ -66,7 +66,9 @@ void params_initLN(
     gxByteBuffer* attributeDescriptor,
     gxByteBuffer* data,
     unsigned char status,
-    DLMS_COMMAND encryptedCommand)
+    DLMS_COMMAND encryptedCommand,
+    unsigned char multipleBlocks,
+    unsigned char lastBlock)
 {
     target->invokeId = invokeId;
     target->settings = settings;
@@ -78,6 +80,7 @@ void params_initLN(
     target->data = data;
     target->time = 0;
     target->status = status;
-    target->multipleBlocks = settings->count != settings->index;
-    target->lastBlock = settings->count == settings->index;
+    target->multipleBlocks = multipleBlocks;
+    target->lastBlock = lastBlock;
+
 }

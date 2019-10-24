@@ -38,16 +38,16 @@ extern "C" {
 
 #include "enums.h"
 
-#ifndef GX_DLMS_MICROCONTROLLER
 #include "bytebuffer.h"
-#endif //GX_DLMS_MICROCONTROLLER
 
 #ifndef DLMS_USE_EPOCH_TIME
 #include <time.h>
 #endif
 
-	//Get UTC offset in minutes.
+#ifndef DLMS_USE_EPOCH_TIME
+    //Get UTC offset in minutes.
     void time_getUtcOffset(short* hours, short* minutes);
+#endif //DLMS_USE_EPOCH_TIME
 
     // DataType enumerates skipped fields from date time.
     typedef enum
@@ -76,35 +76,33 @@ extern "C" {
 
     typedef struct
     {
-        unsigned char skip; //DATETIME_SKIPS
 #ifdef DLMS_USE_EPOCH_TIME
         unsigned long value;
 #else
         struct tm value;
 #endif
+        unsigned char skip; //DATETIME_SKIPS
         short deviation;
-        unsigned char daylightSavingsBegin;
-        unsigned char daylightSavingsEnd;
+        unsigned char extraInfo;// DLMS_DATE_TIME_EXTRA_INFO
         unsigned char status;//DLMS_CLOCK_STATUS
     } gxtime;
 
     // Constructor.
     void time_init(
         gxtime* time,
-        short year,
-        short month,
-        short day,
-        short hour,
-        short minute,
-        short second,
-        short millisecond,
+        unsigned short year,
+        unsigned char month,
+        unsigned char day,
+        unsigned char hour,
+        unsigned char minute,
+        unsigned char second,
+        unsigned short millisecond,
         short devitation);
 
 #ifndef DLMS_USE_EPOCH_TIME
     void time_init2(
         gxtime* time,
         struct tm* value);
-#endif //DLMS_USE_EPOCH_TIME
 
     // Constructor.
     void time_init3(
@@ -116,12 +114,12 @@ extern "C" {
         int minute,
         int second,
         int millisecond);
+#endif //DLMS_USE_EPOCH_TIME
 
     //Constructor from Unix time.
-    void time_init4(
+    void time_initUnix(
         gxtime* time,
         unsigned long value);
-
 
     void time_clear(
         gxtime* time);
@@ -130,24 +128,13 @@ extern "C" {
         gxtime* trg,
         gxtime* src);
 
-    //Returns current time in number of seconds from epoch.
-    //If you are not using operating system you have to implement this by yourself.
-    //Reason for this is that all compilers's don't support time at all.
-    extern long time_current(void);
-
     //Returns the approximate processor time in ms.
     extern long time_elapsed(void);
-
-    //Returns current time.
-    //If you are not using operating system you have to implement this by yourself.
-    //Reason for this is that all compilers's or HWs don't support time at all.
-    extern void time_now(
-        gxtime* value);
 
 	/*
 	Get years from time.
 	*/
-	unsigned char time_getYears(
+	unsigned short time_getYears(
         const gxtime* value);
 	/*
 	Get months from time.
@@ -218,16 +205,35 @@ extern "C" {
     void time_clearTime(
         gxtime* value);
 
+    /*
+    Clears hours.
+    */
+    void time_clearHours(
+        gxtime* value);
+
+    /*
+    Clears minutes.
+    */
+    void time_clearMinutes(
+        gxtime* value);
+
+    /*
+    Clears seconds.
+    */
+    void time_clearSeconds(
+        gxtime* value);
+
     unsigned char date_daysInMonth(
         int year,
         short month);
 
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
     //Print time to cout.
     int time_print(
         //Format.
         const char* format,
         gxtime* time);
+#endif //!defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
 
     //Save time to char buffer.
     int time_toString2(
@@ -239,7 +245,6 @@ extern "C" {
     int time_toString(
         const gxtime* time,
         gxByteBuffer* arr);
-#endif //GX_DLMS_MICROCONTROLLER
 
     void time_addTime(
         gxtime* time,

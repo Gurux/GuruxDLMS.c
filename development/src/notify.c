@@ -44,9 +44,9 @@
 #include "../include/gxset.h"
 
 int notify_getData(
-    dlmsSettings* settings,
-    gxByteBuffer* reply,
-    gxReplyData *data)
+    dlmsSettings * settings,
+    gxByteBuffer * reply,
+    gxReplyData * data)
 {
     return dlms_getData2(settings, reply, data, 0);
 }
@@ -62,14 +62,21 @@ int notify_addData(
     ve_init(&e);
     e.target = obj;
     e.index = index;
+#ifdef DLMS_IGNORE_MALLOC
+    e.value.byteArr = buff;
+    e.value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+#endif //DLMS_IGNORE_MALLOC
     if ((ret = cosem_getValue(settings, &e)) != 0)
     {
         return ret;
     }
     if (e.byteArray)
     {
-        bb_set(buff, e.value.byteArr->data, e.value.byteArr->size);
-        var_clear(&e.value);
+        if (!bb_isAttached(buff))
+        {
+            bb_set(buff, e.value.byteArr->data, e.value.byteArr->size);
+            var_clear(&e.value);
+        }
         return 0;
     }
     ret = dlms_setData(buff, e.value.vt, &e.value);
@@ -91,22 +98,21 @@ int notify_generateDataNotificationMessages2(
     if (settings->useLogicalNameReferencing)
     {
         gxLNParameters p;
-        params_initLN(&p, settings, 0, DLMS_COMMAND_DATA_NOTIFICATION, 0, data, NULL, 0xff, DLMS_COMMAND_NONE);
+        params_initLN(&p, settings, 0, DLMS_COMMAND_DATA_NOTIFICATION, 0, data, NULL, 0xff, DLMS_COMMAND_NONE, 0, 0);
         p.time = time;
         ret = dlms_getLnMessages(&p, messages);
     }
     else
     {
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         gxSNParameters p;
         params_initSN(&p, settings, DLMS_COMMAND_DATA_NOTIFICATION, 1, 0, data, NULL, DLMS_COMMAND_NONE);
         ret = dlms_getSnMessages(&p, messages);
 #else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     }
     return ret;
-    //    return dlms_getMessages(settings, DLMS_COMMAND_DATA_NOTIFICATION, 0, data, date, messages);
 }
 
 int notify_generateDataNotificationMessages(
@@ -120,19 +126,26 @@ int notify_generateDataNotificationMessages(
     message* messages)
 {
     int pos, ret = 0;
-    gxListItem *it;
+    gxListItem* it;
     gxByteBuffer buff;
     bb_init(&buff);
     bb_setUInt8(&buff, DLMS_DATA_TYPE_STRUCTURE);
     hlp_setObjectCount(objects->size, &buff);
     for (pos = 0; pos != objects->size; ++pos)
     {
-        if ((ret = arr_getByIndex(objects, pos, (void**)&it)) != 0)
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(objects, pos, (void**)& it, sizeof(gxListItem))) != 0)
         {
-            return ret;
+            break;
         }
-        ret = notify_addData(settings, it->key, it->value, &buff);
-        if (ret != 0)
+#else
+        if ((ret = arr_getByIndex(objects, pos, (void**)& it)) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+
+        if ((ret = notify_addData(settings, it->key, it->value, &buff)) != 0)
         {
             break;
         }
@@ -158,33 +171,47 @@ int notify_generatePushSetupMessages(
     message* messages)
 {
     int pos, ret = 0;
-    gxKey *it;
-    gxByteBuffer buff;
+    gxByteBuffer* buff;
+#ifdef DLMS_IGNORE_MALLOC
+    gxTarget* it;
+    buff = messages->data[0];
+#else
+    gxKey* it;
+    buff = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+    bb_init(buff);
+#endif //DLMS_IGNORE_MALLOC
     if (push == NULL || messages == NULL)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     mes_clear(messages);
-    bb_init(&buff);
-    bb_setUInt8(&buff, DLMS_DATA_TYPE_STRUCTURE);
-    hlp_setObjectCount(push->pushObjectList.size, &buff);
-    for (pos = 0; pos != push->pushObjectList.size; ++pos)
+    if ((ret = bb_setUInt8(buff, DLMS_DATA_TYPE_STRUCTURE)) == 0 &&
+        (ret = hlp_setObjectCount(push->pushObjectList.size, buff)) == 0)
     {
-        if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)&it)) != 0)
+        for (pos = 0; pos != push->pushObjectList.size; ++pos)
         {
-            return ret;
-        }
-        ret = notify_addData(settings, (gxObject*)it->key, ((gxCaptureObject*)it->value)->attributeIndex, &buff);
-        if (ret != 0)
-        {
-            break;
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)& it, sizeof(gxTarget))) != 0 ||
+                (ret = notify_addData(settings, it->target, it->attributeIndex, buff)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)& it)) != 0 ||
+                (ret = notify_addData(settings, (gxObject*)it->key, ((gxTarget*)it->value)->attributeIndex, buff)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
         }
     }
     if (ret == 0)
     {
-        ret = notify_generateDataNotificationMessages2(settings, date, &buff, messages);
+        ret = notify_generateDataNotificationMessages2(settings, date, buff, messages);
     }
-    bb_clear(&buff);
+#ifndef DLMS_IGNORE_MALLOC
+    bb_clear(buff);
+#endif //DLMS_IGNORE_MALLOC
     return ret;
 }
 
@@ -193,12 +220,12 @@ int notify_parsePush(
     variantArray* data,
     gxArray* items)
 {
-    gxListItem *k;
-    gxObject *obj;
+    gxListItem* k;
+    gxObject* obj;
     unsigned char index;
     int classID, pos, ret;
     gxValueEventArg e;
-    dlmsVARIANT *it, *list, *tmp;
+    dlmsVARIANT* it, * list, * tmp;
     if ((ret = va_getByIndex(data, 0, &list)) != 0)
     {
         return ret;
@@ -227,28 +254,44 @@ int notify_parsePush(
             }
             if (obj == NULL)
             {
+#ifdef DLMS_IGNORE_MALLOC
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+#else
                 if ((ret = cosem_createObject((DLMS_OBJECT_TYPE)classID, &obj)) != 0)
                 {
                     return ret;
                 }
                 memcpy(obj->logicalName, tmp->byteArr, 6);
                 oa_push(&settings->objects, obj);
+#endif //DLMS_IGNORE_MALLOC
             }
+#ifdef DLMS_IGNORE_MALLOC
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+#else
             if ((ret = va_getByIndex(it->Arr, 2, &tmp)) != 0)
             {
                 return ret;
             }
             index = (unsigned char)var_toInteger(tmp);
             arr_push(items, key_init(obj, (void*)(unsigned long long)index));
+#endif //DLMS_IGNORE_MALLOC
         }
     }
     ve_init(&e);
     for (pos = 0; pos != items->size; ++pos)
     {
-        if ((ret = arr_getByIndex(items, pos, (void**)&k)) != 0)
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(items, pos, (void**)& k, sizeof(gxListItem))) != 0)
         {
-            return ret;
+            break;
         }
+#else
+        if ((ret = arr_getByIndex(items, pos, (void**)& k)) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+
         obj = (gxObject*)k->key;
         if ((ret = va_getByIndex(data, pos, &it)) != 0)
         {

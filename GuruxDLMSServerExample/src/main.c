@@ -22,7 +22,7 @@
 #include "../include/getopt.h"
 #include <tchar.h>
 #include <conio.h>
-#include <Winsock.h> //Add support for sockets	
+#include <Winsock.h> //Add support for sockets
 #include <time.h>
 #include <process.h>//Add support for threads
 #else //Linux includes.
@@ -101,7 +101,7 @@ int startServers(int port, int trace)
     printf("Example connection settings:\n");
     printf("GuruxDLMSClientExample -h localhost -p %d\n", port + 1);
     printf("----------------------------------------------------------\n");
-#if !defined(DLMS_INDIAN_STANDARD) && !defined(DLMS_ITALIAN_STANDARD) 
+#if !defined(DLMS_INDIAN_STANDARD) && !defined(DLMS_ITALIAN_STANDARD)
     //Initialize DLMS settings.
     svr_init(&snWrapper.settings, 0, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, sn47frameBuff, WRAPPER_BUFFER_SIZE, sn47pduBuff, PDU_BUFFER_SIZE);
     //We have several server that are using same objects. Just copy them.
@@ -168,17 +168,32 @@ int main(int argc, char* argv[])
     char *p = strrchr(DATAFILE, '\\');
     *p = '\0';
     strcpy(IMAGEFILE, DATAFILE);
+    strcpy(TRACEFILE, DATAFILE);
     //Add empty file name. This is removed when data is updated.
     strcat(IMAGEFILE, "\\empty.bin");
     strcat(DATAFILE, "\\data.csv");
+    strcat(TRACEFILE, "\\trace.txt");
 #else
     char *p = strrchr(DATAFILE, '/');
     *p = '\0';
     strcpy(IMAGEFILE, DATAFILE);
+    strcpy(TRACEFILE, DATAFILE);
     //Add empty file name.
     strcat(IMAGEFILE, "/empty.bin");
     strcat(DATAFILE, "/data.csv");
+    strcat(TRACEFILE, "/trace.txt");
 #endif
+    // Clear trace file
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+#if _MSC_VER > 1400
+    FILE * f = NULL;
+    fopen_s(&f, TRACEFILE, "w");
+#else
+    FILE* f = fopen(TRACEFILE, "w");
+#endif
+    fclose(f);
+#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+
     while ((opt = getopt(argc, argv, "t:p:")) != -1)
     {
         switch (opt)

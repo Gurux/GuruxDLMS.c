@@ -46,7 +46,7 @@
 #endif
 
 //Initialize connection buffers.
-void con_initializeBuffers(connection* connection, int size)
+void con_initializeBuffers(connection * connection, int size)
 {
     if (size == 0)
     {
@@ -68,6 +68,35 @@ unsigned char isConnected(connection* con)
 #endif
 }
 
+void appendLog(unsigned char send, gxByteBuffer* reply)
+{
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+#if _MSC_VER > 1400
+    FILE * f = NULL;
+    fopen_s(&f, "trace.txt", "a");
+#else
+    FILE* f = fopen("trace.txt", "a");
+#endif
+    if (f != NULL)
+    {
+        char* tmp = bb_toHexString(reply);
+        if (tmp != NULL)
+        {
+            if (send)
+            {
+                fprintf(f, "TX: %s\r\n", tmp);
+            }
+            else
+            {
+                fprintf(f, "RX: %s\r\n", tmp);
+            }
+            free(tmp);
+        }
+        fclose(f);
+    }
+#endif
+}
+
 void ListenerThread(void* pVoid)
 {
     int socket;
@@ -83,7 +112,7 @@ void ListenerThread(void* pVoid)
     socklen_t AddrLen = sizeof(add);
 #endif
     int pos;
-    char *info;
+    char* info;
     gxByteBuffer bb, reply, senderInfo;
     struct sockaddr_in client;
     //Get buffer data
@@ -96,10 +125,10 @@ void ListenerThread(void* pVoid)
     {
         len = sizeof(client);
         bb_clear(&senderInfo);
-        socket = accept(con->socket, (struct sockaddr*)&client, &len);
+        socket = accept(con->socket, (struct sockaddr*) & client, &len);
         if (isConnected(con))
         {
-            if ((ret = getpeername(socket, (struct sockaddr*) &add, &AddrLen)) == -1)
+            if ((ret = getpeername(socket, (struct sockaddr*) & add, &AddrLen)) == -1)
             {
 #if defined(_WIN32) || defined(_WIN64)//If Windows
                 closesocket(socket);
@@ -114,7 +143,7 @@ void ListenerThread(void* pVoid)
             info = inet_ntoa(add.sin_addr);
             bb_set(&senderInfo, (unsigned char*)info, (unsigned short)strlen(info));
             bb_setInt8(&senderInfo, ':');
-            hlp_intToString(tmp, 10, add.sin_port, 0);
+            hlp_intToString(tmp, 10, add.sin_port, 0, 0);
             bb_set(&senderInfo, (unsigned char*)tmp, (unsigned short)strlen(tmp));
             while (isConnected(con))
             {
@@ -159,6 +188,7 @@ void ListenerThread(void* pVoid)
                 }
 #endif //OS
                 bb.size = bb.size + ret;
+                appendLog(0, &bb);
                 if (svr_handleRequest(&con->settings, &bb, &reply) != 0)
                 {
 #if defined(_WIN32) || defined(_WIN64)//If Windows
@@ -182,7 +212,8 @@ void ListenerThread(void* pVoid)
                         }
                         printf("\r\n");
                     }
-#endif //OS
+                    appendLog(1, &reply);
+#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
                     if (send(socket, (const char*)reply.data, reply.size - reply.position, 0) == -1)
                     {
                         //If error has occured
@@ -208,7 +239,7 @@ void ListenerThread(void* pVoid)
 
 #if defined(_WIN32) || defined(_WIN64)//If Windows
 #else //If Linux
-void * UnixListenerThread(void * pVoid)
+void* UnixListenerThread(void* pVoid)
 {
     ListenerThread(pVoid);
     return NULL;
@@ -247,7 +278,7 @@ int svr_listen(
         //socket creation.
         return -1;
     }
-    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char *)&fFlag, sizeof(fFlag)) == -1)
+    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char*)& fFlag, sizeof(fFlag)) == -1)
     {
         //setsockopt.
         return -1;
@@ -259,7 +290,7 @@ int svr_listen(
 #else
     add.sin_family = AF_INET;
 #endif
-    if ((ret = bind(con->socket, (struct sockaddr*) &add, sizeof(add))) == -1)
+    if ((ret = bind(con->socket, (struct sockaddr*) & add, sizeof(add))) == -1)
     {
         //bind;
         return -1;
@@ -272,7 +303,7 @@ int svr_listen(
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
     con->receiverThread = (HANDLE)_beginthread(ListenerThread, 0, (LPVOID)con);
 #else
-    ret = pthread_create(&con->receiverThread, NULL, UnixListenerThread, (void *)con);
+    ret = pthread_create(&con->receiverThread, NULL, UnixListenerThread, (void*)con);
 #endif
     return ret;
 }
@@ -294,8 +325,8 @@ int con_close(
 #else
         close(con->socket);
         con->socket = -1;
-        void *res;
-        pthread_join(con->receiverThread, (void **)&res);
+        void* res;
+        pthread_join(con->receiverThread, (void**)& res);
         free(res);
 #endif
 

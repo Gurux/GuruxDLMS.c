@@ -58,6 +58,7 @@ void cip_init(ciphering * target)
     target->invocationCounter = 0;
     target->security = DLMS_SECURITY_NONE;
     target->encrypt = 0;
+#ifndef DLMS_IGNORE_MALLOC
     bb_init(&target->blockCipherKey);
     bb_set(&target->blockCipherKey, DEFAUlT_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
     bb_init(&target->systemTitle);
@@ -65,6 +66,12 @@ void cip_init(ciphering * target)
     bb_init(&target->authenticationKey);
     bb_set(&target->authenticationKey, DEFAUlT_AUTHENTICATION_KEY, sizeof(DEFAUlT_AUTHENTICATION_KEY));
     target->dedicatedKey = NULL;
+#else
+    memcpy(target->blockCipherKey, DEFAUlT_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
+    memcpy(target->systemTitle, DEFAULT_SYSTEM_TITLE, sizeof(DEFAULT_SYSTEM_TITLE));
+    memcpy(target->authenticationKey, DEFAUlT_AUTHENTICATION_KEY, sizeof(DEFAUlT_AUTHENTICATION_KEY));
+    memset(target->dedicatedKey, 0, 16);
+#endif //DLMS_IGNORE_MALLOC
 }
 
 void cip_clear(ciphering* target)
@@ -72,47 +79,22 @@ void cip_clear(ciphering* target)
     target->invocationCounter = 1;
     target->security = DLMS_SECURITY_NONE;
     target->encrypt = 0;
+#ifndef DLMS_IGNORE_MALLOC
     bb_clear(&target->blockCipherKey);
     bb_clear(&target->systemTitle);
     bb_clear(&target->authenticationKey);
-
     if (target->dedicatedKey != NULL)
     {
         bb_clear(target->dedicatedKey);
         gxfree(target->dedicatedKey);
         target->dedicatedKey = NULL;
     }
-
-}
-
-int cip_getAuthenticatedData(
-    DLMS_SECURITY security,
-    gxByteBuffer* authenticationKey,
-    gxByteBuffer* plainText,
-    gxByteBuffer* result)
-{
-    bb_clear(result);
-    if (security == DLMS_SECURITY_AUTHENTICATION)
-    {
-        bb_setUInt8(result, security);
-        bb_set(result, authenticationKey->data, authenticationKey->size);
-        bb_set(result, plainText->data + plainText->position,
-            plainText->size - plainText->position);
-    }
-    else if (security == DLMS_SECURITY_ENCRYPTION)
-    {
-        bb_set(result, authenticationKey->data, authenticationKey->size);
-    }
-    else if (security == DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
-    {
-        bb_setUInt8(result, security);
-        bb_set(result, authenticationKey->data, authenticationKey->size);
-    }
-    else
-    {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
-    return 0;
+#else
+    memset(target->blockCipherKey, 0, 16);
+    memset(target->systemTitle, 0, 8);
+    memset(target->authenticationKey, 0, 16);
+    memset(target->dedicatedKey, 0, 16);
+#endif //DLMS_IGNORE_MALLOC
 }
 
 /**
@@ -124,16 +106,12 @@ int cip_getAuthenticatedData(
 *            System title.
 * @return
 */
-static int cip_getNonse(unsigned long frameCounter, gxByteBuffer* systemTitle, gxByteBuffer* nonce)
+static int cip_getNonse(unsigned long frameCounter, unsigned char* systemTitle, gxByteBuffer* nonce)
 {
     int ret;
-    if (systemTitle->size != 8)
-    {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
     nonce->size = 0;
     if ((ret = bb_capacity(nonce, 12)) != 0 ||
-        (ret = bb_set(nonce, systemTitle->data, systemTitle->size)) != 0 ||
+        (ret = bb_set(nonce, systemTitle, 8)) != 0 ||
         (ret = bb_setUInt32(nonce, frameCounter)) != 0)
     {
         return ret;
@@ -517,43 +495,58 @@ static void cip_inc32(unsigned char* block)
     PUT32(block + 16 - 4, val);
 }
 
-static void cip_gctr(unsigned long* aes, const unsigned char* icb, const unsigned char* x, int xlen, unsigned char* y)
+static void cip_gctr(unsigned long* aes, const unsigned char* icb, unsigned char* in, int len, unsigned char* out)
 {
     size_t i, n, last;
     unsigned char cb[16], tmp[16];
-    const unsigned char* xpos = x;
-    unsigned char* ypos = y;
-
-    if (xlen == 0)
+    unsigned char* pin = in;
+    unsigned char* pout = out;
+    if (len == 0)
     {
         return;
     }
-    n = xlen / 16;
+    n = len / 16;
     memcpy(cb, icb, 16);
     //Full blocks.
     for (i = 0; i < n; i++)
     {
-        aes_encrypt(aes, aes[60], cb, ypos);
-        cip_xor(ypos, xpos);
-        xpos += 16;
-        ypos += 16;
+        if (out == NULL)
+        {
+            aes_encrypt(aes, aes[60], cb, tmp);
+            cip_xor(pin, tmp);
+        }
+        else
+        {
+            aes_encrypt(aes, aes[60], cb, pout);
+            cip_xor(pout, pin);
+        }
+        pin += 16;
+        pout += 16;
         cip_inc32(cb);
     }
 
-    last = x + xlen - xpos;
+    last = in + len - pin;
     //Last, partial block.
     if (last)
     {
         aes_encrypt(aes, aes[60], cb, tmp);
         for (i = 0; i < last; i++)
         {
-            *ypos = *xpos++ ^ tmp[i];
-            ++ypos;
+            if (out == NULL)
+            {
+                *pin ^= tmp[i];
+                ++pin;
+            }
+            else
+            {
+                *pout = *pin++ ^ tmp[i];
+                ++pout;
+            }
         }
     }
 }
 
-static void aes_gcm_gctr(unsigned long* aes, const unsigned char* J0, const unsigned char* in, int len, unsigned char* out)
+static void aes_gcm_gctr(unsigned long* aes, const unsigned char* J0, unsigned char* in, int len, unsigned char* out)
 {
     unsigned char J0inc[16];
     if (len == 0)
@@ -581,154 +574,194 @@ static void aes_gcm_ghash(const unsigned char* H, const unsigned char* aad, int 
     cip_getGHash(H, len_buf, sizeof(len_buf), S);
 }
 
+#ifndef DLMS_IGNORE_MALLOC
 int cip_crypt(
     ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
     unsigned long frameCounter,
     unsigned char tag,
-    gxByteBuffer* systemTitle,
+    unsigned char* systemTitle,
     gxByteBuffer* key,
     gxByteBuffer* input,
-    gxByteBuffer* output,
     unsigned char encrypt)
+#else
+int cip_crypt(
+    ciphering* settings,
+    DLMS_SECURITY security,
+    DLMS_COUNT_TYPE type,
+    unsigned long frameCounter,
+    unsigned char tag,
+    unsigned char* systemTitle,
+    unsigned char* key,
+    gxByteBuffer* input,
+    unsigned char encrypt)
+#endif //DLMS_IGNORE_MALLOC
 {
-    unsigned short headerSize = 0;
     int ret;
-    unsigned long tmp[61] = { 0 };
+    unsigned long aes[61] = { 0 };
     unsigned char H[16] = { 0 };
     unsigned char J0[16] = { 0 };
     unsigned char S[16] = { 0 };
+    unsigned char NONSE[16] = { 0 };
     gxByteBuffer nonse;
-    gxByteBuffer aad;
-    if (key == NULL || key->size != 16 || systemTitle == NULL || systemTitle->size != 8)
+    if (memcmp(systemTitle, EMPTY_SYSTEM_TITLE, 8) == 0)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    bb_init(&nonse);
-    bb_init(&aad);
-
+    bb_attach(&nonse, NONSE, 0, sizeof(NONSE));
     if ((ret = cip_getNonse(frameCounter, systemTitle, &nonse)) != 0)
     {
-        bb_clear(&nonse);
-        bb_clear(&aad);
         return ret;
     }
-    if ((ret = cip_getAuthenticatedData(
-        security,
-        &settings->authenticationKey,
-        input,
-        &aad)) != 0)
+    if ((ret = cip_int(
+        aes,
+#ifndef DLMS_IGNORE_MALLOC
+        key->data,
+#else
+        key,
+#endif //DLMS_IGNORE_MALLOC
+        16 * 8)) != 0)
     {
-        bb_clear(&aad);
         return ret;
     }
-
-    if ((ret = cip_int(tmp, key->data, 16 * 8)) != 0)
-    {
-        bb_clear(&nonse);
-        bb_clear(&aad);
-        return ret;
-    }
-    tmp[60] = 10;
+    aes[60] = 10;
 
     //Hash subkey.
-    aes_encrypt(tmp, tmp[60], H, H);
+    aes_encrypt(aes, aes[60], H, H);
     cip_init_j0(nonse.data, (unsigned char)nonse.size, H, J0);
-    bb_capacity(output, 40 + 16 + (2 * input->size));
-    //Data is encrypted.
-    if (type == DLMS_COUNT_TYPE_PACKET)
+    //Allocate space for authentication tag.
+    if (security != DLMS_SECURITY_ENCRYPTION)
     {
-        bb_setUInt8(output, tag);
-        int len = 5 + input->size;
-        if (security != DLMS_SECURITY_ENCRYPTION)
+        if (!encrypt)
         {
-            len += 12;
-        }
-        if (tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
-            tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
-        {
-            hlp_setObjectCount(systemTitle->size, output);
-            bb_set(output, systemTitle->data, bb_size(systemTitle));
-        }
-        hlp_setObjectCount(len, output);
-        bb_setUInt8(output, security);
-        bb_setUInt32(output, frameCounter);
-        headerSize = (unsigned short)output->size;
-        if (security == DLMS_SECURITY_AUTHENTICATION)
-        {
-            bb_set2(output, input, 0, input->size);
+            //Save authentication key to nonse.
+            bb_clear(&nonse);
+            ret = bb_set(&nonse, input->data + input->size - 12, 12);
+            input->size -= 12;
         }
     }
-    else
-    {
-        //Data is decrypted.
-        if (security == DLMS_SECURITY_AUTHENTICATION ||
-            security == DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
-        {
-            bb_capacity(output, input->size + (16 % aad.size) + aad.size);
-        }
-        else
-        {
-            bb_capacity(output, input->size);
-        }
-    }
-    output->size = input->size + headerSize;
+
     if (security == DLMS_SECURITY_AUTHENTICATION)
     {
-        if (type != DLMS_COUNT_TYPE_PACKET)
+        if ((ret = bb_move(input, input->position, 17, bb_available(input))) == 0)
         {
-            output->size = 0;
+            input->position = 0;
+            bb_setUInt8ByIndex(input, 0, security);
+#ifndef DLMS_IGNORE_MALLOC
+            memcpy(input->data + 1, settings->authenticationKey.data, 16);
+#else
+            memcpy(input->data + 1, settings->authenticationKey, 16);
+#endif //DLMS_IGNORE_MALLOC
+            aes_gcm_ghash(H, input->data, input->size, input->data, 0, S);
+            ret = bb_move(input, 17, 0, input->size - 17);
+            cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
+            if (encrypt)
+            {
+                if (type == DLMS_COUNT_TYPE_TAG)
+                {
+                    bb_move(input, input->size, 0, 12);
+                }
+                else
+                {
+                    input->size += 12;
+                }
+            }
+            else
+            {
+                if (memcmp(NONSE, input->data + input->size, 12) != 0)
+                {
+                    ret = DLMS_ERROR_CODE_INVALID_TAG;
+                }
+            }
         }
-        else
-        {
-            memcpy(output->data + headerSize, input->data, input->size);
-        }
-        aes_gcm_ghash(H, aad.data, aad.size, output->data + headerSize, 0, S);
-        cip_gctr(tmp, J0, S, aad.size, output->data + output->size);
-        output->size += 12;
     }
     else if (security == DLMS_SECURITY_ENCRYPTION)
     {
         //Encrypt the data.
-        aes_gcm_gctr(tmp, J0, input->data, input->size, output->data + headerSize);
+        aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
     }
     else if (security == DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
     {
-        //Encrypt the data.
-        aes_gcm_gctr(tmp, J0, input->data, input->size, output->data + headerSize);
-        if ((output->size - headerSize) % 16 != 0)
-        {
-            unsigned short add = 16 - ((output->size - headerSize) % 16);
-            bb_zero(output, output->size, add);
-            output->size -= add;
-        }
         if (encrypt)
         {
-            aes_gcm_ghash(H, aad.data, aad.size, output->data + headerSize, input->size, S);
+            //Encrypt the data.
+            aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+        }
+        //Count authentication.
+        ret = bb_move(input, input->position, 17, bb_available(input));
+        input->position = 0;
+        ret = bb_setUInt8ByIndex(input, 0, security);
+#ifndef DLMS_IGNORE_MALLOC
+        memcpy(input->data + 1, settings->authenticationKey.data, 16);
+#else
+        memcpy(input->data + 1, settings->authenticationKey, 16);
+#endif //DLMS_IGNORE_MALLOC
+        aes_gcm_ghash(H, input->data, 17, input->data + 17, input->size - 17, S);
+        ret = bb_move(input, 17, 0, input->size - 17);
+        if (!encrypt)
+        {
+            //Decrypt the data.
+            aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+        }
+        cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
+        if (encrypt)
+        {
+            input->size += 12;
         }
         else
         {
-            aes_gcm_ghash(H, aad.data, aad.size, input->data + headerSize, input->size, S);
+            if (memcmp(NONSE, input->data + input->size, 12) != 0)
+            {
+                ret = DLMS_ERROR_CODE_INVALID_TAG;
+            }
         }
-        cip_gctr(tmp, J0, S, sizeof(S), output->data + output->size);
-        output->size += 12;
     }
-    bb_clear(&nonse);
-    bb_clear(&aad);
-    return 0;
+
+    if (encrypt && type == DLMS_COUNT_TYPE_PACKET)
+    {
+        if ((ret = bb_clear(&nonse)) == 0 &&
+            (ret = bb_setUInt8(&nonse, tag)) == 0)
+        {
+            if (tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
+                tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
+            {
+                hlp_setObjectCount(8, &nonse);
+                bb_set(&nonse, systemTitle, 8);
+            }
+            if ((ret = hlp_setObjectCount(5 + input->size, &nonse)) == 0 &&
+                (ret = bb_setUInt8(&nonse, security)) == 0 &&
+                (ret = bb_setUInt32(&nonse, frameCounter)) == 0 &&
+                (ret = bb_insert(nonse.data, nonse.size, input, 0)) == 0)
+            {
+                memcpy(input->data, nonse.data, nonse.size);
+            }
+        }
+    }
+    return ret;
 }
 
+#ifndef DLMS_IGNORE_MALLOC
 int cip_encrypt(
     ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
     unsigned long frameCounter,
     unsigned char tag,
-    gxByteBuffer* systemTitle,
+    unsigned char* systemTitle,
     gxByteBuffer* key,
-    gxByteBuffer* input,
-    gxByteBuffer* output)
+    gxByteBuffer* input)
+#else
+int cip_encrypt(
+    ciphering* settings,
+    DLMS_SECURITY security,
+    DLMS_COUNT_TYPE type,
+    unsigned long frameCounter,
+    unsigned char tag,
+    unsigned char* systemTitle,
+    unsigned char* key,
+    gxByteBuffer* input)
+#endif //DLMS_IGNORE_MALLOC
 {
     return cip_crypt(
         settings,
@@ -739,21 +772,31 @@ int cip_encrypt(
         systemTitle,
         key,
         input,
-        output, 1);
+        1);
 }
+
+#ifndef DLMS_IGNORE_MALLOC
 int cip_decrypt(
     ciphering* settings,
-    gxByteBuffer* title,
+    unsigned char* title,
     gxByteBuffer* key,
     gxByteBuffer* data,
     DLMS_SECURITY* security)
+#else
+int cip_decrypt(
+    ciphering* settings,
+    unsigned char* title,
+    unsigned char* key,
+    gxByteBuffer* data,
+    DLMS_SECURITY* security)
+#endif //DLMS_IGNORE_MALLOC
 {
     unsigned short length;
     int ret;
     unsigned char ch;
     unsigned long frameCounter;
     DLMS_COMMAND cmd;
-    gxByteBuffer tag, ciphertext, systemTitle, countTag;
+    unsigned char systemTitle[8];
     if (data == NULL || data->size - data->position < 2)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -762,7 +805,6 @@ int cip_decrypt(
     {
         return ret;
     }
-    bb_init(&systemTitle);
     cmd = (DLMS_COMMAND)ch;
     switch (cmd)
     {
@@ -774,8 +816,12 @@ int cip_decrypt(
         }
         if (length != 0)
         {
-            bb_set2(&systemTitle, data, data->position, length);
-            title = &systemTitle;
+            if (length != 8)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            bb_get(data, systemTitle, length);
+            title = systemTitle;
         }
         break;
     case DLMS_COMMAND_GLO_INITIATE_REQUEST:
@@ -816,12 +862,10 @@ int cip_decrypt(
     //If Key_Set or authentication or encryption is not used.
     if (ch & 0x40 || *security == DLMS_SECURITY_NONE)
     {
-        bb_clear(&systemTitle);
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     if ((ret = bb_getUInt32(data, &frameCounter)) != 0)
     {
-        bb_clear(&systemTitle);
         return ret;
     }
     if (settings->security == DLMS_SECURITY_NONE)
@@ -829,53 +873,7 @@ int cip_decrypt(
         settings->security = *security;
     }
     settings->invocationCounter = frameCounter + 1;
-    if (*security == DLMS_SECURITY_AUTHENTICATION)
-    {
-        bb_init(&tag);
-        bb_init(&countTag);
-        length = (unsigned short)(data->size - data->position - 12);
-        //Get tag
-        bb_set(&tag, data->data + data->position + length, 12);
-        //Skip tag from data.
-        data->size = data->position + length;
-        // Check tag.
-        if ((ret = cip_crypt(
-            settings,
-            *security,
-            DLMS_COUNT_TYPE_TAG,
-            frameCounter,
-            0,
-            title,
-            key,
-            data,
-            &countTag, 0)) == 0)
-        {
-            // Check tag.
-            if (memcmp(tag.data, countTag.data, 12) != 0)
-            {
-                ret = DLMS_ERROR_CODE_INVALID_TAG;
-            }
-        }
-        bb_clear(&tag);
-        bb_clear(&countTag);
-        bb_clear(&systemTitle);
-        return ret;
-    }
-    bb_init(&ciphertext);
-    bb_init(&tag);
-    if (*security == DLMS_SECURITY_ENCRYPTION)
-    {
-        length = (unsigned short)(data->size - data->position);
-        bb_set2(&ciphertext, data, data->position, length);
-    }
-    else if (*security == DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
-    {
-        length = (unsigned short)(data->size - data->position - 12);
-        bb_set2(&ciphertext, data, data->position, length);
-        bb_set2(&tag, data, data->position, 12);
-    }
-    bb_clear(data);
-    if ((ret = cip_crypt(
+    ret = cip_crypt(
         settings,
         *security,
         DLMS_COUNT_TYPE_DATA,
@@ -883,28 +881,8 @@ int cip_decrypt(
         0,
         title,
         key,
-        &ciphertext,
-        data, 0)) != 0)
-    {
-        bb_clear(&ciphertext);
-        bb_clear(&tag);
-        bb_clear(&systemTitle);
-        return ret;
-    }
-    //Check tag.
-    if (*security == DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
-    {
-        // Check tag.
-        if (memcmp(tag.data, data->data + data->size - 12, 12) != 0)
-        {
-            ret = DLMS_ERROR_CODE_INVALID_TAG;
-        }
-        //Remove tag.
-        data->size = data->size - 12;
-    }
-    bb_clear(&ciphertext);
-    bb_clear(&systemTitle);
-    bb_clear(&tag);
+        data,
+        0);
     return ret;
 }
 

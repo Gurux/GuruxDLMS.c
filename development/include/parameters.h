@@ -143,7 +143,7 @@ extern "C" {
          */
 #ifdef DLMS_USE_EPOCH_TIME
         unsigned long time;
-#else 
+#else
         struct tm* time;
 #endif // DLMS_USE_EPOCH_TIME
         /**
@@ -177,7 +177,9 @@ extern "C" {
         gxByteBuffer* attributeDescriptor,
         gxByteBuffer* data,
         unsigned char status,
-        DLMS_COMMAND encryptedCommand);
+        DLMS_COMMAND encryptedCommand,
+        unsigned char multipleBlocks,
+        unsigned char lastBlock);
 
 #ifdef  __cplusplus
 }

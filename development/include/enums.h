@@ -33,11 +33,15 @@
 #ifndef ENUMS_H
 #define ENUMS_H
 
+#include "gxignore.h"
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
     // Server sender frame sequence starting number.
-#define PDU_MAX_HEADER_SIZE 20
+    // This buffer is also used for save challenge.
+#define PDU_MAX_HEADER_SIZE 70
+
 #define CIPHERING_HEADER_SIZE 22 //7 + 12 + 3
 
     typedef enum
@@ -198,6 +202,21 @@ extern "C" {
         DLMS_CLOCK_STATUS_SKIP = 0xFF
     } DLMS_CLOCK_STATUS;
 
+    // DataType extra info.
+    typedef enum
+    {
+        // No extra info.
+        DLMS_DATE_TIME_EXTRA_INFO_NONE = 0x0,
+        // Daylight savings begin.
+        DLMS_DATE_TIME_EXTRA_INFO_DST_BEGIN = 0x1,
+        // Daylight savings end.
+        DLMS_DATE_TIME_EXTRA_INFO_DST_END = 0x2,
+        // Last day of month.
+        DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY = 0x4,
+        // 2nd last day of month
+        DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2 = 0x8,
+    }DLMS_DATE_TIME_EXTRA_INFO;
+
     /**
      * Used priority.
      */
@@ -226,8 +245,12 @@ extern "C" {
         DLMS_OBJECT_TYPE_REGISTER_ACTIVATION = 6,
         DLMS_OBJECT_TYPE_PROFILE_GENERIC = 7,
         DLMS_OBJECT_TYPE_CLOCK = 8,
+#ifndef DLMS_IGNORE_SCRIPT_TABLE
         DLMS_OBJECT_TYPE_SCRIPT_TABLE = 9,
+#endif //DLMS_IGNORE_SCRIPT_TABLE
+#ifndef DLMS_IGNORE_SCHEDULE
         DLMS_OBJECT_TYPE_SCHEDULE = 10,
+#endif //DLMS_IGNORE_SCHEDULE
         DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE = 11,
         DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME = 12,
         DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME = 15,
@@ -242,8 +265,12 @@ extern "C" {
         DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP = 25,
         DLMS_OBJECT_TYPE_UTILITY_TABLES = 26,
         DLMS_OBJECT_TYPE_MODEM_CONFIGURATION = 27,
+#ifndef DLMS_IGNORE_SCRIPT_AUTO_ANSWER
         DLMS_OBJECT_TYPE_AUTO_ANSWER = 28,
+#endif //DLMS_IGNORE_SCRIPT_AUTO_ANSWER
+#ifndef DLMS_IGNORE_SCRIPT_AUTO_CONNECT
         DLMS_OBJECT_TYPE_AUTO_CONNECT = 29,
+#endif //DLMS_IGNORE_SCRIPT_AUTO_CONNECT
         DLMS_OBJECT_TYPE_TCP_UDP_SETUP = 41,
         DLMS_OBJECT_TYPE_IP4_SETUP = 42,
         DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP = 43,
@@ -332,7 +359,8 @@ extern "C" {
         DLMS_DATA_TYPE_TIME = 27,
         DLMS_DATA_TYPE_ARRAY = 1,
         DLMS_DATA_TYPE_STRUCTURE = 2,
-        DLMS_DATA_TYPE_COMPACT_ARRAY = 19
+        DLMS_DATA_TYPE_COMPACT_ARRAY = 19,
+        DLMS_DATA_TYPE_BYREF = 0x80
     } DLMS_DATA_TYPE;
 
     typedef enum
@@ -807,10 +835,12 @@ extern "C" {
          */
         DLMS_AUTHENTICATION_HIGH_SHA1 = 4,
 
+#ifndef DLMS_IGNORE_HIGH_GMAC
         /**
          * High authentication is used. Password is hashed with GMAC.
          */
         DLMS_AUTHENTICATION_HIGH_GMAC = 5,
+#endif //DLMS_IGNORE_HIGH_GMAC
 
         /**
         * High authentication is used. Password is hashed with SHA-256.

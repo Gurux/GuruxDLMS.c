@@ -53,14 +53,16 @@ extern "C" {
 #endif //DLMS_IGNORE_CLOCK
 
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
-    int cosem_setActionSchedule(gxActionSchedule* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setActionSchedule(dlmsSettings* settings, gxActionSchedule* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_ACTION_SCHEDULE
 
 #ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
-    int cosem_setActivityCalendar(gxActivityCalendar* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setActivityCalendar(dlmsSettings* settings, gxActivityCalendar* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_ACTIVITY_CALENDAR
 
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
     int cosem_setAssociationLogicalName(dlmsSettings* settings, gxAssociationLogicalName* object, unsigned char index, dlmsVARIANT *value);
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     int cosem_setAssociationShortName(dlmsSettings* settings, gxAssociationShortName* object, unsigned char index, dlmsVARIANT *value);
@@ -139,11 +141,11 @@ extern "C" {
 #endif //DLMS_IGNORE_PPP_SETUP
 
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
-    int cosem_setRegisterActivation(gxRegisterActivation* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
-    int cosem_setRegisterMonitor(gxRegisterMonitor* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
@@ -151,11 +153,11 @@ extern "C" {
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 
 #ifndef DLMS_IGNORE_SCHEDULE
-    int cosem_setSchedule(gxSchedule* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_SCHEDULE
 
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
-    int cosem_setScriptTable(gxScriptTable* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
@@ -163,7 +165,7 @@ extern "C" {
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
 
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
-    int cosem_setTcpUdpSetup(gxTcpUdpSetup* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP

@@ -30,13 +30,18 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
+#include "../include/gxignore.h"
+#ifndef DLMS_IGNORE_MALLOC
 #include "../include/gxmem.h"
+#endif //DLMS_IGNORE_MALLOC
+
 #if _MSC_VER > 1400
 #include <crtdbg.h>
 #endif
 #include <string.h>
 #include "../include/message.h"
 
+#ifndef DLMS_IGNORE_MALLOC
 //Initialize gxByteBuffer.
 void mes_init(message* mes)
 {
@@ -44,7 +49,16 @@ void mes_init(message* mes)
     mes->data = (gxByteBuffer**) gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
     mes->size = 0;
 }
+#else
+void mes_attach(message* mes, gxByteBuffer **data, unsigned char capacity)
+{
+    mes->capacity = capacity;
+    mes->data = data;
+    mes->size = 0;
+}
+#endif //DLMS_IGNORE_MALLOC
 
+#ifndef DLMS_IGNORE_MALLOC
 //Push new message.
 void mes_push(message * mes, gxByteBuffer* item)
 {
@@ -64,10 +78,17 @@ void mes_push(message * mes, gxByteBuffer* item)
     mes->data[mes->size] = item;
     mes->size++;
 }
+#endif //DLMS_IGNORE_MALLOC
 
 void mes_clear(message* mes)
 {
     int pos;
+#ifdef DLMS_IGNORE_MALLOC
+    for (pos = 0; pos != mes->capacity; ++pos)
+    {
+        mes->data[pos]->size = mes->data[pos]->position = 0;
+    }
+#else
     if (mes->size != 0)
     {
         for(pos = 0; pos != mes->size; ++pos)
@@ -82,5 +103,6 @@ void mes_clear(message* mes)
         mes->data = NULL;
     }
     mes->capacity = 0;
+#endif //DLMS_IGNORE_MALLOC
     mes->size = 0;
 }

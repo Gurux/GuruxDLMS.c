@@ -41,63 +41,108 @@
 #include "../include/gxkey.h"
 
 //Initialize gxArray.
-void arr_init(gxArray* arr)
+void arr_init(gxArray * arr)
 {
     arr->capacity = 0;
     arr->data = NULL;
-    arr->position = 0;
     arr->size = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    arr->position = 0;
+#endif //DLMS_IGNORE_MALLOC
 }
+
+char arr_isAttached(gxArray* arr)
+{
+    return (arr->capacity & 0x8000) == 0x8000;
+}
+
+unsigned short arr_getCapacity(gxArray* arr)
+{
+    return arr->capacity & 0x7FFF;
+}
+
+void arr_attach(
+    gxArray* arr,
+    void* value,
+    unsigned short count,
+    unsigned short capacity)
+{
+    arr->data = value;
+    arr->capacity = (unsigned short)(0x8000 | capacity);
+    arr->size = count;
+#ifndef DLMS_IGNORE_MALLOC
+    arr->position = 0;
+#endif //DLMS_IGNORE_MALLOC
+}
+
 
 //Allocate new size for the array in bytes.
 int arr_capacity(gxArray* arr, int capacity)
 {
-    arr->capacity = capacity;
-    if (arr->capacity != 0)
+#ifndef DLMS_IGNORE_MALLOC
+    if (!arr_isAttached(arr))
     {
-        if (arr->data == NULL)
+        if (capacity == 0)
         {
-            arr->data = (void**)gxmalloc(arr->capacity * sizeof(void*));
+            if (arr->data != NULL)
+            {
+                gxfree(arr->data);
+                arr->data = NULL;
+            }
         }
         else
         {
-            arr->data = (void**)gxrealloc(arr->data, arr->capacity * sizeof(void*));
+            if (arr->data == NULL)
+            {
+                arr->data = (void**)gxmalloc(capacity * sizeof(void*));
+                if (arr->data == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+            }
+            else
+            {
+                void* tmp = (void**)gxrealloc(arr->data, capacity * sizeof(void*));
+                //If not enought memory available.
+                if (tmp == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                arr->data = tmp;
+            }
         }
-        if (arr->data == NULL)
-        {
-            return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
+        arr->capacity = capacity;
+    }
+#endif //DLMS_IGNORE_MALLOC
+    if (arr_getCapacity(arr) < capacity)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     return 0;
 }
 
-//Push new data to the gxArray.
-int arr_push(gxArray * arr, void* item)
+
+#ifndef DLMS_IGNORE_MALLOC
+int arr_push(gxArray* arr, void* item)
 {
     if (arr->size >= arr->capacity)
     {
-        arr->capacity += GXARRAY_CAPACITY;
-        if (arr->data == NULL)
+        int ret = arr_capacity(arr, arr->capacity + GXARRAY_CAPACITY);
+        if (ret != 0)
         {
-            arr->data = (void**)gxmalloc(arr->capacity * sizeof(void*));
-        }
-        else
-        {
-            arr->data = (void**)gxrealloc(arr->data, arr->capacity * sizeof(void*));
-        }
-        if (arr->data == NULL)
-        {
-            return DLMS_ERROR_CODE_OUTOFMEMORY;
+            return ret;
         }
     }
     arr->data[arr->size] = item;
     ++arr->size;
     return 0;
 }
+#endif //DLMS_IGNORE_MALLOC
 
 void arr_clear(
     gxArray* arr)
 {
+#ifndef DLMS_IGNORE_MALLOC
     int pos;
     if (arr->size != 0)
     {
@@ -112,23 +157,37 @@ void arr_clear(
         arr->data = NULL;
     }
     arr->capacity = 0;
-    arr->size = 0;
+#endif //DLMS_IGNORE_MALLOC
+    if (!arr_isAttached(arr))
+    {
+        arr->size = 0;
+    }
+#ifndef DLMS_IGNORE_MALLOC
     arr->position = 0;
+#endif //DLMS_IGNORE_MALLOC
 }
 
 void arr_empty(
     gxArray* arr)
 {
+#ifndef DLMS_IGNORE_MALLOC
     if (arr->size != 0)
     {
         gxfree(arr->data);
         arr->data = NULL;
     }
     arr->capacity = 0;
-    arr->size = 0;
+#endif //DLMS_IGNORE_MALLOC
+    if (!arr_isAttached(arr))
+    {
+        arr->size = 0;
+    }
+#ifndef DLMS_IGNORE_MALLOC
     arr->position = 0;
+#endif //DLMS_IGNORE_MALLOC
 }
 
+#ifndef DLMS_IGNORE_MALLOC
 int arr_get(gxArray* arr, void** value)
 {
     if (arr->position >= arr->size)
@@ -139,8 +198,10 @@ int arr_get(gxArray* arr, void** value)
     ++arr->position;
     return 0;
 }
+#endif //DLMS_IGNORE_MALLOC
 
-int arr_getByIndex(gxArray* arr, int index, void** value)
+#ifndef DLMS_IGNORE_MALLOC
+int arr_getByIndex(gxArray* arr, unsigned short index, void** value)
 {
     if (index >= arr->size)
     {
@@ -149,12 +210,35 @@ int arr_getByIndex(gxArray* arr, int index, void** value)
     *value = arr->data[index];
     return 0;
 }
+#else
+int arr_getByIndex(gxArray* arr, unsigned short index, void** value, unsigned short itemSize)
+{
+    if (index >= arr->size)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    *value = (void*)((unsigned char*)arr->data + (index * itemSize));
+    return 0;
+}
+#endif //DLMS_IGNORE_MALLOC
+
+
+int arr_getByIndex2(gxArray* arr, unsigned short index, void** value, unsigned short itemSize)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    return arr_getByIndex(arr, index, value);
+#else
+    return arr_getByIndex(arr, index, value, itemSize);
+#endif //DLMS_IGNORE_MALLOC
+}
+
 
 void arr_clearKeyValuePair(gxArray* arr)
 {
+#ifndef DLMS_IGNORE_MALLOC
     gxKey* k;
     int pos;
-    if (arr->size != 0)
+    if (arr->capacity != 0)
     {
         for (pos = 0; pos != arr->size; ++pos)
         {
@@ -165,17 +249,21 @@ void arr_clearKeyValuePair(gxArray* arr)
         }
         gxfree(arr->data);
         arr->data = NULL;
+        arr->capacity = 0;
+        arr->size = 0;
+        arr->position = 0;
     }
-    arr->capacity = 0;
-    arr->size = 0;
-    arr->position = 0;
+#else
+    arr_clear(arr);
+#endif //DLMS_IGNORE_MALLOC
 }
 
 void arr_clearStrings(gxArray* arr)
 {
+#ifndef DLMS_IGNORE_MALLOC
     gxByteBuffer* it;
     int pos;
-    if (arr->size != 0)
+    if (arr->capacity != 0)
     {
         for (pos = 0; pos != arr->size; ++pos)
         {
@@ -185,13 +273,17 @@ void arr_clearStrings(gxArray* arr)
         }
         gxfree(arr->data);
         arr->data = NULL;
+        arr->capacity = 0;
+        arr->size = 0;
+        arr->position = 0;
     }
-    arr->capacity = 0;
-    arr->size = 0;
-    arr->position = 0;
+#else
+    arr_clear(arr);
+#endif //DLMS_IGNORE_MALLOC
 }
 
-int arr_removeByIndex(gxArray* arr, int index, void** value)
+#ifndef DLMS_IGNORE_MALLOC
+int arr_removeByIndex(gxArray* arr, unsigned short index, void** value)
 {
     int pos;
     if (index < 0 || index >= arr->size)
@@ -206,3 +298,29 @@ int arr_removeByIndex(gxArray* arr, int index, void** value)
     --arr->size;
     return 0;
 }
+#else
+int arr_removeByIndex(
+    gxArray* arr,
+    unsigned short index,
+    unsigned short itemSize)
+{
+    int ret;
+    unsigned short pos;
+    void** prev = NULL;
+    void** item = NULL;
+    if ((ret = arr_getByIndex(arr, index, prev, itemSize)) == 0)
+    {
+        for (pos = index + 1; pos < arr->size; ++pos)
+        {
+            if ((ret = arr_getByIndex(arr, pos, item, itemSize)) == 0)
+            {
+                memcpy(prev, item, itemSize);
+                prev = item;
+            }
+        }
+        --arr->size;
+    }
+    return 0;
+}
+
+#endif //DLMS_IGNORE_MALLOC

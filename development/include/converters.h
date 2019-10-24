@@ -30,26 +30,29 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-#include "gxignore.h"
 #ifndef CONVERTERRS_H
 #define CONVERTERRS_H
+#include "gxignore.h"
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
+#ifndef DLMS_IGNORE_MALLOC
 #include "errorcodes.h"
-
-#ifndef GX_DLMS_MICROCONTROLLER
-#include "enums.h"
 #include "variant.h"
 #include "gxarray.h"
 #include "gxobjects.h"
+#endif //DLMS_IGNORE_MALLOC
+#include "enums.h"
 
     //Get object type as string.
     int obj_typeToString(
         DLMS_OBJECT_TYPE type,
         char* buff);
+
+#ifndef DLMS_IGNORE_MALLOC
+#ifndef GX_DLMS_MICROCONTROLLER
 
     const char* obj_getUnitAsString(
         unsigned char unit);
@@ -65,8 +68,9 @@ extern "C" {
         char** buff);
 #endif //GX_DLMS_MICROCONTROLLER
     const char* err_toString(int err);
+
+#endif //DLMS_IGNORE_MALLOC
+#endif //CONVERTERRS_H
 #ifdef  __cplusplus
 }
 #endif
-
-#endif //CONVERTERRS_H

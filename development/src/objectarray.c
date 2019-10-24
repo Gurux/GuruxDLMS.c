@@ -38,16 +38,15 @@
 #include "../include/objectarray.h"
 
 //Initialize objectArray.
-void oa_init(objectArray* arr)
+void oa_init(objectArray * arr)
 {
     arr->capacity = 0;
     arr->data = NULL;
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
     arr->position = 0;
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //!(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
     arr->size = 0;
 }
-
 
 char oa_isAttached(objectArray* arr)
 {
@@ -60,38 +59,45 @@ unsigned short oa_getCapacity(objectArray* arr)
 }
 
 //Allocate new size for the array in bytes.
-void oa_capacity(objectArray* arr, const unsigned short capacity)
+int oa_capacity(objectArray* arr, const unsigned short capacity)
 {
+#ifndef DLMS_IGNORE_MALLOC
     if (!oa_isAttached(arr))
     {
         arr->capacity = capacity;
         if (arr->data == NULL)
         {
-            arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
+            arr->data = (gxObject * *)gxmalloc(arr->capacity * sizeof(gxObject*));
         }
         else
         {
-            arr->data = (gxObject**)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
+            arr->data = (gxObject * *)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
         }
     }
+#endif //DLMS_IGNORE_MALLOC
+    if (oa_getCapacity(arr) < capacity)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    return 0;
 }
 
 //Attach object to objectArray.
-void oa_attach(objectArray * arr, const gxObject** item, const unsigned short count)
+void oa_attach(objectArray* arr, gxObject** item, unsigned short count)
 {
     arr->capacity = 0x8000 + count;
     arr->size = count;
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
     arr->position = 0;
-#endif //GX_DLMS_MICROCONTROLLER
-    arr->data = (gxObject**)item;
+#endif //!(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
+    arr->data = item;
 }
 
-int oa_verify(objectArray * arr)
+int oa_verify(objectArray* arr)
 {
     unsigned short pos;
     int ret;
-    gxObject *it;
+    gxObject* it;
     for (pos = 0; pos != arr->size; ++pos)
     {
         if ((ret = oa_getByIndex(arr, pos, &it)) != 0)
@@ -107,19 +113,20 @@ int oa_verify(objectArray * arr)
     return DLMS_ERROR_CODE_OK;
 }
 
+#ifndef DLMS_IGNORE_MALLOC
 //Push new data to the objectArray.
-int oa_push(objectArray * arr, gxObject* item)
+int oa_push(objectArray* arr, gxObject* item)
 {
     if (!oa_isAttached(arr) && arr->size >= arr->capacity)
     {
         arr->capacity += OBJECT_ARRAY_CAPACITY;
         if (arr->data == NULL)
         {
-            arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
+            arr->data = (gxObject * *)gxmalloc(arr->capacity * sizeof(gxObject*));
         }
         else
         {
-            arr->data = (gxObject**)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
+            arr->data = (gxObject * *)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
         }
     }
     if (oa_getCapacity(arr) <= arr->size)
@@ -130,9 +137,10 @@ int oa_push(objectArray * arr, gxObject* item)
     ++arr->size;
     return DLMS_ERROR_CODE_OK;
 }
+#endif //DLMS_IGNORE_MALLOC
 
 //Copy content of object array.
-void oa_copy(objectArray *target, objectArray* source)
+void oa_copy(objectArray* target, objectArray* source)
 {
     int pos;
     oa_clear(target);
@@ -157,19 +165,22 @@ void oa_clear2(
         {
             obj_clear(arr->data[index + pos]);
         }
+#ifndef DLMS_IGNORE_MALLOC
         for (pos = 0; pos != count; ++pos)
         {
             gxfree(arr->data[index + pos]);
         }
+#endif //DLMS_IGNORE_MALLOC
     }
     arr->size = index;
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
     arr->position = 0;
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //!(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
 }
 
 void oa_clear(objectArray* arr)
 {
+#ifndef DLMS_IGNORE_MALLOC
     unsigned short pos;
     if (arr->data != NULL)
     {
@@ -192,14 +203,16 @@ void oa_clear(objectArray* arr)
             arr->capacity = 0;
         }
     }
+#endif //DLMS_IGNORE_MALLOC
     arr->size = 0;
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
     arr->position = 0;
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //!(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
 }
 
 void oa_empty(objectArray* arr)
 {
+#ifndef DLMS_IGNORE_MALLOC
     if (!oa_isAttached(arr))
     {
         if (arr->data != NULL)
@@ -209,15 +222,16 @@ void oa_empty(objectArray* arr)
         }
         arr->capacity = 0;
     }
+#endif //DLMS_IGNORE_MALLOC
     arr->size = 0;
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
     arr->position = 0;
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //!(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
 }
 
 //Get item from object array by index.
 int oa_getByIndex(
-    objectArray* arr,
+    const objectArray* arr,
     unsigned short index,
     gxObject** item)
 {
@@ -225,7 +239,7 @@ int oa_getByIndex(
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *item = arr->data[index];
+    *item = (gxObject*) arr->data[index];
     return DLMS_ERROR_CODE_OK;
 }
 
@@ -259,7 +273,7 @@ int oa_findBySN(
 int oa_findByLN(
     objectArray* objects,
     DLMS_OBJECT_TYPE type,
-    const unsigned char *ln,
+    const unsigned char* ln,
     gxObject** object)
 {
     unsigned short pos;
@@ -304,7 +318,12 @@ int oa_getObjects(objectArray* src, DLMS_OBJECT_TYPE type, objectArray* objects)
         }
         if (obj->objectType == type || type == DLMS_OBJECT_TYPE_NONE)
         {
+#ifdef DLMS_IGNORE_MALLOC
+            memcpy(&objects->data[objects->size], obj, sizeof(gxObject));
+            ++objects->size;
+#else
             oa_push(objects, obj);
+#endif //DLMS_IGNORE_MALLOC
         }
     }
     //Trim array.
@@ -337,7 +356,17 @@ int oa_getObjects2(
         {
             if (types[pos2] == obj->objectType)
             {
+#ifdef DLMS_IGNORE_MALLOC
+                if (!(objects->size < oa_getCapacity(objects)))
+                {
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
+                }
+                memcpy(&objects->data[objects->size], obj, sizeof(gxObject));
+                ++objects->size;
+#else
                 oa_push(objects, obj);
+#endif //DLMS_IGNORE_MALLOC
                 break;
             }
         }

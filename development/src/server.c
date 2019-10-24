@@ -70,7 +70,7 @@ typedef struct
     gxObject* item;
 } gxSNInfo;
 
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 /**
  * Handle read request.
  */
@@ -84,7 +84,7 @@ int svr_handleReadRequest(
 int svr_handleWriteRequest(
     dlmsServerSettings* settings,
     gxByteBuffer* data);
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 
 //Copy association view.
 void svr_copyAssociationView(objectArray* target, objectArray* source)
@@ -121,7 +121,7 @@ int svr_initialize(
         {
             return ret;
         }
-        if (it->logicalName == NULL)
+        if (memcmp(it->logicalName, EMPTY_LN, sizeof(EMPTY_LN)) == 0)
         {
             //Invalid Logical Name.
             return DLMS_ERROR_CODE_INVALID_LOGICAL_NAME;
@@ -139,14 +139,14 @@ int svr_initialize(
         else if (it->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME
             && !settings->base.useLogicalNameReferencing)
         {
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
             objectArray* list = &((gxAssociationShortName*)it)->objectList;
             if (list->size == 0)
             {
                 svr_copyAssociationView(list, &settings->base.objects);
             }
             associationObject = it;
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         }
         else if (it->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME
             && settings->base.useLogicalNameReferencing)
@@ -164,6 +164,7 @@ int svr_initialize(
     }
     if (associationObject == NULL)
     {
+#ifndef DLMS_IGNORE_MALLOC
         objectArray* list;
         if (settings->base.useLogicalNameReferencing)
         {
@@ -191,18 +192,21 @@ int svr_initialize(
             oa_copy(list, &settings->base.objects);
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         }
+#else
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_MALLOC
     }
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     // Arrange items by Short Name.
     if (!settings->base.useLogicalNameReferencing)
     {
         return svr_updateShortNames(settings, 0);
     }
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     return 0;
 }
 
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 int svr_updateShortNames(
     dlmsServerSettings* settings,
     unsigned char force)
@@ -250,28 +254,26 @@ int svr_updateShortNames(
     }
     return 0;
 }
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 
 void svr_setInitialize(dlmsServerSettings* settings)
 {
-    if (settings->base.protocolVersion != NULL)
-    {
-        gxfree(settings->base.protocolVersion);
-        settings->base.protocolVersion = NULL;
-    }
+    settings->base.protocolVersion = 0;
 #ifndef DLMS_IGNORE_HIGH_GMAC
+#ifndef DLMS_IGNORE_MALLOC
     if (settings->base.cipher.dedicatedKey != NULL)
     {
         bb_clear(settings->base.cipher.dedicatedKey);
         gxfree(settings->base.cipher.dedicatedKey);
         settings->base.cipher.dedicatedKey = NULL;
     }
+#else
+    memset(settings->base.cipher.dedicatedKey, 0, 16);
+#endif //DLMS_IGNORE_MALLOC
+    memset(settings->base.sourceSystemTitle, 0, sizeof(settings->base.sourceSystemTitle));
 #endif //DLMS_IGNORE_HIGH_GMAC
     trans_clear(&settings->transaction);
     settings->base.blockIndex = 1;
-    settings->base.count = 0;
-    settings->base.index = 0;
     settings->base.connected = DLMS_CONNECTION_STATE_NONE;
     settings->base.authentication = DLMS_AUTHENTICATION_NONE;
     settings->base.isAuthenticationRequired = 0;
@@ -281,7 +283,6 @@ void svr_setInitialize(dlmsServerSettings* settings)
 #endif //DLMS_IGNORE_HIGH_GMAC
     bb_clear(&settings->base.ctoSChallenge);
     bb_clear(&settings->base.stoCChallenge);
-    bb_clear(&settings->base.sourceSystemTitle);
 }
 
 void svr_reset(
@@ -570,11 +571,11 @@ int svr_generateDisconnectRequest(
     dlmsServerSettings* settings,
     gxByteBuffer* data)
 {
-    int len;
+    int ret, len;
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
     {
         bb_setUInt8(data, 0x63);
-        bb_setUInt8(data, 0x0);
+        ret = bb_setUInt8(data, 0x0);
     }
     else
     {
@@ -598,9 +599,9 @@ int svr_generateDisconnectRequest(
 
         len = data->size - 3;
         // Update length.
-        bb_setUInt8ByIndex(data, 2, (unsigned char)len);
+        ret = bb_setUInt8ByIndex(data, 2, (unsigned char)len);
     }
-    return 0;
+    return ret;
 }
 
 int svr_reportError(
@@ -614,14 +615,14 @@ int svr_reportError(
     gxByteBuffer data;
     switch (command)
     {
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_READ_REQUEST:
         cmd = DLMS_COMMAND_READ_RESPONSE;
         break;
     case DLMS_COMMAND_WRITE_REQUEST:
         cmd = DLMS_COMMAND_WRITE_RESPONSE;
         break;
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_GET_REQUEST:
         cmd = DLMS_COMMAND_GET_RESPONSE;
         break;
@@ -649,7 +650,7 @@ int svr_reportError(
     {
         gxLNParameters p;
         params_initLN(&p, &settings->base, 0, cmd, 1,
-            NULL, NULL, error, DLMS_COMMAND_NONE);
+            NULL, NULL, error, DLMS_COMMAND_NONE, 0, 0);
         ret = dlms_getLNPdu(&p, &data);
         if (ret != 0)
         {
@@ -659,13 +660,13 @@ int svr_reportError(
     }
     else
     {
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         gxSNParameters p;
         gxByteBuffer bb;
         bb_init(&bb);
         bb_setUInt8(&bb, error);
         params_initSN(&p, &settings->base, cmd, 1, 1, NULL, &bb, settings->info.encryptedCommand);
-        p.lastBlock = settings->base.index == settings->base.count;
+        p.lastBlock = 1;
         ret = dlms_getSNPdu(&p, &data);
         bb_clear(&bb);
         if (ret != 0)
@@ -675,8 +676,8 @@ int svr_reportError(
         }
 #else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-        }
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+    }
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         ret = dlms_getHdlcFrame(&settings->base, 0, &data, reply);
@@ -693,7 +694,7 @@ int svr_reportError(
     }
     bb_clear(&data);
     return ret;
-    }
+}
 
 int svr_handleSetRequest2(
     dlmsServerSettings* settings,
@@ -701,16 +702,24 @@ int svr_handleSetRequest2(
     unsigned char type,
     gxLNParameters* p)
 {
-    gxValueEventArg* e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+    gxValueEventArg* e;
     gxValueEventCollection list;
     int ret;
     DLMS_OBJECT_TYPE ci;
     unsigned char ch;
     unsigned short tmp;
     unsigned char* ln = NULL;
+#ifdef DLMS_IGNORE_MALLOC
+    list = settings->transaction.targets;
+    e = &list.data[0];
+    ve_clear(e);
+#else
+    e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
     ve_init(e);
     vec_init(&list);
     vec_push(&list, e);
+#endif //DLMS_IGNORE_MALLOC
+
     if ((ret = bb_getUInt16(data, &tmp)) != 0)
     {
         vec_clear(&list);
@@ -731,7 +740,7 @@ int svr_handleSetRequest2(
         vec_clear(&list);
         return ret;
     }
-    if (type == 2)
+    if (type == DLMS_SET_COMMAND_TYPE_FIRST_DATABLOCK)
     {
         unsigned long blockNumber;
         unsigned short size;
@@ -750,8 +759,7 @@ int svr_handleSetRequest2(
         if (blockNumber != settings->base.blockIndex)
         {
             vec_clear(&list);
-            p->status = DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID;
-            return 0;
+            return DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID;
         }
         ++settings->base.blockIndex;
         if (hlp_getObjectCount2(data, &size) != 0)
@@ -763,8 +771,7 @@ int svr_handleSetRequest2(
         if (size != data->size - data->position)
         {
             vec_clear(&list);
-            p->status = DLMS_ERROR_CODE_BLOCK_UNAVAILABLE;
-            return 0;
+            return DLMS_ERROR_CODE_BLOCK_UNAVAILABLE;
         }
     }
     if (!p->multipleBlocks)
@@ -782,14 +789,16 @@ int svr_handleSetRequest2(
             {
                 ret = svr_findObject(&settings->base, ci, 0, ln, e);
             }
+#ifndef DLMS_IGNORE_MALLOC
             bb_clear(data);
+#endif //DLMS_IGNORE_MALLOC
             if (ret == 0)
             {
                 // If target is unknown.
                 if (e->target == NULL)
                 {
                     // Device reports a undefined object.
-                    p->status = DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
+                    ret = DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
                 }
                 else
                 {
@@ -798,46 +807,60 @@ int svr_handleSetRequest2(
                     if (am != DLMS_ACCESS_MODE_WRITE && am != DLMS_ACCESS_MODE_READ_WRITE)
                     {
                         //Read Write denied.
-                        p->status = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
                     }
                     else
                     {
                         svr_preWrite(&settings->base, &list);
                         if (p->multipleBlocks)
                         {
+#ifdef DLMS_IGNORE_MALLOC
+                            settings->transaction.targets.size = 1;
+#else
                             bb_clear(&settings->transaction.data);
                             vec_clear(&settings->transaction.targets);
                             settings->transaction.targets = list;
                             var_clear(&e->value);
                             vec_init(&list);
-                            settings->transaction.command = DLMS_COMMAND_GET_REQUEST;
                             if (!bb_isAttached(data))
                             {
-                                bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
+                                ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
                             }
+#endif //DLMS_IGNORE_MALLOC
+                            settings->transaction.command = DLMS_COMMAND_SET_REQUEST;
                         }
-                        if (e->error != 0)
+                        if (ret == 0)
                         {
-                            p->status = e->error;
-                        }
-                        else if (!e->handled && !p->multipleBlocks)
-                        {
-                            ret = cosem_setValue(&settings->base, e);
-                            svr_postWrite(&settings->base, &list);
                             if (e->error != 0)
                             {
-                                p->status = e->error;
+                                ret = e->error;
+                            }
+                            else if (!e->handled && !p->multipleBlocks)
+                            {
+                                ret = cosem_setValue(&settings->base, e);
+                                svr_postWrite(&settings->base, &list);
+                                if (e->error != 0)
+                                {
+                                    ret = e->error;
+                                }
                             }
                         }
                     }
                 }
             }
         }
+        if (type == DLMS_SET_COMMAND_TYPE_NORMAL)
+        {
+            bb_clear(data);
+        }
     }
+#ifndef DLMS_IGNORE_MALLOC
     vec_clear(&list);
+#endif //DLMS_IGNORE_MALLOC
     return ret;
 }
 
+#ifndef DLMS_IGNORE_MALLOC
 int svr_hanleSetRequestWithDataBlock(
     dlmsServerSettings* settings,
     gxByteBuffer* data,
@@ -852,52 +875,54 @@ int svr_hanleSetRequestWithDataBlock(
         return ret;
     }
     p->multipleBlocks = ch == 0;
-    if ((ret = bb_getUInt32(data, &blockNumber)) != 0)
+    if ((ret = bb_getUInt32(data, &blockNumber)) == 0)
     {
-        return ret;
-    }
-    if (blockNumber != settings->base.blockIndex)
-    {
-        p->status = DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID;
-    }
-    else
-    {
-        ++settings->base.blockIndex;
-        if (hlp_getObjectCount2(data, &size) != 0)
+        if (blockNumber != settings->base.blockIndex)
         {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            ret = DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID;
         }
-        if (size != data->size - data->position)
+        else
         {
-            p->status = DLMS_ERROR_CODE_BLOCK_UNAVAILABLE;
-        }
-        bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
-        // If all data is received.
-        if (!p->multipleBlocks)
-        {
-            gxDataInfo di;
-            gxValueEventArg* e = settings->transaction.targets.data[0];
-            di_init(&di);
-            if ((ret != dlms_getData(&settings->transaction.data, &di, &e->value)) != 0)
+            ++settings->base.blockIndex;
+            if (hlp_getObjectCount2(data, &size) != 0)
             {
-                return ret;
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
-            svr_preWrite(&settings->base, &settings->transaction.targets);
-            if (!e->handled && !p->multipleBlocks)
+            else if (size != data->size - data->position)
             {
-                if ((ret = cosem_setValue(&settings->base, e)) != 0)
+                ret = DLMS_ERROR_CODE_BLOCK_UNAVAILABLE;
+            }
+            if (ret == 0 && (ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position)) == 0)
+            {
+                // If all data is received.
+                if (!p->multipleBlocks)
                 {
-                    return ret;
+                    gxDataInfo di;
+                    gxValueEventArg* e = settings->transaction.targets.data[0];
+                    di_init(&di);
+                    if ((ret != dlms_getData(&settings->transaction.data, &di, &e->value)) != 0)
+                    {
+                        return ret;
+                    }
+                    svr_preWrite(&settings->base, &settings->transaction.targets);
+                    if (!e->handled && !p->multipleBlocks)
+                    {
+                        if ((ret = cosem_setValue(&settings->base, e)) != 0)
+                        {
+                            return ret;
+                        }
+                        svr_postWrite(&settings->base, &settings->transaction.targets);
+                    }
+                    trans_clear(&settings->transaction);
+                    resetBlockIndex(&settings->base);
                 }
-                svr_postWrite(&settings->base, &settings->transaction.targets);
             }
-            trans_clear(&settings->transaction);
-            resetBlockIndex(&settings->base);
         }
     }
     p->multipleBlocks = 1;
-    return 0;
+    return ret;
 }
+#endif //DLMS_IGNORE_MALLOC
 
 /**
     * Generate confirmed service error.
@@ -957,15 +982,20 @@ int svr_handleSetRequest(
         return ret;
     }
     updateInvokeId(settings, invokeId);
-    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_SET_RESPONSE, type, NULL, data, 0, settings->info.encryptedCommand);
+    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_SET_RESPONSE, type, NULL, data, 0, settings->info.encryptedCommand, 0, 0);
     if (type == DLMS_SET_COMMAND_TYPE_NORMAL || type == DLMS_SET_COMMAND_TYPE_FIRST_DATABLOCK)
     {
         ret = svr_handleSetRequest2(settings, data, type, &p);
     }
     else if (type == DLMS_SET_COMMAND_TYPE_WITH_DATABLOCK)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        //All data must fit to one PDU at the moment if malloc is not used.
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+#else
         // Set Request With Data Block
         ret = svr_hanleSetRequestWithDataBlock(settings, data, &p);
+#endif //DLMS_IGNORE_MALLOC
     }
     else
     {
@@ -981,10 +1011,17 @@ int svr_handleSetRequest(
         {
             p.status = DLMS_ERROR_CODE_UNMATCH_TYPE;
         }
+        else if (ret == DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+        {
+            p.status = DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
+        }
         else
         {
             p.status = DLMS_ERROR_CODE_READ_WRITE_DENIED;
         }
+        p.requestType = 0;
+        p.multipleBlocks = 0;
+        p.requestType = 1;
     }
     return dlms_getLNPdu(&p, data);
 }
@@ -995,15 +1032,13 @@ int svr_getRequestNormal(
     gxByteBuffer* data,
     unsigned char invokeId)
 {
-    gxValueEventCollection list;
+    gxValueEventCollection* arr;
     unsigned short ci;
     gxValueEventArg* e;
     unsigned char index;
     int ret;
     unsigned char* ln;
     DLMS_ERROR_CODE status = DLMS_ERROR_CODE_OK;
-    settings->base.count = 0;
-    settings->base.index = 0;
     resetBlockIndex(&settings->base);
     // CI
     if ((ret = bb_getUInt16(data, &ci)) != 0)
@@ -1017,36 +1052,71 @@ int svr_getRequestNormal(
     {
         return ret;
     }
-
+#ifdef DLMS_IGNORE_MALLOC
+    arr = &settings->transaction.targets;
+    if (arr->capacity == 0)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    e = &arr->data[0];
+    ve_clear(e);
+    arr->size = 1;
+    e->value.byteArr = data;
+    e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+#else
+    gxValueEventCollection list;
     e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+    ve_init(e);
     ve_init(e);
     e->value.byteArr = data;
     e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
     e->index = index;
     vec_init(&list);
     vec_push(&list, e);
+    arr = &list;
+#endif //DLMS_IGNORE_MALLOC
+    e->index = index;
+
     // Access selection
     unsigned char selection;
     if ((ret = bb_getUInt8(data, &selection)) != 0)
     {
-        vec_init(&list);
+#ifdef DLMS_IGNORE_MALLOC
+        vec_clear(arr);
+#endif //DLMS_IGNORE_MALLOC
         return ret;
     }
     if (selection != 0)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = bb_getUInt8(data, &e->selector)) != 0)
+        {
+            vec_clear(arr);
+            return ret;
+        }
+        e->parameters.byteArr = data;
+        e->parameters.vt = DLMS_DATA_TYPE_OCTET_STRING;
+#else
         gxDataInfo di;
         di_init(&di);
         if ((ret = bb_getUInt8(data, &e->selector)) != 0 ||
             (ret = dlms_getData(data, &di, &e->parameters)) != 0)
         {
-            vec_init(&list);
+            vec_clear(arr);
             return ret;
         }
+        bb_clear(data);
+#endif //DLMS_IGNORE_MALLOC
     }
-    bb_clear(data);
+    else
+    {
+        bb_clear(data);
+    }
     if ((ret = oa_findByLN(&settings->base.objects, (DLMS_OBJECT_TYPE)ci, ln, &e->target)) != 0)
     {
-        vec_clear(&list);
+#ifdef DLMS_IGNORE_MALLOC
+        vec_clear(arr);
+#endif //DLMS_IGNORE_MALLOC
         return ret;
     }
 
@@ -1077,20 +1147,22 @@ int svr_getRequestNormal(
                     (ret = bb_setUInt8(data, 6)) != 0 ||
                     (ret = bb_set(data, DEFAULT_ASSOCIATION, 6)) != 0)
                 {
+#ifdef DLMS_IGNORE_MALLOC
+                    vec_clear(arr);
+#endif //DLMS_IGNORE_MALLOC
                     return ret;
                 }
             }
             else
             {
-                svr_preRead(&settings->base, &list);
+                svr_preRead(&settings->base, arr);
                 if (!e->handled)
                 {
-                    settings->base.count = e->transactionEndIndex - e->transactionStartIndex;
                     if ((ret = cosem_getValue(&settings->base, e)) != 0)
                     {
                         status = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     }
-                    svr_postRead(&settings->base, &list);
+                    svr_postRead(&settings->base, arr);
                 }
             }
             if (status == 0)
@@ -1099,6 +1171,15 @@ int svr_getRequestNormal(
             }
             if (status == 0)
             {
+#ifdef DLMS_IGNORE_MALLOC
+                if (e->value.vt != DLMS_DATA_TYPE_OCTET_STRING)
+                {
+                    if ((ret = dlms_setData(data, e->value.vt, &e->value)) != 0)
+                    {
+                        status = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    }
+                }
+#else
                 if (!e->byteArray)
                 {
                     if ((ret = dlms_setData(data, e->value.vt, &e->value)) != 0)
@@ -1114,6 +1195,7 @@ int svr_getRequestNormal(
                     }
                     var_clear(&e->value);
                 }
+#endif //DLMS_IGNORE_MALLOC
             }
             else if (status != 0)
             {
@@ -1126,22 +1208,27 @@ int svr_getRequestNormal(
     {
         e->value.vt = DLMS_DATA_TYPE_NONE;
     }
+    unsigned char moreData = e->transactionStartIndex != e->transactionEndIndex;
     gxLNParameters p;
-    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 1, NULL, data, status, settings->info.encryptedCommand);
+    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 1, NULL, data, status, settings->info.encryptedCommand, moreData, !moreData);
     ret = dlms_getLNPdu(&p, data);
-    if (settings->base.count != settings->base.index || data->size > settings->base.maxPduSize)
+    if (e->transactionStartIndex != e->transactionEndIndex || data->size > settings->base.maxPduSize)
     {
-        e->transaction = 1;
+#ifndef DLMS_IGNORE_MALLOC
         trans_clear(&settings->transaction);
         settings->transaction.targets = list;
         vec_init(&list);
-        settings->transaction.command = DLMS_COMMAND_GET_REQUEST;
         if (!bb_isAttached(data))
         {
-            bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
+            ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
         }
+#endif //DLMS_IGNORE_MALLOC
+        e->transaction = 1;
+        settings->transaction.command = DLMS_COMMAND_GET_REQUEST;
     }
-    vec_clear(&list);
+#ifndef DLMS_IGNORE_MALLOC
+    vec_clear(arr);
+#endif //DLMS_IGNORE_MALLOC
     return ret;
 }
 
@@ -1164,13 +1251,13 @@ int svr_getRequestNextDataBlock(
     if (index != settings->base.blockIndex)
     {
         params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 2,
-            NULL, NULL, DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID, settings->info.encryptedCommand);
+            NULL, NULL, DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID, settings->info.encryptedCommand, 0, 0);
         return dlms_getLNPdu(&p, data);
     }
     else
     {
         ++settings->base.blockIndex;
-        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 2, NULL, data, DLMS_ERROR_CODE_OK, settings->info.encryptedCommand);
+        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 2, NULL, data, DLMS_ERROR_CODE_OK, settings->info.encryptedCommand, 1, 1);
         // If transaction is not in progress.
         if (settings->transaction.command == DLMS_COMMAND_NONE)
         {
@@ -1178,58 +1265,58 @@ int svr_getRequestNextDataBlock(
         }
         else
         {
+#ifndef DLMS_IGNORE_MALLOC
             bb_set2(data, &settings->transaction.data, 0, settings->transaction.data.size);
             bb_clear(&settings->transaction.data);
-            moreData = settings->base.index != settings->base.count;
-            if (moreData)
+#endif //DLMS_IGNORE_MALLOC
+            moreData = 1;
+            // If there is multiple blocks on the buffer.
+            // This might happen when Max PDU size is very small.
+            if (data->size < settings->base.maxPduSize)
             {
-                // If there is multiple blocks on the buffer.
-                // This might happen when Max PDU size is very small.
-                if (data->size < settings->base.maxPduSize)
+                for (pos = 0; pos != settings->transaction.targets.size; ++pos)
                 {
-                    for (pos = 0; pos != settings->transaction.targets.size; ++pos)
+                    if ((ret = vec_getByIndex(&settings->transaction.targets, pos, &e)) != 0)
                     {
-                        if ((ret = vec_getByIndex(&settings->transaction.targets, pos, &e)) != 0)
+                        break;
+                    }
+                    e->value.byteArr = data;
+                    e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+                    svr_preRead(&settings->base, &settings->transaction.targets);
+                    if (!e->handled)
+                    {
+                        if ((ret = cosem_getValue(&settings->base, e)) != 0)
+                        {
+                            p.status = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                        }
+                        svr_postRead(&settings->base, &settings->transaction.targets);
+                    }
+                    // Add data.
+                    if (e->byteArray)
+                    {
+                        e->value.vt = DLMS_DATA_TYPE_NONE;
+                    }
+                    else
+                    {
+                        if ((ret = dlms_setData(data, e->value.vt, &e->value)) != 0)
                         {
                             break;
                         }
-                        e->value.byteArr = data;
-                        e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
-                        svr_preRead(&settings->base, &settings->transaction.targets);
-                        if (!e->handled)
-                        {
-                            if ((ret = cosem_getValue(&settings->base, e)) != 0)
-                            {
-                                p.status = DLMS_ERROR_CODE_HARDWARE_FAULT;
-                            }
-                            svr_postRead(&settings->base, &settings->transaction.targets);
-                        }
-                        // Add data.
-                        if (e->byteArray)
-                        {
-                            e->value.vt = DLMS_DATA_TYPE_NONE;
-                        }
-                        else
-                        {
-                            if ((ret = dlms_setData(data, e->value.vt, &e->value)) != 0)
-                            {
-                                break;
-                            }
-                            var_clear(&e->value);
-                        }
+                        var_clear(&e->value);
                     }
-                    moreData = settings->base.index != settings->base.count;
                 }
+                p.lastBlock = !(e->transactionStartIndex < e->transactionEndIndex);
             }
-            p.multipleBlocks = 1;
             ret = dlms_getLNPdu(&p, data);
             if (moreData || data->size - data->position != 0)
             {
                 //Append data to transaction data if buffer is not static.
+#ifndef DLMS_IGNORE_MALLOC
                 if (!bb_isAttached(data))
                 {
                     bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
                 }
+#endif //DLMS_IGNORE_MALLOC
             }
             else
             {
@@ -1246,41 +1333,61 @@ int svr_getRequestWithList(
     gxByteBuffer* data,
     unsigned char invokeId)
 {
+    int ret = 0;
+    gxValueEventCollection* arr;
     gxValueEventArg* e;
     DLMS_OBJECT_TYPE ci;
     gxLNParameters p;
-    gxValueEventCollection list;
-    int ret;
     unsigned char attributeIndex;
     unsigned short id;
     unsigned short pos, cnt;
     unsigned char* ln;
+#ifdef DLMS_IGNORE_MALLOC
+    if (hlp_getObjectCount2(data, &cnt) != 0 || cnt > settings->transaction.targets.capacity)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    arr = &settings->transaction.targets;
+    arr->size = (unsigned char)cnt;
+#else
+    gxValueEventCollection list;
     if (hlp_getObjectCount2(data, &cnt) != 0)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     vec_init(&list);
+    arr = &list;
+#endif //DLMS_IGNORE_MALLOC
+
     for (pos = 0; pos != cnt; ++pos)
     {
         if ((ret = bb_getUInt16(data, &id)) != 0)
         {
-            return ret;
+            break;
         }
         ci = (DLMS_OBJECT_TYPE)id;
         ln = data->data + data->position;
         data->position += 6;
         if ((ret = bb_getUInt8(data, &attributeIndex)) != 0)
         {
-            return ret;
+            break;
         }
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = vec_getByIndex(arr, pos, &e)) != 0)
+        {
+            break;
+        }
+        ve_clear(e);
+#else
         e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
         ve_init(e);
-        e->index = attributeIndex;
         vec_push(&list, e);
+#endif //DLMS_IGNORE_MALLOC
+
+        e->index = attributeIndex;
         if ((ret = oa_findByLN(&settings->base.objects, ci, ln, &e->target)) != 0)
         {
-            vec_clear(&list);
-            return ret;
+            break;
         }
         if (e->target == NULL)
         {
@@ -1304,7 +1411,7 @@ int svr_getRequestWithList(
                 unsigned char selection;
                 if ((ret = bb_getUInt8(data, &selection)) != 0)
                 {
-                    return ret;
+                    break;
                 }
                 if (selection != 0)
                 {
@@ -1312,25 +1419,28 @@ int svr_getRequestWithList(
                     di_init(&di);
                     if ((ret = bb_getUInt8(data, &e->selector)) != 0)
                     {
-                        return ret;
+                        break;
                     }
                     if ((ret = dlms_getData(data, &di, &e->parameters)) != 0)
                     {
-                        return ret;
+                        break;
                     }
                 }
             }
         }
     }
     bb_clear(data);
-    svr_preRead(&settings->base, &list);
+    svr_preRead(&settings->base, arr);
     hlp_setObjectCount(cnt, data);
-    for (pos = 0; pos != list.size; ++pos)
+    unsigned char moreData = 0;
+    for (pos = 0; pos != arr->size; ++pos)
     {
-        if ((ret = vec_getByIndex(&list, pos, &e)) != 0)
+        if ((ret = vec_getByIndex(arr, 0, &e)) != 0)
         {
             break;
         }
+        e->value.byteArr = data;
+        e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if (!e->handled)
         {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
@@ -1363,29 +1473,34 @@ int svr_getRequestWithList(
                 var_clear(&e->value);
             }
         }
-        /*
-        if ((ret = dlms_setData(data, e->value.vt, &e->value)) != 0)
+        //PDU is used for serialization. Set data type to none so size is not changed.
+        if (e->byteArray || (e->value.vt == DLMS_DATA_TYPE_OCTET_STRING && bb_isAttached(e->value.byteArr)))
         {
-            break;
+            e->value.vt = DLMS_DATA_TYPE_NONE;
         }
-        */
-        if (settings->base.index != settings->base.count)
+        if (e->transactionStartIndex != e->transactionEndIndex)
         {
+            e->transaction = 1;
+            settings->transaction.command = DLMS_COMMAND_GET_REQUEST;
+            moreData = 1;
+#ifndef DLMS_IGNORE_MALLOC
             trans_clear(&settings->transaction);
             settings->transaction.targets = list;
             var_clear(&e->value);
             vec_init(&list);
-            settings->transaction.command = DLMS_COMMAND_GET_REQUEST;
             if (!bb_isAttached(data))
             {
                 bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
             }
+#endif //DLMS_IGNORE_MALLOC
         }
     }
-    svr_postRead(&settings->base, &list);
-    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 3, NULL, data, 0xFF, settings->info.encryptedCommand);
+    svr_postRead(&settings->base, arr);
+    params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 3, NULL, data, 0xFF, settings->info.encryptedCommand, moreData, !moreData);
     ret = dlms_getLNPdu(&p, data);
+#ifndef DLMS_IGNORE_MALLOC
     vec_clear(&list);
+#endif //DLMS_IGNORE_MALLOC
     return ret;
 }
 
@@ -1441,15 +1556,14 @@ int svr_handleGetRequest(
     {
         // Access Error : Device reports Read-Write denied.
         gxLNParameters p;
-        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, type, NULL, data, DLMS_ERROR_CODE_READ_WRITE_DENIED, settings->info.encryptedCommand);
+        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, type, NULL, data, DLMS_ERROR_CODE_READ_WRITE_DENIED, settings->info.encryptedCommand, 0, 0);
         bb_clear(data);
         ret = dlms_getLNPdu(&p, data);
     }
     return ret;
 }
 
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 /**
  * Find Short Name object.
  *
@@ -1524,12 +1638,24 @@ int svr_handleRead(
     {
         return ret;
     }
+
+#ifdef DLMS_IGNORE_MALLOC
+    if (settings->transaction.targets.capacity < 1)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    list = &settings->transaction.targets;
+    list->size = 1;
+    e = &list->data[0];
+    ve_clear(e);
+#else
     e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
     ve_init(e);
+    vec_push(list, e);
+#endif //DLMS_IGNORE_MALLOC
     e->target = info.item;
     e->index = info.index;
     e->action = info.action;
-    vec_push(list, e);
     if (type == DLMS_VARIABLE_ACCESS_SPECIFICATION_PARAMETERISED_ACCESS)
     {
         if ((ret = bb_getUInt8(data, &e->selector)) != 0)
@@ -1568,7 +1694,7 @@ int svr_handleRead(
     }
     return ret;
 }
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //#ifdef !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 
 /**
 * Get data for Read command.
@@ -1661,8 +1787,7 @@ int svr_getReadData(
     }
     return 0;
 }
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 int svr_handleReadBlockNumberAccess(
     dlmsServerSettings* settings,
     gxByteBuffer* data)
@@ -1670,6 +1795,7 @@ int svr_handleReadBlockNumberAccess(
     gxSNParameters p;
     gxValueEventArg* e;
     unsigned short pos, blockNumber;
+    unsigned char lastBlock = 1;
     int ret;
     unsigned char multipleBlocks;
     if ((ret = bb_getUInt16(data, &blockNumber)) != 0)
@@ -1689,61 +1815,61 @@ int svr_handleReadBlockNumberAccess(
         bb_clear(&bb);
         return ret;
     }
-    if (settings->base.index != settings->base.count
-        && settings->transaction.data.size < settings->base.maxPduSize)
+    gxValueEventCollection reads;
+    gxValueEventCollection actions;
+    vec_init(&reads);
+    vec_init(&actions);
+    for (pos = 0; pos != settings->transaction.targets.size; ++pos)
     {
-        gxValueEventCollection reads;
-        gxValueEventCollection actions;
-        vec_init(&reads);
-        vec_init(&actions);
-        for (pos = 0; pos != settings->transaction.targets.size; ++pos)
+        if ((ret = vec_getByIndex(&settings->transaction.targets, pos, &e)) != 0)
         {
-            if ((ret = vec_getByIndex(&settings->transaction.targets, pos, &e)) != 0)
-            {
-                break;
-            }
-            if (e->action)
-            {
-                vec_push(&actions, e);
-            }
-            else
-            {
-                vec_push(&reads, e);
-            }
+            break;
         }
-        if (ret == 0)
+        if (e->action)
         {
-            DLMS_SINGLE_READ_RESPONSE requestType;
-            if (reads.size != 0)
-            {
-                svr_preRead(&settings->base, &reads);
-            }
-
-            if (actions.size != 0)
-            {
-                svr_preAction(&settings->base, &actions);
-            }
-            ret = svr_getReadData(settings, &settings->transaction.targets,
-                data, &requestType, &multipleBlocks);
-            if (reads.size != 0)
-            {
-                svr_postRead(&settings->base, &reads);
-            }
-            if (actions.size != 0)
-            {
-                svr_postAction(&settings->base, &actions);
-            }
+            vec_push(&actions, e);
         }
-        vec_empty(&reads);
-        vec_empty(&actions);
+        else
+        {
+            vec_push(&reads, e);
+        }
     }
+    if (ret == 0)
+    {
+        DLMS_SINGLE_READ_RESPONSE requestType;
+        if (reads.size != 0)
+        {
+            svr_preRead(&settings->base, &reads);
+        }
+
+        if (actions.size != 0)
+        {
+            svr_preAction(&settings->base, &actions);
+        }
+        ret = svr_getReadData(settings, &settings->transaction.targets,
+            data, &requestType, &multipleBlocks);
+        if (reads.size != 0)
+        {
+            svr_postRead(&settings->base, &reads);
+        }
+        if (actions.size != 0)
+        {
+            svr_postAction(&settings->base, &actions);
+        }
+        if (lastBlock)
+        {
+            lastBlock = e->transactionStartIndex == e->transactionEndIndex;
+        }
+    }
+    vec_empty(&reads);
+    vec_empty(&actions);
     if (ret == 0)
     {
         ++settings->base.blockIndex;
         params_initSN(&p, &settings->base, DLMS_COMMAND_READ_RESPONSE, 1,
             DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT, NULL, data, settings->info.encryptedCommand);
         p.multipleBlocks = 1;
-        p.lastBlock = settings->base.index == settings->base.count;
+        p.lastBlock = lastBlock;
         ret = dlms_getSNPdu(&p, data);
         // If all data is sent.
         if (p.lastBlock && settings->transaction.data.size == settings->transaction.data.position)
@@ -1975,11 +2101,11 @@ int svr_handleReadRequest(
             params_initSN(&p, &settings->base, DLMS_COMMAND_READ_RESPONSE, cnt,
                 requestType, NULL, data, settings->info.encryptedCommand);
             p.multipleBlocks = multipleBlocks;
-            p.lastBlock = settings->base.index == settings->base.count;
+            p.lastBlock = list.data[0]->transactionStartIndex == list.data[0]->transactionEndIndex;
             ret = dlms_getSNPdu(&p, data);
             if (ret == 0)
             {
-                if (settings->base.count != settings->base.index)
+                if (list.data[0]->transactionStartIndex != list.data[0]->transactionEndIndex)
                 {
                     settings->transaction.targets = list;
                     vec_init(&list);
@@ -1988,12 +2114,6 @@ int svr_handleReadRequest(
                     {
                         bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
                     }
-                }
-                else
-                {
-                    // If all data is transfered.
-                    settings->base.index = 0;
-                    settings->base.count = 0;
                 }
             }
         }
@@ -2159,18 +2279,16 @@ int svr_handleWriteRequest(
             bb_setUInt8(&bb, ch);
         }
         params_initSN(&p, &settings->base, DLMS_COMMAND_WRITE_RESPONSE, cnt, 0xFF, NULL, &bb, settings->info.encryptedCommand);
-        p.lastBlock = settings->base.index == settings->base.count;
+        p.lastBlock = e->transactionStartIndex == e->transactionEndIndex;
         ret = dlms_getSNPdu(&p, data);
         bb_clear(&bb);
     }
     // If all data is transfered.
-    settings->base.index = 0;
-    settings->base.count = 0;
     bb_clear(&results);
     vec_clear(&arr);
     return ret;
 }
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 
 /**
 * Handle action request.
@@ -2190,8 +2308,10 @@ int svr_handleMethodRequest(
     int ret;
     unsigned char invokeId, ch, id;
     unsigned short tmp;
+    gxValueEventCollection* list;
+#ifndef DLMS_IGNORE_MALLOC
     gxValueEventCollection arr;
-
+#endif //DLMS_IGNORE_MALLOC
     // Get type.
     if ((ret = bb_getUInt8(data, &ch)) != 0)
     {
@@ -2221,33 +2341,62 @@ int svr_handleMethodRequest(
     {
         return ret;
     }
-
-    vec_init(&arr);
+#ifdef DLMS_IGNORE_MALLOC
+    if (settings->transaction.targets.capacity < 1)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    list = &settings->transaction.targets;
+    list->size = 1;
+    e = &list->data[0];
+    ve_clear(e);
+#else
+    list = &arr;
+    vec_init(list);
     e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
     ve_init(e);
+    vec_push(list, e);
+#endif //DLMS_IGNORE_MALLOC
     e->index = id;
-    vec_push(&arr, e);
     if (ch != 0)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        e->parameters.byteArr = data;
+        e->parameters.vt = DLMS_DATA_TYPE_OCTET_STRING;
+#endif //DLMS_IGNORE_MALLOC
         gxDataInfo di;
         di_init(&di);
         if ((ret = dlms_getData(data, &di, &e->parameters)) != 0)
         {
+#ifndef DLMS_IGNORE_MALLOC
+            bb_clear(data);
             vec_clear(&arr);
+#endif //DLMS_IGNORE_MALLOC
             return ret;
         }
     }
-
-    if ((ret = oa_findByLN(&settings->base.objects, ci, ln, &e->target)) != 0)
+    if (ci == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
     {
-        vec_clear(&arr);
-        return ret;
+        e->target = NULL;
+    }
+    else
+    {
+        if ((ret = oa_findByLN(&settings->base.objects, ci, ln, &e->target)) != 0)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            bb_clear(data);
+            vec_clear(&arr);
+#endif //DLMS_IGNORE_MALLOC
+            return ret;
+        }
     }
     if (e->target == NULL)
     {
         ret = svr_findObject(&settings->base, ci, 0, ln, e);
     }
+#ifndef DLMS_IGNORE_MALLOC
     bb_clear(data);
+#endif //DLMS_IGNORE_MALLOC
     if (e->target == NULL)
     {
         error = DLMS_ERROR_CODE_UNDEFINED_OBJECT;
@@ -2266,7 +2415,7 @@ int svr_handleMethodRequest(
         }
         else
         {
-            svr_preAction(&settings->base, &arr);
+            svr_preAction(&settings->base, list);
             if (!e->handled)
             {
                 if ((ret = cosem_invoke(settings, e)) != 0)
@@ -2274,16 +2423,26 @@ int svr_handleMethodRequest(
                     e->error = (DLMS_ERROR_CODE)ret;
                     ret = 0;
                 }
-                svr_postAction(&settings->base, &arr);
+                svr_postAction(&settings->base, list);
             }
         }
+#ifdef DLMS_IGNORE_MALLOC
+        if (data->position == data->size)
+        {
+            bb_clear(data);
+        }
+#endif //DLMS_IGNORE_MALLOC
+
         // Set default action reply if not given.
         if (e->error == DLMS_ERROR_CODE_OK)
         {
-            // Add return parameters
-            bb_insertUInt8(data, 0, 1);
-            //Add parameters error code.
-            bb_insertUInt8(data, 1, 0);
+            if (// Add return parameters
+                (ret = bb_insertUInt8(data, 0, 1)) != 0 ||
+                //Add parameters error code.
+                (ret = bb_insertUInt8(data, 1, 0)) != 0)
+            {
+                error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+            }
             if (e->byteArray)
             {
                 e->value.vt = DLMS_DATA_TYPE_NONE;
@@ -2307,7 +2466,7 @@ int svr_handleMethodRequest(
     if (ret == 0)
     {
         gxLNParameters p;
-        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_METHOD_RESPONSE, 1, NULL, data, error, settings->info.encryptedCommand);
+        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_METHOD_RESPONSE, 1, NULL, data, error, settings->info.encryptedCommand, 0, 0);
         ret = dlms_getLNPdu(&p, data);
         // If High level authentication fails.
         if (e->target != NULL && e->target->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME && id == 1)
@@ -2324,7 +2483,9 @@ int svr_handleMethodRequest(
             }
         }
     }
+#ifndef DLMS_IGNORE_MALLOC
     vec_clear(&arr);
+#endif //DLMS_IGNORE_MALLOC
     return ret;
 }
 
@@ -2383,11 +2544,11 @@ int svr_handleCommand(
     case DLMS_COMMAND_SET_REQUEST:
         ret = svr_handleSetRequest(settings, data);
         break;
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_WRITE_REQUEST:
         ret = svr_handleWriteRequest(settings, data);
         break;
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_GET_REQUEST:
         //Check is client reading frames.
         if (settings->transaction.command != DLMS_COMMAND_NONE &&
@@ -2400,7 +2561,7 @@ int svr_handleCommand(
             ret = svr_handleGetRequest(settings, data);
         }
         break;
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_READ_REQUEST:
         if (settings->transaction.command != DLMS_COMMAND_NONE &&
             data->position == data->size)
@@ -2412,7 +2573,7 @@ int svr_handleCommand(
             ret = svr_handleReadRequest(settings, data);
         }
         break;
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_METHOD_REQUEST:
         ret = svr_handleMethodRequest(settings, data);
         break;
@@ -2517,7 +2678,7 @@ int svr_handleRequest2(
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC && settings->hdlc != NULL && settings->hdlc->interCharachterTimeout != 0)
     {
         long now = time_elapsed();
-        unsigned short elapsed = (unsigned short)(now - settings->frameReceived);
+        unsigned short elapsed = (unsigned short)(now - settings->frameReceived) / 1000;
         //If frame shoud be fully received.
         if (elapsed >= settings->hdlc->interCharachterTimeout)
         {
@@ -2580,7 +2741,7 @@ int svr_handleRequest2(
         {
             if ((settings->base.connected & DLMS_CONNECTION_STATE_HDLC) != 0)
             {
-                settings->dataReceived = time_current();
+                settings->dataReceived = time_elapsed();
                 ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, reply);
                 settings->receivedData.position = settings->receivedData.size = 0;
                 return ret;
@@ -2645,7 +2806,7 @@ int svr_handleRequest2(
     // If client want next frame.
     if ((settings->info.moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == DLMS_DATA_REQUEST_TYPES_FRAME)
     {
-        settings->dataReceived = time_current();
+        settings->dataReceived = time_elapsed();
         return dlms_getHdlcFrame(&settings->base, getReceiverReady(&settings->base), NULL, reply);
     }
     // Update command if transaction and next frame is asked.
@@ -2667,7 +2828,7 @@ int svr_handleRequest2(
         }
         else if (settings->info.data.size == 0)
         {
-            settings->dataReceived = time_current();
+            settings->dataReceived = time_elapsed();
             return dlms_getHdlcFrame(&settings->base, getKeepAlive(&settings->base), NULL, reply);
         }
     }
@@ -2678,7 +2839,7 @@ int svr_handleRequest2(
     {
         if (settings->info.command != DLMS_COMMAND_SNRM)
         {
-            int elapsed = (int)(time_current() - settings->dataReceived);
+            int elapsed = (int)(time_elapsed() - settings->dataReceived) / 1000;
             //If inactivity time out is elapsed.
             if (elapsed >= settings->hdlc->inactivityTimeout)
             {
@@ -2706,7 +2867,7 @@ int svr_handleRequest2(
     {
         if (settings->info.command != DLMS_COMMAND_AARQ)
         {
-            int elapsed = (int)(time_current() - settings->dataReceived);
+            int elapsed = (int)(time_elapsed() - settings->dataReceived) / 1000;
             //If inactivity time out is elapsed.
             if (elapsed >= settings->wrapper->inactivityTimeout)
             {
@@ -2746,7 +2907,7 @@ int svr_handleRequest2(
         }
     }
     reply_clear2(&settings->info, 0);
-    settings->dataReceived = time_current();
+    settings->dataReceived = time_elapsed();
     return ret;
 }
 
@@ -2758,14 +2919,14 @@ int handleInactivityTimeout(dlmsServerSettings* settings)
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC &&
         settings->hdlc != NULL && settings->hdlc->inactivityTimeout != 0)
     {
-        inactivity = (time_current() - settings->dataReceived) >= settings->hdlc->inactivityTimeout;
+        inactivity = (time_elapsed() - settings->dataReceived) / 1000 >= settings->hdlc->inactivityTimeout;
     }
 #endif // DLMS_IGNORE_IEC_HDLC_SETUP
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER &&
         settings->wrapper != NULL && settings->wrapper->inactivityTimeout != 0)
     {
-        inactivity = (time_current() - settings->dataReceived) >= settings->wrapper->inactivityTimeout;
+        inactivity = (time_elapsed() - settings->dataReceived) / 1000 >= settings->wrapper->inactivityTimeout;
     }
 #endif // DLMS_IGNORE_TCP_UDP_SETUP
     //If inactivity time out is elapsed.

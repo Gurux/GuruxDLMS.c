@@ -60,29 +60,6 @@
 #include "../../development/include/notify.h"
 #include "../../development/include/gxset.h"
 
-//If OS is not used get time.
-//All compilers don't know or use time.
-#if !defined(_WIN32) && !defined(_WIN64) && !defined(__linux__)
-long time_current(void)
-{
-    //Get current time somewhere.
-    return (long)time(NULL);
-}
-
-long time_elapsed(void)
-{
-    return (long)clock() * 1000;
-}
-
-void time_now(
-    gxtime* value)
-{
-    //Get local time somewhere.
-    time_t tm1 = time(NULL);
-    struct tm dt = *localtime(&tm1);
-    time_init2(value, &dt);
-}
-#endif
 //Meter serial number.
 unsigned long sn = 123456;
 
@@ -125,6 +102,27 @@ gxIecHdlcSetup iecHdlcSetup;
 gxCompactData compactData;
 
 int imageSize = 0;
+
+//Returns the approximate processor time in ms.
+long time_elapsed(void)
+{
+    return (long)clock() /(CLOCKS_PER_SEC / 1000);
+}
+
+//Returns current time.
+//If you are not using operating system you have to implement this by yourself.
+//Reason for this is that all compilers's or HWs don't support time at all.
+void time_now(
+    gxtime* value, unsigned char meterTime)
+{
+    time_initUnix(value, (unsigned long)time(NULL));
+    //If date time is wanted in meter time.
+    if (meterTime)
+    {
+        clock_utcToMeterTime(&clock1, value);
+    }
+}
+
 #ifdef DLMS_INDIAN_STANDARD
 /*Indian Standard examples begin.*/
 gxProfileGeneric instantData;
@@ -146,7 +144,7 @@ gxSecuritySetup securitySetup;
 /*Italian Standard examples end.*/
 
 //All objects.
-const gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &imageTransfer.base, &activePowerL1.base, &clock1.base, &udpSetup.base, &profileGeneric.base,
+gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &imageTransfer.base, &activePowerL1.base, &clock1.base, &udpSetup.base, &profileGeneric.base,
     &autoConnect.base, &activityCalendar.base, &localPortSetup.base, &demandRegister.base, &registerMonitor.base,
     &actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
     &disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base, &iecHdlcSetup.base, &compactData.base,
@@ -172,13 +170,13 @@ const gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &im
 };
 
 //Objects what are shown on association view None.
-const gxObject* NONE_OBJECTS[] = {
+gxObject* NONE_OBJECTS[] = {
     &associationNone.base,
     &ldn.base, &clock1.base };
 
 #if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
 //Objects what are shown on association view None.
-const gxObject* SN_OBJECTS[] = { &associationShortName.base, &ldn.base, &id1.base, &id2.base, &fw.base, &imageTransfer.base,
+gxObject* SN_OBJECTS[] = { &associationShortName.base, &ldn.base, &id1.base, &id2.base, &fw.base, &imageTransfer.base,
 &activePowerL1.base, &clock1.base, &udpSetup.base, &profileGeneric.base,
 &autoConnect.base, &activityCalendar.base, &localPortSetup.base, &demandRegister.base, &registerMonitor.base,
 &actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
@@ -187,11 +185,11 @@ const gxObject* SN_OBJECTS[] = { &associationShortName.base, &ldn.base, &id1.bas
 
 #if !defined(DLMS_ITALIAN_STANDARD)
 //Objects what are shown on association view Low.
-const gxObject* LOW_OBJECTS[] = { &lowAssociation.base, &ldn.base, &securitySetup.base };
+gxObject* LOW_OBJECTS[] = { &lowAssociation.base, &ldn.base, &securitySetup.base };
 #endif //!defined(DLMS_ITALIAN_STANDARD)
 
 //Objects what are shown on association view High.
-const gxObject* HIGH_OBJECTS[] = {
+gxObject* HIGH_OBJECTS[] = {
     &highAssociation.base,
     &ldn.base, &id1.base, &id2.base, &fw.base, &imageTransfer.base, &activePowerL1.base, &clock1.base, &udpSetup.base, &profileGeneric.base,
 &autoConnect.base, &activityCalendar.base, &localPortSetup.base, &demandRegister.base, &registerMonitor.base,
@@ -237,7 +235,13 @@ int addNoneAssociation()
     oa_attach(&associationNone.objectList, NONE_OBJECTS, sizeof(NONE_OBJECTS) / sizeof(NONE_OBJECTS[0]));
     bb_addString(&associationNone.secret, "Gurux");
     associationNone.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_NONE;
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
     memcpy(associationNone.securitySetupReference, securitySetup.base.logicalName, 6);
+#else
+    associationNone.securitySetup = &securitySetup;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    associationNone.clientSAP = 0x10;
+    associationNone.serverSAP = 0x1;
     return 0;
 }
 
@@ -253,7 +257,14 @@ int addLowAssociation()
     lowAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_LOW;
     //Use this if you  need to save heap.
     oa_attach(&lowAssociation.objectList, LOW_OBJECTS, sizeof(LOW_OBJECTS) / sizeof(LOW_OBJECTS[0]));
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
     memcpy(lowAssociation.securitySetupReference, securitySetup.base.logicalName, 6);
+#else
+    lowAssociation.securitySetup = &securitySetup;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
+    lowAssociation.clientSAP = 0x20;
+    lowAssociation.serverSAP = 0x1;
     //All objects are add for this Association View later.
     return 0;
 }
@@ -264,14 +275,20 @@ int addLowAssociation()
 ///////////////////////////////////////////////////////////////////////
 int addHighAssociation()
 {
-    const unsigned char ln[6] = { 0, 0, 40, 0, 2, 255 };
+    const unsigned char ln[6] = { 0, 0, 40, 0, 3, 255 };
     cosem_init2((gxObject*)& highAssociation, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
     bb_addString(&highAssociation.secret, "Gurux");
     highAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH;
     //Use this if you  need to save heap.
     oa_attach(&highAssociation.objectList, HIGH_OBJECTS, sizeof(HIGH_OBJECTS) / sizeof(HIGH_OBJECTS[0]));
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
     memcpy(highAssociation.securitySetupReference, securitySetup.base.logicalName, 6);
+#else
+    highAssociation.securitySetup = &securitySetup;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     //All objects are add for this Association View later.
+    highAssociation.clientSAP = 0x30;
+    highAssociation.serverSAP = 0x1;
     return 0;
 }
 #else
@@ -378,8 +395,8 @@ int addClockObject(
     //Add default clock. Clock's Logical Name is 0.0.1.0.0.255.
     const unsigned char ln[6] = { 0,0,1,0,0,255 };
     cosem_init2((gxObject*)& clock1, DLMS_OBJECT_TYPE_CLOCK, ln);
-    time_init3(&clock1.begin, -1, 9, 1, -1, -1, -1, -1);
-    time_init3(&clock1.end, -1, 3, 1, -1, -1, -1, -1);
+    time_init(&clock1.begin, -1, 9, 1, -1, -1, -1, -1, 0);
+    time_init(&clock1.end, -1, 3, 1, -1, -1, -1, -1, 0);
     return 0;
 }
 
@@ -406,7 +423,7 @@ int addProfileGeneric(
 {
     gxtime tm;
     gxKey* k;
-    gxCaptureObject* capture;
+    gxTarget* capture;
     const unsigned char ln[6] = { 1,0,99,1,0,255 };
     cosem_init2((gxObject*)& profileGeneric, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln);
     //Set capture period to 60 second.
@@ -417,26 +434,25 @@ int addProfileGeneric(
     ///////////////////////////////////////////////////////////////////
     //Add colums.
     //Set saved attribute index.
-    capture = (gxCaptureObject*)malloc(sizeof(gxCaptureObject));
+    capture = (gxTarget*)malloc(sizeof(gxTarget));
     capture->attributeIndex = 2;
     capture->dataIndex = 0;
     k = key_init(&clock1, capture);
     arr_push(&profileGeneric.captureObjects, k);
     //Add register object.
-    capture = (gxCaptureObject*)malloc(sizeof(gxCaptureObject));
+    capture = (gxTarget*)malloc(sizeof(gxTarget));
     capture->attributeIndex = 2;
     capture->dataIndex = 0;
 
     k = key_init(&activePowerL1, capture);
     arr_push(&profileGeneric.captureObjects, k);
-
     // Create 10 000 rows for profile generic file.
     // In example profile generic we have two columns.
     // Date time and integer value.
     int rowCount = 10000;
-    time_now(&tm);
-    time_addMinutes(&tm, -tm.value.tm_min);
-    time_addSeconds(&tm, -tm.value.tm_sec);
+    time_now(&tm, 0);
+    time_addMinutes(&tm, -time_getMinutes(&tm));
+    time_addSeconds(&tm, -time_getSeconds(&tm));
     time_addHours(&tm, -(rowCount - 1));
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #if _MSC_VER > 1400
@@ -447,7 +463,8 @@ int addProfileGeneric(
 #endif
     for (int pos = 0; pos != rowCount; ++pos)
     {
-        fprintf(f, "%d/%d/%d %d:%d:%d;%d\n", 1 + tm.value.tm_mon, tm.value.tm_mday, 1900 + tm.value.tm_year, tm.value.tm_hour, tm.value.tm_min, tm.value.tm_sec, pos + 1);
+        fprintf(f, "%d/%d/%d %d:%d:%d;%d\n", time_getMonths(&tm), time_getDays(&tm), time_getYears(&tm),
+            time_getHours(&tm), time_getMinutes(&tm), time_getSeconds(&tm), pos + 1);
         time_addHours(&tm, 1);
     }
     fclose(f);
@@ -661,9 +678,9 @@ int addAutoConnect(
     autoConnect.repetitionDelay = 60;
     //Calling is allowed between 1am to 6am.
     start = (gxtime*)malloc(sizeof(gxtime));
-    time_init3(start, -1, -1, -1, 1, 0, 0, -1);
+    time_init(start, -1, -1, -1, 1, 0, 0, -1, -1);
     end = (gxtime*)malloc(sizeof(gxtime));
-    time_init3(end, -1, -1, -1, 6, 0, 0, -1);
+    time_init(end, -1, -1, -1, 6, 0, 0, -1, -1);
     arr_push(&autoConnect.callingWindow, key_init(start, end));
     str = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
     bb_init(str);
@@ -691,7 +708,7 @@ int addActivityCalendar(
     sp = (gxSeasonProfile*)malloc(sizeof(gxSeasonProfile));
     bb_init(&sp->name);
     bb_addString(&sp->name, "Summer time");
-    time_init3(&sp->start, -1, 3, 31, -1, -1, -1, -1);
+    time_init(&sp->start, -1, 3, 31, -1, -1, -1, -1, -1);
     bb_init(&sp->weekName);
     arr_push(&activityCalendar.seasonProfileActive, sp);
     //Add week profile.
@@ -707,8 +724,13 @@ int addActivityCalendar(
 
     dp->dayId = 1;
     act = (gxDayProfileAction*)malloc(sizeof(gxDayProfileAction));
-    time_now(&act->startTime);
+    time_now(&act->startTime, 0);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    act->script = BASE(actionSchedule);
+#else
     memcpy(act->scriptLogicalName, actionSchedule.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
     act->scriptSelector = 1;
     arr_push(&dp->daySchedules, act);
     arr_push(&activityCalendar.dayProfileTableActive, dp);
@@ -717,7 +739,7 @@ int addActivityCalendar(
     sp = (gxSeasonProfile*)malloc(sizeof(gxSeasonProfile));
     bb_init(&sp->name);
     bb_addString(&sp->name, "Winter time");
-    time_init3(&sp->start, -1, 10, 30, -1, -1, -1, -1);
+    time_init(&sp->start, -1, 10, 30, -1, -1, -1, -1, -1);
     bb_init(&sp->weekName);
     arr_push(&activityCalendar.seasonProfilePassive, sp);
     //Add week profile.
@@ -732,12 +754,16 @@ int addActivityCalendar(
     arr_init(&dp->daySchedules);
     dp->dayId = 1;
     act = (gxDayProfileAction*)malloc(sizeof(gxDayProfileAction));
-    time_now(&act->startTime);
+    time_now(&act->startTime, 0);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    act->script = BASE(actionSchedule);
+#else
     memcpy(act->scriptLogicalName, actionSchedule.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     act->scriptSelector = 1;
     arr_push(&dp->daySchedules, act);
     arr_push(&activityCalendar.dayProfileTablePassive, dp);
-    time_now(&activityCalendar.time);
+    time_now(&activityCalendar.time, 0);
     return 0;
 }
 
@@ -772,8 +798,8 @@ int addDemandRegister(
     var_setUInt16(&demandRegister.currentAvarageValue, 10);
     var_setUInt16(&demandRegister.lastAvarageValue, 20);
     var_setUInt8(&demandRegister.status, 1);
-    time_now(&demandRegister.startTimeCurrent);
-    time_now(&demandRegister.captureTime);
+    time_now(&demandRegister.startTimeCurrent, 1);
+    time_now(&demandRegister.captureTime, 1);
     demandRegister.period = 10;
     demandRegister.numberOfPeriods = 1;
     return 0;
@@ -785,48 +811,63 @@ int addDemandRegister(
 int addRegisterMonitor(
     objectArray* objects)
 {
-    int ret;
     gxActionSet* action;
     dlmsVARIANT* tmp;
-    objectArray oa;
 
     const unsigned char ln[6] = { 0,0,16,1,0,255 };
     cosem_init2((gxObject*)& registerMonitor, DLMS_OBJECT_TYPE_REGISTER_MONITOR, ln);
 
+    //Add low value.
     tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
     var_init(tmp);
-    var_setString(tmp, "Gurux1", 6);
+    var_setUInt32(tmp, 10000);
     va_push(&registerMonitor.thresholds, tmp);
-
+    //Add high value.
     tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
     var_init(tmp);
-    var_setString(tmp, "Gurux2", 6);
+    var_setUInt32(tmp, 30000);
     va_push(&registerMonitor.thresholds, tmp);
-    oa_init(&oa);
-    //Find register object and add it to the profile generic capture columns.
-    if ((ret = oa_getObjects(objects, DLMS_OBJECT_TYPE_REGISTER, &oa)) != 0)
-    {
-        oa_empty(&oa);
-        return ret;
-    }
-    //If register object is not found.
-    if (oa.size == 0)
-    {
-        oa_empty(&oa);
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
 
     registerMonitor.monitoredValue.attributeIndex = 2;
-    registerMonitor.monitoredValue.objectType = oa.data[0]->objectType;
-    memcpy(registerMonitor.monitoredValue.logicalName, oa.data[0]->logicalName, 6);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    registerMonitor.monitoredValue.target = BASE(activePowerL1);
+#else
+    registerMonitor.monitoredValue.objectType = activePowerL1.base.objectType;
+    memcpy(registerMonitor.monitoredValue.logicalName, activePowerL1.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
 
+
+    //Add low action.
     action = (gxActionSet*)malloc(sizeof(gxActionSet));
-    memcpy(action->actionDown.logicalName, registerMonitor.base.logicalName, 6);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    action->actionDown.script = &scriptTable;
+#else
+    memcpy(action->actionDown.logicalName, scriptTable.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
     action->actionDown.scriptSelector = 1;
-    memcpy(action->actionUp.logicalName, registerMonitor.base.logicalName, 6);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    action->actionUp.script = &scriptTable;
+#else
+    memcpy(action->actionUp.logicalName, scriptTable.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     action->actionUp.scriptSelector = 1;
     arr_push(&registerMonitor.actions, action);
-    oa_empty(&oa);
+    //Add high action.
+    action = (gxActionSet*)malloc(sizeof(gxActionSet));
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    action->actionDown.script = &scriptTable;
+#else
+    memcpy(action->actionDown.logicalName, scriptTable.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    action->actionDown.scriptSelector = 1;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    action->actionUp.script = &scriptTable;
+#else
+    memcpy(action->actionUp.logicalName, scriptTable.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    action->actionUp.scriptSelector = 1;
+    arr_push(&registerMonitor.actions, action);
     return 0;
 }
 
@@ -836,15 +877,18 @@ int addRegisterMonitor(
 int addActionSchedule(
     objectArray* objects)
 {
-    unsigned char target[6] = { 0, 1, 10, 1, 101,255 };
     gxtime* tm;
     const unsigned char ln[6] = { 0,0,15,0,0,255 };
     cosem_init2((gxObject*)& actionSchedule, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln);
-    memcpy(actionSchedule.executedScriptLogicalName, target, 6);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    actionSchedule.executedScript = &scriptTable;
+#else
+    memcpy(actionSchedule.executedScriptLogicalName, scriptTable.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     actionSchedule.executedScriptSelector = 1;
     actionSchedule.type = DLMS_SINGLE_ACTION_SCHEDULE_TYPE1;
     tm = (gxtime*)malloc(sizeof(gxtime));
-    time_now(tm);
+    time_now(tm, 0);
     arr_push(&actionSchedule.executionTime, tm);
     return 0;
 }
@@ -887,23 +931,28 @@ int addCompactData(
     dlmsServerSettings* settings,
     objectArray* objects)
 {
-    gxCaptureObject* capture;
+    gxTarget* capture;
     gxKey* k;
     unsigned char ln[6] = { 0,0,66,0,1,255 };
     cosem_init2(&compactData.base, DLMS_OBJECT_TYPE_COMPACT_DATA, ln);
     compactData.templateId = 66;
+#ifdef DLMS_ITALIAN_STANDARD
+    //Some Italy meters require that there is a array count in some compact buffer.
+    //This is against compact data structure defined in DLMS standard.
+    compactData.appendAA = 1;
+#endif //DLMS_ITALIAN_STANDARD
     //Buffer is captured when invoke is called.
     compactData.captureMethod = DLMS_CAPTURE_METHOD_INVOKE;
     ////////////////////////////////////////
     //Add capture objects.
     //Add compact data template ID as first object.
-    capture = (gxCaptureObject*)malloc(sizeof(gxCaptureObject));
+    capture = (gxTarget*)malloc(sizeof(gxTarget));
     capture->attributeIndex = 4;
     capture->dataIndex = 0;
     k = key_init(&compactData, capture);
     arr_push(&compactData.captureObjects, k);
 
-    capture = (gxCaptureObject*)malloc(sizeof(gxCaptureObject));
+    capture = (gxTarget*)malloc(sizeof(gxTarget));
     capture->attributeIndex = 4;
     capture->dataIndex = 0;
     k = key_init(&actionSchedule, capture);
@@ -943,9 +992,9 @@ int addAutoAnswer(
     cosem_init2((gxObject*)& autoAnswer, DLMS_OBJECT_TYPE_AUTO_ANSWER, ln);
 
     start = (gxtime*)malloc(sizeof(gxtime));
-    time_init3(start, -1, -1, -1, 6, -1, -1, -1);
+    time_init(start, -1, -1, -1, 6, -1, -1, -1, -1);
     end = (gxtime*)malloc(sizeof(gxtime));
-    time_init3(end, -1, -1, -1, 8, -1, -1, -1);
+    time_init(end, -1, -1, -1, 8, -1, -1, -1, -1);
 
     autoAnswer.mode = DLMS_AUTO_CONNECT_MODE_EMAIL_SENDING;
     arr_push(&autoAnswer.listeningWindow, key_init(start, end));
@@ -1050,7 +1099,7 @@ int addPushSetup(
 {
     const char dest[] = "127.0.0.1:7000";
 
-    gxCaptureObject* co;
+    gxTarget* co;
     const unsigned char ln[6] = { 0,0,25,9,0,255 };
     cosem_init2((gxObject*)& pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln);
     pushSetup.destination = (char*)malloc(strlen(dest) + 1);
@@ -1058,17 +1107,17 @@ int addPushSetup(
 
     // Add push object itself. This is needed to tell structure of data to
     // the Push listener.
-    co = (gxCaptureObject*)malloc(sizeof(gxCaptureObject));
+    co = (gxTarget*)malloc(sizeof(gxTarget));
     co->attributeIndex = 2;
     co->dataIndex = 0;
     arr_push(&pushSetup.pushObjectList, key_init(&pushSetup, co));
     // Add logical device name.
-    co = (gxCaptureObject*)malloc(sizeof(gxCaptureObject));
+    co = (gxTarget*)malloc(sizeof(gxTarget));
     co->attributeIndex = 2;
     co->dataIndex = 0;
     arr_push(&pushSetup.pushObjectList, key_init(&ldn, co));
     // Add 0.0.25.1.0.255 Ch. 0 IPv4 setup IP address.
-    co = (gxCaptureObject*)malloc(sizeof(gxCaptureObject));
+    co = (gxTarget*)malloc(sizeof(gxTarget));
     co->attributeIndex = 3;
     co->dataIndex = 0;
     arr_push(&pushSetup.pushObjectList, key_init(&ip4Setup, co));
@@ -1087,12 +1136,15 @@ int addScriptTable(
     cosem_init2((gxObject*)& scriptTable, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln);
     s->id = 1;
     arr_init(&s->actions);
-    a->identifier = 2;//Write.
-
+    a->type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
     //TODO: Set object type and logical name, attribute index to execute.
     //In this example it is a clock.
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    a->target = BASE(clock1);
+#else
     a->objectType = DLMS_OBJECT_TYPE_CLOCK;
     memcpy(a->logicalName, clock1.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     a->index = 2;
     var_init(&a->parameter);
     //Add executed action to action list.
@@ -1221,6 +1273,10 @@ int svr_InitObjects(
     {
         return ret;
     }
+    if ((ret = addScriptTable(objects)) != 0)
+    {
+        return ret;
+    }
     if ((ret = addRegisterMonitor(objects)) != 0)
     {
         return ret;
@@ -1255,10 +1311,6 @@ int svr_InitObjects(
         return ret;
     }
     if ((ret = addPushSetup(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addScriptTable(objects)) != 0)
     {
         return ret;
     }
@@ -1385,7 +1437,7 @@ unsigned short getHead() {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     gxtime tm, last;
     int len, month = 0, day = 0, year = 1971, hour = 0, minute = 0, second = 0, value = 0;
-    time_init3(&last, year, month, day, hour, minute, second, 0);
+    time_init(&last, year, month, day, hour, minute, second, 0, -1);
 #if _MSC_VER > 1400
     FILE * f = NULL;
     fopen_s(&f, DATAFILE, "r");
@@ -1396,7 +1448,7 @@ unsigned short getHead() {
     {
         while ((len = fscanf(f, "%d/%d/%d %d:%d:%d;%d", &month, &day, &year, &hour, &minute, &second, &value)) != -1)
         {
-            time_init3(&tm, year, month, day, hour, minute, second, 0);
+            time_init(&tm, year, month, day, hour, minute, second, 0, -1);
             if (time_compare(&last, &tm) > 0)
             {
                 break;
@@ -1457,7 +1509,7 @@ void getProfileGenericDataByEntry(gxProfileGeneric* p, long index, long count)
                     tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
                     var_init(tmp);
                     tmp->dateTime = (gxtime*)malloc(sizeof(gxtime));
-                    time_init3(tmp->dateTime, year, month, day, hour, minute, second, 0);
+                    time_init(tmp->dateTime, year, month, day, hour, minute, second, 0, -1);
                     tmp->vt = DLMS_DATA_TYPE_DATETIME;
                     va_push(row, tmp);
 
@@ -1536,7 +1588,7 @@ int GetProfileGenericDataByRangeFromRingBuffer(gxValueEventArg* e)
     unsigned short pos = 0;
     dlmsVARIANT tmp;
     var_init(&tmp);
-    time_init3(&last, year, month, day, hour, minute, second, 0);
+    time_init(&last, year, month, day, hour, minute, second, 0, -1);
     if ((ret = va_getByIndex(e->parameters.Arr, 1, &it)) != 0)
     {
         return ret;
@@ -1584,11 +1636,11 @@ int GetProfileGenericDataByRangeFromRingBuffer(gxValueEventArg* e)
             //Skip emmpty lines.
             if (len == 7)
             {
-                time_init3(&tm, year, month, day, hour, minute, second, 0);
+                time_init(&tm, year, month, day, hour, minute, second, 0, -1);
                 //If value is inside of start and end time.
                 if (time_compare(&tm, &start) >= 0 && time_compare(&tm, &end) <= 0)
                 {
-                    if (last.value.tm_year == 71)
+                    if (time_getYears(&last) == 1971)
                     {
                         e->transactionStartIndex = pos;
                         //Save end position if we have only one row.
@@ -1685,7 +1737,7 @@ int getProfileGenericDataByRange(dlmsSettings* settings, gxValueEventArg* e)
     }
     if (it->vt == DLMS_DATA_TYPE_UINT32)
     {
-        time_init4(&start, (time_t)it->ulVal);
+        time_initUnix(&start, (time_t)it->ulVal);
     }
     else
     {
@@ -1704,7 +1756,7 @@ int getProfileGenericDataByRange(dlmsSettings* settings, gxValueEventArg* e)
     }
     if (it->vt == DLMS_DATA_TYPE_UINT32)
     {
-        time_init4(&end, (time_t)it->ulVal);
+        time_initUnix(&end, (time_t)it->ulVal);
     }
     else
     {
@@ -1739,7 +1791,7 @@ int getProfileGenericDataByRange(dlmsSettings* settings, gxValueEventArg* e)
             //Skip emmpty lines.
             if (len == 7)
             {
-                time_init3(&tm, year, month, day, hour, minute, second, 0);
+                time_init(&tm, year, month, day, hour, minute, second, 0, -1);
                 if (time_compare(&tm, &end) > 0)
                 {
                     // If all data is read.
@@ -1771,7 +1823,6 @@ void svr_preRead(
     gxValueEventCollection* args)
 {
     gxValueEventArg* e;
-    dlmsVARIANT* value;
     int ret, pos;
     DLMS_OBJECT_TYPE type;
     for (pos = 0; pos != args->size; ++pos)
@@ -1859,7 +1910,7 @@ void svr_preRead(
                         }
                     }
                 }
-                unsigned short count = e->transactionEndIndex - e->transactionStartIndex;
+                unsigned long count = e->transactionEndIndex - e->transactionStartIndex;
                 // Read only rows that can fit to one PDU.
                 if (e->transactionEndIndex - e->transactionStartIndex > p->maxRowCount)
                 {
@@ -1879,7 +1930,7 @@ void svr_preRead(
                 else
                 {
                     //Index where to start.
-                    unsigned short index = e->transactionStartIndex;
+                    unsigned long index = e->transactionStartIndex;
                     if (useRingBuffer)
                     {
                         index += getHead();
@@ -1893,24 +1944,7 @@ void svr_preRead(
         //Update date and time of clock object.
         if (e->target == (gxObject*)& clock1 && e->index == 2)
         {
-            //If value is update by write that value is returned.
-            if (((gxClock*)e->target)->time.value.tm_year == 0)
-            {
-                time_now(&((gxClock*)e->target)->time);
-            }
-        }
-        else if (type == DLMS_OBJECT_TYPE_REGISTER_MONITOR)
-        {
-            if (e->index == 2)
-            {
-                //Initialize random seed.
-                srand((unsigned int)time(NULL));
-                va_clear(&((gxRegisterMonitor*)e->target)->thresholds);
-                value = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
-                var_init(value);
-                var_setUInt16(value, rand() % 100 + 1);
-                va_push(&((gxRegisterMonitor*)e->target)->thresholds, value);
-            }
+            time_now(&((gxClock*)e->target)->time, 1);
         }
     }
 }
@@ -1964,6 +1998,7 @@ void svr_preWrite(
         //Loop buffer elements in write.
         if (e->target == &compactData.base && e->index == 2)
         {
+#ifndef GX_DLMS_MICROCONTROLLER
             variantArray values;
             va_init(&values);
             if ((compactData_getValues(settings, &compactData.templateDescription, e->value.byteArr, &values)) != 0 ||
@@ -1973,8 +2008,10 @@ void svr_preWrite(
                 break;
             }
             va_clear(&values);
+#endif //GX_DLMS_MICROCONTROLLER
             break;
         }
+#ifndef GX_DLMS_MICROCONTROLLER
         //Loop excution times in write.
         if (e->target == &actionSchedule.base && e->index == 4)
         {
@@ -1997,6 +2034,7 @@ void svr_preWrite(
             }
             break;
         }
+#endif //GX_DLMS_MICROCONTROLLER
     }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
 }
@@ -2249,7 +2287,7 @@ void svr_postAction(
     {
         if ((ret = vec_getByIndex(args, pos, &e)) != 0)
         {
-            return;
+            break;
         }
         if (e->target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
         {
@@ -2333,7 +2371,7 @@ int sendPush(
     if ((ret = connectServer(host, port, &s)) == 0)
     {
         //        cl_init(&cl, 1, 1, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_WRAPPER);
-        if ((ret = notify_generatePushSetupMessages(settings, NULL, push, &messages)) == 0)
+        if ((ret = notify_generatePushSetupMessages(settings, 0, push, &messages)) == 0)
         {
             for (pos = 0; pos != messages.size; ++pos)
             {
@@ -2421,7 +2459,7 @@ DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
     if (settings->base.cipher.security == DLMS_SECURITY_NONE)
     {
         //Uncomment this if you want that only Get service is available with authentication level None.
-        //settings->base.negotiatedConformance &= DLMS_CONFORMANCE_GET;
+        //settings->base.negotiatedConformance = DLMS_CONFORMANCE_GET;
          //Uncomment this if secured (ciphered) connection is always required.
          //return DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
     }
@@ -2470,17 +2508,22 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     {
         return DLMS_ACCESS_MODE_READ;
     }
+    //Security Setup client_system_title and server_system_title access is not allowed.
+    if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP && (index == 4 || index == 5))
+    {
+        return DLMS_ACCESS_MODE_READ;
+    }
+    //Compact data buffer is read-only.
+    if (obj->objectType == DLMS_OBJECT_TYPE_COMPACT_DATA && index == 2)
+    {
+        return DLMS_ACCESS_MODE_READ;
+    }
+
     // Only read is allowed
     if (settings->authentication == DLMS_AUTHENTICATION_NONE)
     {
         return DLMS_ACCESS_MODE_READ;
     }
-    //client_system_title and server_system_title are read-only.
-    if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP && (index == 4 || index == 5))
-    {
-        return DLMS_ACCESS_MODE_READ;
-    }
-
     //Only read is allowed for followed tests.
     if (obj->objectType == DLMS_OBJECT_TYPE_REGISTER ||
         obj->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME ||
@@ -2514,6 +2557,12 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
     {
         return DLMS_METHOD_ACCESS_MODE_NONE;
     }
+    //Example server don't allow security setup changes.
+    if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP)
+    {
+        return DLMS_METHOD_ACCESS_MODE_NONE;
+    }
+
     // Only clock methods are allowed.
     if (settings->authentication == DLMS_AUTHENTICATION_LOW)
     {
@@ -2557,7 +2606,7 @@ int svr_connected(
             //Return error if client can connect only using pre-established connnection.
             return DLMS_ERROR_CODE_READ_WRITE_DENIED;
         }
-}
+    }
 #else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;
@@ -2600,8 +2649,9 @@ void captureToRingBuffer(gxProfileGeneric* pg)
 #endif
     obj_clearProfileGenericBuffer(&pg->buffer);
     // Update last average value.
-    time_now(&tm);
-    fprintf(f, "%d/%d/%d %d:%d:%d;%d\n", 1 + tm.value.tm_mon, tm.value.tm_mday, 1900 + tm.value.tm_year, tm.value.tm_hour, tm.value.tm_min, tm.value.tm_sec, cnt);
+    time_now(&tm, 0);
+    fprintf(f, "%d/%d/%d %d:%d:%d;%d\n", time_getMonths(&tm), time_getDays(&tm), time_getYears(&tm),
+        time_getHours(&tm), time_getMinutes(&tm), time_getSeconds(&tm), cnt);
     fclose(f);
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 }
@@ -2619,8 +2669,9 @@ void capture2File(gxProfileGeneric* pg)
 #endif
     obj_clearProfileGenericBuffer(&pg->buffer);
     // Update last average value.
-    time_now(&tm);
-    fprintf(f, "%d/%d/%d %d:%d:%d;%d\n", 1 + tm.value.tm_mon, tm.value.tm_mday, 1900 + tm.value.tm_year, tm.value.tm_hour, tm.value.tm_min, tm.value.tm_sec, cnt);
+    time_now(&tm, 0);
+    fprintf(f, "%d/%d/%d %d:%d:%d;%d\n", time_getMonths(&tm), time_getDays(&tm), time_getYears(&tm),
+        time_getHours(&tm), time_getMinutes(&tm), time_getSeconds(&tm), cnt);
     fclose(f);
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 }

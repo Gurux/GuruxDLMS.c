@@ -49,10 +49,9 @@
 unsigned char hlp_isBigEndian(void)
 {
     unsigned short a = 0x1234;
-    return *((unsigned char *)&a) == 0x12;
+    return *((unsigned char*)& a) == 0x12;
 }
 
-#ifndef GX_DLMS_MICROCONTROLLER
 char* hlp_getErrorMessage(short err)
 {
     switch (err)
@@ -147,7 +146,6 @@ char* hlp_getErrorMessage(short err)
         return "Unknown error.";
     }
 }
-#endif //GX_DLMS_MICROCONTROLLER
 
 unsigned char hlp_getObjectCountSizeInBytes(unsigned long count)
 {
@@ -298,7 +296,8 @@ int hlp_setObjectCount(unsigned long count, gxByteBuffer* buff)
     return ret;
 }
 
-char* hlp_bytesToHex(const unsigned char* pBytes, int count)
+#ifndef DLMS_IGNORE_MALLOC
+char* hlp_bytesToHex(const unsigned char* bytes, int count)
 {
     const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
     unsigned char tmp;
@@ -311,7 +310,7 @@ char* hlp_bytesToHex(const unsigned char* pBytes, int count)
         {
             for (pos = 0; pos != count; ++pos)
             {
-                tmp = pBytes[pos] & 0xFF;
+                tmp = bytes[pos] & 0xFF;
                 hexChars[pos * 3] = hexArray[tmp >> 4];
                 hexChars[pos * 3 + 1] = hexArray[tmp & 0x0F];
                 hexChars[pos * 3 + 2] = ' ';
@@ -325,6 +324,34 @@ char* hlp_bytesToHex(const unsigned char* pBytes, int count)
         hexChars[0] = '\0';
     }
     return hexChars;
+}
+#endif //DLMS_IGNORE_MALLOC
+
+int hlp_bytesToHex2(const unsigned char* bytes, unsigned short count, char* buff, unsigned short size)
+{
+    const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+    unsigned char tmp;
+    int pos;
+    if (3 * count > size)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (count != 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            tmp = bytes[pos] & 0xFF;
+            buff[pos * 3] = hexArray[tmp >> 4];
+            buff[pos * 3 + 1] = hexArray[tmp & 0x0F];
+            buff[pos * 3 + 2] = ' ';
+        }
+        buff[(3 * count) - 1] = '\0';
+    }
+    else
+    {
+        buff[0] = '\0';
+    }
+    return 0;
 }
 
 unsigned char getValue(char c)
@@ -348,6 +375,7 @@ unsigned char getValue(char c)
     return value;
 }
 
+#ifndef DLMS_IGNORE_MALLOC
 int hlp_hexToBytes(
     const char* str,
     unsigned char** buffer,
@@ -386,14 +414,14 @@ int hlp_hexToBytes(
             {
                 tmp[*count] = (unsigned char)(lastValue << 4 | getValue(*str));
                 lastValue = -1;
-                ++*count;
+                ++* count;
             }
         }
         else if (lastValue != -1)
         {
             tmp[*count] = getValue(*str);
             lastValue = -1;
-            ++*count;
+            ++* count;
         }
         ++str;
     }
@@ -403,8 +431,60 @@ int hlp_hexToBytes(
     }
     return 0;
 }
+#endif //DLMS_IGNORE_MALLOC
 
-#ifndef GX_DLMS_MICROCONTROLLER
+int hlp_hexToBytes2(
+    const char* str,
+    unsigned char* buffer,
+    unsigned short* count)
+{
+    unsigned short max = *count;
+    *count = 0;
+    if (buffer == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (str == NULL)
+    {
+        return 0;
+    }
+    int len = (int)strlen(str);
+    if (len == 0)
+    {
+        return 0;
+    }
+    int lastValue = -1;
+    for (int pos = 0; pos != len; ++pos)
+    {
+        if (*str >= '0' && *str < 'g')
+        {
+            if (lastValue == -1)
+            {
+                lastValue = getValue(*str);
+            }
+            else if (lastValue != -1)
+            {
+                buffer[*count] = (unsigned char)(lastValue << 4 | getValue(*str));
+                lastValue = -1;
+                ++* count;
+            }
+        }
+        else if (lastValue != -1)
+        {
+            buffer[*count] = getValue(*str);
+            lastValue = -1;
+            ++* count;
+        }
+        if (max < *count)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        ++str;
+    }
+    return 0;
+}
+
+#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
 void hlp_trace(unsigned char* data, int index, int count, unsigned char send)
 {
     char* buff = hlp_bytesToHex(data + index, count);
@@ -509,40 +589,43 @@ int hlp_appendLogicalName(gxByteBuffer* bb, const unsigned char value[6])
     return bb_addString(bb, ln);
 }
 
+
+#endif //!defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+
 int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
 {
     int ret;
-    ret = hlp_intToString(ln, 25, value[0], 0);
+    ret = hlp_intToString(ln, 25, value[0], 0, 2);
     if (ret != -1)
     {
         ln += ret;
         *ln = '.';
         ++ln;
-        ret = hlp_intToString(ln, 25, value[1], 0);
+        ret = hlp_intToString(ln, 25, value[1], 0, 2);
         if (ret != -1)
         {
             ln += ret;
             *ln = '.';
             ++ln;
-            ret = hlp_intToString(ln, 25, value[2], 0);
+            ret = hlp_intToString(ln, 25, value[2], 0, 2);
             if (ret != -1)
             {
                 ln += ret;
                 *ln = '.';
                 ++ln;
-                ret = hlp_intToString(ln, 25, value[3], 0);
+                ret = hlp_intToString(ln, 25, value[3], 0, 2);
                 if (ret != -1)
                 {
                     ln += ret;
                     *ln = '.';
                     ++ln;
-                    ret = hlp_intToString(ln, 25, value[4], 0);
+                    ret = hlp_intToString(ln, 25, value[4], 0, 2);
                     if (ret != -1)
                     {
                         ln += ret;
                         *ln = '.';
                         ++ln;
-                        ret = hlp_intToString(ln, 25, value[5], 0);
+                        ret = hlp_intToString(ln, 25, value[5], 0, 2);
                     }
                 }
             }
@@ -555,8 +638,7 @@ int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
     return ret;
 }
 
-#endif //GX_DLMS_MICROCONTROLLER
-
+#if !defined(DLMS_IGNORE_MALLOC)
 //Set logical name from string.
 int hlp_setLogicalName(unsigned char ln[6], const char* name)
 {
@@ -605,6 +687,7 @@ int hlp_setLogicalName(unsigned char ln[6], const char* name)
     }
     return DLMS_ERROR_CODE_OK;
 }
+#endif //!defined(DLMS_IGNORE_MALLOC)
 
 void hlp_replace(gxByteBuffer* str, char oldCh, char newCh)
 {
@@ -693,7 +776,7 @@ int hlp_getDataTypeSize(DLMS_DATA_TYPE type)
     return size;
 }
 
-int hlp_intToString(char *str, int bufsize, long value, unsigned char isSigned)
+int hlp_intToString(char* str, int bufsize, long value, unsigned char isSigned, unsigned char digits)
 {
     int cnt = 0;
     long val = value;
@@ -709,12 +792,32 @@ int hlp_intToString(char *str, int bufsize, long value, unsigned char isSigned)
         value = -value;
         ++cnt;
     }
+    if (digits != 0)
+    {
+        --digits;
+    }
     //Find length.
     while ((val = (val / 10)) > 0)
     {
         ++str;
+        if (digits != 0)
+        {
+            --digits;
+        }
     }
-    *(str + 1) = '\0';
+    *(str + digits + 1) = '\0';
+    while (digits != 0)
+    {
+        if (bufsize < 1)
+        {
+            return -1;
+        }
+        *str = '0';
+        --digits;
+        --bufsize;
+        ++str;
+        ++cnt;
+    }
     do
     {
         if (bufsize < 1)
@@ -730,7 +833,7 @@ int hlp_intToString(char *str, int bufsize, long value, unsigned char isSigned)
     return cnt;
 }
 
-long hlp_stringToInt(const char *str)
+long hlp_stringToInt(const char* str)
 {
     if (str == NULL)
     {
@@ -760,7 +863,7 @@ long hlp_stringToInt(const char *str)
     return value;
 }
 
-int hlp_int64ToString(char *str, int bufsize, long long value, unsigned char isSigned)
+int hlp_int64ToString(char* str, int bufsize, long long value, unsigned char isSigned)
 {
     int cnt = 0;
     long long val = value;
@@ -797,7 +900,7 @@ int hlp_int64ToString(char *str, int bufsize, long long value, unsigned char isS
     return cnt;
 }
 
-long long hlp_stringToInt64(const char *str)
+long long hlp_stringToInt64(const char* str)
 {
     if (str == NULL)
     {

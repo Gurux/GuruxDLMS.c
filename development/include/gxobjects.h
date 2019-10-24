@@ -43,6 +43,10 @@ extern "C" {
 #include "gxarray.h"
 #include "gxkey.h"
 
+#ifdef DLMS_IGNORE_MALLOC
+#include "gxdefine.h"
+#endif //DLMS_IGNORE_MALLOC
+
     typedef enum
     {
         /*
@@ -300,6 +304,14 @@ extern "C" {
         DLMS_PPP_AUTHENTICATION_TYPE_CHAP = 2
     } DLMS_PPP_AUTHENTICATION_TYPE;
 
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_DESTINATION_LENGTH];
+        unsigned short size;
+    }gxDestination;
+#endif //DLMS_IGNORE_MALLOC
+
     //Access modes are saved structure because they are not needed on server side and we want to save memory.
     /**
     ---------------------------------------------------------------------------
@@ -312,14 +324,12 @@ extern "C" {
 
     typedef struct
     {
-#ifdef DLMS_ITALIAN_STANDARD
         unsigned short objectType; //DLMS_OBJECT_TYPE
-#else
-        unsigned char objectType; //DLMS_OBJECT_TYPE
-#endif //DLMS_ITALIAN_STANDARD
         unsigned char version;
+#ifndef DLMS_IGNORE_MALLOC
         //Is this component free when collection is clear.
         unsigned char free;
+#endif //DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         unsigned short shortName;
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -327,25 +337,23 @@ extern "C" {
         gxAccess* access;
     } gxObject;
 
+    //Returns object's logical name.
+    const unsigned char* obj_getLogicalName(gxObject* target);
+
     typedef struct
     {
-        gxObject *key;
+        gxObject* key;
         unsigned char value;
     } gxListItem;
-
-    //Make list item.
-    gxListItem* li_init(
-        gxObject* key,
-        unsigned char value);
 
     typedef struct
     {
         gxObject** data;
         unsigned short capacity;
         unsigned short size;
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
         unsigned short position;
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //!(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
     } objectArray;
 
     //---------------------------------------------------------------------------
@@ -385,7 +393,10 @@ extern "C" {
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
     typedef struct
     {
-        gxRegister base;
+        gxObject base;
+        dlmsVARIANT value;
+        signed char scaler;
+        unsigned char unit;
         gxtime captureTime;
         dlmsVARIANT status;
     } gxExtendedRegister;
@@ -414,40 +425,81 @@ extern "C" {
     } gxDemandRegister;
 #endif // DLMS_IGNORE_DEMAND_REGISTER
 
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
     typedef struct
     {
-        DLMS_OBJECT_TYPE classId;
+        DLMS_OBJECT_TYPE objectType;
         unsigned char logicalName[6];
     } gxObjectDefinition;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
+#ifndef DLMS_IGNORE_REGISTER_ACTIVATION
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        gxObject* target;
+        unsigned char indexes[9];
+    } gxRegisterActivationMask;
+#endif //DLMS_IGNORE_MALLOC
 
     //---------------------------------------------------------------------------
     // Online help:
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterActivation
-#ifndef DLMS_IGNORE_REGISTER_ACTIVATION
     typedef struct
     {
         /**
         * Base class where class is derived.
         */
         gxObject base;
+
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+        objectArray registerAssignment;
+#else
         gxArray registerAssignment;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
         gxArray maskList;
+#ifdef DLMS_IGNORE_MALLOC
+        unsigned char activeMask[6];
+#else
         gxByteBuffer activeMask;
+#endif //DLMS_IGNORE_MALLOC
+
+
     } gxRegisterActivation;
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 
-#ifndef DLMS_IGNORE_PROFILE_GENERIC
+#if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA) && defined(DLMS_IGNORE_PUSH_SETUP) && defined(DLMS_IGNORE_PARAMETER_MONITOR))
     //---------------------------------------------------------------------------
     // Online help:
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSProfileGeneric
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCompactData
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSParameterMonitor
     typedef struct
     {
-        unsigned char attributeIndex;
-        unsigned char dataIndex;
+        signed char attributeIndex;
+        unsigned short dataIndex;
+#ifdef DLMS_IGNORE_MALLOC
+        gxObject* target;
+#endif //DLMS_IGNORE_MALLOC
+    } gxTarget;
+
+
+    //---------------------------------------------------------------------------
+    //deprecated: User gxTarget instead of gxCaptureObject.
+    typedef struct
+    {
+        char attributeIndex;
+        unsigned short dataIndex;
     } gxCaptureObject;
 
+#endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA) && defined(DLMS_IGNORE_PUSH_SETUP) && defined(DLMS_IGNORE_PARAMETER_MONITOR))
+
+#ifndef DLMS_IGNORE_PROFILE_GENERIC
+#ifndef DLMS_IGNORE_MALLOC
     //Create capture object with given attribute and data indexes.
-    gxCaptureObject* co_init(unsigned char attributeIndex, unsigned char dataIndex);
+    gxTarget* co_init(unsigned char attributeIndex, unsigned char dataIndex);
+#endif //DLMS_IGNORE_MALLOC
 
     //---------------------------------------------------------------------------
     // Online help:
@@ -459,21 +511,28 @@ extern "C" {
         */
         gxObject base;
 
-        gxArray buffer; //gxarray< gxarray<dlmsVARIANT> >
-        gxArray captureObjects; //gxkey<gxObject*, gxCaptureObject*>
+#ifndef DLMS_IGNORE_MALLOC
+        //There is no buffer is malloc is not used.
+        //Reason for this is that we don't know the structure of the data and where example octect string is saved.
+        //User must do this manually!
+        gxArray buffer;
+#endif //DLMS_IGNORE_MALLOC
+        gxArray captureObjects;
         int capturePeriod;
         DLMS_SORT_METHOD sortMethod;
         gxObject* sortObject;
         unsigned long profileEntries;
         unsigned long entriesInUse;
-        unsigned char sortObjectAttributeIndex;
+        signed char sortObjectAttributeIndex;
         unsigned short sortObjectDataIndex;
 
         /**
         * Max row count is used with Profile Generic to tell how many rows are read
         * to one PDU. Default value is 1. Change this for your needs.
         */
+#ifndef DLMS_IGNORE_MALLOC
         unsigned short maxRowCount;
+#endif //DLMS_IGNORE_MALLOC
     } gxProfileGeneric;
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
@@ -498,6 +557,19 @@ extern "C" {
         gxtime time;
         gxtime presetTime;
     } gxClock;
+
+#ifndef DLMS_IGNORE_CLOCK
+    //Update Daylight Saving time flag if DST is used.
+    void clock_updateDST(
+        gxClock* object,
+        gxtime* value);
+
+    //Convert UTC date time to meter date time.
+    int clock_utcToMeterTime(
+        gxClock* object,
+        gxtime* value);
+#endif // DLMS_IGNORE_CLOCK
+
 #endif //DLMS_IGNORE_CLOCK
 
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
@@ -506,12 +578,15 @@ extern "C" {
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSScriptTable
     typedef struct
     {
-        DLMS_SCRIPT_ACTION_TYPE type;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* target;
+#else
         DLMS_OBJECT_TYPE objectType;
         unsigned char logicalName[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        DLMS_SCRIPT_ACTION_TYPE type;
         dlmsVARIANT parameter;
-        unsigned char index;
-        int identifier;
+        signed char index;
     } gxScriptAction;
 
     //---------------------------------------------------------------------------
@@ -519,7 +594,9 @@ extern "C" {
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSScriptTable
     typedef struct
     {
+        //Script ID.
         unsigned short id;
+        //Script actions.
         gxArray actions;
     } gxScript;
 
@@ -553,16 +630,19 @@ extern "C" {
         * Is Schedule entry enabled.
         */
         unsigned char enable;
-
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxScriptTable* scriptTable;
+#else
         /**
         * Logical name of the Script table object.
         */
         unsigned char logicalName[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
 
         /**
         * Script identifier of the script to be executed.
         */
-        unsigned short scriptSelector;
+        short scriptSelector;
 
         /**
         *
@@ -572,12 +652,12 @@ extern "C" {
         /**
         * Defines a period in minutes, in which an entry shall be processed after power fail.
         */
-        unsigned short validityWindow;
+        short validityWindow;
 
         /**
-        * Days of the week on which the entry is valid.
+        * BitArray days of the week on which the entry is valid.
         */
-        bitArray execWeekdays;
+        unsigned char execWeekdays;
 
         /**
         * Perform the link to the IC Special days table, day_id.
@@ -643,6 +723,59 @@ extern "C" {
     } gxSpecialDaysTable;
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
 
+#ifndef DLMS_IGNORE_SECURITY_SETUP
+    typedef struct
+    {
+        // Used certificate entity.
+        DLMS_CERTIFICATE_ENTITY entity;
+
+        // Used certificate type.
+        DLMS_CERTIFICATE_TYPE type;
+
+#ifdef DLMS_IGNORE_MALLOC
+        // Certificate serial number.
+        char serialNumber[MAX_CERTIFICATE_SERIAL_NUMBER_LENGTH];
+
+        // Certificate issuer.
+        char issuer[MAX_CERTIFICATE_ISSUER_LENGTH];
+
+        // Certificate subject.
+        char subject[MAX_CERTIFICATE_SUBJECT_LENGTH];
+        // Certificate subject alt name.
+        char subjectAltName[MAX_CERTIFICATE_SUBJECT_ALT_LENGTH];
+#else
+        // Certificate serial number.
+        char* serialNumber;
+
+        // Certificate issuer.
+        char* issuer;
+
+        // Certificate subject.
+        char* subject;
+        // Certificate subject alt name.
+        char* subjectAltName;
+#endif //DLMS_IGNORE_MALLOC
+    }gxCertificateInfo;
+
+    /**
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSecuritySetup
+    */
+    typedef struct
+    {
+        /**
+        * Base class where class is derived.
+        */
+        gxObject base;
+        unsigned char securityPolicy;
+        DLMS_SECURITY_SUITE securitySuite;
+        gxByteBuffer serverSystemTitle;
+        gxByteBuffer clientSystemTitle;
+        gxArray certificates;
+    } gxSecuritySetup;
+#endif //DLMS_IGNORE_SECURITY_SETUP
+
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -656,11 +789,16 @@ extern "C" {
         */
         gxObject base;
         objectArray objectList;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxSecuritySetup* securitySetup;
+#else
         unsigned char securitySetupReference[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         gxByteBuffer secret;
     } gxAssociationShortName;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -689,7 +827,7 @@ extern "C" {
         unsigned short maxReceivePduSize;
         unsigned short maxSendPpuSize;
         unsigned char dlmsVersionNumber;
-        unsigned char qualityOfService;
+        signed char qualityOfService;
         gxByteBuffer cypheringInfo;
     } gxXDLMSContextType;
 
@@ -709,6 +847,16 @@ extern "C" {
         DLMS_AUTHENTICATION mechanismId;
     } gxAuthenticationMechanismName;
 
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        //User ID.
+        unsigned char id;
+        //User name
+        char name[MAX_USER_NAME_LENGTH];
+    }gxUser;
+#endif //DLMS_IGNORE_MALLOC
+
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -723,13 +871,17 @@ extern "C" {
 
         DLMS_ASSOCIATION_STATUS associationStatus;
         objectArray objectList;
-        unsigned char clientSAP;
+        signed char clientSAP;
         unsigned short serverSAP;
         gxApplicationContextName applicationContextName;
         gxXDLMSContextType xDLMSContextInfo;
         gxAuthenticationMechanismName authenticationMechanismName;
         gxByteBuffer secret;
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_SECURITY_SETUP))
+        gxSecuritySetup* securitySetup;
+#else
         unsigned char securitySetupReference[6];
+#endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_SECURITY_SETUP))
         /**
         * User list.
         */
@@ -737,11 +889,25 @@ extern "C" {
         /**
         * Current user.
         */
+#ifdef DLMS_IGNORE_MALLOC
+        gxUser currentUser;
+#else
         gxKey2 currentUser;
-
+#endif //DLMS_IGNORE_MALLOC
     } gxAssociationLogicalName;
 
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
+
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_SAP_ITEM_NAME_LENGTH];
+        unsigned short size;
+    }gxSapItemName;
+#endif //DLMS_IGNORE_MALLOC
+
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -750,7 +916,11 @@ extern "C" {
     typedef struct
     {
         unsigned short id;
+#ifdef DLMS_IGNORE_MALLOC
+        gxSapItemName name;
+#else
         gxByteBuffer name;
+#endif //DLMS_IGNORE_MALLOC
     } gxSapItem;
 
     /**
@@ -770,6 +940,21 @@ extern "C" {
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char data[MAX_IMAGE_IDENTIFICATION_LENGTH];
+        unsigned short size;
+    }gxImageIdentification;
+
+    typedef struct
+    {
+        unsigned char data[MAX_IMAGE_SIGNATURE_LENGTH];
+        unsigned short size;
+    }gxImageSignature;
+#endif //DLMS_IGNORE_MALLOC
+
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -777,9 +962,15 @@ extern "C" {
     */
     typedef struct
     {
-        long size;
+        unsigned long size;
+
+#ifdef DLMS_IGNORE_MALLOC
+        gxImageIdentification identification;
+        gxImageSignature signature;
+#else
         gxByteBuffer identification;
         gxByteBuffer signature;
+#endif //DLMS_IGNORE_MALLOC
     } gxImageActivateInfo;
 
     /**
@@ -826,17 +1017,24 @@ extern "C" {
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 
 #ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
-    /**
-    ---------------------------------------------------------------------------
-    Online help:
-    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSActivityCalendar
-    */
+
+#ifdef DLMS_IGNORE_MALLOC
     typedef struct
     {
-        gxByteBuffer name;
-        gxtime start;
-        gxByteBuffer weekName;
-    } gxSeasonProfile;
+        unsigned char value[MAX_SEASON_PROFILE_NAME_LENGTH];
+        unsigned short size;
+    }gxSeasonProfileName;
+#endif //DLMS_IGNORE_MALLOC
+
+#define SET_OCTECT_STRING(X, V, S) memcpy(X.value, V, S);X.size=S
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_SEASON_PROFILE_WEEK_NAME_LENGTH];
+        unsigned short size;
+    }gxSeasonProfileWeekName;
+#endif //DLMS_IGNORE_MALLOC
 
     /**
     ---------------------------------------------------------------------------
@@ -845,7 +1043,39 @@ extern "C" {
     */
     typedef struct
     {
+#ifdef DLMS_IGNORE_MALLOC
+        gxSeasonProfileName name;
+#else
         gxByteBuffer name;
+#endif //DLMS_IGNORE_MALLOC
+        gxtime start;
+#ifdef DLMS_IGNORE_MALLOC
+        gxSeasonProfileWeekName weekName;
+#else
+        gxByteBuffer weekName;
+#endif //DLMS_IGNORE_MALLOC
+    } gxSeasonProfile;
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_SEASON_WEEK_PROFILE_NAME_LENGTH];
+        unsigned short size;
+    }gxWeekProfileName;
+#endif //DLMS_IGNORE_MALLOC
+
+    /**
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSActivityCalendar
+    */
+    typedef struct
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        gxWeekProfileName name;
+#else
+        gxByteBuffer name;
+#endif //DLMS_IGNORE_MALLOC
         unsigned char monday;
         unsigned char tuesday;
         unsigned char wednesday;
@@ -863,7 +1093,11 @@ extern "C" {
     typedef struct
     {
         gxtime startTime;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* script;
+#else
         unsigned char scriptLogicalName[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         unsigned short scriptSelector;
     } gxDayProfileAction;
 
@@ -911,9 +1145,13 @@ extern "C" {
     */
     typedef struct
     {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* target;
+#else
         DLMS_OBJECT_TYPE objectType;
         unsigned char logicalName[6];
-        unsigned char attributeIndex;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        signed char attributeIndex;
     } gxMonitoredValue;
 
     /**
@@ -923,7 +1161,11 @@ extern "C" {
     */
     typedef struct
     {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxScriptTable* script;
+#else
         unsigned char logicalName[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         unsigned short scriptSelector;
     } gxActionItem;
 
@@ -969,7 +1211,11 @@ extern "C" {
         */
         gxObject base;
 
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxScriptTable* executedScript;
+#else
         unsigned char executedScriptLogicalName[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         unsigned short executedScriptSelector;
         DLMS_SINGLE_ACTION_SCHEDULE_TYPE type;
         gxArray executionTime; //gxTime
@@ -1089,6 +1335,15 @@ extern "C" {
 #endif //DLMS_IGNORE_UTILITY_TABLES
 
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_MODEM_INITIALIZATION_STRING_LENGTH];
+        unsigned short size;
+    }gxModemInitialisationString;
+#endif //DLMS_IGNORE_MALLOC
+
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -1096,10 +1351,23 @@ extern "C" {
     */
     typedef struct
     {
+#ifdef DLMS_IGNORE_MALLOC
+        gxModemInitialisationString request;
+        gxModemInitialisationString response;
+#else
         gxByteBuffer request;
         gxByteBuffer response;
+#endif //DLMS_IGNORE_MALLOC
         unsigned short delay;
     } gxModemInitialisation;
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_MODEM_PROFILE_STRING_LENGTH];
+        unsigned short size;
+    }gxModemProfile;
+#endif //DLMS_IGNORE_MALLOC
 
     /**
     ---------------------------------------------------------------------------
@@ -1118,6 +1386,12 @@ extern "C" {
     } gxModemConfiguration;
 
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
+
+    typedef struct
+    {
+        gxtime first;
+        gxtime second;
+    }gxTimePair;
 
 #ifndef DLMS_IGNORE_AUTO_ANSWER
     /**
@@ -1174,7 +1448,12 @@ extern "C" {
         */
         gxObject base;
         unsigned short port;
-        gxByteBuffer ipReference;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* ipSetup;
+#else
+        //Logical name.
+        unsigned char ipReference[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         unsigned char maximumSimultaneousConnections;
         unsigned short inactivityTimeout;
         unsigned short maximumSegmentSize;
@@ -1183,6 +1462,13 @@ extern "C" {
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 
 #ifndef DLMS_IGNORE_IP4_SETUP
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_IP4_SETUP_IP_OPTION_DATA_LENGTH];
+        unsigned short size;
+    }gxip4SetupIpOptionData;
+#endif //DLMS_IGNORE_MALLOC
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -1191,8 +1477,12 @@ extern "C" {
     typedef struct
     {
         DLMS_IP_OPTION_TYPE type;
-        short length;
+        unsigned char length;
+#ifdef DLMS_IGNORE_MALLOC
+        gxip4SetupIpOptionData data;
+#else
         gxByteBuffer data;
+#endif //DLMS_IGNORE_MALLOC
     } gxip4SetupIpOption;
 
     /**
@@ -1206,9 +1496,13 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        gxByteBuffer dataLinkLayerReference;
+        unsigned char dataLinkLayerReference[6];
         unsigned int ipAddress;
+#ifdef DLMS_IGNORE_MALLOC
+        gxArray multicastIPAddress;
+#else
         variantArray multicastIPAddress;
+#endif //DLMS_IGNORE_MALLOC
         gxArray ipOptions; //gxip4SetupIpOption
         unsigned long subnetMask;
         unsigned long gatewayIPAddress;
@@ -1266,8 +1560,8 @@ extern "C" {
     typedef struct
     {
         DLMS_PPP_SETUP_LCP_OPTION_TYPE type;
+        unsigned char length;
         dlmsVARIANT data;
-        int length;
     } gxpppSetupLcpOption;
 
     /**
@@ -1278,8 +1572,8 @@ extern "C" {
     typedef struct
     {
         DLMS_PPP_SETUP_IPCP_OPTION_TYPE type;
+        unsigned char length;
         dlmsVARIANT data;
-        int length;
     } gxpppSetupIPCPOption;
 
     /**
@@ -1294,7 +1588,7 @@ extern "C" {
         */
         gxObject base;
         gxArray ipcpOptions; // gxpppSetupIPCPOption
-        gxByteBuffer PHYReference;
+        unsigned char PHYReference[6];
         gxArray lcpOptions; //CGXDLMSPppSetupLcpOption
         gxByteBuffer userName;
         gxByteBuffer password;
@@ -1424,7 +1718,11 @@ extern "C" {
         /**
         * Name of network operator.
         */
+#ifdef DLMS_IGNORE_MALLOC
+        gxByteBuffer operatorName;
+#else
         char* operatorName;
+#endif //DLMS_IGNORE_MALLOC
 
         /**
         * Registration status of the modem.
@@ -1471,7 +1769,7 @@ extern "C" {
         */
         gxObject base;
 
-        gxArray tableCellValues;
+        variantArray tableCellValues;
         gxArray tableCellDefinition;
         signed char scaler;
         unsigned char unit;
@@ -1494,46 +1792,6 @@ extern "C" {
         //TODO:
     } gxStatusMapping;
 #endif //DLMS_IGNORE_STATUS_MAPPING
-
-#ifndef DLMS_IGNORE_SECURITY_SETUP
-    typedef struct
-    {
-        // Used certificate entity.
-        DLMS_CERTIFICATE_ENTITY entity;
-
-        // Used certificate type.
-        DLMS_CERTIFICATE_TYPE type;
-
-        // Certificate serial number.
-        char* serialNumber;
-
-        // Certificate issuer.
-        char* issuer;
-
-        // Certificate subject.
-        char* subject;
-        // Certificate subject alt name.
-        char* subjectAltName;
-    }gxCertificateInfo;
-
-    /**
-    ---------------------------------------------------------------------------
-    Online help:
-    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSecuritySetup
-    */
-    typedef struct
-    {
-        /**
-        * Base class where class is derived.
-        */
-        gxObject base;
-        unsigned char securityPolicy;
-        DLMS_SECURITY_SUITE securitySuite;
-        gxByteBuffer serverSystemTitle;
-        gxByteBuffer clientSystemTitle;
-        gxArray certificates;
-    } gxSecuritySetup;
-#endif //DLMS_IGNORE_SECURITY_SETUP
 
 #ifndef DLMS_IGNORE_DISCONNECT_CONTROL
     /**
@@ -1563,7 +1821,7 @@ extern "C" {
     {
         unsigned short id;
         gxtime activationTime;
-        int duration;
+        unsigned long duration;
     } gxEmergencyProfile;
 
     /**
@@ -1579,8 +1837,8 @@ extern "C" {
         gxObject base;
 
         gxObject* monitoredValue;
-        //Selected attribute index of monitored value->
-        unsigned char selectedAttributeIndex;
+        //Selected attribute index of monitored value.
+        signed char selectedAttributeIndex;
 
         dlmsVARIANT thresholdActive;
         dlmsVARIANT thresholdNormal;
@@ -1588,7 +1846,11 @@ extern "C" {
         long minOverThresholdDuration;
         long minUnderThresholdDuration;
         gxEmergencyProfile emergencyProfile;
+#ifdef DLMS_IGNORE_MALLOC
+        gxArray emergencyProfileGroupIDs;
+#else
         variantArray emergencyProfileGroupIDs;
+#endif //DLMS_IGNORE_MALLOC
         unsigned char emergencyProfileActive;
         gxActionItem actionOverThreshold;
         gxActionItem actionUnderThreshold;
@@ -1596,6 +1858,21 @@ extern "C" {
 #endif //DLMS_IGNORE_LIMITER
 
 #ifndef DLMS_IGNORE_MBUS_CLIENT
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_CAPTURE_DEFINITION_ELEMENT_LENGTH];
+        unsigned short size;
+    }gxCaptureDefinitionElement;
+
+    typedef struct
+    {
+        gxCaptureDefinitionElement data;
+        gxCaptureDefinitionElement value;
+    }gxCaptureDefinition;
+#endif //DLMS_IGNORE_MALLOC
+
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -1609,7 +1886,7 @@ extern "C" {
         gxObject base;
         unsigned long capturePeriod;
         unsigned char primaryAddress;
-        gxByteBuffer mBusPortReference;
+        unsigned char mBusPortReference[6];
         gxArray captureDefinition;
         unsigned long identificationNumber;
         unsigned short manufacturerID;
@@ -1622,6 +1899,15 @@ extern "C" {
 #endif //DLMS_IGNORE_MBUS_CLIENT
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_PUSH_SETUP_TARGET_LENGTH];
+        unsigned short size;
+    }gxPushSetupDestination;
+#endif //DLMS_IGNORE_MALLOC
+
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -1637,7 +1923,11 @@ extern "C" {
 
         DLMS_SERVICE_TYPE service;
 
+#ifdef DLMS_IGNORE_MALLOC
+        gxPushSetupDestination destination;
+#else
         char* destination;
+#endif //DLMS_IGNORE_MALLOC
 
         DLMS_MESSAGE_TYPE message;
 
@@ -1667,6 +1957,14 @@ extern "C" {
 #endif //DLMS_IGNORE_MESSAGE_HANDLER
 
 #ifndef DLMS_IGNORE_PARAMETER_MONITOR
+
+    typedef struct
+    {
+        gxObject* target;
+        signed char attributeIndex;
+        dlmsVARIANT value;
+    } gxChangedParameter;
+
     /**
     ---------------------------------------------------------------------------
     Online help:
@@ -1678,6 +1976,15 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
+
+        //Changed parameter.
+        gxChangedParameter changedParameter;
+
+        // Capture time.
+        gxtime captureTime;
+
+        // Changed Parameter
+        gxArray parameters;
     } gxParameterMonitor;
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
 
@@ -1883,9 +2190,13 @@ extern "C" {
     */
     typedef struct
     {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* target;
+#else
         DLMS_OBJECT_TYPE type;
         //Logical name.
         unsigned char logicalName[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         //attribute index.
         int attributeIndex;
         //data index
@@ -1945,6 +2256,14 @@ extern "C" {
         unsigned char tokenProportion;
     }gxTokenGatewayConfiguration;
 
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        char value[MAX_CURRENCY_NAME_LENGTH];
+        unsigned short size;
+    }gxCurrencyName;
+#endif //DLMS_IGNORE_MALLOC
+
     /**
     Used currency.
     ---------------------------------------------------------------------------
@@ -1954,9 +2273,13 @@ extern "C" {
     typedef struct
     {
         // Currency name.
+#ifdef DLMS_IGNORE_MALLOC
+        gxCurrencyName name;
+#else
         char* name;
+#endif //DLMS_IGNORE_MALLOC
         // Currency scale.
-        char scale;
+        signed char scale;
         // Currency unit.
         DLMS_CURRENCY unit;
     }gxCurrency;
@@ -2150,10 +2473,22 @@ extern "C" {
     */
     typedef struct
     {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* target;
+#else
         DLMS_OBJECT_TYPE type;
         unsigned char logicalName[6];
-        unsigned char attributeIndex;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        signed char attributeIndex;
     } gxCommodity;
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char data[MAX_CHARGE_TABLE_INDEX_LENGTH];
+        unsigned short size;
+    }gxChargeTableIndex;
+#endif //DLMS_IGNORE_MALLOC
 
     /**
     ---------------------------------------------------------------------------
@@ -2162,7 +2497,11 @@ extern "C" {
     */
     typedef struct
     {
+#ifdef DLMS_IGNORE_MALLOC
+        gxChargeTableIndex index;
+#else
         gxByteBuffer index;
+#endif //DLMS_IGNORE_MALLOC
         short chargePerUnit;
     } gxChargeTable;
 
@@ -2205,6 +2544,14 @@ extern "C" {
 #endif //DLMS_IGNORE_CHARGE
 
 #ifndef DLMS_IGNORE_TOKEN_GATEWAY
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        unsigned char value[MAX_TOKEN_GATEWAY_DESCRIPTION_LENGTH];
+        unsigned short size;
+    }gxTokenGatewayDescription;
+#endif //DLMS_IGNORE_MALLOC
+
     //---------------------------------------------------------------------------
     // Online help:
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSTokenGateway
@@ -2304,7 +2651,7 @@ extern "C" {
         gxObject base;
 
         gxByteBuffer buffer;
-        gxArray captureObjects; //gxkey<gxObject*, gxCaptureObject*>
+        gxArray captureObjects; //gxkey<gxObject*, gxTarget*>
         unsigned char templateId;
         gxByteBuffer templateDescription;
         DLMS_CAPTURE_METHOD captureMethod;
@@ -2446,12 +2793,14 @@ extern "C" {
 
     void obj_clear(gxObject* object);
 
-    int obj_clearPushObjectList(gxArray* buffer);
     int obj_clearProfileGenericBuffer(gxArray* buffer);
 
     int obj_clearSapList(gxArray* buffer);
 
+#if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA) && defined(DLMS_IGNORE_PUSH_SETUP))
+    int obj_clearPushObjectList(gxArray* buffer);
     int obj_clearProfileGenericCaptureObjects(gxArray* captureObjects);
+#endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA))
 
     int obj_clearSeasonProfile(gxArray* list);
 
@@ -2465,7 +2814,11 @@ extern "C" {
 
     int obj_clearScriptTable(gxArray* list);
 
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+    int obj_clearRegisterActivationAssignment(objectArray* list);
+#else
     int obj_clearRegisterActivationAssignment(gxArray* list);
+#endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
 
     int obj_clearRegisterActivationMaskList(gxArray* list);
 
@@ -2491,15 +2844,16 @@ extern "C" {
         gxObject* object);
 
     int obj_getAttributeIndexToRead(
-        gxObject *object,
+        gxObject* object,
         gxByteBuffer* ba);
 
-    int obj_updateAttributeAccessModes(gxObject* object, variantArray *arr);
-
+#if !defined(DLMS_IGNORE_MALLOC)
+    int obj_updateAttributeAccessModes(gxObject* object, variantArray* arr);
+#endif //!defined(DLMS_IGNORE_MALLOC)
 
     //Returns collection of attributes to read.
     int obj_getAttributeIndexToRead(
-        gxObject *object,
+        gxObject* object,
         gxByteBuffer* ba);
 
 #ifndef DLMS_IGNORE_DATA_PROTECTION
@@ -2507,11 +2861,19 @@ extern "C" {
     void init_ProtectionParameter(gxProtectionParameter* target);
 #endif //DLMS_IGNORE_DATA_PROTECTION
 
+#ifndef DLMS_IGNORE_PARAMETER_MONITOR
+    int obj_clearParametersList(gxArray* buffer);
+#endif //DLMS_IGNORE_PARAMETER_MONITOR
+
     int obj_clearCertificateInfo(gxArray* arr);
 
     //Clear user list.
     int obj_clearUserList(
         gxArray* list);
+
+#define BASE(X) &X.base
+
+#define INIT_OBJECT(X, Y, Z) cosem_init2(&X.base, Y, Z)
 
 #ifdef  __cplusplus
 }

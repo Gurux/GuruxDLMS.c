@@ -32,6 +32,7 @@
 
 #ifndef NOTIFY_H
 #define NOTIFY_H
+#include "gxignore.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -149,5 +150,4 @@ int notify_parsePush(
 #ifdef  __cplusplus
 }
 #endif
-
 #endif //NOTIFY_H

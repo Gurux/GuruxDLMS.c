@@ -43,20 +43,45 @@ extern "C" {
 
     typedef struct
     {
+#ifndef DLMS_IGNORE_MALLOC
         void** data;
-        int capacity;
+#else
+        void* data;
+#endif //DLMS_IGNORE_MALLOC
+
+        unsigned short capacity;
         unsigned short size;
+#ifndef DLMS_IGNORE_MALLOC
         int position;
+#endif //DLMS_IGNORE_MALLOC
     } gxArray;
 
     //Initialize gxArray.
     void arr_init(gxArray* arr);
 
+    void arr_attach(
+        gxArray* arr,
+        void* value,
+        unsigned short count,
+        unsigned short capacity);
+    /*
+       * Is static buffer used.
+       */
+    char arr_isAttached(
+        gxArray* arr);
+
+    /*Get maximum buffer size.*/
+    unsigned short arr_getCapacity(
+        gxArray* arr);
+
     //Allocate new size for the array in bytes.
     int arr_capacity(gxArray* arr, int capacity);
 
+
+#ifndef DLMS_IGNORE_MALLOC
     //Push new data to the gxArray.
-    int arr_push(gxArray * arr, void* item);
+    int arr_push(gxArray* arr, void* item);
+#endif //DLMS_IGNORE_MALLOC
 
     //Clear array. All items are automatically free.
     void arr_clear(gxArray* arr);
@@ -71,17 +96,35 @@ extern "C" {
     //Clear string array.
     void arr_clearStrings(gxArray* arr);
 
+#ifndef DLMS_IGNORE_MALLOC
     int arr_get(gxArray* arr, void** value);
 
     int arr_getByIndex(
         gxArray* arr,
-        int index,
+        unsigned short index,
         void** value);
 
     int arr_removeByIndex(
         gxArray* arr,
-        int index,
+        unsigned short index,
         void** value);
+#else
+    int arr_getByIndex(
+        gxArray* arr,
+        unsigned short index,
+        void** value,
+        unsigned short itemSize);
+
+    int arr_removeByIndex(
+        gxArray* arr,
+        unsigned short index,
+        unsigned short itemSize);
+
+#endif //DLMS_IGNORE_MALLOC
+
+    int arr_getByIndex2(gxArray* arr, unsigned short index, void** value, unsigned short itemSize);
+
+#define ARR_ATTACH(X, V, S) arr_attach(&X, V, S, sizeof(V)/sizeof(V[0]))
 
 #ifdef  __cplusplus
 }

@@ -45,48 +45,96 @@ void vec_init(gxValueEventCollection* arr)
     arr->size = 0;
 }
 
-//Allocate new size for the array in bytes.
-void vec_capacity(gxValueEventCollection* arr, unsigned char capacity)
+char vec_isAttached(gxValueEventCollection* arr)
 {
-    arr->capacity = capacity;
-    if (arr->data == NULL)
-    {
-        arr->data = (gxValueEventArg**)gxmalloc(arr->capacity * sizeof(gxValueEventArg*));
-    }
-    else
-    {
-        arr->data = (gxValueEventArg**)gxrealloc(arr->data, arr->capacity * sizeof(gxValueEventArg*));
-    }
+    return (arr->capacity & 0x80) == 0x80;
 }
 
-//Push new data to the gxValueEventCollection.
-void vec_push(gxValueEventCollection * arr, gxValueEventArg* item)
+unsigned char vec_getCapacity(gxValueEventCollection* arr)
 {
-    if (arr->size >= arr->capacity)
+    return arr->capacity & 0x7F;
+}
+
+#ifdef DLMS_IGNORE_MALLOC
+void vec_attach(
+    gxValueEventCollection* arr,
+    gxValueEventArg* value,
+    unsigned char count,
+    unsigned char capacity)
+{
+    arr->data = value;
+    arr->capacity = (unsigned short)(0x80 | capacity);
+    arr->size = count;
+    arr->position = 0;
+}
+#endif //DLMS_IGNORE_MALLOC
+
+//Allocate new size for the array in bytes.
+int vec_capacity(gxValueEventCollection* arr, unsigned char capacity)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    if (!vec_isAttached(arr))
     {
-        arr->capacity += 2;
+        arr->capacity = capacity;
         if (arr->data == NULL)
         {
-            arr->data = (gxValueEventArg**)gxmalloc(arr->capacity * sizeof(gxValueEventArg*));
+            arr->data = (gxValueEventArg * *)gxmalloc(arr->capacity * sizeof(gxValueEventArg*));
         }
         else
         {
-            arr->data = (gxValueEventArg**)gxrealloc(arr->data, arr->capacity * sizeof(gxValueEventArg*));
+            arr->data = (gxValueEventArg * *)gxrealloc(arr->data, arr->capacity * sizeof(gxValueEventArg*));
         }
     }
-    arr->data[arr->size] = item;
-    ++arr->size;
+#endif //DLMS_IGNORE_MALLOC
+    if (vec_getCapacity(arr) < capacity)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    return 0;
 }
+
+#ifndef DLMS_IGNORE_MALLOC
+//Push new data to the gxValueEventCollection.
+int vec_push(gxValueEventCollection * arr, gxValueEventArg* item)
+{
+    int ret = 0;
+    if (!vec_isAttached(arr))
+    {
+        if (arr->size >= vec_getCapacity(arr))
+        {
+            if ((ret = vec_capacity(arr, arr->capacity + 2)) != 0)
+            {
+                return ret;
+            }
+        }
+    }
+    if (vec_getCapacity(arr) <= arr->size)
+    {
+        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    else
+    {
+        arr->data[arr->size] = item;
+        ++arr->size;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MALLOC
 
 void vec_empty(
     gxValueEventCollection* arr)
 {
-    if (arr->size != 0)
+#ifndef DLMS_IGNORE_MALLOC
+    if (!vec_isAttached(arr))
     {
-        gxfree(arr->data);
-        arr->data = NULL;
-    }
-    arr->capacity = 0;
+        if (arr->size != 0)
+        {
+            gxfree(arr->data);
+            arr->data = NULL;
+        }
+        arr->capacity = 0;
+}
+#endif //DLMS_IGNORE_MALLOC
     arr->size = 0;
     arr->position = 0;
 }
@@ -94,31 +142,25 @@ void vec_empty(
 void vec_clear(
     gxValueEventCollection* arr)
 {
-    int pos;
-    if (arr->size != 0)
+#ifndef DLMS_IGNORE_MALLOC
+    if (!vec_isAttached(arr))
     {
-        for (pos = 0; pos != arr->size; ++pos)
+        int pos;
+        if (arr->size != 0)
         {
-            ve_clear(arr->data[pos]);
-            gxfree(arr->data[pos]);
+            for (pos = 0; pos != arr->size; ++pos)
+            {
+                ve_clear(arr->data[pos]);
+                gxfree(arr->data[pos]);
+            }
+            gxfree(arr->data);
+            arr->data = NULL;
         }
-        gxfree(arr->data);
-        arr->data = NULL;
+        arr->capacity = 0;
     }
-    arr->capacity = 0;
+#endif //DLMS_IGNORE_MALLOC
     arr->size = 0;
     arr->position = 0;
-}
-
-int vec_get(gxValueEventCollection* arr, gxValueEventArg** value)
-{
-    if (arr->position >= arr->size)
-    {
-        return DLMS_ERROR_CODE_OUTOFMEMORY;
-    }
-    *value = arr->data[arr->position];
-    ++arr->position;
-    return 0;
 }
 
 int vec_getByIndex(gxValueEventCollection* arr, int index, gxValueEventArg** value)
@@ -127,7 +169,11 @@ int vec_getByIndex(gxValueEventCollection* arr, int index, gxValueEventArg** val
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = arr->data[index];
+#ifdef DLMS_IGNORE_MALLOC
+    *value = &arr->data[index];
+#else
+    * value = arr->data[index];
+#endif //DLMS_IGNORE_MALLOC
     return 0;
 }
 
@@ -143,7 +189,9 @@ void ve_init(gxValueEventArg * ve)
     ve->error = DLMS_ERROR_CODE_OK;
     ve->action = 0;
     ve->byteArray = 0;
+#ifndef DLMS_IGNORE_MALLOC
     oa_init(&ve->releasedObjects);
+#endif //DLMS_IGNORE_MALLOC
     ve->skipMaxPduSize = 0;
     ve->transactionStartIndex = 0;
     ve->transactionEndIndex = 0;
@@ -162,7 +210,9 @@ void ve_clear(gxValueEventArg * ve)
     ve->error = DLMS_ERROR_CODE_OK;
     ve->action = 0;
     ve->byteArray = 0;
+#ifndef DLMS_IGNORE_MALLOC
     oa_clear(&ve->releasedObjects);
+#endif //DLMS_IGNORE_MALLOC
     ve->skipMaxPduSize = 0;
     ve->transactionStartIndex = 0;
     ve->transactionEndIndex = 0;

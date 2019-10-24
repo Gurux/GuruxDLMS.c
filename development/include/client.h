@@ -38,14 +38,14 @@ extern "C" {
 #endif
 
 #include "gxignore.h"
-#ifndef DLMS_IGNORE_CLIENT
+#if !(defined(DLMS_IGNORE_CLIENT) && defined(DLMS_IGNORE_MALLOC))
 
 #include "dlms.h"
 
     int cl_getData(
-        dlmsSettings *settings,
-        gxByteBuffer *reply,
-        gxReplyData *data);
+        dlmsSettings* settings,
+        gxByteBuffer* reply,
+        gxReplyData* data);
 
     int cl_snrmRequest(
         dlmsSettings* settings,
@@ -63,7 +63,6 @@ extern "C" {
         dlmsSettings* settings,
         gxByteBuffer* data);
 
-
     int cl_getApplicationAssociationRequest(
         dlmsSettings* settings,
         message* messages);
@@ -72,13 +71,17 @@ extern "C" {
         dlmsSettings* settings,
         gxByteBuffer* reply);
 
+#ifndef DLMS_IGNORE_MALLOC
+    /*Read association view. Association view is not available if malloc is not used.*/
     int cl_getObjectsRequest(
         dlmsSettings* settings,
         message* messages);
 
+    /*Parse association view. Association view is not available if malloc is not used.*/
     int cl_parseObjects(
         dlmsSettings* settings,
         gxByteBuffer* data);
+#endif //DLMS_IGNORE_MALLOC
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     int cl_readSN(
@@ -142,6 +145,13 @@ extern "C" {
         message* messages);
 #endif //DLMS_USE_EPOCH_TIME
 
+    int cl_readRowsByRange2(
+        dlmsSettings* settings,
+        gxProfileGeneric* object,
+        gxtime* start,
+        gxtime* end,
+        message* messages);
+
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
     int cl_write(
@@ -169,13 +179,13 @@ extern "C" {
     int cl_changeType(
         gxByteBuffer* value,
         DLMS_DATA_TYPE type,
-        dlmsVARIANT *newValue);
+        dlmsVARIANT* newValue);
 
     int cl_updateValue(
         dlmsSettings* settings,
         gxObject* object,
         unsigned char attributeOrdinal,
-        dlmsVARIANT *value);
+        dlmsVARIANT* value);
 
     /**
          * Update list of values.
@@ -281,5 +291,5 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
-#endif //DLMS_IGNORE_CLIENT
+#endif //!defined(DLMS_IGNORE_CLIENT) && !defined(DLMS_IGNORE_MALLOC)
 #endif //CLIENT_H

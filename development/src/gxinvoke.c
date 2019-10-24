@@ -43,6 +43,7 @@
 #endif
 #include <string.h>
 
+#include "../include/cosem.h"
 #include "../include/dlms.h"
 #include "../include/gxset.h"
 #include "../include/gxinvoke.h"
@@ -67,7 +68,11 @@ int invoke_Charge(
     {
         for (pos = 0; pos != object->unitChargePassive.chargeTables.size; ++pos)
         {
-            ret = arr_get(&object->unitChargePassive.chargeTables, (void**)& ct);
+#ifdef DLMS_IGNORE_MALLOC
+            ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)& ct, sizeof(gxCharge));
+#else
+            ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)& ct);
+#endif //DLMS_IGNORE_MALLOC
             if (ret != 0)
             {
                 return ret;
@@ -82,15 +87,23 @@ int invoke_Charge(
         object->unitChargeActive.commodity = object->unitChargePassive.commodity;
         for (pos = 0; pos != object->unitChargePassive.chargeTables.size; ++pos)
         {
-            ret = arr_get(&object->unitChargePassive.chargeTables, (void**)& ct);
-            if (ret != 0)
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)& ct, sizeof(gxChargeTable))) != 0 ||
+                (ret = arr_getByIndex(&object->unitChargeActive.chargeTables, object->unitChargeActive.chargeTables.size, (void**)& it, sizeof(gxChargeTable))) != 0)
             {
-                return ret;
+                break;
+            }
+            ++object->unitChargeActive.chargeTables.size;
+#else
+            if ((ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)& ct)) != 0)
+            {
+                break;
             }
             it = (gxChargeTable*)gxmalloc(sizeof(gxChargeTable));
+            arr_push(&object->unitChargeActive.chargeTables, it);
+#endif //DLMS_IGNORE_MALLOC
             it->chargePerUnit = ct->chargePerUnit;
             it->index = ct->index;
-            arr_push(&object->unitChargeActive.chargeTables, it);
         }
     }
     //Update total amount remaining.
@@ -164,54 +177,88 @@ int invoke_AssociationLogicalName(
     gxValueEventArg* e)
 {
     int ret = 0;
+    gxAssociationLogicalName* object = (gxAssociationLogicalName*)e->target;
     // Check reply_to_HLS_authentication
     if (e->index == 1)
     {
+        unsigned char ch;
+#ifndef DLMS_IGNORE_HIGH_GMAC
+        gxByteBuffer tmp;
+#endif //DLMS_IGNORE_HIGH_GMAC
+        unsigned char tmp2[64];
         unsigned char equal;
         unsigned long ic = 0;
         gxByteBuffer bb;
         gxByteBuffer* readSecret;
         bb_init(&bb);
+#ifdef DLMS_IGNORE_MALLOC
+        unsigned short count;
+        if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0)
+        {
+            return ret;
+        }
+        if (ch != DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        if ((ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) != 0)
+        {
+            return ret;
+        }
+        if (count > bb_available(e->parameters.byteArr))
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+#endif //DLMS_IGNORE_MALLOC
+
+#ifndef DLMS_IGNORE_HIGH_GMAC
         if (settings->base.authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
         {
-            unsigned char ch;
-            readSecret = &settings->base.sourceSystemTitle;
-            bb_set(&bb, e->parameters.byteArr->data, e->parameters.byteArr->size);
-            if ((ret = bb_getUInt8(&bb, &ch)) != 0 ||
-                (ret = bb_getUInt32(&bb, &ic)) != 0)
+            bb_attach(&tmp, settings->base.sourceSystemTitle, sizeof(settings->base.sourceSystemTitle), sizeof(settings->base.sourceSystemTitle));
+            if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0 ||
+                (ret = bb_getUInt32(e->parameters.byteArr, &ic)) != 0)
             {
-                bb_clear(&bb);
                 return ret;
             }
-            bb_clear(&bb);
+            //IC is also compared.
+            e->parameters.byteArr->position -= 5;
+            readSecret = &tmp;
         }
         else
+#endif //DLMS_IGNORE_MALLOC
         {
-            readSecret = &((gxAssociationLogicalName*)e->target)->secret;
+            readSecret = &object->secret;
         }
-        bb_clear(&settings->info.data);
+
+        bb_init(&bb);
+        bb_attach(&bb, tmp2, 0, sizeof(tmp2));
         if ((ret = dlms_secure(&settings->base,
             ic,
             &settings->base.stoCChallenge,
             readSecret,
-            &settings->info.data)) != 0)
+            &bb)) != 0)
         {
             return ret;
         }
-        equal = bb_size(e->parameters.byteArr) != 0 &&
-            bb_compare(&settings->info.data,
-                e->parameters.byteArr->data,
-                e->parameters.byteArr->size);
+        equal = bb_available(e->parameters.byteArr) != 0 &&
+            bb_compare(&bb,
+                e->parameters.byteArr->data + e->parameters.byteArr->position,
+                bb_available(e->parameters.byteArr));
         bb_clear(&settings->info.data);
         if (equal)
         {
+#ifndef DLMS_IGNORE_HIGH_GMAC
             if (settings->base.authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
             {
-#ifndef DLMS_IGNORE_HIGH_GMAC
+#ifdef DLMS_IGNORE_MALLOC
+                bb_attach(&tmp, settings->base.cipher.systemTitle, sizeof(settings->base.cipher.systemTitle), sizeof(settings->base.cipher.systemTitle));
+                readSecret = &tmp;
+#else
                 readSecret = &settings->base.cipher.systemTitle;
+#endif //DLMS_IGNORE_MALLOC
                 ic = settings->base.cipher.invocationCounter;
-#endif //DLMS_IGNORE_HIGH_GMAC
             }
+#endif //DLMS_IGNORE_HIGH_GMAC
             e->byteArray = 1;
             if ((ret = dlms_secure(&settings->base,
                 ic,
@@ -223,11 +270,11 @@ int invoke_AssociationLogicalName(
             }
             bb_insertUInt8(&settings->info.data, 0, DLMS_DATA_TYPE_OCTET_STRING);
             bb_insertUInt8(&settings->info.data, 1, (unsigned char)(settings->info.data.size - 1));
-            ((gxAssociationLogicalName*)e->target)->associationStatus = DLMS_ASSOCIATION_STATUS_ASSOCIATED;
+            object->associationStatus = DLMS_ASSOCIATION_STATUS_ASSOCIATED;
         }
         else
         {
-            ((gxAssociationLogicalName*)e->target)->associationStatus = DLMS_ASSOCIATION_STATUS_NON_ASSOCIATED;
+            object->associationStatus = DLMS_ASSOCIATION_STATUS_NON_ASSOCIATED;
         }
     }
     else if (e->index == 2)
@@ -238,12 +285,32 @@ int invoke_AssociationLogicalName(
         }
         else
         {
-            bb_clear(&((gxAssociationLogicalName*)e->target)->secret);
-            bb_set(&((gxAssociationLogicalName*)e->target)->secret, e->parameters.byteArr->data, e->parameters.byteArr->size);
+            bb_clear(&object->secret);
+            bb_set(&object->secret, e->parameters.byteArr->data, e->parameters.byteArr->size);
         }
     }
     else if (e->index == 5)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        gxUser* it;
+        if (!(object->userList.size < arr_getCapacity(&object->userList)))
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        else
+        {
+            ++object->userList.size;
+            if ((ret = arr_getByIndex(&object->userList, object->userList.size - 1, (void**)& it, sizeof(gxUser))) == 0)
+            {
+                if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
+                    (ret = cosem_getUInt8(e->parameters.byteArr, &it->id)) != 0 ||
+                    (ret = cosem_getString2(e->parameters.byteArr, it->name, sizeof(it->name))) != 0)
+                {
+                    //Error code is returned at the end of the function.
+                }
+            }
+        }
+#else
         if (e->parameters.vt != DLMS_DATA_TYPE_STRUCTURE || e->parameters.Arr->size != 2)
         {
             ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
@@ -253,13 +320,13 @@ int invoke_AssociationLogicalName(
             dlmsVARIANT* tmp;
             char* name;
             gxKey2* it = (gxKey2*)gxmalloc(sizeof(gxKey2));
-            if ((ret = va_get(e->parameters.Arr, &tmp)) != 0)
+            if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp)) != 0)
             {
                 gxfree(it);
                 return ret;
             }
             it->key = tmp->bVal;
-            if ((ret = va_get(e->parameters.Arr, &tmp)) != 0)
+            if ((ret = va_getByIndex(e->parameters.Arr, 1, &tmp)) != 0)
             {
                 gxfree(it);
                 return ret;
@@ -270,9 +337,45 @@ int invoke_AssociationLogicalName(
             memcpy(it->value, tmp->strVal->data, tmp->strVal->size);
             ret = arr_push(&((gxAssociationLogicalName*)e->target)->userList, it);
         }
+#endif //DLMS_IGNORE_MALLOC
     }
     else if (e->index == 6)
     {
+        int pos;
+#ifdef DLMS_IGNORE_MALLOC
+        gxUser* it;
+        unsigned char id;
+        char name[MAX_SAP_ITEM_NAME_LENGTH];
+        if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
+            (ret = cosem_getUInt8(e->parameters.byteArr, &id)) == 0 &&
+            (ret = cosem_getString2(e->parameters.byteArr, name, sizeof(name))) == 0)
+        {
+            unsigned short size = (unsigned short) strlen(name);
+            for (pos = 0; pos != ((gxAssociationLogicalName*)e->target)->userList.size; ++pos)
+            {
+                if ((ret = arr_getByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)& it, sizeof(gxUser))) != 0)
+                {
+                    return ret;
+                }
+                if (it->id == id && memcmp(it->name, name, size) == 0)
+                {
+                    int pos2;
+                    gxUser* it2;
+                    for (pos2 = pos + 1; pos2 < ((gxAssociationLogicalName*)e->target)->userList.size; ++pos2)
+                    {
+                        if ((ret = arr_getByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos2, (void**)& it2, sizeof(gxUser))) != 0)
+                        {
+                            break;
+                        }
+                        memcpy(it, it2, sizeof(gxUser));
+                        it = it2;
+                    }
+                    --((gxAssociationLogicalName*)e->target)->userList.size;
+                    break;
+                }
+            }
+        }
+#else
         if (e->parameters.Arr->size != 2)
         {
             return DLMS_ERROR_CODE_READ_WRITE_DENIED;
@@ -280,13 +383,12 @@ int invoke_AssociationLogicalName(
         else
         {
             gxKey2* it;
-            int pos;
             unsigned char id;
             dlmsVARIANT* tmp;
             unsigned char* name;
-            ret = va_get(e->parameters.Arr, &tmp);
+            ret = va_getByIndex(e->parameters.Arr, 0, &tmp);
             id = tmp->bVal;
-            ret = va_get(e->parameters.Arr, &tmp);
+            ret = va_getByIndex(e->parameters.Arr, 1, &tmp);
             name = tmp->strVal->data;
             int len = tmp->strVal->size;
             for (pos = 0; pos != ((gxAssociationLogicalName*)e->target)->userList.size; ++pos)
@@ -305,6 +407,7 @@ int invoke_AssociationLogicalName(
                 }
             }
         }
+#endif //DLMS_IGNORE_MALLOC
     }
     else
     {
@@ -318,10 +421,11 @@ int invoke_ImageTransfer(
     gxImageTransfer* target,
     gxValueEventArg* e)
 {
-    int pos, ret;
+    int pos, ret = 0;
     //Image transfer initiate
     if (e->index == 1)
     {
+        gxByteBuffer tmp;
         gxImageActivateInfo* it, * item = NULL;
         target->imageFirstNotTransferredBlockNumber = 0;
         ba_clear(&target->imageTransferredBlocksStatus);
@@ -337,12 +441,20 @@ int invoke_ImageTransfer(
         unsigned char exists = 0;
         for (pos = 0; pos != target->imageActivateInfo.size; ++pos)
         {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&target->imageActivateInfo, pos, (void**)& it, sizeof(gxImageActivateInfo))) != 0)
+            {
+                return ret;
+            }
+#else
             if ((ret = arr_getByIndex(&target->imageActivateInfo, pos, (void**)& it)) != 0)
             {
                 return ret;
             }
+#endif //DLMS_IGNORE_MALLOC
+            bb_attach(&tmp, it->identification.data, it->identification.size, it->identification.size);
             if (bb_size(imageIdentifier->byteArr) != 0 &&
-                bb_compare(&it->identification, imageIdentifier->byteArr->data, imageIdentifier->byteArr->size))
+                bb_compare(&tmp, imageIdentifier->byteArr->data, imageIdentifier->byteArr->size))
             {
                 item = it;
                 exists = 1;
@@ -350,34 +462,36 @@ int invoke_ImageTransfer(
         }
         if (!exists)
         {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&target->imageActivateInfo, target->imageActivateInfo.size, (void**)& item, sizeof(gxImageActivateInfo))) != 0)
+            {
+                return ret;
+            }
+            ++target->imageActivateInfo.size;
+#else
             item = (gxImageActivateInfo*)gxmalloc(sizeof(gxImageActivateInfo));
-            bb_init(&item->identification);
-            bb_init(&item->signature);
-        }
-        else
-        {
-            bb_clear(&item->identification);
-            bb_clear(&item->signature);
-        }
-        item->size = var_toInteger(size);
-        bb_set2(&item->identification, imageIdentifier->byteArr, 0, imageIdentifier->byteArr->size);
-        if (!exists)
-        {
             arr_push(&target->imageActivateInfo, item);
-        }
-        int cnt = item->size / target->imageBlockSize;
-        if (item->size % target->imageBlockSize != 0)
-        {
-            ++cnt;
-        }
+#endif //DLMS_IGNORE_MALLOC
+            item->size = var_toInteger(size);
+            item->identification.size = 0;
+            if ((ret = cosem_getOctectString2(imageIdentifier->byteArr, item->identification.data, sizeof(item->identification.data), (unsigned short*)& item->identification.size)) != 0)
+            {
+                return ret;
+            }
+            int cnt = item->size / target->imageBlockSize;
+            if (item->size % target->imageBlockSize != 0)
+            {
+                ++cnt;
+            }
 #ifndef GX_DLMS_MICROCONTROLLER
-        target->imageTransferredBlocksStatus.position = 0;
+            target->imageTransferredBlocksStatus.position = 0;
 #endif //GX_DLMS_MICROCONTROLLER
-        target->imageTransferredBlocksStatus.size = 0;
-        ba_capacity(&target->imageTransferredBlocksStatus, (unsigned short)cnt);
-        for (pos = 0; pos != cnt; ++pos)
-        {
-            ba_set(&target->imageTransferredBlocksStatus, 0);
+            target->imageTransferredBlocksStatus.size = 0;
+            ba_capacity(&target->imageTransferredBlocksStatus, (unsigned short)cnt);
+            for (pos = 0; pos != cnt; ++pos)
+            {
+                ba_set(&target->imageTransferredBlocksStatus, 0);
+            }
         }
     }
     //Image block transfer
@@ -403,9 +517,9 @@ int invoke_ImageTransfer(
     }
     else
     {
-        return DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
     }
-    return DLMS_ERROR_CODE_OK;
+    return ret;
 }
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
 
@@ -414,17 +528,56 @@ int invoke_SapAssigment(
     gxSapAssignment* target,
     gxValueEventArg* e)
 {
-    dlmsVARIANT* tmp;
-    int pos, ret;
+    int pos, ret = 0;
+    unsigned short id;
     gxSapItem* it;
     //Image transfer initiate
     if (e->index == 1)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = cosem_checkStructure(e->value.byteArr, 2)) == 0 &&
+            (ret = cosem_getUInt16(e->value.byteArr, &id)) == 0)
+        {
+            if (id == 0)
+            {
+                unsigned short size;
+                unsigned char name[MAX_SAP_ITEM_NAME_LENGTH];
+                if ((ret = cosem_getOctectString2(e->value.byteArr, name, sizeof(name), &size)) == 0)
+                {
+                    name[size] = 0;
+                    for (pos = 0; pos != target->sapAssignmentList.size; ++pos)
+                    {
+                        if ((ret = arr_getByIndex(&target->sapAssignmentList, pos, (void**)& it, sizeof(gxSapItem))) != 0)
+                        {
+                            return ret;
+                        }
+                        if (it->name.size == size && memcmp(it->name.value, name, size) == 0)
+                        {
+                            if ((ret = arr_removeByIndex(&target->sapAssignmentList, pos, sizeof(gxSapItem))) == 0)
+                            {
+                                --target->sapAssignmentList.size;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if ((ret = arr_getByIndex(&target->sapAssignmentList, target->sapAssignmentList.size, (void**)& it, sizeof(gxSapItem))) == 0 &&
+                    (ret = cosem_getOctectString2(e->value.byteArr, it->name.value, sizeof(it->name.value), &it->name.size)) == 0)
+                {
+                    it->id = id;
+                    ++target->sapAssignmentList.size;
+                }
+            }
+        }
+#else
+        dlmsVARIANT* tmp;
         if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp)) != 0)
         {
             return ret;
         }
-        unsigned short id = tmp->uiVal;
+        id = tmp->uiVal;
         if ((ret = va_getByIndex(e->parameters.Arr, 1, &tmp)) != 0)
         {
             return ret;
@@ -465,12 +618,13 @@ int invoke_SapAssigment(
             bb_set(&it->name, name->data, name->size);
             arr_push(&target->sapAssignmentList, it);
         }
+#endif //DLMS_IGNORE_MALLOC
     }
     else
     {
-        return DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
     }
-    return DLMS_ERROR_CODE_OK;
+    return ret;
 }
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 
@@ -482,14 +636,19 @@ int invoke_AssociationShortName(
     int ret;
     unsigned char equal;
     unsigned long ic = 0;
+#ifndef DLMS_IGNORE_HIGH_GMAC
+    gxByteBuffer bb;
+#endif //DLMS_IGNORE_HIGH_GMAC
     gxByteBuffer* readSecret;
     // Check reply_to_HLS_authentication
     if (e->index == 8)
     {
+#ifndef DLMS_IGNORE_HIGH_GMAC
         if (settings->base.authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
         {
             unsigned char ch;
-            readSecret = &settings->base.sourceSystemTitle;
+            bb_attach(&bb, settings->base.sourceSystemTitle, sizeof(settings->base.sourceSystemTitle), sizeof(settings->base.sourceSystemTitle));
+            readSecret = &bb;
             if ((ret = bb_getUInt8(&settings->info.data, &ch)) != 0 ||
                 (ret = bb_getUInt32(&settings->info.data, &ic)) != 0)
             {
@@ -498,6 +657,7 @@ int invoke_AssociationShortName(
             }
         }
         else
+#endif //DLMS_IGNORE_HIGH_GMAC
         {
             readSecret = &((gxAssociationShortName*)e->target)->secret;
         }
@@ -516,13 +676,18 @@ int invoke_AssociationShortName(
         if (equal)
         {
             e->byteArray = 1;
+#ifndef DLMS_IGNORE_HIGH_GMAC
             if (settings->base.authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
             {
-#ifndef DLMS_IGNORE_HIGH_GMAC
+#ifdef DLMS_IGNORE_MALLOC
+                bb_attach(&bb, settings->base.cipher.systemTitle, sizeof(settings->base.cipher.systemTitle), sizeof(settings->base.cipher.systemTitle));
+                readSecret = &bb;
+#else
                 readSecret = &settings->base.cipher.systemTitle;
+#endif //DLMS_IGNORE_MALLOC
                 ic = settings->base.cipher.invocationCounter;
-#endif //DLMS_IGNORE_HIGH_GMAC
             }
+#endif //DLMS_IGNORE_HIGH_GMAC
             if ((ret = dlms_secure(&settings->base,
                 ic,
                 &settings->base.ctoSChallenge,
@@ -549,40 +714,66 @@ int invoke_AssociationShortName(
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
 int invoke_ScriptTable(dlmsServerSettings* settings, gxValueEventArg* e)
 {
+    gxScript* s;
     gxScriptAction* sa;
-    int ret = 0, pos;
+    int ret = 0, pos, pos2;
+    unsigned char id = var_toInteger(&e->parameters);
     //Find index and execute it.
     if (e->index == 1)
     {
         for (pos = 0; pos != ((gxScriptTable*)e->target)->scripts.size; ++pos)
         {
-            ret = arr_get(&((gxScriptTable*)e->target)->scripts, (void**)& sa);
-            if (ret != 0)
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&((gxScriptTable*)e->target)->scripts, pos, (void**)& s, sizeof(gxScript))) != 0)
+#else
+            if ((ret = arr_getByIndex(&((gxScriptTable*)e->target)->scripts, pos, (void**)& s)) != 0)
+#endif //DLMS_IGNORE_MALLOC
             {
-                return ret;
+                break;
             }
-            if (sa->identifier == var_toInteger(&e->value))
+            if (s->id == id)
             {
-                if (sa->type == DLMS_SCRIPT_ACTION_TYPE_WRITE)
+                for (pos2 = 0; pos2 != s->actions.size; ++pos2)
                 {
-                    ret = cosem_setValue(&settings->base, e);
-                    if (ret != 0)
+#ifdef DLMS_IGNORE_MALLOC
+                    if ((ret = arr_getByIndex(&s->actions, pos2, (void**)& sa, sizeof(gxScriptAction))) != 0)
+#else
+                    if ((ret = arr_getByIndex(&s->actions, pos2, (void**)& sa)) != 0)
+#endif //DLMS_IGNORE_MALLOC
                     {
-                        return ret;
+                        break;
                     }
-                }
-                else if (sa->type == DLMS_SCRIPT_ACTION_TYPE_EXECUTE)
-                {
-                    ret = cosem_invoke(settings, e);
-                    if (ret != 0)
+                    gxValueEventArg e2;
+                    ve_init(&e2);
+                    e2.parameters = sa->parameter;
+                    e2.index = sa->index;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+                    e2.target = sa->target;
+#else
+                    if ((ret = oa_findByLN(&settings->base.objects, sa->objectType, sa->logicalName, &e2.target)) != 0)
                     {
-                        return ret;
+                        break;
                     }
-                }
-                else
-                {
-                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-                    break;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+                    if (sa->type == DLMS_SCRIPT_ACTION_TYPE_WRITE)
+                    {
+                        if ((ret = cosem_setValue(&settings->base, &e2)) != 0)
+                        {
+                            break;
+                        }
+                    }
+                    else if (sa->type == DLMS_SCRIPT_ACTION_TYPE_EXECUTE)
+                    {
+                        if ((ret = cosem_invoke(settings, &e2)) != 0)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                        break;
+                    }
                 }
             }
         }
@@ -599,28 +790,60 @@ int invoke_ScriptTable(dlmsServerSettings* settings, gxValueEventArg* e)
 int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret = 0, pos;
+#ifndef DLMS_IGNORE_MALLOC
     dlmsVARIANT* it;
+#endif //DLMS_IGNORE_MALLOC
     gxActiveDevice* ad;
     //Register device.
     if (index == 1)
     {
-        ret = va_get(value->Arr, &it);
-        if (ret != 0)
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->activeDevices, object->activeDevices.size, (void**)& ad, sizeof(gxActiveDevice))) == 0)
         {
-            return ret;
+            ++object->activeDevices.size;
+            bb_init(&ad->macAddress);
+            ba_init(&ad->status);
+            ret = cosem_getOctectString(value->byteArr, &ad->macAddress);
         }
-        ad = (gxActiveDevice*)gxcalloc(1, sizeof(gxActiveDevice));
-        bb_init(&ad->macAddress);
-        ba_init(&ad->status);
-        bb_set(&ad->macAddress, it->byteArr->data, it->byteArr->size);
-        arr_push(&object->activeDevices, ad);
+#else
+        if ((ret = va_getByIndex(value->Arr, 0, &it)) == 0)
+        {
+            ad = (gxActiveDevice*)gxcalloc(1, sizeof(gxActiveDevice));
+            bb_init(&ad->macAddress);
+            ba_init(&ad->status);
+            bb_set(&ad->macAddress, it->byteArr->data, it->byteArr->size);
+            arr_push(&object->activeDevices, ad);
+        }
+#endif //DLMS_IGNORE_MALLOC
     }
     //Unregister device.
     else if (index == 2)
     {
         for (pos = 0; pos != object->activeDevices.size; ++pos)
         {
-            ret = arr_get(&object->activeDevices, (void**)& ad);
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->activeDevices, pos, (void**)& ad, sizeof(gxActiveDevice))) != 0)
+            {
+                break;
+            }
+            if (memcpy(&ad->macAddress, &value->byteArr, 8) == 0)
+            {
+                int pos2;
+                gxActiveDevice* ad2;
+                for (pos2 = pos + 1; pos2 < object->activeDevices.size; ++pos2)
+                {
+                    if ((ret = arr_getByIndex(&object->activeDevices, pos2, (void**)& ad2, sizeof(gxActiveDevice))) != 0)
+                    {
+                        break;
+                    }
+                    memcpy(ad, ad2, sizeof(gxActiveDevice));
+                    ad = ad2;
+                }
+                --object->activeDevices.size;
+                break;
+            }
+#else
+            ret = arr_getByIndex(&object->activeDevices, pos, (void**)& ad);
             if (ret != 0)
             {
                 return ret;
@@ -635,6 +858,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
                 gxfree(ad);
                 break;
             }
+#endif //DLMS_IGNORE_MALLOC
         }
     }
     //Unregister all device.
@@ -669,7 +893,7 @@ int invoke_ExtendedRegister(
     //Reset.
     if (index == 1)
     {
-        ret = var_clear(&object->base.value);
+        ret = var_clear(&object->value);
         if (ret != 0)
         {
             return ret;
@@ -687,8 +911,10 @@ int invoke_ExtendedRegister(
 int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
     dlmsVARIANT* it;
     dlmsVARIANT tmp;
+#endif //DLMS_IGNORE_MALLOC
     // Resets the value to the default value.
     // The default value is an instance specific constant.
     if (index == 1)
@@ -748,12 +974,15 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
     // avalidity_interval within which the new time can be activated.
     else if (index == 5)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        ret = cosem_getDateFromOctectString(value->byteArr, &object->presetTime);
+#else
         ret = var_init(&tmp);
         if (ret != 0)
         {
             return ret;
         }
-        ret = va_get(value->Arr, &it);
+        ret = va_getByIndex(value->Arr, 0, &it);
         if (ret != 0)
         {
             return ret;
@@ -764,6 +993,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
             return ret;
         }
         object->presetTime = *tmp.dateTime;
+#endif //DLMS_IGNORE_MALLOC
     }
     // Shifts the time.
     else if (index == 6)
@@ -780,11 +1010,11 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
 #ifndef DLMS_IGNORE_REGISTER
 int invoke_Register(
     gxRegister* object,
-    unsigned char index)
+    gxValueEventArg* e)
 {
     int ret = 0;
     //Reset.
-    if (index == 1)
+    if (e->index == 1)
     {
         ret = var_clear(&object->value);
     }
@@ -792,9 +1022,11 @@ int invoke_Register(
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
+    bb_clear(e->value.byteArr);
     return ret;
 }
 #endif //DLMS_IGNORE_REGISTER
+
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 /*
 * Copies the values of the objects to capture into the buffer by reading
@@ -803,6 +1035,19 @@ int invoke_Register(
 int capture(dlmsSettings* settings,
     gxProfileGeneric* object)
 {
+#ifdef DLMS_IGNORE_MALLOC
+    gxValueEventArg e;
+    gxValueEventCollection args;
+    ve_init(&e);
+    e.action = 1;
+    e.target = &object->base;
+    e.index = 2;
+    gxValueEventArg p[1] = { e };
+    vec_attach(&args, p, 1, 1);
+    svr_preGet(settings, &args);
+    svr_postGet(settings, &args);
+    vec_empty(&args);
+#else
     int ret, pos;
     gxKey* kv;
     dlmsVARIANT* value;
@@ -815,7 +1060,7 @@ int capture(dlmsSettings* settings,
     e.index = 2;
     vec_init(&args);
     vec_push(&args, &e);
-    // svr_preGet(settings, &args);
+    svr_preGet(settings, &args);
     if (!e.handled)
     {
         gxValueEventArg e2;
@@ -830,7 +1075,7 @@ int capture(dlmsSettings* settings,
                 return ret;
             }
             e2.target = (gxObject*)kv->key;
-            e2.index = ((gxCaptureObject*)kv->value)->attributeIndex;
+            e2.index = ((gxTarget*)kv->value)->attributeIndex;
             if ((ret = cosem_getData(&e2)) != 0)
             {
                 return ret;
@@ -850,8 +1095,9 @@ int capture(dlmsSettings* settings,
         arr_push(&object->buffer, row);
         object->entriesInUse = object->buffer.size;
     }
-    //svr_postGet(settings, &args);
+    svr_postGet(settings, &args);
     vec_empty(&args);
+#endif //DLMS_IGNORE_MALLOC
     return 0;
 }
 
@@ -864,13 +1110,15 @@ int invoke_ProfileGeneric(
     //Reset.
     if (index == 1)
     {
+#ifndef DLMS_IGNORE_MALLOC
         ret = obj_clearProfileGenericBuffer(&object->buffer);
+#endif //DLMS_IGNORE_MALLOC
     }
     //Capture.
     else if (index == 2)
     {
         // Capture.
-        capture(&settings->base, object);
+        ret = capture(&settings->base, object);
     }
     else
     {
@@ -897,21 +1145,20 @@ int compactDataAppend(unsigned char byteArray, dlmsVARIANT* value3, gxByteBuffer
         return 0;
     }
     int ret;
-    gxByteBuffer tmp;
-    bb_init(&tmp);
-    if ((ret = dlms_setData(&tmp, value3->vt, value3)) != 0)
+    unsigned short startPos = (unsigned short)bb->size;
+    if ((ret = dlms_setData(bb, value3->vt, value3)) != 0)
     {
         return ret;
     }
-    if (tmp.size == 1)
+    //If data is empty.
+    if (bb->size - startPos == 1)
     {
         bb_setUInt8(bb, 0);
     }
     else
     {
-        bb_set(bb, tmp.data + 1, tmp.size - 1);
+        ret = bb_move(bb, startPos + 1, startPos, bb->size - startPos - 1);
     }
-    bb_clear(&tmp);
     return 0;
 }
 
@@ -959,12 +1206,17 @@ int compactDataAppendArray(dlmsVARIANT* value, gxByteBuffer* bb, unsigned short 
 * Copies the values of the objects to capture into the buffer by reading
 * capture objects.
 */
-int cosem_captureCompactData(dlmsSettings* settings,
+int cosem_captureCompactData(
+    dlmsSettings* settings,
     gxCompactData* object)
 {
     int ret = 0;
     unsigned short pos;
+#ifdef DLMS_IGNORE_MALLOC
+    gxTarget* kv;
+#else
     gxKey* kv;
+#endif //DLMS_IGNORE_MALLOC
     gxValueEventArg e;
     gxValueEventCollection args;
     bb_clear(&object->buffer);
@@ -972,21 +1224,45 @@ int cosem_captureCompactData(dlmsSettings* settings,
     e.action = 1;
     e.target = &object->base;
     e.index = 2;
+#ifdef DLMS_IGNORE_MALLOC
+    //Allocate space where captured values are saved before they are added to the buffer.
+    // We can't use server buffer because there might be transaction on progress when this is called.
+    unsigned char tmp[MAX_CAPTURE_OBJECT_BUFFER_SIZE];
+    gxByteBuffer bb;
+    bb_attach(&bb, tmp, 0, sizeof(tmp));
+    gxValueEventArg p[1] = { e };
+    vec_attach(&args, p, 1, 1);
+#else
     vec_init(&args);
     vec_push(&args, &e);
-    // svr_preGet(settings, &args);
+#endif //DLMS_IGNORE_MALLOC
+    svr_preGet(settings, &args);
     if (!e.handled)
     {
+        unsigned short dataIndex;
         for (pos = 0; pos != object->captureObjects.size; ++pos)
         {
+#ifdef DLMS_IGNORE_MALLOC
+            ret = arr_getByIndex(&object->captureObjects, pos, (void**)& kv, sizeof(gxTarget));
+#else
             ret = arr_getByIndex(&object->captureObjects, pos, (void**)& kv);
+#endif //DLMS_IGNORE_MALLOC
             if (ret != DLMS_ERROR_CODE_OK)
             {
                 bb_clear(&object->buffer);
                 break;
             }
+#ifdef DLMS_IGNORE_MALLOC
+            e.value.byteArr = &bb;
+            e.value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+            e.target = kv->target;
+            e.index = kv->attributeIndex;
+            dataIndex = kv->dataIndex;
+#else
             e.target = (gxObject*)kv->key;
-            e.index = ((gxCaptureObject*)kv->value)->attributeIndex;
+            e.index = ((gxTarget*)kv->value)->attributeIndex;
+            dataIndex = ((gxTarget*)kv->value)->dataIndex;
+#endif //DLMS_IGNORE_MALLOC
             if ((ret = cosem_getValue(settings, &e)) != 0)
             {
                 bb_clear(&object->buffer);
@@ -1013,7 +1289,7 @@ int cosem_captureCompactData(dlmsSettings* settings,
                         bb_setUInt8(&object->buffer, value.Arr->size);
                     }
 #endif //DLMS_ITALIAN_STANDARD
-                    if ((ret = compactDataAppendArray(&value, &object->buffer, ((gxCaptureObject*)kv->value)->dataIndex)) != 0)
+                    if ((ret = compactDataAppendArray(&value, &object->buffer, dataIndex)) != 0)
                     {
                         var_clear(&value);
                         break;
@@ -1036,7 +1312,7 @@ int cosem_captureCompactData(dlmsSettings* settings,
             ve_clear(&e);
         }
     }
-    // svr_postGet(settings, &args);
+    svr_postGet(settings, &args);
     if (ret != 0)
     {
         bb_clear(&object->buffer);
@@ -1086,14 +1362,14 @@ int cosem_invoke(
     case DLMS_OBJECT_TYPE_REGISTER:
         ret = invoke_Register(
             (gxRegister*)e->target,
-            e->index);
+            e);
         break;
 #endif //DLMS_IGNORE_REGISTER
 #ifndef DLMS_IGNORE_CLOCK
     case DLMS_OBJECT_TYPE_CLOCK:
         ret = invoke_Clock(
             (gxClock*)e->target,
-            e->index, &e->value);
+            e->index, &e->parameters);
         break;
 #endif //DLMS_IGNORE_CLOCK
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
@@ -1121,7 +1397,7 @@ int cosem_invoke(
         ret = invoke_zigbeeNetworkControl(
             (gxZigBeeNetworkControl*)e->target,
             e->index,
-            &e->value);
+            &e->parameters);
         break;
 #endif //DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
 #ifndef DLMS_IGNORE_CHARGE
@@ -1129,7 +1405,7 @@ int cosem_invoke(
         ret = invoke_Charge(
             (gxCharge*)e->target,
             e->index,
-            &e->value);
+            &e->parameters);
         break;
 #endif //DLMS_IGNORE_CHARGE
 #ifndef DLMS_IGNORE_CREDIT
@@ -1137,7 +1413,7 @@ int cosem_invoke(
         ret = invoke_Credit(
             (gxCredit*)e->target,
             e->index,
-            &e->value);
+            &e->parameters);
         break;
 #endif //DLMS_IGNORE_CREDIT
 #ifndef DLMS_IGNORE_TOKEN_GATEWAY
@@ -1145,7 +1421,7 @@ int cosem_invoke(
         ret = invoke_gxTokenGateway(
             (gxTokenGateway*)e->target,
             e->index,
-            &e->value);
+            &e->parameters);
         break;
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME

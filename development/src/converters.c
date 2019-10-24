@@ -30,10 +30,6 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-#include "../include/gxignore.h"
-#include "../include/gxmem.h"
-#include "../include/converters.h"
-#ifndef GX_DLMS_MICROCONTROLLER
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include <assert.h>
 #include <stdio.h> //printf needs this or error is generated.
@@ -41,10 +37,22 @@
 #if _MSC_VER > 1400
 #include <crtdbg.h>
 #endif
+#include "../include/gxignore.h"
+#include "../include/gxobjects.h"
+#ifndef DLMS_IGNORE_MALLOC
+#include "../include/gxmem.h"
+#include "../include/converters.h"
+#ifndef GX_DLMS_MICROCONTROLLER
 #include <string.h>
 #include "../include/helpers.h"
 #include "../include/objectarray.h"
 #include "../include/gxkey.h"
+
+#endif //GX_DLMS_MICROCONTROLLER
+#else
+#include "../include/enums.h"
+#endif //DLMS_IGNORE_MALLOC
+#include <string.h>
 
 void append(char* buff, char* data)
 {
@@ -162,12 +170,16 @@ int obj_typeToString(DLMS_OBJECT_TYPE type, char* buff)
     case DLMS_OBJECT_TYPE_SAP_ASSIGNMENT:
         append(buff, "SAP Assignment");
         break;
+#ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
         append(buff, "Schedule");
         break;
+#endif //DLMS_IGNORE_SCHEDULE
+#ifndef DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SCRIPT_TABLE:
         append(buff, "Script Table");
         break;
+#endif //DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SMTP_SETUP:
         append(buff, "SMTP Setup");
         break;
@@ -217,6 +229,9 @@ int obj_typeToString(DLMS_OBJECT_TYPE type, char* buff)
     }
     return 0;
 }
+
+#ifndef DLMS_IGNORE_MALLOC
+#ifndef GX_DLMS_MICROCONTROLLER
 
 const char* obj_getUnitAsString(unsigned char unit)
 {
@@ -493,9 +508,25 @@ int obj_ScriptTableToString(gxScriptTable* object, char** buff)
             }
             bb_addIntAsString(&ba, sa->type);
             bb_addString(&ba, " ");
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            if (sa->target == NULL)
+            {
+                bb_addIntAsString(&ba, 0);
+                bb_addString(&ba, " ");
+                hlp_appendLogicalName(&ba, EMPTY_LN);
+            }
+            else
+            {
+                bb_addIntAsString(&ba, sa->target->objectType);
+                bb_addString(&ba, " ");
+                hlp_appendLogicalName(&ba, sa->target->logicalName);
+            }
+#else
             bb_addIntAsString(&ba, sa->objectType);
             bb_addString(&ba, " ");
             hlp_appendLogicalName(&ba, sa->logicalName);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
             bb_addString(&ba, " ");
             bb_addIntAsString(&ba, sa->index);
             bb_addString(&ba, " ");
@@ -555,7 +586,12 @@ int obj_TcpUdpSetupToString(gxTcpUdpSetup* object, char** buff)
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->port);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
-    bb_attachString(&ba, bb_toString(&object->ipReference));
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    bb_addLogicalName(&ba, obj_getLogicalName((gxObject*) object->ipSetup));
+#else
+    bb_addLogicalName(&ba, object->ipReference);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
     bb_addString(&ba, "\r\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->maximumSegmentSize);
     bb_addString(&ba, "\r\nIndex: 5 Value: ");
@@ -765,7 +801,18 @@ int obj_dayProfileToString(gxArray* arr, gxByteBuffer* ba)
             {
                 return ret;
             }
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            if (it->script == NULL)
+            {
+                hlp_appendLogicalName(ba, EMPTY_LN);
+            }
+            else
+            {
+                hlp_appendLogicalName(ba, it->script->logicalName);
+            }
+#else
             hlp_appendLogicalName(ba, it->scriptLogicalName);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
             bb_addString(ba, " ");
             bb_addIntAsString(ba, it->scriptSelector);
             bb_addString(ba, " ");
@@ -948,14 +995,22 @@ int obj_demandRegisterToString(gxDemandRegister* object, char** buff)
 int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
 {
     int pos, ret;
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
     gxObjectDefinition* od;
+#else
+    gxObject* od;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     gxKey* it;
     gxByteBuffer ba;
     bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     for (pos = 0; pos != object->registerAssignment.size; ++pos)
     {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        ret = oa_getByIndex(&object->registerAssignment, pos, &od);
+#else
         ret = arr_getByIndex(&object->registerAssignment, pos, (void**)& od);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         if (ret != 0)
         {
             return ret;
@@ -964,7 +1019,7 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
         {
             bb_addString(&ba, ", ");
         }
-        bb_addIntAsString(&ba, od->classId);
+        bb_addIntAsString(&ba, od->objectType);
         bb_addString(&ba, " ");
         hlp_appendLogicalName(&ba, od->logicalName);
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -995,13 +1050,24 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
 }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
-void actionItemToString(gxActionItem * item, gxByteBuffer * ba)
+void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
 {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    if (item->script == NULL)
+    {
+        hlp_appendLogicalName(ba, EMPTY_LN);
+    }
+    else
+    {
+        hlp_appendLogicalName(ba, item->script->base.logicalName);
+    }
+#else
     hlp_appendLogicalName(ba, item->logicalName);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     bb_addString(ba, " ");
     bb_addIntAsString(ba, item->scriptSelector);
 }
-int obj_registerMonitorToString(gxRegisterMonitor * object, char** buff)
+int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
 {
     char str[30];
     int pos, ret;
@@ -1027,9 +1093,24 @@ int obj_registerMonitorToString(gxRegisterMonitor * object, char** buff)
 #endif
     }
     bb_addString(&ba, "]\r\nIndex: 3 Value: ");
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    if (object->monitoredValue.target == NULL)
+    {
+        hlp_appendLogicalName(&ba, EMPTY_LN);
+        bb_addString(&ba, " ");
+        obj_typeToString(0, str);
+    }
+    else
+    {
+        hlp_appendLogicalName(&ba, object->monitoredValue.target->logicalName);
+        bb_addString(&ba, " ");
+        obj_typeToString(object->monitoredValue.target->objectType, str);
+    }
+#else
     hlp_appendLogicalName(&ba, object->monitoredValue.logicalName);
     bb_addString(&ba, " ");
     obj_typeToString(object->monitoredValue.objectType, str);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     bb_addString(&ba, str);
     bb_addString(&ba, " ");
     bb_addIntAsString(&ba, object->monitoredValue.attributeIndex);
@@ -1057,14 +1138,26 @@ int obj_registerMonitorToString(gxRegisterMonitor * object, char** buff)
 }
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
-int obj_actionScheduleToString(gxActionSchedule * object, char** buff)
+int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
 {
     int pos = 0, ret;
     gxtime* tm;
     gxByteBuffer ba;
     bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    if (object->executedScript == NULL)
+    {
+        hlp_appendLogicalName(&ba, EMPTY_LN);
+    }
+    else
+    {
+        hlp_appendLogicalName(&ba, object->executedScript->base.logicalName);
+    }
+#else
     hlp_appendLogicalName(&ba, object->executedScriptLogicalName);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
     bb_addString(&ba, " ");
     bb_addIntAsString(&ba, object->executedScriptSelector);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -1098,7 +1191,7 @@ int obj_actionScheduleToString(gxActionSchedule * object, char** buff)
 }
 #endif //DLMS_IGNORE_ACTION_SCHEDULE
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
-int obj_sapAssignmentToString(gxSapAssignment * object, char** buff)
+int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
 {
     int pos, ret;
     gxSapItem* it;
@@ -1127,7 +1220,7 @@ int obj_sapAssignmentToString(gxSapAssignment * object, char** buff)
 }
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 #ifndef DLMS_IGNORE_AUTO_ANSWER
-int obj_autoAnswerToString(gxAutoAnswer * object, char** buff)
+int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
 {
     int pos, ret = 0;
     gxKey* it;
@@ -1166,7 +1259,7 @@ int obj_autoAnswerToString(gxAutoAnswer * object, char** buff)
 }
 #endif //DLMS_IGNORE_AUTO_ANSWER
 #ifndef DLMS_IGNORE_IP4_SETUP
-int obj_ip4SetupToString(gxIp4Setup * object, char** buff)
+int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
 {
     int ret, pos;
     dlmsVARIANT* tmp;
@@ -1174,7 +1267,7 @@ int obj_ip4SetupToString(gxIp4Setup * object, char** buff)
     gxByteBuffer ba;
     bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
-    bb_attachString(&ba, bb_toString(&object->dataLinkLayerReference));
+    bb_addLogicalName(&ba, object->dataLinkLayerReference);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->ipAddress);
     bb_addString(&ba, "\r\nIndex: 4 Value: [");
@@ -1230,7 +1323,7 @@ int obj_ip4SetupToString(gxIp4Setup * object, char** buff)
 }
 #endif //DLMS_IGNORE_IP4_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
-int obj_UtilityTablesToString(gxUtilityTables * object, char** buff)
+int obj_UtilityTablesToString(gxUtilityTables* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1248,7 +1341,7 @@ int obj_UtilityTablesToString(gxUtilityTables * object, char** buff)
 #endif //DLMS_IGNORE_UTILITY_TABLES
 
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
-int obj_mbusSlavePortSetupToString(gxMbusSlavePortSetup * object, char** buff)
+int obj_mbusSlavePortSetupToString(gxMbusSlavePortSetup* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1267,7 +1360,7 @@ int obj_mbusSlavePortSetupToString(gxMbusSlavePortSetup * object, char** buff)
 }
 #endif //DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
-int obj_imageTransferToString(gxImageTransfer * object, char** buff)
+int obj_imageTransferToString(gxImageTransfer* object, char** buff)
 {
     int pos, ret;
     gxImageActivateInfo* it;
@@ -1308,7 +1401,7 @@ int obj_imageTransferToString(gxImageTransfer * object, char** buff)
 }
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
 #ifndef DLMS_IGNORE_DISCONNECT_CONTROL
-int obj_disconnectControlToString(gxDisconnectControl * object, char** buff)
+int obj_disconnectControlToString(gxDisconnectControl* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1325,7 +1418,7 @@ int obj_disconnectControlToString(gxDisconnectControl * object, char** buff)
 }
 #endif //DLMS_IGNORE_DISCONNECT_CONTROL
 #ifndef DLMS_IGNORE_LIMITER
-int obj_limiterToString(gxLimiter * object, char** buff)
+int obj_limiterToString(gxLimiter* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
@@ -1385,7 +1478,7 @@ int obj_limiterToString(gxLimiter * object, char** buff)
 }
 #endif //DLMS_IGNORE_LIMITER
 #ifndef DLMS_IGNORE_MBUS_CLIENT
-int obj_mBusClientToString(gxMBusClient * object, char** buff)
+int obj_mBusClientToString(gxMBusClient* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1394,7 +1487,7 @@ int obj_mBusClientToString(gxMBusClient * object, char** buff)
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->primaryAddress);
     bb_addString(&ba, "\r\nIndex: 4 Value: ");
-    bb_attachString(&ba, bb_toString(&object->mBusPortReference));
+    bb_addLogicalName(&ba, object->mBusPortReference);
     bb_addString(&ba, "\r\nIndex: 5 Value: ");
     //TODO: bb_addIntAsString(&ba, object->captureDefinition);
     bb_addString(&ba, "\r\nIndex: 6 Value: ");
@@ -1420,7 +1513,7 @@ int obj_mBusClientToString(gxMBusClient * object, char** buff)
 }
 #endif //DLMS_IGNORE_MBUS_CLIENT
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
-int obj_modemConfigurationToString(gxModemConfiguration * object, char** buff)
+int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
 {
     int pos, ret;
     gxModemInitialisation* mi;
@@ -1467,7 +1560,7 @@ int obj_modemConfigurationToString(gxModemConfiguration * object, char** buff)
 }
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP
-int obj_macAddressSetupToString(gxMacAddressSetup * object, char** buff)
+int obj_macAddressSetupToString(gxMacAddressSetup* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1481,7 +1574,7 @@ int obj_macAddressSetupToString(gxMacAddressSetup * object, char** buff)
 #endif //DLMS_IGNORE_MAC_ADDRESS_SETUP
 
 #ifndef DLMS_IGNORE_GPRS_SETUP
-void qualityOfServiceToString(gxQualityOfService * target, gxByteBuffer * ba)
+void qualityOfServiceToString(gxQualityOfService* target, gxByteBuffer* ba)
 {
     bb_addIntAsString(ba, target->precedence);
     bb_addString(ba, " ");
@@ -1495,7 +1588,7 @@ void qualityOfServiceToString(gxQualityOfService * target, gxByteBuffer * ba)
     bb_addString(ba, " ");
 }
 
-int obj_GPRSSetupToString(gxGPRSSetup * object, char** buff)
+int obj_GPRSSetupToString(gxGPRSSetup* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1514,21 +1607,21 @@ int obj_GPRSSetupToString(gxGPRSSetup * object, char** buff)
 }
 #endif //DLMS_IGNORE_GPRS_SETUP
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
-int obj_extendedRegisterToString(gxExtendedRegister * object, char** buff)
+int obj_extendedRegisterToString(gxExtendedRegister* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
     bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
-    ret = var_toString(&object->base.value, &ba);
+    ret = var_toString(&object->value, &ba);
     if (ret != 0)
     {
         return ret;
     }
     bb_addString(&ba, "\r\nIndex: 3 Value: Scaler: ");
-    bb_addIntAsString(&ba, object->base.scaler);
+    bb_addIntAsString(&ba, object->scaler);
     bb_addString(&ba, " Unit: ");
-    bb_addString(&ba, obj_getUnitAsString(object->base.unit));
+    bb_addString(&ba, obj_getUnitAsString(object->unit));
     bb_addString(&ba, "\r\nIndex: 4 Value: ");
     ret = var_toString(&object->status, &ba);
     if (ret != 0)
@@ -1544,7 +1637,7 @@ int obj_extendedRegisterToString(gxExtendedRegister * object, char** buff)
 }
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
 
-int obj_objectsToString(gxByteBuffer * ba, objectArray * objects)
+int obj_objectsToString(gxByteBuffer* ba, objectArray* objects)
 {
     char str[30];
     unsigned short pos;
@@ -1572,7 +1665,7 @@ int obj_objectsToString(gxByteBuffer * ba, objectArray * objects)
     return ret;
 }
 
-int obj_rowsToString(gxByteBuffer * ba, gxArray * buffer)
+int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
 {
     dlmsVARIANT* tmp;
     variantArray* va;
@@ -1606,7 +1699,7 @@ int obj_rowsToString(gxByteBuffer * ba, gxArray * buffer)
     return 0;
 }
 
-void obj_applicationContextNameToString(gxByteBuffer * ba, gxApplicationContextName * object)
+void obj_applicationContextNameToString(gxByteBuffer* ba, gxApplicationContextName* object)
 {
     hlp_appendLogicalName(ba, object->logicalName);
     bb_addString(ba, " ");
@@ -1625,7 +1718,7 @@ void obj_applicationContextNameToString(gxByteBuffer * ba, gxApplicationContextN
     bb_addIntAsString(ba, object->contextId);
 }
 
-void obj_xDLMSContextTypeToString(gxByteBuffer * ba, gxXDLMSContextType * object)
+void obj_xDLMSContextTypeToString(gxByteBuffer* ba, gxXDLMSContextType* object)
 {
     bb_addIntAsString(ba, object->conformance);
     bb_addString(ba, " ");
@@ -1638,7 +1731,7 @@ void obj_xDLMSContextTypeToString(gxByteBuffer * ba, gxXDLMSContextType * object
     bb_attachString(ba, bb_toString(&object->cypheringInfo));
 }
 
-void obj_authenticationMechanismNameToString(gxByteBuffer * ba, gxAuthenticationMechanismName * object)
+void obj_authenticationMechanismNameToString(gxByteBuffer* ba, gxAuthenticationMechanismName* object)
 {
     bb_addIntAsString(ba, object->jointIsoCtt);
     bb_addString(ba, " ");
@@ -1654,7 +1747,7 @@ void obj_authenticationMechanismNameToString(gxByteBuffer * ba, gxAuthentication
     bb_addIntAsString(ba, object->mechanismId);
 }
 
-int obj_associationLogicalNameToString(gxAssociationLogicalName * object, char** buff)
+int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** buff)
 {
     int pos, ret = 0;
     gxKey2* it;
@@ -1680,7 +1773,11 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName * object, char**
     if (object->base.version > 0)
     {
         bb_addString(&ba, "\r\nIndex: 9 Value: ");
-        hlp_appendLogicalName(&ba, object->securitySetupReference);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        bb_addLogicalName(&ba, obj_getLogicalName((gxObject*)object->securitySetup));
+#else
+        bb_addLogicalName(&ba, object->securitySetupReference);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     }
     if (object->base.version > 1)
     {
@@ -1705,7 +1802,7 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName * object, char**
 }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-int obj_associationShortNameToString(gxAssociationShortName * object, char** buff)
+int obj_associationShortNameToString(gxAssociationShortName* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1714,7 +1811,11 @@ int obj_associationShortNameToString(gxAssociationShortName * object, char** buf
     bb_addString(&ba, "]\r\nIndex: 3 Value: ");
     //TODO: Show access rights.
     bb_addString(&ba, "\r\nIndex: 4 Value: ");
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    bb_addLogicalName(&ba, obj_getLogicalName((gxObject*)object->securitySetup));
+#else
     hlp_appendLogicalName(&ba, object->securitySetupReference);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     bb_addString(&ba, "\r\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
@@ -1723,14 +1824,14 @@ int obj_associationShortNameToString(gxAssociationShortName * object, char** buf
 
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #ifndef DLMS_IGNORE_PPP_SETUP
-int obj_pppSetupToString(gxPppSetup * object, char** buff)
+int obj_pppSetupToString(gxPppSetup* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     //TODO: ipcpOptions
     bb_addString(&ba, "]\r\nIndex: 3 Value: ");
-    bb_attachString(&ba, bb_toString(&object->PHYReference));
+    bb_addLogicalName(&ba, object->PHYReference);
     bb_addString(&ba, "\r\nIndex: 4 Value: [");
     //TODO: lcpOptions
     bb_addString(&ba, "]\r\nIndex: 5 Value: ");
@@ -1746,7 +1847,7 @@ int obj_pppSetupToString(gxPppSetup * object, char** buff)
 }
 #endif //DLMS_IGNORE_PPP_SETUP
 
-int obj_CaptureObjectsToString(gxByteBuffer * ba, gxArray * objects)
+int obj_CaptureObjectsToString(gxByteBuffer* ba, gxArray* objects)
 {
     gxKey* kv;
     int ret, pos;
@@ -1773,7 +1874,7 @@ int obj_CaptureObjectsToString(gxByteBuffer * ba, gxArray * objects)
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 
-int obj_ProfileGenericToString(gxProfileGeneric * object, char** buff)
+int obj_ProfileGenericToString(gxProfileGeneric* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
@@ -1806,7 +1907,7 @@ int obj_ProfileGenericToString(gxProfileGeneric * object, char** buff)
 }
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_ACCOUNT
-int obj_accountToString(gxAccount * object, char** buff)
+int obj_accountToString(gxAccount* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1858,7 +1959,7 @@ int obj_accountToString(gxAccount * object, char** buff)
 }
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_CREDIT
-int obj_creditToString(gxCredit * object, char** buff)
+int obj_creditToString(gxCredit* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1889,7 +1990,7 @@ int obj_creditToString(gxCredit * object, char** buff)
 }
 #endif //DLMS_IGNORE_CREDIT
 #ifndef DLMS_IGNORE_CHARGE
-int obj_chargeToString(gxCharge * object, char** buff)
+int obj_chargeToString(gxCharge* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -1926,7 +2027,7 @@ int obj_chargeToString(gxCharge * object, char** buff)
 #endif //DLMS_IGNORE_CHARGE
 #ifndef DLMS_IGNORE_TOKEN_GATEWAY
 int obj_tokenGatewayToString(
-    gxTokenGateway * object,
+    gxTokenGateway* object,
     char** buff)
 {
     gxByteBuffer ba;
@@ -1939,7 +2040,7 @@ int obj_tokenGatewayToString(
 }
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
-int obj_GsmDiagnosticToString(gxGsmDiagnostic * object, char** buff)
+int obj_GsmDiagnosticToString(gxGsmDiagnostic* object, char** buff)
 {
     int pos, ret;
     gxAdjacentCell* it;
@@ -1991,7 +2092,7 @@ int obj_GsmDiagnosticToString(gxGsmDiagnostic * object, char** buff)
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
-int obj_CompactDataToString(gxCompactData * object, char** buff)
+int obj_CompactDataToString(gxCompactData* object, char** buff)
 {
     gxByteBuffer ba;
     char* tmp;
@@ -2016,7 +2117,7 @@ int obj_CompactDataToString(gxCompactData * object, char** buff)
 }
 #endif //DLMS_IGNORE_COMPACT_DATA
 #ifdef DLMS_ITALIAN_STANDARD
-int obj_TariffPlanToString(gxTariffPlan * object, char** buff)
+int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
 {
     gxByteBuffer ba;
     bb_init(&ba);
@@ -2033,7 +2134,7 @@ int obj_TariffPlanToString(gxTariffPlan * object, char** buff)
 }
 #endif //DLMS_ITALIAN_STANDARD
 
-int obj_toString(gxObject * object, char** buff)
+int obj_toString(gxObject* object, char** buff)
 {
     int ret = 0;
     switch (object->objectType)
@@ -2436,3 +2537,4 @@ const char* err_toString(int err)
         return "Unknown error.";
     }
 }
+#endif //DLMS_IGNORE_MALLOC

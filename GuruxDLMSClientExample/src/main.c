@@ -31,7 +31,7 @@
 
 #include "../include/communication.h"
 
-//Client don't need this. 
+//Client don't need this.
 unsigned char svr_isTarget(
     dlmsSettings *settings,
     unsigned long serverAddress,
@@ -40,14 +40,14 @@ unsigned char svr_isTarget(
     return 0;
 }
 
-//Client don't need this. 
+//Client don't need this.
 int svr_connected(
     dlmsServerSettings *settings) {
     return 0;
 
 }
 
-//Client don't need this. 
+//Client don't need this.
 DLMS_ACCESS_MODE svr_getAttributeAccess(
     dlmsSettings *settings,
     gxObject *obj,
@@ -56,7 +56,7 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     return DLMS_ACCESS_MODE_READ_WRITE;
 }
 
-//Client don't need this. 
+//Client don't need this.
 DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
     dlmsSettings *settings,
     gxObject *obj,
@@ -188,7 +188,7 @@ int readTcpIpConnection(
 int readSerialPort(
     connection *connection,
     const char* port,
-    unsigned char iec, 
+    unsigned char iec,
     char *readObjects)
 {
     int ret;
@@ -482,7 +482,7 @@ int main(int argc, char* argv[])
 #if _MSC_VER > 1000
     //Show memory leaks.
     _CrtDumpMemoryLeaks();
-#endif //_MSC_VER 
+#endif //_MSC_VER
 #endif
     return ret;
 }

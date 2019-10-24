@@ -39,6 +39,7 @@ extern "C" {
 /* Uncomment defines to ignore non-needed parts to make image size smaller. */
 
 // #define DLMS_IGNORE_WRAPPER
+// #define DLMS_IGNORE_NOTIFY
 // #define DLMS_IGNORE_SERVER
 // #define DLMS_IGNORE_CLIENT
 // #define GX_DLMS_MICROCONTROLLER
@@ -101,6 +102,13 @@ extern "C" {
 // #define DLMS_IGNORE_TOKEN_GATEWAY
 // #define DLMS_IGNORE_COMPACT_DATA
 // #define DLMS_ITALIAN_STANDARD
+// #define DLMS_IGNORE_MALLOC
+// #define DLMS_USE_CUSTOM_MALLOC
+
+// #define DLMS_IGNORE_OBJECT_POINTERS
+
+// #define DLMS_IGNORE_FLOAT32
+// #define DLMS_IGNORE_FLOAT64
 
 //Use EPOCH time. This can be used to improve memory usage.
 // #define DLMS_USE_EPOCH_TIME

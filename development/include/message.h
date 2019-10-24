@@ -33,6 +33,7 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#include "gxignore.h"
 #include "bytebuffer.h"
 
 #ifdef  __cplusplus
@@ -44,20 +45,29 @@ extern "C" {
 typedef struct
 {
     gxByteBuffer** data;
-    int capacity;
-    int size;
+    unsigned char capacity;
+    unsigned char size;
 } message;
 
+#ifndef DLMS_IGNORE_MALLOC
 //Initialize gxByteBuffer.
 void mes_init(message* mes);
+#else
+void mes_attach(message* mes, gxByteBuffer** data, unsigned char capacity);
+#endif //DLMS_IGNORE_MALLOC
 
+#ifndef DLMS_IGNORE_MALLOC
 //Push new message.
-void mes_push(message * mes, gxByteBuffer* item);
+void mes_push(
+    message * mes,
+    gxByteBuffer* item);
+#endif //DLMS_IGNORE_MALLOC
 
-void mes_clear(message* mes);
+//Clear message list.
+void mes_clear(
+    message* mes);
 
 #ifdef  __cplusplus
 }
 #endif
-
 #endif //MESSAGE_H

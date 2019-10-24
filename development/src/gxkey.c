@@ -32,7 +32,7 @@
 
 #include "../include/gxmem.h"
 #include "../include/gxkey.h"
-
+#ifndef DLMS_IGNORE_MALLOC
 gxKey* key_init(void* key, void* value)
 {
     gxKey* obj = (gxKey*) gxmalloc(sizeof(gxKey));
@@ -48,3 +48,4 @@ gxKey2* key_init2(unsigned char key, void* value)
     obj->value = value;
     return obj;
 }
+#endif //DLMS_IGNORE_MALLOC

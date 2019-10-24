@@ -3,7 +3,7 @@ TARGET   = libgurux_dlms_c.a
 
 CC       = gcc
 # compiling flags here
-CFLAGS   = -std=c99 -Wall -fPIC
+CFLAGS   = -g -std=c99 -Wall -fPIC
 #Add this if used on microcontroller. -D GX_DLMS_MICROCONTROLLER
 
 LINKER   = ar rvs

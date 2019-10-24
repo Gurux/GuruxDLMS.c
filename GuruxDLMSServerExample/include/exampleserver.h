@@ -17,7 +17,7 @@
 #pragma once
 
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
-#include <Winsock.h> //Add support for sockets	
+#include <Winsock.h> //Add support for sockets
 #endif
 
 #include "../../development/include/server.h"
@@ -26,6 +26,7 @@
 #include "connection.h"
 char DATAFILE[FILENAME_MAX];
 char IMAGEFILE[FILENAME_MAX];
+char TRACEFILE[FILENAME_MAX];
 
 int svr_start(
     connection *con,
@@ -47,7 +48,7 @@ int svr_InitObjects(
 * @return True, if data is sent to this server.
 */
 unsigned char svr_isTarget(
-    dlmsSettings *settings, 
+    dlmsSettings *settings,
     unsigned long int serverAddress,
     unsigned long clientAddress);
 

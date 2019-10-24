@@ -77,62 +77,113 @@ void ba_init(bitArray* arr)
     arr->size = 0;
 }
 
-//Allocate new size for the array in bytes.
-void ba_capacity(bitArray *arr, unsigned short capacity)
+
+char ba_isAttached(bitArray* arr)
 {
-    arr->capacity = capacity;
-    if (capacity == 0)
+    return (arr->capacity & 0x8000) == 0x8000;
+}
+
+unsigned short ba_getCapacity(bitArray* arr)
+{
+    return arr->capacity & 0x7FFF;
+}
+
+void ba_attach(
+    bitArray* arr,
+    unsigned char* value,
+    unsigned short count,
+    unsigned short capacity)
+{
+    arr->data = value;
+    arr->capacity = (unsigned short)(0x8000 | capacity);
+    arr->size = count;
+#ifndef GX_DLMS_MICROCONTROLLER
+    arr->position = 0;
+#endif //GX_DLMS_MICROCONTROLLER
+}
+
+//Allocate new size for the array in bytes.
+int ba_capacity(bitArray* arr, unsigned short capacity)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    if (!ba_isAttached(arr))
     {
-        if (arr->data != NULL)
+        arr->capacity = capacity;
+        if (capacity == 0)
         {
-            gxfree(arr->data);
-            arr->data = NULL;
-        }
-    }
-    else
-    {
-        if (arr->data == NULL)
-        {
-            arr->data = (unsigned char*)gxmalloc(ba_getByteCount(arr->capacity));
+            if (arr->data != NULL)
+            {
+                gxfree(arr->data);
+                arr->data = NULL;
+            }
         }
         else
         {
-            arr->data = (unsigned char*)gxrealloc(arr->data, ba_getByteCount(arr->capacity));
+            if (arr->data == NULL)
+            {
+                arr->data = (unsigned char*)gxmalloc(ba_getByteCount(arr->capacity));
+                if (arr->data == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+            }
+            else
+            {
+                unsigned char* tmp = (unsigned char*)gxrealloc(arr->data, ba_getByteCount(arr->capacity));
+                //If not enought memory available.
+                if (tmp == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                arr->data = tmp;
+            }
         }
     }
+#endif //DLMS_IGNORE_MALLOC
+    if (ba_getCapacity(arr) < capacity)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    return 0;
 }
 
 //Push new data to the bit array.
-void ba_set(bitArray *arr, unsigned char item)
+int ba_set(bitArray *arr, unsigned char item)
 {
-    ba_setByIndex(arr, arr->size, item);
-    ++arr->size;
+    int ret = ba_setByIndex(arr, arr->size, item);
+    if (ret == 0)
+    {
+        ++arr->size;
+    }
+    return ret;
 }
 
 //Set bit by index.
-void ba_setByIndex(bitArray *arr, int index, unsigned char item)
+int ba_setByIndex(bitArray *arr, int index, unsigned char item)
 {
+    int ret;
     unsigned char newItem = 0;
     int byteIndex;
     item = item == 0 ? 0 : 1;
-    if (index >= arr->capacity)
+    if (!ba_isAttached(arr))
     {
-        arr->capacity += BIT_ARRAY_CAPACITY;
-        //If we are adding a bit to the higher than next byte.
         if (index >= arr->capacity)
         {
-            ba_setByIndex(arr, index, item);
-            return;
+            if ((ret = ba_capacity(arr, arr->capacity + BIT_ARRAY_CAPACITY)) != 0)
+            {
+                return ret;
+            }
+            //If we are adding a bit to the higher than next byte.
+            if (index >= arr->capacity)
+            {
+                return ba_setByIndex(arr, index, item);
+            }
+            newItem = 1;
         }
-        if (arr->data == NULL)
-        {
-            arr->data = (unsigned char*)gxmalloc(ba_getByteCount(arr->capacity));
-        }
-        else
-        {
-            arr->data = (unsigned char*)gxrealloc(arr->data, ba_getByteCount(arr->capacity));
-        }
-        newItem = 1;
+    }
+    if (index >= arr->capacity)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     byteIndex = getByteIndex(index);
     if (index % 8 == 0 || newItem)
@@ -143,6 +194,7 @@ void ba_setByIndex(bitArray *arr, int index, unsigned char item)
     {
         arr->data[byteIndex] |= (item << (7 - (index % 8)));
     }
+    return 0;
 }
 
 //Add bits from byte array to bit array.
@@ -184,7 +236,10 @@ int ba_add(bitArray *arr, gxByteBuffer * bytes, unsigned short count, unsigned c
             }
             ++bytes->position;
         }
-        ba_setByIndex(arr, pos, (unsigned char)(ch & (1 << bytePos)));
+        if ((ret = ba_setByIndex(arr, pos, (unsigned char)(ch & (1 << bytePos)))) != 0)
+        {
+            return ret;
+        }
         --bytePos;
         ++arr->size;
     }
@@ -211,12 +266,14 @@ int ba_copy(
 
 void ba_clear(bitArray *arr)
 {
+#ifndef DLMS_IGNORE_MALLOC
     if (arr->data != NULL)
     {
         gxfree(arr->data);
         arr->data = NULL;
     }
     arr->capacity = 0;
+#endif //DLMS_IGNORE_MALLOC
     arr->size = 0;
 #ifndef GX_DLMS_MICROCONTROLLER
     arr->position = 0;
@@ -263,7 +320,7 @@ int ba_toInteger(bitArray *arr, int *value)
     return 0;
 }
 
-
+#ifndef DLMS_IGNORE_MALLOC
 char* ba_toString(bitArray *arr)
 {
     unsigned char ch;
@@ -286,3 +343,4 @@ char* ba_toString(bitArray *arr)
     *(buff + arr->size) = 0;
     return buff;
 }
+#endif //DLMS_IGNORE_MALLOC

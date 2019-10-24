@@ -48,12 +48,25 @@
 
 char bb_isAttached(gxByteBuffer * arr)
 {
+    if (arr == NULL)
+    {
+        return 0;
+    }
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     //If byte buffer is attached.
     return (arr->capacity & 0x80000000) == 0x80000000;
 #else
     return (arr->capacity & 0x8000) == 0x8000;
 #endif
+}
+
+unsigned short bb_available(gxByteBuffer* arr)
+{
+    if (arr == NULL)
+    {
+        return 0;
+    }
+    return (unsigned short) (arr->size - arr->position);
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
@@ -104,6 +117,7 @@ int bb_capacity(
     unsigned short capacity)
 #endif
 {
+#ifndef DLMS_IGNORE_MALLOC
     //Capacity can't change if it's attached.
     if (!bb_isAttached(arr))
     {
@@ -143,37 +157,47 @@ int bb_capacity(
         }
         arr->capacity = capacity;
     }
+#endif //DLMS_IGNORE_MALLOC
+    if (bb_getCapacity(arr) < capacity)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return DLMS_ERROR_CODE_OK;
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-void bb_zero(
+int bb_zero(
     gxByteBuffer* arr,
     unsigned long index,
     unsigned long count)
 #else
-void bb_zero(
+int bb_zero(
     gxByteBuffer* arr,
     unsigned short index,
     unsigned short count)
 #endif
 {
+    short ret;
     if (index + count > arr->capacity)
     {
-        bb_capacity(arr, index + count);
+        if ((ret = bb_capacity(arr, index + count)) != 0)
+        {
+            return ret;
+        }
     }
     if (arr->size < index + count)
     {
         arr->size = index + count;
     }
     memset(arr->data + index, 0, count);
+    return 0;
 }
 
 int bb_setUInt8(
     gxByteBuffer* arr,
     unsigned char item)
 {
-    int ret = bb_setUInt8ByIndex(arr, arr->size, item);
+    int ret = bb_setUInt8ByIndex(arr, bb_size(arr), item);
     if (ret == 0)
     {
         ++arr->size;
@@ -213,8 +237,10 @@ int bb_allocate(
     unsigned short dataSize)
 #endif
 {
+#ifndef DLMS_IGNORE_MALLOC
     if (!bb_isAttached(arr) && (arr->capacity == 0 || index + dataSize > arr->capacity))
     {
+        unsigned char empty = arr->capacity == 0;
         //If data is append fist time.
         if (dataSize > VECTOR_CAPACITY || arr->capacity == 0)
         {
@@ -224,7 +250,7 @@ int bb_allocate(
         {
             arr->capacity += VECTOR_CAPACITY;
         }
-        if (arr->capacity == 0)
+        if (empty)
         {
             arr->data = (unsigned char*)gxmalloc(arr->capacity);
         }
@@ -238,6 +264,7 @@ int bb_allocate(
             arr->data = tmp;
         }
     }
+#endif //DLMS_IGNORE_MALLOC
     if (bb_getCapacity(arr) < index + dataSize)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -257,6 +284,10 @@ int bb_setUInt8ByIndex(
     unsigned char item)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     int ret = bb_allocate(arr, index, 1);
     if (ret == 0)
     {
@@ -291,10 +322,17 @@ int bb_setUInt32(
     return ret;
 }
 
+#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_setUInt32ByIndex(
     gxByteBuffer* arr,
     unsigned long index,
     unsigned long item)
+#else
+int bb_setUInt32ByIndex(
+    gxByteBuffer* arr,
+    unsigned short index,
+    unsigned long item)
+#endif //!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 {
     int ret = bb_allocate(arr, index, 4);
     if (ret == 0)
@@ -331,7 +369,7 @@ int bb_setUInt64(
     return ret;
 }
 
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_FLOAT32
 int bb_setFloat(
     gxByteBuffer* arr,
     float value)
@@ -355,7 +393,9 @@ int bb_setFloat(
     }
     return ret;
 }
+#endif //DLMS_IGNORE_FLOAT32
 
+#ifndef DLMS_IGNORE_FLOAT64
 int bb_setDouble(
     gxByteBuffer* arr,
     double value)
@@ -383,7 +423,7 @@ int bb_setDouble(
     }
     return ret;
 }
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_FLOAT64
 
 int bb_setInt8(
     gxByteBuffer* arr,
@@ -514,6 +554,7 @@ void bb_attach(
     arr->position = 0;
 }
 
+#ifndef DLMS_IGNORE_MALLOC
 void bb_attachString(
     gxByteBuffer* arr,
     char* value)
@@ -522,10 +563,12 @@ void bb_attachString(
     bb_set(arr, (const unsigned char*)value, (unsigned short)len);
     gxfree(value);
 }
+#endif //DLMS_IGNORE_MALLOC
 
 int bb_clear(
     gxByteBuffer* arr)
 {
+#ifndef DLMS_IGNORE_MALLOC
     //If byte buffer is attached.
     if (!bb_isAttached(arr))
     {
@@ -536,6 +579,7 @@ int bb_clear(
         }
         arr->capacity = 0;
     }
+#endif //DLMS_IGNORE_MALLOC
     arr->size = 0;
     arr->position = 0;
     return 0;
@@ -736,7 +780,7 @@ int bb_getUInt128ByIndex(
     return ret;
 }
 
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_FLOAT32
 int bb_getFloat(
     gxByteBuffer* arr,
     float* value)
@@ -759,7 +803,9 @@ int bb_getFloat(
     arr->position += 4;
     return 0;
 }
+#endif //DLMS_IGNORE_FLOAT32
 
+#ifndef DLMS_IGNORE_FLOAT64
 int bb_getDouble(
     gxByteBuffer* arr,
     double* value)
@@ -786,7 +832,7 @@ int bb_getDouble(
     arr->position += 8;
     return 0;
 }
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_FLOAT64
 
 int bb_getUInt16ByIndex(
     gxByteBuffer* arr,
@@ -802,6 +848,7 @@ int bb_getUInt16ByIndex(
     return 0;
 }
 
+#ifndef DLMS_IGNORE_MALLOC
 int bb_addHexString(
     gxByteBuffer* arr,
     const char* str)
@@ -821,8 +868,30 @@ int bb_addHexString(
     }
     return 0;
 }
+#endif //DLMS_IGNORE_MALLOC
 
-#ifndef GX_DLMS_MICROCONTROLLER
+int bb_addLogicalName(
+    gxByteBuffer* arr,
+    const unsigned char* str)
+{
+    int ret;
+    char buffer[25];
+    if ((ret = hlp_bytesToHex2(str, 6, buffer, sizeof(buffer))) == 0)
+    {
+        ret = bb_addString(arr, buffer);
+    }
+    return ret;
+}
+
+int bb_toHexString2(
+    gxByteBuffer* arr,
+    char* buffer,
+    unsigned short size)
+{
+    return hlp_bytesToHex2(arr->data, (unsigned short) arr->size, buffer, size);
+}
+
+#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
 char* bb_toString(
     gxByteBuffer* arr)
 {
@@ -840,15 +909,6 @@ char* bb_toHexString(
 {
     char* buff = hlp_bytesToHex(arr->data, arr->size);
     return buff;
-}
-
-void bb_addIntAsString(
-    gxByteBuffer* bb,
-    int value)
-{
-    char str[20];
-    hlp_intToString(str, 20, value, 1);
-    bb_addString(bb, str);
 }
 
 void bb_addDoubleAsString(
@@ -871,7 +931,19 @@ void bb_addDoubleAsString(
         bb_addString(bb, buff);
     }
 }
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //!defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+
+void bb_addIntAsString(gxByteBuffer* bb, int value)
+{
+    bb_addIntAsString2(bb, value, 0);
+}
+
+void bb_addIntAsString2(gxByteBuffer* bb, int value, unsigned char digits)
+{
+    char str[20];
+    hlp_intToString(str, 20, value, 1, digits);
+    bb_addString(bb, str);
+}
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_subArray(
@@ -946,14 +1018,14 @@ int bb_move(
     else
     {
         //Append data.
-        if (bb_getCapacity(bb) < count + destPos - srcPos)
+        if (bb_getCapacity(bb) < count + destPos)
         {
             int ret;
             if (bb_isAttached(bb))
             {
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
-            if ((ret = bb_capacity(bb, count + destPos - srcPos)) != 0)
+            if ((ret = bb_capacity(bb, count + destPos)) != 0)
             {
                 return ret;
             }
@@ -963,16 +1035,7 @@ int bb_move(
     {
         //Do not use memcpy here!
         memmove(bb->data + destPos, bb->data + srcPos, count);
-        if (destPos < srcPos)
-        {
-            //If data is moved to the begin.
-            bb->size = (destPos + count);
-        }
-        else
-        {
-            //If data is append.
-            bb->size = (destPos - srcPos + count);
-        }
+        bb->size = (destPos + count);
         if (bb->position > bb->size)
         {
             bb->position = bb->size;

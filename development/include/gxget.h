@@ -171,20 +171,27 @@ extern "C" {
         dlmsVARIANT* parameters,
         gxArray* columns);
 
+#ifndef DLMS_IGNORE_MALLOC
     int cosem_getRow(
         gxArray* table,
         int index,
         gxArray* captureObjects,
         gxArray* columns,
         gxByteBuffer* data);
+#endif //DLMS_IGNORE_MALLOC
 
     int cosem_getTariffPlan(
         gxValueEventArg* e);
 
-
+#ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
     int cosem_getGsmDiagnostic(
         gxValueEventArg* e);
+#endif //DLMS_IGNORE_GSM_DIAGNOSTIC
 
+#ifndef DLMS_IGNORE_PARAMETER_MONITOR
+    int cosem_getParameterMonitor(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_PARAMETER_MONITOR
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
 

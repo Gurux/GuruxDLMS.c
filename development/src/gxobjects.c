@@ -46,194 +46,222 @@
 #include "../include/gxobjects.h"
 #include "../include/objectarray.h"
 
-gxListItem* li_init(
-    gxObject* key,
-    unsigned char value)
+const unsigned char* obj_getLogicalName(gxObject* target)
 {
-    gxListItem* obj = (gxListItem*)gxmalloc(sizeof(gxListItem));
-    obj->key = key;
-    obj->value = value;
-    return obj;
+    if (target == NULL)
+    {
+        return EMPTY_LN;
+    }
+    return target->logicalName;
 }
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
+#ifndef DLMS_IGNORE_MALLOC
 //Create capture object with given attribute and data indexes.
-gxCaptureObject* co_init(
+gxTarget * co_init(
     unsigned char attributeIndex,
     unsigned char dataIndex)
 {
-    gxCaptureObject *obj = (gxCaptureObject*)gxmalloc(sizeof(gxCaptureObject));
+    gxTarget* obj = (gxTarget*)gxmalloc(sizeof(gxTarget));
     obj->attributeIndex = attributeIndex;
     obj->dataIndex = dataIndex;
     return obj;
 }
+#endif //DLMS_IGNORE_MALLOC
 
 int obj_clearProfileGenericBuffer(gxArray* buffer)
 {
+    //Clear data rows.
+#ifndef DLMS_IGNORE_MALLOC
     variantArray* va;
     int pos, ret;
-    //Clear data rows.
     for (pos = 0; pos != buffer->size; ++pos)
     {
-        ret = arr_getByIndex(buffer, pos, (void**)&va);
+        ret = arr_getByIndex(buffer, pos, (void**)& va);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         va_clear(va);
     }
-    arr_clear(buffer);
-    return 0;
-}
-
-int obj_clearPushObjectList(gxArray* buffer)
-{
-    gxKey *it;
-    int pos, ret;
-    //Clear push objects.
-    for (pos = 0; pos != buffer->size; ++pos)
-    {
-        ret = arr_getByIndex(buffer, pos, (void**)&it);
-        if (ret != DLMS_ERROR_CODE_OK)
-        {
-            return ret;
-        }
-        gxfree((gxCaptureObject*)it->value);
-    }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(buffer);
     return 0;
 }
 #endif //DLMS_IGNORE_PROFILE_GENERIC
+
+#if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA) && defined(DLMS_IGNORE_PUSH_SETUP))
+int obj_clearPushObjectList(gxArray* buffer)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    gxKey* it;
+    int pos, ret;
+    //Clear push objects.
+    for (pos = 0; pos != buffer->size; ++pos)
+    {
+        ret = arr_getByIndex(buffer, pos, (void**)& it);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        gxfree((gxTarget*)it->value);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(buffer);
+    return 0;
+}
+#endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_OBJECT_TYPE_PUSH_SETUP) && defined(DLMS_IGNORE_PUSH_SETUP))
+
 #ifndef DLMS_IGNORE_ACCOUNT
 
 int obj_clearCreditChargeConfigurations(gxArray* list)
 {
-    gxCreditChargeConfiguration *it;
-    int pos, ret;
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    gxCreditChargeConfiguration* it;
+    int pos;
     //Clear push objects.
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
         memset(it->creditReference, 0, sizeof(it->creditReference));
         memset(it->chargeReference, 0, sizeof(it->creditReference));
         it->collectionConfiguration = DLMS_CREDIT_COLLECTION_CONFIGURATION_DISCONNECTED;
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
-    return 0;
+    return ret;
 }
 
 int obj_clearTokenGatewayConfigurations(gxArray* list)
 {
-    gxTokenGatewayConfiguration *it;
-    int pos, ret;
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    gxTokenGatewayConfiguration* it;
+    int pos;
     //Clear push objects.
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
         memset(it->creditReference, 0, 6);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
-    return 0;
+    return ret;
 }
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
 int obj_clearSapList(gxArray* buffer)
 {
-    int pos, ret = DLMS_ERROR_CODE_OK;
-    gxSapItem *it;
-
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxSapItem* it;
     //Objects are not cleared because client owns them and clears them later.
     for (pos = 0; pos != buffer->size; ++pos)
     {
-        ret = arr_getByIndex(buffer, pos, (void**)&it);
+        ret = arr_getByIndex(buffer, pos, (void**)& it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
         bb_clear(&it->name);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(buffer);
     return ret;
 }
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
-#ifndef DLMS_IGNORE_PROFILE_GENERIC
+#if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA))
 int obj_clearProfileGenericCaptureObjects(gxArray* captureObjects)
 {
-    int pos, ret = DLMS_ERROR_CODE_OK;
-    gxKey *kv;
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxKey* kv;
     //Objects are not cleared because client owns them and clears them later.
     for (pos = 0; pos != captureObjects->size; ++pos)
     {
-        ret = arr_getByIndex(captureObjects, pos, (void**)&kv);
+        ret = arr_getByIndex(captureObjects, pos, (void**)& kv);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
         gxfree(kv->value);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(captureObjects);
     return ret;
 }
-#endif //DLMS_IGNORE_PROFILE_GENERIC
+#endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA))
+
 #ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
 int obj_clearSeasonProfile(gxArray* list)
 {
-    int pos, ret = DLMS_ERROR_CODE_OK;
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
     gxSeasonProfile* sp;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&sp);
+        ret = arr_getByIndex(list, pos, (void**)& sp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
         bb_clear(&sp->name);
         bb_clear(&sp->weekName);
     };
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
 
 int obj_clearWeekProfileTable(gxArray* list)
 {
-    int pos, ret = DLMS_ERROR_CODE_OK;
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
     gxWeekProfile* wp;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&wp);
+        ret = arr_getByIndex(list, pos, (void**)& wp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
         bb_clear(&wp->name);
-    };
+    }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
 
 int obj_clearDayProfileTable(gxArray* list)
 {
-    int pos, pos2, ret = DLMS_ERROR_CODE_OK;
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos, pos2;
     gxDayProfile* it;
     gxDayProfileAction* dp;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         for (pos2 = 0; pos2 != it->daySchedules.size; ++pos2)
         {
-            ret = arr_getByIndex(&it->daySchedules, pos2, (void**)&dp);
+            ret = arr_getByIndex(&it->daySchedules, pos2, (void**)& dp);
             if (ret != DLMS_ERROR_CODE_OK)
             {
                 return ret;
@@ -241,6 +269,7 @@ int obj_clearDayProfileTable(gxArray* list)
         }
         arr_clear(&it->daySchedules);
     };
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
@@ -255,11 +284,13 @@ int obj_clearRegisterMonitorActions(gxArray* list)
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
 int obj_clearModemConfigurationInitialisationStrings(gxArray* list)
 {
-    int ret = DLMS_ERROR_CODE_OK, pos;
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
     gxModemInitialisation* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -267,6 +298,7 @@ int obj_clearModemConfigurationInitialisationStrings(gxArray* list)
         bb_clear(&it->request);
         bb_clear(&it->response);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
@@ -274,45 +306,62 @@ int obj_clearModemConfigurationInitialisationStrings(gxArray* list)
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
 int obj_clearScriptTable(gxArray* list)
 {
-    int pos, pos2, ret = 0;
-    gxScript *s;
-    gxScriptAction *sa;
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos, pos2;
+    gxScript* s;
+    gxScriptAction* sa;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&s);
+        ret = arr_getByIndex(list, pos, (void**)& s);
         if (ret != 0)
         {
-            return ret;
+            break;
         }
         for (pos2 = 0; pos2 != s->actions.size; ++pos2)
         {
-            ret = arr_getByIndex(&s->actions, pos2, (void**)&sa);
+            ret = arr_getByIndex(&s->actions, pos2, (void**)& sa);
             if (ret != 0)
             {
-                return ret;
+                break;
             }
             var_clear(&sa->parameter);
         }
         arr_clear(&s->actions);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
+
+
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+int obj_clearRegisterActivationAssignment(objectArray* list)
+{
+    oa_clear(list);
+    return 0;
+}
+#else
 int obj_clearRegisterActivationAssignment(gxArray* list)
 {
     arr_clear(list);
     return 0;
 }
+#endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
 
 int obj_clearRegisterActivationMaskList(gxArray* list)
 {
+#ifdef DLMS_IGNORE_MALLOC
+    list->size = 0;
+    return 0;
+#else
     int pos, ret = 0;
-    gxKey *it;
+    gxKey* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != 0)
         {
             return ret;
@@ -322,22 +371,26 @@ int obj_clearRegisterActivationMaskList(gxArray* list)
     }
     arr_clearKeyValuePair(list);
     return ret;
+#endif //DLMS_IGNORE_MALLOC
 }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_IP4_SETUP
 int obj_clearIP4SetupOptions(gxArray* list)
 {
-    int pos, ret = 0;
-    gxip4SetupIpOption *it;
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxip4SetupIpOption* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != 0)
         {
             return ret;
         }
         bb_clear(&it->data);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
@@ -345,34 +398,40 @@ int obj_clearIP4SetupOptions(gxArray* list)
 #ifndef DLMS_IGNORE_PPP_SETUP
 int obj_clearPPPSetupIPCPOptions(gxArray* list)
 {
-    int pos, ret = 0;
-    gxpppSetupIPCPOption *it;
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxpppSetupIPCPOption* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != 0)
         {
             return ret;
         }
         var_clear(&it->data);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
 
 int obj_clearPPPSetupLCPOptions(gxArray* list)
 {
-    int pos, ret = 0;
-    gxpppSetupLcpOption *it;
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxpppSetupLcpOption* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != 0)
         {
             return ret;
         }
         var_clear(&it->data);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
@@ -380,11 +439,13 @@ int obj_clearPPPSetupLCPOptions(gxArray* list)
 #ifndef DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
 int obj_clearActiveDevices(gxArray* list)
 {
-    int pos, ret = 0;
-    gxActiveDevice *it;
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxActiveDevice* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != 0)
         {
             return ret;
@@ -392,6 +453,7 @@ int obj_clearActiveDevices(gxArray* list)
         bb_clear(&it->macAddress);
         ba_clear(&it->status);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
@@ -399,17 +461,20 @@ int obj_clearActiveDevices(gxArray* list)
 #ifndef DLMS_IGNORE_CHARGE
 int obj_clearChargeTables(gxArray* list)
 {
-    int pos, ret = 0;
-    gxChargeTable *it;
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxChargeTable* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != 0)
         {
             return ret;
         }
         bb_clear(&it->index);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
@@ -417,17 +482,20 @@ int obj_clearChargeTables(gxArray* list)
 
 int obj_clearUserList(gxArray* list)
 {
-    int pos, ret = 0;
-    gxKey2 *it;
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxKey2* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
+        ret = arr_getByIndex(list, pos, (void**)& it);
         if (ret != 0)
         {
             return ret;
         }
         gxfree(it->value);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
     return ret;
 }
@@ -435,22 +503,24 @@ int obj_clearUserList(gxArray* list)
 #ifndef DLMS_IGNORE_SECURITY_SETUP
 int obj_clearCertificateInfo(gxArray* arr)
 {
-    int ret;
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
     gxCertificateInfo* it;
     unsigned short pos;
     for (pos = 0; pos != arr->size; ++pos)
     {
-        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0)
+        if ((ret = arr_getByIndex(arr, pos, (void**)& it)) != 0)
         {
-            return ret;
+            break;
         }
         gxfree(it->serialNumber);
         gxfree(it->issuer);
         gxfree(it->subject);
         gxfree(it->subjectAltName);
     }
+#endif //DLMS_IGNORE_MALLOC
     arr_clear(arr);
-    return 0;
+    return ret;
 }
 #endif //DLMS_IGNORE_SECURITY_SETUP
 
@@ -463,8 +533,10 @@ void obj_clear(gxObject* object)
         {
             bb_clear(&object->access->attributeAccessModes);
             bb_clear(&object->access->methodAccessModes);
+#ifndef DLMS_IGNORE_MALLOC
             gxfree(object->access);
             object->access = NULL;
+#endif //DLMS_IGNORE_MALLOC
         }
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         object->shortName = 0;
@@ -532,10 +604,15 @@ void obj_clear(gxObject* object)
             bb_clear(&((gxAssociationLogicalName*)object)->xDLMSContextInfo.cypheringInfo);
             bb_clear(&((gxAssociationLogicalName*)object)->secret);
             obj_clearUserList(&((gxAssociationLogicalName*)object)->userList);
+#ifdef DLMS_IGNORE_MALLOC
+            ((gxAssociationLogicalName*)object)->currentUser.id = -1;
+            ((gxAssociationLogicalName*)object)->currentUser.name[0] = 0;
+#else
             if (((gxAssociationLogicalName*)object)->currentUser.value != NULL)
             {
                 gxfree(((gxAssociationLogicalName*)object)->currentUser.value);
             }
+#endif //DLMS_IGNORE_MALLOC
             break;
 #endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -608,9 +685,14 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
         case DLMS_OBJECT_TYPE_IP4_SETUP:
-            bb_clear(&((gxIp4Setup*)object)->dataLinkLayerReference);
+            memset(((gxIp4Setup*)object)->dataLinkLayerReference, 0, 6);
             var_clear(&((gxIp4Setup*)object)->value);
+#ifdef DLMS_IGNORE_MALLOC
+            arr_clear(&((gxIp4Setup*)object)->multicastIPAddress);
+#else
             va_clear(&((gxIp4Setup*)object)->multicastIPAddress);
+#endif //DLMS_IGNORE_MALLOC
+
             obj_clearIP4SetupOptions(&((gxIp4Setup*)object)->ipOptions);
             break;
 #endif //DLMS_IGNORE_IP4_SETUP
@@ -622,16 +704,18 @@ void obj_clear(gxObject* object)
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
         case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
         {
-            gxImageActivateInfo *it;
-            ((gxImageTransfer*)object)->imageActivateInfo.position = 0;
-            while (((gxImageTransfer*)object)->imageActivateInfo.position != ((gxImageTransfer*)object)->imageActivateInfo.size)
+#ifndef DLMS_IGNORE_MALLOC
+            gxImageActivateInfo* it;
+            int pos = 0;
+            while (pos != ((gxImageTransfer*)object)->imageActivateInfo.size)
             {
-                if (arr_get(&((gxImageTransfer*)object)->imageActivateInfo, (void**)&it) == 0)
+                if (arr_getByIndex(&((gxImageTransfer*)object)->imageActivateInfo, pos, (void**)& it) == 0)
                 {
                     bb_clear(&it->identification);
                     bb_clear(&it->signature);
                 }
             }
+#endif //DLMS_IGNORE_MALLOC
             ba_clear(&((gxImageTransfer*)object)->imageTransferredBlocksStatus);
             arr_clear(&((gxImageTransfer*)object)->imageActivateInfo);
             break;
@@ -647,12 +731,16 @@ void obj_clear(gxObject* object)
             var_clear(&((gxLimiter*)object)->thresholdActive);
             var_clear(&((gxLimiter*)object)->thresholdNormal);
             var_clear(&((gxLimiter*)object)->thresholdEmergency);
+#ifdef DLMS_IGNORE_MALLOC
+            arr_clear(&((gxLimiter*)object)->emergencyProfileGroupIDs);
+#else
             va_clear(&((gxLimiter*)object)->emergencyProfileGroupIDs);
+#endif //DLMS_IGNORE_MALLOC
             break;
 #endif //DLMS_IGNORE_LIMITER
 #ifndef DLMS_IGNORE_MBUS_CLIENT
         case DLMS_OBJECT_TYPE_MBUS_CLIENT:
-            bb_clear(&((gxMBusClient*)object)->mBusPortReference);
+            memset(((gxMBusClient*)object)->mBusPortReference, 0, 6);
             arr_clearKeyValuePair(&((gxMBusClient*)object)->captureDefinition);
             break;
 #endif //DLMS_IGNORE_MBUS_CLIENT
@@ -667,7 +755,7 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_PPP_SETUP
         case DLMS_OBJECT_TYPE_PPP_SETUP:
-            bb_clear(&((gxPppSetup*)object)->PHYReference);
+            memset(((gxPppSetup*)object)->PHYReference, 0, 6);
             bb_clear(&((gxPppSetup*)object)->userName);
             bb_clear(&((gxPppSetup*)object)->password);
             obj_clearPPPSetupIPCPOptions(&((gxPppSetup*)object)->ipcpOptions);
@@ -676,15 +764,26 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_PPP_SETUP
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
         case DLMS_OBJECT_TYPE_PROFILE_GENERIC:
+#ifndef DLMS_IGNORE_MALLOC
             obj_clearProfileGenericBuffer(&((gxProfileGeneric*)object)->buffer);
+#endif //DLMS_IGNORE_MALLOC
             obj_clearProfileGenericCaptureObjects(&((gxProfileGeneric*)object)->captureObjects);
             break;
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
         case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+            oa_clear(&((gxRegisterActivation*)object)->registerAssignment);
+#else
             obj_clearRegisterActivationAssignment(&((gxRegisterActivation*)object)->registerAssignment);
+#endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
             obj_clearRegisterActivationMaskList(&((gxRegisterActivation*)object)->maskList);
+#ifdef DLMS_IGNORE_MALLOC
+            memset(((gxRegisterActivation*)object)->activeMask, 0, 6);
+#else
             bb_clear(&((gxRegisterActivation*)object)->activeMask);
+#endif //DLMS_IGNORE_MALLOC
+
             break;
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
@@ -764,7 +863,12 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_STATUS_MAPPING
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
         case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
-            bb_clear(&((gxTcpUdpSetup*)object)->ipReference);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            ((gxTcpUdpSetup*)object)->ipSetup = NULL;
+#else
+            memset(&((gxTcpUdpSetup*)object)->ipReference, 0, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
             break;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
@@ -787,11 +891,15 @@ void obj_clear(gxObject* object)
 #ifndef DLMS_IGNORE_PUSH_SETUP
         case DLMS_OBJECT_TYPE_PUSH_SETUP:
             obj_clearPushObjectList(&((gxPushSetup*)object)->pushObjectList);
+#ifdef DLMS_IGNORE_MALLOC
+            ((gxPushSetup*)object)->destination.size = 0;
+#else
             if (((gxPushSetup*)object)->destination != NULL)
             {
                 gxfree(((gxPushSetup*)object)->destination);
                 ((gxPushSetup*)object)->destination = NULL;
             }
+#endif //DLMS_IGNORE_MALLOC
             arr_clearKeyValuePair(&((gxPushSetup*)object)->communicationWindow);
             break;
         case DLMS_OBJECT_TYPE_DATA_PROTECTION:
@@ -806,8 +914,12 @@ void obj_clear(gxObject* object)
             arr_clear(&((gxAccount*)object)->chargeReferences);
             arr_clear(&((gxAccount*)object)->creditChargeConfigurations);
             arr_clear(&((gxAccount*)object)->tokenGatewayConfigurations);
+#ifdef DLMS_IGNORE_MALLOC
+            ((gxAccount*)object)->currency.name.size = 0;
+#else
             gxfree(((gxAccount*)object)->currency.name);
             ((gxAccount*)object)->currency.name = NULL;
+#endif //DLMS_IGNORE_MALLOC
             break;
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_CREDIT
@@ -831,8 +943,12 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
         case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
+#ifndef DLMS_IGNORE_MALLOC
             gxfree(((gxGsmDiagnostic*)object)->operatorName);
             ((gxGsmDiagnostic*)object)->operatorName = NULL;
+#else
+            bb_clear(&((gxGsmDiagnostic*)object)->operatorName);
+#endif //DLMS_IGNORE_MALLOC
             arr_clear(&((gxGsmDiagnostic*)object)->adjacentCells);
             break;
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
@@ -1018,14 +1134,18 @@ unsigned char obj_attributeCount(gxObject* object)
     {
         return 2;
     }
+#ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
     {
         return 2;
     }
+#endif //DLMS_IGNORE_SCHEDULE
+#ifndef DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SCRIPT_TABLE:
     {
         return 2;
     }
+#endif //DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SMTP_SETUP:
     {
         return 1;
@@ -1078,6 +1198,8 @@ unsigned char obj_attributeCount(gxObject* object)
 #endif //DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
         return 8;
+    case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
+        return 4;
     default:
         //Unknown type.
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -1089,10 +1211,10 @@ unsigned char obj_attributeCount(gxObject* object)
 }
 
 //Returns collection of attributes to read.
-int obj_getAttributeIndexToRead(gxObject *object, gxByteBuffer* ba)
+int obj_getAttributeIndexToRead(gxObject* object, gxByteBuffer* ba)
 {
     unsigned char ch, pos;
-    int ret;
+    int ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     unsigned char cnt;
     bb_clear(ba);
 
@@ -1102,8 +1224,11 @@ int obj_getAttributeIndexToRead(gxObject *object, gxByteBuffer* ba)
 #ifndef DLMS_IGNORE_REGISTER
         if (object->access == NULL)
         {
-            bb_setUInt8(ba, 3);
-            bb_setUInt8(ba, 2);
+            if ((ret = bb_setUInt8(ba, 3)) == 0 &&
+                (ret = bb_setUInt8(ba, 2)) == 0)
+            {
+
+            }
         }
         else
         {
@@ -1112,27 +1237,33 @@ int obj_getAttributeIndexToRead(gxObject *object, gxByteBuffer* ba)
                 ret = bb_getUInt8ByIndex(&object->access->attributeAccessModes, 3 - 1, &ch);
                 if (ret == 0 && ch != DLMS_ACCESS_MODE_NONE)
                 {
-                    bb_setUInt8(ba, 3);
+                    ret = bb_setUInt8(ba, 3);
                 }
             }
-            ret = bb_getUInt8ByIndex(&object->access->attributeAccessModes, 2 - 1, &ch);
-            if (ret == 0 && ch != DLMS_ACCESS_MODE_NONE)
+            if (ret == 0)
             {
-                bb_setUInt8(ba, 2);
+                ret = bb_getUInt8ByIndex(&object->access->attributeAccessModes, 2 - 1, &ch);
+                if (ret == 0 && ch != DLMS_ACCESS_MODE_NONE)
+                {
+                    ret = bb_setUInt8(ba, 2);
+                }
             }
         }
 #endif //DLMS_IGNORE_REGISTER
-}
+    }
     else if (object->objectType == DLMS_OBJECT_TYPE_EXTENDED_REGISTER)
     {
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
-        if (!((gxExtendedRegister*)object)->base.unitRead)
+        if (!((gxExtendedRegister*)object)->unit == 0)
         {
-            bb_setUInt8(ba, 3);
+            ret = bb_setUInt8(ba, 3);
         }
-        bb_setUInt8(ba, 2);
-        bb_setUInt8(ba, 4);
-        bb_setUInt8(ba, 5);
+        if (ret == 0 && (ret = bb_setUInt8(ba, 2)) == 0 &&
+            (ret = bb_setUInt8(ba, 4)) == 0 &&
+            (ret = bb_setUInt8(ba, 5)) == 0)
+        {
+
+        }
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
     }
     else if (object->objectType == DLMS_OBJECT_TYPE_DEMAND_REGISTER)
@@ -1140,44 +1271,52 @@ int obj_getAttributeIndexToRead(gxObject *object, gxByteBuffer* ba)
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
         if (!((gxDemandRegister*)object)->unitRead)
         {
-            bb_setUInt8(ba, 4);
+            ret = bb_setUInt8(ba, 4);
         }
-        bb_setUInt8(ba, 2);
-        bb_setUInt8(ba, 3);
-        bb_setUInt8(ba, 5);
-        bb_setUInt8(ba, 6);
-        bb_setUInt8(ba, 7);
-        bb_setUInt8(ba, 8);
-        bb_setUInt8(ba, 9);
+        if (ret == 0 && (ret = bb_setUInt8(ba, 2)) == 0 &&
+            (ret = bb_setUInt8(ba, 3)) == 0 &&
+            (ret = bb_setUInt8(ba, 5)) == 0 &&
+            (ret = bb_setUInt8(ba, 6)) == 0 &&
+            (ret = bb_setUInt8(ba, 7)) == 0 &&
+            (ret = bb_setUInt8(ba, 8)) == 0 &&
+            (ret = bb_setUInt8(ba, 9)) == 0)
+        {
+
+        }
 #endif //DLMS_IGNORE_DEMAND_REGISTER
     }
     else
     {
         cnt = obj_attributeCount(object) + 1;
-        bb_capacity(ba, cnt);
-        for (pos = 2; pos < cnt; ++pos)
+        if ((ret = bb_capacity(ba, cnt)) == 0)
         {
-            if (object->access == NULL)
+            for (pos = 2; pos < cnt; ++pos)
             {
-                bb_setUInt8(ba, pos);
-            }
-            else
-            {
-                ret = bb_getUInt8ByIndex(&object->access->attributeAccessModes, pos - 1, &ch);
-                if (ret != 0 || ch != DLMS_ACCESS_MODE_NONE)
+                if (object->access == NULL)
                 {
-                    bb_setUInt8(ba, pos);
+                    if ((ret = bb_setUInt8(ba, pos)) != 0)
+                    {
+                        break;
+                    }
                 }
                 else
                 {
+                    ret = bb_getUInt8ByIndex(&object->access->attributeAccessModes, pos - 1, &ch);
+                    if (ret == 0 || ch != DLMS_ACCESS_MODE_NONE)
+                    {
+                        ret = bb_setUInt8(ba, pos);
+                    }
+                    else
+                    {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-                    printf("Attribute access is denied.");
+                        printf("Attribute access is denied.");
 #endif
+                    }
                 }
             }
         }
     }
-    return 0;
+    return ret;
 }
 
 
@@ -1321,14 +1460,18 @@ unsigned char obj_methodCount(gxObject* object)
     {
         return 1;
     }
+#ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
     {
         return 3;
     }
+#endif //DLMS_IGNORE_SCHEDULE
+#ifndef DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SCRIPT_TABLE:
     {
         return 1;
     }
+#endif //DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SMTP_SETUP:
     {
         return 1;
@@ -1379,6 +1522,8 @@ unsigned char obj_methodCount(gxObject* object)
         return 0;
     case DLMS_OBJECT_TYPE_COMPACT_DATA:
         return 2;
+    case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
+        return 2;
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         return 0;
@@ -1392,23 +1537,24 @@ unsigned char obj_methodCount(gxObject* object)
     }
 }
 
-int obj_updateAttributeAccessModes(gxObject* object, variantArray *arr)
+#if !defined(DLMS_IGNORE_MALLOC)
+int obj_updateAttributeAccessModes(gxObject* object, variantArray* arr)
 {
     unsigned char id;
     int ret;
     unsigned short pos, cnt;
-    dlmsVARIANT* tmp, *it, *value;
+    dlmsVARIANT* tmp, * it, * value;
     //If accessmodes are not returned. Some meters do not return them.
     if (arr->size != 2)
     {
         return 0;
     }
-    ret = va_get(arr, &tmp);
+    ret = va_getByIndex(arr, 0, &tmp);
     if (ret != 0)
     {
         return ret;
     }
-    //If access modes are not retreaved yet.
+    //If access modes are not retrieved yet.
     if (object->access == NULL || object->access->attributeAccessModes.size == 0)
     {
         if (object->access == NULL)
@@ -1437,7 +1583,7 @@ int obj_updateAttributeAccessModes(gxObject* object, variantArray *arr)
         }
 
         //Get ID.
-        ret = va_get(it->Arr, &value);
+        ret = va_getByIndex(it->Arr, 0, &value);
         if (ret != 0)
         {
             return ret;
@@ -1446,7 +1592,7 @@ int obj_updateAttributeAccessModes(gxObject* object, variantArray *arr)
         id = (unsigned char)var_toInteger(value);
         if (!(id > object->access->attributeAccessModes.size))
         {
-            ret = va_get(it->Arr, &value);
+            ret = va_getByIndex(it->Arr, 1, &value);
             if (ret != 0)
             {
                 return ret;
@@ -1457,7 +1603,7 @@ int obj_updateAttributeAccessModes(gxObject* object, variantArray *arr)
     }
 
     //Get method access modes.
-    ret = va_get(arr, &tmp);
+    ret = va_getByIndex(arr, 1, &tmp);
     if (ret != 0)
     {
         return ret;
@@ -1476,7 +1622,7 @@ int obj_updateAttributeAccessModes(gxObject* object, variantArray *arr)
         }
 
         //Get ID.
-        ret = va_get(it->Arr, &value);
+        ret = va_getByIndex(it->Arr, 0, &value);
         if (ret != 0)
         {
             return ret;
@@ -1485,7 +1631,7 @@ int obj_updateAttributeAccessModes(gxObject* object, variantArray *arr)
         id = (unsigned char)var_toInteger(value);
         if (!(id > object->access->methodAccessModes.size))
         {
-            ret = va_get(it->Arr, &value);
+            ret = va_getByIndex(it->Arr, 1, &value);
             if (ret != 0)
             {
                 return ret;
@@ -1496,6 +1642,7 @@ int obj_updateAttributeAccessModes(gxObject* object, variantArray *arr)
     }
     return ret;
 }
+#endif //!defined(DLMS_IGNORE_MALLOC)
 
 #ifndef DLMS_IGNORE_DATA_PROTECTION
 void init_ProtectionParameter(gxProtectionParameter* target)
@@ -1526,3 +1673,82 @@ void clear_ProtectionParameter(gxProtectionParameter* target)
     bb_clear(&target->options.recipient);
 }
 #endif //DLMS_IGNORE_DATA_PROTECTION
+
+
+#ifndef DLMS_IGNORE_PARAMETER_MONITOR
+int obj_clearParametersList(gxArray* buffer)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    gxKey* it;
+    int pos, ret;
+    //Clear push objects.
+    for (pos = 0; pos != buffer->size; ++pos)
+    {
+        ret = arr_getByIndex(buffer, pos, (void**)& it);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        gxfree((gxTarget*)it->value);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(buffer);
+    return 0;
+}
+#endif //DLMS_IGNORE_PARAMETER_MONITOR
+
+#ifndef DLMS_IGNORE_CLOCK
+#ifndef DLMS_IGNORE_SERVER
+void clock_updateDST(gxClock* object, gxtime* value)
+{
+    if (object->enabled && time_compare(&object->begin, value) != 1 && time_compare(value, &object->end) != -1)
+    {
+        object->status |= DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
+    }
+    else
+    {
+        object->status &= ~DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
+    }
+    object->time.status = object->status;
+}
+#endif //DLMS_IGNORE_SERVER
+
+int clock_utcToMeterTime(gxClock* object, gxtime* value)
+{
+    if (value->deviation == 0 && object->timeZone != 0 && object->timeZone != -32768) //-32768 = 0x8000
+    {
+#ifdef DLMS_USE_UTC_TIME_ZONE
+        time_addMinutes(value, object->timeZone);
+#else
+        time_addMinutes(value, -object->timeZone);
+#endif //DLMS_USE_UTC_TIME_ZONE
+        value->deviation = object->timeZone;
+    }
+    //If DST is enabled for the meter and it's not set for the time.
+    if ((object->status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0)
+    {
+#ifdef DLMS_USE_UTC_TIME_ZONE
+        time_addMinutes(value, object->deviation);
+        value->deviation += object->deviation;
+#else
+        time_addMinutes(value, object->deviation);
+        value->deviation -= object->deviation;
+#endif //DLMS_USE_UTC_TIME_ZONE
+        value->status |= DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
+    }
+    else if ((object->status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) == 0)
+    {
+        value->status &= ~DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
+    }
+    else if ((object->status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0 && (value->status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0)
+    {
+#ifdef DLMS_USE_UTC_TIME_ZONE
+        value->deviation += object->deviation;
+#else
+        value->deviation -= object->deviation;
+#endif //DLMS_USE_UTC_TIME_ZONE
+    }
+    return 0;
+}
+
+#endif //DLMS_IGNORE_CLOCK

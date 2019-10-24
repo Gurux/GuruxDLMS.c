@@ -443,7 +443,6 @@ static void InvCipher(void)
 /*****************************************************************************/
 #if defined(ECB) && (ECB == 1)
 
-
 void gxaes_ecb_encrypt(const unsigned char* input, const unsigned char* key, unsigned char* output, const unsigned long length)
 {
     // Copy input to output, and work in-memory on output

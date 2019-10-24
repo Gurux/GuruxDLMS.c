@@ -69,7 +69,6 @@ extern "C" {
         * Optional parameters.
         */
         dlmsVARIANT parameters;
-
         /**
          * Occurred error.
          */
@@ -84,10 +83,12 @@ extern "C" {
         */
         unsigned char byteArray;
 
+#ifndef DLMS_IGNORE_MALLOC
         /**
         * List of objects that are released after use.
         */
         objectArray releasedObjects;
+#endif //DLMS_IGNORE_MALLOC
 
         /**
         * Is value max PDU size skipped.
@@ -97,11 +98,11 @@ extern "C" {
         /**
         *  Transaction begin index.
         */
-        unsigned short transactionStartIndex;
+        unsigned long transactionStartIndex;
         /**
         *  Transaction end index.
         */
-        unsigned short transactionEndIndex;
+        unsigned long transactionEndIndex;
         //It this transaction.
         unsigned short transaction;
     } gxValueEventArg;
@@ -110,17 +111,21 @@ extern "C" {
     * Initialize value event arg.
     */
     void ve_init(
-        gxValueEventArg * ve);
+        gxValueEventArg* ve);
 
     /**
     * Clear value event arg.
     */
     void ve_clear(
-        gxValueEventArg * ve);
+        gxValueEventArg* ve);
 
     typedef struct
     {
+#ifdef DLMS_IGNORE_MALLOC
+        gxValueEventArg* data;
+#else
         gxValueEventArg** data;
+#endif //DLMS_IGNORE_MALLOC
         unsigned char capacity;
         unsigned char size;
         unsigned char position;
@@ -131,10 +136,32 @@ extern "C" {
     void vec_init(
         gxValueEventCollection* arr);
 
+#ifdef DLMS_IGNORE_MALLOC
+    //Attach value event collection.
+    void vec_attach(
+        gxValueEventCollection* arr,
+        gxValueEventArg* value,
+        unsigned char count,
+        unsigned char capacity);
+#endif //DLMS_IGNORE_MALLOC
+
+
+    /*
+    * Is static buffer used.
+    */
+    char vec_isAttached(
+        gxValueEventCollection* arr);
+
+    //Bit array capacity.
+    unsigned char vec_getCapacity(
+        gxValueEventCollection* arr);
+
+#ifndef DLMS_IGNORE_MALLOC
     //Push new data to the value event collection.
-    void vec_push(
-        gxValueEventCollection *arr,
-        gxValueEventArg *item);
+    int vec_push(
+        gxValueEventCollection* arr,
+        gxValueEventArg* item);
+#endif //DLMS_IGNORE_MALLOC
 
     //empty array, but items are not free.
     void vec_empty(
@@ -144,15 +171,10 @@ extern "C" {
     void vec_clear(
         gxValueEventCollection* arr);
 
-    int vec_get(
-        gxValueEventCollection* arr,
-        gxValueEventArg** value);
-
     int vec_getByIndex(
         gxValueEventCollection* arr,
         int index,
         gxValueEventArg** value);
-
 
 #ifdef  __cplusplus
 }

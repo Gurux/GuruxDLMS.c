@@ -313,6 +313,7 @@
     <ClInclude Include="..\include\errorCodes.h" />
     <ClInclude Include="..\include\gxaes.h" />
     <ClInclude Include="..\include\gxarray.h" />
+    <ClInclude Include="..\include\gxdefine.h" />
     <ClInclude Include="..\include\gxget.h" />
     <ClInclude Include="..\include\gxignore.h" />
     <ClInclude Include="..\include\gxinvoke.h" />

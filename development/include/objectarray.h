@@ -49,23 +49,30 @@ extern "C" {
     //Attach objects to objectArray.
     void oa_attach(
         objectArray * arr,
-        const gxObject** item,
-        const unsigned short count);
+        gxObject** item,
+        unsigned short count);
 
     //Verify that all objects are called init2. This is used for developing purposes.
     int oa_verify(
         objectArray * arr);
 
 
+
+    char oa_isAttached(objectArray* arr);
+
+    unsigned short oa_getCapacity(objectArray* arr);
+
     //Allocate new size for the array in bytes.
-    void oa_capacity(
+    int oa_capacity(
         objectArray* arr,
         const unsigned short capacity);
 
+#ifndef DLMS_IGNORE_MALLOC
     //Push new data to the variantArray.
     int oa_push(
         objectArray * arr,
         gxObject* item);
+#endif //DLMS_IGNORE_MALLOC
 
     //Copy content of object array.
     void oa_copy(
@@ -88,7 +95,7 @@ extern "C" {
 
     //Get item from object array by index.
     int oa_getByIndex(
-        objectArray* arr,
+        const objectArray* arr,
         unsigned short index,
         gxObject** item);
 
@@ -120,6 +127,7 @@ extern "C" {
         unsigned char typeCount,
         objectArray* objects);
 
+#define OA_ATTACH(X, V) oa_attach(&X, (gxObject**) V, sizeof(V)/sizeof(V[0]))
 #ifdef  __cplusplus
 }
 #endif

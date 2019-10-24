@@ -238,3 +238,5 @@ GuruxDLMSServerExample/VS/data.csv
 *.zip
 development/gurux.dlms.c.cppcheck
 GuruxDLMSServerExample/VS/trace.txt
+GuruxDLMSServerExample/src/lib.rules
+GuruxDLMSServerExample/trace.txt

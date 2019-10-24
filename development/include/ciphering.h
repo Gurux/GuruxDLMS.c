@@ -57,21 +57,37 @@ typedef struct
     /**
     * Block cipher key.
     */
+#ifndef DLMS_IGNORE_MALLOC
     gxByteBuffer blockCipherKey;
+#else
+    unsigned char blockCipherKey[16];
+#endif //DLMS_IGNORE_MALLOC
 
     /**
     * System title.
     */
+#ifndef DLMS_IGNORE_MALLOC
     gxByteBuffer systemTitle;
+#else
+    unsigned char systemTitle[8];
+#endif //DLMS_IGNORE_MALLOC
 
     /**
     * Invocation (Frame) counter.
     */
     unsigned long invocationCounter;
+#ifndef DLMS_IGNORE_MALLOC
     gxByteBuffer authenticationKey;
+#else
+    unsigned char authenticationKey[16];
+#endif //DLMS_IGNORE_MALLOC
 
     //Dedicated key.
-    gxByteBuffer *dedicatedKey;
+#ifndef DLMS_IGNORE_MALLOC
+    gxByteBuffer* dedicatedKey;
+#else
+    unsigned char dedicatedKey[16];
+#endif //DLMS_IGNORE_MALLOC
 
 } ciphering;
 
@@ -81,26 +97,46 @@ void cip_clear(ciphering* target);
 /**
 * Encrypt data.
 */
+#ifndef DLMS_IGNORE_MALLOC
 int cip_encrypt(
-    ciphering *settings,
+    ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
     unsigned long frameCounter,
     unsigned char tag,
-    gxByteBuffer *systemTitle,
-    gxByteBuffer *key,
-    gxByteBuffer *input,
-    gxByteBuffer *output);
+    unsigned char* systemTitle,
+    gxByteBuffer* key,
+    gxByteBuffer* input);
+#else
+int cip_encrypt(
+    ciphering* settings,
+    DLMS_SECURITY security,
+    DLMS_COUNT_TYPE type,
+    unsigned long frameCounter,
+    unsigned char tag,
+    unsigned char* systemTitle,
+    unsigned char* key,
+    gxByteBuffer* input);
+#endif //DLMS_IGNORE_MALLOC
 
 /**
 * Decrypt data.
 */
+#ifndef DLMS_IGNORE_MALLOC
 int cip_decrypt(
-    ciphering *settings,
-    gxByteBuffer *title,
-    gxByteBuffer *key,
-    gxByteBuffer *data,
-    DLMS_SECURITY *security);
+    ciphering* settings,
+    unsigned char* title,
+    gxByteBuffer* key,
+    gxByteBuffer* data,
+    DLMS_SECURITY* security);
+#else
+int cip_decrypt(
+    ciphering* settings,
+    unsigned char* title,
+    unsigned char* key,
+    gxByteBuffer* data,
+    DLMS_SECURITY* security);
+#endif //DLMS_IGNORE_MALLOC
 
 // Encrypt data using AES RFC3394.
 int cip_encryptKey(

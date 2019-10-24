@@ -162,7 +162,7 @@ void gxsha1_update(gxByteBuffer* data, unsigned long* digest, unsigned long* tra
 int gxsha1_final(gxByteBuffer* data, unsigned long* digest, unsigned long* transforms, gxByteBuffer* reply)
 {
     int pos;
-    bb_capacity(reply, *transforms * 64);
+    bb_capacity(reply, (unsigned short) *transforms * 64);
     bb_set(reply, data->data, data->size);
     /* Total number of hashed bits */
     unsigned long long total_bits = (*transforms * 64 + data->size) * 8;

@@ -91,8 +91,12 @@ void cl_init(
     DLMS_INTERFACE_TYPE interfaceType)
 {
     settings->qualityOfService = 0;
-    settings->protocolVersion = NULL;
+    settings->protocolVersion = 0;
+#ifndef DLMS_IGNORE_MALLOC
     settings->preEstablishedSystemTitle = NULL;
+#else
+    memset(settings->preEstablishedSystemTitle, 0, 8);
+#endif //DLMS_IGNORE_MALLOC
     settings->blockIndex = 1;
     settings->clientAddress = (unsigned short)clientAddress;
     settings->serverAddress = (unsigned short)serverAddress;
@@ -102,11 +106,10 @@ void cl_init(
     settings->authentication = authentication;
     bb_init(&settings->password);
     bb_addString(&settings->password, password);
-    bb_init(&settings->sourceSystemTitle);
+    memset(settings->sourceSystemTitle, 0, sizeof(settings->sourceSystemTitle));
     bb_init(&settings->kek);
     settings->maxServerPDUSize = 1024;
     settings->maxPduSize = 0xFFFF;
-    settings->position = settings->index = settings->count = 0;
     settings->server = 0;
     if (useLogicalNameReferencing)
     {
@@ -146,19 +149,19 @@ void cl_init(
 void cl_clear(
     dlmsSettings* settings)
 {
-    if (settings->protocolVersion != NULL)
-    {
-        gxfree(settings->protocolVersion);
-        settings->protocolVersion = NULL;
-    }
+    settings->protocolVersion = 0;
+#ifndef DLMS_IGNORE_MALLOC
     if (settings->preEstablishedSystemTitle != NULL)
     {
         bb_clear(settings->preEstablishedSystemTitle);
         gxfree(settings->preEstablishedSystemTitle);
         settings->preEstablishedSystemTitle = NULL;
     }
+#else
+    memset(settings->preEstablishedSystemTitle, 0, 8);
+#endif //DLMS_IGNORE_MALLOC
+    memset(settings->sourceSystemTitle, 0, sizeof(settings->sourceSystemTitle));
     bb_clear(&settings->password);
-    bb_clear(&settings->sourceSystemTitle);
     bb_clear(&settings->kek);
     oa_clear(&settings->objects);
     settings->connected = DLMS_CONNECTION_STATE_NONE;
@@ -172,7 +175,6 @@ void cl_clear(
     cip_clear(&settings->cipher);
 #endif //DLMS_IGNORE_HIGH_GMAC
     settings->maxPduSize = 0xFFFF;
-    settings->position = settings->index = settings->count = 0;
     settings->userId = -1;
 }
 
@@ -322,14 +324,18 @@ unsigned char isCiphered(
 void trans_init(gxLongTransaction* trans)
 {
     trans->command = DLMS_COMMAND_NONE;
+#ifndef DLMS_IGNORE_MALLOC
     bb_init(&trans->data);
+#endif //DLMS_IGNORE_MALLOC
     vec_init(&trans->targets);
 }
 
 void trans_clear(gxLongTransaction* trans)
 {
     trans->command = DLMS_COMMAND_NONE;
+#ifndef DLMS_IGNORE_MALLOC
     bb_clear(&trans->data);
+#endif //DLMS_IGNORE_MALLOC
     vec_clear(&trans->targets);
 }
 

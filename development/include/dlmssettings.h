@@ -57,8 +57,8 @@ extern "C" {
         // Server to Client challenge.
         gxByteBuffer stoCChallenge;
 
-        gxByteBuffer sourceSystemTitle;
-        
+        unsigned char sourceSystemTitle[8];
+
         // Invoke ID.
         unsigned char invokeID;
 
@@ -81,21 +81,6 @@ extern "C" {
         DLMS_AUTHENTICATION authentication;
         gxByteBuffer password;
         gxByteBuffer kek;
-        /**
-         * Long data count.
-         */
-        unsigned short count;
-
-        /**
-         * Long data index.
-         */
-        unsigned short index;
-
-        /**
-         * Long data position. This is used to save position of long read/write.
-         */
-        unsigned short position;
-
         /**
         * DLMS version number.
         */
@@ -156,11 +141,16 @@ extern "C" {
         /**
         *  Protocol version.
         */
-        char* protocolVersion;
+        unsigned char protocolVersion;
 
         unsigned char qualityOfService;
         //Pre-established Application Associations system title.
-        gxByteBuffer *preEstablishedSystemTitle;
+
+#ifndef DLMS_IGNORE_MALLOC
+        gxByteBuffer* preEstablishedSystemTitle;
+#else
+        unsigned char preEstablishedSystemTitle[8];
+#endif //DLMS_IGNORE_MALLOC
     } dlmsSettings;
 
     typedef struct
@@ -175,10 +165,12 @@ extern "C" {
          */
         gxValueEventCollection targets;
 
+#ifndef DLMS_IGNORE_MALLOC
         /**
          * Extra data from PDU.
          */
         gxByteBuffer data;
+#endif //DLMS_IGNORE_MALLOC
     } gxLongTransaction;
 
     typedef struct

@@ -317,12 +317,6 @@ int com_open(
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
 
-        if ((ioctl(connection->comPort, TIOCEXCL) == -1))
-        {
-            printf("Failed to Open port %s. Exclusive access denied.\n", port);
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-
         memset(&options, 0, sizeof(options));
         options.c_iflag = 0;
         options.c_oflag = 0;

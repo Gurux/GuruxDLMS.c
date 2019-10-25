@@ -645,7 +645,7 @@ int cl_parseObjects(dlmsSettings* settings, gxByteBuffer* data)
 }
 #endif //DLMS_IGNORE_MALLOC
 
-#if !(defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) || defined(DLMS_IGNORE_MALLOC))
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int cl_readSN(
     dlmsSettings* settings,
     unsigned short address,
@@ -681,7 +681,7 @@ int cl_readSN(
     bb_clear(&attributeDescriptor);
     return ret;
 }
-#endif //!(defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) || defined(DLMS_IGNORE_MALLOC))
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int cl_readLN(
     dlmsSettings* settings,

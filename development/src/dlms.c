@@ -4425,7 +4425,7 @@ int dlms_addLLCBytes(
     return ret;
 }
 
-#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_appendMultipleSNBlocks(
     gxSNParameters* p,
     gxByteBuffer* reply)
@@ -4530,8 +4530,13 @@ int dlms_getSNPdu(
             int pos = reply->size;
             dlmsVARIANT tmp;
             gxtime t;
+
+#ifndef DLMS_IGNORE_MALLOC
             tmp.dateTime = &t;
             tmp.vt = DLMS_DATA_TYPE_DATETIME;
+#else
+            GX_DATETIME(tmp) = &t;
+#endif // DLMS_IGNORE_MALLOC
 #ifdef DLMS_USE_EPOCH_TIME
             t.value = p->time;
 #else
@@ -4663,7 +4668,7 @@ int dlms_getSNPdu(
 #endif //DLMS_IGNORE_HIGH_GMAC
     return 0;
 }
-#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 
 /**
@@ -4793,6 +4798,7 @@ int dlms_getLNPdu(
                 gxtime t;
 #ifndef DLMS_IGNORE_MALLOC
                 tmp.dateTime = &t;
+                tmp.vt = DLMS_DATA_TYPE_DATETIME;
 #else
                 GX_DATETIME(tmp) = &t;
 #endif // DLMS_IGNORE_MALLOC
@@ -4801,7 +4807,6 @@ int dlms_getLNPdu(
 #else
                 t.value = *p->time;
 #endif // DLMS_USE_EPOCH_TIME
-                tmp.vt = DLMS_DATA_TYPE_DATETIME;
                 if ((ret = dlms_setData(h, DLMS_DATA_TYPE_OCTET_STRING, &tmp)) != 0)
                 {
                     return ret;
@@ -5083,7 +5088,7 @@ int dlms_getLnMessages(
     return ret;
 }
 
-#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getSnMessages(
     gxSNParameters* p,
     message* messages)
@@ -5101,13 +5106,23 @@ int dlms_getSnMessages(
         frame = getNextSend(p->settings, 1);
     }
     bb_init(&data);
+    mes_clear(messages);
     do
     {
         ret = dlms_getSNPdu(p, &data);
         // Command is not add to next PDUs.
         while (ret == 0 && data.position != data.size)
         {
+#ifndef DLMS_IGNORE_MALLOC
             it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+#else
+            if (!(messages->size < messages->capacity))
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            it = messages->data[messages->size];
+            ++messages->size;
+#endif //DLMS_IGNORE_MALLOC
             bb_init(it);
             if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
@@ -5132,13 +5147,15 @@ int dlms_getSnMessages(
             {
                 break;
             }
+#ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
+#endif //DLMS_IGNORE_MALLOC
         }
         bb_clear(&data);
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
     return 0;
 }
-#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_getData2(
     dlmsSettings* settings,
@@ -5216,7 +5233,7 @@ int dlms_generateChallenge(
     return ret;
 }
 
-#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getActionInfo(
     DLMS_OBJECT_TYPE objectType,
     unsigned char* value,
@@ -5323,7 +5340,7 @@ int dlms_getActionInfo(
     }
     return DLMS_ERROR_CODE_OK;
 }
-#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_secure(
     dlmsSettings* settings,

@@ -36,6 +36,7 @@
 extern "C" {
 #endif
 
+#include "gxignore.h"
 #include "gxobjects.h"
 #include "errorcodes.h"
 

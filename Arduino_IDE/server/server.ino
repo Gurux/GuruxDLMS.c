@@ -210,7 +210,7 @@ int addClockObject()
         clock1.timeZone = 0;
         //Deviation is 60 minutes.
         clock1.deviation = 60;
-    }
+  }
   return 0;
 }
 
@@ -235,7 +235,7 @@ int svr_InitObjects(
   addClockObject();
   addRegisterObject();
   addAssociation();
-  OA_ATTACH(settings->base.objects, ALL_OBJECTS);  
+  OA_ATTACH(settings->base.objects, ALL_OBJECTS);
   return oa_verify(&settings->base.objects);
 }
 
@@ -292,8 +292,8 @@ void svr_preRead(
     if (e->target == &clock1.base && e->index == 2)
     {
        GX_DATETIME(e->value) = &time1;
-       time_now(&time1, 1);     
-       e->handled = true;       
+       time_now(&time1, 1);
+       e->handled = true;
     }
   }
 }

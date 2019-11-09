@@ -4812,7 +4812,10 @@ int dlms_getLNPdu(
                     return ret;
                 }
                 //Remove data type.
-                bb_move(h, pos + 1, pos, reply->size - pos - 1);
+                if (p->command != DLMS_COMMAND_EVENT_NOTIFICATION)
+                {
+                    bb_move(h, pos + 1, pos, reply->size - pos - 1);
+                }
             }
         }
         else if (p->command != DLMS_COMMAND_RELEASE_REQUEST)

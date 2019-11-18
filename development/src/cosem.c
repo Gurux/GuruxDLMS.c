@@ -831,7 +831,7 @@ int cosem_getDateTimeBase(gxByteBuffer* bb, gxtime* value, unsigned char type)
     var_init(&tmp);
 #endif //DLMS_IGNORE_MALLOC
     di_init(&info);
-    info.type = type;
+    info.type = (DLMS_DATA_TYPE) type;
     return dlms_getData(bb, &info, &tmp);
 }
 
@@ -884,7 +884,7 @@ int cosem_getDateTimeFromOctectStringBase(gxByteBuffer* bb, gxtime* value, unsig
         }
     }
     di_init(&info);
-    info.type = type;
+    info.type = (DLMS_DATA_TYPE) type;
     return dlms_getData(bb, &info, &tmp);
 }
 
@@ -940,7 +940,7 @@ int cosem_getVariant(gxByteBuffer* bb, dlmsVARIANT* value)
         return 0;
     }
     di_init(&info);
-    info.type = ch;
+    info.type = (DLMS_DATA_TYPE) ch;
     return dlms_getData(bb, &info, value);
 }
 

@@ -1100,7 +1100,7 @@ int getTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     }
 #ifndef DLMS_IGNORE_MALLOC
     value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
-    time_init(value->dateTime, -1, -1, -1, hour, minute, second, ms, 0x8000);
+    time_init(value->dateTime, (unsigned short)-1, 0xFF, 0xFF, hour, minute, second, ms, 0x8000);
     value->vt = DLMS_DATA_TYPE_TIME;
 #else
     time_init((gxtime*)value->pVal, -1, -1, -1, hour, minute, second, ms, 0x8000);
@@ -1152,7 +1152,7 @@ int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     }
 #ifndef DLMS_IGNORE_MALLOC
     value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
-    time_init(value->dateTime, year, month, day, -1, -1, -1, -1, 0x8000);
+    time_init(value->dateTime, year, month, day, 0xFF, 0xFF, 0xFF, 0xFF, 0x8000);
     value->vt = DLMS_DATA_TYPE_DATE;
 #else
     time_init((gxtime*)value->pVal, year, month, day, -1, -1, -1, -1, 0x8000);

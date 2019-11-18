@@ -369,7 +369,7 @@ int com_open(
         len = strlen(buff);
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
-            printf("\r\n<-");
+            printf("\r\nTX:\t");
             for (pos = 0; pos != len; ++pos)
             {
                 printf("%.2X ", buff[pos]);
@@ -398,7 +398,7 @@ int com_open(
 #endif
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
-            printf("\r\n->");
+            printf("\r\nRX:\t");
         }
         //Read reply data.
         if (com_readSerialPort(connection, '\n') != 0)
@@ -483,7 +483,7 @@ int com_open(
         len = 6;
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
-            printf("\r\n<-");
+            printf("\r\nTX:\t");
             for (pos = 0; pos != len; ++pos)
             {
                 printf("%.2X ", buff[pos]);
@@ -574,7 +574,7 @@ int readDLMSPacket(
     if (connection->trace > GX_TRACE_LEVEL_INFO)
     {
         hex = bb_toHexString(data);
-        printf("<- %s\r\n", hex);
+        printf("TX:\t%s\r\n", hex);
         free(hex);
     }
     if (connection->comPort != INVALID_HANDLE_VALUE)
@@ -649,7 +649,7 @@ int readDLMSPacket(
             char* hex = hlp_bytesToHex(connection->data.data + index, connection->data.size - index);
             if (index == 0)
             {
-                printf("-> %s", hex);
+                printf("RX:\t %s", hex);
             }
             else
             {

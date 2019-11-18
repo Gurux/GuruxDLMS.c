@@ -286,7 +286,7 @@ void arr_clearStrings(gxArray* arr)
 int arr_removeByIndex(gxArray* arr, unsigned short index, void** value)
 {
     int pos;
-    if (index < 0 || index >= arr->size)
+    if (index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }

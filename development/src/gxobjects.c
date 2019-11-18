@@ -1016,6 +1016,10 @@ unsigned char obj_attributeCount(gxObject* object)
     }
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
     {
+        if (object->version < 2)
+        {
+            return 2;
+        }
         return 4;
     }
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
@@ -1272,6 +1276,10 @@ int obj_getAttributeIndexToRead(gxObject* object, gxByteBuffer* ba)
         if (!((gxDemandRegister*)object)->unitRead)
         {
             ret = bb_setUInt8(ba, 4);
+        }
+        else
+        {
+            ret = 0;
         }
         if (ret == 0 && (ret = bb_setUInt8(ba, 2)) == 0 &&
             (ret = bb_setUInt8(ba, 3)) == 0 &&

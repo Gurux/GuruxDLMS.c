@@ -898,12 +898,12 @@ int cosem_setActionSchedule(
                 {
                     return ret;
                 }
-#ifdef DLMS_USE_EPOCH_TIME
                 ret = dlms_changeType2(tmp2, DLMS_DATA_TYPE_DATE, &date);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
                     return ret;
                 }
+#ifdef DLMS_USE_EPOCH_TIME
                 time_addHours(date.dateTime, time_getHours(time.dateTime));
                 time_addMinutes(date.dateTime, time_getMinutes(time.dateTime));
                 time_addSeconds(date.dateTime, time_getSeconds(time.dateTime));
@@ -1327,7 +1327,7 @@ int cosem_setAssociationLogicalName(
                     (ret = cosem_getUInt8(value->byteArr, &object->authenticationMechanismName.authenticationMechanismName)) == 0 &&
                     (ret = cosem_getUInt8(value->byteArr, &ch)) == 0)
                 {
-                    object->authenticationMechanismName.mechanismId = ch;
+                    object->authenticationMechanismName.mechanismId = (DLMS_AUTHENTICATION)ch;
                 }
             }
         }
@@ -3978,12 +3978,13 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
                 {
                     break;
                 }
-                ret = va_getByIndex(tmp3->Arr, 1, &tmp);
+                ret = va_getByIndex(tmp3->Arr, 0, &tmp);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
                     break;
                 }
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
+                actionSet->actionUp.script = NULL;
                 if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_SCRIPT_TABLE, tmp->byteArr->data, (gxObject * *)& actionSet->actionUp.script)) != 0)
                 {
                     return ret;
@@ -3991,7 +3992,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
 #else
                 memcpy(actionSet->actionUp.logicalName, tmp->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-                ret = va_getByIndex(tmp3->Arr, 2, &tmp);
+                ret = va_getByIndex(tmp3->Arr, 1, &tmp);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
                     break;
@@ -4009,6 +4010,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
                     break;
                 }
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
+                actionSet->actionDown.script = NULL;
                 if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_SCRIPT_TABLE, tmp->byteArr->data, (gxObject * *)& actionSet->actionDown.script)) != 0)
                 {
                     return ret;
@@ -4693,28 +4695,39 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
     }
     else if (index == 3)
     {
+        if (value->vt == DLMS_DATA_TYPE_NONE)
+        {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            object->ipSetup = NULL;
+#else
+            object->ipReference = NULL;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        }
+        else
+        {
 #ifdef DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-        unsigned char ln[6];
-        if ((ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) == 0)
-        {
-            ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_IP4_SETUP, ln, &object->ipSetup);
-        }
+            unsigned char ln[6];
+            if ((ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) == 0)
+            {
+                ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_IP4_SETUP, ln, &object->ipSetup);
+            }
 #else
-        ret = bb_get(value->byteArr, object->ipReference, 6);
+            ret = bb_get(value->byteArr, object->ipReference, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #else
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-        unsigned char ln[6];
-        if ((ret = bb_get(value->byteArr, ln, 6)) != 0 ||
-            (ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_IP4_SETUP, ln, &object->ipSetup)) != 0)
-        {
+            unsigned char ln[6];
+            if ((ret = bb_get(value->byteArr, ln, 6)) != 0 ||
+                (ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_IP4_SETUP, ln, &object->ipSetup)) != 0)
+            {
 
-        }
+            }
 #else
-        ret = bb_get(value->byteArr, object->ipReference, 6);
+            ret = bb_get(value->byteArr, object->ipReference, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
+        }
     }
     else if (index == 4)
     {
@@ -6093,31 +6106,34 @@ int cosem_setProfileGeneric(
         }
         if ((ret = obj_clearProfileGenericBuffer(&object->buffer)) == 0)
         {
-            unsigned short rIndex, rCount = arr_getCapacity(&object->buffer);
-            dlmsVARIANT* row;
-            if ((ret = cosem_checkArray(value->byteArr, &rCount)) == 0)
+            if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
             {
-                object->buffer.size = rCount;
-                if (rCount != 0 && (ret = arr_getByIndex(&object->buffer, 0, (void**)& row)) == 0)
+                unsigned short rIndex, rCount = arr_getCapacity(&object->buffer);
+                dlmsVARIANT* row;
+                if ((ret = cosem_checkArray(value->byteArr, &rCount)) == 0)
                 {
-                    unsigned short cCount = row->Arr->size;
-                    if (cCount > object->captureObjects.size)
+                    object->buffer.size = rCount;
+                    if (rCount != 0 && (ret = arr_getByIndex(&object->buffer, 0, (void**)& row)) == 0)
                     {
-                        //Number of columns do not match.
-                        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-                    }
-                    for (rIndex = 0; rIndex != rCount; ++rIndex)
-                    {
-                        if ((ret = arr_getByIndex(&object->buffer, rIndex, (void**)& row)) != 0 ||
-                            (ret = cosem_checkStructure(value->byteArr, (unsigned char)cCount)) != 0)
+                        unsigned short cCount = row->Arr->size;
+                        if (cCount > object->captureObjects.size)
                         {
-                            break;
+                            //Number of columns do not match.
+                            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+                        }
+                        for (rIndex = 0; rIndex != rCount; ++rIndex)
+                        {
+                            if ((ret = arr_getByIndex(&object->buffer, rIndex, (void**)& row)) != 0 ||
+                                (ret = cosem_checkStructure(value->byteArr, (unsigned char)cCount)) != 0)
+                            {
+                                break;
+                            }
                         }
                     }
                 }
             }
         }
-        if (value->Arr != NULL)
+        if (value->vt == DLMS_DATA_TYPE_ARRAY)
         {
             //Allocate array.
             arr_capacity(&object->buffer, value->Arr->size);

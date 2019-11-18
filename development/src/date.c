@@ -122,7 +122,7 @@ void time_init(
     unsigned short millisecond,
     short devitation)
 {
-    if (devitation == -1)
+    if (devitation == (unsigned short)-1)
     {
         devitation = 0x8000;
     }

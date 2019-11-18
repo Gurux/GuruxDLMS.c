@@ -789,7 +789,7 @@ int hlp_intToString(char* str, int bufsize, long value, unsigned char isSigned, 
         *str = '-';
         ++str;
         --bufsize;
-        value = -value;
+        val = -value;
         ++cnt;
     }
     if (digits != 0)

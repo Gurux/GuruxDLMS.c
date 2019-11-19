@@ -4700,7 +4700,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
             object->ipSetup = NULL;
 #else
-            object->ipReference = NULL;
+            memset(object->ipReference, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         }
         else

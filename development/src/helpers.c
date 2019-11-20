@@ -682,7 +682,7 @@ int hlp_setLogicalName(unsigned char ln[6], const char* name)
     gxfree(pOriginalBuff);
     if (count != 6)
     {
-        memset(&ln, 0, 6);
+        memset(ln, 0, 6);
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return DLMS_ERROR_CODE_OK;

@@ -5087,6 +5087,7 @@ int dlms_getLnMessages(
 #endif //DLMS_IGNORE_MALLOC
         }
         bb_clear(&reply);
+        frame = 0;
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
     return ret;
 }
@@ -5136,14 +5137,7 @@ int dlms_getSnMessages(
                 ret = dlms_getHdlcFrame(p->settings, frame, &data, it);
                 if (data.position != data.size)
                 {
-                    if (p->settings->server)
-                    {
-                        frame = 0;
-                    }
-                    else
-                    {
-                        frame = getNextSend(p->settings, 0);
-                    }
+                    frame = getNextSend(p->settings, 0);
                 }
             }
             if (ret != 0)
@@ -5155,6 +5149,7 @@ int dlms_getSnMessages(
 #endif //DLMS_IGNORE_MALLOC
         }
         bb_clear(&data);
+        frame = 0;
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
     return 0;
 }

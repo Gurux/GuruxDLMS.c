@@ -937,7 +937,7 @@ int cip_decryptKey(
     unsigned char a[8];
     unsigned char buf[16];
     unsigned char buf2[16];
-    char j, i;
+    signed char j, i;
     unsigned char k, v, n;
     unsigned short t;
     // Amount of 64-bit blocks.

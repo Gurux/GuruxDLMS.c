@@ -700,7 +700,7 @@ int cl_readLN(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned char tmp[20];
+    unsigned char tmp[100];
     bb_attach(&attributeDescriptor, tmp, 0, sizeof(tmp));
 #else
     bb_init(&attributeDescriptor);
@@ -886,66 +886,40 @@ int cl_readRowsByEntry(dlmsSettings* settings, gxProfileGeneric* object, unsigne
 
 int cl_readRowsByEntry2(dlmsSettings* settings, gxProfileGeneric* object, unsigned long index, unsigned long count, unsigned short colStart, unsigned short colEnd, message* messages)
 {
-    dlmsVARIANT tmp;
     int ret;
     gxByteBuffer data;
     if (object == NULL)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned char buff[20];
+    bb_attach(&data, buff, 0, sizeof(buff));
+#else
     bb_init(&data);
-    bb_setUInt8(&data, 2);  //Add AccessSelector
-    bb_setUInt8(&data, DLMS_DATA_TYPE_STRUCTURE); //Add enum tag.
-    bb_setUInt8(&data, 0x04); //Add item count
-    var_init(&tmp);
-    //Add start index
-    var_setUInt32(&tmp, index);
-    if ((ret = dlms_setData(&data, tmp.vt, &tmp)) != 0)
+#endif //DLMS_IGNORE_MALLOC
+    //Add AccessSelector
+    if ((ret = bb_setUInt8(&data, 2)) == 0 &&
+        //Add structure tag.
+        (ret = cosem_setStructure(&data, 4)) == 0 &&
+        //Add start index
+        (ret = cosem_setUInt32(&data, index)) == 0 &&
+        //Add Count
+        (ret = cosem_setUInt32(&data, count == 0 ? 0 : index + count - 1)) == 0 &&
+        //Add columns.
+        (ret = cosem_setUInt16(&data, colStart)) == 0 &&
+        (ret = cosem_setUInt16(&data, colEnd)) == 0)
     {
-        var_clear(&tmp);
-        bb_clear(&data);
-        return ret;
-    }
-    //Add Count
-    if (count == 0)
-    {
-        var_setUInt32(&tmp, count);
-    }
-    else
-    {
-        var_setUInt32(&tmp, index + count - 1);
-    }
-    if ((ret = dlms_setData(&data, tmp.vt, &tmp)) != 0)
-    {
-        var_clear(&tmp);
-        bb_clear(&data);
-        return ret;
-    }
-    //Add columns.
-    var_setUInt16(&tmp, colStart);
-    if ((ret = dlms_setData(&data, tmp.vt, &tmp)) != 0)
-    {
-        var_clear(&tmp);
-        bb_clear(&data);
-        return ret;
-    }
-    var_setUInt16(&tmp, colEnd);
-    if ((ret = dlms_setData(&data, tmp.vt, &tmp)) != 0)
-    {
-        var_clear(&tmp);
-        bb_clear(&data);
-        return ret;
-    }
-    var_clear(&tmp);
-    if (settings->useLogicalNameReferencing)
-    {
-        ret = cl_readLN(settings, object->base.logicalName, object->base.objectType, 2, &data, messages);
-    }
-    else
-    {
+        if (settings->useLogicalNameReferencing)
+        {
+            ret = cl_readLN(settings, object->base.logicalName, object->base.objectType, 2, &data, messages);
+        }
+        else
+        {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-        ret = cl_readSN(settings, object->base.shortName, 2, &data, messages);
+            ret = cl_readSN(settings, object->base.shortName, 2, &data, messages);
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+        }
     }
     bb_clear(&data);
     return ret;
@@ -986,7 +960,6 @@ int cl_readRowsByRange(
     DLMS_OBJECT_TYPE type = DLMS_OBJECT_TYPE_CLOCK;
     unsigned char* ln = LN;
     gxtime t;
-    dlmsVARIANT tmp;
     int ret;
     gxByteBuffer data;
     if (object == NULL || start == 0 || end == 0 || messages == NULL)
@@ -1023,114 +996,85 @@ int cl_readRowsByRange(
     }
 #endif //DLMS_IGNORE_MALLOC
     time_clear(&t);
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned char buff[100];
+    bb_attach(&data, buff, 0, sizeof(buff));
+#else
     bb_init(&data);
-    bb_setUInt8(&data, 1);  //Add AccessSelector
-    bb_setUInt8(&data, DLMS_DATA_TYPE_STRUCTURE); //Add enum tag.
-    bb_setUInt8(&data, 0x04); //Add item count
-    bb_setUInt8(&data, DLMS_DATA_TYPE_STRUCTURE); //Add enum tag.
-    bb_setUInt8(&data, 0x04); //Add item count
-    // Add class_id
-    var_init(&tmp);
-    var_setUInt16(&tmp, type);
-    if ((ret = dlms_setData(&data, tmp.vt, &tmp)) != 0)
+#endif //DLMS_IGNORE_MALLOC
+    //Add AccessSelector
+    if ((ret = bb_setUInt8(&data, 1)) == 0 &&
+        //Add structure tag.
+        (ret = cosem_setStructure(&data, 4)) == 0 &&
+        //Add structure tag.
+        (ret = cosem_setStructure(&data, 4)) == 0 &&
+        // Add class_id
+        (ret = cosem_setUInt16(&data, type)) == 0 &&
+        // Add parameter Logical name
+        (ret = cosem_setOctectString2(&data, ln, 6)) == 0 &&
+        //Add attribute index.
+        (ret = cosem_setUInt8(&data, 2)) == 0 &&
+        //Add version.
+        (ret = cosem_setUInt16(&data, 0)) == 0)
     {
-        var_clear(&tmp);
-        bb_clear(&data);
-        return ret;
-    }
-    // Add parameter Logical name
-    bb_setUInt8(&data, DLMS_DATA_TYPE_OCTET_STRING); //Add enum tag.
-    bb_setUInt8(&data, 6); //Add item count
-    bb_set(&data, ln, 6);
-    //Add attribute index.
-    var_setInt8(&tmp, 2);
-    if ((ret = dlms_setData(&data, tmp.vt, &tmp)) != 0)
-    {
-        var_clear(&tmp);
-        bb_clear(&data);
-        return ret;
-    }
-    //Add version.
-    var_setUInt16(&tmp, 0);
-    if ((ret = dlms_setData(&data, tmp.vt, &tmp)) != 0)
-    {
-        var_clear(&tmp);
-        bb_clear(&data);
-        return ret;
-    }
-    //Add start time
-    if (unixTime)
-    {
-#ifdef DLMS_USE_EPOCH_TIME
-        var_setUInt32(&tmp, start);
-#else
-        var_setUInt32(&tmp, time_toUnixTime(start));
-#endif //DLMS_USE_EPOCH_TIME
-        if ((ret = dlms_setData(&data, DLMS_DATA_TYPE_UINT32, &tmp)) != 0)
+        //Add start time
+        if (unixTime)
         {
-            var_clear(&tmp);
-            bb_clear(&data);
-            return ret;
-        }
-    }
-    else
-    {
 #ifdef DLMS_USE_EPOCH_TIME
-        time_initUnix(&t, start);
+            ret = cosem_setUInt32(&data, start);
 #else
-        time_init2(&t, start);
+            ret = cosem_setUInt32(&data, time_toUnixTime(start));
 #endif //DLMS_USE_EPOCH_TIME
-        if ((ret = cosem_setDateTimeAsOctectString(&data, &t)) != 0)
-        {
-            var_clear(&tmp);
-            bb_clear(&data);
-            return ret;
         }
-    }
-    //Add end time
-    if (unixTime)
-    {
+        else
+        {
 #ifdef DLMS_USE_EPOCH_TIME
-        var_setUInt32(&tmp, end);
+            time_initUnix(&t, start);
 #else
-        var_setUInt32(&tmp, time_toUnixTime(end));
+            time_init2(&t, start);
 #endif //DLMS_USE_EPOCH_TIME
-        if ((ret = dlms_setData(&data, DLMS_DATA_TYPE_UINT32, &tmp)) != 0)
-        {
-            var_clear(&tmp);
-            bb_clear(&data);
-            return ret;
+            if ((ret = cosem_setDateTimeAsOctectString(&data, &t)) != 0)
+            {
+                bb_clear(&data);
+                return ret;
+            }
         }
-    }
-    else
-    {
+        //Add end time
+        if (unixTime)
+        {
 #ifdef DLMS_USE_EPOCH_TIME
-        time_initUnix(&t, end);
+            ret = cosem_setUInt32(&data, end);
 #else
-        time_init2(&t, end);
+            ret = cosem_setUInt32(&data, time_toUnixTime(end));
 #endif //DLMS_USE_EPOCH_TIME
-        if ((ret = cosem_setDateTimeAsOctectString(&data, &t)) != 0)
-        {
-            var_clear(&tmp);
-            bb_clear(&data);
-            return ret;
         }
-    }
-    var_clear(&tmp);
-    //Add array of read columns. Read All...
-    //Add array type
-    bb_setUInt8(&data, 0x01);
-    //Add item count
-    bb_setUInt8(&data, 0x00);
-    if (settings->useLogicalNameReferencing)
-    {
-        ret = cl_readLN(settings, object->base.logicalName, object->base.objectType, 2, &data, messages);
-    }
-    else
-    {
+        else
+        {
+#ifdef DLMS_USE_EPOCH_TIME
+            time_initUnix(&t, end);
+#else
+            time_init2(&t, end);
+#endif //DLMS_USE_EPOCH_TIME
+            if ((ret = cosem_setDateTimeAsOctectString(&data, &t)) != 0)
+            {
+                bb_clear(&data);
+                return ret;
+            }
+        }
+        //Add array of read columns. Read All...
+        bb_setUInt8(&data, 0x01);
+        //Add item count
+        bb_setUInt8(&data, 0x00);
+        if (settings->useLogicalNameReferencing)
+        {
+            ret = cl_readLN(settings, object->base.logicalName, object->base.objectType, 2, &data, messages);
+        }
+        else
+        {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-        ret = cl_readSN(settings, object->base.shortName, 2, &data, messages);
+            ret = cl_readSN(settings, object->base.shortName, 2, &data, messages);
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+        }
     }
     bb_clear(&data);
     return ret;
@@ -1496,7 +1440,7 @@ int cl_method(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }
     return ret;
-}
+    }
 
 int cl_methodLN(
     dlmsSettings* settings,

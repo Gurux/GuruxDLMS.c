@@ -101,6 +101,11 @@ extern "C" {
         unsigned char peek;
 
         /**
+        * Value is not try to parse. This is used in data collector.
+        */
+        unsigned char ignoreValue;
+
+        /**
         * Is received message General Block Transfer message.
         */
         unsigned char gbt;

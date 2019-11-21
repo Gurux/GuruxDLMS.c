@@ -4387,7 +4387,7 @@ int dlms_getPdu(
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 
     // Get data if all data is read or we want to peek data.
-    if (ret == 0 && data->data.position != data->data.size
+    if (ret == 0 && !data->ignoreValue && data->data.position != data->data.size
         && (
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
             cmd == DLMS_COMMAND_READ_RESPONSE ||

@@ -60,6 +60,7 @@ void reply_init(gxReplyData* reply)
     reply->readPosition = 0;
     reply->packetLength = 0;
     reply->peek = 0;
+    reply->ignoreValue = 0;
     reply->dataType = DLMS_DATA_TYPE_NONE;
     reply->gbt = 0;
     reply->cipherIndex = 0;
@@ -86,6 +87,7 @@ void reply_clear2(gxReplyData* reply, unsigned char clearData)
     reply->readPosition = 0;
     reply->packetLength = 0;
     reply->peek = 0;
+    reply->ignoreValue = 0;
     reply->dataType = DLMS_DATA_TYPE_NONE;
     reply->gbt = 0;
     reply->cipherIndex = 0;

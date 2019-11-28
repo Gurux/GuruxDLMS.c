@@ -1727,7 +1727,7 @@ int cosem_setAssociationShortName(
     else if (index == 4)
     {
 #ifdef DLMS_IGNORE_MALLOC
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_SECURITY_SETUP))
         unsigned char ln[6];
         if ((ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) == 0)
         {
@@ -1735,7 +1735,7 @@ int cosem_setAssociationShortName(
         }
 #else
         ret = cosem_getOctectString2(value->byteArr, object->securitySetupReference, 6, NULL);
-#endif //DLMS_IGNORE_OBJECT_POINTERS
+#endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_SECURITY_SETUP))
 #else
         if (bb_size(value->byteArr) != 6)
         {
@@ -2295,67 +2295,67 @@ int cosem_setGprsSetup(gxGPRSSetup* object, unsigned char index, dlmsVARIANT* va
         {
             return ret;
         }
-        ret = va_getByIndex(tmp->Arr, 1, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 0, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         object->defaultQualityOfService.precedence = (unsigned char)var_toInteger(tmp3);
-        ret = va_getByIndex(tmp->Arr, 2, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 1, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         object->defaultQualityOfService.delay = (unsigned char)var_toInteger(tmp3);
-        ret = va_getByIndex(tmp->Arr, 3, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 2, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         object->defaultQualityOfService.reliability = (unsigned char)var_toInteger(tmp3);
-        ret = va_getByIndex(tmp->Arr, 4, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 3, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         object->defaultQualityOfService.peakThroughput = (unsigned char)var_toInteger(tmp3);
-        ret = va_getByIndex(tmp->Arr, 5, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 4, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         object->defaultQualityOfService.meanThroughput = (unsigned char)var_toInteger(tmp3);
 
-        ret = va_getByIndex(value->Arr, 6, &tmp);
+        ret = va_getByIndex(value->Arr, 1, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
-        ret = va_getByIndex(tmp->Arr, 7, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 0, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         object->requestedQualityOfService.precedence = (unsigned char)var_toInteger(tmp3);
-        ret = va_getByIndex(tmp->Arr, 8, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 1, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         object->requestedQualityOfService.delay = (unsigned char)var_toInteger(tmp3);
-        ret = va_getByIndex(tmp->Arr, 9, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 2, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         object->requestedQualityOfService.reliability = (unsigned char)var_toInteger(tmp3);
-        ret = va_getByIndex(tmp->Arr, 10, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 3, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         object->requestedQualityOfService.peakThroughput = (unsigned char)var_toInteger(tmp3);
-        ret = va_getByIndex(tmp->Arr, 11, &tmp3);
+        ret = va_getByIndex(tmp->Arr, 4, &tmp3);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -2659,7 +2659,7 @@ int cosem_setIecLocalPortSetup(gxLocalPortSetup* object, unsigned char index, dl
 }
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
-int cosem_setIP4Setup(gxIp4Setup* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret = 0, pos;
 #ifndef DLMS_IGNORE_MALLOC
@@ -2669,9 +2669,27 @@ int cosem_setIP4Setup(gxIp4Setup* object, unsigned char index, dlmsVARIANT* valu
     if (index == 2)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_getOctectString2(value->byteArr, object->dataLinkLayerReference, 6, NULL);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        unsigned char ln[6];
+        if ((ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) == 0)
+        {
+            if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, ln, &object->dataLinkLayer)) != 0)
+            {
+                return ret;
+            }
+        }
 #else
-        memset(object->dataLinkLayerReference, 0, 6);
+        ret = cosem_getOctectString2(value->byteArr, object->dataLinkLayerReference, 6, NULL);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+#else
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, value->byteArr->data, &object->dataLinkLayer)) != 0)
+        {
+            return ret;
+        }
+#else
+        ret = bb_get(value->byteArr, object->dataLinkLayerReference, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (index == 3)
@@ -3130,15 +3148,33 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
 }
 #endif //DLMS_IGNORE_LIMITER
 #ifndef DLMS_IGNORE_MBUS_CLIENT
-int cosem_setmMbusClient(gxMBusClient* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
     if (index == 2)
     {
 #ifdef DLMS_IGNORE_MALLOC
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        unsigned char ln[6];
+        if ((ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) == 0)
+        {
+            if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, ln, &object->mBusPort)) != 0)
+            {
+                return ret;
+            }
+        }
+#else
         ret = cosem_getOctectString2(value->byteArr, object->mBusPortReference, 6, NULL);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+#else
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, value->byteArr->data, &object->mBusPort)) != 0)
+        {
+            return ret;
+        }
 #else
         ret = bb_get(value->byteArr, object->mBusPortReference, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (index == 3)
@@ -3378,7 +3414,7 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
 }
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_PPP_SETUP
-int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
     gxpppSetupLcpOption* lcpItem;
@@ -3390,9 +3426,27 @@ int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT* valu
     if (index == 2)
     {
 #ifdef DLMS_IGNORE_MALLOC
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        unsigned char ln[6];
+        if ((ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) == 0)
+        {
+            if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, ln, &object->phy)) != 0)
+            {
+                return ret;
+            }
+        }
+#else
         ret = cosem_getOctectString2(value->byteArr, object->PHYReference, 6, NULL);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+#else
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, value->byteArr->data, &object->phy)) != 0)
+        {
+            return ret;
+        }
 #else
         ret = bb_get(value->byteArr, object->PHYReference, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (index == 3)
@@ -3647,25 +3701,26 @@ int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* ob
                 {
                     break;
                 }
-                if (objectDefinition == NULL)
-                {
-                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
-                    break;
-                }
                 type = var_toInteger(tmp3);
                 ret = va_getByIndex(tmp->Arr, 1, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
                     break;
                 }
+                const unsigned char* ln = tmp3->byteArr->data;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
                 objectDefinition = (gxObjectDefinition*)gxmalloc(sizeof(gxObjectDefinition));
                 objectDefinition->objectType = (DLMS_OBJECT_TYPE)type;
-                memcpy(objectDefinition->logicalName, tmp3->byteArr->data, 6);
+                memcpy(objectDefinition->logicalName, ln, 6);
 #else
-                if ((ret = oa_findByLN(&settings->objects, type, tmp3->byteArr->data, &objectDefinition)) != 0)
+                if ((ret = oa_findByLN(&settings->objects, type, ln, &objectDefinition)) != 0)
                 {
-                    return ret;
+                    break;
+                }
+                if (objectDefinition == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
                 }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -5169,27 +5224,27 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
         return ret;
     }
     //commodity scale
-    ret = va_getByIndex(it->Arr, 1, &it2);
+    ret = va_getByIndex(it->Arr, 0, &it2);
     if (ret != 0)
     {
         return ret;
     }
     target->chargePerUnitScaling.commodityScale = (char)var_toInteger(it2);
     //price scale
-    ret = va_getByIndex(it->Arr, 2, &it2);
+    ret = va_getByIndex(it->Arr, 1, &it2);
     if (ret != 0)
     {
         return ret;
     }
     target->chargePerUnitScaling.priceScale = (char)var_toInteger(it2);
     //commodity
-    ret = va_getByIndex(value->Arr, 3, &it);
+    ret = va_getByIndex(value->Arr, 1, &it);
     if (ret != 0)
     {
         return ret;
     }
     //type
-    ret = va_getByIndex(it->Arr, 4, &it2);
+    ret = va_getByIndex(it->Arr, 0, &it2);
     if (ret != 0)
     {
         return ret;
@@ -5200,7 +5255,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
     target->commodity.type = (DLMS_OBJECT_TYPE)var_toInteger(it2);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     //LN
-    ret = va_getByIndex(it->Arr, 5, &it2);
+    ret = va_getByIndex(it->Arr, 1, &it2);
     if (ret != 0)
     {
         return ret;
@@ -5225,14 +5280,14 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
     }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     //attribute index
-    ret = va_getByIndex(it->Arr, 6, &it2);
+    ret = va_getByIndex(it->Arr, 2, &it2);
     if (ret != 0)
     {
         return ret;
     }
     target->commodity.attributeIndex = (unsigned char)var_toInteger(it2);
     //chargeTables
-    ret = va_getByIndex(value->Arr, 7, &it);
+    ret = va_getByIndex(value->Arr, 2, &it);
     if (ret != 0)
     {
         return ret;
@@ -5563,10 +5618,6 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
             ba = (unsigned char*)gxmalloc(6);
-            if ((ret = arr_getByIndex(&object->creditReferences, pos, (void**)& ba)) != 0)
-            {
-                break;
-            }
             memcpy(ba, it->byteArr->data, 6);
             arr_push(&object->creditReferences, ba);
         }
@@ -6354,12 +6405,19 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
         }
         else if (value->vt == DLMS_DATA_TYPE_STRING)
         {
+#ifdef DLMS_IGNORE_MALLOC
+            bb_clear(&object->operatorName);
+            if (value->strVal != NULL && bb_size(value->strVal) != 0)
+            {
+                bb_set(&object->operatorName, value->strVal->data, value->strVal->size);
+            }
+#else
             if (object->operatorName != NULL)
             {
                 gxfree(object->operatorName);
                 object->operatorName = NULL;
             }
-            object->operatorName[0] = 0;
+            object->operatorName = NULL;
             if (value->strVal != NULL && bb_size(value->strVal) != 0)
             {
                 object->operatorName = (char*)gxmalloc(value->strVal->size + 1);
@@ -6370,6 +6428,7 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
                 memcpy(object->operatorName, value->strVal, value->strVal->size);
                 object->operatorName[value->strVal->size] = '\0';
             }
+#endif //DLMS_IGNORE_MALLOC
         }
         else
         {
@@ -7103,7 +7162,12 @@ int cosem_setParameterMonitor(
     {
     case 2:
     {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
         object->changedParameter.target = NULL;
+#else
+        object->changedParameter.type = DLMS_OBJECT_TYPE_NONE;
+        memset(object->changedParameter.logicalName, 0, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
 #ifdef DLMS_IGNORE_MALLOC
         unsigned char ln[6];
         unsigned short type;
@@ -7113,7 +7177,12 @@ int cosem_setParameterMonitor(
             (ret = cosem_getInt8(value->byteArr, &object->changedParameter.attributeIndex)) == 0 &&
             (ret = cosem_getVariant(value->byteArr, &object->changedParameter.value)) == 0)
         {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
             ret = oa_findByLN(&settings->objects, type, ln, &object->changedParameter.target);
+#else
+            object->changedParameter.type = type;
+            memcpy(object->changedParameter.logicalName, ln, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         }
 #else
         if (value->Arr != NULL)
@@ -7124,7 +7193,7 @@ int cosem_setParameterMonitor(
                 //Get LN.
                 if ((ret = va_getByIndex(value->Arr, 1, &tmp3)) == DLMS_ERROR_CODE_OK)
                 {
-                    object->changedParameter.target = NULL;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
                     if ((ret = oa_findByLN(&settings->objects, type, tmp3->byteArr->data, &object->changedParameter.target)) != 0)
                     {
                         return ret;
@@ -7145,6 +7214,19 @@ int cosem_setParameterMonitor(
                             ret = var_copy(&object->changedParameter.value, tmp3);
                         }
                     }
+#else
+                    object->changedParameter.type = type;
+                    memcpy(object->changedParameter.logicalName, tmp3->byteArr->data, 6);
+                    if ((ret = va_getByIndex(value->Arr, 2, &tmp3)) == DLMS_ERROR_CODE_OK)
+                    {
+                        object->changedParameter.attributeIndex = (unsigned char)var_toInteger(tmp3);
+                        if ((ret = va_getByIndex(value->Arr, 3, &tmp3)) == DLMS_ERROR_CODE_OK)
+                        {
+                            ret = var_copy(&object->changedParameter.value, tmp3);
+                        }
+                    }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+
                 }
             }
         }
@@ -7579,7 +7661,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
     case DLMS_OBJECT_TYPE_IP4_SETUP:
-        ret = cosem_setIP4Setup((gxIp4Setup*)e->target, e->index, &e->value);
+        ret = cosem_setIP4Setup(settings, (gxIp4Setup*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_IP4_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
@@ -7604,7 +7686,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
 #endif //DLMS_IGNORE_LIMITER
 #ifndef DLMS_IGNORE_MBUS_CLIENT
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
-        ret = cosem_setmMbusClient((gxMBusClient*)e->target, e->index, &e->value);
+        ret = cosem_setmMbusClient(settings, (gxMBusClient*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_MBUS_CLIENT
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
@@ -7614,7 +7696,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_PPP_SETUP
     case DLMS_OBJECT_TYPE_PPP_SETUP:
-        ret = cosem_setPppSetup((gxPppSetup*)e->target, e->index, &e->value);
+        ret = cosem_setPppSetup(settings, (gxPppSetup*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_PPP_SETUP
 #ifndef DLMS_IGNORE_PROFILE_GENERIC

@@ -1861,7 +1861,7 @@ int getCompactArray(
 int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
 {
     unsigned char ch, knownType;
-    int ret;
+    int ret = 0;
 #ifndef DLMS_IGNORE_MALLOC
     unsigned long startIndex = data->position;
     var_clear(value);
@@ -2957,7 +2957,7 @@ int dlms_receiverReady(
 #endif //#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     }
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned char buff[4];
+    unsigned char buff[40];
     bb_attach(&bb, buff, 0, sizeof(buff));
 #else
     bb_init(&bb);
@@ -2982,6 +2982,9 @@ int dlms_receiverReady(
     {
         gxLNParameters p;
         params_initLN(&p, settings, 0, cmd, DLMS_GET_COMMAND_TYPE_NEXT_DATA_BLOCK, &bb, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
+#ifdef DLMS_IGNORE_MALLOC
+        p.serializedPdu = &bb;
+#endif //DLMS_IGNORE_MALLOC
         ret = dlms_getLnMessages(&p, &tmp);
     }
     else
@@ -4720,10 +4723,13 @@ int dlms_getLNPdu(
     unsigned short len = 0;
     if (p->command == DLMS_COMMAND_AARQ)
     {
+        //Data is already added to reply when malloc is not used.
+#ifndef DLMS_IGNORE_MALLOC
         if ((ret = bb_set2(reply, p->attributeDescriptor, 0, p->attributeDescriptor->size)) != 0)
         {
             return ret;
         }
+#endif //DLMS_IGNORE_MALLOC
     }
     else
     {
@@ -4736,7 +4742,12 @@ int dlms_getLNPdu(
         }
         else
         {
+#ifdef DLMS_IGNORE_MALLOC
+            bb_attach(&header, pduAttributes, 0, sizeof(pduAttributes));
+            h = &header;
+#else
             h = reply;
+#endif //DLMS_IGNORE_MALLOC
         }
         if ((p->settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER) != 0)
         {
@@ -4865,11 +4876,13 @@ int dlms_getLNPdu(
                 ret = bb_setUInt8(h, dlms_getInvokeIDPriority(p->settings));
             }
         }
+#ifndef DLMS_IGNORE_MALLOC
         // Add attribute descriptor.
         if (ret == 0 && p->attributeDescriptor != NULL)
         {
-            ret = bb_set2(reply, p->attributeDescriptor, 0, p->attributeDescriptor->size);
+            ret = bb_set(reply, p->attributeDescriptor->data, p->attributeDescriptor->size);
         }
+#endif //DLMS_IGNORE_MALLOC
         if (ret == 0 &&
             p->command != DLMS_COMMAND_EVENT_NOTIFICATION &&
             p->command != DLMS_COMMAND_DATA_NOTIFICATION &&
@@ -4930,6 +4943,13 @@ int dlms_getLNPdu(
                 ret = hlp_setObjectCount(len, h);
                 if (ret == 0)
                 {
+#ifdef DLMS_IGNORE_MALLOC
+                    if ((ret = bb_insert(h->data, h->size, reply, 0)) != 0)
+                    {
+                        //If this fails PDU buffer size must be bigger.
+                        return ret;
+                    }
+#else
                     if (p->settings->server)
                     {
                         if ((ret = bb_insert(h->data, h->size, reply, 0)) != 0)
@@ -4942,6 +4962,7 @@ int dlms_getLNPdu(
                     {
                         ret = bb_set2(reply, p->data, p->data->position, len);
                     }
+#endif //DLMS_IGNORE_MALLOC
                 }
             }
         }
@@ -4965,6 +4986,13 @@ int dlms_getLNPdu(
                 {
                     len = (unsigned short)(p->settings->maxPduSize - h->size - p->data->size - p->data->position);
                 }
+#ifdef DLMS_IGNORE_MALLOC
+                ret = bb_insert(h->data, h->size, reply, 0);
+                if (!p->settings->server)
+                {
+                    p->data->position += len;
+                }
+#else
                 if (p->settings->server)
                 {
                     ret = bb_insert(h->data, h->size, reply, 0);
@@ -4973,10 +5001,18 @@ int dlms_getLNPdu(
                 {
                     ret = bb_set2(reply, p->data, p->data->position, len);
                 }
+#endif //DLMS_IGNORE_MALLOC
             }
-            else if (p->settings->server)
+            else
             {
+#ifdef DLMS_IGNORE_MALLOC
                 ret = bb_insert(h->data, h->size, reply, 0);
+#else
+                if (p->settings->server)
+                {
+                    ret = bb_insert(h->data, h->size, reply, 0);
+                }
+#endif //DLMS_IGNORE_MALLOC
             }
         }
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -5028,7 +5064,7 @@ int dlms_getLnMessages(
     message* messages)
 {
     int ret;
-    gxByteBuffer reply;
+    gxByteBuffer* pdu;
     gxByteBuffer* it;
     unsigned char frame = 0;
     if (p->command == DLMS_COMMAND_DATA_NOTIFICATION ||
@@ -5037,15 +5073,15 @@ int dlms_getLnMessages(
         frame = 0x13;
     }
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned char tmp[MAX_CLIENT_PDU_SIZE];
-    bb_attach(&reply, tmp, 0, sizeof(tmp));
+    pdu = p->serializedPdu;
 #else
+    gxByteBuffer reply;
     bb_init(&reply);
+    pdu = &reply;
 #endif //DLMS_IGNORE_MALLOC
-
     do
     {
-        if ((ret = dlms_getLNPdu(p, &reply)) == 0)
+        if ((ret = dlms_getLNPdu(p, pdu)) == 0)
         {
             p->lastBlock = 1;
             if (p->attributeDescriptor == NULL)
@@ -5053,7 +5089,7 @@ int dlms_getLnMessages(
                 ++p->settings->blockIndex;
             }
         }
-        while (ret == 0 && reply.position != reply.size)
+        while (ret == 0 && pdu->position != pdu->size)
         {
 #ifdef DLMS_IGNORE_MALLOC
             if (!(messages->size < messages->capacity))
@@ -5071,13 +5107,13 @@ int dlms_getLnMessages(
 #ifndef DLMS_IGNORE_WRAPPER
             if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
-                ret = dlms_getWrapperFrame(p->settings, &reply, it);
+                ret = dlms_getWrapperFrame(p->settings, pdu, it);
             }
             else
 #endif //DLMS_IGNORE_WRAPPER
             {
-                ret = dlms_getHdlcFrame(p->settings, frame, &reply, it);
-                if (reply.position != reply.size)
+                ret = dlms_getHdlcFrame(p->settings, frame, pdu, it);
+                if (pdu->position != pdu->size)
                 {
                     frame = getNextSend(p->settings, 0);
                 }
@@ -5086,7 +5122,7 @@ int dlms_getLnMessages(
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
         }
-        bb_clear(&reply);
+        bb_clear(pdu);
         frame = 0;
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
     return ret;

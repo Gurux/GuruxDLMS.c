@@ -120,9 +120,9 @@ void time_init(
     unsigned char minute,
     unsigned char second,
     unsigned short millisecond,
-    short devitation)
+    signed short devitation)
 {
-    if (devitation == (unsigned short)-1)
+    if (devitation == -1)
     {
         devitation = 0x8000;
     }

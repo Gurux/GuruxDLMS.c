@@ -95,6 +95,10 @@ extern "C" {
          * Block index.
          */
         unsigned short blockIndex;
+        //Serialize data to this PDU.
+#ifdef DLMS_IGNORE_MALLOC
+        gxByteBuffer* serializedPdu;
+#endif //DLMS_IGNORE_MALLOC
     } gxSNParameters;
 
     void params_initSN(
@@ -166,6 +170,10 @@ extern "C" {
         * Received invoke ID.
         */
         unsigned char invokeId;
+        //Serialize data to this PDU.
+#ifdef DLMS_IGNORE_MALLOC
+        gxByteBuffer* serializedPdu;
+#endif //DLMS_IGNORE_MALLOC
     } gxLNParameters;
 
     void params_initLN(

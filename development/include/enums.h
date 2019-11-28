@@ -177,7 +177,10 @@ extern "C" {
         DLMS_SERVICE_TYPE_UDP = 1,
         DLMS_SERVICE_TYPE_FTP = 2,
         DLMS_SERVICE_TYPE_SMTP = 3,
-        DLMS_SERVICE_TYPE_SMS = 4
+        DLMS_SERVICE_TYPE_SMS = 4,
+        DLMS_SERVICE_TYPE_HDLC = 5,
+        DLMS_SERVICE_TYPE_M_BUS = 6,
+        DLMS_SERVICE_TYPE_ZIG_BEE = 7
     } DLMS_SERVICE_TYPE;
 
     typedef enum

@@ -1267,7 +1267,14 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
     gxByteBuffer ba;
     bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    if (object->dataLinkLayer != NULL)
+    {
+        bb_addLogicalName(&ba, object->dataLinkLayer->logicalName);
+    }
+#else
     bb_addLogicalName(&ba, object->dataLinkLayerReference);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->ipAddress);
     bb_addString(&ba, "\r\nIndex: 4 Value: [");
@@ -1487,7 +1494,14 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->primaryAddress);
     bb_addString(&ba, "\r\nIndex: 4 Value: ");
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    if (object->mBusPort != NULL)
+    {
+        bb_addLogicalName(&ba, object->mBusPort->logicalName);
+    }
+#else
     bb_addLogicalName(&ba, object->mBusPortReference);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     bb_addString(&ba, "\r\nIndex: 5 Value: ");
     //TODO: bb_addIntAsString(&ba, object->captureDefinition);
     bb_addString(&ba, "\r\nIndex: 6 Value: ");
@@ -1831,7 +1845,14 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
     bb_addString(&ba, "Index: 2 Value: [");
     //TODO: ipcpOptions
     bb_addString(&ba, "]\r\nIndex: 3 Value: ");
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    if (object->phy != NULL)
+    {
+        bb_addLogicalName(&ba, object->phy->logicalName);
+    }
+#else
     bb_addLogicalName(&ba, object->PHYReference);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     bb_addString(&ba, "\r\nIndex: 4 Value: [");
     //TODO: lcpOptions
     bb_addString(&ba, "]\r\nIndex: 5 Value: ");

@@ -984,7 +984,6 @@ int apdu_getUserInformation(
     int ret = 0;
     gxByteBuffer bb;
     unsigned char buff[4];
-    bb_clear(data);
     // Tag for xDLMS-Initiate
     if ((ret = bb_setUInt8(data, DLMS_COMMAND_INITIATE_RESPONSE)) != 0)
     {

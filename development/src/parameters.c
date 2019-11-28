@@ -54,6 +54,9 @@ void params_initSN(
     target->multipleBlocks = 0;
     target->time = 0;
     target->lastBlock = 1;
+#ifdef DLMS_IGNORE_MALLOC
+    target->serializedPdu = settings->serializedPdu;
+#endif //DLMS_IGNORE_MALLOC
 }
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
@@ -82,5 +85,8 @@ void params_initLN(
     target->status = status;
     target->multipleBlocks = multipleBlocks;
     target->lastBlock = lastBlock;
-
+    //Serialize data to this PDU.
+#ifdef DLMS_IGNORE_MALLOC
+    target->serializedPdu = settings->serializedPdu;
+#endif //DLMS_IGNORE_MALLOC
 }

@@ -86,6 +86,7 @@ int svr_handleWriteRequest(
     gxByteBuffer* data);
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 
+#if !defined(DLMS_IGNORE_MALLOC)
 //Copy association view.
 void svr_copyAssociationView(objectArray* target, objectArray* source)
 {
@@ -103,6 +104,7 @@ void svr_copyAssociationView(objectArray* target, objectArray* source)
     }
     target->size = cnt;
 }
+#endif //!defined(DLMS_IGNORE_MALLOC)
 
 int svr_initialize(
     dlmsServerSettings* settings)
@@ -152,11 +154,13 @@ int svr_initialize(
             && settings->base.useLogicalNameReferencing)
         {
             gxAssociationLogicalName* ln = (gxAssociationLogicalName*)it;
+#if !defined(DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME) && !defined(DLMS_IGNORE_MALLOC)
             objectArray* list = &ln->objectList;
             if (list->size == 0)
             {
                 svr_copyAssociationView(list, &settings->base.objects);
             }
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME) && !defined(DLMS_IGNORE_MALLOC)
             associationObject = it;
             ln->xDLMSContextInfo.maxReceivePduSize = ln->xDLMSContextInfo.maxSendPpuSize = settings->base.maxServerPDUSize;
             ln->xDLMSContextInfo.conformance = settings->base.proposedConformance;
@@ -696,6 +700,7 @@ int svr_reportError(
     return ret;
 }
 
+#ifndef DLMS_IGNORE_SET
 int svr_handleSetRequest2(
     dlmsServerSettings* settings,
     gxByteBuffer* data,
@@ -859,6 +864,7 @@ int svr_handleSetRequest2(
 #endif //DLMS_IGNORE_MALLOC
     return ret;
 }
+#endif //DLMS_IGNORE_SET
 
 #ifndef DLMS_IGNORE_MALLOC
 int svr_hanleSetRequestWithDataBlock(
@@ -954,6 +960,7 @@ int svr_generateConfirmedServiceError(
     return 0;
 }
 
+#ifndef DLMS_IGNORE_SET
 int svr_handleSetRequest(
     dlmsServerSettings* settings,
     gxByteBuffer* data)
@@ -1026,6 +1033,7 @@ int svr_handleSetRequest(
     return dlms_getLNPdu(&p, data);
 }
 
+#endif //DLMS_IGNORE_SET
 
 int svr_getRequestNormal(
     dlmsServerSettings* settings,
@@ -2290,6 +2298,7 @@ int svr_handleWriteRequest(
 }
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 
+#ifndef DLMS_IGNORE_ACTION
 /**
 * Handle action request.
 *
@@ -2488,6 +2497,7 @@ int svr_handleMethodRequest(
 #endif //DLMS_IGNORE_MALLOC
     return ret;
 }
+#endif //DLMS_IGNORE_ACTION
 
 /**
 * Handles release request.
@@ -2500,34 +2510,55 @@ int svr_handleMethodRequest(
 int svr_handleReleaseRequest(
     dlmsServerSettings* settings,
     gxByteBuffer* data) {
+    int ret;
+    unsigned char ch, len;
+    gxByteBuffer tmp;
+    //Get len.
+    if ((ret = bb_getUInt8(data, &len)) != 0 ||
+        (ret = bb_getUInt8(data, &ch)) != 0 ||
+        (ret = bb_getUInt8(data, &ch)) != 0 ||
+        //Get reason.
+        (ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    unsigned char userInfo = len != 3;
     bb_clear(data);
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned char offset = settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC ? 12 : 9;
+    bb_attach(&tmp, data->data + offset, 0, data->capacity - offset);
+#else
+    bb_init(&tmp);
+#endif //DLMS_IGNORE_MALLOC
+    if (userInfo && (ret = apdu_getUserInformation(&settings->base, &tmp, 0)) != 0)
+    {
+        return ret;
+    }
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         dlms_addLLCBytes(&settings->base, data);
     }
-    int ret;
-    gxByteBuffer tmp;
-    if ((ret = bb_init(&tmp)) != 0)
+    if ((ret = bb_setUInt8(data, 0x63)) == 0 &&
+        //Len.
+        (ret = bb_setUInt8(data, (unsigned char)(tmp.size + 3))) == 0 &&
+        (ret = bb_setUInt8(data, 0x80)) == 0 &&
+        (ret = bb_setUInt8(data, 0x01)) == 0 &&
+        //Reason
+        (ret = bb_setUInt8(data, ch)) == 0)
     {
-        return ret;
+        if (tmp.size != 0)
+        {
+            if ((ret = bb_setUInt8(data, 0xBE)) == 0 &&
+                (ret = bb_setUInt8(data, (unsigned char)(tmp.size + 1))) == 0 &&
+                (ret = bb_setUInt8(data, 4)) == 0 &&
+                (ret = bb_setUInt8(data, (unsigned char)tmp.size)) == 0)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                ret = bb_set(data, tmp.data, tmp.size);
+#endif //DLMS_IGNORE_MALLOC
+            }
+        }
     }
-    if ((ret = apdu_getUserInformation(&settings->base, &tmp, 0)) != 0)
-    {
-        bb_clear(&tmp);
-        return ret;
-    }
-    bb_setUInt8(data, 0x63);
-    //Len.
-    bb_setUInt8(data, (unsigned char)(tmp.size + 3));
-    bb_setUInt8(data, 0x80);
-    bb_setUInt8(data, 0x01);
-    bb_setUInt8(data, 0x00);
-    bb_setUInt8(data, 0xBE);
-    bb_setUInt8(data, (unsigned char)(tmp.size + 1));
-    bb_setUInt8(data, 4);
-    bb_setUInt8(data, (unsigned char)tmp.size);
-    bb_set(data, tmp.data, tmp.size);
-    bb_clear(&tmp);
     return 0;
 }
 
@@ -2541,9 +2572,11 @@ int svr_handleCommand(
     unsigned char frame = 0;
     switch (cmd)
     {
+#ifndef DLMS_IGNORE_SET
     case DLMS_COMMAND_SET_REQUEST:
         ret = svr_handleSetRequest(settings, data);
         break;
+#endif //DLMS_IGNORE_SET
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_WRITE_REQUEST:
         ret = svr_handleWriteRequest(settings, data);
@@ -2574,9 +2607,11 @@ int svr_handleCommand(
         }
         break;
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#ifndef DLMS_IGNORE_ACTION
     case DLMS_COMMAND_METHOD_REQUEST:
         ret = svr_handleMethodRequest(settings, data);
         break;
+#endif //DLMS_IGNORE_ACTION
     case DLMS_COMMAND_SNRM:
         ret = svr_handleSnrmRequest(settings, data);
         settings->base.connected = DLMS_CONNECTION_STATE_HDLC;

@@ -151,6 +151,12 @@ extern "C" {
 #else
         unsigned char preEstablishedSystemTitle[8];
 #endif //DLMS_IGNORE_MALLOC
+
+//Client serializes data to this PDU when malloc is not used.
+#ifdef DLMS_IGNORE_MALLOC
+        gxByteBuffer* serializedPdu;
+#endif //DLMS_IGNORE_MALLOC
+
     } dlmsSettings;
 
     typedef struct

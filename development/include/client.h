@@ -71,12 +71,12 @@ extern "C" {
         dlmsSettings* settings,
         gxByteBuffer* reply);
 
-#ifndef DLMS_IGNORE_MALLOC
     /*Read association view. Association view is not available if malloc is not used.*/
     int cl_getObjectsRequest(
         dlmsSettings* settings,
         message* messages);
 
+#ifndef DLMS_IGNORE_MALLOC
     /*Parse association view. Association view is not available if malloc is not used.*/
     int cl_parseObjects(
         dlmsSettings* settings,

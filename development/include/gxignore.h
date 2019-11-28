@@ -116,6 +116,9 @@ extern "C" {
 //Use UTC time zone. Read more: https://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSClock
 // #define DLMS_USE_UTC_TIME_ZONE
 
+// #define DLMS_IGNORE_SET
+// #define DLMS_IGNORE_ACTION
+
 #ifdef  __cplusplus
 }
 #endif

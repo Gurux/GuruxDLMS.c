@@ -105,7 +105,7 @@ extern "C" {
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 
 #ifndef DLMS_IGNORE_IP4_SETUP
-    int cosem_setIP4Setup(gxIp4Setup* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_IP4_SETUP
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
@@ -129,7 +129,7 @@ extern "C" {
 #endif //DLMS_IGNORE_LIMITER
 
 #ifndef DLMS_IGNORE_MBUS_CLIENT
-    int cosem_setmMbusClient(gxMBusClient* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_MBUS_CLIENT
 
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
@@ -137,7 +137,7 @@ extern "C" {
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 
 #ifndef DLMS_IGNORE_PPP_SETUP
-    int cosem_setPppSetup(gxPppSetup* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_PPP_SETUP
 
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION

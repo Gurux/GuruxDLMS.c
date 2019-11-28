@@ -51,7 +51,7 @@
 #include "../include/helpers.h"
 #include "../include/serverevents.h"
 
-int cosem_getByteBuffer(gxValueEventArg* e)
+int cosem_getByteBuffer(gxValueEventArg * e)
 {
     e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
     e->byteArray = 1;
@@ -1223,11 +1223,11 @@ int cosem_getAssociationShortName(
     }
     else if (e->index == 4)
     {
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_SECURITY_SETUP))
         ret = cosem_setOctectString2(e->value.byteArr, obj_getLogicalName((gxObject*)object->securitySetup), 6);
 #else
         ret = cosem_setOctectString2(e->value.byteArr, object->securitySetupReference, 6);
-#endif //DLMS_IGNORE_OBJECT_POINTERS
+#endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_SECURITY_SETUP))
     }
     else
     {
@@ -1882,10 +1882,22 @@ int cosem_getIP4Setup(
     {
         if ((ret = cosem_getByteBuffer(e)) == 0)
         {
-            if ((ret = cosem_setOctectString2(e->value.byteArr, object->dataLinkLayerReference, 6)) != 0)
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            if (object->dataLinkLayer == NULL)
+            {
+                ret = cosem_setOctectString2(e->value.byteArr, EMPTY_LN, 6);
+            }
+            else
+            {
+                ret = cosem_setOctectString2(e->value.byteArr, object->dataLinkLayer->logicalName, 6);
+                //Error code is returned at the end of the function.
+            }
+#else
+            ret = cosem_setOctectString2(e->value.byteArr, object->dataLinkLayerReference, 6);
             {
                 //Error code is returned at the end of the function.
             }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         }
     }
     else if (e->index == 3)
@@ -2732,7 +2744,7 @@ int getProfileGenericData(
                     {
                         e->transactionEndIndex = object->buffer.size;
                     }
-                    if (e->transactionStartIndex + e->transactionEndIndex > (unsigned long) (object->buffer.size + 1))
+                    if (e->transactionStartIndex + e->transactionEndIndex > (unsigned long)(object->buffer.size + 1))
                     {
                         e->transactionEndIndex = object->buffer.size;
                     }
@@ -2780,11 +2792,11 @@ int cosem_getProfileGeneric(
         if ((ret = cosem_getByteBuffer(e)) == 0)
         {
             ret = getProfileGenericData(settings, object, e, e->value.byteArr);
-}
+        }
 #else
         e->byteArray = 1;
 #endif //DLMS_IGNORE_MALLOC
-        }
+    }
     else if (e->index == 3)
     {
         if ((ret = cosem_getByteBuffer(e)) == 0)
@@ -2864,7 +2876,7 @@ int cosem_getProfileGeneric(
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
 #ifndef DLMS_IGNORE_DISCONNECT_CONTROL
@@ -3081,7 +3093,7 @@ int cosem_getmMbusClient(
     gxValueEventArg* e)
 {
     int ret = 0, pos;
-
+    gxMBusClient* object = (gxMBusClient*) e->target;
 #ifdef DLMS_IGNORE_MALLOC
     gxCaptureDefinition* it;
 #else
@@ -3091,7 +3103,18 @@ int cosem_getmMbusClient(
     {
         if ((ret = cosem_getByteBuffer(e)) == 0)
         {
-            ret = cosem_setOctectString2(e->value.byteArr, ((gxMBusClient*)e->target)->mBusPortReference, 6);
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            if (object->mBusPort == NULL)
+            {
+                ret = cosem_setOctectString2(e->value.byteArr, EMPTY_LN, 6);
+            }
+            else
+            {
+                ret = cosem_setOctectString2(e->value.byteArr, object->mBusPort->logicalName, 6);
+            }
+#else
+            ret = cosem_setOctectString2(e->value.byteArr, object->mBusPortReference, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         }
     }
     else if (e->index == 3)
@@ -3102,14 +3125,14 @@ int cosem_getmMbusClient(
         }
         gxByteBuffer* data = e->value.byteArr;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
-            (ret = hlp_setObjectCount(((gxMBusClient*)e->target)->captureDefinition.size, data)) != 0)
+            (ret = hlp_setObjectCount(object->captureDefinition.size, data)) != 0)
         {
             return ret;
         }
-        for (pos = 0; pos != ((gxMBusClient*)e->target)->captureDefinition.size; ++pos)
+        for (pos = 0; pos != object->captureDefinition.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&((gxMBusClient*)e->target)->captureDefinition, pos, (void**)& it, sizeof(gxCaptureDefinition))) != 0 ||
+            if ((ret = arr_getByIndex(&object->captureDefinition, pos, (void**)& it, sizeof(gxCaptureDefinition))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //
@@ -3124,7 +3147,7 @@ int cosem_getmMbusClient(
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&((gxMBusClient*)e->target)->captureDefinition, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->captureDefinition, pos, (void**)& it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //
@@ -3143,39 +3166,39 @@ int cosem_getmMbusClient(
     }
     else if (e->index == 4)
     {
-        ret = var_setUInt32(&e->value, ((gxMBusClient*)e->target)->capturePeriod);
+        ret = var_setUInt32(&e->value, object->capturePeriod);
     }
     else if (e->index == 5)
     {
-        ret = var_setUInt8(&e->value, ((gxMBusClient*)e->target)->primaryAddress);
+        ret = var_setUInt8(&e->value, object->primaryAddress);
     }
     else if (e->index == 6)
     {
-        ret = var_setUInt32(&e->value, ((gxMBusClient*)e->target)->identificationNumber);
+        ret = var_setUInt32(&e->value, object->identificationNumber);
     }
     else if (e->index == 7)
     {
-        ret = var_setUInt16(&e->value, ((gxMBusClient*)e->target)->manufacturerID);
+        ret = var_setUInt16(&e->value, object->manufacturerID);
     }
     else if (e->index == 8)
     {
-        ret = var_setUInt8(&e->value, ((gxMBusClient*)e->target)->dataHeaderVersion);
+        ret = var_setUInt8(&e->value, object->dataHeaderVersion);
     }
     else if (e->index == 9)
     {
-        ret = var_setUInt8(&e->value, ((gxMBusClient*)e->target)->deviceType);
+        ret = var_setUInt8(&e->value, object->deviceType);
     }
     else if (e->index == 10)
     {
-        ret = var_setUInt8(&e->value, ((gxMBusClient*)e->target)->accessNumber);
+        ret = var_setUInt8(&e->value, object->accessNumber);
     }
     else if (e->index == 11)
     {
-        ret = var_setUInt8(&e->value, ((gxMBusClient*)e->target)->status);
+        ret = var_setUInt8(&e->value, object->status);
     }
     else if (e->index == 12)
     {
-        ret = var_setUInt8(&e->value, ((gxMBusClient*)e->target)->alarm);
+        ret = var_setUInt8(&e->value, object->alarm);
     }
     else
     {
@@ -3347,14 +3370,39 @@ int cosem_getPppSetup(
     if (e->index == 2)
     {
 #ifdef DLMS_IGNORE_MALLOC
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        if (object->phy == NULL)
+        {
+            ret = cosem_setOctectString2(e->value.byteArr, EMPTY_LN, 6);
+        }
+        else
+        {
+            ret = cosem_setOctectString2(e->value.byteArr, object->phy->logicalName, 6);
+        }
+#else
         ret = cosem_setOctectString2(e->value.byteArr, object->PHYReference, sizeof(object->PHYReference));
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+#else
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        if ((ret = cosem_getByteBuffer(e)) == 0)
+        {
+            if (object->phy == NULL)
+            {
+                ret = cosem_setOctectString2(e->value.byteArr, EMPTY_LN, 6);
+            }
+            else
+            {
+                ret = cosem_setOctectString2(e->value.byteArr, object->phy->logicalName, 6);
+            }
+        }
 #else
         if ((ret = cosem_getByteBuffer(e)) == 0 &&
             (ret = cosem_setOctectString2(e->value.byteArr, object->PHYReference, 6)) == 0)
         {
-    }
+        }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     else if (e->index == 3)
     {
         if ((ret = cosem_getByteBuffer(e)) != 0)
@@ -3458,7 +3506,7 @@ int cosem_getPppSetup(
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_PPP_SETUP
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
 int cosem_getRegisterActivation(
@@ -3504,8 +3552,8 @@ int cosem_getRegisterActivation(
             {
                 break;
             }
+        }
     }
-}
     else if (e->index == 3)
     {
 #ifdef DLMS_IGNORE_MALLOC
@@ -4941,9 +4989,9 @@ int cosem_getAccount(
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
                     (ret = bb_setUInt8(data, 3)) != 0 ||
                     (ret = bb_setUInt8(data, (unsigned char)(ccc->collectionConfiguration << 5))) != 0)
-                {
-                    break;
-                }
+            {
+                break;
+            }
     }
     else if (e->index == 12)
     {
@@ -5625,7 +5673,7 @@ int cosem_getGsmDiagnostic(
         else
         {
             ret = var_setString(&e->value, object->operatorName, (unsigned short)strlen(object->operatorName));
-    }
+        }
 #endif //DLMS_IGNORE_MALLOC
         break;
     case 3:
@@ -5753,9 +5801,9 @@ int cosem_getGsmDiagnostic(
         break;
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-}
-    return ret;
     }
+    return ret;
+}
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
 
 #ifndef DLMS_IGNORE_PARAMETER_MONITOR
@@ -5779,6 +5827,7 @@ int cosem_getParameterMonitor(
         {
             return ret;
         }
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
         if (object->changedParameter.target == NULL)
         {
             if ((ret = cosem_setUInt16(data, 0)) != 0 ||
@@ -5787,8 +5836,8 @@ int cosem_getParameterMonitor(
                 (ret = bb_setUInt8(data, 0)) != 0)
             {
                 //Error code is returned at the end of the function.
-            }
-        }
+    }
+    }
         else
         {
             if ((ret = cosem_setUInt16(data, object->changedParameter.target->objectType)) != 0 ||
@@ -5799,6 +5848,15 @@ int cosem_getParameterMonitor(
                 //Error code is returned at the end of the function.
             }
         }
+#else
+        if ((ret = cosem_setUInt16(data, object->changedParameter.type)) != 0 ||
+            (ret = cosem_setOctectString2(data, object->changedParameter.logicalName, 6)) != 0 ||
+            (ret = cosem_setInt8(data, object->changedParameter.attributeIndex)) != 0 ||
+            (ret = cosem_setVariant(data, &object->changedParameter.value)) != 0)
+        {
+            //Error code is returned at the end of the function.
+        }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     }
     break;
     case 3:

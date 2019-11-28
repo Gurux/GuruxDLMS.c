@@ -40,13 +40,13 @@
 //Returns current time.
 //If you are not using operating system you have to implement this by yourself.
 //Reason for this is that all compilers's or HWs don't support time at all.
-void time_now(gxtime* value)
+void time_now(gxtime * value)
 {
     time_initUnix(value, (unsigned long)time(NULL));
 }
 
 //Make connection using TCP/IP connection.
-int com_makeConnect(connection *connection, const char* address, int port)
+int com_makeConnect(connection* connection, const char* address, int port)
 {
     int ret;
     struct sockaddr_in add;
@@ -63,7 +63,7 @@ int com_makeConnect(connection *connection, const char* address, int port)
     //If address is give as name
     if (add.sin_addr.s_addr == INADDR_NONE)
     {
-        struct hostent *hostent = gethostbyname(address);
+        struct hostent* hostent = gethostbyname(address);
         if (hostent == NULL)
         {
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
@@ -79,7 +79,7 @@ int com_makeConnect(connection *connection, const char* address, int port)
         add.sin_addr = *(struct in_addr*)(void*)hostent->h_addr_list[0];
     };
     //Connect to the meter.
-    ret = connect(connection->socket, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
+    ret = connect(connection->socket, (struct sockaddr*) & add, sizeof(struct sockaddr_in));
     if (ret == -1)
     {
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
@@ -126,7 +126,7 @@ int com_setCommState(HANDLE hWnd, LPDCB DCB)
 #endif
 
 int com_readSerialPort(
-    connection *connection,
+    connection* connection,
     unsigned char eop)
 {
     //Read reply data.
@@ -248,8 +248,8 @@ int com_readSerialPort(
 }
 
 int com_open(
-    connection *connection,
-    const char *port,
+    connection* connection,
+    const char* port,
     unsigned char iec)
 {
     unsigned short baudRate;
@@ -555,11 +555,11 @@ int com_open(
 
 // Read DLMS Data frame from the device.
 int readDLMSPacket(
-    connection *connection,
+    connection* connection,
     gxByteBuffer* data,
     gxReplyData* reply)
 {
-    char *hex;
+    char* hex;
 #if defined(_WIN32) || defined(_WIN64)//Windows
     unsigned long sendSize = 0;
 #endif
@@ -672,7 +672,7 @@ int readDLMSPacket(
 }
 
 int com_readDataBlock(
-    connection *connection,
+    connection* connection,
     message* messages,
     gxReplyData* reply)
 {
@@ -713,7 +713,7 @@ int com_readDataBlock(
 
 //Close connection to the meter.
 int com_close(
-    connection *connection)
+    connection* connection)
 {
     int ret = DLMS_ERROR_CODE_OK;
     gxReplyData reply;
@@ -769,7 +769,7 @@ int com_close(
 
 //Initialize connection to the meter.
 int com_initializeConnection(
-    connection *connection)
+    connection* connection)
 {
     int ret = DLMS_ERROR_CODE_OK;
     message messages;
@@ -858,7 +858,7 @@ void com_reportError(const char* description,
 }
 
 //Get Association view.
-int com_getAssociationView(connection *connection)
+int com_getAssociationView(connection* connection)
 {
     int ret;
     message data;
@@ -880,7 +880,7 @@ int com_getAssociationView(connection *connection)
 
 //Read object.
 int com_read(
-    connection *connection,
+    connection* connection,
     gxObject* object,
     unsigned char attributeOrdinal)
 {
@@ -901,7 +901,7 @@ int com_read(
 }
 
 int com_write(
-    connection *connection,
+    connection* connection,
     gxObject* object,
     unsigned char attributeOrdinal)
 {
@@ -921,7 +921,7 @@ int com_write(
 }
 
 int com_method(
-    connection *connection,
+    connection* connection,
     gxObject* object,
     unsigned char attributeOrdinal,
     dlmsVARIANT* params)
@@ -943,7 +943,7 @@ int com_method(
 
 //Read objects.
 int com_readList(
-    connection *connection,
+    connection* connection,
     gxArray* list)
 {
     int pos, ret = DLMS_ERROR_CODE_OK;
@@ -997,7 +997,7 @@ int com_readList(
 }
 
 int com_readRowsByEntry(
-    connection *connection,
+    connection* connection,
     gxProfileGeneric* object,
     unsigned long index,
     unsigned long count)
@@ -1019,7 +1019,7 @@ int com_readRowsByEntry(
 }
 
 int com_readRowsByEntry2(
-    connection *connection,
+    connection* connection,
     gxProfileGeneric* object,
     unsigned long index,
     unsigned long count,
@@ -1053,7 +1053,7 @@ int com_readRowsByEntry2(
 
 ///////////////////////////////////////////////////////////////////////////////////
 int com_readRowsByRange(
-    connection *connection,
+    connection* connection,
     gxProfileGeneric* object,
     struct tm* start,
     struct tm* end)
@@ -1077,7 +1077,7 @@ int com_readRowsByRange(
 ///////////////////////////////////////////////////////////////////////////////////
 //Read scalers and units. They are static so they are read only once.
 int com_readScalerAndUnits(
-    connection *connection)
+    connection* connection)
 {
     gxObject* obj;
     int ret, pos;
@@ -1145,7 +1145,7 @@ int com_readScalerAndUnits(
 ///////////////////////////////////////////////////////////////////////////////////
 //Read profile generic columns. They are static so they are read only once.
 int com_readProfileGenericColumns(
-    connection *connection)
+    connection* connection)
 {
     int ret, pos;
     objectArray objects;
@@ -1178,7 +1178,7 @@ int com_readProfileGenericColumns(
 ///////////////////////////////////////////////////////////////////////////////////
 //Read profile generics rows.
 int com_readProfileGenerics(
-    connection *connection)
+    connection* connection)
 {
     gxtime startTime, endTime;
     int ret, pos;
@@ -1199,7 +1199,7 @@ int com_readProfileGenerics(
     bb_init(&ba);
     for (pos = 0; pos != objects.size; ++pos)
     {
-        ret = oa_getByIndex(&objects, pos, (gxObject**)&pg);
+        ret = oa_getByIndex(&objects, pos, (gxObject * *)& pg);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             //Do not clear objects list because it will free also objects from association view list.
@@ -1290,7 +1290,7 @@ int com_readProfileGenerics(
     return ret;
 }
 
-int com_readValue(connection *connection, gxObject* object, unsigned char index)
+int com_readValue(connection* connection, gxObject* object, unsigned char index)
 {
     int ret;
     char* data = NULL;
@@ -1342,7 +1342,7 @@ int com_readValue(connection *connection, gxObject* object, unsigned char index)
 
 // This function reads ALL objects that meter have excluded profile generic objects.
 // It will loop all object's attributes.
-int com_readValues(connection *connection)
+int com_readValues(connection* connection)
 {
     gxByteBuffer attributes;
     unsigned char ch;
@@ -1351,16 +1351,14 @@ int com_readValues(connection *connection)
     char ln[25];
     gxObject* object;
     unsigned long index;
-    int ret, pos;
+    int ret = 0, pos;
     bb_init(&attributes);
-
     for (pos = 0; pos != connection->settings.objects.size; ++pos)
     {
         ret = oa_getByIndex(&connection->settings.objects, pos, &object);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            bb_clear(&attributes);
-            return ret;
+            break;
         }
         ///////////////////////////////////////////////////////////////////////////////////
         // Profile generics are read later because they are special cases.
@@ -1372,14 +1370,12 @@ int com_readValues(connection *connection)
         ret = obj_typeToString(object->objectType, str);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            bb_clear(&attributes);
-            return ret;
+            break;
         }
         ret = hlp_getLogicalNameToString(object->logicalName, ln);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            bb_clear(&attributes);
-            return ret;
+            break;
         }
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
@@ -1388,16 +1384,14 @@ int com_readValues(connection *connection)
         ret = obj_getAttributeIndexToRead(object, &attributes);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            bb_clear(&attributes);
-            return ret;
+            break;
         }
         for (index = 0; index < attributes.size; ++index)
         {
             ret = bb_getUInt8ByIndex(&attributes, index, &ch);
             if (ret != DLMS_ERROR_CODE_OK)
             {
-                bb_clear(&attributes);
-                return ret;
+                break;
             }
             ret = com_read(connection, object, ch);
             if (ret != DLMS_ERROR_CODE_OK)
@@ -1409,20 +1403,22 @@ int com_readValues(connection *connection)
                 //Return error if not DLMS error.
                 if (ret != DLMS_ERROR_CODE_READ_WRITE_DENIED)
                 {
-                    bb_clear(&attributes);
-                    return ret;
+                    continue;
                 }
                 ret = 0;
             }
-                }
+        }
+        if (ret != 0)
+        {
+            break;
+        }
         bb_clear(&attributes);
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
             ret = obj_toString(object, &data);
             if (ret != DLMS_ERROR_CODE_OK)
             {
-                bb_clear(&attributes);
-                return ret;
+               break;
             }
             if (data != NULL)
             {
@@ -1437,7 +1433,7 @@ int com_readValues(connection *connection)
 }
 
 //This function reads ALL objects that meter have. It will loop all object's attributes.
-int com_readAllObjects(connection *connection)
+int com_readAllObjects(connection* connection)
 {
     int ret;
 

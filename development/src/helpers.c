@@ -539,7 +539,7 @@ int hlp_parseLogicalName(gxByteBuffer* value, unsigned char ln[6])
     gxfree(pOriginalBuff);
     if (count != 6)
     {
-        memset(ln, 0, 6);
+        memset(&ln, 0, 6);
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return DLMS_ERROR_CODE_OK;

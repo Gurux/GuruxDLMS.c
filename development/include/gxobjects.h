@@ -789,7 +789,7 @@ extern "C" {
         */
         gxObject base;
         objectArray objectList;
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_SECURITY_SETUP))
         gxSecuritySetup* securitySetup;
 #else
         unsigned char securitySetupReference[6];
@@ -1137,6 +1137,24 @@ extern "C" {
 
 #endif // DLMS_IGNORE_ACTIVITY_CALENDAR
 
+#if !(defined(DLMS_IGNORE_LIMITER) && defined(DLMS_IGNORE_REGISTER_MONITOR))
+/**
+---------------------------------------------------------------------------
+Online help:
+http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterMonitor
+*/
+typedef struct
+{
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    gxScriptTable* script;
+#else
+    unsigned char logicalName[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    unsigned short scriptSelector;
+} gxActionItem;
+
+#endif //!(defined(DLMS_IGNORE_LIMITER) && defined(DLMS_IGNORE_REGISTER_MONITOR))
+
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
     /**
     ---------------------------------------------------------------------------
@@ -1153,21 +1171,6 @@ extern "C" {
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         signed char attributeIndex;
     } gxMonitoredValue;
-
-    /**
-    ---------------------------------------------------------------------------
-    Online help:
-    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterMonitor
-    */
-    typedef struct
-    {
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
-        gxScriptTable* script;
-#else
-        unsigned char logicalName[6];
-#endif //DLMS_IGNORE_OBJECT_POINTERS
-        unsigned short scriptSelector;
-    } gxActionItem;
 
     /**
     ---------------------------------------------------------------------------
@@ -1496,7 +1499,11 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* dataLinkLayer;
+#else
         unsigned char dataLinkLayerReference[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         unsigned int ipAddress;
 #ifdef DLMS_IGNORE_MALLOC
         gxArray multicastIPAddress;
@@ -1588,7 +1595,11 @@ extern "C" {
         */
         gxObject base;
         gxArray ipcpOptions; // gxpppSetupIPCPOption
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* phy;
+#else
         unsigned char PHYReference[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         gxArray lcpOptions; //CGXDLMSPppSetupLcpOption
         gxByteBuffer userName;
         gxByteBuffer password;
@@ -1886,7 +1897,11 @@ extern "C" {
         gxObject base;
         unsigned long capturePeriod;
         unsigned char primaryAddress;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* mBusPort;
+#else
         unsigned char mBusPortReference[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         gxArray captureDefinition;
         unsigned long identificationNumber;
         unsigned short manufacturerID;
@@ -1960,7 +1975,13 @@ extern "C" {
 
     typedef struct
     {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
         gxObject* target;
+#else
+        DLMS_OBJECT_TYPE type;
+        //Logical name.
+        unsigned char logicalName[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         signed char attributeIndex;
         dlmsVARIANT value;
     } gxChangedParameter;

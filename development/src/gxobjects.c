@@ -46,7 +46,7 @@
 #include "../include/gxobjects.h"
 #include "../include/objectarray.h"
 
-const unsigned char* obj_getLogicalName(gxObject* target)
+const unsigned char* obj_getLogicalName(gxObject * target)
 {
     if (target == NULL)
     {
@@ -58,7 +58,7 @@ const unsigned char* obj_getLogicalName(gxObject* target)
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_MALLOC
 //Create capture object with given attribute and data indexes.
-gxTarget * co_init(
+gxTarget* co_init(
     unsigned char attributeIndex,
     unsigned char dataIndex)
 {
@@ -685,7 +685,11 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
         case DLMS_OBJECT_TYPE_IP4_SETUP:
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            ((gxIp4Setup*)object)->dataLinkLayer = NULL;
+#else
             memset(((gxIp4Setup*)object)->dataLinkLayerReference, 0, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
             var_clear(&((gxIp4Setup*)object)->value);
 #ifdef DLMS_IGNORE_MALLOC
             arr_clear(&((gxIp4Setup*)object)->multicastIPAddress);
@@ -740,7 +744,11 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_LIMITER
 #ifndef DLMS_IGNORE_MBUS_CLIENT
         case DLMS_OBJECT_TYPE_MBUS_CLIENT:
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            ((gxMBusClient*)object)->mBusPort = NULL;
+#else
             memset(((gxMBusClient*)object)->mBusPortReference, 0, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
             arr_clearKeyValuePair(&((gxMBusClient*)object)->captureDefinition);
             break;
 #endif //DLMS_IGNORE_MBUS_CLIENT
@@ -755,7 +763,11 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_PPP_SETUP
         case DLMS_OBJECT_TYPE_PPP_SETUP:
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            ((gxPppSetup*)object)->phy = NULL;
+#else
             memset(((gxPppSetup*)object)->PHYReference, 0, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
             bb_clear(&((gxPppSetup*)object)->userName);
             bb_clear(&((gxPppSetup*)object)->password);
             obj_clearPPPSetupIPCPOptions(&((gxPppSetup*)object)->ipcpOptions);
@@ -959,6 +971,19 @@ void obj_clear(gxObject* object)
             bb_clear(&((gxCompactData*)object)->templateDescription);
             break;
 #endif //DLMS_IGNORE_COMPACT_DATA
+#ifndef DLMS_IGNORE_PARAMETER_MONITOR
+        case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            ((gxParameterMonitor*)object)->changedParameter.target = NULL;
+#else
+            ((gxParameterMonitor*)object)->changedParameter.type = DLMS_OBJECT_TYPE_NONE;
+            memset(((gxParameterMonitor*)object)->changedParameter.logicalName, 0, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+            var_clear(&((gxParameterMonitor*)object)->changedParameter.value);
+            arr_clear(&((gxParameterMonitor*)object)->parameters);
+            break;
+#endif //DLMS_IGNORE_PARAMETER_MONITOR
+
 #ifdef DLMS_ITALIAN_STANDARD
         case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         {
@@ -1236,6 +1261,7 @@ int obj_getAttributeIndexToRead(gxObject* object, gxByteBuffer* ba)
         }
         else
         {
+            ret = 0;
             if (!((gxRegister*)object)->unitRead)
             {
                 ret = bb_getUInt8ByIndex(&object->access->attributeAccessModes, 3 - 1, &ch);

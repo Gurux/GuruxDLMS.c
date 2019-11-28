@@ -52,8 +52,8 @@
 int cl_snrmRequest(dlmsSettings * settings, message * messages)
 {
     int ret;
-    gxByteBuffer bb;
     gxByteBuffer* reply;
+    gxByteBuffer* pData;
     mes_clear(messages);
     settings->connected = DLMS_CONNECTION_STATE_NONE;
     settings->isAuthenticationRequired = 0;
@@ -64,7 +64,6 @@ int cl_snrmRequest(dlmsSettings * settings, message * messages)
     }
     resetFrameSequence(settings);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned char tmp[21];
     if (!(messages->capacity > messages->size))
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -72,68 +71,75 @@ int cl_snrmRequest(dlmsSettings * settings, message * messages)
     reply = messages->data[messages->size];
     ++messages->size;
     bb_clear(reply);
-    bb_attach(&bb, tmp, 0, sizeof(tmp));
+    pData = settings->serializedPdu;
+    if (pData == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    bb_clear(pData);
 #else
     reply = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
     bb_init(reply);
+    gxByteBuffer bb;
     bb_init(&bb);
     bb_capacity(&bb, 30);
+    pData = &bb;
 #endif //DLMS_IGNORE_MALLOC
 
     // FromatID
-    if ((ret = bb_setUInt8(&bb, 0x81)) == 0 &&
+    if ((ret = bb_setUInt8(pData, 0x81)) == 0 &&
         // GroupID
-        (ret = bb_setUInt8(&bb, 0x80)) == 0 &&
+        (ret = bb_setUInt8(pData, 0x80)) == 0 &&
         // Length is updated later.
-        (ret = bb_setUInt8(&bb, 0)) == 0)
+        (ret = bb_setUInt8(pData, 0)) == 0)
     {
         // If custom HDLC parameters are used.
         if (ret == 0 && DEFAULT_MAX_INFO_TX != settings->maxInfoTX)
         {
-            if ((ret = bb_setUInt8(&bb, HDLC_INFO_MAX_INFO_TX)) == 0)
+            if ((ret = bb_setUInt8(pData, HDLC_INFO_MAX_INFO_TX)) == 0)
             {
-                ret = dlms_appendHdlcParameter(&bb, settings->maxInfoTX);
+                ret = dlms_appendHdlcParameter(pData, settings->maxInfoTX);
             }
         }
         if (ret == 0 && DEFAULT_MAX_INFO_RX != settings->maxInfoRX)
         {
-            if ((ret = bb_setUInt8(&bb, HDLC_INFO_MAX_INFO_RX)) == 0)
+            if ((ret = bb_setUInt8(pData, HDLC_INFO_MAX_INFO_RX)) == 0)
             {
-                ret = dlms_appendHdlcParameter(&bb, settings->maxInfoRX);
+                ret = dlms_appendHdlcParameter(pData, settings->maxInfoRX);
             }
         }
         if (ret == 0 && DEFAULT_MAX_WINDOW_SIZE_TX != settings->windowSizeTX)
         {
-            if ((ret = bb_setUInt8(&bb, HDLC_INFO_WINDOW_SIZE_TX)) == 0 &&
-                (ret = bb_setUInt8(&bb, 4)) == 0)
+            if ((ret = bb_setUInt8(pData, HDLC_INFO_WINDOW_SIZE_TX)) == 0 &&
+                (ret = bb_setUInt8(pData, 4)) == 0)
             {
-                ret = bb_setUInt32(&bb, settings->windowSizeTX);
+                ret = bb_setUInt32(pData, settings->windowSizeTX);
             }
         }
         if (ret == 0 && DEFAULT_MAX_WINDOW_SIZE_RX != settings->windowSizeRX)
         {
-            if ((ret = bb_setUInt8(&bb, HDLC_INFO_WINDOW_SIZE_RX)) == 0 &&
-                (ret = bb_setUInt8(&bb, 4)) == 0)
+            if ((ret = bb_setUInt8(pData, HDLC_INFO_WINDOW_SIZE_RX)) == 0 &&
+                (ret = bb_setUInt8(pData, 4)) == 0)
             {
-                ret = bb_setUInt32(&bb, settings->windowSizeRX);
+                ret = bb_setUInt32(pData, settings->windowSizeRX);
             }
         }
         // If default HDLC parameters are not used.
         if (ret == 0)
         {
-            if (bb.size != 3)
+            if (pData->size != 3)
             {
                 // Length.
-                ret = bb_setUInt8ByIndex(&bb, 2, (unsigned char)(bb.size - 3));
+                ret = bb_setUInt8ByIndex(pData, 2, (unsigned char)(pData->size - 3));
             }
             else
             {
-                bb_clear(&bb);
+                bb_clear(pData);
             }
         }
-        if (ret == 0 && (ret = dlms_getHdlcFrame(settings, DLMS_COMMAND_SNRM, &bb, reply)) != 0)
+        if (ret == 0 && (ret = dlms_getHdlcFrame(settings, DLMS_COMMAND_SNRM, pData, reply)) != 0)
         {
-            bb_clear(&bb);
+            bb_clear(pData);
             bb_clear(reply);
 #ifndef DLMS_IGNORE_MALLOC
             gxfree(reply);
@@ -141,7 +147,7 @@ int cl_snrmRequest(dlmsSettings * settings, message * messages)
             return ret;
         }
     }
-    bb_clear(&bb);
+    bb_clear(pData);
 #ifndef DLMS_IGNORE_MALLOC
     mes_push(messages, reply);
 #endif //DLMS_IGNORE_MALLOC
@@ -160,9 +166,24 @@ int cl_aarqRequest(
     message* messages)
 {
     int ret;
+    gxByteBuffer* pdu;
+#ifdef DLMS_IGNORE_MALLOC
+    if (!(messages->size < messages->capacity))
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    pdu = settings->serializedPdu;
+    if (pdu == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    bb_clear(pdu);
+#else
     gxByteBuffer buff;
-    unsigned char replydata[100];
-    bb_attach(&buff, replydata, 0, sizeof(replydata));
+    bb_init(&buff);
+    pdu = &buff;
+#endif //DLMS_IGNORE_MALLOC
+
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
     resetBlockIndex(settings);
     mes_clear(messages);
@@ -181,19 +202,19 @@ int cl_aarqRequest(
             return ret;
         }
     }
-    if ((ret = apdu_generateAarq(settings, &buff)) == 0)
+    if ((ret = apdu_generateAarq(settings, pdu)) == 0)
     {
         if (settings->useLogicalNameReferencing)
         {
             gxLNParameters p;
-            params_initLN(&p, settings, 0, DLMS_COMMAND_AARQ, 0, &buff, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
+            params_initLN(&p, settings, 0, DLMS_COMMAND_AARQ, 0, pdu, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
             ret = dlms_getLnMessages(&p, messages);
         }
         else
         {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
             gxSNParameters p;
-            params_initSN(&p, settings, DLMS_COMMAND_AARQ, 0, 0, NULL, &buff, DLMS_COMMAND_NONE);
+            params_initSN(&p, settings, DLMS_COMMAND_AARQ, 0, 0, NULL, pdu, DLMS_COMMAND_NONE);
             ret = dlms_getSnMessages(&p, messages);
 #else
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -201,7 +222,7 @@ int cl_aarqRequest(
         }
     }
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
-    bb_clear(&buff);
+    bb_clear(pdu);
     return ret;
 }
 
@@ -522,6 +543,7 @@ int cl_parseLNObjects(gxByteBuffer* data, objectArray* objects)
     var_clear(&value);
     return 0;
 }
+#endif //DLMS_IGNORE_MALLOC
 
 int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
 {
@@ -541,7 +563,6 @@ int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
     }
     return ret;
 }
-#endif //DLMS_IGNORE_MALLOC
 
 #if !(defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) || defined(DLMS_IGNORE_MALLOC))
 // SN referencing
@@ -693,38 +714,45 @@ int cl_readLN(
 {
     int ret;
     gxLNParameters p;
-    gxByteBuffer attributeDescriptor;
+    gxByteBuffer* pdu;
     if ((attributeOrdinal < 1))
     {
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned char tmp[100];
-    bb_attach(&attributeDescriptor, tmp, 0, sizeof(tmp));
+    if (settings->serializedPdu == NULL)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    pdu = settings->serializedPdu;
+    bb_clear(pdu);
 #else
+    gxByteBuffer attributeDescriptor;
     bb_init(&attributeDescriptor);
+    pdu = &attributeDescriptor;
 #endif //DLMS_IGNORE_MALLOC
     resetBlockIndex(settings);
     // CI
-    if ((ret = bb_setUInt16(&attributeDescriptor, objectType)) == 0 &&
+    if ((ret = bb_setUInt16(pdu, objectType)) == 0 &&
         // Add LN
-        (ret = bb_set(&attributeDescriptor, name, 6)) == 0 &&
+        (ret = bb_set(pdu, name, 6)) == 0 &&
         // Attribute ID.
-        (ret = bb_setUInt8(&attributeDescriptor, attributeOrdinal)) == 0)
+        (ret = bb_setUInt8(pdu, attributeOrdinal)) == 0)
     {
         if (data == NULL || data->size == 0)
         {
             // Access selection is not used.
-            ret = bb_setUInt8(&attributeDescriptor, 0);
+            ret = bb_setUInt8(pdu, 0);
         }
         else
         {
             // Access selection is used.
-            if ((ret = bb_setUInt8(&attributeDescriptor, 1)) == 0)
+            if ((ret = bb_setUInt8(pdu, 1)) == 0)
             {
                 // Add data.
-                ret = bb_set2(&attributeDescriptor, data, 0, data->size);
+                ret = bb_set2(pdu, data, 0, data->size);
             }
         }
     }
@@ -732,10 +760,10 @@ int cl_readLN(
     {
         params_initLN(&p, settings, 0,
             DLMS_COMMAND_GET_REQUEST, DLMS_GET_COMMAND_TYPE_NORMAL,
-            &attributeDescriptor, data, 0xFF, DLMS_COMMAND_NONE, 0, 0);
+            pdu, data, 0xFF, DLMS_COMMAND_NONE, 0, 0);
         ret = dlms_getLnMessages(&p, messages);
     }
-    bb_clear(&attributeDescriptor);
+    bb_clear(pdu);
     return ret;
 }
 
@@ -1341,15 +1369,51 @@ int cl_writeLN(
 {
     int ret;
     gxLNParameters p;
-    gxByteBuffer bb, data;
+    gxByteBuffer* pdu;
+    gxByteBuffer data;
     if (index < 1)
     {
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    resetBlockIndex(settings);
-    bb_init(&bb);
+#ifdef DLMS_IGNORE_MALLOC
+    if (settings->serializedPdu == NULL)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    pdu = settings->serializedPdu;
+    //Use same buffer for header and data. Header size is 10 bytes.
     bb_init(&data);
+    bb_clear(pdu);
+#else
+    gxByteBuffer bb;
+    bb_init(&bb);
+    pdu = &bb;
+    bb_init(&data);
+#endif //DLMS_IGNORE_MALLOC
+    resetBlockIndex(settings);
+    // Add CI.
+    bb_setUInt16(pdu, objectType);
+    // Add LN
+    bb_set(pdu, name, 6);
+    // Attribute ID.
+    bb_setUInt8(pdu, index);
+    // Access selection is not used.
+    bb_setUInt8(pdu, 0);
+#ifdef DLMS_IGNORE_MALLOC
+    if (byteArray != 0)
+    {
+        bb_set2(pdu, value->byteArr, 0, value->byteArr->size);
+    }
+    else
+    {
+        if ((ret = dlms_setData(pdu, value->vt, value)) != 0)
+        {
+            return ret;
+        }
+    }
+#else
     if (byteArray != 0)
     {
         bb_set2(&data, value->byteArr, 0, value->byteArr->size);
@@ -1361,20 +1425,13 @@ int cl_writeLN(
             return ret;
         }
     }
-    // Add CI.
-    bb_setUInt16(&bb, objectType);
-    // Add LN
-    bb_set(&bb, name, 6);
-    // Attribute ID.
-    bb_setUInt8(&bb, index);
-    // Access selection is not used.
-    bb_setUInt8(&bb, 0);
+#endif //DLMS_IGNORE_MALLOC
+
     params_initLN(&p, settings, 0,
         DLMS_COMMAND_SET_REQUEST, DLMS_SET_COMMAND_TYPE_NORMAL,
-        &bb, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
+        pdu, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
     ret = dlms_getLnMessages(&p, messages);
-    bb_clear(&data);
-    bb_clear(&bb);
+    bb_clear(pdu);
     return ret;
 }
 
@@ -1452,54 +1509,74 @@ int cl_methodLN(
 {
     int ret = 0;
     gxLNParameters p;
-    gxByteBuffer bb, data;
-    unsigned char P[10];
+    gxByteBuffer* pdu;
+    gxByteBuffer data;
     if (index < 1)
     {
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    resetBlockIndex(settings);
-    BB_ATTACH(bb, P, 0);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned char replydata[100];
-    BB_ATTACH(data, replydata, 0);
+    if (settings->serializedPdu == NULL)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    pdu = settings->serializedPdu;
+    //Use same buffer for header and data. Header size is 10 bytes.
+    bb_init(&data);
+    bb_clear(pdu);
 #else
+    gxByteBuffer bb;
+    bb_init(&bb);
+    pdu = &bb;
     bb_init(&data);
 #endif //DLMS_IGNORE_MALLOC
-    if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
+    resetBlockIndex(settings);
+    // CI
+    if ((ret = bb_setUInt16(pdu, objectType)) == 0 &&
+        // Add LN
+        (ret = bb_set(pdu, name, 6)) == 0 &&
+        // Attribute ID.
+        (ret = bb_setUInt8(pdu, index)) == 0 &&
+        // Is Method Invocation Parameters used.
+        (ret = bb_setUInt8(pdu, value == NULL || value->vt == DLMS_DATA_TYPE_NONE ? 0 : 1)) == 0)
     {
-        if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+#ifdef DLMS_IGNORE_MALLOC
+        if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
         {
-            ret = bb_set(&data, value->byteArr->data, value->byteArr->size);
+            if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+            {
+                ret = bb_set(pdu, value->byteArr->data, value->byteArr->size);
+            }
+            else
+            {
+                ret = dlms_setData(pdu, value->vt, value);
+            }
         }
-        else
+#else
+        if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
         {
-            ret = dlms_setData(&data, value->vt, value);
+            if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+            {
+                ret = bb_set(&data, value->byteArr->data, value->byteArr->size);
+            }
+            else
+            {
+                ret = dlms_setData(&data, value->vt, value);
+            }
         }
+#endif //DLMS_IGNORE_MALLOC
     }
     if (ret == 0)
     {
-        // CI
-        if ((ret = bb_setUInt16(&bb, objectType)) == 0 &&
-            // Add LN
-            (ret = bb_set(&bb, name, 6)) == 0 &&
-            // Attribute ID.
-            (ret = bb_setUInt8(&bb, index)) == 0 &&
-            // Is Method Invocation Parameters used.
-            (ret = bb_setUInt8(&bb, value == NULL || value->vt == DLMS_DATA_TYPE_NONE ? 0 : 1)) == 0)
-        {
-            if (ret == 0)
-            {
-                params_initLN(&p, settings, 0,
-                    DLMS_COMMAND_METHOD_REQUEST, DLMS_ACTION_COMMAND_TYPE_NORMAL,
-                    &bb, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
-                ret = dlms_getLnMessages(&p, messages);
-            }
-            bb_clear(&data);
-            bb_clear(&bb);
-        }
+        params_initLN(&p, settings, 0,
+            DLMS_COMMAND_METHOD_REQUEST, DLMS_ACTION_COMMAND_TYPE_NORMAL,
+            pdu, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
+        ret = dlms_getLnMessages(&p, messages);
     }
+    bb_clear(&data);
+    bb_clear(pdu);
     return ret;
 }
 

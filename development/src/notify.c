@@ -171,34 +171,34 @@ int notify_generatePushSetupMessages(
     message* messages)
 {
     int pos, ret = 0;
-    gxByteBuffer* buff;
+    gxByteBuffer* pdu;
 #ifdef DLMS_IGNORE_MALLOC
     gxTarget* it;
-    buff = messages->data[0];
+    pdu = settings->serializedPdu;
 #else
     gxKey* it;
-    buff = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-    bb_init(buff);
+    pdu = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+    bb_init(pdu);
 #endif //DLMS_IGNORE_MALLOC
     if (push == NULL || messages == NULL)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     mes_clear(messages);
-    if ((ret = bb_setUInt8(buff, DLMS_DATA_TYPE_STRUCTURE)) == 0 &&
-        (ret = hlp_setObjectCount(push->pushObjectList.size, buff)) == 0)
+    if ((ret = bb_setUInt8(pdu, DLMS_DATA_TYPE_STRUCTURE)) == 0 &&
+        (ret = hlp_setObjectCount(push->pushObjectList.size, pdu)) == 0)
     {
         for (pos = 0; pos != push->pushObjectList.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
             if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)& it, sizeof(gxTarget))) != 0 ||
-                (ret = notify_addData(settings, it->target, it->attributeIndex, buff)) != 0)
+                (ret = notify_addData(settings, it->target, it->attributeIndex, pdu)) != 0)
             {
                 break;
             }
 #else
             if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)& it)) != 0 ||
-                (ret = notify_addData(settings, (gxObject*)it->key, ((gxTarget*)it->value)->attributeIndex, buff)) != 0)
+                (ret = notify_addData(settings, (gxObject*)it->key, ((gxTarget*)it->value)->attributeIndex, pdu)) != 0)
             {
                 break;
             }
@@ -207,10 +207,10 @@ int notify_generatePushSetupMessages(
     }
     if (ret == 0)
     {
-        ret = notify_generateDataNotificationMessages2(settings, date, buff, messages);
+        ret = notify_generateDataNotificationMessages2(settings, date, pdu, messages);
     }
 #ifndef DLMS_IGNORE_MALLOC
-    bb_clear(buff);
+    bb_clear(pdu);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
 }

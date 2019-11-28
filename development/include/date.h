@@ -97,7 +97,7 @@ extern "C" {
         unsigned char minute,
         unsigned char second,
         unsigned short millisecond,
-        short devitation);
+        signed short devitation);
 
 #ifndef DLMS_USE_EPOCH_TIME
     void time_init2(

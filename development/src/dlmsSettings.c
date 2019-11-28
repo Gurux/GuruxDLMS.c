@@ -144,6 +144,9 @@ void cl_init(
 #endif //DLMS_IGNORE_HIGH_GMAC
     settings->userId = -1;
     resetFrameSequence(settings);
+#ifdef DLMS_IGNORE_MALLOC
+    settings->serializedPdu = NULL;
+#endif //DLMS_IGNORE_MALLOC
 }
 
 void cl_clear(

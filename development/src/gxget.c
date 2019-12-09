@@ -2794,6 +2794,9 @@ int cosem_getProfileGeneric(
             ret = getProfileGenericData(settings, object, e, e->value.byteArr);
         }
 #else
+        gxValueEventCollection arr;
+        vec_attach(&arr, e, 1, 1);
+        svr_preGet(settings, &arr);
         e->byteArray = 1;
 #endif //DLMS_IGNORE_MALLOC
     }

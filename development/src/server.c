@@ -1447,8 +1447,10 @@ int svr_getRequestWithList(
         {
             break;
         }
+#ifdef DLMS_IGNORE_MALLOC
         e->value.byteArr = data;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+#endif //DLMS_IGNORE_MALLOC
         if (e->error == 0 && !e->handled)
         {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
@@ -1463,7 +1465,7 @@ int svr_getRequestWithList(
             }
             bb_setUInt8ByIndex(data, pos2, (unsigned char)e->error);
         }
-        else if (e->error == 0)
+        if (e->error == 0)
         {
             if (!e->byteArray)
             {

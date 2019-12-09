@@ -57,9 +57,9 @@
 #ifndef DLMS_IGNORE_CHARGE
 
 int invoke_Charge(
-    gxCharge * object,
+    gxCharge* object,
     unsigned char index,
-    dlmsVARIANT * value)
+    dlmsVARIANT* value)
 {
     gxChargeTable* ct, * it;
     int ret = 0, pos;
@@ -69,9 +69,9 @@ int invoke_Charge(
         for (pos = 0; pos != object->unitChargePassive.chargeTables.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)& ct, sizeof(gxCharge));
+            ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)&ct, sizeof(gxCharge));
 #else
-            ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)& ct);
+            ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)&ct);
 #endif //DLMS_IGNORE_MALLOC
             if (ret != 0)
             {
@@ -88,14 +88,14 @@ int invoke_Charge(
         for (pos = 0; pos != object->unitChargePassive.chargeTables.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)& ct, sizeof(gxChargeTable))) != 0 ||
-                (ret = arr_getByIndex(&object->unitChargeActive.chargeTables, object->unitChargeActive.chargeTables.size, (void**)& it, sizeof(gxChargeTable))) != 0)
+            if ((ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)&ct, sizeof(gxChargeTable))) != 0 ||
+                (ret = arr_getByIndex(&object->unitChargeActive.chargeTables, object->unitChargeActive.chargeTables.size, (void**)&it, sizeof(gxChargeTable))) != 0)
             {
                 break;
             }
             ++object->unitChargeActive.chargeTables.size;
 #else
-            if ((ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)& ct)) != 0)
+            if ((ret = arr_getByIndex(&object->unitChargePassive.chargeTables, pos, (void**)&ct)) != 0)
             {
                 break;
             }
@@ -300,7 +300,7 @@ int invoke_AssociationLogicalName(
         else
         {
             ++object->userList.size;
-            if ((ret = arr_getByIndex(&object->userList, object->userList.size - 1, (void**)& it, sizeof(gxUser))) == 0)
+            if ((ret = arr_getByIndex(&object->userList, object->userList.size - 1, (void**)&it, sizeof(gxUser))) == 0)
             {
                 if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
                     (ret = cosem_getUInt8(e->parameters.byteArr, &it->id)) != 0 ||
@@ -350,10 +350,10 @@ int invoke_AssociationLogicalName(
             (ret = cosem_getUInt8(e->parameters.byteArr, &id)) == 0 &&
             (ret = cosem_getString2(e->parameters.byteArr, name, sizeof(name))) == 0)
         {
-            unsigned short size = (unsigned short) strlen(name);
+            unsigned short size = (unsigned short)strlen(name);
             for (pos = 0; pos != ((gxAssociationLogicalName*)e->target)->userList.size; ++pos)
             {
-                if ((ret = arr_getByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)& it, sizeof(gxUser))) != 0)
+                if ((ret = arr_getByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)&it, sizeof(gxUser))) != 0)
                 {
                     return ret;
                 }
@@ -363,7 +363,7 @@ int invoke_AssociationLogicalName(
                     gxUser* it2;
                     for (pos2 = pos + 1; pos2 < ((gxAssociationLogicalName*)e->target)->userList.size; ++pos2)
                     {
-                        if ((ret = arr_getByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos2, (void**)& it2, sizeof(gxUser))) != 0)
+                        if ((ret = arr_getByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos2, (void**)&it2, sizeof(gxUser))) != 0)
                         {
                             break;
                         }
@@ -393,14 +393,14 @@ int invoke_AssociationLogicalName(
             int len = tmp->strVal->size;
             for (pos = 0; pos != ((gxAssociationLogicalName*)e->target)->userList.size; ++pos)
             {
-                ret = arr_getByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)& it);
+                ret = arr_getByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)&it);
                 if (ret != 0)
                 {
                     return ret;
                 }
                 if (it->key == id && memcmp(it->value, name, len) == 0)
                 {
-                    arr_removeByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)& it);
+                    arr_removeByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)&it);
                     gxfree(it->value);
                     gxfree(it);
                     break;
@@ -442,12 +442,12 @@ int invoke_ImageTransfer(
         for (pos = 0; pos != target->imageActivateInfo.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&target->imageActivateInfo, pos, (void**)& it, sizeof(gxImageActivateInfo))) != 0)
+            if ((ret = arr_getByIndex(&target->imageActivateInfo, pos, (void**)&it, sizeof(gxImageActivateInfo))) != 0)
             {
                 return ret;
             }
 #else
-            if ((ret = arr_getByIndex(&target->imageActivateInfo, pos, (void**)& it)) != 0)
+            if ((ret = arr_getByIndex(&target->imageActivateInfo, pos, (void**)&it)) != 0)
             {
                 return ret;
             }
@@ -463,7 +463,7 @@ int invoke_ImageTransfer(
         if (!exists)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&target->imageActivateInfo, target->imageActivateInfo.size, (void**)& item, sizeof(gxImageActivateInfo))) != 0)
+            if ((ret = arr_getByIndex(&target->imageActivateInfo, target->imageActivateInfo.size, (void**)&item, sizeof(gxImageActivateInfo))) != 0)
             {
                 return ret;
             }
@@ -474,7 +474,7 @@ int invoke_ImageTransfer(
 #endif //DLMS_IGNORE_MALLOC
             item->size = var_toInteger(size);
             item->identification.size = 0;
-            if ((ret = cosem_getOctectString2(imageIdentifier->byteArr, item->identification.data, sizeof(item->identification.data), (unsigned short*)& item->identification.size)) != 0)
+            if ((ret = cosem_getOctectString2(imageIdentifier->byteArr, item->identification.data, sizeof(item->identification.data), (unsigned short*)&item->identification.size)) != 0)
             {
                 return ret;
             }
@@ -547,7 +547,7 @@ int invoke_SapAssigment(
                     name[size] = 0;
                     for (pos = 0; pos != target->sapAssignmentList.size; ++pos)
                     {
-                        if ((ret = arr_getByIndex(&target->sapAssignmentList, pos, (void**)& it, sizeof(gxSapItem))) != 0)
+                        if ((ret = arr_getByIndex(&target->sapAssignmentList, pos, (void**)&it, sizeof(gxSapItem))) != 0)
                         {
                             return ret;
                         }
@@ -563,7 +563,7 @@ int invoke_SapAssigment(
             }
             else
             {
-                if ((ret = arr_getByIndex(&target->sapAssignmentList, target->sapAssignmentList.size, (void**)& it, sizeof(gxSapItem))) == 0 &&
+                if ((ret = arr_getByIndex(&target->sapAssignmentList, target->sapAssignmentList.size, (void**)&it, sizeof(gxSapItem))) == 0 &&
                     (ret = cosem_getOctectString2(e->value.byteArr, it->name.value, sizeof(it->name.value), &it->name.size)) == 0)
                 {
                     it->id = id;
@@ -596,14 +596,14 @@ int invoke_SapAssigment(
         {
             for (pos = 0; pos != target->sapAssignmentList.size; ++pos)
             {
-                if ((ret = arr_getByIndex(&target->sapAssignmentList, pos, (void**)& it)) != 0)
+                if ((ret = arr_getByIndex(&target->sapAssignmentList, pos, (void**)&it)) != 0)
                 {
                     return ret;
                 }
                 it->name.position = 0;
                 if (name != NULL && bb_compare(&it->name, name->data, bb_size(name)))
                 {
-                    ret = arr_removeByIndex(&target->sapAssignmentList, pos, (void**)& it);
+                    ret = arr_removeByIndex(&target->sapAssignmentList, pos, (void**)&it);
                     bb_clear(&it->name);
                     gxfree(it);
                     return ret;
@@ -724,9 +724,9 @@ int invoke_ScriptTable(dlmsServerSettings* settings, gxValueEventArg* e)
         for (pos = 0; pos != ((gxScriptTable*)e->target)->scripts.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&((gxScriptTable*)e->target)->scripts, pos, (void**)& s, sizeof(gxScript))) != 0)
+            if ((ret = arr_getByIndex(&((gxScriptTable*)e->target)->scripts, pos, (void**)&s, sizeof(gxScript))) != 0)
 #else
-            if ((ret = arr_getByIndex(&((gxScriptTable*)e->target)->scripts, pos, (void**)& s)) != 0)
+            if ((ret = arr_getByIndex(&((gxScriptTable*)e->target)->scripts, pos, (void**)&s)) != 0)
 #endif //DLMS_IGNORE_MALLOC
             {
                 break;
@@ -736,9 +736,9 @@ int invoke_ScriptTable(dlmsServerSettings* settings, gxValueEventArg* e)
                 for (pos2 = 0; pos2 != s->actions.size; ++pos2)
                 {
 #ifdef DLMS_IGNORE_MALLOC
-                    if ((ret = arr_getByIndex(&s->actions, pos2, (void**)& sa, sizeof(gxScriptAction))) != 0)
+                    if ((ret = arr_getByIndex(&s->actions, pos2, (void**)&sa, sizeof(gxScriptAction))) != 0)
 #else
-                    if ((ret = arr_getByIndex(&s->actions, pos2, (void**)& sa)) != 0)
+                    if ((ret = arr_getByIndex(&s->actions, pos2, (void**)&sa)) != 0)
 #endif //DLMS_IGNORE_MALLOC
                     {
                         break;
@@ -798,7 +798,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
     if (index == 1)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(&object->activeDevices, object->activeDevices.size, (void**)& ad, sizeof(gxActiveDevice))) == 0)
+        if ((ret = arr_getByIndex(&object->activeDevices, object->activeDevices.size, (void**)&ad, sizeof(gxActiveDevice))) == 0)
         {
             ++object->activeDevices.size;
             bb_init(&ad->macAddress);
@@ -822,7 +822,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
         for (pos = 0; pos != object->activeDevices.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->activeDevices, pos, (void**)& ad, sizeof(gxActiveDevice))) != 0)
+            if ((ret = arr_getByIndex(&object->activeDevices, pos, (void**)&ad, sizeof(gxActiveDevice))) != 0)
             {
                 break;
             }
@@ -832,7 +832,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
                 gxActiveDevice* ad2;
                 for (pos2 = pos + 1; pos2 < object->activeDevices.size; ++pos2)
                 {
-                    if ((ret = arr_getByIndex(&object->activeDevices, pos2, (void**)& ad2, sizeof(gxActiveDevice))) != 0)
+                    if ((ret = arr_getByIndex(&object->activeDevices, pos2, (void**)&ad2, sizeof(gxActiveDevice))) != 0)
                     {
                         break;
                     }
@@ -843,14 +843,14 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
                 break;
             }
 #else
-            ret = arr_getByIndex(&object->activeDevices, pos, (void**)& ad);
+            ret = arr_getByIndex(&object->activeDevices, pos, (void**)&ad);
             if (ret != 0)
             {
                 return ret;
             }
             if (memcpy(&ad->macAddress, &value->byteArr, 8) == 0)
             {
-                ret = arr_removeByIndex(&object->activeDevices, pos, (void**)& ad);
+                ret = arr_removeByIndex(&object->activeDevices, pos, (void**)&ad);
                 if (ret != 0)
                 {
                     return ret;
@@ -1069,7 +1069,7 @@ int capture(dlmsSettings* settings,
         va_init(row);
         for (pos = 0; pos != object->captureObjects.size; ++pos)
         {
-            ret = arr_getByIndex(&object->captureObjects, pos, (void**)& kv);
+            ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv);
             if (ret != DLMS_ERROR_CODE_OK)
             {
                 return ret;
@@ -1089,7 +1089,7 @@ int capture(dlmsSettings* settings,
         if (object->profileEntries == object->buffer.size)
         {
             variantArray* removedRow;
-            arr_removeByIndex(&object->buffer, 0, (void**)& removedRow);
+            arr_removeByIndex(&object->buffer, 0, (void**)&removedRow);
             va_clear(removedRow);
         }
         arr_push(&object->buffer, row);
@@ -1243,9 +1243,9 @@ int cosem_captureCompactData(
         for (pos = 0; pos != object->captureObjects.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            ret = arr_getByIndex(&object->captureObjects, pos, (void**)& kv, sizeof(gxTarget));
+            ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv, sizeof(gxTarget));
 #else
-            ret = arr_getByIndex(&object->captureObjects, pos, (void**)& kv);
+            ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv);
 #endif //DLMS_IGNORE_MALLOC
             if (ret != DLMS_ERROR_CODE_OK)
             {
@@ -1286,7 +1286,7 @@ int cosem_captureCompactData(
                     //Some meters require that there is a array count in data.
                     if (value.vt == DLMS_DATA_TYPE_ARRAY && object->appendAA)
                     {
-                        bb_setUInt8(&object->buffer, value.Arr->size);
+                        bb_setUInt8(&object->buffer, (unsigned char)value.Arr->size);
                     }
 #endif //DLMS_ITALIAN_STANDARD
                     if ((ret = compactDataAppendArray(&value, &object->buffer, dataIndex)) != 0)

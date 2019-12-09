@@ -1443,13 +1443,13 @@ int svr_getRequestWithList(
     unsigned char moreData = 0;
     for (pos = 0; pos != arr->size; ++pos)
     {
-        if ((ret = vec_getByIndex(arr, 0, &e)) != 0)
+        if ((ret = vec_getByIndex(arr, pos, &e)) != 0)
         {
             break;
         }
         e->value.byteArr = data;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
-        if (!e->handled)
+        if (e->error == 0 && !e->handled)
         {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
             unsigned long pos2 = data->size;
@@ -1463,7 +1463,7 @@ int svr_getRequestWithList(
             }
             bb_setUInt8ByIndex(data, pos2, (unsigned char)e->error);
         }
-        if (e->error == 0)
+        else if (e->error == 0)
         {
             if (!e->byteArray)
             {
@@ -1480,6 +1480,11 @@ int svr_getRequestWithList(
                 }
                 var_clear(&e->value);
             }
+        }
+        else
+        {
+            bb_setUInt8(data, 1);
+            bb_setUInt8(data, (unsigned char)e->error);
         }
         //PDU is used for serialization. Set data type to none so size is not changed.
         if (e->byteArray || (e->value.vt == DLMS_DATA_TYPE_OCTET_STRING && bb_isAttached(e->value.byteArr)))

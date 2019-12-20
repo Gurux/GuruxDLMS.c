@@ -223,7 +223,6 @@ int addLowAssociation()
         BB_ATTACH(lowAssociation.xDLMSContextInfo.cypheringInfo, CYPHERING_INFO, 0);
         ARR_ATTACH(lowAssociation.userList, USER_LIST, 0);
         lowAssociation.clientSAP = 0x20;
-        static char LLS_PASSWORD[20] = "Gurux";
         BB_ATTACH(lowAssociation.secret, LLS_PASSWORD, (unsigned short)strlen(LLS_PASSWORD));
         //All objects are add for this Association View later.
     }
@@ -255,8 +254,8 @@ int addHighAssociation()
         //All objects are add for this Association View later.
         ARR_ATTACH(highAssociation.userList, USER_LIST, 0);
         highAssociation.clientSAP = 0x30;
-        static char LLS_PASSWORD[20] = "Gurux";
-        BB_ATTACH(highAssociation.secret, LLS_PASSWORD, (unsigned short)strlen(LLS_PASSWORD));
+        static char HLS_PASSWORD[20] = "Gurux";
+        BB_ATTACH(highAssociation.secret, HLS_PASSWORD, (unsigned short)strlen(HLS_PASSWORD));
     }
     return ret;
 }
@@ -537,8 +536,8 @@ int addExtendedRegisterObject()
     {
         GX_UINT16(extendedRegister.value) = 25400;
         //10 ^ 3 =  1000
-        activePowerL1.scaler = -2;
-        activePowerL1.unit = DLMS_UNIT_ACTIVE_ENERGY;
+        extendedRegister.scaler = -2;
+        extendedRegister.unit = DLMS_UNIT_ACTIVE_ENERGY;
     }
     return ret;
 }

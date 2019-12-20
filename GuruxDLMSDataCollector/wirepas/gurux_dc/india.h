@@ -1,18 +1,10 @@
-#include "../dlms/include/cosem.h"
-#include "../dlms/include/gxobjects.h"
-#include "../dlms/include/dlmssettings.h"
-//Define Logical Device Name.
-static char LDN[17] = "Gurux";
-//Define Flag ID.
-static char FLAG_ID[3] = "GRX";
+#include "./dlms/include/cosem.h"
+#include "./dlms/include/gxobjects.h"
+#include "./dlms/include/dlmssettings.h"
 ///////////////////////////////////////////////////////////////////////
 /*Define all COSEM objects here so they are not use stack.*/
 //0.0.40.0.2.255 LLS Secret Key
 gxAssociationLogicalName llsSecretKey;
-//0.0.15.0.0.255 Single-action Schedule for Billing Dates
-gxActionSchedule singleActionScheduleForBillingDates;
-//0.0.13.0.0.255 Activity Calendar Active Time
-gxActivityCalendar activityCalendarActiveTime;
 //0.0.1.0.0.255 Clock
 gxClock clock1;
 //0.0.0.1.0.255 Cumulative Billing count
@@ -185,105 +177,8 @@ gxRegister sumLiReactivePowerQiiiTimeIntegral5;
 gxRegister sumLiReactivePowerQivTimeIntegral5;
 //1.0.94.91.13.255 Ch. 0 Identifiers for India
 gxRegister identifiersForIndia;
-//0.0.10.0.1.255 MD Reset Action
-gxScriptTable mdResetAction;
+
 ///////////////////////////////////////////////////////////////////////
-/*All objects.*/
-static gxObject* ALL_OBJECTS[] = {
-    BASE(llsSecretKey),
-    BASE(singleActionScheduleForBillingDates),
-    BASE(activityCalendarActiveTime),
-    BASE(clock1),
-    BASE(cumulativeBillingCount),
-    BASE(cosemLogicalDeviceName),
-    BASE(cumulativeTamperCount),
-    BASE(meterType),
-    BASE(meterSerialNumber),
-    BASE(manufacturerName),
-    BASE(meterYearOfManufacture),
-    BASE(cumulativeProgrammingCount),
-    BASE(noOfPowerFailuresInAllThreePhases),
-    BASE(eventCode1),
-    BASE(eventCurrentRelated),
-    BASE(eventPowerRelated),
-    BASE(eventTransactionRelated),
-    BASE(eventOthers),
-    BASE(eventNonRollOverEvents),
-    BASE(eventLoadSwitchStatus),
-    BASE(firmwareVersionForMeter),
-    BASE(transformerRatioMinusCurrent),
-    BASE(transformerRatioMinusVoltage),
-    BASE(demandIntegrationPeriod),
-    BASE(profileCapturePeriod),
-    BASE(recordingInterval2ForLoadProfile),
-    BASE(timeStampOfTheMostRecentBillingPeriodClosed),
-    BASE(maximumDemandKw),
-    BASE(sumLiActivePowerMinusMax1RateIsTotal),
-    BASE(maximumDemandKva),
-    BASE(sumLiApparentPowerMinusMax1RateIsTotal),
-    BASE(iecHdlcSetup),
-    BASE(voltageRelatedEventsProfile),
-    BASE(currentRelatedEventsProfile),
-    BASE(powerRelatedEventsProfile),
-    BASE(transactionEventsProfile),
-    BASE(otherTamperEventsProfile),
-    BASE(nonRollOverEventsProfile),
-    BASE(controlEventsProfile),
-    BASE(instantaneousProfile),
-    BASE(scalerInstantaneousProfile),
-    BASE(scalerBlockLoadProfile),
-    BASE(scalerDailyLoadProfile),
-    BASE(scalerBillingProfile),
-    BASE(scalerEventsProfile),
-    BASE(billingProfile),
-    BASE(loadProfile),
-    BASE(dailyLoadProfile),
-    BASE(billingDateImportMode),
-    BASE(cumulativePowerOffDurationInMin),
-    BASE(activePowerKw),
-    BASE(cumulativeEnergyKwh),
-    BASE(cumulativeEnergyKwhExport),
-    BASE(sumLiReactivePowerPlusInstValue),
-    BASE(sumLiReactivePowerQiTimeIntegral1RateIsTotal),
-    BASE(sumLiReactivePowerQiiTimeIntegral1RateIsTotal),
-    BASE(sumLiReactivePowerQiiiTimeIntegral1RateIsTotal),
-    BASE(sumLiReactivePowerQivTimeIntegral1RateIsTotal),
-    BASE(apparentPowerKva),
-    BASE(cumulativeEnergyKvahImport),
-    BASE(cumulativeEnergyKvahExport),
-    BASE(signedPowerFactor),
-    BASE(frequencyHz),
-    BASE(l1CurrentInstValue),
-    BASE(l1VoltageInstValue),
-    BASE(l1PowerFactorInstValue),
-    BASE(l2CurrentInstValue),
-    BASE(l2VoltageInstValue),
-    BASE(l2PowerFactorInstValue),
-    BASE(l3CurrentInstValue),
-    BASE(l3VoltageInstValue),
-    BASE(l3PowerFactorInstValue),
-    BASE(sumLiActivePowerTimeIntegral1RateIsTotal),
-    BASE(l1CurrentCurrentAvg5),
-    BASE(l2CurrentCurrentAvg5),
-    BASE(l3CurrentCurrentAvg5),
-    BASE(l1VoltageCurrentAvg5),
-    BASE(l2VoltageCurrentAvg5),
-    BASE(l3VoltageCurrentAvg5),
-    BASE(blockEnergyKwhImport),
-    BASE(blockEnergyKwhExport),
-    BASE(sumLiActivePowerTimeIntegral5),
-    BASE(blockEnergyKvahImport),
-    BASE(blockEnergyKvahExport),
-    BASE(sumLiReactivePowerQiTimeIntegral5),
-    BASE(sumLiReactivePowerQiiTimeIntegral5),
-    BASE(sumLiReactivePowerQiiiTimeIntegral5),
-    BASE(sumLiReactivePowerQivTimeIntegral5),
-    BASE(identifiersForIndia),
-    BASE(mdResetAction),
-};
-///////////////////////////////////////////////////////////////////////
-int addsingleActionScheduleForBillingDates();
-int addactivityCalendarActiveTime();
 int addllsSecretKey();
 int addclock1();
 int addcumulativeBillingCount();
@@ -371,6 +266,5 @@ int addsumLiReactivePowerQiiTimeIntegral5();
 int addsumLiReactivePowerQiiiTimeIntegral5();
 int addsumLiReactivePowerQivTimeIntegral5();
 int addidentifiersForIndia();
-int addmdResetAction();
 
 int obj_InitObjects(dlmsServerSettings* settings);

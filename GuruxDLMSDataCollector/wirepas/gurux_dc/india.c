@@ -1,117 +1,102 @@
-#include "../include/objects.h"
+#include "india.h"
 
-int addsingleActionScheduleForBillingDates()
-{
-    int ret;
-    //Action schedule execution times.
-    static gxtime EXECUTION_TIMES[1];
-    const unsigned char ln[6] = { 0, 0, 15, 0, 0, 255 };
-    if ((ret = INIT_OBJECT(singleActionScheduleForBillingDates, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln)) == 0)
-    {
-        singleActionScheduleForBillingDates.executedScript = &mdResetAction;
-        singleActionScheduleForBillingDates.executedScriptSelector = 1;
-        singleActionScheduleForBillingDates.type = DLMS_SINGLE_ACTION_SCHEDULE_TYPE1;
-        //Add execution times.
-        time_init(&EXECUTION_TIMES[0], 65535, 255, 1, 0, 0, 0, 255, 180);
-
-        ARR_ATTACH(singleActionScheduleForBillingDates.executionTime, EXECUTION_TIMES, 1);
-    }
-    return ret;
-}
-
-int addactivityCalendarActiveTime()
-{
-    int ret;
-    gxWeekProfile* wp;
-    //Define active calendar name.
-    static unsigned char ACTIVE_CALENDAR_NAME[20];
-    //Define passive calendar name.
-    static unsigned char PASSIVE_CALENDAR_NAME[20];
-    static gxSeasonProfile ACTIVE_SEASON_PROFILE[10];
-    static gxSeasonProfile PASSIVE_SEASON_PROFILE[10];
-    static gxWeekProfile ACTIVE_WEEK_PROFILE[10];
-    static gxWeekProfile PASSIVE_WEEK_PROFILE[10];
-    static gxDayProfile ACTIVE_DAY_PROFILE[3];
-    static gxDayProfile PASSIVE_DAY_PROFILE[3];
-    //Own day profile action for each day profile.
-    static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS1[10];
-    static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS2[10];
-    static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS3[10];
-    static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS1[10];
-    static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS2[10];
-    static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS3[10];
-
-    const unsigned char ln[6] = { 0, 0, 13, 0, 0, 255 };
-    if ((ret = INIT_OBJECT(activityCalendarActiveTime, DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR, ln)) == 0)
-    {
-        /*
-        const char* activeSeasonName = ACTIVE_SEASON_NAME;
-        const char* passiveSeasonName = PASSIVE_SEASON_NAME;
-        const char* activeWeekProfileName = ACTIVE_WEEK_PROFILE_NAME;
-        const char* passiveWeekProfileName = PASSIVE_WEEK_PROFILE_NAME;
-        strcpy((char*)ACTIVE_CALENDAR_NAME, ACTIVE_CALENDAR_NAME_T);
-        strcpy((char*)PASSIVE_CALENDAR_NAME, PASSIVE_CALENDAR_NAME_T);
-
-        BB_ATTACH(activityCalendarActiveTime.calendarNameActive, ACTIVE_CALENDAR_NAME, (unsigned short)strlen(ACTIVE_CALENDAR_NAME));
-
-        /////////////////////////////////////////////////////////////////////////
-        //Add active season profile.
-        ARR_ATTACH(activityCalendarActiveTime.seasonProfileActive, ACTIVE_SEASON_PROFILE, 1);
-        SET_OCTECT_STRING(ACTIVE_SEASON_PROFILE[0].name, activeSeasonName, (unsigned short)strlen(activeSeasonName));
-        time_init(&ACTIVE_SEASON_PROFILE[0].start, -1, 3, 31, -1, -1, -1, -1, -clock1.timeZone);
-        /////////////////////////////////////////////////////////////////////////
-        //Add week profile.
-        ARR_ATTACH(activityCalendarActiveTime.weekProfileTableActive, ACTIVE_WEEK_PROFILE, 1);
-        SET_OCTECT_STRING(ACTIVE_WEEK_PROFILE[0].name, activeWeekProfileName, (unsigned short)strlen(activeWeekProfileName));
-        wp = &ACTIVE_WEEK_PROFILE[0];
-        wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
-        /////////////////////////////////////////////////////////////////////////
-        //Add active day profiles. There are max three day profiles where one is in use.
-        ARR_ATTACH(activityCalendarActiveTime.dayProfileTableActive, ACTIVE_DAY_PROFILE, 1);
-        ACTIVE_DAY_PROFILE[0].dayId = 1;
-        ARR_ATTACH(ACTIVE_DAY_PROFILE[0].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS1, 1);
-        ARR_ATTACH(ACTIVE_DAY_PROFILE[1].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS2, 0);
-        ARR_ATTACH(ACTIVE_DAY_PROFILE[2].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS3, 0);
-
-        //MIKKO time_now(&ACTIVE_DAY_PROFILE_ACTIONS1[0].startTime, 0);
-        ACTIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(actionSchedule);
-        ACTIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
-
-        /////////////////////////////////////////////////////////////////////////
-        //Add passive season profile.
-        BB_ATTACH(activityCalendarActiveTime.calendarNamePassive, PASSIVE_CALENDAR_NAME, (unsigned short)strlen((char*)PASSIVE_CALENDAR_NAME));
-        ARR_ATTACH(activityCalendarActiveTime.seasonProfilePassive, PASSIVE_SEASON_PROFILE, 1);
-        SET_OCTECT_STRING(PASSIVE_SEASON_PROFILE[0].name, passiveSeasonName, (unsigned short)strlen(passiveSeasonName));
-        time_init(&PASSIVE_SEASON_PROFILE[0].start, -1, 10, 30, -1, -1, -1, -1, -clock1.timeZone);
-
-        /////////////////////////////////////////////////////////////////////////
-        //Add week profile.
-        ARR_ATTACH(activityCalendarActiveTime.weekProfileTablePassive, PASSIVE_WEEK_PROFILE, 1);
-        SET_OCTECT_STRING(PASSIVE_WEEK_PROFILE[0].name, passiveWeekProfileName, (unsigned short)strlen(passiveWeekProfileName));
-        wp = &PASSIVE_WEEK_PROFILE[0];
-        wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
-
-        /////////////////////////////////////////////////////////////////////////
-        //Add passive day profiles. There are max three day profiles where one is in use.
-        ARR_ATTACH(activityCalendarActiveTime.dayProfileTablePassive, PASSIVE_DAY_PROFILE, 1);
-        PASSIVE_DAY_PROFILE[0].dayId = 1;
-        ARR_ATTACH(PASSIVE_DAY_PROFILE[0].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS1, 1);
-        ARR_ATTACH(PASSIVE_DAY_PROFILE[1].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS2, 0);
-        ARR_ATTACH(PASSIVE_DAY_PROFILE[2].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS3, 0);
-        //MIKKO time_now(&PASSIVE_DAY_PROFILE_ACTIONS1[0].startTime, 0);
-        PASSIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(actionSchedule);
-        PASSIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
-        //MIKKO time_now(&activityCalendarActiveTime.time, 0);
-        */
-    }
-    return ret;
-}
+///////////////////////////////////////////////////////////////////////
+/*All objects.*/
+static gxObject* ALL_OBJECTS[] = {
+    BASE(llsSecretKey),
+    BASE(clock1),
+    BASE(cumulativeBillingCount),
+    BASE(cosemLogicalDeviceName),
+    BASE(cumulativeTamperCount),
+    BASE(meterType),
+    BASE(meterSerialNumber),
+    BASE(manufacturerName),
+    BASE(meterYearOfManufacture),
+    BASE(cumulativeProgrammingCount),
+    BASE(noOfPowerFailuresInAllThreePhases),
+    BASE(eventCode1),
+    BASE(eventCurrentRelated),
+    BASE(eventPowerRelated),
+    BASE(eventTransactionRelated),
+    BASE(eventOthers),
+    BASE(eventNonRollOverEvents),
+    BASE(eventLoadSwitchStatus),
+    BASE(firmwareVersionForMeter),
+    BASE(transformerRatioMinusCurrent),
+    BASE(transformerRatioMinusVoltage),
+    BASE(demandIntegrationPeriod),
+    BASE(profileCapturePeriod),
+    BASE(recordingInterval2ForLoadProfile),
+    BASE(timeStampOfTheMostRecentBillingPeriodClosed),
+    BASE(maximumDemandKw),
+    BASE(sumLiActivePowerMinusMax1RateIsTotal),
+    BASE(maximumDemandKva),
+    BASE(sumLiApparentPowerMinusMax1RateIsTotal),
+    BASE(iecHdlcSetup),
+    BASE(voltageRelatedEventsProfile),
+    BASE(currentRelatedEventsProfile),
+    BASE(powerRelatedEventsProfile),
+    BASE(transactionEventsProfile),
+    BASE(otherTamperEventsProfile),
+    BASE(nonRollOverEventsProfile),
+    BASE(controlEventsProfile),
+    BASE(instantaneousProfile),
+    BASE(scalerInstantaneousProfile),
+    BASE(scalerBlockLoadProfile),
+    BASE(scalerDailyLoadProfile),
+    BASE(scalerBillingProfile),
+    BASE(scalerEventsProfile),
+    BASE(billingProfile),
+    BASE(loadProfile),
+    BASE(dailyLoadProfile),
+    BASE(billingDateImportMode),
+    BASE(cumulativePowerOffDurationInMin),
+    BASE(activePowerKw),
+    BASE(cumulativeEnergyKwh),
+    BASE(cumulativeEnergyKwhExport),
+    BASE(sumLiReactivePowerPlusInstValue),
+    BASE(sumLiReactivePowerQiTimeIntegral1RateIsTotal),
+    BASE(sumLiReactivePowerQiiTimeIntegral1RateIsTotal),
+    BASE(sumLiReactivePowerQiiiTimeIntegral1RateIsTotal),
+    BASE(sumLiReactivePowerQivTimeIntegral1RateIsTotal),
+    BASE(apparentPowerKva),
+    BASE(cumulativeEnergyKvahImport),
+    BASE(cumulativeEnergyKvahExport),
+    BASE(signedPowerFactor),
+    BASE(frequencyHz),
+    BASE(l1CurrentInstValue),
+    BASE(l1VoltageInstValue),
+    BASE(l1PowerFactorInstValue),
+    BASE(l2CurrentInstValue),
+    BASE(l2VoltageInstValue),
+    BASE(l2PowerFactorInstValue),
+    BASE(l3CurrentInstValue),
+    BASE(l3VoltageInstValue),
+    BASE(l3PowerFactorInstValue),
+    BASE(sumLiActivePowerTimeIntegral1RateIsTotal),
+    BASE(l1CurrentCurrentAvg5),
+    BASE(l2CurrentCurrentAvg5),
+    BASE(l3CurrentCurrentAvg5),
+    BASE(l1VoltageCurrentAvg5),
+    BASE(l2VoltageCurrentAvg5),
+    BASE(l3VoltageCurrentAvg5),
+    BASE(blockEnergyKwhImport),
+    BASE(blockEnergyKwhExport),
+    BASE(sumLiActivePowerTimeIntegral5),
+    BASE(blockEnergyKvahImport),
+    BASE(blockEnergyKvahExport),
+    BASE(sumLiReactivePowerQiTimeIntegral5),
+    BASE(sumLiReactivePowerQiiTimeIntegral5),
+    BASE(sumLiReactivePowerQiiiTimeIntegral5),
+    BASE(sumLiReactivePowerQivTimeIntegral5),
+    BASE(identifiersForIndia),
+};
 
 int addllsSecretKey()
 {
     int ret;
     //Dedicated key.
-    static char CYPHERING_INFO[20] = { 0 };
+    static unsigned char CYPHERING_INFO[20] = { 0 };
     const unsigned char ln[6] = { 0, 0, 40, 0, 2, 255 };
     if ((ret = INIT_OBJECT(llsSecretKey, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
     {
@@ -922,6 +907,7 @@ int addscalerInstantaneousProfile()
         CAPTURE_OBJECT[20].target = BASE(sumLiActivePowerTimeIntegral1RateIsTotal);
         CAPTURE_OBJECT[20].attributeIndex = 3;
         CAPTURE_OBJECT[20].dataIndex = 0;
+
     }
     return ret;
 }
@@ -1881,22 +1867,10 @@ int addidentifiersForIndia()
     return ret;
 }
 
-int addmdResetAction()
-{
-    int ret;
-    const unsigned char ln[6] = { 0, 0, 10, 0, 1, 255 };
-    if ((ret = INIT_OBJECT(mdResetAction, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
-    {
-    }
-    return ret;
-}
-
 int obj_InitObjects(dlmsServerSettings* settings)
 {
     int ret;
-    if ((ret = addsingleActionScheduleForBillingDates()) != 0 ||
-        (ret = addactivityCalendarActiveTime()) != 0 ||
-        (ret = addllsSecretKey()) != 0 ||
+    if ((ret = addllsSecretKey()) != 0 ||
         (ret = addclock1()) != 0 ||
         (ret = addcumulativeBillingCount()) != 0 ||
         (ret = addcosemLogicalDeviceName()) != 0 ||
@@ -1982,8 +1956,7 @@ int obj_InitObjects(dlmsServerSettings* settings)
         (ret = addsumLiReactivePowerQiiTimeIntegral5()) != 0 ||
         (ret = addsumLiReactivePowerQiiiTimeIntegral5()) != 0 ||
         (ret = addsumLiReactivePowerQivTimeIntegral5()) != 0 ||
-        (ret = addidentifiersForIndia()) != 0 ||
-        (ret = addmdResetAction()) != 0)
+        (ret = addidentifiersForIndia()) != 0)
     {
         return ret;
     }

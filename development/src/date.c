@@ -134,6 +134,8 @@ void time_init(
         year -= 1;
     }
     time->skip = DATETIME_SKIPS_NONE;
+    time->status = DLMS_CLOCK_STATUS_OK;
+    time->extraInfo = 0;
     //Convert years to days
     time->value = 0;
     if (year == 0xFFFF)
@@ -148,9 +150,29 @@ void time_init(
         time->skip |= DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DEVITATION;
         month = 1;
     }
+    else if (month == 0xFE)
+    {
+        time->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_DST_BEGIN;
+        month = 1;
+    }
+    else if (month == 0xFD)
+    {
+        time->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_DST_END;
+        month = 1;
+    }
     if (day == 0xFF)
     {
         time->skip |= DATETIME_SKIPS_DAY | DATETIME_SKIPS_DEVITATION;
+        day = 1;
+    }
+    else if (day == 0xFE)
+    {
+        time->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY;
+        day = 1;
+    }
+    else if (day == 0xFD)
+    {
+        time->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2;
         day = 1;
     }
     time->value += (30 * month) + (3 * (month + 1) / 5) + day;
@@ -199,8 +221,6 @@ void time_init(
         time->skip |= DATETIME_SKIPS_DEVITATION;
     }
     time->deviation = devitation;
-    time->status = DLMS_CLOCK_STATUS_OK;
-    time->extraInfo = 0;
 #else
     int skip = DATETIME_SKIPS_NONE;
     memset(&time->value, 0, sizeof(time->value));

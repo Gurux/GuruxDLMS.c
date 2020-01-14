@@ -1,5 +1,5 @@
 # Boards compatible with this app 
-TARGET_BOARDS := pca10056 
+TARGET_BOARDS := wirepasEFR32Kit 
 
 # Define default network settings
 # TODO: Change this. This must be unique for each NIC.

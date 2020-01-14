@@ -345,7 +345,6 @@ int apdu_generateUserInformation(
                 cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
             }
         }
-        bb_init(&crypted);
 #ifndef DLMS_IGNORE_MALLOC
         ret = cip_encrypt(
             &settings->cipher,

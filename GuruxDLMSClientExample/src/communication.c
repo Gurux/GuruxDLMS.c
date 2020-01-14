@@ -16,6 +16,7 @@
 #include "../include/communication.h"
 #include "../../development/include/gxkey.h"
 #include "../../development/include/converters.h"
+#include "../../development/include/cosem.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -40,7 +41,7 @@
 //Returns current time.
 //If you are not using operating system you have to implement this by yourself.
 //Reason for this is that all compilers's or HWs don't support time at all.
-void time_now(gxtime * value)
+void time_now(gxtime* value)
 {
     time_initUnix(value, (unsigned long)time(NULL));
 }
@@ -247,28 +248,18 @@ int com_readSerialPort(
     return DLMS_ERROR_CODE_OK;
 }
 
-int com_open(
+int com_initializeOpticalHead(
     connection* connection,
-    const char* port,
     unsigned char iec)
 {
     unsigned short baudRate;
-    int ret, len, pos;
+    int ret = 0, len, pos;
     unsigned char ch;
     //In Linux serial port name might be very long.
     char buff[50];
 #if defined(_WIN32) || defined(_WIN64)
     DCB dcb = { 0 };
     unsigned long sendSize = 0;
-#if _MSC_VER > 1000
-    sprintf_s(buff, 50, "\\\\.\\%s", port);
-#else
-    sprintf(buff, "\\\\.\\%s", port);
-#endif
-    //Open serial port for read / write. Port can't share.
-    connection->comPort = CreateFileA(buff,
-        GENERIC_READ | GENERIC_WRITE, 0, NULL,
-        OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (connection->comPort == INVALID_HANDLE_VALUE)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -300,63 +291,47 @@ int com_open(
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-#else //#if defined(__LINUX__)
+#else
     struct termios options;
-    // read/write | not controlling term | don't wait for DCD line signal.
-    connection->comPort = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
-    if (connection->comPort == -1) // if open is unsuccessful.
+    memset(&options, 0, sizeof(options));
+    options.c_iflag = 0;
+    options.c_oflag = 0;
+    if (iec)
     {
-        printf("Failed to Open port: %s\n", port);
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        options.c_cflag |= PARENB;
+        options.c_cflag &= ~PARODD;
+        options.c_cflag &= ~CSTOPB;
+        options.c_cflag &= ~CSIZE;
+        options.c_cflag |= CS7;
+        //Set Baud Rates
+        cfsetospeed(&options, B300);
+        cfsetispeed(&options, B300);
     }
     else
     {
-        if (!isatty(connection->comPort))
-        {
-            printf("Failed to Open port %s. This is not a serial port.\n", port);
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
+        // 8n1, see termios.h for more information
+        options.c_cflag = CS8 | CREAD | CLOCAL;
+        /*
+        options.c_cflag &= ~PARENB
+        options.c_cflag &= ~CSTOPB
+        options.c_cflag &= ~CSIZE;
+        options.c_cflag |= CS8;
+        */
+        //Set Baud Rates
+        cfsetospeed(&options, B9600);
+        cfsetispeed(&options, B9600);
+    }
+    options.c_lflag = 0;
+    options.c_cc[VMIN] = 1;
+    //How long we are waiting reply charachter from serial port.
+    options.c_cc[VTIME] = 5;
 
-        memset(&options, 0, sizeof(options));
-        options.c_iflag = 0;
-        options.c_oflag = 0;
-        if (iec)
-        {
-            options.c_cflag |= PARENB;
-            options.c_cflag &= ~PARODD;
-            options.c_cflag &= ~CSTOPB;
-            options.c_cflag &= ~CSIZE;
-            options.c_cflag |= CS7;
-            //Set Baud Rates
-            cfsetospeed(&options, B300);
-            cfsetispeed(&options, B300);
-        }
-        else
-        {
-            // 8n1, see termios.h for more information
-            options.c_cflag = CS8 | CREAD | CLOCAL;
-            /*
-            options.c_cflag &= ~PARENB
-            options.c_cflag &= ~CSTOPB
-            options.c_cflag &= ~CSIZE;
-            options.c_cflag |= CS8;
-            */
-            //Set Baud Rates
-            cfsetospeed(&options, B9600);
-            cfsetispeed(&options, B9600);
-        }
-        options.c_lflag = 0;
-        options.c_cc[VMIN] = 1;
-        //How long we are waiting reply charachter from serial port.
-        options.c_cc[VTIME] = 5;
-
-        //hardware flow control is used as default.
-        //options.c_cflag |= CRTSCTS;
-        if (tcsetattr(connection->comPort, TCSAFLUSH, &options) != 0)
-        {
-            printf("Failed to Open port. tcsetattr failed.\r");
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
+    //hardware flow control is used as default.
+    //options.c_cflag |= CRTSCTS;
+    if (tcsetattr(connection->comPort, TCSAFLUSH, &options) != 0)
+    {
+        printf("Failed to Open port. tcsetattr failed.\r");
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
 #endif
     if (iec)
@@ -550,7 +525,45 @@ int com_open(
         }
 #endif
     }
-    return DLMS_ERROR_CODE_OK;
+    return ret;
+}
+
+int com_open(
+    connection* connection,
+    const char* port,
+    unsigned char iec)
+{
+    //In Linux serial port name might be very long.
+#if defined(_WIN32) || defined(_WIN64)
+    char buff[50];
+#if _MSC_VER > 1000
+    sprintf_s(buff, 50, "\\\\.\\%s", port);
+#else
+    sprintf(buff, "\\\\.\\%s", port);
+#endif
+    //Open serial port for read / write. Port can't share.
+    connection->comPort = CreateFileA(buff,
+        GENERIC_READ | GENERIC_WRITE, 0, NULL,
+        OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+    if (connection->comPort == INVALID_HANDLE_VALUE)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+#else //#if defined(__LINUX__)
+    // read/write | not controlling term | don't wait for DCD line signal.
+    connection->comPort = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
+    if (connection->comPort == -1) // if open is unsuccessful.
+    {
+        printf("Failed to Open port: %s\n", port);
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (!isatty(connection->comPort))
+    {
+        printf("Failed to Open port %s. This is not a serial port.\n", port);
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+#endif
+    return com_initializeOpticalHead(connection, iec);
 }
 
 // Read DLMS Data frame from the device.
@@ -711,6 +724,27 @@ int com_readDataBlock(
     return ret;
 }
 
+
+//Close connection to the meter.
+int com_disconnect(
+    connection* connection)
+{
+    int ret = DLMS_ERROR_CODE_OK;
+    gxReplyData reply;
+    message msg;
+    reply_init(&reply);
+    mes_init(&msg);
+    if ((ret = cl_disconnectRequest(&connection->settings, &msg)) != 0 ||
+        (ret = com_readDataBlock(connection, &msg, &reply)) != 0)
+    {
+        //Show error but continue close.
+        printf("Close failed.");
+    }
+    reply_clear(&reply);
+    mes_clear(&msg);
+    return ret;
+}
+
 //Close connection to the meter.
 int com_close(
     connection* connection)
@@ -767,13 +801,111 @@ int com_close(
     return ret;
 }
 
+//Read Invocation counter (frame counter) from the meter and update it.
+int com_updateInvocationCounter(
+    connection* connection,
+    const char* invocationCounter)
+{
+    int ret = DLMS_ERROR_CODE_OK;
+    //Read frame counter if GeneralProtection is used.
+    if (invocationCounter != NULL && connection->settings.cipher.security != DLMS_SECURITY_NONE)
+    {
+        message messages;
+        gxReplyData reply;
+        unsigned short add = connection->settings.clientAddress;
+        DLMS_AUTHENTICATION auth = connection->settings.authentication;
+        DLMS_SECURITY security = connection->settings.cipher.security;
+        gxByteBuffer challenge;
+        bb_init(&challenge);
+        bb_set(&challenge, connection->settings.ctoSChallenge.data, connection->settings.ctoSChallenge.size);
+        connection->settings.clientAddress = 16;
+        connection->settings.authentication = DLMS_AUTHENTICATION_NONE;
+        connection->settings.cipher.security = DLMS_SECURITY_NONE;
+        if (connection->trace > GX_TRACE_LEVEL_WARNING)
+        {
+            printf("updateInvocationCounter\r\n");
+        }
+        mes_init(&messages);
+        reply_init(&reply);
+        //Get meter's send and receive buffers size.
+        if ((ret = cl_snrmRequest(&connection->settings, &messages)) != 0 ||
+            (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
+            (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0)
+        {
+            bb_clear(&challenge);
+            mes_clear(&messages);
+            reply_clear(&reply);
+            if (connection->trace > GX_TRACE_LEVEL_OFF)
+            {
+                printf("SNRMRequest failed %s\r\n", hlp_getErrorMessage(ret));
+            }
+            return ret;
+        }
+        mes_clear(&messages);
+        reply_clear(&reply);
+        if ((ret = cl_aarqRequest(&connection->settings, &messages)) != 0 ||
+            (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
+            (ret = cl_parseAAREResponse(&connection->settings, &reply.data)) != 0)
+        {
+            bb_clear(&challenge);
+            mes_clear(&messages);
+            reply_clear(&reply);
+            if (ret == DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED)
+            {
+                if (connection->trace > GX_TRACE_LEVEL_OFF)
+                {
+                    printf("Use Logical Name referencing is wrong. Change it!\r\n");
+                }
+                return ret;
+            }
+            if (connection->trace > GX_TRACE_LEVEL_OFF)
+            {
+                printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
+            }
+            return ret;
+        }
+        mes_clear(&messages);
+        reply_clear(&reply);
+        if (connection->settings.maxPduSize == 0xFFFF)
+        {
+            con_initializeBuffers(connection, connection->settings.maxPduSize);
+        }
+        else
+        {
+            //Allocate 50 bytes more because some meters count this wrong and send few bytes too many.
+            con_initializeBuffers(connection, 50 + connection->settings.maxPduSize);
+        }
+        gxData d;
+        cosem_init(BASE(d), DLMS_OBJECT_TYPE_DATA, invocationCounter);
+        if ((ret = com_read(connection, BASE(d), 2)) == 0)
+        {
+            connection->settings.cipher.invocationCounter = 1 + var_toInteger(&d.value);
+            if (connection->trace > GX_TRACE_LEVEL_WARNING)
+            {
+                printf("Invocation counter: %ld (0x%lX)\r\n",
+                    connection->settings.cipher.invocationCounter,
+                    connection->settings.cipher.invocationCounter);
+            }
+            //It's OK if this fails.
+            com_disconnect(connection);
+            connection->settings.clientAddress = add;
+            connection->settings.authentication = auth;
+            connection->settings.cipher.security = security;
+            bb_clear(&connection->settings.ctoSChallenge);
+            bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
+            bb_clear(&challenge);
+        }
+    }
+    return ret;
+}
+
 //Initialize connection to the meter.
 int com_initializeConnection(
     connection* connection)
 {
-    int ret = DLMS_ERROR_CODE_OK;
     message messages;
     gxReplyData reply;
+    int ret = 0;
     if (connection->trace > GX_TRACE_LEVEL_WARNING)
     {
         printf("InitializeConnection\r\n");
@@ -1199,7 +1331,7 @@ int com_readProfileGenerics(
     bb_init(&ba);
     for (pos = 0; pos != objects.size; ++pos)
     {
-        ret = oa_getByIndex(&objects, pos, (gxObject * *)& pg);
+        ret = oa_getByIndex(&objects, pos, (gxObject**)&pg);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             //Do not clear objects list because it will free also objects from association view list.
@@ -1418,7 +1550,7 @@ int com_readValues(connection* connection)
             ret = obj_toString(object, &data);
             if (ret != DLMS_ERROR_CODE_OK)
             {
-               break;
+                break;
             }
             if (data != NULL)
             {
@@ -1432,17 +1564,9 @@ int com_readValues(connection* connection)
     return ret;
 }
 
-//This function reads ALL objects that meter have. It will loop all object's attributes.
 int com_readAllObjects(connection* connection)
 {
     int ret;
-
-    //Initialize connection.
-    ret = com_initializeConnection(connection);
-    if (ret != DLMS_ERROR_CODE_OK)
-    {
-        return ret;
-    }
     //Get objects from the meter and read them.
     ret = com_getAssociationView(connection);
     if (ret != DLMS_ERROR_CODE_OK)

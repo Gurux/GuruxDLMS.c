@@ -56,8 +56,23 @@ int com_readDataBlock(
     gxReplyData* reply);
 
 //Close connection to the meter.
+int com_disconnect(
+    connection* connection);
+
+//Close connection to the meter and close the communcation channel.
 int com_close(
     connection *connection);
+
+//Initialize optical head.
+int com_initializeOpticalHead(
+    connection* connection,
+    unsigned char iec);
+
+
+//Read Invocation counter (frame counter) from the meter and update it.
+int com_updateInvocationCounter(
+    connection* connection,
+    const char* invocationCounter);
 
 //Initialize connection to the meter.
 int com_initializeConnection(
@@ -117,8 +132,9 @@ int com_readValue(
     gxObject* object,
     unsigned char index);
 
-//Read all objects from the meter.
-int com_readAllObjects(connection *connection);
+//This function reads ALL objects that meter have. It will loop all object's attributes.
+int com_readAllObjects(
+    connection *connection);
 
 #ifdef  __cplusplus
 }

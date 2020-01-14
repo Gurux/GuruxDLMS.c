@@ -48,7 +48,7 @@
 #include "../include/errorcodes.h"
 #include "../include/helpers.h"
 
-int var_setEnum(dlmsVARIANT * data, unsigned char value)
+int var_setEnum(dlmsVARIANT* data, unsigned char value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_ENUM;
@@ -429,11 +429,33 @@ int var_getDateTime2(
     }
     if (dateTime->value.tm_mon != -1 && (dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
     {
-        month = (unsigned char)dateTime->value.tm_mon + 1;
+        if (dateTime->extraInfo == DLMS_DATE_TIME_EXTRA_INFO_DST_BEGIN)
+        {
+            month = 0xFE;
+        }
+        else if (dateTime->extraInfo == DLMS_DATE_TIME_EXTRA_INFO_DST_END)
+        {
+            month = 0xFD;
+        }
+        else
+        {
+            month = (unsigned char)dateTime->value.tm_mon + 1;
+        }
     }
     if (dateTime->value.tm_mday != -1 && (dateTime->skip & DATETIME_SKIPS_DAY) == 0)
     {
-        day = (unsigned char)dateTime->value.tm_mday;
+        if (dateTime->extraInfo == DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY)
+        {
+            day = 0xFE;
+        }
+        else if (dateTime->extraInfo == DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)
+        {
+            day = 0xFD;
+        }
+        else
+        {
+            day = (unsigned char)dateTime->value.tm_mday;
+        }
     }
     //Add week day
     if ((dateTime->value.tm_wday != -1 && dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
@@ -476,7 +498,15 @@ int var_getDateTime2(
         bb_setUInt8(ba, 0xFF);
     }
     //Add day
-    if ((dateTime->skip & DATETIME_SKIPS_DAY) == 0)
+    if ((dateTime->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY) != 0)
+    {
+        bb_setUInt8(ba, 0xFE);
+    }
+    else if ((dateTime->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2) != 0)
+    {
+        bb_setUInt8(ba, 0xFD);
+    }
+    else if ((dateTime->skip & DATETIME_SKIPS_DAY) == 0)
     {
         bb_setUInt8(ba, day);
     }
@@ -525,7 +555,7 @@ int var_getDateTime2(
     else
     {
         bb_setUInt8(ba, 0xFF);
-    }
+}
     //Add ms.
 #ifdef DLMS_ITALIAN_STANDARD
     //Italian standard uses 0 for ms.
@@ -684,7 +714,7 @@ int var_getTime(
     else
     {
         bb_setUInt8(ba, 0xFF);
-    }
+}
     //Add ms.
 #ifdef DLMS_ITALIAN_STANDARD
     //Italian standard uses 0 for ms.
@@ -865,8 +895,8 @@ int var_getBytes2(
             if ((ret = hlp_setObjectCount(data->strVal->size, ba)) == 0)
             {
                 ret = bb_set(ba, data->strVal->data, data->strVal->size);
-            }
         }
+    }
 #else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_MALLOC
@@ -979,7 +1009,7 @@ int var_getBytes2(
         assert(0);
 #endif
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+        }
     return ret;
 }
 
@@ -1219,7 +1249,7 @@ int va_push(variantArray* arr, dlmsVARIANT* item)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    p = (dlmsVARIANT * *)arr->data;
+    p = (dlmsVARIANT**)arr->data;
     p[arr->size] = item;
     ++arr->size;
     return 0;
@@ -1287,7 +1317,7 @@ int va_getByIndex(variantArray* arr, int index, dlmsVARIANT_PTR* item)
     *item = &p[index];
     return DLMS_ERROR_CODE_OK;
 #else
-    dlmsVARIANT** p = (dlmsVARIANT * *)arr->data;
+    dlmsVARIANT** p = (dlmsVARIANT**)arr->data;
     *item = p[index];
     return DLMS_ERROR_CODE_OK;
 #endif //DLMS_IGNORE_MALLOC
@@ -1526,7 +1556,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //GX_DLMS_MICROCONTROLLER
-        }
+    }
         else if (tmp.vt == DLMS_DATA_TYPE_FLOAT64)
         {
 #ifndef GX_DLMS_MICROCONTROLLER
@@ -1542,7 +1572,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //GX_DLMS_MICROCONTROLLER
-        }
+}
         else if (tmp.vt == DLMS_DATA_TYPE_BIT_STRING)
         {
             char* str = ba_toString(tmp.bitArr);
@@ -1578,7 +1608,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //GX_DLMS_MICROCONTROLLER
-        }
+            }
         else if (tmp.vt == DLMS_DATA_TYPE_NONE)
         {
             item->vt = type;
@@ -1589,7 +1619,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         {
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
         }
-    }
+        }
     else if (item->vt == DLMS_DATA_TYPE_STRING)
     {
         if (type == DLMS_DATA_TYPE_BOOLEAN)
@@ -1698,7 +1728,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
         }
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-    }
+        }
     fromSize = var_getSize(tmp.vt);
     toSize = var_getSize(item->vt);
     //If we try to change bigger valut to smaller check that value is not too big.
@@ -1726,7 +1756,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
     item->vt = type;
     var_clear(&tmp);
     return DLMS_ERROR_CODE_OK;
-}
+    }
 
 int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
 {
@@ -2006,11 +2036,11 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
             if (count != hlp_getDataTypeSize(target->vt ^ DLMS_DATA_TYPE_BYREF))
             {
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
+}
             memcpy(target->pVal, &source->bVal, count);
-        }
-        return 0;
     }
+        return 0;
+}
 #else
 #endif //DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_MALLOC
@@ -2096,13 +2126,13 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
                         return ret;
                     }
                     va_push(target->Arr, item);
-}
+                    }
+                }
             }
-        }
 #else
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_MALLOC
-    }
+        }
 #ifndef DLMS_IGNORE_MALLOC
     else if (source->vt == DLMS_DATA_TYPE_DATETIME)
     {
@@ -2225,7 +2255,7 @@ int var_setTimeAsOctetString(
         if ((ret = var_getTime(value, target->byteArr)) == 0)
         {
             target->vt = DLMS_DATA_TYPE_OCTET_STRING;
-    }
+        }
     }
     return ret;
 }
@@ -2288,7 +2318,7 @@ int var_getDateTime(dlmsVARIANT* target, gxtime* value)
         value->skip = target->dateTime->skip;
         value->status = target->dateTime->status;
         value->value = target->dateTime->value;
-}
+    }
 #endif //DLMS_IGNORE_MALLOC
     else
     {
@@ -2425,7 +2455,7 @@ int va_print(
         {
             return ret;
         }
-}
+    }
     return ret;
 }
 

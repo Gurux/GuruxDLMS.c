@@ -28,12 +28,12 @@ SRCS +=  $(DLMS_PREFIX)apdu.c             \
          $(DLMS_PREFIX)parameters.c       \
          $(DLMS_PREFIX)replydata.c        \
          $(DLMS_PREFIX)client.c           \
-		 $(DLMS_PREFIX)server.c           \
+	 $(DLMS_PREFIX)server.c           \
          $(DLMS_PREFIX)notify.c           \
          $(DLMS_PREFIX)variant.c          \
-	 $(SRCS_PATH)india.c            \
+         $(SRCS_PATH)india.c              \
 
-INCLUDES += 
+INCLUDES +=
 
 # Define default network settings
 CFLAGS += -DNETWORK_ADDRESS=$(default_network_address)

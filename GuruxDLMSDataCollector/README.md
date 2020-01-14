@@ -19,6 +19,16 @@ Before Start
 =========================== 
 You must copy include and src folders from the development folder under dlms folder. You get a lot of compiler errors if this is not done.
 
+You need to change default_network_address and app_specific_area_id fro config.mk file.
+You can use example this random generator. https://www.browserling.com/tools/random-hex
+```C
+# TODO: Change this. This must be unique for each NIC.
+default_network_address ?= 0x123456
+
+# Define a specific application area_id
+# TODO: Change this. This SINK ID.
+app_specific_area_id=0x83744C
+```
 Programming
 =========================== 
 

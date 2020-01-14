@@ -33,7 +33,7 @@
 
 //Client don't need this.
 unsigned char svr_isTarget(
-    dlmsSettings *settings,
+    dlmsSettings* settings,
     unsigned long serverAddress,
     unsigned long clientAddress)
 {
@@ -42,15 +42,15 @@ unsigned char svr_isTarget(
 
 //Client don't need this.
 int svr_connected(
-    dlmsServerSettings *settings) {
+    dlmsServerSettings* settings) {
     return 0;
 
 }
 
 //Client don't need this.
 DLMS_ACCESS_MODE svr_getAttributeAccess(
-    dlmsSettings *settings,
-    gxObject *obj,
+    dlmsSettings* settings,
+    gxObject* obj,
     unsigned char index)
 {
     return DLMS_ACCESS_MODE_READ_WRITE;
@@ -58,8 +58,8 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
 
 //Client don't need this.
 DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
-    dlmsSettings *settings,
-    gxObject *obj,
+    dlmsSettings* settings,
+    gxObject* obj,
     unsigned char index)
 {
     return DLMS_METHOD_ACCESS_MODE_ACCESS;
@@ -68,7 +68,7 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
 /**
 * Updates clock and reads it.
 */
-int com_updateClock(connection *connection)
+int com_updateClock(connection* connection)
 {
     int ret;
     gxClock clock;
@@ -103,7 +103,7 @@ int com_updateClock(connection *connection)
 /**
 * Calls disconnect method.
 */
-int com_Disconnect(connection *connection)
+int disconnect(connection* connection)
 {
     int ret;
     gxDisconnectControl dc;
@@ -117,10 +117,11 @@ int com_Disconnect(connection *connection)
 
 /*Read DLMS meter using TCP/IP connection.*/
 int readTcpIpConnection(
-    connection *connection,
+    connection* connection,
     const char* address,
     const int port,
-    char *readObjects)
+    char* readObjects,
+    const char* invocationCounter)
 {
     int ret;
 #if defined(_WIN32) || defined(_WIN64)//Windows
@@ -145,13 +146,14 @@ int readTcpIpConnection(
     }
     if (readObjects != NULL)
     {
-        if ((ret = com_initializeConnection(connection)) == 0 &&
+        if ((ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 &&
+            (ret = com_initializeConnection(connection)) == 0 &&
             (ret = com_getAssociationView(connection)) == 0)
         {
             int index;
             unsigned char buff[200];
             gxObject* obj = NULL;
-            char *p2, *p = readObjects;
+            char* p2, * p = readObjects;
             do
             {
                 if (p != readObjects)
@@ -175,8 +177,14 @@ int readTcpIpConnection(
     }
     else
     {
-        //Read all objects from the meter.
-        ret = com_readAllObjects(connection);
+        //Initialize connection.
+        if ((ret = com_updateInvocationCounter(connection, invocationCounter)) != 0 ||
+            (ret = com_initializeConnection(connection)) != 0 ||
+            (ret = com_readAllObjects(connection)) != 0)
+            //Read all objects from the meter.
+        {
+            //Error code is returned at the end of the function.
+        }
     }
     //Close connection.
     com_close(connection);
@@ -186,22 +194,26 @@ int readTcpIpConnection(
 
 /*Read DLMS meter using serial port connection.*/
 int readSerialPort(
-    connection *connection,
+    connection* connection,
     const char* port,
     unsigned char iec,
-    char *readObjects)
+    char* readObjects,
+    char* invocationCounter)
 {
     int ret;
     ret = com_open(connection, port, iec);
     if (ret == 0 && readObjects != NULL)
     {
-        if ((ret = com_initializeConnection(connection)) == 0 &&
+        if ((ret = com_initializeOpticalHead(connection, iec)) == 0 &&
+            (ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 &&
+            (ret = com_initializeOpticalHead(connection, iec)) == 0 &&
+            (ret = com_initializeConnection(connection)) == 0 &&
             (ret = com_getAssociationView(connection)) == 0)
         {
             int index;
             unsigned char buff[200];
             gxObject* obj = NULL;
-            char *p2, *p = readObjects;
+            char* p2, * p = readObjects;
             do
             {
                 if (p != readObjects)
@@ -225,8 +237,16 @@ int readSerialPort(
     }
     else if (ret == 0)
     {
-        //Read all objects from the meter.
-        ret = com_readAllObjects(connection);
+        //Initialize connection.
+        if ((ret = com_initializeOpticalHead(connection, iec)) != 0 ||
+            (ret = com_updateInvocationCounter(connection, invocationCounter)) != 0 ||
+            (ret = com_initializeOpticalHead(connection, iec)) != 0 ||
+            (ret = com_initializeConnection(connection)) != 0 ||
+            (ret = com_readAllObjects(connection)) != 0)
+            //Read all objects from the meter.
+        {
+            //Error code is returned at the end of the function.
+        }
     }
     //Close connection.
     com_close(connection);
@@ -251,6 +271,8 @@ static void ShowHelp()
     printf(" -w WRAPPER profile is used. HDLC is default.\r\n");
     printf(" -t Trace messages.\r\n");
     printf(" -g \"0.0.1.0.0.255:1; 0.0.1.0.0.255:2\" Get selected object(s) with given attribute index.\r\n");
+    printf(" -C \t Security Level. (None, Authentication, Encrypted, AuthenticationEncryption)");
+    printf(" -v \t Invocation counter data object Logical Name. Ex. 0.0.43.1.1.255");
     printf("Example:\r\n");
     printf("Read LG device using TCP/IP connection.\r\n");
     printf("GuruxDlmsSample -r SN -c 16 -s 1 -h [Meter IP Address] -p [Meter Port No]\r\n");
@@ -273,9 +295,10 @@ int connectMeter(int argc, char* argv[])
     char* address = NULL;
     char* serialPort = NULL;
     unsigned char iec = 0;
-    char *p, *readObjects = NULL;
+    char* p, * readObjects = NULL;
     int index, a, b, c, d, e, f;
-    while ((opt = getopt(argc, argv, "h:p:c:s:r:it:a:p:wP:g:S:")) != -1)
+    char* invocationCounter = NULL;
+    while ((opt = getopt(argc, argv, "h:p:c:s:r:it:a:p:wP:g:S:C:v:")) != -1)
     {
         switch (opt)
         {
@@ -330,6 +353,41 @@ int connectMeter(int argc, char* argv[])
         case 'i':
             //IEC.
             iec = 1;
+            break;
+        case 'C':
+            if (strcmp("None", optarg) == 0)
+            {
+                con.settings.cipher.security = DLMS_SECURITY_NONE;
+            }
+            else if (strcmp("Authentication", optarg) == 0)
+            {
+                con.settings.cipher.security = DLMS_SECURITY_AUTHENTICATION;
+            }
+            else if (strcmp("Encryption", optarg) == 0)
+            {
+                con.settings.cipher.security = DLMS_SECURITY_ENCRYPTION;
+            }
+            else if (strcmp("AuthenticationEncryption", optarg) == 0)
+            {
+                con.settings.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
+            }
+            else
+            {
+                printf("Invalid Ciphering option '%s'. (None, Authentication, Encryption, AuthenticationEncryption)", optarg);
+                return 1;
+            }
+            break;
+        case 'v':
+            invocationCounter = optarg;
+#if defined(_WIN32) || defined(_WIN64)//Windows
+            if ((ret = sscanf_s(optarg, "%d.%d.%d.%d.%d.%d", &a, &b, &c, &d, &e, &f)) != 6)
+#else
+            if ((ret = sscanf(optarg, "%d.%d.%d.%d.%d.%d", &a, &b, &c, &d, &e, &f)) != 6)
+#endif
+            {
+                ShowHelp();
+                return 1;
+            }
             break;
         case 'g':
             //Get (read) selected objects.
@@ -453,14 +511,14 @@ int connectMeter(int argc, char* argv[])
             printf("Missing mandatory host option.\n");
             return 1;
         }
-        if (readTcpIpConnection(&con, address, port, readObjects) != 0)
+        if (readTcpIpConnection(&con, address, port, readObjects, invocationCounter) != 0)
         {
             printf("Error.");
         }
     }
     else if (serialPort != NULL)
     {
-        readSerialPort(&con, serialPort, iec, readObjects);
+        readSerialPort(&con, serialPort, iec, readObjects, invocationCounter);
     }
     else
     {

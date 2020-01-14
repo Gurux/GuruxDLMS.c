@@ -4657,7 +4657,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
 int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, dlmsVARIANT* value)
 {
-    int ret, pos;
+    int ret = 0, pos;
     gxSpecialDay* specialDay;
     if (index == 2)
     {

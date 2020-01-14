@@ -1196,15 +1196,14 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     t = value->pVal;
 #ifdef DLMS_USE_EPOCH_TIME
     short deviation;
-    unsigned char mon = 0, hour = 0, min = 0, sec = 0, wday = 0, skip = 0;
-    signed char day = 0;
+    unsigned char mon = 0, day = 0, hour = 0, min = 0, sec = 0, wday = 0, skip = 0;
     // Get month
     if ((ret = bb_getUInt8(buff, &mon)) != 0)
     {
         return ret;
     }
     // Get day
-    if ((ret = bb_getInt8(buff, &day)) != 0)
+    if ((ret = bb_getUInt8(buff, &day)) != 0)
     {
         return ret;
     }
@@ -1245,28 +1244,22 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     if (year < 1 || year == 0xFFFF)
     {
         skip |= DATETIME_SKIPS_YEAR;
-        year = 2000;
+        year = 1970;
     }
     if (wday > 7)
     {
         wday = 0;
         skip |= DATETIME_SKIPS_DAYOFWEEK;
     }
-    unsigned char daylightSavingsBegin = mon == 0xFE;
-    unsigned char daylightSavingsEnd = mon == 0xFD;
-    if (mon < 1 || mon > 12)
+    if ((mon < 1 || mon > 12) && mon != 0xFE && mon != 0xFD)
     {
         skip |= DATETIME_SKIPS_MONTH;
         mon = 1;
     }
-    if (day == -1 || day == 0 || day > 31)
+    if ((day < 1 || day > 31) && day != 0xFE && day != 0xFD)
     {
         skip |= DATETIME_SKIPS_DAY;
         day = 1;
-    }
-    else if (day < 0)
-    {
-        //TODO: day = cal.GetActualMaximum(Calendar.DATE) + day + 3;
     }
     if (hour > 24)
     {
@@ -1286,15 +1279,6 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     time_init(t, year, mon, day, hour, min, sec, 0, deviation);
     t->skip = skip;
     t->status = status;
-    t->extraInfo = 0;
-    if (daylightSavingsBegin)
-    {
-        t->extraInfo |= DLMS_DATE_TIME_EXTRA_INFO_DST_BEGIN;
-    }
-    if (daylightSavingsEnd)
-    {
-        t->extraInfo |= DLMS_DATE_TIME_EXTRA_INFO_DST_END;
-    }
 #else
     t->value.tm_yday = 0;
     t->value.tm_year = year;
@@ -1336,6 +1320,7 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     {
         return ret;
     }
+    t->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_NONE;
     t->skip = DATETIME_SKIPS_NONE;
     ms = ch;
     if (ms != 0xFF)
@@ -1373,12 +1358,14 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     if (t->value.tm_mon == 0xFE)
     {
         t->extraInfo |= DLMS_DATE_TIME_EXTRA_INFO_DST_BEGIN;
+        t->value.tm_mon = 0;
     }
-    if (t->value.tm_mon == 0xFD)
+    else if (t->value.tm_mon == 0xFD)
     {
-        t->extraInfo |= DLMS_DATE_TIME_EXTRA_INFO_DST_BEGIN;
+        t->extraInfo |= DLMS_DATE_TIME_EXTRA_INFO_DST_END;
+        t->value.tm_mon = 0;
     }
-    if (t->value.tm_mon < 1 || t->value.tm_mon > 12)
+    else if (t->value.tm_mon < 1 || t->value.tm_mon > 12)
     {
         t->skip = (DATETIME_SKIPS)(t->skip | DATETIME_SKIPS_MONTH);
         t->value.tm_mon = 0;
@@ -1387,14 +1374,22 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     {
         t->value.tm_mon -= 1;
     }
-    if (t->value.tm_mday == -1 || t->value.tm_mday == 0 || t->value.tm_mday > 31)
+    if (t->value.tm_mday == 0xFD)
+    {
+        // 2nd last day of month.
+        t->value.tm_mday = 1;
+        t->extraInfo |= DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2;
+    }
+    else if (t->value.tm_mday == 0xFE)
+    {
+        //Last day of month
+        t->value.tm_mday = 1;
+        t->extraInfo |= DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY;
+    }
+    else if (t->value.tm_mday == -1 || t->value.tm_mday == 0 || t->value.tm_mday > 31)
     {
         t->skip = (DATETIME_SKIPS)(t->skip | DATETIME_SKIPS_DAY);
         t->value.tm_mday = 1;
-    }
-    else if (t->value.tm_mday < 0)
-    {
-        //TODO: day = cal.GetActualMaximum(Calendar.DATE) + day + 3;
     }
     if (t->value.tm_hour < 0 || t->value.tm_hour > 24)
     {

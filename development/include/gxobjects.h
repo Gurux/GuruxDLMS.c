@@ -55,7 +55,7 @@ extern "C" {
         DLMS_SCRIPT_ACTION_TYPE_WRITE = 1,
         /*
          * Execute specific method
-         */
+        */
         DLMS_SCRIPT_ACTION_TYPE_EXECUTE = 2
     } DLMS_SCRIPT_ACTION_TYPE;
 
@@ -113,28 +113,28 @@ extern "C" {
         DLMS_AUTO_CONNECT_MODE_NO_AUTO_DIALLING = 0,
         /**
          * Auto dialling allowed anytime,
-         */
+        */
         DLMS_AUTO_CONNECT_MODE_AUTO_DIALLING_ALLOWED_ANYTIME = 1,
         /**
          * Auto dialling allowed within the validity time of the calling window.
-         */
+        */
         DLMS_AUTO_CONNECT_MODE_AUTO_DIALLING_ALLOWED_CALLING_WINDOW = 2,
         /**
          * Regular auto dialling allowed within the validity time
          * of the calling window; alarm initiated auto dialling allowed anytime,
-         */
+        */
         DLMS_AUTO_CONNECT_MODE_REGULAR_AUTO_DIALLING_ALLOWED_CALLING_WINDOW = 3,
         /**
          * SMS sending via Public Land Mobile Network (PLMN),
-         */
+        */
         DLMS_AUTO_CONNECT_MODE_SMS_SENDING_PLMN = 4,
         /*
          * SMS sending via PSTN.
-         */
+        */
         DLMS_AUTO_CONNECT_MODE_SMS_SENDING_PSTN = 5,
         /*
          * Email sending.
-         */
+        */
         DLMS_AUTO_CONNECT_MODE_EMAIL_SENDING = 6
     } DLMS_AUTO_CONNECT_MODE;
 
@@ -235,11 +235,11 @@ extern "C" {
         DLMS_CONTROL_STATE_DISCONNECTED,
         /*
          * The output_state is set to 1 and the consumer is connected.
-         */
+        */
         DLMS_CONTROL_STATE_CONNECTED,
         /*
          * The output_state is set to false and the consumer is disconnected.
-         */
+        */
         DLMS_CONTROL_STATE_READY_FOR_RECONNECTION
     } DLMS_CONTROL_STATE;
 
@@ -251,37 +251,37 @@ extern "C" {
     {
         /*
          * The disconnect control object is always in 'connected' state,
-         */
+        */
         DLMS_CONTROL_MODE_NONE,
         /*
          * Disconnection: Remote (b, c), manual (f), local (g)
          * Reconnection: Remote (d), manual (e).
-         */
+        */
         DLMS_CONTROL_MODE_MODE_1,
         /*
          * Disconnection: Remote (b, c), manual (f), local (g)
          * Reconnection: Remote (a), manual (e).
-         */
+        */
         DLMS_CONTROL_MODE_MODE_2,
         /*
          * Disconnection: Remote (b, c), manual (-), local (g)
          * Reconnection: Remote (d), manual (e).
-         */
+        */
         DLMS_CONTROL_MODE_MODE_3,
         /*
          * Disconnection: Remote (b, c), manual (-), local (g)
          * Reconnection: Remote (a), manual (e)
-         */
+        */
         DLMS_CONTROL_MODE_MODE_4,
         /*
          * Disconnection: Remote (b, c), manual (f), local (g)
          * Reconnection: Remote (d), manual (e), local (h),
-         */
+        */
         DLMS_CONTROL_MODE_MODE_5,
         /*
          * Disconnection: Remote (b, c), manual (-), local (g)
          * Reconnection: Remote (d), manual (e), local (h)
-         */
+        */
         DLMS_CONTROL_MODE_MODE_6,
     } DLMS_CONTROL_MODE;
 
@@ -1138,20 +1138,20 @@ extern "C" {
 #endif // DLMS_IGNORE_ACTIVITY_CALENDAR
 
 #if !(defined(DLMS_IGNORE_LIMITER) && defined(DLMS_IGNORE_REGISTER_MONITOR))
-/**
----------------------------------------------------------------------------
-Online help:
-http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterMonitor
-*/
-typedef struct
-{
+    /**
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterMonitor
+    */
+    typedef struct
+    {
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    gxScriptTable* script;
+        gxScriptTable* script;
 #else
-    unsigned char logicalName[6];
+        unsigned char logicalName[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    unsigned short scriptSelector;
-} gxActionItem;
+        unsigned short scriptSelector;
+    } gxActionItem;
 
 #endif //!(defined(DLMS_IGNORE_LIMITER) && defined(DLMS_IGNORE_REGISTER_MONITOR))
 
@@ -1255,12 +1255,12 @@ typedef struct
     {
         /**
          * The interface ignores all received frames.
-         */
+        */
         DLMS_IEC_TWISTED_PAIR_SETUP_MODE_INACTIVE,
 
         /**
          * Active.
-         */
+        */
         DLMS_IEC_TWISTED_PAIR_SETUP_MODE_ACTIVE
     } DLMS_IEC_TWISTED_PAIR_SETUP_MODE;
 
@@ -2073,6 +2073,29 @@ typedef struct
         //Restriction by entry.
         DLMS_RESTRICTION_TYPE_ENTRY = 2
     } DLMS_RESTRICTION_TYPE;
+
+    //Global key types.
+    typedef enum
+    {
+        /**
+        * Global unicast encryption key. <br>
+        * Client and server uses this message to send Ephemeral Public Key to other
+        * party.
+        */
+        DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION,
+        /**
+         * Global broadcast encryption key.
+        */
+        DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION,
+        /**
+         * Authentication key.
+        */
+        DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION,
+        /**
+         * Key Encrypting Key, also known as Master key.
+        */
+        DLMS_GLOBAL_KEY_TYPE_KEK
+    }DLMS_GLOBAL_KEY_TYPE;
 
     /**
     ---------------------------------------------------------------------------

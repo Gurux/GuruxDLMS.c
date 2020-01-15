@@ -27,6 +27,7 @@
 char DATAFILE[FILENAME_MAX];
 char IMAGEFILE[FILENAME_MAX];
 char TRACEFILE[FILENAME_MAX];
+void println(char* desc, gxByteBuffer* data);
 
 int svr_start(
     connection *con,

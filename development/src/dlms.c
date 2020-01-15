@@ -1344,7 +1344,7 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     if (year < 1 || year == 0xFFFF)
     {
         t->skip = (DATETIME_SKIPS)(t->skip | DATETIME_SKIPS_YEAR);
-        t->value.tm_year = 0;
+        t->value.tm_year = 1;
     }
     else
     {
@@ -2251,7 +2251,9 @@ int dlms_checkHdlcAddress(
             return DLMS_ERROR_CODE_FALSE;
         }
         // Check that server addresses match.
-        if (settings->serverAddress != (int)source)
+        if (settings->serverAddress != (int)source &&
+            // If All-station (Broadcast).
+            settings->serverAddress != 0x7F && settings->serverAddress != 0x3FFF)
         {
             return DLMS_ERROR_CODE_FALSE;
         }
@@ -2679,7 +2681,7 @@ int dlms_getHdlcData(
                 return ret;
             }
         }
-        data->command = (DLMS_COMMAND)* frame;
+        data->command = (DLMS_COMMAND)*frame;
     }
     else if ((*frame & HDLC_FRAME_TYPE_S_FRAME) == HDLC_FRAME_TYPE_S_FRAME)
     {
@@ -5429,10 +5431,43 @@ int dlms_secure(
     if (settings->authentication != DLMS_AUTHENTICATION_HIGH_GMAC)
 #endif //DLMS_IGNORE_HIGH_GMAC
     {
-        if ((ret = bb_set(&challenge, data->data, data->size)) != 0 ||
-            (ret = bb_set(&challenge, secret->data, secret->size)) != 0)
+        if (settings->authentication == DLMS_AUTHENTICATION_HIGH_SHA256)
         {
-            return ret;
+            //If SHA256 is not used.
+#ifdef DLMS_IGNORE_HIGH_SHA256
+            return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
+#else
+            if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
+                (ret = bb_set(&challenge, settings->cipher.systemTitle.data, settings->cipher.systemTitle.size)) != 0 ||
+                (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
+            {
+                return ret;
+            }
+            if (settings->server)
+            {
+                if ((ret = bb_set(&challenge, settings->ctoSChallenge.data, settings->ctoSChallenge.size)) != 0 ||
+                    (ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0)
+                {
+                    return ret;
+                }
+            }
+            else
+            {
+                if ((ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0 ||
+                    (ret = bb_set(&challenge, settings->ctoSChallenge.data, settings->ctoSChallenge.size)) != 0)
+                {
+                    return ret;
+                }
+            }
+#endif //DLMS_IGNORE_HIGH_SHA256
+        }
+        else
+        {
+            if ((ret = bb_set(&challenge, data->data, data->size)) != 0 ||
+                (ret = bb_set(&challenge, secret->data, secret->size)) != 0)
+            {
+                return ret;
+            }
         }
     }
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH_MD5)

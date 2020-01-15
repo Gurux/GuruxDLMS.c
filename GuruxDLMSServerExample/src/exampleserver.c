@@ -123,6 +123,16 @@ void time_now(
     }
 }
 
+void println(char* desc, gxByteBuffer* data)
+{
+    if (data != NULL)
+    {
+        char* str = bb_toHexString(data);
+        printf("%s: %s\r\n", desc, str);
+        free(str);
+    }
+}
+
 #ifdef DLMS_INDIAN_STANDARD
 /*Indian Standard examples begin.*/
 gxProfileGeneric instantData;
@@ -1362,6 +1372,7 @@ int svr_start(
     {
         return ret;
     }
+    bb_addString(&con->settings.base.kek, "1111111111111111");
     return DLMS_ERROR_CODE_OK;
 }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -2293,6 +2304,17 @@ void svr_postAction(
         {
             handleProfileGenericActions(e);
         }
+        else if (e->target->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP && e->index == 2)
+        {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+            printf("----------------------------------------------------------\n");
+            printf("Updated keys: \r\n");
+            println("System Title", &settings->cipher.systemTitle);
+            println("Authentication key", &settings->cipher.authenticationKey);
+            println("Block cipher key", &settings->cipher.blockCipherKey);
+            println("Master key (KEK) title", &settings->kek);
+#endif
+        }
     }
 }
 
@@ -2557,10 +2579,14 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
     {
         return DLMS_METHOD_ACCESS_MODE_NONE;
     }
-    //Example server don't allow security setup changes.
+    //Example server allows security setup changes only when high authentication is used.
     if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP)
     {
-        return DLMS_METHOD_ACCESS_MODE_NONE;
+        if (settings->authentication == DLMS_AUTHENTICATION_LOW)
+        {
+            return DLMS_METHOD_ACCESS_MODE_NONE;
+        }
+        return DLMS_METHOD_ACCESS_MODE_ACCESS;
     }
 
     // Only clock methods are allowed.

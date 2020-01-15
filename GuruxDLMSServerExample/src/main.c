@@ -128,6 +128,14 @@ int startServers(int port, int trace)
     printf("Logical Name DLMS Server with IEC 62056-47 in port %d.\n", port + 3);
     printf("Example connection settings:\n");
     printf("GuruxDLMSClientExample -h localhost -p %d -w\n", port + 3);
+
+    printf("----------------------------------------------------------\n");
+    println("System Title", &snHdlc.settings.base.cipher.systemTitle);
+    println("Authentication key", &snHdlc.settings.base.cipher.authenticationKey);
+    println("Block cipher key", &snHdlc.settings.base.cipher.blockCipherKey);
+    println("Client System title", snHdlc.settings.base.preEstablishedSystemTitle);
+    println("Master key (KEK) title", &snHdlc.settings.base.kek);
+    printf("----------------------------------------------------------\n");
     printf("Press Enter to close application.\r\n");
 #endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
     getchar();
@@ -165,7 +173,7 @@ int main(int argc, char* argv[])
 
     strcpy(DATAFILE, argv[0]);
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
-    char *p = strrchr(DATAFILE, '\\');
+    char* p = strrchr(DATAFILE, '\\');
     *p = '\0';
     strcpy(IMAGEFILE, DATAFILE);
     strcpy(TRACEFILE, DATAFILE);
@@ -174,7 +182,7 @@ int main(int argc, char* argv[])
     strcat(DATAFILE, "\\data.csv");
     strcat(TRACEFILE, "\\trace.txt");
 #else
-    char *p = strrchr(DATAFILE, '/');
+    char* p = strrchr(DATAFILE, '/');
     *p = '\0';
     strcpy(IMAGEFILE, DATAFILE);
     strcpy(TRACEFILE, DATAFILE);
@@ -186,7 +194,7 @@ int main(int argc, char* argv[])
     // Clear trace file
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #if _MSC_VER > 1400
-    FILE * f = NULL;
+    FILE* f = NULL;
     fopen_s(&f, TRACEFILE, "w");
 #else
     FILE* f = fopen(TRACEFILE, "w");

@@ -628,6 +628,73 @@ int invoke_SapAssigment(
 }
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 
+int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, gxValueEventArg* e)
+{
+    int pos, ret = 0;
+    dlmsVARIANT* it, * type, * data;
+    if (e->index == 1)
+    {
+        target->securityPolicy = var_toInteger(&e->parameters);
+    }
+    else if (e->index == 2)
+    {
+        if (e->parameters.vt != DLMS_DATA_TYPE_ARRAY)
+        {
+            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        }
+        else
+        {
+            gxByteBuffer bb;
+            bb_init(&bb);
+            for (pos = 0; pos != e->parameters.Arr->size; ++pos)
+            {
+                bb_clear(&bb);
+                if ((ret = va_getByIndex(e->parameters.Arr, pos, &it)) != 0 ||
+                    (ret = va_getByIndex(it->Arr, 0, &type)) != 0 ||
+                    (ret = va_getByIndex(it->Arr, 1, &data)) != 0 ||
+                    (ret = cip_decryptKey(&settings->base.kek, data->byteArr, &bb)) != 0)
+                {
+                    break;
+                }
+                if (bb.size != 16)
+                {
+                    e->error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                    break;
+                }
+                switch (type->cVal)
+                {
+                case DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION:
+                    bb_clear(&settings->base.cipher.blockCipherKey);
+                    bb_set(&settings->base.cipher.blockCipherKey, bb.data, bb.size);
+                    break;
+                case DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION:
+                    //Invalid type
+                    ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                    break;
+                case DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION:
+                    bb_clear(&settings->base.cipher.authenticationKey);
+                    bb_set(&settings->base.cipher.authenticationKey, bb.data, bb.size);
+                    break;
+                case DLMS_GLOBAL_KEY_TYPE_KEK:
+                    bb_clear(&settings->base.kek);
+                    bb_set(&settings->base.kek, bb.data, bb.size);
+                    break;
+                default:
+                    //Invalid type
+                    ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                    break;
+                }
+            }
+            bb_clear(&bb);
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+    }
+    return ret;
+}
+
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int invoke_AssociationShortName(
     dlmsServerSettings* settings,
@@ -686,7 +753,7 @@ int invoke_AssociationShortName(
                 readSecret = &settings->base.cipher.systemTitle;
 #endif //DLMS_IGNORE_MALLOC
                 ic = settings->base.cipher.invocationCounter;
-            }
+        }
 #endif //DLMS_IGNORE_HIGH_GMAC
             if ((ret = dlms_secure(&settings->base,
                 ic,
@@ -698,12 +765,12 @@ int invoke_AssociationShortName(
             }
             bb_insertUInt8(&settings->info.data, 0, DLMS_DATA_TYPE_OCTET_STRING);
             bb_insertUInt8(&settings->info.data, 1, (unsigned char)(settings->info.data.size - 1));
-        }
+    }
         else
         {
             return 0;
         }
-    }
+}
     else
     {
         return DLMS_ERROR_CODE_READ_WRITE_DENIED;
@@ -753,7 +820,7 @@ int invoke_ScriptTable(dlmsServerSettings* settings, gxValueEventArg* e)
                     if ((ret = oa_findByLN(&settings->base.objects, sa->objectType, sa->logicalName, &e2.target)) != 0)
                     {
                         break;
-                    }
+            }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                     if (sa->type == DLMS_SCRIPT_ACTION_TYPE_WRITE)
                     {
@@ -774,8 +841,8 @@ int invoke_ScriptTable(dlmsServerSettings* settings, gxValueEventArg* e)
                         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
                         break;
                     }
-                }
-            }
+    }
+}
         }
     }
     else
@@ -804,7 +871,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
             bb_init(&ad->macAddress);
             ba_init(&ad->status);
             ret = cosem_getOctectString(value->byteArr, &ad->macAddress);
-        }
+}
 #else
         if ((ret = va_getByIndex(value->Arr, 0, &it)) == 0)
         {
@@ -841,7 +908,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
                 }
                 --object->activeDevices.size;
                 break;
-            }
+    }
 #else
             ret = arr_getByIndex(&object->activeDevices, pos, (void**)&ad);
             if (ret != 0)
@@ -950,7 +1017,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
 #else
         time_addTime(&object->time, 0, -object->time.value.tm_min + minutes, -object->time.value.tm_sec);
 #endif // DLMS_USE_EPOCH_TIME
-    }
+        }
     // Sets the meter's time to the nearest minute.
     else if (index == 3)
     {
@@ -964,7 +1031,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
             time_addTime(&object->time, 0, 1, 0);
         }
         time_addTime(&object->time, 0, 0, -s);
-    }
+}
     //Adjust to preset time.
     else if (index == 4)
     {
@@ -1287,14 +1354,14 @@ int cosem_captureCompactData(
                     if (value.vt == DLMS_DATA_TYPE_ARRAY && object->appendAA)
                     {
                         bb_setUInt8(&object->buffer, (unsigned char)value.Arr->size);
-                    }
+            }
 #endif //DLMS_ITALIAN_STANDARD
                     if ((ret = compactDataAppendArray(&value, &object->buffer, dataIndex)) != 0)
                     {
                         var_clear(&value);
                         break;
                     }
-                }
+            }
                 else
                 {
                     if ((ret = compactDataAppend(1, &e.value, &object->buffer)) != 0)
@@ -1304,13 +1371,13 @@ int cosem_captureCompactData(
                     }
                 }
                 var_clear(&value);
-            }
+    }
             else if ((ret = compactDataAppend(0, &e.value, &object->buffer)) != 0)
             {
                 break;
             }
             ve_clear(&e);
-        }
+}
     }
     svr_postGet(settings, &args);
     if (ret != 0)
@@ -1446,6 +1513,11 @@ int cosem_invoke(
         ret = invoke_SapAssigment((gxSapAssignment*)e->target, e);
         break;
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
+#ifndef DLMS_IGNORE_SECURITY_SETUP
+    case DLMS_OBJECT_TYPE_SECURITY_SETUP:
+        ret = invoke_SecuritySetup(settings, (gxSecuritySetup*)e->target, e);
+        break;
+#endif //DLMS_IGNORE_SECURITY_SETUP
 #ifndef DLMS_IGNORE_COMPACT_DATA
     case DLMS_OBJECT_TYPE_COMPACT_DATA:
         ret = invoke_CompactData(settings, (gxCompactData*)e->target, e->index);

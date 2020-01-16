@@ -134,7 +134,7 @@ int startServers(int port, int trace)
     println("Authentication key", &snHdlc.settings.base.cipher.authenticationKey);
     println("Block cipher key", &snHdlc.settings.base.cipher.blockCipherKey);
     println("Client System title", snHdlc.settings.base.preEstablishedSystemTitle);
-    println("Master key (KEK) title", &snHdlc.settings.base.kek);
+    println("Master key (KEK)", &snHdlc.settings.base.kek);
     printf("----------------------------------------------------------\n");
     printf("Press Enter to close application.\r\n");
 #endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)

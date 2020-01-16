@@ -151,6 +151,18 @@ const gxObject* ALL_OBJECTS[] = { BASE(ldn), BASE(id1), BASE(id2), BASE(fw), BAS
     BASE(specialDays),
 };
 
+void println(char* desc, unsigned char* data, unsigned char length)
+{
+    if (data != NULL)
+    {
+        char str[50];
+        if (hlp_bytesToHex2(data, length, str, sizeof(str)) == 0)
+        {
+            printf("%s: %s\r\n", desc, str);
+        }
+    }
+}
+
 //Returns the approximate processor time in ms.
 long time_elapsed(void)
 {
@@ -181,7 +193,7 @@ int addNoneAssociation()
     //User list.
     static gxUser USER_LIST[10] = { 0 };
     //Dedicated key.
-    static char CYPHERING_INFO[20] = { 0 };
+    static unsigned char CYPHERING_INFO[20] = { 0 };
     const unsigned char ln[6] = { 0, 0, 40, 0, 1, 255 };
     if ((ret = INIT_OBJECT(associationNone, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
     {
@@ -208,11 +220,11 @@ int addLowAssociation()
     //Define low level password.
     static char LLS_PASSWORD[20] = "Gurux";
     //Dedicated key.
-    static char CYPHERING_INFO[20] = { 0 };
+    static unsigned char CYPHERING_INFO[20] = { 0 };
     const unsigned char ln[6] = { 0, 0, 40, 0, 2, 255 };
     if ((ret = INIT_OBJECT(lowAssociation, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
     {
-        BB_ATTACH(lowAssociation.secret, LLS_PASSWORD, (unsigned short)strlen(LLS_PASSWORD));
+        BB_ATTACH(lowAssociation.secret, (unsigned char*)LLS_PASSWORD, (unsigned short)strlen(LLS_PASSWORD));
         lowAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_LOW;
         OA_ATTACH(lowAssociation.objectList, ALL_OBJECTS);
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -223,7 +235,7 @@ int addLowAssociation()
         BB_ATTACH(lowAssociation.xDLMSContextInfo.cypheringInfo, CYPHERING_INFO, 0);
         ARR_ATTACH(lowAssociation.userList, USER_LIST, 0);
         lowAssociation.clientSAP = 0x20;
-        BB_ATTACH(lowAssociation.secret, LLS_PASSWORD, (unsigned short)strlen(LLS_PASSWORD));
+        BB_ATTACH(lowAssociation.secret, (unsigned char*) LLS_PASSWORD, (unsigned short)strlen(LLS_PASSWORD));
         //All objects are add for this Association View later.
     }
     return ret;
@@ -239,7 +251,7 @@ int addHighAssociation()
     //User list.
     static gxUser USER_LIST[10] = { 0 };
     //Dedicated key.
-    static char CYPHERING_INFO[20] = { 0 };
+    static unsigned char CYPHERING_INFO[20] = { 0 };
     const unsigned char ln[6] = { 0, 0, 40, 0, 3, 255 };
     if ((ret = INIT_OBJECT(highAssociation, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
     {
@@ -255,7 +267,7 @@ int addHighAssociation()
         ARR_ATTACH(highAssociation.userList, USER_LIST, 0);
         highAssociation.clientSAP = 0x30;
         static char HLS_PASSWORD[20] = "Gurux";
-        BB_ATTACH(highAssociation.secret, HLS_PASSWORD, (unsigned short)strlen(HLS_PASSWORD));
+        BB_ATTACH(highAssociation.secret, (unsigned char*)HLS_PASSWORD, (unsigned short)strlen(HLS_PASSWORD));
     }
     return ret;
 }
@@ -703,7 +715,7 @@ int addActivityCalendar()
         strcpy((char*)ACTIVE_CALENDAR_NAME, "Active");
         strcpy((char*)PASSIVE_CALENDAR_NAME, "Passive");
 
-        BB_ATTACH(activityCalendar.calendarNameActive, ACTIVE_CALENDAR_NAME, (unsigned short)strlen(ACTIVE_CALENDAR_NAME));
+        BB_ATTACH(activityCalendar.calendarNameActive, ACTIVE_CALENDAR_NAME, (unsigned short)strlen((char*)ACTIVE_CALENDAR_NAME));
 
         /////////////////////////////////////////////////////////////////////////
         //Add active season profile.
@@ -2124,6 +2136,17 @@ void svr_postAction(
         {
             handleProfileGenericActions(e);
         }
+        else if (e->target->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP && e->index == 2)
+        {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+            printf("----------------------------------------------------------\n");
+            printf("Updated keys: \r\n");
+            println("System Title", settings->cipher.systemTitle, sizeof(settings->cipher.systemTitle));
+            println("Authentication key", settings->cipher.authenticationKey, sizeof(settings->cipher.authenticationKey));
+            println("Block cipher key", settings->cipher.blockCipherKey, sizeof(settings->cipher.blockCipherKey));
+            println("Master key (KEK)", settings->kek, sizeof(settings->kek));
+#endif
+        }
     }
 }
 
@@ -2350,10 +2373,14 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
     {
         return DLMS_METHOD_ACCESS_MODE_NONE;
     }
-    //Example server don't allow security setup changes.
+    //Example server allows security setup changes only when high authentication is used.
     if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP)
     {
-        return DLMS_METHOD_ACCESS_MODE_NONE;
+        if (settings->authentication == DLMS_AUTHENTICATION_LOW)
+        {
+            return DLMS_METHOD_ACCESS_MODE_NONE;
+        }
+        return DLMS_METHOD_ACCESS_MODE_ACCESS;
     }
 
     // Only clock methods are allowed.

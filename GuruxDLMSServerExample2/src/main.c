@@ -192,7 +192,9 @@ int main(int argc, char* argv[])
     BB_ATTACH(settings.base.ctoSChallenge, C2S_CHALLENGE, 0);
     //Allocate space for server challenge.
     BB_ATTACH(settings.base.stoCChallenge, S2C_CHALLENGE, 0);
-
+    //Set master key (KEK) to 1111111111111111.
+    unsigned char KEK[16] = {0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31};
+    memcpy(settings.base.kek, KEK, sizeof(KEK));
     //Allocate space for read list.
     vec_attach(&settings.transaction.targets, events, 0, sizeof(events) / sizeof(events[0]));
 
@@ -202,13 +204,20 @@ int main(int argc, char* argv[])
     if ((ret = svr_initialize(&settings)) != 0)
     {
         //TODO: Show error.
-        return;
+        return ret;
     }
     char buff[512];
     printf("Logical Name DLMS Server in port %d.\n", port);
     printf("Example connection settings:\n");
     printf("GuruxDLMSClientExample -h localhost -p %d\n", port);
-
+    printf("----------------------------------------------------------\n");
+    println("System Title", settings.base.cipher.systemTitle, sizeof(settings.base.cipher.systemTitle));
+    println("Authentication key", settings.base.cipher.authenticationKey, sizeof(settings.base.cipher.authenticationKey));
+    println("Block cipher key", settings.base.cipher.blockCipherKey, sizeof(settings.base.cipher.blockCipherKey));
+    println("Client System title", settings.base.preEstablishedSystemTitle, sizeof(settings.base.preEstablishedSystemTitle));
+    println("Master key (KEK)", settings.base.kek, sizeof(settings.base.kek));
+    printf("----------------------------------------------------------\n");
+    printf("Press Enter to close application.\r\n");
     ls = socket(AF_INET, SOCK_STREAM, 0);
     add.sin_port = htons(port);
     add.sin_addr.s_addr = htonl(INADDR_ANY);

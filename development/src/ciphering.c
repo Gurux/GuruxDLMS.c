@@ -892,13 +892,17 @@ int cip_decrypt(
 
 static const unsigned char WRAP_IV[] = { 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6 };
 
-int cip_encryptKey(gxByteBuffer* kek, gxByteBuffer* data, gxByteBuffer* output)
+int cip_encryptKey(
+    unsigned char* kek,
+    unsigned char size,
+    gxByteBuffer* data,
+    gxByteBuffer* output)
 {
     unsigned char buf[16] = { 0 };
     unsigned char buf2[16] = { 0 };
     unsigned char n, j, i;
 
-    if (kek == NULL || kek->size != 16 ||
+    if (kek == NULL || size != 16 ||
         data == NULL || data->size != 16 ||
         output == NULL)
     {
@@ -917,7 +921,7 @@ int cip_encryptKey(gxByteBuffer* kek, gxByteBuffer* data, gxByteBuffer* output)
         {
             memcpy(buf, output->data, 8);
             memcpy(buf + 8, output->data + (8 * i), 8);
-            gxaes_ecb_encrypt(buf, kek->data, buf2, 16);
+            gxaes_ecb_encrypt(buf, kek, buf2, 16);
             unsigned int t = n * j + i;
             for (int k = 1; t != 0; k++)
             {
@@ -933,7 +937,9 @@ int cip_encryptKey(gxByteBuffer* kek, gxByteBuffer* data, gxByteBuffer* output)
 }
 
 int cip_decryptKey(
-    gxByteBuffer* kek,
+    unsigned char* kek,
+    //KEK size.
+    unsigned char size,
     gxByteBuffer* data,
     gxByteBuffer* output)
 {
@@ -946,7 +952,7 @@ int cip_decryptKey(
     unsigned short t;
     // Amount of 64-bit blocks.
     n = (unsigned char)(bb_size(data) >> 3);
-    if (data == NULL || data->size != n * 8 ||
+    if (kek == NULL || size != 16 || data == NULL || data->size != n * 8 ||
         output == NULL)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -976,7 +982,7 @@ int cip_decryptKey(
                 buf[sizeof(WRAP_IV) - k] ^= v;
                 t = (unsigned short)(t >> 8);
             }
-            gxaes_ecb_decrypt(buf, kek->data, buf2, 16);
+            gxaes_ecb_decrypt(buf, kek, buf2, 16);
             memcpy(a, buf2, 8);
             memcpy(output->data + 8 * (i - 1), buf2 + 8, 8);
         }

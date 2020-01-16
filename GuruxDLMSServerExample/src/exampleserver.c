@@ -2312,7 +2312,7 @@ void svr_postAction(
             println("System Title", &settings->cipher.systemTitle);
             println("Authentication key", &settings->cipher.authenticationKey);
             println("Block cipher key", &settings->cipher.blockCipherKey);
-            println("Master key (KEK) title", &settings->kek);
+            println("Master key (KEK)", &settings->kek);
 #endif
         }
     }

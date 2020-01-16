@@ -34,6 +34,8 @@ char DATAFILE[FILENAME_MAX];
 char IMAGEFILE[FILENAME_MAX];
 char TRACEFILE[FILENAME_MAX];
 
+void println(char* desc, unsigned char* data, unsigned char length);
+
 int svr_start(
     connection *con,
     unsigned short port);

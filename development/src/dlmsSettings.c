@@ -107,7 +107,11 @@ void cl_init(
     bb_init(&settings->password);
     bb_addString(&settings->password, password);
     memset(settings->sourceSystemTitle, 0, sizeof(settings->sourceSystemTitle));
+#ifdef DLMS_IGNORE_MALLOC
+    memset(settings->kek, 0, sizeof(settings->kek));
+#else
     bb_init(&settings->kek);
+#endif //DLMS_IGNORE_MALLOC
     settings->maxServerPDUSize = 1024;
     settings->maxPduSize = 0xFFFF;
     settings->server = 0;
@@ -165,7 +169,11 @@ void cl_clear(
 #endif //DLMS_IGNORE_MALLOC
     memset(settings->sourceSystemTitle, 0, sizeof(settings->sourceSystemTitle));
     bb_clear(&settings->password);
+#ifdef DLMS_IGNORE_MALLOC
+    memset(settings->kek, 0, sizeof(settings->kek));
+#else
     bb_clear(&settings->kek);
+#endif //DLMS_IGNORE_MALLOC
     oa_clear(&settings->objects);
     settings->connected = DLMS_CONNECTION_STATE_NONE;
     settings->customChallenges = 0;

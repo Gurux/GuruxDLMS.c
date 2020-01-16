@@ -5437,12 +5437,21 @@ int dlms_secure(
 #ifdef DLMS_IGNORE_HIGH_SHA256
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #else
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
+                (ret = bb_set(&challenge, settings->cipher.systemTitle, 8)) != 0 ||
+                (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
+            {
+                return ret;
+            }
+#else
             if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
                 (ret = bb_set(&challenge, settings->cipher.systemTitle.data, settings->cipher.systemTitle.size)) != 0 ||
                 (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
             {
                 return ret;
             }
+#endif //DLMS_IGNORE_MALLOC
             if (settings->server)
             {
                 if ((ret = bb_set(&challenge, settings->ctoSChallenge.data, settings->ctoSChallenge.size)) != 0 ||

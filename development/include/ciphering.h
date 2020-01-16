@@ -140,14 +140,18 @@ int cip_decrypt(
 
 // Encrypt data using AES RFC3394.
 int cip_encryptKey(
-    gxByteBuffer* kek,
+    unsigned char* kek,
+    //KEK size.
+    unsigned char size,
     gxByteBuffer* data,
     gxByteBuffer* output);
 
 // Decrypt data using AES RFC3394.
 //Returns DLMS_ERROR_CODE_FALSE if data is not encrypted with the key.
 int cip_decryptKey(
-    gxByteBuffer* kek,
+    unsigned char* kek,
+    //KEK size.
+    unsigned char size,
     gxByteBuffer* data,
     gxByteBuffer* output);
 

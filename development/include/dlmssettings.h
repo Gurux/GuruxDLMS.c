@@ -80,7 +80,11 @@ extern "C" {
         DLMS_INTERFACE_TYPE interfaceType;
         DLMS_AUTHENTICATION authentication;
         gxByteBuffer password;
+#ifndef DLMS_IGNORE_MALLOC
         gxByteBuffer kek;
+#else
+        unsigned char kek[16];
+#endif //DLMS_IGNORE_MALLOC
         /**
         * DLMS version number.
         */

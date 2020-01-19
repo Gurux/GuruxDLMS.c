@@ -580,7 +580,14 @@ int var_getDateTime2(
         bb_setInt16(ba, dateTime->deviation);
     }
     //Add clock status
-    bb_setUInt8(ba, dateTime->status);
+    if ((dateTime->skip & DATETIME_SKIPS_STATUS) != 0)
+    {
+        bb_setUInt8(ba, 0xFF);
+    }
+    else
+    {
+        bb_setUInt8(ba, dateTime->status);
+    }
     return 0;
 }
 

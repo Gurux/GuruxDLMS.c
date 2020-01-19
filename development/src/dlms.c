@@ -1279,6 +1279,11 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     time_init(t, year, mon, day, hour, min, sec, 0, deviation);
     t->skip = skip;
     t->status = status;
+    if (status == 0xFF)
+    {
+        t->skip = (DATETIME_SKIPS)(t->skip | DATETIME_SKIPS_STATUS);
+        t->status = 0;
+    }
 #else
     t->value.tm_yday = 0;
     t->value.tm_year = year;
@@ -1338,6 +1343,11 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     if ((ret = bb_getUInt8(buff, &ch)) != 0)
     {
         return ret;
+    }
+    if (ch == 0xFF)
+    {
+        t->skip = (DATETIME_SKIPS)(t->skip | DATETIME_SKIPS_STATUS);
+        ch = 0;
     }
     status = ch;
     t->status = (DLMS_CLOCK_STATUS)status;

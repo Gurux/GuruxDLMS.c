@@ -71,7 +71,9 @@ extern "C" {
         // Hundreds of seconds part of date time is skipped.
         DATETIME_SKIPS_MS = 0x80,
         //Devitation is skipped.
-        DATETIME_SKIPS_DEVITATION = 0x100
+        DATETIME_SKIPS_DEVITATION = 0x100,
+        //Status is skipped.
+        DATETIME_SKIPS_STATUS = 0x200
     } DATETIME_SKIPS;
 
     typedef struct

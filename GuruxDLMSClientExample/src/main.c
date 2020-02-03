@@ -515,6 +515,10 @@ int connectMeter(int argc, char* argv[])
         {
             printf("Error.");
         }
+        if (readTcpIpConnection(&con, address, port, readObjects, invocationCounter) != 0)
+        {
+            printf("Error.");
+        }
     }
     else if (serialPort != NULL)
     {

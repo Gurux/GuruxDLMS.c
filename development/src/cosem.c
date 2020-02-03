@@ -470,6 +470,7 @@ int cosem_init2(
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
         break;
     case DLMS_OBJECT_TYPE_AUTO_CONNECT:
+        object->version = 2;
         break;
     case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
         break;
@@ -495,6 +496,7 @@ int cosem_init2(
         break;
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
     case DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP:
+        object->version = 1;
         break;
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
         break;
@@ -509,6 +511,7 @@ int cosem_init2(
     case DLMS_OBJECT_TYPE_LIMITER:
         break;
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
+        object->version = 1;
         break;
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
         object->version = 1;

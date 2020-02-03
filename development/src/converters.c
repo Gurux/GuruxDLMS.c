@@ -1519,7 +1519,9 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
     bb_addString(&ba, "\r\nIndex: 12 Value: ");
     bb_addIntAsString(&ba, object->alarm);
     bb_addString(&ba, "\r\nIndex: 13 Value: ");
-    bb_addIntAsString(&ba, object->primaryAddress);
+    bb_addIntAsString(&ba, object->configuration);
+    bb_addString(&ba, "\r\nIndex: 14 Value: ");
+    bb_addIntAsString(&ba, object->encryptionKeyStatus);
     bb_addString(&ba, "\r\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);

@@ -797,7 +797,7 @@ int com_close(
 #endif
         connection->comPort = INVALID_HANDLE_VALUE;
     }
-    cl_clear(&connection->settings);
+    // cl_clear(&connection->settings);
     return ret;
 }
 
@@ -909,6 +909,10 @@ int com_initializeConnection(
     if (connection->trace > GX_TRACE_LEVEL_WARNING)
     {
         printf("InitializeConnection\r\n");
+    }
+    if (connection->data.size == 0)
+    {
+        bb_capacity(&connection->data, 500);
     }
 
     mes_init(&messages);

@@ -51,7 +51,7 @@
 #include "../include/helpers.h"
 #include "../include/serverevents.h"
 
-int cosem_getByteBuffer(gxValueEventArg * e)
+int cosem_getByteBuffer(gxValueEventArg* e)
 {
     e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
     e->byteArray = 1;
@@ -274,7 +274,7 @@ int cosem_getActionSchedule(
                 break;
             }
 #ifndef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)& tm)) != 0)
+            if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&tm)) != 0)
             {
                 break;
             }
@@ -284,7 +284,7 @@ int cosem_getActionSchedule(
             }
             tmp.vt = DLMS_DATA_TYPE_TIME;
 #else
-            if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)& tm, sizeof(gxtime))) != 0)
+            if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&tm, sizeof(gxtime))) != 0)
             {
                 break;
             }
@@ -335,9 +335,9 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
         if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 2)) != 0 ||
 #ifndef DLMS_IGNORE_MALLOC
-            (ret = arr_getByIndex(list, pos, (void**)& dp)) != 0 ||
+            (ret = arr_getByIndex(list, pos, (void**)&dp)) != 0 ||
 #else
-            (ret = arr_getByIndex(list, pos, (void**)& dp, sizeof(gxDayProfile))) != 0 ||
+            (ret = arr_getByIndex(list, pos, (void**)&dp, sizeof(gxDayProfile))) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_UINT8)) != 0 ||
             (ret = bb_setUInt8(ba, dp->dayId)) != 0 ||
@@ -351,7 +351,7 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
         for (pos2 = 0; pos2 != dp->daySchedules.size; ++pos2)
         {
 #ifndef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)& action)) != 0 ||
+            if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action)) != 0 ||
                 (ret = var_setTimeAsOctetString(&tmp, &action->startTime)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(ba, 3)) != 0 ||
@@ -371,7 +371,7 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
             }
 
 #else
-            if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)& action, sizeof(gxDayProfileAction))) != 0 ||
+            if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action, sizeof(gxDayProfileAction))) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(ba, 3)) != 0 ||
                 (ret = cosem_setTimeAsOctectString(ba, &action->startTime)) != 0 ||
@@ -410,7 +410,7 @@ int getActivityCalendarWeekProfileTable(gxArray* list, gxByteBuffer* ba)
 #ifdef DLMS_IGNORE_MALLOC
         if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 8)) != 0 ||
-            (ret = arr_getByIndex(list, pos, (void**)& wp, sizeof(gxWeekProfile))) != 0 ||
+            (ret = arr_getByIndex(list, pos, (void**)&wp, sizeof(gxWeekProfile))) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = bb_setUInt8(ba, (unsigned char)wp->name.size)) != 0 ||
             (ret = bb_set(ba, wp->name.value, wp->name.size)) != 0 ||
@@ -434,7 +434,7 @@ int getActivityCalendarWeekProfileTable(gxArray* list, gxByteBuffer* ba)
 #else
         if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 8)) != 0 ||
-            (ret = arr_getByIndex(list, pos, (void**)& wp)) != 0 ||
+            (ret = arr_getByIndex(list, pos, (void**)&wp)) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = bb_setUInt8(ba, (unsigned char)bb_size(&wp->name))) != 0 ||
             (ret = bb_set2(ba, &wp->name, 0, bb_size(&wp->name))) != 0 ||
@@ -475,7 +475,7 @@ int getActivityCalendarSeasonProfile(gxArray* list, gxByteBuffer* ba)
     for (pos = 0; pos != list->size; ++pos)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(list, pos, (void**)& sp, sizeof(gxSeasonProfile))) != 0)
+        if ((ret = arr_getByIndex(list, pos, (void**)&sp, sizeof(gxSeasonProfile))) != 0)
         {
             break;
         }
@@ -498,7 +498,7 @@ int getActivityCalendarSeasonProfile(gxArray* list, gxByteBuffer* ba)
 #else
         if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 3)) != 0 ||
-            (ret = arr_getByIndex(list, pos, (void**)& sp)) != 0 ||
+            (ret = arr_getByIndex(list, pos, (void**)&sp)) != 0 ||
             //Add name.
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
             (ret = bb_setUInt8(ba, (unsigned char)bb_size(&sp->name))) != 0 ||
@@ -828,7 +828,7 @@ int getUserList(
     for (pos = (unsigned short)e->transactionStartIndex; pos < target->userList.size; ++pos)
     {
 #ifndef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(&target->userList, pos, (void**)& it)) != 0)
+        if ((ret = arr_getByIndex(&target->userList, pos, (void**)&it)) != 0)
         {
             break;
         }
@@ -836,7 +836,7 @@ int getUserList(
         name = it->value;
         len = (unsigned char)strlen(name);
 #else
-        if ((ret = arr_getByIndex(&target->userList, pos, (void**)& it, sizeof(gxUser))) != 0)
+        if ((ret = arr_getByIndex(&target->userList, pos, (void**)&it, sizeof(gxUser))) != 0)
         {
             break;
         }
@@ -1278,7 +1278,7 @@ int cosem_getAutoAnswer(
                 break;
             }
 #ifndef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)& kv)) != 0 ||
+            if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&kv)) != 0 ||
                 (ret = var_setDateTime(&f, (gxtime*)kv->key)) != 0 ||
                 (ret = var_setDateTime(&s, (gxtime*)kv->value)) != 0)
             {
@@ -1287,7 +1287,7 @@ int cosem_getAutoAnswer(
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)& kv, sizeof(gxTimePair))) != 0)
+            if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&kv, sizeof(gxTimePair))) != 0)
             {
                 var_clear(&f);
                 var_clear(&s);
@@ -1391,7 +1391,7 @@ int cosem_getAutoConnect(
             }
 
 #ifndef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->callingWindow, pos, (void**)& k)) != 0 ||
+            if ((ret = arr_getByIndex(&object->callingWindow, pos, (void**)&k)) != 0 ||
                 (ret = var_setDateTime(&f, (gxtime*)k->key)) != 0 ||
                 (ret = var_setDateTime(&s, (gxtime*)k->value)) != 0 ||
                 (ret = var_getBytes2(&f, DLMS_DATA_TYPE_OCTET_STRING, data)) != 0 ||
@@ -1404,7 +1404,7 @@ int cosem_getAutoConnect(
             var_clear(&f);
             var_clear(&s);
 #else
-            if ((ret = arr_getByIndex(&object->callingWindow, pos, (void**)& k, sizeof(gxTimePair))) != 0)
+            if ((ret = arr_getByIndex(&object->callingWindow, pos, (void**)&k, sizeof(gxTimePair))) != 0)
             {
                 break;
             }
@@ -1433,7 +1433,7 @@ int cosem_getAutoConnect(
         {
 #ifndef DLMS_IGNORE_MALLOC
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-                (ret = arr_getByIndex(&object->destinations, pos, (void**)& it)) != 0 ||
+                (ret = arr_getByIndex(&object->destinations, pos, (void**)&it)) != 0 ||
                 (ret = hlp_setObjectCount(it->size, data)) != 0 ||
                 (ret = bb_set(data, it->data, it->size)) != 0)
             {
@@ -1441,7 +1441,7 @@ int cosem_getAutoConnect(
             }
 #else
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-                (ret = arr_getByIndex(&object->destinations, pos, (void**)& it, sizeof(gxDestination))) != 0 ||
+                (ret = arr_getByIndex(&object->destinations, pos, (void**)&it, sizeof(gxDestination))) != 0 ||
                 (ret = hlp_setObjectCount(it->size, data)) != 0 ||
                 (ret = bb_set(data, it->value, it->size)) != 0)
             {
@@ -1717,9 +1717,9 @@ int cosem_getSecuritySetup(
         for (pos = 0; pos != object->certificates.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->certificates, pos, (void**)& it, sizeof(gxCertificateInfo))) != 0 ||
+            if ((ret = arr_getByIndex(&object->certificates, pos, (void**)&it, sizeof(gxCertificateInfo))) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->certificates, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->certificates, pos, (void**)&it)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = hlp_setObjectCount(6, data)) != 0 ||
@@ -1920,7 +1920,7 @@ int cosem_getIP4Setup(
         unsigned long* v;
         for (pos = 0; pos != object->multicastIPAddress.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->multicastIPAddress, pos, (void**)& v, sizeof(unsigned long))) != 0 ||
+            if ((ret = arr_getByIndex(&object->multicastIPAddress, pos, (void**)&v, sizeof(unsigned long))) != 0 ||
                 (ret = bb_setUInt32(data, *v)) != 0)
             {
                 break;
@@ -1952,7 +1952,7 @@ int cosem_getIP4Setup(
         for (pos = 0; pos != object->ipOptions.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->ipOptions, pos, (void**)& it, sizeof(gxip4SetupIpOption))) != 0 ||
+            if ((ret = arr_getByIndex(&object->ipOptions, pos, (void**)&it, sizeof(gxip4SetupIpOption))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Type
@@ -1969,7 +1969,7 @@ int cosem_getIP4Setup(
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&object->ipOptions, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->ipOptions, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Type
@@ -2110,9 +2110,9 @@ int cosem_getImageTransfer(
             for (pos = 0; pos != object->imageActivateInfo.size; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
-                if ((ret = arr_getByIndex(&object->imageActivateInfo, pos, (void**)& ai, sizeof(gxImageActivateInfo))) != 0 ||
+                if ((ret = arr_getByIndex(&object->imageActivateInfo, pos, (void**)&ai, sizeof(gxImageActivateInfo))) != 0 ||
 #else
-                if ((ret = arr_getByIndex(&object->imageActivateInfo, pos, (void**)& ai)) != 0 ||
+                if ((ret = arr_getByIndex(&object->imageActivateInfo, pos, (void**)&ai)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                     (ret = bb_setUInt8(data, 3)) != 0 ||
@@ -2173,7 +2173,7 @@ int getColumns(
     {
         pduSize = (unsigned short)ba->size;
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(list, pos, (void**)& it, sizeof(gxTarget))) != 0 ||
+        if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxTarget))) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 4)) != 0 ||
             //ClassID
@@ -2193,7 +2193,7 @@ int getColumns(
             break;
         }
 #else
-        if ((ret = arr_getByIndex(list, pos, (void**)& it)) != 0 ||
+        if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 4)) != 0 ||
             //ClassID
@@ -2286,7 +2286,7 @@ int getSelectedColumns(
         // Find columns and update only them.
         for (pos2 = 0; pos2 != captureObjects->size; ++pos2)
         {
-            if ((ret = arr_getByIndex(captureObjects, pos2, (void**)& c)) != 0)
+            if ((ret = arr_getByIndex(captureObjects, pos2, (void**)&c)) != 0)
             {
                 return ret;
             }
@@ -2336,8 +2336,8 @@ int cosem_getColumns(
             columns->size = count;
             for (pos = 0; pos != count; ++pos)
             {
-                if ((ret = arr_getByIndex(captureObjects, pos, (void**)& k, sizeof(gxTarget))) != 0 ||
-                    (ret = arr_getByIndex(columns, pos, (void**)& k2, sizeof(gxTarget))) != 0)
+                if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k, sizeof(gxTarget))) != 0 ||
+                    (ret = arr_getByIndex(columns, pos, (void**)&k2, sizeof(gxTarget))) != 0)
                 {
                     break;
                 }
@@ -2364,7 +2364,7 @@ int cosem_getColumns(
                 }
                 for (pos2 = 0; pos2 != captureObjects->size; ++pos2)
                 {
-                    if ((ret = arr_getByIndex(captureObjects, pos2, (void**)& k, sizeof(gxTarget))) != 0)
+                    if ((ret = arr_getByIndex(captureObjects, pos2, (void**)&k, sizeof(gxTarget))) != 0)
                     {
                         break;
                     }
@@ -2375,7 +2375,7 @@ int cosem_getColumns(
                             return DLMS_ERROR_CODE_INVALID_PARAMETER;
                         }
                         ++columns->size;
-                        if ((ret = arr_getByIndex(columns, index, (void**)& k2, sizeof(gxTarget))) != 0)
+                        if ((ret = arr_getByIndex(columns, index, (void**)&k2, sizeof(gxTarget))) != 0)
                         {
                             break;
                         }
@@ -2405,8 +2405,8 @@ int cosem_getColumns(
         columns->size = count;
         for (pos = start - 1; pos != count; ++pos)
         {
-            if ((ret = arr_getByIndex(captureObjects, pos, (void**)& k, sizeof(gxTarget))) != 0 ||
-                (ret = arr_getByIndex(columns, index, (void**)& k2, sizeof(gxTarget))) != 0)
+            if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k, sizeof(gxTarget))) != 0 ||
+                (ret = arr_getByIndex(columns, index, (void**)&k2, sizeof(gxTarget))) != 0)
             {
                 break;
             }
@@ -2462,7 +2462,7 @@ int cosem_getColumns(
                 }
                 for (pos = start - 1; pos != count; ++pos)
                 {
-                    if ((ret = arr_getByIndex(captureObjects, pos, (void**)& k)) != 0 ||
+                    if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k)) != 0 ||
                         (ret = arr_push(columns, k)) != 0)
                     {
                         return ret;
@@ -2475,7 +2475,7 @@ int cosem_getColumns(
         {
             for (pos = 0; pos != captureObjects->size; ++pos)
             {
-                if ((ret = arr_getByIndex(captureObjects, pos, (void**)& k)) != 0 ||
+                if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k)) != 0 ||
                     (ret = arr_push(columns, k)) != 0)
                 {
                     break;
@@ -2498,7 +2498,7 @@ int cosem_getRow(
     int ret, pos;
     dlmsVARIANT* col;
     variantArray* row;
-    if ((ret = arr_getByIndex(table, index, (void**)& row)) != 0)
+    if ((ret = arr_getByIndex(table, index, (void**)&row)) != 0)
     {
         return ret;
     }
@@ -2685,7 +2685,7 @@ int getProfileGenericData(
                 unsigned short pos;
                 for (pos = 0; pos != object->buffer.size; ++pos)
                 {
-                    if ((ret = arr_getByIndex(&object->buffer, pos, (void**)& row)) != 0 ||
+                    if ((ret = arr_getByIndex(&object->buffer, pos, (void**)&row)) != 0 ||
                         (ret = va_getByIndex(row, 0, &it)) != 0)
                     {
                         break;
@@ -2759,7 +2759,7 @@ int getProfileGenericData(
                     }
                     for (; e->transactionStartIndex < e->transactionEndIndex; ++e->transactionStartIndex)
                     {
-                        if ((ret = arr_getByIndex(&object->buffer, (unsigned short)e->transactionStartIndex, (void**)& row)) != 0 ||
+                        if ((ret = arr_getByIndex(&object->buffer, (unsigned short)e->transactionStartIndex, (void**)&row)) != 0 ||
                             (ret = cosem_getRow(&object->buffer, e->transactionStartIndex, &captureObjects, &object->captureObjects, reply)) != 0)
                         {
                             break;
@@ -3025,7 +3025,7 @@ int cosem_getLimiter(
         for (pos = 0; pos != object->emergencyProfileGroupIDs.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->emergencyProfileGroupIDs, pos, (void**)& it, sizeof(unsigned short))) != 0 ||
+            if ((ret = arr_getByIndex(&object->emergencyProfileGroupIDs, pos, (void**)&it, sizeof(unsigned short))) != 0 ||
                 (ret = bb_setUInt16(data, *it)) != 0)
             {
                 break;
@@ -3096,7 +3096,7 @@ int cosem_getmMbusClient(
     gxValueEventArg* e)
 {
     int ret = 0, pos;
-    gxMBusClient* object = (gxMBusClient*) e->target;
+    gxMBusClient* object = (gxMBusClient*)e->target;
 #ifdef DLMS_IGNORE_MALLOC
     gxCaptureDefinition* it;
 #else
@@ -3135,7 +3135,7 @@ int cosem_getmMbusClient(
         for (pos = 0; pos != object->captureDefinition.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->captureDefinition, pos, (void**)& it, sizeof(gxCaptureDefinition))) != 0 ||
+            if ((ret = arr_getByIndex(&object->captureDefinition, pos, (void**)&it, sizeof(gxCaptureDefinition))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //
@@ -3150,7 +3150,7 @@ int cosem_getmMbusClient(
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&object->captureDefinition, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->captureDefinition, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //
@@ -3202,6 +3202,14 @@ int cosem_getmMbusClient(
     else if (e->index == 12)
     {
         ret = var_setUInt8(&e->value, object->alarm);
+    }
+    else if (e->index == 13 && object->base.version != 0)
+    {
+        ret = var_setUInt16(&e->value, object->configuration);
+    }
+    else if (e->index == 14 && object->base.version != 0)
+    {
+        ret = var_setEnum(&e->value, object->encryptionKeyStatus);
     }
     else
     {
@@ -3255,7 +3263,7 @@ int cosem_getModemConfiguration(
         for (pos = 0; pos != target->initialisationStrings.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&target->initialisationStrings, pos, (void**)& mi, sizeof(gxModemInitialisation))) != 0 ||
+            if ((ret = arr_getByIndex(&target->initialisationStrings, pos, (void**)&mi, sizeof(gxModemInitialisation))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Add request.
@@ -3273,7 +3281,7 @@ int cosem_getModemConfiguration(
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&target->initialisationStrings, pos, (void**)& mi)) != 0 ||
+            if ((ret = arr_getByIndex(&target->initialisationStrings, pos, (void**)&mi)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Add request.
@@ -3336,7 +3344,7 @@ int cosem_getModemConfiguration(
             for (pos = 0; pos != target->modemProfile.size; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
-                if ((ret = arr_getByIndex(&target->modemProfile, pos, (void**)& ba, sizeof(gxModemProfile))) != 0 ||
+                if ((ret = arr_getByIndex(&target->modemProfile, pos, (void**)&ba, sizeof(gxModemProfile))) != 0 ||
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                     (ret = hlp_setObjectCount(ba->size, data)) != 0 ||
                     (ret = bb_set(data, ba->value, ba->size)) != 0)
@@ -3344,7 +3352,7 @@ int cosem_getModemConfiguration(
                     break;
                 }
 #else
-                if ((ret = arr_getByIndex(&target->modemProfile, pos, (void**)& ba)) != 0 ||
+                if ((ret = arr_getByIndex(&target->modemProfile, pos, (void**)&ba)) != 0 ||
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                     (ret = hlp_setObjectCount(ba->size, data)) != 0 ||
                     (ret = bb_set(data, ba->data, ba->size)) != 0)
@@ -3423,9 +3431,9 @@ int cosem_getPppSetup(
         {
 
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->lcpOptions, pos, (void**)& lcpItem, sizeof(gxpppSetupLcpOption))) != 0 ||
+            if ((ret = arr_getByIndex(&object->lcpOptions, pos, (void**)&lcpItem, sizeof(gxpppSetupLcpOption))) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->lcpOptions, pos, (void**)& lcpItem)) != 0 ||
+            if ((ret = arr_getByIndex(&object->lcpOptions, pos, (void**)&lcpItem)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
@@ -3457,9 +3465,9 @@ int cosem_getPppSetup(
         {
 
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->ipcpOptions, pos, (void**)& ipcpItem, sizeof(gxpppSetupIPCPOption))) != 0 ||
+            if ((ret = arr_getByIndex(&object->ipcpOptions, pos, (void**)&ipcpItem, sizeof(gxpppSetupIPCPOption))) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->ipcpOptions, pos, (void**)& ipcpItem)) != 0 ||
+            if ((ret = arr_getByIndex(&object->ipcpOptions, pos, (void**)&ipcpItem)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
@@ -3543,7 +3551,7 @@ int cosem_getRegisterActivation(
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
             if ((ret = oa_getByIndex(&object->registerAssignment, pos, &od)) != 0 ||
 #else
-            if ((ret = arr_getByIndex2(&object->registerAssignment, pos, (void**)& od, sizeof(gxObject))) != 0 ||
+            if ((ret = arr_getByIndex2(&object->registerAssignment, pos, (void**)&od, sizeof(gxObject))) != 0 ||
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -3578,7 +3586,7 @@ int cosem_getRegisterActivation(
         for (pos = 0; pos != object->maskList.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->maskList, pos, (void**)& a, sizeof(gxRegisterActivationMask))) != 0 ||
+            if ((ret = arr_getByIndex(&object->maskList, pos, (void**)&a, sizeof(gxRegisterActivationMask))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0)
             {
@@ -3616,7 +3624,7 @@ int cosem_getRegisterActivation(
                 }
             }
 #else
-            if ((ret = arr_getByIndex(&object->maskList, pos, (void**)& a)) != 0 ||
+            if ((ret = arr_getByIndex(&object->maskList, pos, (void**)&a)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
@@ -3735,9 +3743,9 @@ int cosem_getRegisterMonitor(
                     (ret = bb_setUInt8(data, 2)) != 0 ||
 
 #ifdef DLMS_IGNORE_MALLOC
-                    (ret = arr_getByIndex(&object->actions, pos, (void**)& actionSet, sizeof(gxActionSet))) != 0 ||
+                    (ret = arr_getByIndex(&object->actions, pos, (void**)&actionSet, sizeof(gxActionSet))) != 0 ||
 #else
-                    (ret = arr_getByIndex(&object->actions, pos, (void**)& actionSet)) != 0 ||
+                    (ret = arr_getByIndex(&object->actions, pos, (void**)&actionSet)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
 
 
@@ -3806,7 +3814,7 @@ int cosem_getSapAssignment(
 #ifdef DLMS_IGNORE_MALLOC
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
-                (ret = arr_getByIndex(&object->sapAssignmentList, pos, (void**)& it, sizeof(gxSapItem))) != 0 ||
+                (ret = arr_getByIndex(&object->sapAssignmentList, pos, (void**)&it, sizeof(gxSapItem))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(data, it->id)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
@@ -3818,7 +3826,7 @@ int cosem_getSapAssignment(
 #else
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
-                (ret = arr_getByIndex(&object->sapAssignmentList, pos, (void**)& it)) != 0 ||
+                (ret = arr_getByIndex(&object->sapAssignmentList, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(data, it->id)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
@@ -3864,9 +3872,9 @@ int cosem_getSchedule(
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 10)) != 0 ||
 #ifdef DLMS_IGNORE_MALLOC
-                (ret = arr_getByIndex(&object->entries, pos, (void**)& se, sizeof(gxScheduleEntry))) != 0 ||
+                (ret = arr_getByIndex(&object->entries, pos, (void**)&se, sizeof(gxScheduleEntry))) != 0 ||
 #else
-                (ret = arr_getByIndex(&object->entries, pos, (void**)& se)) != 0 ||
+                (ret = arr_getByIndex(&object->entries, pos, (void**)&se)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
 
                 //Add index.
@@ -3941,9 +3949,9 @@ int cosem_getScriptTable(
         for (pos = 0; pos != object->scripts.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->scripts, pos, (void**)& it, sizeof(gxScript))) != 0 ||
+            if ((ret = arr_getByIndex(&object->scripts, pos, (void**)&it, sizeof(gxScript))) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->scripts, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->scripts, pos, (void**)&it)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -3958,9 +3966,9 @@ int cosem_getScriptTable(
             for (pos2 = 0; pos2 != it->actions.size; ++pos2)
             {
 #ifdef DLMS_IGNORE_MALLOC
-                if ((ret = arr_getByIndex(&it->actions, pos2, (void**)& a, sizeof(gxScriptAction))) != 0 ||
+                if ((ret = arr_getByIndex(&it->actions, pos2, (void**)&a, sizeof(gxScriptAction))) != 0 ||
 #else
-                if ((ret = arr_getByIndex(&it->actions, pos2, (void**)& a)) != 0 ||
+                if ((ret = arr_getByIndex(&it->actions, pos2, (void**)&a)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                     (ret = bb_setUInt8(data, 5)) != 0 ||
@@ -4024,9 +4032,9 @@ int cosem_getSpecialDaysTable(
         for (pos = 0; pos != object->entries.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->entries, pos, (void**)& sd, sizeof(gxSpecialDay))) != 0 ||
+            if ((ret = arr_getByIndex(&object->entries, pos, (void**)&sd, sizeof(gxSpecialDay))) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->entries, pos, (void**)& sd)) != 0 ||
+            if ((ret = arr_getByIndex(&object->entries, pos, (void**)&sd)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
@@ -4165,7 +4173,7 @@ int cosem_getMessageHandler(
 #ifdef DLMS_IGNORE_MALLOC
         for (pos = 0; pos != object->listeningWindow.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)& it, sizeof(gxTimePair))) != 0 ||
+            if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&it, sizeof(gxTimePair))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //Add start
@@ -4179,7 +4187,7 @@ int cosem_getMessageHandler(
 #else
         for (pos = 0; pos != object->listeningWindow.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //Add start
@@ -4220,9 +4228,9 @@ int cosem_getMessageHandler(
             for (pos = 0; pos != object->sendersAndActions.size; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
-                if ((ret = arr_getByIndex(&object->sendersAndActions, pos, (void**)& tmp, sizeof(dlmsVARIANT))) != 0 ||
+                if ((ret = arr_getByIndex(&object->sendersAndActions, pos, (void**)&tmp, sizeof(dlmsVARIANT))) != 0 ||
 #else
-                if ((ret = arr_getByIndex(&object->sendersAndActions, pos, (void**)& tmp)) != 0 ||
+                if ((ret = arr_getByIndex(&object->sendersAndActions, pos, (void**)&tmp)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                     (ret = var_getBytes(tmp, data)) != 0)
                 {
@@ -4266,7 +4274,7 @@ int cosem_getPushSetup(
         for (pos = 0; pos != object->pushObjectList.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)& it, sizeof(gxTarget))) != 0 ||
+            if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)&it, sizeof(gxTarget))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 4)) != 0 ||
                 //Type.
@@ -4286,7 +4294,7 @@ int cosem_getPushSetup(
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 4)) != 0 ||
                 //Type.
@@ -4376,7 +4384,7 @@ int cosem_getPushSetup(
         for (pos = 0; pos != object->communicationWindow.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)& d, sizeof(gxTimePair))) != 0 ||
+            if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&d, sizeof(gxTimePair))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //Start date time.
@@ -4388,7 +4396,7 @@ int cosem_getPushSetup(
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 //Start date time.
@@ -4459,9 +4467,9 @@ int cosem_getZigbeeNetworkControl(
         for (pos = 0; pos != object->activeDevices.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->activeDevices, pos, (void**)& it, sizeof(gxActiveDevice))) != 0 ||
+            if ((ret = arr_getByIndex(&object->activeDevices, pos, (void**)&it, sizeof(gxActiveDevice))) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->activeDevices, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->activeDevices, pos, (void**)&it)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 14)) != 0 ||
@@ -4576,9 +4584,9 @@ int getUnitCharge(gxUnitCharge* target, gxValueEventArg* e)
     for (pos = 0; pos != target->chargeTables.size; ++pos)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(&target->chargeTables, pos, (void**)& it, sizeof(gxChargeTable))) != 0 ||
+        if ((ret = arr_getByIndex(&target->chargeTables, pos, (void**)&it, sizeof(gxChargeTable))) != 0 ||
 #else
-        if ((ret = arr_getByIndex(&target->chargeTables, pos, (void**)& it)) != 0 ||
+        if ((ret = arr_getByIndex(&target->chargeTables, pos, (void**)&it)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 2)) != 0 ||
@@ -4717,7 +4725,7 @@ int cosem_getTokenGateway(
         for (pos = 0; pos != object->descriptions.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->descriptions, pos, (void**)& it, sizeof(gxTokenGatewayDescription))) != 0)
+            if ((ret = arr_getByIndex(&object->descriptions, pos, (void**)&it, sizeof(gxTokenGatewayDescription))) != 0)
             {
                 break;
             }
@@ -4728,7 +4736,7 @@ int cosem_getTokenGateway(
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&object->descriptions, pos, (void**)& it)) != 0)
+            if ((ret = arr_getByIndex(&object->descriptions, pos, (void**)&it)) != 0)
             {
                 break;
             }
@@ -4919,9 +4927,9 @@ int cosem_getAccount(
         for (pos = 0; pos != object->creditReferences.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->creditReferences, pos, (void**)& it, 6)) != 0 ||
+            if ((ret = arr_getByIndex(&object->creditReferences, pos, (void**)&it, 6)) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->creditReferences, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->creditReferences, pos, (void**)&it)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = bb_setUInt8(data, 6)) != 0 ||
@@ -4947,9 +4955,9 @@ int cosem_getAccount(
         for (pos = 0; pos != object->chargeReferences.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->chargeReferences, pos, (void**)& it, 6)) != 0 ||
+            if ((ret = arr_getByIndex(&object->chargeReferences, pos, (void**)&it, 6)) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->chargeReferences, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->chargeReferences, pos, (void**)&it)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = bb_setUInt8(data, 6)) != 0 ||
@@ -4974,9 +4982,9 @@ int cosem_getAccount(
         }
         for (pos = 0; pos != object->creditChargeConfigurations.size; ++pos)
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->creditChargeConfigurations, pos, (void**)& ccc, sizeof(gxCreditChargeConfiguration))) != 0 ||
+            if ((ret = arr_getByIndex(&object->creditChargeConfigurations, pos, (void**)&ccc, sizeof(gxCreditChargeConfiguration))) != 0 ||
 #else
-                if ((ret = arr_getByIndex(&object->creditChargeConfigurations, pos, (void**)& ccc)) != 0 ||
+                if ((ret = arr_getByIndex(&object->creditChargeConfigurations, pos, (void**)&ccc)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                     (ret = hlp_setObjectCount(3, data)) != 0 ||
@@ -4992,9 +5000,9 @@ int cosem_getAccount(
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
                     (ret = bb_setUInt8(data, 3)) != 0 ||
                     (ret = bb_setUInt8(data, (unsigned char)(ccc->collectionConfiguration << 5))) != 0)
-            {
-                break;
-            }
+                {
+                    break;
+                }
     }
     else if (e->index == 12)
     {
@@ -5012,9 +5020,9 @@ int cosem_getAccount(
         for (pos = 0; pos != object->tokenGatewayConfigurations.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->tokenGatewayConfigurations, pos, (void**)& gwc, sizeof(gxTokenGatewayConfiguration))) != 0 ||
+            if ((ret = arr_getByIndex(&object->tokenGatewayConfigurations, pos, (void**)&gwc, sizeof(gxTokenGatewayConfiguration))) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->tokenGatewayConfigurations, pos, (void**)& gwc)) != 0 ||
+            if ((ret = arr_getByIndex(&object->tokenGatewayConfigurations, pos, (void**)&gwc)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = hlp_setObjectCount(2, data)) != 0 ||
@@ -5620,7 +5628,7 @@ int cosem_getTariffPlan(gxValueEventArg* e)
         }
         for (pos = 0; pos != object->plan.specialDays.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->plan.specialDays, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->plan.specialDays, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(data, it)) != 0)
             {
@@ -5760,9 +5768,9 @@ int cosem_getGsmDiagnostic(
         for (pos = 0; pos != object->adjacentCells.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->adjacentCells, pos, (void**)& it, sizeof(gxAdjacentCell))) != 0 ||
+            if ((ret = arr_getByIndex(&object->adjacentCells, pos, (void**)&it, sizeof(gxAdjacentCell))) != 0 ||
 #else
-            if ((ret = arr_getByIndex(&object->adjacentCells, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->adjacentCells, pos, (void**)&it)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0)
@@ -5839,8 +5847,8 @@ int cosem_getParameterMonitor(
                 (ret = bb_setUInt8(data, 0)) != 0)
             {
                 //Error code is returned at the end of the function.
-    }
-    }
+            }
+        }
         else
         {
             if ((ret = cosem_setUInt16(data, object->changedParameter.target->objectType)) != 0 ||
@@ -5889,7 +5897,7 @@ int cosem_getParameterMonitor(
         for (pos = 0; pos != object->parameters.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&object->parameters, pos, (void**)& it, sizeof(gxTarget))) != 0 ||
+            if ((ret = arr_getByIndex(&object->parameters, pos, (void**)&it, sizeof(gxTarget))) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Type.
@@ -5906,7 +5914,7 @@ int cosem_getParameterMonitor(
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&object->parameters, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&object->parameters, pos, (void**)&it)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 3)) != 0 ||
                 //Type.

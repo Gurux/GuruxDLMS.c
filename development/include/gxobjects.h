@@ -135,7 +135,30 @@ extern "C" {
         /*
          * Email sending.
         */
-        DLMS_AUTO_CONNECT_MODE_EMAIL_SENDING = 6
+        DLMS_AUTO_CONNECT_MODE_EMAIL_SENDING = 6,
+        /*
+       * The device is permanently connected to the communication network.
+       */
+        AUTO_CONNECT_MODE_PERMANENTLY_CONNECT = 101,
+        /*
+        * The device is permanently connected to the communication network. No
+        * connection possible outside the calling window.
+        */
+        AUTO_CONNECT_MODE_CONNECT_WITH_CALLING_WINDOW = 102,
+        /*
+        * The device is permanently connected to the communication network.
+        * Connection is possible as soon as the connect method is invoked.
+        */
+        AUTO_CONNECT_MODE_CONNECT_INVOKED = 103,
+        /*
+        * The device is usually disconnected. It connects to the communication
+        * network as soon as the connect method is invoked
+        */
+        AUTO_CONNECT_MODE_DISCONNECT_CONNECT_INVOKED = 104,
+        /*
+        * (200..255) manufacturer specific modes
+        */
+        AUTO_CONNECT_MODE_MANUFACTURE_SPESIFIC = 200
     } DLMS_AUTO_CONNECT_MODE;
 
     typedef enum
@@ -1870,6 +1893,15 @@ extern "C" {
 
 #ifndef DLMS_IGNORE_MBUS_CLIENT
 
+typedef enum
+{
+    DLMS_MBUS_ENCRYPTION_KEY_STATUS_NO_ENCRYPTION_KEY = 0,
+    DLMS_MBUS_ENCRYPTION_KEY_STATUS_ENCRYPTION_KEY_SET,
+    DLMS_MBUS_ENCRYPTION_KEY_STATUS_ENCRYPTION_KEY_TRANSFERRED,
+    DLMS_MBUS_ENCRYPTION_KEY_STATUS_ENCRYPTION_KEY_SET_AND_TRANSFERRED,
+    DLMS_MBUS_ENCRYPTION_KEY_STATUS_ENCRYPTION_KEY_INUSE
+}DLMS_MBUS_ENCRYPTION_KEY_STATUS;
+
 #ifdef DLMS_IGNORE_MALLOC
     typedef struct
     {
@@ -1910,6 +1942,8 @@ extern "C" {
         unsigned char accessNumber;
         unsigned char status;
         unsigned char alarm;
+        unsigned short configuration;
+        DLMS_MBUS_ENCRYPTION_KEY_STATUS encryptionKeyStatus;
     } gxMBusClient;
 #endif //DLMS_IGNORE_MBUS_CLIENT
 

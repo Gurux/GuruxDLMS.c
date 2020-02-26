@@ -1041,7 +1041,7 @@ int cl_readRowsByRange(
         // Add parameter Logical name
         (ret = cosem_setOctectString2(&data, ln, 6)) == 0 &&
         //Add attribute index.
-        (ret = cosem_setUInt8(&data, 2)) == 0 &&
+        (ret = cosem_setInt8(&data, 2)) == 0 &&
         //Add version.
         (ret = cosem_setUInt16(&data, 0)) == 0)
     {

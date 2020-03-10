@@ -90,6 +90,7 @@ void cl_init(
     const char* password,
     DLMS_INTERFACE_TYPE interfaceType)
 {
+    settings->autoIncreaseInvokeID = 0;
     settings->qualityOfService = 0;
     settings->protocolVersion = 0;
 #ifndef DLMS_IGNORE_MALLOC

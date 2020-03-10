@@ -875,6 +875,7 @@ int cosem_setActionSchedule(
         var_init(&date);
         if (value->Arr != NULL)
         {
+            arr_capacity(&object->executionTime, value->Arr->size);
             for (pos = 0; pos != value->Arr->size; ++pos)
             {
                 ret = va_getByIndex(value->Arr, pos, &tmp);

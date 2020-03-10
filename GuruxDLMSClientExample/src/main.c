@@ -273,6 +273,7 @@ static void ShowHelp()
     printf(" -g \"0.0.1.0.0.255:1; 0.0.1.0.0.255:2\" Get selected object(s) with given attribute index.\r\n");
     printf(" -C \t Security Level. (None, Authentication, Encrypted, AuthenticationEncryption)");
     printf(" -v \t Invocation counter data object Logical Name. Ex. 0.0.43.1.1.255");
+    printf(" -I \t Auto increase invoke ID");
     printf("Example:\r\n");
     printf("Read LG device using TCP/IP connection.\r\n");
     printf("GuruxDlmsSample -r SN -c 16 -s 1 -h [Meter IP Address] -p [Meter Port No]\r\n");
@@ -298,7 +299,7 @@ int connectMeter(int argc, char* argv[])
     char* p, * readObjects = NULL;
     int index, a, b, c, d, e, f;
     char* invocationCounter = NULL;
-    while ((opt = getopt(argc, argv, "h:p:c:s:r:it:a:p:wP:g:S:C:v:")) != -1)
+    while ((opt = getopt(argc, argv, "h:p:c:s:r:iIt:a:p:wP:g:S:C:v:")) != -1)
     {
         switch (opt)
         {
@@ -353,6 +354,10 @@ int connectMeter(int argc, char* argv[])
         case 'i':
             //IEC.
             iec = 1;
+            break;
+        case 'I':
+            // AutoIncreaseInvokeID.
+            con.settings.autoIncreaseInvokeID = 1;
             break;
         case 'C':
             if (strcmp("None", optarg) == 0)

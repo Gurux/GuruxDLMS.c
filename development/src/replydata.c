@@ -50,6 +50,7 @@ unsigned char reply_isMoreData(gxReplyData* reply)
 */
 void reply_init(gxReplyData* reply)
 {
+    reply->invokeId = 0;
     reply->commandType = 0;
     reply->moreData = DLMS_DATA_REQUEST_TYPES_NONE;
     reply->encryptedCommand = reply->command = DLMS_COMMAND_NONE;
@@ -74,6 +75,7 @@ void reply_init(gxReplyData* reply)
 
 void reply_clear2(gxReplyData* reply, unsigned char clearData)
 {
+    reply->invokeId = 0;
     reply->moreData = DLMS_DATA_REQUEST_TYPES_NONE;
     reply->encryptedCommand = reply->command = DLMS_COMMAND_NONE;
     if (clearData)

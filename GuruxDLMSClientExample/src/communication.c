@@ -1092,6 +1092,8 @@ int com_readList(
         else
         {
             reply_init(&reply);
+            //NOTE! Set ignore value to true because list is parsed differently than normal read.
+            reply.ignoreValue = 1;
             bb_init(&rr);
             bb_init(&bb);
             //Send data.
@@ -1106,6 +1108,8 @@ int com_readList(
                 //Check is there errors or more data from server
                 while (reply_isMoreData(&reply))
                 {
+                    //NOTE! Set ignore value to true because list is parsed differently than normal read.
+                    reply.ignoreValue = 1;
                     if ((ret = cl_receiverReady(&connection->settings, reply.moreData, &rr)) != DLMS_ERROR_CODE_OK ||
                         (ret = readDLMSPacket(connection, &rr, &reply)) != DLMS_ERROR_CODE_OK)
                     {

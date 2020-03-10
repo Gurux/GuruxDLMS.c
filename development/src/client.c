@@ -49,7 +49,7 @@
 #include "../include/dlms.h"
 #include "../include/cosem.h"
 
-int cl_snrmRequest(dlmsSettings * settings, message * messages)
+int cl_snrmRequest(dlmsSettings* settings, message* messages)
 {
     int ret;
     gxByteBuffer* reply;
@@ -194,6 +194,14 @@ int cl_aarqRequest(
     }
     bb_clear(&settings->stoCChallenge);
     bb_clear(&settings->ctoSChallenge);
+    if (settings->autoIncreaseInvokeID)
+    {
+        settings->invokeID = 0;
+    }
+    else
+    {
+        settings->invokeID = 1;
+    }
     // If authentication or ciphering is used.
     if (settings->authentication > DLMS_AUTHENTICATION_LOW)
     {
@@ -220,11 +228,11 @@ int cl_aarqRequest(
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         }
-    }
+        }
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
     bb_clear(pdu);
     return ret;
-}
+    }
 
 int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
 {
@@ -235,6 +243,14 @@ int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
     if ((ret = apdu_parsePDU(settings, reply, &result, &sd, &command)) != 0)
     {
         return ret;
+    }
+    if (result != DLMS_ASSOCIATION_RESULT_ACCEPTED)
+    {
+        if (result == DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED)
+        {
+            return DLMS_ERROR_CODE_REJECTED_TRANSIENT;
+        }
+        return DLMS_ERROR_CODE_REJECTED_PERMAMENT;
     }
     settings->isAuthenticationRequired = result == DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED && sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
     if (!settings->isAuthenticationRequired)
@@ -406,8 +422,8 @@ int cl_parseApplicationAssociationResponse(
 #ifndef DLMS_IGNORE_MALLOC
                 var_clear(&value);
 #endif //DLMS_IGNORE_MALLOC
-                bb_clear(&challenge);
-                return ret;
+                    bb_clear(&challenge);
+                    return ret;
             }
             bb_clear(&challenge);
         }
@@ -428,7 +444,7 @@ int cl_parseApplicationAssociationResponse(
 #endif //DLMS_IGNORE_MALLOC
             bb_clear(&challenge);
             return ret;
-        }
+}
 #ifdef DLMS_IGNORE_MALLOC
         equals = bb_compare(
             &challenge,
@@ -552,7 +568,7 @@ int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
     {
         static unsigned char ln[] = { 0, 0, 40, 0, 0, 0xFF };
         ret = cl_readLN(settings, ln, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, 2, NULL, messages);
-    }
+}
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -653,7 +669,7 @@ int cl_parseObjects(dlmsSettings* settings, gxByteBuffer* data)
     if (settings->useLogicalNameReferencing)
     {
         ret = cl_parseLNObjects(data, &settings->objects);
-    }
+}
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -808,12 +824,12 @@ int cl_readList(
         for (pos = 0; pos != list->size; )
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(list, pos, (void**)& it, sizeof(gxObject*))) != 0)
+            if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxObject*))) != 0)
             {
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(list, pos, (void**)& it)) != 0)
+            if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
             {
                 break;
             }
@@ -853,12 +869,12 @@ int cl_readList(
         for (pos = 0; pos != list->size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(list, pos, (void**)& it, sizeof(gxListItem))) != 0)
+            if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxListItem))) != 0)
             {
                 return ret;
             }
 #else
-            if ((ret = arr_getByIndex(list, pos, (void**)& it)) != 0)
+            if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
             {
                 return ret;
             }
@@ -894,7 +910,7 @@ int cl_read(
     else if (settings->useLogicalNameReferencing)
     {
         ret = cl_readLN(settings, object->logicalName, object->objectType, attributeOrdinal, NULL, messages);
-    }
+}
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -998,7 +1014,7 @@ int cl_readRowsByRange(
     {
 #ifdef DLMS_IGNORE_MALLOC
         gxTarget* kv;
-        ret = arr_getByIndex(&object->captureObjects, 0, (void**)& kv, sizeof(gxTarget));
+        ret = arr_getByIndex(&object->captureObjects, 0, (void**)&kv, sizeof(gxTarget));
         if (ret != 0)
         {
             return ret;
@@ -1007,7 +1023,7 @@ int cl_readRowsByRange(
         ln = kv->target->logicalName;
 #else
         gxKey* kv;
-        ret = arr_getByIndex(&object->captureObjects, 0, (void**)& kv);
+        ret = arr_getByIndex(&object->captureObjects, 0, (void**)&kv);
         if (ret != 0)
         {
             return ret;
@@ -1065,8 +1081,8 @@ int cl_readRowsByRange(
             {
                 bb_clear(&data);
                 return ret;
-            }
         }
+    }
         //Add end time
         if (unixTime)
         {
@@ -1103,7 +1119,7 @@ int cl_readRowsByRange(
             ret = cl_readSN(settings, object->base.shortName, 2, &data, messages);
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         }
-    }
+}
     bb_clear(&data);
     return ret;
 }
@@ -1144,22 +1160,32 @@ int cl_updateValues(
     gxArray* list,
     gxByteBuffer* data)
 {
+    unsigned short count;
     int pos, ret = 0;
     gxListItem* it;
     gxDataInfo info;
     unsigned char ch;
     gxValueEventArg e;
     ve_init(&e);
+    if ((ret = hlp_getObjectCount2(data, &count)) != 0)
+    {
+        return ret;
+    }
+    if (count != list->size)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+
     for (pos = 0; pos != list->size; ++pos)
     {
         di_init(&info);
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(list, pos, (void**)& it, sizeof(gxListItem))) != 0)
+        if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxListItem))) != 0)
         {
             break;
         }
 #else
-        if ((ret = arr_getByIndex(list, pos, (void**)& it)) != 0)
+        if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
         {
             break;
         }
@@ -1251,7 +1277,7 @@ int cl_releaseRequest(dlmsSettings* settings, message* packets)
             DLMS_VARIABLE_ACCESS_SPECIFICATION_VARIABLE_NAME,
             NULL, &bb, DLMS_COMMAND_NONE);
         ret = dlms_getSnMessages(&p, packets);
-    }
+}
 #else
     ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1405,7 +1431,7 @@ int cl_writeLN(
     if (byteArray != 0)
     {
         bb_set2(pdu, value->byteArr, 0, value->byteArr->size);
-    }
+}
     else
     {
         if ((ret = dlms_setData(pdu, value->vt, value)) != 0)
@@ -1487,7 +1513,7 @@ int cl_method(
     if (settings->useLogicalNameReferencing)
     {
         ret = cl_methodLN(settings, object->logicalName, object->objectType, index, data, messages);
-    }
+}
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1553,7 +1579,7 @@ int cl_methodLN(
             {
                 ret = dlms_setData(pdu, value->vt, value);
             }
-        }
+}
 #else
         if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
         {

@@ -1629,6 +1629,7 @@ extern "C" {
 
     /*
     * Enumerates all conformance bits.
+    * https://www.gurux.fi/Gurux.DLMS.Conformance
     */
     typedef enum
     {

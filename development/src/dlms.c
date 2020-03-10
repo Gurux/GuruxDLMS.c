@@ -255,7 +255,7 @@ unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, D
 }
 #endif //DLMS_IGNORE_HIGH_GMAC
 
-unsigned char dlms_getInvokeIDPriority(dlmsSettings* settings)
+unsigned char dlms_getInvokeIDPriority(dlmsSettings* settings, unsigned char increase)
 {
     unsigned char value = 0;
     if (settings->priority == DLMS_PRIORITY_HIGH)
@@ -265,6 +265,10 @@ unsigned char dlms_getInvokeIDPriority(dlmsSettings* settings)
     if (settings->serviceClass == DLMS_SERVICE_CLASS_CONFIRMED)
     {
         value |= 0x40;
+    }
+    if (increase)
+    {
+        settings->invokeID = (unsigned char)((1 + settings->invokeID) & 0xF);
     }
     value |= settings->invokeID;
     return value;
@@ -3082,7 +3086,11 @@ int dlms_handleGetResponse(
     }
     type = ch;
     // Get invoke ID and priority.
-    if ((ret = bb_getUInt8(&reply->data, &ch)) != 0)
+    if ((ret = bb_getUInt8(&reply->data, &reply->invokeId)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = dlms_verifyInvokeId(settings, reply)) != 0)
     {
         return ret;
     }
@@ -3192,10 +3200,6 @@ int dlms_handleGetResponse(
     }
     else if (type == 3)
     {
-        // Get response with list.
-        // Get item count.
-        hlp_getObjectCount2(&reply->data, &count);
-        dlms_getDataFromBlock(&reply->data, 0);
         return DLMS_ERROR_CODE_FALSE;
     }
     else
@@ -3533,7 +3537,19 @@ int dlms_handleReadResponse(
     return 0;
 }
 
+
+int dlms_verifyInvokeId(dlmsSettings* settings, gxReplyData* reply)
+{
+    if (settings->autoIncreaseInvokeID && reply->invokeId != dlms_getInvokeIDPriority(settings, 0))
+    {
+        //Invalid invoke ID.
+        return DLMS_ERROR_CODE_INVALID_INVOKE_ID;
+    }
+    return 0;
+}
+
 int dlms_handleMethodResponse(
+    dlmsSettings* settings,
     gxReplyData* data)
 {
     int ret;
@@ -3544,7 +3560,11 @@ int dlms_handleMethodResponse(
         return ret;
     }
     // Get invoke ID and priority.
-    if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
+    if ((ret = bb_getUInt8(&data->data, &data->invokeId)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = dlms_verifyInvokeId(settings, data)) != 0)
     {
         return ret;
     }
@@ -3686,9 +3706,10 @@ int dlms_handlePush(gxReplyData* reply)
 }
 
 int dlms_handleSetResponse(
+    dlmsSettings* settings,
     gxReplyData* data)
 {
-    unsigned char ch, type, invokeId;
+    unsigned char ch, type;
     int ret;
     if ((ret = bb_getUInt8(&data->data, &type)) != 0)
     {
@@ -3696,11 +3717,14 @@ int dlms_handleSetResponse(
     }
 
     //Invoke ID and priority.
-    if ((ret = bb_getUInt8(&data->data, &invokeId)) != 0)
+    if ((ret = bb_getUInt8(&data->data, &data->invokeId)) != 0)
     {
         return ret;
     }
-
+    if ((ret = dlms_verifyInvokeId(settings, data)) != 0)
+    {
+        return ret;
+    }
     // SetResponseNormal
     if (type == DLMS_SET_RESPONSE_TYPE_NORMAL)
     {
@@ -3868,7 +3892,7 @@ int dlms_handleDataNotification(
         return ret;
     }
     return dlms_getValueFromData(settings, reply);
-}
+    }
 
 /**
 * Handle General block transfer message.
@@ -4039,7 +4063,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
             {
                 data->preEstablished = 1;
             }
-        }
+            }
         else
         {
             if ((ret = cip_decrypt(&settings->cipher,
@@ -4114,13 +4138,13 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
                 bb_clear(&bb);
                 return ret;
             }
-        }
+    }
         bb_set2(&data->data, &bb, bb.position, bb.size - bb.position);
         bb_clear(&bb);
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
         data->cipherIndex = (unsigned short)data->data.size;
-    }
+}
     return ret;
 #endif //DLMS_IGNORE_HIGH_GMAC
 }
@@ -4220,7 +4244,7 @@ int dlms_getPdu(
             }
             break;
         case DLMS_COMMAND_SET_RESPONSE:
-            ret = dlms_handleSetResponse(data);
+            ret = dlms_handleSetResponse(settings, data);
             break;
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_WRITE_RESPONSE:
@@ -4228,7 +4252,7 @@ int dlms_getPdu(
             break;
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_METHOD_RESPONSE:
-            ret = dlms_handleMethodResponse(data);
+            ret = dlms_handleMethodResponse(settings, data);
             break;
         case DLMS_COMMAND_GENERAL_BLOCK_TRANSFER:
             ret = dlms_handleGbt(settings, data);
@@ -4677,7 +4701,7 @@ int dlms_getSNPdu(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 
@@ -4746,7 +4770,7 @@ int dlms_getLNPdu(
         {
             bb_attach(&header, pduAttributes, 0, sizeof(pduAttributes));
             h = &header;
-        }
+    }
         else
         {
 #ifdef DLMS_IGNORE_MALLOC
@@ -4797,8 +4821,8 @@ int dlms_getLNPdu(
                 else
                 {
                     ret = bb_setUInt32(h, dlms_getLongInvokeIDPriority(p->settings));
-                }
             }
+        }
             // Add date time.
 #ifdef DLMS_USE_EPOCH_TIME
             if (p->time == 0)
@@ -4835,7 +4859,7 @@ int dlms_getLNPdu(
                     bb_move(h, pos + 1, pos, reply->size - pos - 1);
                 }
             }
-        }
+}
         else if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
             // Get request size can be bigger than PDU size.
@@ -4880,7 +4904,7 @@ int dlms_getLNPdu(
             }
             else
             {
-                ret = bb_setUInt8(h, dlms_getInvokeIDPriority(p->settings));
+                ret = bb_setUInt8(h, dlms_getInvokeIDPriority(p->settings, p->settings->autoIncreaseInvokeID));
             }
         }
 #ifndef DLMS_IGNORE_MALLOC
@@ -5009,7 +5033,7 @@ int dlms_getLNPdu(
                     ret = bb_set2(reply, p->data, p->data->position, len);
                 }
 #endif //DLMS_IGNORE_MALLOC
-            }
+                }
             else
             {
 #ifdef DLMS_IGNORE_MALLOC
@@ -5056,15 +5080,15 @@ int dlms_getLNPdu(
                 key,
                 reply);
             ++p->settings->cipher.invocationCounter;
-        }
+            }
 #endif //DLMS_IGNORE_HIGH_GMAC1
-    }
+        }
     if (ret == 0 && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         ret = dlms_addLLCBytes(p->settings, reply);
     }
     return ret;
-}
+        }
 
 int dlms_getLnMessages(
     gxLNParameters* p,
@@ -5103,7 +5127,7 @@ int dlms_getLnMessages(
             {
                 ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
                 break;
-            }
+        }
             it = messages->data[messages->size];
             ++messages->size;
             bb_clear(it);
@@ -5128,11 +5152,11 @@ int dlms_getLnMessages(
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
-        }
+    }
         bb_clear(pdu);
         frame = 0;
-    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-    return ret;
+} while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+return ret;
 }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -5190,11 +5214,11 @@ int dlms_getSnMessages(
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
-        }
+    }
         bb_clear(&data);
         frame = 0;
-    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-    return 0;
+} while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+return 0;
 }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
@@ -5479,7 +5503,7 @@ int dlms_secure(
                 }
             }
 #endif //DLMS_IGNORE_HIGH_SHA256
-        }
+    }
         else
         {
             if ((ret = bb_set(&challenge, data->data, data->size)) != 0 ||
@@ -5488,7 +5512,7 @@ int dlms_secure(
                 return ret;
             }
         }
-    }
+            }
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH_MD5)
     {
         //If MD5 is not used.
@@ -5557,7 +5581,7 @@ int dlms_secure(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-}
+    }
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,

@@ -488,7 +488,7 @@ int obj_ScriptTableToString(gxScriptTable* object, char** buff)
         {
             bb_addString(&ba, ", ");
         }
-        ret = arr_getByIndex(&object->scripts, pos, (void**)& s);
+        ret = arr_getByIndex(&object->scripts, pos, (void**)&s);
         if (ret != 0)
         {
             return ret;
@@ -497,7 +497,7 @@ int obj_ScriptTableToString(gxScriptTable* object, char** buff)
         bb_addString(&ba, "\r\n");
         for (pos2 = 0; pos2 != s->actions.size; ++pos2)
         {
-            ret = arr_getByIndex(&s->actions, pos2, (void**)& sa);
+            ret = arr_getByIndex(&s->actions, pos2, (void**)&sa);
             if (ret != 0)
             {
                 return ret;
@@ -557,7 +557,7 @@ int obj_specialDaysTableToString(gxSpecialDaysTable* object, char** buff)
         {
             bb_addString(&ba, ", ");
         }
-        ret = arr_getByIndex(&object->entries, pos, (void**)& sd);
+        ret = arr_getByIndex(&object->entries, pos, (void**)&sd);
         if (ret != 0)
         {
             return ret;
@@ -587,7 +587,7 @@ int obj_TcpUdpSetupToString(gxTcpUdpSetup* object, char** buff)
     bb_addIntAsString(&ba, object->port);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    bb_addLogicalName(&ba, obj_getLogicalName((gxObject*) object->ipSetup));
+    bb_addLogicalName(&ba, obj_getLogicalName((gxObject*)object->ipSetup));
 #else
     bb_addLogicalName(&ba, object->ipReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -679,7 +679,7 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
         {
             bb_addString(&ba, ", ");
         }
-        ret = arr_getByIndex(&object->callingWindow, pos, (void**)& k);
+        ret = arr_getByIndex(&object->callingWindow, pos, (void**)&k);
         if (ret != 0)
         {
             return ret;
@@ -696,7 +696,7 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
         {
             bb_addString(&ba, ", ");
         }
-        ret = arr_getByIndex(&object->destinations, pos, (void**)& dest);
+        ret = arr_getByIndex(&object->destinations, pos, (void**)&dest);
         if (ret != 0)
         {
             return ret;
@@ -721,7 +721,7 @@ int obj_seasonProfileToString(gxArray* arr, gxByteBuffer* ba)
         {
             bb_addString(ba, ", ");
         }
-        ret = arr_getByIndex(arr, pos, (void**)& it);
+        ret = arr_getByIndex(arr, pos, (void**)&it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -746,7 +746,7 @@ int obj_weekProfileToString(gxArray* arr, gxByteBuffer* ba)
         {
             bb_addString(ba, ", ");
         }
-        ret = arr_getByIndex(arr, pos, (void**)& it);
+        ret = arr_getByIndex(arr, pos, (void**)&it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -783,7 +783,7 @@ int obj_dayProfileToString(gxArray* arr, gxByteBuffer* ba)
         {
             bb_addString(ba, ", ");
         }
-        ret = arr_getByIndex(arr, pos, (void**)& dp);
+        ret = arr_getByIndex(arr, pos, (void**)&dp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -796,7 +796,7 @@ int obj_dayProfileToString(gxArray* arr, gxByteBuffer* ba)
             {
                 bb_addString(ba, ", ");
             }
-            ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)& it);
+            ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&it);
             if (ret != DLMS_ERROR_CODE_OK)
             {
                 return ret;
@@ -1009,7 +1009,7 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         ret = oa_getByIndex(&object->registerAssignment, pos, &od);
 #else
-        ret = arr_getByIndex(&object->registerAssignment, pos, (void**)& od);
+        ret = arr_getByIndex(&object->registerAssignment, pos, (void**)&od);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         if (ret != 0)
         {
@@ -1030,7 +1030,7 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
     bb_addString(&ba, "Index: 3 Value: [");
     for (pos = 0; pos != object->maskList.size; ++pos)
     {
-        ret = arr_getByIndex(&object->maskList, pos, (void**)& it);
+        ret = arr_getByIndex(&object->maskList, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -1118,7 +1118,7 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
     bb_addString(&ba, "\r\nIndex: 4 Value: [");
     for (pos = 0; pos != object->actions.size; ++pos)
     {
-        ret = arr_getByIndex(&object->actions, pos, (void**)& as);
+        ret = arr_getByIndex(&object->actions, pos, (void**)&as);
         if (ret != 0)
         {
             return ret;
@@ -1166,7 +1166,7 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
     bb_addString(&ba, "\r\nIndex: 4 Value: [");
     for (pos = 0; pos != object->executionTime.size; ++pos)
     {
-        ret = arr_getByIndex(&object->executionTime, pos, (void**)& tm);
+        ret = arr_getByIndex(&object->executionTime, pos, (void**)&tm);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -1200,7 +1200,7 @@ int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
     bb_addString(&ba, "Index: 2 Value: [");
     for (pos = 0; pos != object->sapAssignmentList.size; ++pos)
     {
-        ret = arr_getByIndex(&object->sapAssignmentList, pos, (void**)& it);
+        ret = arr_getByIndex(&object->sapAssignmentList, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -1231,7 +1231,7 @@ int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
     bb_addString(&ba, "\r\nIndex: 3 Value: [");
     for (pos = 0; pos != object->listeningWindow.size; ++pos)
     {
-        ret = arr_getByIndex(&object->listeningWindow, pos, (void**)& it);
+        ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -1298,7 +1298,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
     bb_addString(&ba, "]\r\nIndex: 5 Value: [");
     for (pos = 0; pos != object->ipOptions.size; ++pos)
     {
-        ret = arr_getByIndex(&object->ipOptions, pos, (void**)& ip);
+        ret = arr_getByIndex(&object->ipOptions, pos, (void**)&ip);
         if (ret != 0)
         {
             return ret;
@@ -1386,7 +1386,7 @@ int obj_imageTransferToString(gxImageTransfer* object, char** buff)
     bb_addString(&ba, "\r\nIndex: 7 Value: [");
     for (pos = 0; pos != object->imageActivateInfo.size; ++pos)
     {
-        ret = arr_getByIndex(&object->imageActivateInfo, pos, (void**)& it);
+        ret = arr_getByIndex(&object->imageActivateInfo, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -1540,7 +1540,7 @@ int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
     bb_addString(&ba, "\r\nIndex: 3 Value: [");
     for (pos = 0; pos != object->initialisationStrings.size; ++pos)
     {
-        ret = arr_getByIndex(&object->initialisationStrings, pos, (void**)& mi);
+        ret = arr_getByIndex(&object->initialisationStrings, pos, (void**)&mi);
         if (ret != 0)
         {
             return ret;
@@ -1558,7 +1558,7 @@ int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
     bb_addString(&ba, "]\r\nIndex: 4 Value: [");
     for (pos = 0; pos != object->modemProfile.size; ++pos)
     {
-        ret = arr_getByIndex(&object->modemProfile, pos, (void**)& it);
+        ret = arr_getByIndex(&object->modemProfile, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -1688,7 +1688,7 @@ int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
     int r, c, ret;
     for (r = 0; r != buffer->size; ++r)
     {
-        ret = arr_getByIndex(buffer, r, (void**)& va);
+        ret = arr_getByIndex(buffer, r, (void**)&va);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -1800,7 +1800,7 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** 
         bb_addString(&ba, "\r\nIndex: 10 Value: [\r\n");
         for (pos = 0; pos != object->userList.size; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->userList, pos, (void**)& it)) != 0)
+            if ((ret = arr_getByIndex(&object->userList, pos, (void**)&it)) != 0)
             {
                 return ret;
             }
@@ -1879,7 +1879,7 @@ int obj_CaptureObjectsToString(gxByteBuffer* ba, gxArray* objects)
     oa_capacity(&tmp, objects->size);
     for (pos = 0; pos != objects->size; ++pos)
     {
-        ret = arr_getByIndex(objects, pos, (void**)& kv);
+        ret = arr_getByIndex(objects, pos, (void**)&kv);
         if (ret != 0)
         {
             return ret;
@@ -2091,7 +2091,7 @@ int obj_GsmDiagnosticToString(gxGsmDiagnostic* object, char** buff)
     bb_addString(&ba, "\r\nIndex: 7 Value:[\r\n");
     for (pos = 0; pos != object->adjacentCells.size; ++pos)
     {
-        ret = arr_getByIndex(&object->adjacentCells, pos, (void**)& it);
+        ret = arr_getByIndex(&object->adjacentCells, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -2556,6 +2556,10 @@ const char* err_toString(int err)
         return "Authentication Required.";
     case    DLMS_ERROR_CODE_INVALID_FRAME_NUMBER:
         return "Invalid frame number";
+    case DLMS_ERROR_CODE_INVALID_DATE_TIME:
+        return "Invalid date-time.";
+    case DLMS_ERROR_CODE_INVALID_INVOKE_ID:
+        return "Invalid Invoke ID.";
     default:
         return "Unknown error.";
     }

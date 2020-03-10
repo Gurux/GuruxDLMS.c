@@ -160,7 +160,8 @@ extern "C" {
 #ifdef DLMS_IGNORE_MALLOC
         gxByteBuffer* serializedPdu;
 #endif //DLMS_IGNORE_MALLOC
-
+        //Auto increase Invoke ID.
+        unsigned char autoIncreaseInvokeID;
     } dlmsSettings;
 
     typedef struct

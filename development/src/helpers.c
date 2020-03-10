@@ -49,7 +49,7 @@
 unsigned char hlp_isBigEndian(void)
 {
     unsigned short a = 0x1234;
-    return *((unsigned char*)& a) == 0x12;
+    return *((unsigned char*)&a) == 0x12;
 }
 
 char* hlp_getErrorMessage(short err)
@@ -142,6 +142,10 @@ char* hlp_getErrorMessage(short err)
         return "Receive failed.";
     case DLMS_ERROR_CODE_NOT_IMPLEMENTED:
         return "Not implemented.";
+    case DLMS_ERROR_CODE_INVALID_DATE_TIME:
+        return "Invalid date-time.";
+    case DLMS_ERROR_CODE_INVALID_INVOKE_ID:
+        return "Invalid Invoke ID.";
     default:
         return "Unknown error.";
     }

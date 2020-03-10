@@ -129,6 +129,7 @@ extern "C" {
         * Pre-established connection.
         */
         unsigned char preEstablished;
+        unsigned char invokeId;
     } gxReplyData;
 
     unsigned char reply_isMoreData(gxReplyData* reply);

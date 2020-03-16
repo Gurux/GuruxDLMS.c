@@ -3069,6 +3069,16 @@ int dlms_getWrapperFrame(
 }
 #endif //DLMS_IGNORE_WRAPPER
 
+int dlms_verifyInvokeId(dlmsSettings* settings, gxReplyData* reply)
+{
+    if (settings->autoIncreaseInvokeID && reply->invokeId != dlms_getInvokeIDPriority(settings, 0))
+    {
+        //Invalid invoke ID.
+        return DLMS_ERROR_CODE_INVALID_INVOKE_ID;
+    }
+    return 0;
+}
+
 int dlms_handleGetResponse(
     dlmsSettings* settings,
     gxReplyData* reply,
@@ -3533,17 +3543,6 @@ int dlms_handleReadResponse(
     if (cnt != 1)
     {
         return DLMS_ERROR_CODE_FALSE;
-    }
-    return 0;
-}
-
-
-int dlms_verifyInvokeId(dlmsSettings* settings, gxReplyData* reply)
-{
-    if (settings->autoIncreaseInvokeID && reply->invokeId != dlms_getInvokeIDPriority(settings, 0))
-    {
-        //Invalid invoke ID.
-        return DLMS_ERROR_CODE_INVALID_INVOKE_ID;
     }
     return 0;
 }

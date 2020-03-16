@@ -1766,7 +1766,7 @@ int cosem_setAutoAnswer(gxAutoAnswer* object, unsigned char index, dlmsVARIANT* 
 #endif //DLMS_IGNORE_MALLOC
     if (index == 2)
     {
-        object->mode = (DLMS_AUTO_CONNECT_MODE)var_toInteger(value);
+        object->mode = (DLMS_AUTO_ANSWER_MODE)var_toInteger(value);
     }
     else if (index == 3)
     {

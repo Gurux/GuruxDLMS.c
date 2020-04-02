@@ -63,7 +63,6 @@ void reply_init(gxReplyData* reply)
     reply->peek = 0;
     reply->ignoreValue = 0;
     reply->dataType = DLMS_DATA_TYPE_NONE;
-    reply->gbt = 0;
     reply->cipherIndex = 0;
 #ifdef DLMS_USE_EPOCH_TIME
     reply->time = 0;
@@ -71,6 +70,10 @@ void reply_init(gxReplyData* reply)
     memset(&reply->time, 0, sizeof(struct tm));
 #endif // DLMS_USE_EPOCH_TIME
     reply->preEstablished = 0;
+    reply->blockNumber = 0;
+    reply->blockNumberAck = 0;
+    reply->streaming = 0;
+    reply->windowSize = 0;
 }
 
 void reply_clear2(gxReplyData* reply, unsigned char clearData)
@@ -91,13 +94,16 @@ void reply_clear2(gxReplyData* reply, unsigned char clearData)
     reply->peek = 0;
     reply->ignoreValue = 0;
     reply->dataType = DLMS_DATA_TYPE_NONE;
-    reply->gbt = 0;
     reply->cipherIndex = 0;
 #ifdef DLMS_USE_EPOCH_TIME
     reply->time = 0;
 #else
     memset(&reply->time, 0, sizeof(struct tm));
 #endif // DLMS_USE_EPOCH_TIME
+    reply->blockNumber = 0;
+    reply->blockNumberAck;
+    reply->streaming = 0;
+    reply->windowSize = 0;
 }
 
 void reply_clear(gxReplyData* reply)

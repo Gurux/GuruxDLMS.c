@@ -25,7 +25,7 @@
 #include <crtdbg.h>
 #endif
 #include <tchar.h>
-#include <Winsock.h> //Add support for sockets	
+#include <Winsock.h> //Add support for sockets
 #include <process.h>//Add support for threads
 #else //Linux
 #define INVALID_HANDLE_VALUE -1
@@ -124,7 +124,7 @@ int test()
     clock.base.objectType = DLMS_OBJECT_TYPE_CLOCK;
     hlp_setLogicalName(clock.base.logicalName, "0.0.1.0.0.255");
     cl_init(&cl, 1, 1, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_WRAPPER);
-    svr_init(&con.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER);
+    svr_init(&con.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, 0, 0, NULL, 0, NULL, 0);
     arr_push(&p.pushObjectList, key_init(&p, co_init(2, 0)));
     arr_push(&p.pushObjectList, key_init(&clock, co_init(2, 0)));
 

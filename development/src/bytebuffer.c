@@ -585,6 +585,14 @@ int bb_clear(
     return 0;
 }
 
+int bb_empty(
+    gxByteBuffer* arr)
+{
+    arr->size = 0;
+    arr->position = 0;
+    return 0;
+}
+
 int bb_getUInt8(
     gxByteBuffer* arr,
     unsigned char* value)

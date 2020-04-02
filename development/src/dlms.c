@@ -3442,17 +3442,26 @@ int dlms_handleReadResponse(
         }
         reply->totalCount = cnt;
     }
+    if (cnt != 1)
+    {
+        //Parse data after all data is received when readlist is used.
+        if (reply->moreData != DLMS_DATA_REQUEST_TYPES_NONE)
+        {
+            if ((ret = dlms_getDataFromBlock(&reply->data, 0)) == 0)
+            {
+                ret = DLMS_ERROR_CODE_FALSE;
+            }
+            return ret;
+        }
+        if (!first)
+        {
+            reply->data.position = 0;
+            first = 1;
+        }
+    }
     va_init(&values);
     for (pos = 0; pos != cnt; ++pos)
     {
-        if (reply->data.size - reply->data.position == 0)
-        {
-            if (cnt != 1)
-            {
-                dlms_getDataFromBlock(&reply->data, 0);
-            }
-            return DLMS_ERROR_CODE_FALSE;
-        }
         // Get status code. Status code is begin of each PDU.
         if (first)
         {
@@ -3479,21 +3488,6 @@ int dlms_handleReadResponse(
                 // If read multiple items.
                 reply->readPosition = reply->data.position;
                 dlms_getValueFromData(settings, reply);
-                if (reply->data.position == (unsigned long)reply->readPosition)
-                {
-                    // If multiple values remove command.
-                    if (cnt != 1 && reply->totalCount == 0)
-                    {
-                        ++index;
-                    }
-                    reply->totalCount = 0;
-                    reply->data.position = index;
-                    dlms_getDataFromBlock(&reply->data, 0);
-                    var_clear(&reply->dataValue);
-                    // Ask that data is parsed after last block is received.
-                    reply->commandType = DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT;
-                    return DLMS_ERROR_CODE_FALSE;
-                }
                 reply->data.position = reply->readPosition;
                 va_push(&values, &reply->dataValue);
                 var_clear(&reply->dataValue);
@@ -3891,7 +3885,7 @@ int dlms_handleDataNotification(
         return ret;
     }
     return dlms_getValueFromData(settings, reply);
-    }
+}
 
 /**
 * Handle General block transfer message.
@@ -3906,94 +3900,85 @@ int dlms_handleGbt(
     gxReplyData* data)
 {
     int ret;
-    unsigned char ch, window, bn, bna;
+    unsigned char bc, window;
+    unsigned short bn, bna;
     unsigned short index = (unsigned short)(data->data.position - 1);
-    data->gbt = 1;
-    if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
+    if ((ret = bb_getUInt8(&data->data, &bc)) != 0)
     {
         return ret;
     }
     // Is streaming active.
-    //TODO: bool streaming = (ch & 0x40) == 1;
-    window = (ch & 0x3F);
+    data->streaming = (bc & 0x40) != 0;
+    data->windowSize = (bc & 0x3F);
     // Block number.
-    if ((ret = bb_getUInt8(&data->data, &bn)) != 0)
+    if ((ret = bb_getUInt16(&data->data, &bn)) != 0)
     {
         return ret;
     }
     // Block number acknowledged.
-    if ((ret = bb_getUInt8(&data->data, &bna)) != 0)
+    if ((ret = bb_getUInt16(&data->data, &bna)) != 0)
     {
         return ret;
     }
-    // Get APU tag.
-    if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
+    // Remove existing data when first block is received.
+    if (bn == 1)
     {
-        return ret;
+        index = 0;
     }
-    if (ch != 0)
+    else if (bna != settings->blockIndex - 1)
     {
-        //Invalid APU.
-        return DLMS_ERROR_CODE_INVALID_TAG;
+        // If this block is already received.
+        data->data.size = index;
+        data->command = DLMS_COMMAND_NONE;
+        return 0;
     }
-    // Get Addl tag.
-    if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
-    {
-        return ret;
-    }
-    if (ch != 0)
-    {
-        //Invalid APU.
-        return DLMS_ERROR_CODE_INVALID_TAG;
-    }
-    if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
-    {
-        return ret;
-    }
-    if (ch != 0)
-    {
-        return DLMS_ERROR_CODE_INVALID_TAG;
-    }
+
+    data->blockNumber = bn;
+    // Block number acknowledged.
+    data->blockNumberAck = bna;
     data->command = DLMS_COMMAND_NONE;
-    if (window != 0)
+    unsigned short len;
+    if (hlp_getObjectCount2(&data->data, &len) != 0)
     {
-        unsigned short len;
-        if (hlp_getObjectCount2(&data->data, &len) != 0)
-        {
-            return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
-        if (len != (data->data.size - data->data.position))
-        {
-            data->complete = 0;
-            return 0;
-        }
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    if ((ret = dlms_getDataFromBlock(&data->data, index)) != 0 ||
-        (ret = dlms_getPdu(settings, data, 0)) != 0)
+    if (len != (data->data.size - data->data.position))
+    {
+        data->complete = 0;
+        return 0;
+    }
+    if ((ret = dlms_getDataFromBlock(&data->data, index)) != 0)
     {
         return ret;
     }
-    // Is Last block,
-    if ((ch & 0x80) == 0)
-    {
-        data->moreData = (DLMS_DATA_REQUEST_TYPES)(data->moreData | DLMS_DATA_REQUEST_TYPES_BLOCK);
+
+    // Is Last block.
+    if ((bc & 0x80) == 0) {
+        data->moreData |= DLMS_DATA_REQUEST_TYPES_GBT;
     }
     else
     {
-        data->moreData = (DLMS_DATA_REQUEST_TYPES)(data->moreData & ~DLMS_DATA_REQUEST_TYPES_BLOCK);
-    }
-    // Get data if all data is read or we want to peek data.
-    if (data->data.position != data->data.size
-        && (
+        data->moreData &= ~DLMS_DATA_REQUEST_TYPES_GBT;
+        if (data->data.size != 0)
+        {
+            data->data.position = 0;
+            if ((ret = dlms_getPdu(settings, data, 0)) != 0)
+            {
+                return ret;
+            }
+            // Get data if all data is read or we want to peek data.
+            if (data->data.position != data->data.size
+                && (
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-            data->command == DLMS_COMMAND_READ_RESPONSE ||
+                    data->command == DLMS_COMMAND_READ_RESPONSE ||
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-            data->command == DLMS_COMMAND_GET_RESPONSE)
-        && (data->moreData == DLMS_DATA_REQUEST_TYPES_NONE
-            || data->peek))
-    {
-        data->data.position = 0;
-        ret = dlms_getValueFromData(settings, data);
+                    data->command == DLMS_COMMAND_GET_RESPONSE)
+                && (data->moreData == DLMS_DATA_REQUEST_TYPES_NONE || data->peek))
+            {
+                data->data.position = 0;
+                ret = dlms_getValueFromData(settings, data);
+            }
+        }
     }
     return ret;
 }
@@ -4062,7 +4047,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
             {
                 data->preEstablished = 1;
             }
-            }
+        }
         else
         {
             if ((ret = cip_decrypt(&settings->cipher,
@@ -4086,14 +4071,14 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
         }
         data->encryptedCommand = data->command;
         data->command = (DLMS_COMMAND)ch;
-    }
+        }
     else
     {
         data->data.position = (data->data.position - 1);
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-}
+    }
 
 int dlms_handledGloDedResponse(dlmsSettings* settings,
     gxReplyData* data, unsigned short index)
@@ -4121,7 +4106,7 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
                 bb_clear(&bb);
                 return ret;
             }
-        }
+    }
         else
         {
             if ((ret = cip_decrypt(&settings->cipher,
@@ -4137,7 +4122,7 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
                 bb_clear(&bb);
                 return ret;
             }
-    }
+        }
         bb_set2(&data->data, &bb, bb.position, bb.size - bb.position);
         bb_clear(&bb);
         data->command = DLMS_COMMAND_NONE;
@@ -4202,7 +4187,7 @@ int dlms_getPdu(
     unsigned char ch;
     DLMS_COMMAND cmd = data->command;
     // If header is not read yet or GBT message.
-    if (cmd == DLMS_COMMAND_NONE || data->gbt)
+    if (cmd == DLMS_COMMAND_NONE)
     {
         // If PDU is missing.
         if (data->data.size - data->data.position == 0)
@@ -4700,7 +4685,7 @@ int dlms_getSNPdu(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 
@@ -4769,7 +4754,7 @@ int dlms_getLNPdu(
         {
             bb_attach(&header, pduAttributes, 0, sizeof(pduAttributes));
             h = &header;
-    }
+        }
         else
         {
 #ifdef DLMS_IGNORE_MALLOC
@@ -4820,8 +4805,8 @@ int dlms_getLNPdu(
                 else
                 {
                     ret = bb_setUInt32(h, dlms_getLongInvokeIDPriority(p->settings));
+                }
             }
-        }
             // Add date time.
 #ifdef DLMS_USE_EPOCH_TIME
             if (p->time == 0)
@@ -4858,7 +4843,7 @@ int dlms_getLNPdu(
                     bb_move(h, pos + 1, pos, reply->size - pos - 1);
                 }
             }
-}
+            }
         else if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
             // Get request size can be bigger than PDU size.
@@ -4993,9 +4978,9 @@ int dlms_getLNPdu(
                         ret = bb_set2(reply, p->data, p->data->position, len);
                     }
 #endif //DLMS_IGNORE_MALLOC
+                        }
+                    }
                 }
-            }
-        }
         // Add data that fits to one block.
         if (ret == 0 && len == 0)
         {
@@ -5032,7 +5017,7 @@ int dlms_getLNPdu(
                     ret = bb_set2(reply, p->data, p->data->position, len);
                 }
 #endif //DLMS_IGNORE_MALLOC
-                }
+            }
             else
             {
 #ifdef DLMS_IGNORE_MALLOC
@@ -5043,8 +5028,8 @@ int dlms_getLNPdu(
                     ret = bb_insert(h->data, h->size, reply, 0);
                 }
 #endif //DLMS_IGNORE_MALLOC
+                }
             }
-        }
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (ret == 0 && ciphering && reply->size != 0 && p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
@@ -5087,7 +5072,7 @@ int dlms_getLNPdu(
         ret = dlms_addLLCBytes(p->settings, reply);
     }
     return ret;
-        }
+}
 
 int dlms_getLnMessages(
     gxLNParameters* p,
@@ -5117,46 +5102,45 @@ int dlms_getLnMessages(
             if (p->attributeDescriptor == NULL)
             {
                 ++p->settings->blockIndex;
-            }
         }
-        while (ret == 0 && pdu->position != pdu->size)
-        {
+    } while (ret == 0 && pdu->position != pdu->size)
+    {
 #ifdef DLMS_IGNORE_MALLOC
-            if (!(messages->size < messages->capacity))
-            {
-                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-                break;
+        if (!(messages->size < messages->capacity))
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            break;
         }
-            it = messages->data[messages->size];
-            ++messages->size;
-            bb_clear(it);
+        it = messages->data[messages->size];
+        ++messages->size;
+        bb_clear(it);
 #else
-            it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(it);
+        it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        bb_init(it);
 #endif //DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_WRAPPER
-            if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
-            {
-                ret = dlms_getWrapperFrame(p->settings, pdu, it);
-            }
-            else
+        if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
+        {
+            ret = dlms_getWrapperFrame(p->settings, pdu, it);
+        }
+        else
 #endif //DLMS_IGNORE_WRAPPER
+        {
+            ret = dlms_getHdlcFrame(p->settings, frame, pdu, it);
+            if (pdu->position != pdu->size)
             {
-                ret = dlms_getHdlcFrame(p->settings, frame, pdu, it);
-                if (pdu->position != pdu->size)
-                {
-                    frame = getNextSend(p->settings, 0);
-                }
+                frame = getNextSend(p->settings, 0);
             }
-#ifndef DLMS_IGNORE_MALLOC
-            mes_push(messages, it);
-#endif //DLMS_IGNORE_MALLOC
     }
-        bb_clear(pdu);
-        frame = 0;
-} while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-return ret;
+#ifndef DLMS_IGNORE_MALLOC
+        mes_push(messages, it);
+#endif //DLMS_IGNORE_MALLOC
 }
+    bb_clear(pdu);
+    frame = 0;
+        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+        return ret;
+            }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getSnMessages(
@@ -5205,7 +5189,7 @@ int dlms_getSnMessages(
                 {
                     frame = getNextSend(p->settings, 0);
                 }
-            }
+        }
             if (ret != 0)
             {
                 break;
@@ -5218,7 +5202,7 @@ int dlms_getSnMessages(
         frame = 0;
 } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
 return 0;
-}
+        }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_getData2(
@@ -5431,7 +5415,7 @@ int dlms_secure(
         if (len % 16 != 0)
         {
             len += (16 - (data->size % 16));
-        }
+    }
         if (secret->size > data->size)
         {
             len = (unsigned short)secret->size;
@@ -5457,7 +5441,7 @@ int dlms_secure(
 #else
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_AES
-    }
+}
     // Get server Challenge.
     // Get shared secret
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -5491,8 +5475,8 @@ int dlms_secure(
                     (ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0)
                 {
                     return ret;
-                }
-            }
+        }
+    }
             else
             {
                 if ((ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0 ||
@@ -5502,7 +5486,7 @@ int dlms_secure(
                 }
             }
 #endif //DLMS_IGNORE_HIGH_SHA256
-    }
+        }
         else
         {
             if ((ret = bb_set(&challenge, data->data, data->size)) != 0 ||
@@ -5511,7 +5495,7 @@ int dlms_secure(
                 return ret;
             }
         }
-            }
+    }
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH_MD5)
     {
         //If MD5 is not used.
@@ -5577,10 +5561,10 @@ int dlms_secure(
         }
         bb_clear(&challenge);
 #endif //DLMS_IGNORE_HIGH_GMAC
-    }
+            }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-    }
+        }
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,

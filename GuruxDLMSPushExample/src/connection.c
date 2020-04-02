@@ -19,7 +19,7 @@
 #include <stdlib.h> // malloc and free needs this or error is generated.
 #include <stdio.h>
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
-#include <Winsock.h> //Add support for sockets	
+#include <Winsock.h> //Add support for sockets
 #include <process.h>//Add support for threads
 #else //Linux
 #define INVALID_HANDLE_VALUE -1
@@ -40,6 +40,51 @@
 #include <fcntl.h> // File control definitions
 #include <errno.h> // Error number definitions
 #endif
+
+unsigned char svr_isTarget(
+    dlmsSettings* settings,
+    unsigned long serverAddress,
+    unsigned long clientAddress)
+{
+    //Empty skeleton. This is added because server implementation needs this.
+}
+
+void time_now(
+    gxtime* value, unsigned char meterTime)
+{
+    //Empty skeleton. This is added because server implementation needs this.
+}
+
+/**
+* Get attribute access level.
+*/
+DLMS_ACCESS_MODE svr_getAttributeAccess(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index)
+{
+    //Empty skeleton. This is added because server implementation needs this.
+}
+
+/**
+* Get method access level.
+*/
+DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index)
+{
+    //Empty skeleton. This is added because server implementation needs this.
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//Client has made connection to the server.
+/////////////////////////////////////////////////////////////////////////////
+int svr_connected(
+    dlmsServerSettings* settings)
+{
+    //Empty skeleton. This is added because server implementation needs this.
+}
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection* connection, int size)
@@ -97,12 +142,13 @@ void ListenerThread(void* pVoid)
     while (isConnected(con))
     {
         len = sizeof(client);
-        bb_clear(&senderInfo);
+        bb_empty(&senderInfo);
         socket = accept(con->socket, (struct sockaddr*)&client, &len);
         if (isConnected(con))
         {
             if ((ret = getpeername(socket, (struct sockaddr*) &add, &AddrLen)) == -1)
             {
+                bb_empty(&bb);
 #if defined(_WIN32) || defined(_WIN64)//If Windows
                 closesocket(socket);
                 socket = INVALID_SOCKET;
@@ -129,6 +175,7 @@ void ListenerThread(void* pVoid)
                     bb.data + bb.size,
                     bb.capacity - bb.size, 0)) == -1)
                 {
+                    bb_empty(&bb);
                     //Notify error.
 #if defined(_WIN32) || defined(_WIN64)//If Windows
                     closesocket(socket);
@@ -142,6 +189,7 @@ void ListenerThread(void* pVoid)
                 //If client is closed the connection.
                 if (ret == 0)
                 {
+                    bb_empty(&bb);
 #if defined(_WIN32) || defined(_WIN64)//If Windows
                     closesocket(socket);
                     socket = INVALID_SOCKET;
@@ -154,6 +202,7 @@ void ListenerThread(void* pVoid)
                 bb.size = bb.size + ret;
                 if (notify_getData(&con->settings.base, &bb, &data) != 0)
                 {
+                    bb_empty(&bb);
 #if defined(_WIN32) || defined(_WIN64)//If Windows
                     closesocket(socket);
                     socket = INVALID_SOCKET;
@@ -164,37 +213,41 @@ void ListenerThread(void* pVoid)
                     break;
                 }
                 // If all data is received.
-                if (data.complete && data.moreData == DLMS_DATA_REQUEST_TYPES_NONE)
+                if (data.complete)
                 {
-                    ret = notify_parsePush(&con->settings.base, data.dataValue.Arr, &list);
-                    if (ret != 0)
+                    bb_empty(&bb);
+                    if (data.moreData == DLMS_DATA_REQUEST_TYPES_NONE)
                     {
-                        arr_clear(&list);
-                        break;
-                    }
-                    // Print received data.
-                    for (pos = 0; pos != list.size; ++pos)
-                    {
-                        if ((ret = arr_getByIndex(&list, pos, (void**)&it)) != 0)
-                        {
-                            break;
-                        }
-
-                        // Print LN and value.
-                        if ((ret = obj_toString((gxObject*)it->key, &buff)) != 0)
+                        ret = notify_parsePush(&con->settings.base, data.dataValue.Arr, &list);
+                        if (ret != 0)
                         {
                             arr_clear(&list);
-                            free(buff);
-                            buff = NULL;
                             break;
                         }
-                        hlp_getLogicalNameToString(((gxObject*)it->key)->logicalName, ln);
-                        printf("%s : %s\r\n", ln, buff);
-                        free(buff);
-                        buff = NULL;
+                        // Print received data.
+                        for (pos = 0; pos != list.size; ++pos)
+                        {
+                            if ((ret = arr_getByIndex(&list, pos, (void**)&it)) != 0)
+                            {
+                                break;
+                            }
+
+                            // Print LN and value.
+                            if ((ret = obj_toString((gxObject*)it->key, &buff)) != 0)
+                            {
+                                arr_clear(&list);
+                                free(buff);
+                                buff = NULL;
+                                break;
+                            }
+                            hlp_getLogicalNameToString(((gxObject*)it->key)->logicalName, ln);
+                            printf("%s : %s\r\n", ln, buff);
+                            free(buff);
+                            buff = NULL;
+                        }
+                        reply_clear(&data);
+                        arr_clear(&list);
                     }
-                    reply_clear(&data);
-                    arr_clear(&list);
                 }
             }
         }

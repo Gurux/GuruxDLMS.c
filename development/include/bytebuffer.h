@@ -263,8 +263,12 @@ extern "C" {
         unsigned short count,
         unsigned short capacity);
 #endif
-
+    //Clean byte buffer and release allocated memory.
     int bb_clear(
+        gxByteBuffer* bb);
+
+    //Set size and position to zero. Allocated memory is not released.
+    int bb_empty(
         gxByteBuffer* bb);
 
     int bb_getUInt8(

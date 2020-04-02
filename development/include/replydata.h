@@ -105,11 +105,6 @@ extern "C" {
         */
         unsigned char ignoreValue;
 
-        /**
-        * Is received message General Block Transfer message.
-        */
-        unsigned char gbt;
-
         DLMS_DATA_TYPE dataType;
 
         /**
@@ -130,6 +125,15 @@ extern "C" {
         */
         unsigned char preEstablished;
         unsigned char invokeId;
+
+        //GBT block number.
+        unsigned short blockNumber;
+        //GBT block number ACK.
+        unsigned short blockNumberAck;
+        //GBT is streaming used.
+        unsigned streaming;
+        //GBT window size
+        unsigned windowSize;
     } gxReplyData;
 
     unsigned char reply_isMoreData(gxReplyData* reply);

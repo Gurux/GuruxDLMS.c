@@ -111,6 +111,9 @@ extern "C" {
 //Define max challenge size.
 #define MAX_CHALLENGE_SIZE 64
 
+//Define max certificate serial number length.
+#define MAX_PRIME_FIRMWARE_VERSION_LENGTH 20
+
 #ifdef  __cplusplus
 }
 #endif

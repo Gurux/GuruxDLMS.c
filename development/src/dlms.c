@@ -3900,7 +3900,7 @@ int dlms_handleGbt(
     gxReplyData* data)
 {
     int ret;
-    unsigned char bc, window;
+    unsigned char bc;
     unsigned short bn, bna;
     unsigned short index = (unsigned short)(data->data.position - 1);
     if ((ret = bb_getUInt8(&data->data, &bc)) != 0)

@@ -295,30 +295,70 @@ extern "C" {
         DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP = 74,
 
         /*
-         * Configure a ZigBee PRO device with information necessary to create or
-         * join the network.
-         */
-         DLMS_OBJECT_TYPE_ZIG_BEE_SAS_STARTUP = 101,
-         /*
-         * Configure the behavior of a ZigBee PRO device on joining or loss of
-         * connection to the network.
-         */
-         DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN = 102,
-         /*
-         * Configure the fragmentation feature of ZigBee PRO transport layer.
-         */
-         DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION = 103,
+    * Addresses that are provided by the base node during the opening of the
+    * convergence layer.
+    */
+    DLMS_OBJECT_TYPE_LLC_SSCS_SETUP = 80,
 
-         DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL = 104,
+    /*
+    * Counters related to the physical layers exchanges.
+    */
+    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS = 81,
 
-         DLMS_OBJECT_TYPE_DATA_PROTECTION = 30,
-         DLMS_OBJECT_TYPE_ACCOUNT = 111,
-         DLMS_OBJECT_TYPE_CREDIT = 112,
-         DLMS_OBJECT_TYPE_CHARGE = 113,
-         DLMS_OBJECT_TYPE_TOKEN_GATEWAY = 115,
+    /*
+    * A necessary parameters to set up and manage the PRIME NB OFDM PLC MAC
+    * layer.
+    */
+    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP = 82,
 
-         // Tariff Plan (Piano Tariffario) is used in Italian standard UNI/TS 11291-11.
-         DLMS_OBJECT_TYPE_TARIFF_PLAN = 8192,
+    /*
+    * Functional behaviour of MAC.
+    */
+    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS = 83,
+
+    /*
+    * Statistical information on the operation of the MAC layer for management
+    * purposes.
+    */
+    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS = 84,
+
+    /*
+    * Parameters related to the management of the devices connected to the
+    * network.
+    */
+    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA = 85,
+
+    /*
+    * Identification information related to administration and maintenance of
+    * PRIME NB OFDM PLC devices.
+    */
+    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION = 86,
+
+    /*
+    * Configure a ZigBee PRO device with information necessary to create or
+    * join the network.
+    */
+    DLMS_OBJECT_TYPE_ZIG_BEE_SAS_STARTUP = 101,
+    /*
+    * Configure the behavior of a ZigBee PRO device on joining or loss of
+    * connection to the network.
+    */
+    DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN = 102,
+    /*
+    * Configure the fragmentation feature of ZigBee PRO transport layer.
+    */
+    DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION = 103,
+
+    DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL = 104,
+
+    DLMS_OBJECT_TYPE_DATA_PROTECTION = 30,
+    DLMS_OBJECT_TYPE_ACCOUNT = 111,
+    DLMS_OBJECT_TYPE_CREDIT = 112,
+    DLMS_OBJECT_TYPE_CHARGE = 113,
+    DLMS_OBJECT_TYPE_TOKEN_GATEWAY = 115,
+
+    // Tariff Plan (Piano Tariffario) is used in Italian standard UNI/TS 11291-11.
+    DLMS_OBJECT_TYPE_TARIFF_PLAN = 8192,
     } DLMS_OBJECT_TYPE;
 
     typedef enum
@@ -2462,6 +2502,85 @@ extern "C" {
         DLMS_CAPTURE_METHOD_IMPLICIT
     }DLMS_CAPTURE_METHOD;
 
+    /**
+     * Present functional state of the node.
+     */
+    typedef enum
+    {
+        /**
+        * Disconnected.
+        */
+        DLMS_MAC_STATE_DISCONNECTED,
+        /**
+        * Terminal.
+        */
+        DLMS_MAC_STATE_TERMINAL,
+        /**
+        * Switch.
+        */
+        DLMS_MAC_STATE_SWITCH,
+        /**
+        * Base.
+        */
+        DLMS_MAC_STATE_BASE
+    }DLMS_MAC_STATE;
+
+    /**
+     * Present functional state of the node.
+     */
+    typedef enum
+    {
+        DLMS_MAC_CAPABILITIES_NONE = 0,
+        /**
+        * Switch capable.
+        */
+        DLMS_MAC_CAPABILITIES_SWITCH_CAPABLE = 1,
+        /**
+        * Packet aggregation.
+        */
+        DLMS_MAC_CAPABILITIES_PACKET_AGGREGATION = 2,
+        /**
+        * Contention free period.
+        */
+        DLMS_MAC_CAPABILITIES_CONTENTION_FREE_PERIOD = 4,
+        /**
+        * Direct connection.
+        */
+        DLMS_MAC_CAPABILITIES_DIRECT_CONNECTION = 8,
+        /**
+        * Multicast.
+        */
+        DLMS_MAC_CAPABILITIES_MULTICAST = 0x10,
+        /**
+        * PHY Robustness Management.
+        */
+        DLMS_MAC_CAPABILITIES_PHY_ROBUSTNESS_MANAGEMENT = 0x20,
+        /**
+        * ARQ.
+        */
+        DLMS_MAC_CAPABILITIES_ARQ = 0x40,
+        /**
+        * Reserved for future use.
+        */
+        DLMS_MAC_CAPABILITIES_RESERVED_FOR_FUTURE_USE = 0x80,
+        /**
+        * Direct Connection Switching.
+        */
+        DLMS_MAC_CAPABILITIES_DIRECT_CONNECTION_SWITCHING = 0x100,
+        /**
+        * Multicast Switching Capability.
+        */
+        DLMS_MAC_CAPABILITIES_MULTICAST_SWITCHING_CAPABILITY = 0x200,
+        /**
+        * PHY Robustness Management Switching Capability.
+        */
+        DLMS_MAC_CAPABILITIES_PHY_ROBUSTNESS_MANAGEMENT_SWITCHING_CAPABILITY = 0x400,
+        /**
+        * ARQ Buffering Switching Capability.
+        */
+        DLMS_MAC_CAPABILITIES_ARQ_BUFFERING_SWITCHING_CAPABILITY = 0x800
+    }
+    DLMS_MAC_CAPABILITIES;
 #ifdef  __cplusplus
 }
 #endif

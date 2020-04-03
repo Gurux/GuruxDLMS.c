@@ -7357,6 +7357,631 @@ int cosem_setParameterMonitor(
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
 
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+int cosem_setLlcSscsSetup(
+    dlmsSettings* settings,
+    gxLlcSscsSetup* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int ret = 0;
+    switch (index)
+    {
+    case 2:
+        object->serviceNodeAddress = var_toInteger(value);
+        break;
+    case 3:
+        object->baseNodeAddress = var_toInteger(value);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+int cosem_setPrimeNbOfdmPlcPhysicalLayerCounters(
+    dlmsSettings* settings,
+    gxPrimeNbOfdmPlcPhysicalLayerCounters* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int ret = 0;
+    switch (index)
+    {
+    case 2:
+        object->crcIncorrectCount = var_toInteger(value);
+        break;
+    case 3:
+        object->crcFailedCount = var_toInteger(value);
+        break;
+    case 4:
+        object->txDropCount = var_toInteger(value);
+        break;
+    case 5:
+        object->rxDropCount = var_toInteger(value);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+int cosem_setPrimeNbOfdmPlcMacSetup(
+    dlmsSettings* settings,
+    gxPrimeNbOfdmPlcMacSetup* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int ret = 0;
+    switch (index)
+    {
+    case 2:
+        object->macMinSwitchSearchTime = var_toInteger(value);
+        break;
+    case 3:
+        object->macMaxPromotionPdu = var_toInteger(value);
+        break;
+    case 4:
+        object->macPromotionPduTxPeriod = var_toInteger(value);
+        break;
+    case 5:
+        object->macBeaconsPerFrame = var_toInteger(value);
+        break;
+    case 6:
+        object->macScpMaxTxAttempts = var_toInteger(value);
+        break;
+    case 7:
+        object->macCtlReTxTimer = var_toInteger(value);
+        break;
+    case 8:
+        object->macMaxCtlReTx = var_toInteger(value);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+int cosem_setPrimeNbOfdmPlcMacFunctionalParameters(
+    dlmsSettings* settings,
+    gxPrimeNbOfdmPlcMacFunctionalParameters* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int ret = 0;
+    switch (index)
+    {
+    case 2:
+        object->lnId = var_toInteger(value);
+        break;
+    case 3:
+        object->lsId = var_toInteger(value);
+        break;
+    case 4:
+        object->sId = var_toInteger(value);
+        break;
+    case 5:
+        object->sna.size = 0;
+        ret = bb_set(&object->sna, value->byteArr, bb_size(value->byteArr));
+        break;
+    case 6:
+        object->state = (DLMS_MAC_STATE)var_toInteger(value);
+        break;
+    case 7:
+        object->scpLength = var_toInteger(value);
+        break;
+    case 8:
+        object->nodeHierarchyLevel = var_toInteger(value);
+        break;
+    case 9:
+        object->beaconSlotCount = var_toInteger(value);
+        break;
+    case 10:
+        object->beaconRxSlot = var_toInteger(value);
+        break;
+    case 11:
+        object->beaconTxSlot = var_toInteger(value);
+        break;
+    case 12:
+        object->beaconRxFrequency = var_toInteger(value);
+        break;
+    case 13:
+        object->beaconTxFrequency = var_toInteger(value);
+        break;
+    case 14:
+        object->capabilities = (DLMS_MAC_CAPABILITIES)var_toInteger(value);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+int cosem_setPrimeNbOfdmPlcMacCounters(
+    dlmsSettings* settings,
+    gxPrimeNbOfdmPlcMacCounters* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int ret = 0;
+    switch (index)
+    {
+    case 2:
+        object->txDataPktCount = var_toInteger(value);
+        break;
+    case 3:
+        object->rxDataPktCount = var_toInteger(value);
+        break;
+    case 4:
+        object->txCtrlPktCount = var_toInteger(value);
+        break;
+    case 5:
+        object->rxCtrlPktCount = var_toInteger(value);
+        break;
+    case 6:
+        object->csmaFailCount = var_toInteger(value);
+        break;
+    case 7:
+        object->csmaChBusyCount = var_toInteger(value);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+
+int cosem_setMulticastEntries(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, dlmsVARIANT* value)
+{
+    int ret = 0;
+    int pos;
+    gxMacMulticastEntry* it;
+    arr_clear(&object->multicastEntries);
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned short count = arr_getCapacity(&object->multicastEntries);
+    if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
+    {
+        object->multicastEntries.size = count;
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = arr_getByIndex(&object->multicastEntries, pos, &it, sizeof(gxMacMulticastEntry))) != 0 ||
+                (ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->id)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->members)) != 0)
+            {
+                break;
+            }
+        }
+    }
+#else
+    if (value->Arr != NULL)
+    {
+        dlmsVARIANT* tmp;
+        dlmsVARIANT* tmp2;
+        for (pos = 0; pos != value->Arr->size; ++pos)
+        {
+            ret = va_getByIndex(value->Arr, pos, &tmp);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it = (gxMacMulticastEntry*)gxmalloc(sizeof(gxMacMulticastEntry));
+            if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->id = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->members = var_toInteger(tmp2);
+            arr_push(&object->multicastEntries, it);
+        }
+    }
+#endif //DLMS_IGNORE_MALLOC
+    return 0;
+}
+
+
+int cosem_setSwitchTable(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, dlmsVARIANT* value)
+{
+    int ret = 0;
+    int pos;
+    arr_empty(&object->switchTable);
+#ifdef DLMS_IGNORE_MALLOC
+    short* it;
+    unsigned short count = arr_getCapacity(&object->switchTable);
+    if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
+    {
+        object->switchTable.size = count;
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = arr_getByIndex(&object->switchTable, pos, &it, sizeof(short))) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, it)) != 0)
+            {
+                break;
+            }
+        }
+    }
+#else
+    if (value->Arr != NULL)
+    {
+        dlmsVARIANT* it;
+        for (pos = 0; pos != value->Arr->size; ++pos)
+        {
+            if ((ret = va_getByIndex(value->Arr, pos, &it)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            arr_push(&object->switchTable, (void*)var_toInteger(it));
+        }
+    }
+#endif //DLMS_IGNORE_MALLOC
+    return 0;
+}
+
+int cosem_setDirectTable(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, dlmsVARIANT* value)
+{
+    int ret = 0;
+    int pos;
+    gxMacDirectTable* it;
+    arr_clear(&object->directTable);
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned short count = arr_getCapacity(&object->directTable);
+    if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
+    {
+        object->directTable.size = count;
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = arr_getByIndex(&object->directTable, pos, &it, sizeof(gxMacDirectTable))) != 0 ||
+                (ret = cosem_checkStructure(value->byteArr, 7)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->sourceSId)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->sourceLnId)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->sourceLcId)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->destinationSId)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->destinationLnId)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->destinationLcId)) != 0 ||
+                (ret = cosem_getOctectString2(value->byteArr, it->did, sizeof(it->did), NULL)) != 0)
+            {
+                break;
+            }
+        }
+    }
+#else
+    if (value->Arr != NULL)
+    {
+        dlmsVARIANT* tmp;
+        dlmsVARIANT* tmp2;
+        for (pos = 0; pos != value->Arr->size; ++pos)
+        {
+            ret = va_getByIndex(value->Arr, pos, &tmp);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it = (gxMacDirectTable*)gxmalloc(sizeof(gxMacDirectTable));
+            if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->sourceSId = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->sourceLnId = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->sourceLcId = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->destinationSId = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 4, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->destinationLnId = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 5, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->destinationLcId = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 6, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            if ((ret = bb_get(tmp2->byteArr, it->did, sizeof(it->did))) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            arr_push(&object->directTable, it);
+        }
+    }
+#endif //DLMS_IGNORE_MALLOC
+    return 0;
+}
+
+int cosem_setAvailableSwitches(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, dlmsVARIANT* value)
+{
+    int ret = 0;
+    int pos;
+    gxMacAvailableSwitch* it;
+    obj_clearAvailableSwitches(&object->availableSwitches);
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned short count = arr_getCapacity(&object->availableSwitches);
+    if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
+    {
+        object->availableSwitches.size = count;
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = arr_getByIndex(&object->availableSwitches, pos, &it, sizeof(gxMacAvailableSwitch))) != 0 ||
+                (ret = cosem_checkStructure(value->byteArr, 5)) != 0 ||
+                (ret = cosem_getOctectString2(value->byteArr, it->sna, sizeof(it->sna), NULL)) != 0 ||
+                (ret = cosem_getInt32(value->byteArr, &it->lsId)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->level)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->rxLevel)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->rxSnr)) != 0)
+            {
+                break;
+            }
+        }
+    }
+#else
+    if (value->Arr != NULL)
+    {
+        dlmsVARIANT* tmp;
+        dlmsVARIANT* tmp2;
+        for (pos = 0; pos != value->Arr->size; ++pos)
+        {
+            ret = va_getByIndex(value->Arr, pos, &tmp);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it = (gxMacAvailableSwitch*)gxmalloc(sizeof(gxMacAvailableSwitch));
+            bb_init(&it->sna);
+            bb_capacity(&it->sna, tmp2->byteArr->size);
+            if ((ret = bb_set(&it->sna, tmp2->byteArr, tmp2->byteArr->size)) != DLMS_ERROR_CODE_OK)
+            {
+                gxfree(it);
+                break;
+            }
+            if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                gxfree(it);
+                break;
+            }
+            it->lsId = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                gxfree(it);
+                break;
+            }
+            it->level = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                gxfree(it);
+                break;
+            }
+            it->rxLevel = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 4, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                gxfree(it);
+                break;
+            }
+            it->rxSnr = var_toInteger(tmp2);
+            arr_push(&object->availableSwitches, it);
+        }
+    }
+#endif //DLMS_IGNORE_MALLOC
+    return 0;
+}
+
+int cosem_setCommunications(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, dlmsVARIANT* value)
+{
+    int ret = 0;
+    int pos;
+    gxMacPhyCommunication* it;
+    arr_clear(&object->communications);
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned short count = arr_getCapacity(&object->communications);
+    if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
+    {
+        object->communications.size = count;
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = arr_getByIndex(&object->communications, pos, &it, sizeof(gxMacPhyCommunication))) != 0 ||
+                (ret = cosem_checkStructure(value->byteArr, 9)) != 0 ||
+                (ret = cosem_getOctectString2(value->byteArr, it->eui, sizeof(it->eui), NULL)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->txPower)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->txCoding)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->rxCoding)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->rxLvl)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->snr)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->txPowerModified)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->txCodingModified)) != 0 ||
+                (ret = cosem_getInt16(value->byteArr, &it->rxCodingModified)) != 0)
+            {
+                break;
+            }
+        }
+    }
+#else
+    if (value->Arr != NULL)
+    {
+        dlmsVARIANT* tmp;
+        dlmsVARIANT* tmp2;
+        for (pos = 0; pos != value->Arr->size; ++pos)
+        {
+            ret = va_getByIndex(value->Arr, pos, &tmp);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it = (gxMacPhyCommunication*)gxmalloc(sizeof(gxMacPhyCommunication));
+            if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            if ((ret = bb_get(tmp2->byteArr, it->eui, sizeof(it->eui))) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->txPower = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->txCoding = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->rxCoding = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 4, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->rxLvl = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 5, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->snr = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 6, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->txPowerModified = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 7, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->txCodingModified = var_toInteger(tmp2);
+            if ((ret = va_getByIndex(tmp->Arr, 8, &tmp2)) != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it->rxCodingModified = var_toInteger(tmp2);
+            arr_push(&object->communications, it);
+        }
+    }
+#endif //DLMS_IGNORE_MALLOC
+    return 0;
+}
+
+int cosem_setPrimeNbOfdmPlcMacNetworkAdministrationData(
+    dlmsSettings* settings,
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int ret = 0;
+    switch (index)
+    {
+    case 2:
+        ret = cosem_setMulticastEntries(object, value);
+        break;
+    case 3:
+        ret = cosem_setSwitchTable(object, value);
+        break;
+    case 4:
+        ret = cosem_setDirectTable(object, value);
+        break;
+    case 5:
+        ret = cosem_setAvailableSwitches(object, value);
+        break;
+    case 6:
+        ret = cosem_setCommunications(object, value);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+int cosem_setPrimeNbOfdmPlcApplicationsIdentification(
+    dlmsSettings* settings,
+    gxPrimeNbOfdmPlcApplicationsIdentification* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int ret = 0;
+    switch (index)
+    {
+    case 2:
+    {
+        int len = bb_size(value->byteArr);
+#ifdef DLMS_IGNORE_MALLOC
+        ret = bb_get(value->byteArr, object->firmwareVersion, len);
+        object->firmwareVersion[len] = 0;
+#else
+        gxfree(object->firmwareVersion);
+        if (len == 0)
+        {
+            object->firmwareVersion = NULL;
+        }
+        else
+        {
+            object->firmwareVersion = gxmalloc(len + 1);
+            if (object->firmwareVersion == NULL)
+            {
+                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            else
+            {
+                ret = bb_get(value->byteArr, object->firmwareVersion, len);
+                object->firmwareVersion[len] = 0;
+            }
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    break;
+    case 3:
+        object->vendorId = var_toInteger(value);
+        break;
+    case 4:
+        object->productId = var_toInteger(value);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #ifdef DLMS_ITALIAN_STANDARD
 int updateIntervals(gxInterval* interval, gxByteBuffer* value)
 {
@@ -7846,6 +8471,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
         ret = cosem_setGsmDiagnostic((gxGsmDiagnostic*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
+
 #ifndef DLMS_IGNORE_COMPACT_DATA
     case DLMS_OBJECT_TYPE_COMPACT_DATA:
         ret = cosem_setCompactData(settings, (gxCompactData*)e->target, e->index, &e->value);
@@ -7856,6 +8482,41 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
         ret = cosem_setParameterMonitor(settings, (gxParameterMonitor*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+    case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
+        ret = cosem_setLlcSscsSetup(settings, (gxLlcSscsSetup*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
+        ret = cosem_setPrimeNbOfdmPlcPhysicalLayerCounters(settings, (gxPrimeNbOfdmPlcPhysicalLayerCounters*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
+        ret = cosem_setPrimeNbOfdmPlcMacSetup(settings, (gxPrimeNbOfdmPlcMacSetup*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
+        ret = cosem_setPrimeNbOfdmPlcMacFunctionalParameters(settings, (gxPrimeNbOfdmPlcMacFunctionalParameters*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
+        ret = cosem_setPrimeNbOfdmPlcMacCounters(settings, (gxPrimeNbOfdmPlcMacCounters*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
+        ret = cosem_setPrimeNbOfdmPlcMacNetworkAdministrationData(settings, (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
+        ret = cosem_setPrimeNbOfdmPlcApplicationsIdentification(settings, (gxPrimeNbOfdmPlcApplicationsIdentification*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = cosem_setTariffPlan((gxTariffPlan*)e->target, e->index, &e->value);

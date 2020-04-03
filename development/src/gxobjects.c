@@ -46,7 +46,7 @@
 #include "../include/gxobjects.h"
 #include "../include/objectarray.h"
 
-const unsigned char* obj_getLogicalName(gxObject * target)
+const unsigned char* obj_getLogicalName(gxObject* target)
 {
     if (target == NULL)
     {
@@ -77,7 +77,7 @@ int obj_clearProfileGenericBuffer(gxArray* buffer)
     int pos, ret;
     for (pos = 0; pos != buffer->size; ++pos)
     {
-        ret = arr_getByIndex(buffer, pos, (void**)& va);
+        ret = arr_getByIndex(buffer, pos, (void**)&va);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -99,7 +99,7 @@ int obj_clearPushObjectList(gxArray* buffer)
     //Clear push objects.
     for (pos = 0; pos != buffer->size; ++pos)
     {
-        ret = arr_getByIndex(buffer, pos, (void**)& it);
+        ret = arr_getByIndex(buffer, pos, (void**)&it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -123,7 +123,7 @@ int obj_clearCreditChargeConfigurations(gxArray* list)
     //Clear push objects.
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             break;
@@ -146,7 +146,7 @@ int obj_clearTokenGatewayConfigurations(gxArray* list)
     //Clear push objects.
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             break;
@@ -168,7 +168,7 @@ int obj_clearSapList(gxArray* buffer)
     //Objects are not cleared because client owns them and clears them later.
     for (pos = 0; pos != buffer->size; ++pos)
     {
-        ret = arr_getByIndex(buffer, pos, (void**)& it);
+        ret = arr_getByIndex(buffer, pos, (void**)&it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             break;
@@ -190,7 +190,7 @@ int obj_clearProfileGenericCaptureObjects(gxArray* captureObjects)
     //Objects are not cleared because client owns them and clears them later.
     for (pos = 0; pos != captureObjects->size; ++pos)
     {
-        ret = arr_getByIndex(captureObjects, pos, (void**)& kv);
+        ret = arr_getByIndex(captureObjects, pos, (void**)&kv);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             break;
@@ -212,7 +212,7 @@ int obj_clearSeasonProfile(gxArray* list)
     gxSeasonProfile* sp;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& sp);
+        ret = arr_getByIndex(list, pos, (void**)&sp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             break;
@@ -233,7 +233,7 @@ int obj_clearWeekProfileTable(gxArray* list)
     gxWeekProfile* wp;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& wp);
+        ret = arr_getByIndex(list, pos, (void**)&wp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             break;
@@ -254,14 +254,14 @@ int obj_clearDayProfileTable(gxArray* list)
     gxDayProfileAction* dp;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
         for (pos2 = 0; pos2 != it->daySchedules.size; ++pos2)
         {
-            ret = arr_getByIndex(&it->daySchedules, pos2, (void**)& dp);
+            ret = arr_getByIndex(&it->daySchedules, pos2, (void**)&dp);
             if (ret != DLMS_ERROR_CODE_OK)
             {
                 return ret;
@@ -290,7 +290,7 @@ int obj_clearModemConfigurationInitialisationStrings(gxArray* list)
     gxModemInitialisation* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
@@ -313,14 +313,14 @@ int obj_clearScriptTable(gxArray* list)
     gxScriptAction* sa;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& s);
+        ret = arr_getByIndex(list, pos, (void**)&s);
         if (ret != 0)
         {
             break;
         }
         for (pos2 = 0; pos2 != s->actions.size; ++pos2)
         {
-            ret = arr_getByIndex(&s->actions, pos2, (void**)& sa);
+            ret = arr_getByIndex(&s->actions, pos2, (void**)&sa);
             if (ret != 0)
             {
                 break;
@@ -361,7 +361,7 @@ int obj_clearRegisterActivationMaskList(gxArray* list)
     gxKey* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -383,7 +383,7 @@ int obj_clearIP4SetupOptions(gxArray* list)
     gxip4SetupIpOption* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -404,7 +404,7 @@ int obj_clearPPPSetupIPCPOptions(gxArray* list)
     gxpppSetupIPCPOption* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -424,7 +424,7 @@ int obj_clearPPPSetupLCPOptions(gxArray* list)
     gxpppSetupLcpOption* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -445,7 +445,7 @@ int obj_clearActiveDevices(gxArray* list)
     gxActiveDevice* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -467,7 +467,7 @@ int obj_clearChargeTables(gxArray* list)
     gxChargeTable* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
@@ -488,12 +488,34 @@ int obj_clearUserList(gxArray* list)
     gxKey2* it;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)& it);
+        ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != 0)
         {
             return ret;
         }
         gxfree(it->value);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(list);
+    return ret;
+}
+
+//Clear available switches.
+int obj_clearAvailableSwitches(
+    gxArray* list)
+{
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxMacAvailableSwitch* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        ret = arr_getByIndex(list, pos, (void**)&it);
+        if (ret != 0)
+        {
+            return ret;
+        }
+        bb_clear(&it->sna);
     }
 #endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
@@ -509,7 +531,7 @@ int obj_clearCertificateInfo(gxArray* arr)
     unsigned short pos;
     for (pos = 0; pos != arr->size; ++pos)
     {
-        if ((ret = arr_getByIndex(arr, pos, (void**)& it)) != 0)
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0)
         {
             break;
         }
@@ -713,7 +735,7 @@ void obj_clear(gxObject* object)
             int pos = 0;
             while (pos != ((gxImageTransfer*)object)->imageActivateInfo.size)
             {
-                if (arr_getByIndex(&((gxImageTransfer*)object)->imageActivateInfo, pos, (void**)& it) == 0)
+                if (arr_getByIndex(&((gxImageTransfer*)object)->imageActivateInfo, pos, (void**)&it) == 0)
                 {
                     bb_clear(&it->identification);
                     bb_clear(&it->signature);
@@ -983,7 +1005,39 @@ void obj_clear(gxObject* object)
             arr_clear(&((gxParameterMonitor*)object)->parameters);
             break;
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
-
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+        case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
+            break;
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+        case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
+            break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+        case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
+            break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+        case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
+            break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+        case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
+            break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+        case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
+            arr_clear(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->multicastEntries);
+            arr_empty(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->switchTable);
+            arr_clear(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->directTable);
+            obj_clearAvailableSwitches(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->availableSwitches);
+            arr_clear(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->communications);
+            break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+        case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
+            break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #ifdef DLMS_ITALIAN_STANDARD
         case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         {
@@ -1229,6 +1283,34 @@ unsigned char obj_attributeCount(gxObject* object)
         return 8;
     case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
         return 4;
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+    case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
+        return 3;
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
+        return 5;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
+        return 8;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
+        return 14;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
+        return 7;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
+        return 6;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
+        return 4;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
     default:
         //Unknown type.
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -1558,6 +1640,34 @@ unsigned char obj_methodCount(gxObject* object)
         return 2;
     case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
         return 2;
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+    case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
+        return 1;
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
+        return 1;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
+        return 0;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
+        return 0;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
+        return 1;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
+        return 1;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
+        return 0;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         return 0;
@@ -1718,7 +1828,7 @@ int obj_clearParametersList(gxArray* buffer)
     //Clear push objects.
     for (pos = 0; pos != buffer->size; ++pos)
     {
-        ret = arr_getByIndex(buffer, pos, (void**)& it);
+        ret = arr_getByIndex(buffer, pos, (void**)&it);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;

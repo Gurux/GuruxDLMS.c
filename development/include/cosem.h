@@ -80,6 +80,8 @@ extern "C" {
 
   int cosem_getInt16(gxByteBuffer* bb, short* value);
 
+  int cosem_getInt32(gxByteBuffer* bb, int* value);
+
   int cosem_getOctectString(gxByteBuffer* bb, gxByteBuffer* value);
 
   int cosem_getString(gxByteBuffer* bb, gxByteBuffer* value);

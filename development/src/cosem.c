@@ -315,6 +315,41 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxParameterMonitor);
         break;
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+    case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
+        size = sizeof(gxLlcSscsSetup);
+        break;
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
+        size = sizeof(gxPrimeNbOfdmPlcPhysicalLayerCounters);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
+        size = sizeof(gxPrimeNbOfdmPlcMacSetup);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
+        size = sizeof(gxPrimeNbOfdmPlcMacFunctionalParameters);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
+        size = sizeof(gxPrimeNbOfdmPlcMacCounters);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
+        size = sizeof(gxPrimeNbOfdmPlcMacNetworkAdministrationData);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
+        size = sizeof(gxPrimeNbOfdmPlcApplicationsIdentification);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         size = sizeof(gxTariffPlan);
@@ -333,7 +368,7 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
     }
 #endif
     return size;
-}
+    }
 
 #ifndef DLMS_IGNORE_MALLOC
 int cosem_createObject(DLMS_OBJECT_TYPE type, gxObject** object)
@@ -614,7 +649,7 @@ int cosem_checkStructure(gxByteBuffer* bb, unsigned char expectedItemCount)
     return 0;
 }
 
-int cosem_checkArray(gxByteBuffer* bb, unsigned short *count)
+int cosem_checkArray(gxByteBuffer* bb, unsigned short* count)
 {
     int ret;
     unsigned char ch;
@@ -735,6 +770,25 @@ int cosem_getInt16(gxByteBuffer* bb, short* value)
     return 0;
 }
 
+int cosem_getInt32(gxByteBuffer* bb, int* value)
+{
+    int ret;
+    unsigned char tmp;
+    if ((ret = bb_getUInt8(bb, &tmp)) != 0)
+    {
+        return ret;
+    }
+    if (tmp != DLMS_DATA_TYPE_INT32)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = bb_getInt32(bb, value)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+
 int cosem_getOctectStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned char type)
 {
     int ret;
@@ -834,7 +888,7 @@ int cosem_getDateTimeBase(gxByteBuffer* bb, gxtime* value, unsigned char type)
     var_init(&tmp);
 #endif //DLMS_IGNORE_MALLOC
     di_init(&info);
-    info.type = (DLMS_DATA_TYPE) type;
+    info.type = (DLMS_DATA_TYPE)type;
     return dlms_getData(bb, &info, &tmp);
 }
 
@@ -887,7 +941,7 @@ int cosem_getDateTimeFromOctectStringBase(gxByteBuffer* bb, gxtime* value, unsig
         }
     }
     di_init(&info);
-    info.type = (DLMS_DATA_TYPE) type;
+    info.type = (DLMS_DATA_TYPE)type;
     return dlms_getData(bb, &info, &tmp);
 }
 
@@ -943,7 +997,7 @@ int cosem_getVariant(gxByteBuffer* bb, dlmsVARIANT* value)
         return 0;
     }
     di_init(&info);
-    info.type = (DLMS_DATA_TYPE) ch;
+    info.type = (DLMS_DATA_TYPE)ch;
     return dlms_getData(bb, &info, value);
 }
 
@@ -1024,7 +1078,7 @@ int cosem_setOctectString(gxByteBuffer* bb, gxByteBuffer* value)
         }
     }
     else if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-        (ret = bb_setUInt8(bb, (unsigned char) value->size)) != 0 ||
+        (ret = bb_setUInt8(bb, (unsigned char)value->size)) != 0 ||
         (ret = bb_set(bb, value->data, (unsigned short)value->size)) != 0)
     {
         //Error code is returned at the end of the function.
@@ -1081,7 +1135,7 @@ int cosem_setOctectString2(
         }
     }
     else if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-        (ret = bb_setUInt8(bb, (unsigned char) size)) != 0 ||
+        (ret = bb_setUInt8(bb, (unsigned char)size)) != 0 ||
         (ret = bb_set(bb, value, size)) != 0)
     {
         //Error code is returned at the end of the function.

@@ -350,20 +350,39 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
 
         for (pos2 = 0; pos2 != dp->daySchedules.size; ++pos2)
         {
+            unsigned char* ln;
 #ifndef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action)) != 0 ||
-                (ret = var_setTimeAsOctetString(&tmp, &action->startTime)) != 0 ||
+            if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action, sizeof(gxDayProfileAction))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if (action->script == NULL)
+            {
+                ln = EMPTY_LN;
+            }
+            else
+            {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+                ln = action->script->logicalName;
+#else
+                ln = action->scriptLogicalName;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+            }
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = var_setTimeAsOctetString(&tmp, &action->startTime)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(ba, 3)) != 0 ||
                 (ret = var_getBytes2(&tmp, DLMS_DATA_TYPE_OCTET_STRING, ba)) != 0 ||
                 (ret = var_clear(&tmp)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = bb_setUInt8(ba, 6)) != 0 ||
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
-                (ret = bb_set(ba, action->script->logicalName, 6)) != 0 ||
-#else
-                (ret = bb_set(ba, action->scriptLogicalName, 6)) != 0 ||
-#endif //DLMS_IGNORE_OBJECT_POINTERS
+                (ret = bb_set(ba, ln, 6)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(ba, action->scriptSelector)) != 0)
             {
@@ -371,17 +390,12 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
             }
 
 #else
-            if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action, sizeof(gxDayProfileAction))) != 0 ||
-                (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+            if ((ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(ba, 3)) != 0 ||
                 (ret = cosem_setTimeAsOctectString(ba, &action->startTime)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = bb_setUInt8(ba, 6)) != 0 ||
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
-                (ret = bb_set(ba, action->script->logicalName, 6)) != 0 ||
-#else
-                (ret = bb_set(ba, action->scriptLogicalName, 6)) != 0 ||
-#endif //DLMS_IGNORE_OBJECT_POINTERS
+                (ret = bb_set(ba, ln, 6)) != 0 ||
                 (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(ba, action->scriptSelector)) != 0)
 
@@ -5523,6 +5537,41 @@ int cosem_getValue(
         ret = cosem_getParameterMonitor(e);
         break;
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+    case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
+        ret = cosem_getLlcSscsSetup(e);
+        break;
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
+        ret = cosem_getPrimeNbOfdmPlcPhysicalLayerCounters(e);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
+        ret = cosem_getPrimeNbOfdmPlcMacSetup(e);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
+        ret = cosem_getPrimeNbOfdmPlcMacFunctionalParameters(e);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
+        ret = cosem_getPrimeNbOfdmPlcMacCounters(e);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
+        ret = cosem_getPrimeNbOfdmPlcMacNetworkAdministrationData(e);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
+        ret = cosem_getPrimeNbOfdmPlcApplicationsIdentification(e);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = cosem_getTariffPlan(e);
@@ -5941,3 +5990,480 @@ int cosem_getParameterMonitor(
     return ret;
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
+
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+int cosem_getLlcSscsSetup(
+    gxValueEventArg* e)
+{
+    int ret;
+    gxLlcSscsSetup* object = (gxLlcSscsSetup*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = var_setUInt16(&e->value, object->serviceNodeAddress);
+        break;
+    case 3:
+        ret = var_setUInt16(&e->value, object->baseNodeAddress);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+int cosem_getPrimeNbOfdmPlcPhysicalLayerCounters(
+    gxValueEventArg* e)
+{
+    int ret;
+    gxPrimeNbOfdmPlcPhysicalLayerCounters* object = (gxPrimeNbOfdmPlcPhysicalLayerCounters*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = var_setUInt16(&e->value, object->crcIncorrectCount);
+        break;
+    case 3:
+        ret = var_setUInt16(&e->value, object->crcFailedCount);
+        break;
+    case 4:
+        ret = var_setUInt16(&e->value, object->txDropCount);
+        break;
+    case 5:
+        ret = var_setUInt16(&e->value, object->rxDropCount);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+int cosem_getPrimeNbOfdmPlcMacSetup(
+    gxValueEventArg* e)
+{
+    int ret;
+    gxPrimeNbOfdmPlcMacSetup* object = (gxPrimeNbOfdmPlcMacSetup*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = var_setUInt8(&e->value, object->macMinSwitchSearchTime);
+        break;
+    case 3:
+        ret = var_setUInt8(&e->value, object->macMaxPromotionPdu);
+        break;
+    case 4:
+        ret = var_setUInt8(&e->value, object->macPromotionPduTxPeriod);
+        break;
+    case 5:
+        ret = var_setUInt8(&e->value, object->macBeaconsPerFrame);
+        break;
+    case 6:
+        ret = var_setUInt8(&e->value, object->macScpMaxTxAttempts);
+        break;
+    case 7:
+        ret = var_setUInt8(&e->value, object->macCtlReTxTimer);
+        break;
+    case 8:
+        ret = var_setUInt8(&e->value, object->macMaxCtlReTx);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+int cosem_getPrimeNbOfdmPlcMacFunctionalParameters(
+    gxValueEventArg* e)
+{
+    int ret;
+    gxPrimeNbOfdmPlcMacFunctionalParameters* object = (gxPrimeNbOfdmPlcMacFunctionalParameters*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = var_setInt16(&e->value, object->lnId);
+        break;
+    case 3:
+        ret = var_setUInt8(&e->value, object->lsId);
+        break;
+    case 4:
+        ret = var_setUInt8(&e->value, object->sId);
+        break;
+    case 5:
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        unsigned short size;
+        ret = cosem_getOctectString2(e->value.byteArr, object->sna.data, object->sna.size, &size);
+#else
+        ret = var_addBytes(&e->value, object->sna.data, object->sna.size);
+#endif //DLMS_IGNORE_MALLOC
+    }
+    break;
+    case 6:
+        ret = var_setEnum(&e->value, object->state);
+        break;
+    case 7:
+        ret = var_setUInt16(&e->value, object->scpLength);
+        break;
+    case 8:
+        ret = var_setUInt8(&e->value, object->nodeHierarchyLevel);
+        break;
+    case 9:
+        ret = var_setUInt8(&e->value, object->beaconSlotCount);
+        break;
+    case 10:
+        ret = var_setUInt8(&e->value, object->beaconRxSlot);
+        break;
+    case 11:
+        ret = var_setUInt8(&e->value, object->beaconTxSlot);
+        break;
+    case 12:
+        ret = var_setUInt8(&e->value, object->beaconRxFrequency);
+        break;
+    case 13:
+        ret = var_setUInt8(&e->value, object->beaconTxFrequency);
+        break;
+    case 14:
+        ret = var_setEnum(&e->value, object->capabilities);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+int cosem_getPrimeNbOfdmPlcMacCounters(
+    gxValueEventArg* e)
+{
+    int ret;
+    gxPrimeNbOfdmPlcMacCounters* object = (gxPrimeNbOfdmPlcMacCounters*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = var_setUInt32(&e->value, object->txDataPktCount);
+        break;
+    case 3:
+        ret = var_setUInt32(&e->value, object->rxDataPktCount);
+        break;
+    case 4:
+        ret = var_setUInt32(&e->value, object->txCtrlPktCount);
+        break;
+    case 5:
+        ret = var_setUInt32(&e->value, object->rxCtrlPktCount);
+        break;
+    case 6:
+        ret = var_setUInt32(&e->value, object->csmaFailCount);
+        break;
+    case 7:
+        ret = var_setUInt32(&e->value, object->csmaChBusyCount);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+
+int cosem_getMulticastEntries(gxValueEventArg* e)
+{
+    gxMacMulticastEntry* it;
+    int ret, pos;
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
+        (ret = hlp_setObjectCount(object->multicastEntries.size, data)) != 0)
+    {
+        return ret;
+    }
+
+    for (pos = 0; pos != object->multicastEntries.size; ++pos)
+    {
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+            (ret = bb_setUInt8(data, 2)) != 0)
+        {
+            break;
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->multicastEntries, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(&object->multicastEntries, pos, (void**)&it, sizeof(gxMacMulticastEntry))) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+
+        if ((ret = cosem_setInt8(data, it->id)) != 0 ||
+            (ret = cosem_setInt16(data, it->members)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
+int cosem_getSwitchTable(gxValueEventArg* e)
+{
+    short* it;
+    int ret, pos;
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
+        (ret = hlp_setObjectCount(object->switchTable.size, data)) != 0)
+    {
+        return ret;
+    }
+
+    for (pos = 0; pos != object->switchTable.size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->switchTable, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(&object->switchTable, pos, (void**)&it, sizeof(short))) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+        if ((ret = cosem_setInt16(data, (short)it)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
+int cosem_getDirectTable(gxValueEventArg* e)
+{
+    gxMacDirectTable* it;
+    int ret, pos;
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
+        (ret = hlp_setObjectCount(object->directTable.size, data)) != 0)
+    {
+        return ret;
+    }
+
+    for (pos = 0; pos != object->directTable.size; ++pos)
+    {
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+            (ret = bb_setUInt8(data, 7)) != 0)
+        {
+            break;
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->directTable, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(&object->directTable, pos, (void**)&it, sizeof(gxMacDirectTable))) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+
+        if ((ret = cosem_setInt16(data, it->sourceSId)) != 0 ||
+            (ret = cosem_setInt16(data, it->sourceLnId)) != 0 ||
+            (ret = cosem_setInt16(data, it->sourceLcId)) != 0 ||
+            (ret = cosem_setInt16(data, it->destinationSId)) != 0 ||
+            (ret = cosem_setInt16(data, it->destinationLnId)) != 0 ||
+            (ret = cosem_setInt16(data, it->destinationLcId)) != 0 ||
+            (ret = cosem_setOctectString2(data, it->did, sizeof(it->did))) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
+int cosem_getAvailableSwitches(gxValueEventArg* e)
+{
+    gxMacAvailableSwitch* it;
+    int ret, pos;
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
+        (ret = hlp_setObjectCount(object->availableSwitches.size, data)) != 0)
+    {
+        return ret;
+    }
+
+    for (pos = 0; pos != object->availableSwitches.size; ++pos)
+    {
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+            (ret = bb_setUInt8(data, 5)) != 0)
+        {
+            break;
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->availableSwitches, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(&object->availableSwitches, pos, (void**)&it, sizeof(gxMacAvailableSwitch))) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+
+        if ((ret = cosem_setOctectString2(data, it->sna.data, it->sna.size)) != 0 ||
+            (ret = cosem_setInt32(data, it->lsId)) != 0 ||
+            (ret = cosem_setInt16(data, it->level)) != 0 ||
+            (ret = cosem_setInt16(data, it->rxLevel)) != 0 ||
+            (ret = cosem_setInt16(data, it->rxSnr)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
+
+int cosem_getCommunications(gxValueEventArg* e)
+{
+    gxMacPhyCommunication* it;
+    int ret, pos;
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
+        (ret = hlp_setObjectCount(object->communications.size, data)) != 0)
+    {
+        return ret;
+    }
+
+    for (pos = 0; pos != object->communications.size; ++pos)
+    {
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+            (ret = bb_setUInt8(data, 9)) != 0)
+        {
+            break;
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->communications, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(&object->availableSwitches, pos, (void**)&it, sizeof(gxMacPhyCommunication))) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+
+        if ((ret = cosem_setOctectString2(data, it->eui, sizeof(it->eui))) != 0 ||
+            (ret = cosem_setInt16(data, it->txPower)) != 0 ||
+            (ret = cosem_setInt16(data, it->txCoding)) != 0 ||
+            (ret = cosem_setInt16(data, it->rxCoding)) != 0 ||
+            (ret = cosem_setInt16(data, it->rxLvl)) != 0 ||
+            (ret = cosem_setInt16(data, it->snr)) != 0 ||
+            (ret = cosem_setInt16(data, it->txPowerModified)) != 0 ||
+            (ret = cosem_setInt16(data, it->txCodingModified)) != 0 ||
+            (ret = cosem_setInt16(data, it->rxCodingModified)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+int  cosem_getPrimeNbOfdmPlcMacNetworkAdministrationData(
+    gxValueEventArg* e)
+{
+    int ret;
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = cosem_getMulticastEntries(e);
+        break;
+    case 3:
+        ret = cosem_getSwitchTable(e);
+        break;
+    case 4:
+        ret = cosem_getDirectTable(e);
+        break;
+    case 5:
+        ret = cosem_getAvailableSwitches(e);
+        break;
+    case 6:
+        ret = cosem_getCommunications(e);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+int  cosem_getPrimeNbOfdmPlcApplicationsIdentification(
+    gxValueEventArg* e)
+{
+    int ret;
+    gxPrimeNbOfdmPlcApplicationsIdentification* object = (gxPrimeNbOfdmPlcApplicationsIdentification*)e->target;
+    switch (e->index)
+    {
+    case 2:
+    {
+        if ((ret = cosem_getByteBuffer(e)) != 0)
+        {
+            return ret;
+        }
+        gxByteBuffer* data = e->value.byteArr;
+        int len = (int)strlen(object->firmwareVersion);
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+            (ret = bb_setUInt8(data, len)) != 0 ||
+            (ret = bb_set(data, (unsigned char*)object->firmwareVersion, len)) != 0)
+        {
+            break;
+        }
+    }
+    break;
+    case 3:
+        ret = var_setUInt16(&e->value, object->vendorId);
+        break;
+    case 4:
+        ret = var_setUInt16(&e->value, object->productId);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION

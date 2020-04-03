@@ -194,13 +194,42 @@ extern "C" {
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
-
     //Convert compact data buffer to array of values.
     int compactData_getValues(
         dlmsSettings* settings,
         gxByteBuffer* templateDescription,
         gxByteBuffer* buffer,
         variantArray* values);
+#endif //DLMS_IGNORE_COMPACT_DATA
+
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+    int cosem_getLlcSscsSetup(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+    int cosem_getPrimeNbOfdmPlcPhysicalLayerCounters(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+    int cosem_getPrimeNbOfdmPlcMacSetup(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+    int cosem_getPrimeNbOfdmPlcMacFunctionalParameters(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+    int cosem_getPrimeNbOfdmPlcMacCounters(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+    int  cosem_getPrimeNbOfdmPlcMacNetworkAdministrationData(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+    int  cosem_getPrimeNbOfdmPlcApplicationsIdentification(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 
 #ifdef DLMS_ITALIAN_STANDARD
     //Convert compact data buffer to array of values.
@@ -213,8 +242,6 @@ extern "C" {
         variantArray* values,
         unsigned char appendAA);
 #endif //DLMS_ITALIAN_STANDARD
-
-#endif //DLMS_IGNORE_COMPACT_DATA
 
 #ifdef  __cplusplus
 }

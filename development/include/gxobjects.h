@@ -61,29 +61,29 @@ extern "C" {
 
     typedef enum
     {
-        /**
+        /*
          First in first out
          When circle buffer is full first item is removed.
         */
         DLMS_SORT_METHOD_FIFO = 1,
-        /**
+        /*
          Last in first out.
          When circle buffer is full last item is removed.
         */
         DLMS_SORT_METHOD_LIFO = 2,
-        /**
+        /*
          Largest is first.
         */
         DLMS_SORT_METHOD_LARGEST = 3,
-        /**
+        /*
          Smallest is first.
         */
         DLMS_SORT_METHOD_SMALLEST = 4,
-        /**
+        /*
          Nearst to zero is first.
         */
         DLMS_SORT_METHOD_NEAREST_TO_ZERO = 5,
-        /**
+        /*
          Farest from zero is first.
         */
         DLMS_SORT_METHOD_FAREST_FROM_ZERO = 6
@@ -182,21 +182,21 @@ extern "C" {
         DLMS_AUTO_ANSWER_MODE_NONE = 3
     } DLMS_AUTO_ANSWER_MODE;
 
-    /**
+    /*
      Defines the protocol used by the meter on the port.
     */
     typedef enum
     {
-        /**
+        /*
          Protocol according to IEC 62056-21 (modes A�E),
         */
         DLMS_OPTICAL_PROTOCOL_MODE_DEFAULT = 0,
-        /**
+        /*
          Protocol according to IEC 62056-46.
          Using this enumeration value all other attributes of this IC are not applicable.
         */
         DLMS_OPTICAL_PROTOCOL_MODE_NET = 1,
-        /**
+        /*
          Protocol not specified. Using this enumeration value,
          ProposedBaudrate is used for setting the communication speed on the port.
          All other attributes are not applicable.
@@ -206,59 +206,59 @@ extern "C" {
 
     typedef enum
     {
-        /**
+        /*
          Minimium time is 20 ms.
         */
         DLMS_LOCAL_PORT_RESPONSE_TIME_20_MS = 0,
-        /**
+        /*
          Minimium time is 200 ms.
         */
         DLMS_LOCAL_PORT_RESPONSE_TIME_200_MS = 1
     } DLMS_LOCAL_PORT_RESPONSE_TIME;
 
-    /**
+    /*
      *
      * Defines the baud rates.
      */
     typedef enum
     {
-        /**
+        /*
         Baudrate is 300.
         */
         DLMS_BAUD_RATE_300 = 0,
-        /**
+        /*
          Baudrate is 600.
         */
         DLMS_BAUD_RATE_600,
-        /**
+        /*
          Baudrate is 1200.
         */
         DLMS_BAUD_RATE_1200,
-        /**
+        /*
          Baudrate is 2400.
         */
         DLMS_BAUD_RATE_2400,
-        /**
+        /*
          Baudrate is 4800.
         */
         DLMS_BAUD_RATE_4800,
-        /**
+        /*
          Baudrate is 9600.
         */
         DLMS_BAUD_RATE_9600,
-        /**
+        /*
          Baudrate is 19200.
         */
         DLMS_BAUD_RATE_19200,
-        /**
+        /*
          Baudrate is 38400.
         */
         DLMS_BAUD_RATE_38400,
-        /**
+        /*
          Baudrate is 57600.
         */
         DLMS_BAUD_RATE_57600,
-        /**
+        /*
          Baudrate is 115200.
         */
         DLMS_BAUD_RATE_115200
@@ -322,20 +322,20 @@ extern "C" {
         DLMS_CONTROL_MODE_MODE_6,
     } DLMS_CONTROL_MODE;
 
-    /**
+    /*
     PPP Authentication Type
      */
     typedef enum
     {
-        /**
+        /*
          No authentication.
         */
         DLMS_PPP_AUTHENTICATION_TYPE_NONE = 0,
-        /**
+        /*
          PAP Login
         */
         DLMS_PPP_AUTHENTICATION_TYPE_PAP = 1,
-        /**
+        /*
          CHAP-algorithm
         */
         DLMS_PPP_AUTHENTICATION_TYPE_CHAP = 2
@@ -350,7 +350,7 @@ extern "C" {
 #endif //DLMS_IGNORE_MALLOC
 
     //Access modes are saved structure because they are not needed on server side and we want to save memory.
-    /**
+    /*
     ---------------------------------------------------------------------------
     */
     typedef struct
@@ -399,7 +399,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_DATA
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -413,7 +413,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_REGISTER
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -445,7 +445,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -484,7 +484,7 @@ extern "C" {
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterActivation
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -543,7 +543,7 @@ extern "C" {
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSProfileGeneric
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -563,7 +563,7 @@ extern "C" {
         signed char sortObjectAttributeIndex;
         unsigned short sortObjectDataIndex;
 
-        /**
+        /*
         * Max row count is used with Profile Generic to tell how many rows are read
         * to one PDU. Default value is 1. Change this for your needs.
         */
@@ -579,7 +579,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_CLOCK
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -642,7 +642,7 @@ extern "C" {
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSScriptTable
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -651,81 +651,81 @@ extern "C" {
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 
 #ifndef DLMS_IGNORE_SCHEDULE
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSchedule
     */
     typedef struct
     {
-        /**
+        /*
         * Schedule entry index.
         */
         unsigned short index;
 
-        /**
+        /*
         * Is Schedule entry enabled.
         */
         unsigned char enable;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         gxScriptTable* scriptTable;
 #else
-        /**
+        /*
         * Logical name of the Script table object.
         */
         unsigned char logicalName[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
-        /**
+        /*
         * Script identifier of the script to be executed.
         */
         short scriptSelector;
 
-        /**
+        /*
         *
         */
         gxtime switchTime;
 
-        /**
+        /*
         * Defines a period in minutes, in which an entry shall be processed after power fail.
         */
         short validityWindow;
 
-        /**
+        /*
         * BitArray days of the week on which the entry is valid.
         */
         unsigned char execWeekdays;
 
-        /**
+        /*
         * Perform the link to the IC Special days table, day_id.
         */
         bitArray execSpecDays;
 
-        /**
+        /*
         * Date starting period in which the entry is valid.
         */
         gxtime beginDate;
 
-        /**
+        /*
         * Date starting period in which the entry is valid.
         */
         gxtime endDate;
     }
     gxScheduleEntry;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSchedule
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
 
-        /**
+        /*
         * Specifies the scripts to be executed at given times.
         */
         gxArray entries; //gxScheduleEntry
@@ -733,7 +733,7 @@ extern "C" {
 #endif //DLMS_IGNORE_SCHEDULE
 
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSpecialDaysTable
@@ -745,18 +745,18 @@ extern "C" {
         unsigned char dayId;
     } gxSpecialDay;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSpecialDaysTable
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
-        gxArray entries;
+        gxArray entries;//gxSpecialDay[]
     } gxSpecialDaysTable;
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
 
@@ -794,14 +794,14 @@ extern "C" {
 #endif //DLMS_IGNORE_MALLOC
     }gxCertificateInfo;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSecuritySetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -813,7 +813,7 @@ extern "C" {
     } gxSecuritySetup;
 #endif //DLMS_IGNORE_SECURITY_SETUP
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAssociationShortName
@@ -821,7 +821,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -836,7 +836,7 @@ extern "C" {
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 #ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAssociationLogicalName
@@ -853,7 +853,7 @@ extern "C" {
         unsigned char contextId;
     } gxApplicationContextName;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAssociationLogicalName
@@ -868,7 +868,7 @@ extern "C" {
         gxByteBuffer cypheringInfo;
     } gxXDLMSContextType;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAssociationLogicalName
@@ -894,14 +894,14 @@ extern "C" {
     }gxUser;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAssociationLogicalName
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -919,11 +919,11 @@ extern "C" {
 #else
         unsigned char securitySetupReference[6];
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_SECURITY_SETUP))
-        /**
+        /*
         * User list.
         */
         gxArray userList;
-        /**
+        /*
         * Current user.
         */
 #ifdef DLMS_IGNORE_MALLOC
@@ -945,7 +945,7 @@ extern "C" {
     }gxSapItemName;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSapAssignment
@@ -960,14 +960,14 @@ extern "C" {
 #endif //DLMS_IGNORE_MALLOC
     } gxSapItem;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSapAssignment
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -992,7 +992,7 @@ extern "C" {
     }gxImageSignature;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSImageTransfer
@@ -1010,14 +1010,14 @@ extern "C" {
 #endif //DLMS_IGNORE_MALLOC
     } gxImageActivateInfo;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSImageTransfer
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1031,14 +1031,14 @@ extern "C" {
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
 
 #ifndef DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSIECLocalPortSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1073,7 +1073,7 @@ extern "C" {
     }gxSeasonProfileWeekName;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSActivityCalendar
@@ -1101,7 +1101,7 @@ extern "C" {
     }gxWeekProfileName;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSActivityCalendar
@@ -1122,7 +1122,7 @@ extern "C" {
         unsigned char sunday;
     } gxWeekProfile;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSActivityCalendar
@@ -1138,7 +1138,7 @@ extern "C" {
         unsigned short scriptSelector;
     } gxDayProfileAction;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSActivityCalendar
@@ -1149,14 +1149,14 @@ extern "C" {
         gxArray daySchedules; //gxDayProfileAction
     } gxDayProfile;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSActivityCalendar
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1175,7 +1175,7 @@ extern "C" {
 #endif // DLMS_IGNORE_ACTIVITY_CALENDAR
 
 #if !(defined(DLMS_IGNORE_LIMITER) && defined(DLMS_IGNORE_REGISTER_MONITOR))
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterMonitor
@@ -1193,7 +1193,7 @@ extern "C" {
 #endif //!(defined(DLMS_IGNORE_LIMITER) && defined(DLMS_IGNORE_REGISTER_MONITOR))
 
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterMonitor
@@ -1209,7 +1209,7 @@ extern "C" {
         signed char attributeIndex;
     } gxMonitoredValue;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterMonitor
@@ -1220,14 +1220,14 @@ extern "C" {
         gxActionItem actionDown;
     } gxActionSet;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterMonitor
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1239,14 +1239,14 @@ extern "C" {
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSActionSchedule
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1264,14 +1264,14 @@ extern "C" {
 #endif //DLMS_IGNORE_ACTION_SCHEDULE
 
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSIecHdlcSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1290,46 +1290,46 @@ extern "C" {
 #ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
     typedef enum
     {
-        /**
+        /*
          * The interface ignores all received frames.
         */
         DLMS_IEC_TWISTED_PAIR_SETUP_MODE_INACTIVE,
 
-        /**
+        /*
          * Active.
         */
         DLMS_IEC_TWISTED_PAIR_SETUP_MODE_ACTIVE
     } DLMS_IEC_TWISTED_PAIR_SETUP_MODE;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSIecTwistedPairSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
 
 
-        /**
+        /*
          * Working mode.
          */
         DLMS_IEC_TWISTED_PAIR_SETUP_MODE mode;
 
-        /**
+        /*
          * Communication speed.
          */
         DLMS_BAUD_RATE speed;
 
-        /**
+        /*
          * List of Primary Station Addresses.
          */
         gxByteBuffer primaryAddresses;
 
-        /**
+        /*
          * List of the TAB(i) for which the real equipment has been programmed in
          * the case of forgotten station call.
          */
@@ -1338,14 +1338,14 @@ extern "C" {
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSMbusSlavePortSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1358,14 +1358,14 @@ extern "C" {
 #endif //DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 
 #ifndef DLMS_IGNORE_UTILITY_TABLES
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSUtilityTables
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1384,7 +1384,7 @@ extern "C" {
     }gxModemInitialisationString;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSModemConfiguration
@@ -1409,14 +1409,14 @@ extern "C" {
     }gxModemProfile;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSModemConfiguration
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1434,14 +1434,14 @@ extern "C" {
     }gxTimePair;
 
 #ifndef DLMS_IGNORE_AUTO_ANSWER
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAutoAnswer
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1455,14 +1455,14 @@ extern "C" {
 #endif //DLMS_IGNORE_AUTO_ANSWER
 
 #ifndef DLMS_IGNORE_AUTO_CONNECT
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAutoConnect
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1476,14 +1476,14 @@ extern "C" {
 #endif //DLMS_IGNORE_AUTO_CONNECT
 
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSTcpUdpSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1509,7 +1509,7 @@ extern "C" {
         unsigned short size;
     }gxip4SetupIpOptionData;
 #endif //DLMS_IGNORE_MALLOC
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSip4SetupIpOption
@@ -1525,14 +1525,14 @@ extern "C" {
 #endif //DLMS_IGNORE_MALLOC
     } gxip4SetupIpOption;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSIp4Setup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1559,14 +1559,14 @@ extern "C" {
 
 #ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSMacAddressSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1596,7 +1596,7 @@ extern "C" {
         DLMS_PPP_SETUP_IPCP_OPTION_TYPE_USIP = 22
     } DLMS_PPP_SETUP_IPCP_OPTION_TYPE;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPppSetup
@@ -1608,7 +1608,7 @@ extern "C" {
         dlmsVARIANT data;
     } gxpppSetupLcpOption;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPppSetup
@@ -1620,14 +1620,14 @@ extern "C" {
         dlmsVARIANT data;
     } gxpppSetupIPCPOption;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPppSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1645,7 +1645,7 @@ extern "C" {
 #endif //DLMS_IGNORE_PPP_SETUP
 
 #ifndef DLMS_IGNORE_GPRS_SETUP
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSGPRSSetup
@@ -1659,14 +1659,14 @@ extern "C" {
         unsigned char meanThroughput;
     } gxQualityOfService;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSGPRSSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1678,14 +1678,14 @@ extern "C" {
 #endif //DLMS_IGNORE_GPRS_SETUP
 
 #ifndef DLMS_IGNORE_SMTP_SETUP
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSmtpSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1693,7 +1693,7 @@ extern "C" {
 #endif //DLMS_IGNORE_SMTP_SETUP
 
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSGsmDiagnostic
@@ -1734,36 +1734,36 @@ extern "C" {
         unsigned long channelNumber;
     }gxGSMCellInfo;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSGsmDiagnostic
     */
     typedef struct
     {
-        /**
+        /*
         * Four-byte cell ID.
         */
         unsigned long cellId;
 
-        /**
+        /*
         * Signal quality.
         */
         unsigned char signalQuality;
     }gxAdjacentCell;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSGsmDiagnostic
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
-        /**
+        /*
         * Name of network operator.
         */
 #ifdef DLMS_IGNORE_MALLOC
@@ -1772,32 +1772,32 @@ extern "C" {
         char* operatorName;
 #endif //DLMS_IGNORE_MALLOC
 
-        /**
+        /*
         * Registration status of the modem.
         */
         DLMS_GSM_STATUS status;
 
-        /**
+        /*
         * Registration status of the modem.
         */
         DLMS_GSM_CIRCUIT_SWITCH_STATUS circuitSwitchStatus;
 
-        /**
+        /*
         * Registration status of the modem.
         */
         DLMS_GSM_PACKET_SWITCH_STATUS packetSwitchStatus;
 
-        /**
+        /*
         * Registration status of the modem.
         */
         gxGSMCellInfo cellInfo;
 
-        /**
+        /*
         * Adjacent cells.
         */
         gxArray adjacentCells; //<GXAdjacentCell*>
 
-        /**
+        /*
         * Date and time when the data have been last captured.
         */
         gxtime captureTime;
@@ -1805,14 +1805,14 @@ extern "C" {
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
 
 #ifndef DLMS_IGNORE_REGISTER_TABLE
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSRegisterTable
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1826,14 +1826,14 @@ extern "C" {
 #endif //DLMS_IGNORE_REGISTER_TABLE
 
 #ifndef DLMS_IGNORE_STATUS_MAPPING
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSStatusMapping
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1842,14 +1842,14 @@ extern "C" {
 #endif //DLMS_IGNORE_STATUS_MAPPING
 
 #ifndef DLMS_IGNORE_DISCONNECT_CONTROL
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSDisconnectControl
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1860,7 +1860,7 @@ extern "C" {
 #endif //DLMS_IGNORE_DISCONNECT_CONTROL
 
 #ifndef DLMS_IGNORE_LIMITER
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSLimiter
@@ -1872,14 +1872,14 @@ extern "C" {
         unsigned long duration;
     } gxEmergencyProfile;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSLimiter
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1930,14 +1930,14 @@ extern "C" {
     }gxCaptureDefinition;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSMBusClient
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -1971,14 +1971,14 @@ extern "C" {
     }gxPushSetupDestination;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPushSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2002,14 +2002,14 @@ extern "C" {
 #endif //DLMS_IGNORE_PUSH_SETUP
 
 #ifndef DLMS_IGNORE_MESSAGE_HANDLER
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSMessageHandler
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2034,14 +2034,14 @@ extern "C" {
         dlmsVARIANT value;
     } gxChangedParameter;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSParameterMonitor
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2058,14 +2058,14 @@ extern "C" {
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
 
 #ifndef DLMS_IGNORE_WIRELESS_MODE_Q_CHANNEL
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSWirelessModeQChannel
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2074,14 +2074,14 @@ extern "C" {
 #endif //DLMS_IGNORE_WIRELESS_MODE_Q_CHANNEL
 
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSMBusMasterPortSetup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2125,27 +2125,27 @@ extern "C" {
     //Global key types.
     typedef enum
     {
-        /**
+        /*
         * Global unicast encryption key. <br>
         * Client and server uses this message to send Ephemeral Public Key to other
         * party.
         */
         DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION,
-        /**
+        /*
          * Global broadcast encryption key.
         */
         DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION,
-        /**
+        /*
          * Authentication key.
         */
         DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION,
-        /**
+        /*
          * Key Encrypting Key, also known as Master key.
         */
         DLMS_GLOBAL_KEY_TYPE_KEK
     }DLMS_GLOBAL_KEY_TYPE;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMS
@@ -2157,7 +2157,7 @@ extern "C" {
         gxByteBuffer data;
     } gxWrappedKeyInfoOptions;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMS
@@ -2169,7 +2169,7 @@ extern "C" {
     }
     gxAgreedKeyInfoOptions;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMS
@@ -2182,7 +2182,7 @@ extern "C" {
         gxAgreedKeyInfoOptions agreedOptions;
     } gxKeyinfo;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMS
@@ -2200,7 +2200,7 @@ extern "C" {
         gxKeyinfo info;
     } gxProtectionOptions;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMS
@@ -2214,14 +2214,14 @@ extern "C" {
 #endif //DLMS_IGNORE_DATA_PROTECTION
 
 #ifndef DLMS_IGNORE_EVENT
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSEvent
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2229,14 +2229,14 @@ extern "C" {
 #endif //DLMS_IGNORE_EVENT
 
 #ifndef DLMS_IGNORE_ZIG_BEE_SAS_STARTUP
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSZigBeeSasStartup
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2245,14 +2245,14 @@ extern "C" {
 #endif //DLMS_IGNORE_ZIG_BEE_SAS_STARTUP
 
 #ifndef DLMS_IGNORE_ZIG_BEE_SAS_JOIN
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSZigBeeSasJoin
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2260,14 +2260,14 @@ extern "C" {
 #endif //DLMS_IGNORE_ZIG_BEE_SAS_JOIN
 
 #ifndef DLMS_IGNORE_ZIG_BEE_SAS_APS_FRAGMENTATION
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSZigBeeSasApsFragmentation
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2275,7 +2275,7 @@ extern "C" {
 #endif //DLMS_IGNORE_ZIG_BEE_SAS_APS_FRAGMENTATION
 
 #ifndef DLMS_IGNORE_DATA_PROTECTION
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSDataProtection
@@ -2295,7 +2295,7 @@ extern "C" {
         int dataIndex;
     }gxDataProtectionObject;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSDataProtection
@@ -2312,7 +2312,7 @@ extern "C" {
 #endif //DLMS_IGNORE_DATA_PROTECTION
 
 #ifndef DLMS_IGNORE_ACCOUNT
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccountModeAndStatus
@@ -2325,7 +2325,7 @@ extern "C" {
         unsigned char accountStatus;
     }gxAccountModeAndStatus;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCreditChargeConfiguration
@@ -2337,7 +2337,7 @@ extern "C" {
         DLMS_CREDIT_COLLECTION_CONFIGURATION collectionConfiguration;
     }gxCreditChargeConfiguration;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSTokenGatewayConfiguration
@@ -2356,7 +2356,7 @@ extern "C" {
     }gxCurrencyName;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     Used currency.
     ---------------------------------------------------------------------------
     Online help:
@@ -2376,46 +2376,46 @@ extern "C" {
         DLMS_CURRENCY unit;
     }gxCurrency;
 
-    /**
+    /*
     * Online help:<br/>
     * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
 
-        /**
+        /*
         * Payment mode.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         DLMS_ACCOUNT_PAYMENT_MODE paymentMode;
 
-        /**
+        /*
         * Account status.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         DLMS_ACCOUNT_STATUS accountStatus;
 
-        /**
+        /*
         * Credit In Use.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         unsigned char currentCreditInUse;
 
-        /**
+        /*
         * Credit status.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         DLMS_ACCOUNT_CREDIT_STATUS currentCreditStatus;
 
-        /**
+        /*
         * The available_credit attribute is the sum of the positive current credit
         * amount values in the instances of the Credit class. <br/>
         * Online help:<br/>
@@ -2423,14 +2423,14 @@ extern "C" {
         */
         int availableCredit;
 
-        /**
+        /*
         * Amount to clear.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         int amountToClear;
 
-        /**
+        /*
         * Conjunction with the amount to clear, and is included in the description
         * of that attribute.<br/>
         * Online help:<br/>
@@ -2438,79 +2438,79 @@ extern "C" {
         */
         int clearanceThreshold;
 
-        /**
+        /*
         * Aggregated debt.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         int aggregatedDebt;
 
-        /**
+        /*
         * Credit references.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         gxArray creditReferences;//List<String>
 
-        /**
+        /*
         * Charge references.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         gxArray chargeReferences;//List<String>
-        /**
+        /*
         * Credit charge configurations.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         gxArray creditChargeConfigurations;//List<GXCreditChargeConfiguration>
 
-        /**
+        /*
         * Token gateway configurations.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         gxArray tokenGatewayConfigurations;//List<GXTokenGatewayConfiguration>
-        /**
+        /*
         * Account activation time.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         gxtime accountActivationTime;
 
-        /**
+        /*
         * Account closure time.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         gxtime accountClosureTime;
 
-        /**
+        /*
         * Currency.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         gxCurrency currency;
-        /**
+        /*
         * Low credit threshold.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         int lowCreditThreshold;
-        /**
+        /*
         * Next credit available threshold.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         int nextCreditAvailableThreshold;
-        /**
+        /*
         * Max Provision.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
         unsigned short maxProvision;
 
-        /**
+        /*
         * Max provision period.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
@@ -2520,14 +2520,14 @@ extern "C" {
 #endif //DLMS_IGNORE_ACCOUNT
 
 #ifndef DLMS_IGNORE_CREDIT
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCredit
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2547,7 +2547,7 @@ extern "C" {
 #endif //DLMS_IGNORE_CREDIT
 
 #ifndef DLMS_IGNORE_CHARGE
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
@@ -2558,7 +2558,7 @@ extern "C" {
         signed char priceScale;
     } gxChargePerUnitScaling;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
@@ -2582,7 +2582,7 @@ extern "C" {
     }gxChargeTableIndex;
 #endif //DLMS_IGNORE_MALLOC
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
@@ -2597,7 +2597,7 @@ extern "C" {
         short chargePerUnit;
     } gxChargeTable;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
@@ -2614,7 +2614,7 @@ extern "C" {
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2649,7 +2649,7 @@ extern "C" {
     //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSTokenGateway
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2686,7 +2686,7 @@ extern "C" {
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 
 #ifndef DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSZigBeeNetworkControl
@@ -2709,14 +2709,14 @@ extern "C" {
         unsigned char stackVersion;
     } gxActiveDevice;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSZigBeeNetworkControl
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2728,16 +2728,330 @@ extern "C" {
 
 #endif //DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
 
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSLlcSscsSetup
+    */
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /*Address assigned to the service node during its registration by the base node.*/
+        unsigned short serviceNodeAddress;
+        /* Base node address to which the service node is registered.*/
+        unsigned short baseNodeAddress;
+
+    } gxLlcSscsSetup;
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPrimeNbOfdmPlcPhysicalLayerCounters
+    */
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+
+        /*Number of bursts received on the physical layer for which the CRC was incorrect.*/
+        unsigned short crcIncorrectCount;
+
+        /* Number of bursts received on the physical layer for which the CRC was correct, but the Protocol field of PHY header had invalid value.*/
+        unsigned short crcFailedCount;
+
+        /*Number of times when PHY layer received new data to transmit.*/
+        unsigned short txDropCount;
+
+        /*Number of times when the PHY layer received new data on the channel.*/
+        unsigned short rxDropCount;
+    }gxPrimeNbOfdmPlcPhysicalLayerCounters;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPrimeNbOfdmPlcMacSetup
+    */
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+
+        /*PIB attribute 0x0010.*/
+        unsigned char macMinSwitchSearchTime;
+
+        /*PIB attribute 0x0011.*/
+        unsigned char macMaxPromotionPdu;
+
+        /*PIB attribute 0x0012.*/
+        unsigned char macPromotionPduTxPeriod;
+
+        /*PIB attribute 0x0013.*/
+        unsigned char macBeaconsPerFrame;
+
+        /*PIB attribute 0x0014.*/
+        unsigned char macScpMaxTxAttempts;
+
+        /*PIB attribute 0x0015.*/
+        unsigned char macCtlReTxTimer;
+
+        /*PIB attribute 0x0018.*/
+        unsigned char macMaxCtlReTx;
+    }gxPrimeNbOfdmPlcMacSetup;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+    /*
+   ---------------------------------------------------------------------------
+   Online help:
+   http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPrimeNbOfdmPlcMacFunctionalParameters
+   */
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+
+        /*LNID allocated to this node at time of its registration.*/
+        short lnId;
+
+        /*LSID allocated to this node at the time of its promotion.*/
+        unsigned char lsId;
+
+        /*SID of the switch node through which this node is connected to the subnetwork.*/
+        unsigned char sId;
+
+        /*Subnetwork address to which this node is registered.*/
+        gxByteBuffer sna;
+
+        /*Present functional state of the node.*/
+
+        DLMS_MAC_STATE state;
+
+        /*The SCP length, in symbols, in present frame.*/
+        unsigned short scpLength;
+
+        /*Level of this node in subnetwork hierarchy.*/
+        unsigned char nodeHierarchyLevel;
+
+        /*Number of beacon slots provisioned in present frame structure.*/
+        unsigned char beaconSlotCount;
+
+        /*Beacon slot in which this device’s switch node transmits its beacon.*/
+        unsigned char beaconRxSlot;
+
+        /*Beacon slot in which this device transmits its beacon.*/
+        unsigned char beaconTxSlot;
+
+        /*Number of frames between receptions of two successive beacons.*/
+        unsigned char beaconRxFrequency;
+
+        /*Number of frames between transmissions of two successive beacons.*/
+        unsigned char beaconTxFrequency;
+
+        /*This attribute defines the capabilities of the node.*/
+        DLMS_MAC_CAPABILITIES capabilities;
+    }gxPrimeNbOfdmPlcMacFunctionalParameters;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPrimeNbOfdmPlcMacCounters
+    */
+    typedef struct
+    {
+        /*Base class where class is derived.*/
+        gxObject base;
+
+        /*Count of successfully transmitted MSDUs.*/
+        unsigned long txDataPktCount;
+
+        /*Count of successfully received MSDUs whose destination address was this node.*/
+        unsigned long rxDataPktCount;
+
+        /*Count of successfully transmitted MAC control packets.*/
+        unsigned long txCtrlPktCount;
+
+        /*Count of successfully received MAC control packets whose destination was this node.*/
+        unsigned long rxCtrlPktCount;
+
+        /*Count of failed CSMA transmit attempts.*/
+        unsigned long csmaFailCount;
+
+        /*Count of number of times this node has to back off SCP transmission due to channel busy state.*/
+        unsigned long csmaChBusyCount;
+    }gxPrimeNbOfdmPlcMacCounters;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+    /*Multicast switching table.*/
+    typedef struct
+    {
+        /*LCID of multicast group.*/
+        char id;
+        /*Number of child nodes.*/
+        short members;
+    }gxMacMulticastEntry;
+
+    /*MAC direct table element.*/
+    typedef struct
+    {
+        /*SID of switch through which the source service node is connected.*/
+        short sourceSId;
+
+        /*NID allocated to the source service node.*/
+        short sourceLnId;
+        /*LCID allocated to this connection at the source.*/
+        short sourceLcId;
+
+        /*SID of the switch through which the destination service node is connected.*/
+        short destinationSId;
+        /*NID allocated to the destination service node.*/
+        short destinationLnId;
+
+        /*LCID allocated to this connection at the destination.*/
+        short destinationLcId;
+        /*Entry DID is the EUI-48 of the direct switch.*/
+        unsigned char did[6];
+    }gxMacDirectTable;
+
+    /*MAC available switch.*/
+    typedef struct
+    {
+        /*EUI-48 of the subnetwork.*/
+        gxByteBuffer sna;
+
+        /*SID of this switch.*/
+        long lsId;
+
+        /*Level of this switch in subnetwork hierarchy.*/
+        unsigned short level;
+
+        /*The received signal level for this switch.*/
+        unsigned short rxLevel;
+        /*The signal to noise ratio for this switch.*/
+        unsigned short rxSnr;
+    }gxMacAvailableSwitch;
+
+    /*MAC PHY communication parameters.*/
+    typedef struct
+    {
+        /*EUI is the EUI-48 of the other device.*/
+        unsigned char eui[6];
+
+        /*The tx power of GPDU packets sent to the device.*/
+        unsigned short txPower;
+
+        /*The Tx coding of GPDU packets sent to the device.*/
+        unsigned short txCoding;
+
+        /*The Rx coding of GPDU packets received from the device.*/
+        unsigned short rxCoding;
+
+        /*The Rx power level of GPDU packets received from the device.*/
+        unsigned short rxLvl;
+
+        /*SNR of GPDU packets received from the device.*/
+        unsigned short snr;
+
+        /*The number of times the Tx power was modified.*/
+        unsigned short txPowerModified;
+
+        /*The number of times the Tx coding was modified.*/
+        unsigned short txCodingModified;
+
+        /*The number of times the Rx coding was modified.*/
+        unsigned short rxCodingModified;
+    }gxMacPhyCommunication;
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPrimeNbOfdmPlcMacNetworkAdministrationData
+    */
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+
+        /*List of entries in multicast switching table.*/
+        gxArray multicastEntries;//gxMacMulticastEntry[]
+
+        /*Switch table.*/
+        gxArray switchTable;//short[]
+
+        /*List of entries in multicast switching table.*/
+        gxArray directTable; //gxMacDirectTable[]
+
+        /*List of available switches.*/
+        gxArray availableSwitches;//gxMacAvailableSwitch[]
+
+        /*List of PHY communication parameters.*/
+        gxArray communications; //gxMacPhyCommunication[]
+
+    }gxPrimeNbOfdmPlcMacNetworkAdministrationData;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSPrimeNbOfdmPlcApplicationsIdentification
+    */
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+
+        /*Textual description of the firmware version running on the device.*/
+#ifdef DLMS_IGNORE_MALLOC
+        char firmwareVersion[MAX_PRIME_FIRMWARE_VERSION_LENGTH];
+#else
+        // Certificate serial number.
+        char* firmwareVersion;
+#endif //DLMS_IGNORE_MALLOC
+
+        /*Unique vendor identifier assigned by PRIME Alliance.*/
+        unsigned short vendorId;
+
+        /*Vendor assigned unique identifier for specific product.*/
+        unsigned short productId;
+    }gxPrimeNbOfdmPlcApplicationsIdentification;
+
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+
 #ifndef DLMS_IGNORE_COMPACT_DATA
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCompactData
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2756,7 +3070,7 @@ extern "C" {
 
 #ifdef DLMS_ITALIAN_STANDARD
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSTariffPlan
@@ -2788,7 +3102,7 @@ extern "C" {
     }DLMS_WEEKLY_ACTIVATION;
 
 
-    /**
+    /*
     The default tariff.
     ---------------------------------------------------------------------------
     Online help:
@@ -2806,7 +3120,7 @@ extern "C" {
         DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_3
     }DLMS_DEFAULT_TARIFF_BAND;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSTariffPlan
@@ -2821,7 +3135,7 @@ extern "C" {
         unsigned char useInterval;
     } gxInterval;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSTariffPlan
@@ -2840,7 +3154,7 @@ extern "C" {
         gxInterval holidayIntervals[5];
     } gxBandDescriptor;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSTariffPlan
@@ -2859,14 +3173,14 @@ extern "C" {
         gxArray specialDays; //UInt16[]
     } gxPlan;
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Online help:
     http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSTariffPlan
     */
     typedef struct
     {
-        /**
+        /*
         * Base class where class is derived.
         */
         gxObject base;
@@ -2961,6 +3275,10 @@ extern "C" {
 
     //Clear user list.
     int obj_clearUserList(
+        gxArray* list);
+
+    //Clear available switches.
+    int obj_clearAvailableSwitches(
         gxArray* list);
 
 #define BASE(X) &X.base

@@ -500,6 +500,7 @@ int obj_clearUserList(gxArray* list)
     return ret;
 }
 
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 //Clear available switches.
 int obj_clearAvailableSwitches(
     gxArray* list)
@@ -521,6 +522,7 @@ int obj_clearAvailableSwitches(
     arr_clear(list);
     return ret;
 }
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 
 #ifndef DLMS_IGNORE_SECURITY_SETUP
 int obj_clearCertificateInfo(gxArray* arr)

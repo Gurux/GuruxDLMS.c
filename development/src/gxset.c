@@ -7472,7 +7472,7 @@ int cosem_setPrimeNbOfdmPlcMacFunctionalParameters(
         break;
     case 5:
         object->sna.size = 0;
-        ret = bb_set(&object->sna, value->byteArr, bb_size(value->byteArr));
+        ret = bb_set(&object->sna, value->byteArr->data, bb_size(value->byteArr));
         break;
     case 6:
         object->state = (DLMS_MAC_STATE)var_toInteger(value);
@@ -7736,7 +7736,7 @@ int cosem_setAvailableSwitches(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obj
         {
             if ((ret = arr_getByIndex(&object->availableSwitches, pos, &it, sizeof(gxMacAvailableSwitch))) != 0 ||
                 (ret = cosem_checkStructure(value->byteArr, 5)) != 0 ||
-                (ret = cosem_getOctectString2(value->byteArr, it->sna, sizeof(it->sna), NULL)) != 0 ||
+                (ret = cosem_getOctectString2(value->byteArr, it->sna.data, sizeof(it->sna), NULL)) != 0 ||
                 (ret = cosem_getInt32(value->byteArr, &it->lsId)) != 0 ||
                 (ret = cosem_getInt16(value->byteArr, &it->level)) != 0 ||
                 (ret = cosem_getInt16(value->byteArr, &it->rxLevel)) != 0 ||
@@ -7765,7 +7765,7 @@ int cosem_setAvailableSwitches(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obj
             it = (gxMacAvailableSwitch*)gxmalloc(sizeof(gxMacAvailableSwitch));
             bb_init(&it->sna);
             bb_capacity(&it->sna, tmp2->byteArr->size);
-            if ((ret = bb_set(&it->sna, tmp2->byteArr, tmp2->byteArr->size)) != DLMS_ERROR_CODE_OK)
+            if ((ret = bb_set(&it->sna, tmp2->byteArr->data, tmp2->byteArr->size)) != DLMS_ERROR_CODE_OK)
             {
                 gxfree(it);
                 break;

@@ -83,6 +83,16 @@ extern "C" {
         gxByteBuffer* data);
 #endif //DLMS_IGNORE_MALLOC
 
+    //Get objects count in association view.
+    int cl_parseObjectCount(
+        gxByteBuffer* data,
+        unsigned short* count);
+
+    /*Parse next association view object. This method can be used when malloc is not used.*/
+    int cl_parseNextObject(
+        gxByteBuffer* data,
+        gxObject* object);
+
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     int cl_readSN(
         dlmsSettings* settings,

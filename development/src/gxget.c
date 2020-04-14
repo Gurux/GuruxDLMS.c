@@ -350,7 +350,7 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
 
         for (pos2 = 0; pos2 != dp->daySchedules.size; ++pos2)
         {
-            unsigned char* ln;
+            const unsigned char* ln;
 #ifndef DLMS_IGNORE_MALLOC
             if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action)) != 0)
             {
@@ -6097,9 +6097,9 @@ int cosem_getPrimeNbOfdmPlcMacFunctionalParameters(
     {
 #ifdef DLMS_IGNORE_MALLOC
         unsigned short size;
-        ret = cosem_getOctectString2(e->value.byteArr, object->sna.data, object->sna.size, &size);
+        ret = cosem_getOctectString2(e->value.byteArr, object->sna.data, (unsigned short) object->sna.size, &size);
 #else
-        ret = var_addBytes(&e->value, object->sna.data, object->sna.size);
+        ret = var_addBytes(&e->value, object->sna.data, (unsigned short) object->sna.size);
 #endif //DLMS_IGNORE_MALLOC
     }
     break;
@@ -6170,6 +6170,8 @@ int cosem_getPrimeNbOfdmPlcMacCounters(
     return ret;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 
 int cosem_getMulticastEntries(gxValueEventArg* e)
 {
@@ -6336,7 +6338,7 @@ int cosem_getAvailableSwitches(gxValueEventArg* e)
         }
 #endif //DLMS_IGNORE_MALLOC
 
-        if ((ret = cosem_setOctectString2(data, it->sna.data, it->sna.size)) != 0 ||
+        if ((ret = cosem_setOctectString2(data, it->sna.data, (unsigned short)it->sna.size)) != 0 ||
             (ret = cosem_setInt32(data, it->lsId)) != 0 ||
             (ret = cosem_setInt16(data, it->level)) != 0 ||
             (ret = cosem_setInt16(data, it->rxLevel)) != 0 ||
@@ -6400,7 +6402,6 @@ int cosem_getCommunications(gxValueEventArg* e)
     return ret;
 }
 
-#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 int  cosem_getPrimeNbOfdmPlcMacNetworkAdministrationData(
     gxValueEventArg* e)
 {

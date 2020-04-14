@@ -228,11 +228,11 @@ int cl_aarqRequest(
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         }
-        }
+    }
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
     bb_clear(pdu);
     return ret;
-    }
+}
 
 int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
 {
@@ -423,7 +423,7 @@ int cl_parseApplicationAssociationResponse(
                 var_clear(&value);
 #endif //DLMS_IGNORE_MALLOC
                     bb_clear(&challenge);
-                    return ret;
+                return ret;
             }
             bb_clear(&challenge);
         }
@@ -444,7 +444,7 @@ int cl_parseApplicationAssociationResponse(
 #endif //DLMS_IGNORE_MALLOC
             bb_clear(&challenge);
             return ret;
-}
+        }
 #ifdef DLMS_IGNORE_MALLOC
         equals = bb_compare(
             &challenge,
@@ -494,7 +494,7 @@ int cl_parseLNObjects(gxByteBuffer* data, objectArray* objects)
     ret = bb_getUInt8(data, &size);
     if (ret != DLMS_ERROR_CODE_OK)
     {
-        return 0;
+        return ret;
     }
     //Check that data is in the array
     if (size != DLMS_DATA_TYPE_ARRAY)
@@ -568,7 +568,7 @@ int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
     {
         static unsigned char ln[] = { 0, 0, 40, 0, 0, 0xFF };
         ret = cl_readLN(settings, ln, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, 2, NULL, messages);
-}
+    }
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -669,7 +669,7 @@ int cl_parseObjects(dlmsSettings* settings, gxByteBuffer* data)
     if (settings->useLogicalNameReferencing)
     {
         ret = cl_parseLNObjects(data, &settings->objects);
-}
+    }
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -681,6 +681,99 @@ int cl_parseObjects(dlmsSettings* settings, gxByteBuffer* data)
     return ret;
 }
 #endif //DLMS_IGNORE_MALLOC
+
+int cl_parseObjectCount(
+    gxByteBuffer* data,
+    unsigned short* count)
+{
+    unsigned char ch;
+    int ret;
+    //Get array tag.
+    ret = bb_getUInt8(data, &ch);
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+        return ret;
+    }
+    //Check that data is in the array
+    if (ch != DLMS_DATA_TYPE_ARRAY)
+    {
+        return DLMS_ERROR_CODE_INVALID_RESPONSE;
+    }
+    //get object count
+    if (hlp_getObjectCount2(data, count) != 0)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    return ret;
+}
+
+int cl_parseNextObject(
+    gxByteBuffer* data,
+    gxObject* object)
+{
+    int ret = 0;
+    unsigned short pos, size, capacity = sizeof(object->logicalName);
+    signed char id;
+    unsigned char mode;
+    dlmsVARIANT selector;
+    if ((ret = cosem_checkStructure(data, 4)) == 0 &&
+        (ret = cosem_getUInt16(data, &object->objectType)) == 0 &&
+        (ret = cosem_getUInt8(data, &object->version)) == 0 &&
+        (ret = cosem_getOctectString2(data, object->logicalName, capacity, &size)) == 0 &&
+        (ret = cosem_checkStructure(data, 2)) == 0)
+    {
+        size = 0xFFFF;
+        if ((ret = cosem_checkArray(data, &size)) == 0)
+        {
+            var_init(&selector);
+            //Get access modes.
+            for (pos = 0; pos != size; ++pos)
+            {
+                if ((ret = cosem_checkStructure(data, 3)) != 0 ||
+                    (ret = cosem_getInt8(data, &id)) != 0 ||
+                    (ret = cosem_getEnum(data, &mode)) != 0 ||
+                    (ret = cosem_getVariant(data, &selector)) != 0)
+                {
+                    break;
+                }
+                //Save access mode if user wants to know it.
+                if (object->access != NULL)
+                {
+                    if ((ret = bb_setUInt8ByIndex(&object->access->attributeAccessModes, pos, mode)) != 0)
+                    {
+                        break;
+                    }
+                }
+            }
+            //Get action access modes.
+            if (ret == 0)
+            {
+                size = 0xFFFF;
+                if ((ret = cosem_checkArray(data, &size)) == 0)
+                {
+                    for (pos = 0; pos != size; ++pos)
+                    {
+                        if ((ret = cosem_checkStructure(data, 2)) != 0 ||
+                            (ret = cosem_getInt8(data, &id)) != 0 ||
+                            (ret = cosem_getEnum(data, &mode)) != 0)
+                        {
+                            break;
+                        }
+                        //Save action access mode if user wants to know it.
+                        if (object->access != NULL)
+                        {
+                            if ((ret = bb_setUInt8ByIndex(&object->access->methodAccessModes, pos, mode)) != 0)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return ret;
+}
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int cl_readSN(
@@ -910,7 +1003,7 @@ int cl_read(
     else if (settings->useLogicalNameReferencing)
     {
         ret = cl_readLN(settings, object->logicalName, object->objectType, attributeOrdinal, NULL, messages);
-}
+    }
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1081,8 +1174,8 @@ int cl_readRowsByRange(
             {
                 bb_clear(&data);
                 return ret;
+            }
         }
-    }
         //Add end time
         if (unixTime)
         {
@@ -1119,7 +1212,7 @@ int cl_readRowsByRange(
             ret = cl_readSN(settings, object->base.shortName, 2, &data, messages);
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         }
-}
+    }
     bb_clear(&data);
     return ret;
 }
@@ -1277,7 +1370,7 @@ int cl_releaseRequest(dlmsSettings* settings, message* packets)
             DLMS_VARIABLE_ACCESS_SPECIFICATION_VARIABLE_NAME,
             NULL, &bb, DLMS_COMMAND_NONE);
         ret = dlms_getSnMessages(&p, packets);
-}
+    }
 #else
     ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1431,7 +1524,7 @@ int cl_writeLN(
     if (byteArray != 0)
     {
         bb_set2(pdu, value->byteArr, 0, value->byteArr->size);
-}
+    }
     else
     {
         if ((ret = dlms_setData(pdu, value->vt, value)) != 0)
@@ -1513,7 +1606,7 @@ int cl_method(
     if (settings->useLogicalNameReferencing)
     {
         ret = cl_methodLN(settings, object->logicalName, object->objectType, index, data, messages);
-}
+    }
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1523,7 +1616,7 @@ int cl_method(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }
     return ret;
-    }
+}
 
 int cl_methodLN(
     dlmsSettings* settings,
@@ -1579,7 +1672,7 @@ int cl_methodLN(
             {
                 ret = dlms_setData(pdu, value->vt, value);
             }
-}
+        }
 #else
         if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
         {

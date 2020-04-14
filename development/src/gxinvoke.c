@@ -628,6 +628,7 @@ int invoke_SapAssigment(
 }
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 
+#ifndef DLMS_IGNORE_SECURITY_SETUP
 int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, gxValueEventArg* e)
 {
     int pos, ret = 0;
@@ -750,6 +751,8 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
     }
     return ret;
 }
+
+#endif //DLMS_IGNORE_SECURITY_SETUP
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int invoke_AssociationShortName(

@@ -2204,11 +2204,11 @@ int dlms_checkHdlcAddress(
     int ret;
     unsigned long source, target;
     // Get destination and source addresses.
-    if ((ret = dlms_getHDLCAddress(reply, &target, 0)) != 0)
+    if ((ret = dlms_getHDLCAddress(reply, &target, !server)) != 0)
     {
         return ret;
     }
-    if ((ret = dlms_getHDLCAddress(reply, &source, 1)) != 0)
+    if ((ret = dlms_getHDLCAddress(reply, &source, server)) != 0)
     {
         return ret;
     }

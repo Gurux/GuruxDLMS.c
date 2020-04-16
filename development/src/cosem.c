@@ -1020,6 +1020,25 @@ int cosem_getEnum(gxByteBuffer* bb, unsigned char* value)
     return 0;
 }
 
+int cosem_getBoolean(gxByteBuffer* bb, unsigned char* value)
+{
+    int ret;
+    unsigned char tmp;
+    if ((ret = bb_getUInt8(bb, &tmp)) != 0)
+    {
+        return ret;
+    }
+    if (tmp != DLMS_DATA_TYPE_BOOLEAN)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = bb_getUInt8(bb, value)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+
 int cosem_getUtf8String(gxByteBuffer* bb, gxByteBuffer* value)
 {
     return cosem_getOctectStringBase(bb, value, DLMS_DATA_TYPE_STRING_UTF8);

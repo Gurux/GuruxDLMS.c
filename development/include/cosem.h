@@ -108,6 +108,8 @@ extern "C" {
 
   int cosem_getEnum(gxByteBuffer* bb, unsigned char* value);
 
+  int cosem_getBoolean(gxByteBuffer* bb, unsigned char* value);
+
   int cosem_getUtf8String(gxByteBuffer* bb, gxByteBuffer* value);
 
   int cosem_getUtf8String2(gxByteBuffer* bb, char* value, unsigned short capacity, unsigned short* size);

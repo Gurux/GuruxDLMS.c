@@ -754,10 +754,22 @@ int cl_parseNextObject(
                     for (pos = 0; pos != size; ++pos)
                     {
                         if ((ret = cosem_checkStructure(data, 2)) != 0 ||
-                            (ret = cosem_getInt8(data, &id)) != 0 ||
-                            (ret = cosem_getEnum(data, &mode)) != 0)
+                            (ret = cosem_getInt8(data, &id)) != 0)
                         {
                             break;
+                        }
+                        if ((ret = bb_getUInt8(data, &mode)) != 0)
+                        {
+                            return ret;
+                        }
+                        //Version 0 uses boolean and other versions uses enum.
+                        if (mode != DLMS_DATA_TYPE_ENUM && mode != DLMS_DATA_TYPE_BOOLEAN)
+                        {
+                            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+                        }
+                        if ((ret = bb_getUInt8(data, &mode)) != 0)
+                        {
+                            return ret;
                         }
                         //Save action access mode if user wants to know it.
                         if (object->access != NULL)

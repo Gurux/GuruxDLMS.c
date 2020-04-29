@@ -36,16 +36,17 @@
 extern "C" {
 #endif
 
+#include "gxint.h"
 #include "enums.h"
 #include "gxignore.h"
 
 typedef struct
 {
     // Last array index.
-    unsigned short index;
+    uint16_t index;
 
     // Items count in array.
-    unsigned short count;
+    uint16_t count;
     // Object data type.
     DLMS_DATA_TYPE type;
     // Is data parsed to the end.

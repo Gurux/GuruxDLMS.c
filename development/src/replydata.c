@@ -101,7 +101,7 @@ void reply_clear2(gxReplyData* reply, unsigned char clearData)
     memset(&reply->time, 0, sizeof(struct tm));
 #endif // DLMS_USE_EPOCH_TIME
     reply->blockNumber = 0;
-    reply->blockNumberAck;
+    reply->blockNumberAck = 0;
     reply->streaming = 0;
     reply->windowSize = 0;
 }

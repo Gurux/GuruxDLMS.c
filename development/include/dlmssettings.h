@@ -72,9 +72,9 @@ extern "C" {
         DLMS_SERVICE_CLASS serviceClass;
 
         // Client address.
-        unsigned short clientAddress;
+        uint16_t clientAddress;
         //Server address.
-        unsigned short serverAddress;
+        uint16_t serverAddress;
 
         unsigned char useLogicalNameReferencing;
         DLMS_INTERFACE_TYPE interfaceType;
@@ -93,12 +93,12 @@ extern "C" {
         /**
         * Max PDU size used in communicating.
         */
-        unsigned short maxPduSize;
+        uint16_t maxPduSize;
 
         /**
         * Max PDU size that server uses. Client can ask anything, but server will decide.
         */
-        unsigned short maxServerPDUSize;
+        uint16_t maxServerPDUSize;
 
         /**
         * HDLC sender frame sequence number.
@@ -122,9 +122,9 @@ extern "C" {
         DLMS_CONFORMANCE negotiatedConformance;
 
         //Used max info TX.
-        unsigned short maxInfoTX;
+        uint16_t maxInfoTX;
         //Used max info RX.
-        unsigned short maxInfoRX;
+        uint16_t maxInfoRX;
         //Used max window size in TX.
         unsigned char windowSizeTX;
         //Used max window size in RX.
@@ -132,7 +132,7 @@ extern "C" {
         objectArray objects;
 
         // Block packet index.
-        unsigned long blockIndex;
+        uint32_t blockIndex;
         //Is connected to the meter.
         DLMS_CONNECTION_STATE connected;
 
@@ -140,7 +140,7 @@ extern "C" {
         ciphering cipher;
 #endif //DLMS_IGNORE_HIGH_GMAC
 
-        short userId;
+        int16_t userId;
 
         /**
         *  Protocol version.
@@ -210,9 +210,11 @@ extern "C" {
         gxTcpUdpSetup *wrapper;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
         //Time when last frame was received. HDLC framing is using this.
-        long dataReceived;
+        uint32_t dataReceived;
         //Time when last byte was received. HDLC framing is using this.
-        long frameReceived;
+        uint32_t frameReceived;
+        //Server is using push client address when sending push messages. Client address is used if PushAddress is zero.
+        uint16_t pushClientAddress;
     } dlmsServerSettings;
 
     //Initialize server.
@@ -221,17 +223,17 @@ extern "C" {
         unsigned char useLogicalNameReferencing,
         DLMS_INTERFACE_TYPE interfaceType,
         //Max frame size.
-        unsigned short frameSize,
+        uint16_t frameSize,
         //Max PDU size.
-        unsigned short pduSize,
+        uint16_t pduSize,
         //Buffer where received frames are saved.
         unsigned char* frameBuffer,
         //Size of frame buffer.
-        unsigned short frameBufferSize,
+        uint16_t frameBufferSize,
         //PDU Buffer.
         unsigned char* pduBuffer,
         //Size of PDU buffer.
-        unsigned short pduBufferSize);
+        uint16_t pduBufferSize);
 
     //Initialize client.
     void cl_init(

@@ -55,14 +55,14 @@ extern "C" {
 
 #if defined(ECB) && (ECB == 1)
 
-    void gxaes_ecb_encrypt(const unsigned char* input, const unsigned char* key, unsigned char *output, const unsigned long length);
-    void gxaes_ecb_decrypt(const unsigned char* input, const unsigned char* key, unsigned char *output, const unsigned long length);
+    void gxaes_ecb_encrypt(const unsigned char* input, const unsigned char* key, unsigned char *output, const size_t length);
+    void gxaes_ecb_decrypt(const unsigned char* input, const unsigned char* key, unsigned char *output, const size_t length);
 
 #endif // #if defined(ECB) && (ECB == !)
 
 #if defined(CBC) && (CBC == 1)
-    void gxaes_cbc_encrypt(unsigned char* output, unsigned char* input, unsigned long length, const unsigned char* key, const unsigned char* iv);
-    void gxaes_cbc_decrypt(unsigned char* output, unsigned char* input, unsigned long length, const unsigned char* key, const unsigned char* iv);
+    void gxaes_cbc_encrypt(unsigned char* output, unsigned char* input, uint32_t length, const unsigned char* key, const unsigned char* iv);
+    void gxaes_cbc_decrypt(unsigned char* output, unsigned char* input, uint32_t length, const unsigned char* key, const unsigned char* iv);
 
 #endif // #if defined(CBC) && (CBC == 1)
 

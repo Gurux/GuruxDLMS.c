@@ -68,27 +68,27 @@ extern "C" {
 
   int cosem_checkStructure(gxByteBuffer* bb, unsigned char expectedItemCount);
 
-  int cosem_checkArray(gxByteBuffer* bb, unsigned short* count);
+  int cosem_checkArray(gxByteBuffer* bb, uint16_t* count);
 
   int cosem_getUInt8(gxByteBuffer* bb, unsigned char* value);
 
-  int cosem_getUInt16(gxByteBuffer* bb, unsigned short* value);
+  int cosem_getUInt16(gxByteBuffer* bb, uint16_t* value);
 
-  int cosem_getUInt32(gxByteBuffer* bb, unsigned long* value);
+  int cosem_getUInt32(gxByteBuffer* bb, uint32_t* value);
 
   int cosem_getInt8(gxByteBuffer* bb, signed char* value);
 
-  int cosem_getInt16(gxByteBuffer* bb, short* value);
+  int cosem_getInt16(gxByteBuffer* bb, int16_t* value);
 
-  int cosem_getInt32(gxByteBuffer* bb, int* value);
+  int cosem_getInt32(gxByteBuffer* bb, int32_t* value);
 
   int cosem_getOctectString(gxByteBuffer* bb, gxByteBuffer* value);
 
   int cosem_getString(gxByteBuffer* bb, gxByteBuffer* value);
 
-  int cosem_getOctectString2(gxByteBuffer* bb, unsigned char* value, unsigned short capacity, unsigned short* size);
+  int cosem_getOctectString2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size);
 
-  int cosem_getString2(gxByteBuffer* bb, char* value, unsigned short capacity);
+  int cosem_getString2(gxByteBuffer* bb, char* value, uint16_t capacity);
 
   int cosem_getDateTimeFromOctectString(gxByteBuffer* bb, gxtime* value);
 
@@ -112,7 +112,7 @@ extern "C" {
 
   int cosem_getUtf8String(gxByteBuffer* bb, gxByteBuffer* value);
 
-  int cosem_getUtf8String2(gxByteBuffer* bb, char* value, unsigned short capacity, unsigned short* size);
+  int cosem_getUtf8String2(gxByteBuffer* bb, char* value, uint16_t capacity, uint16_t* size);
 
   int cosem_setDateTimeAsOctectString(gxByteBuffer* bb, gxtime* value);
 
@@ -131,21 +131,29 @@ extern "C" {
   int cosem_setOctectString2(
       gxByteBuffer* bb,
       const unsigned char* value,
-      unsigned short size);
+      uint16_t size);
 
   int cosem_setUInt8(gxByteBuffer* bb, unsigned char value);
-  int cosem_setUInt16(gxByteBuffer* bb, unsigned short value);
-  int cosem_setUInt32(gxByteBuffer* bb, unsigned long value);
-  int cosem_setUInt64(gxByteBuffer* bb, unsigned long long* value);
+  int cosem_setUInt16(gxByteBuffer* bb, uint16_t value);
+  int cosem_setUInt32(gxByteBuffer* bb, uint32_t value);
+  int cosem_setUInt64(gxByteBuffer* bb, uint64_t* value);
 
   int cosem_setInt8(gxByteBuffer* bb, char value);
-  int cosem_setInt16(gxByteBuffer* bb, short value);
-  int cosem_setInt32(gxByteBuffer* bb, long value);
-  int cosem_setInt64(gxByteBuffer* bb, long long* value);
+  int cosem_setInt16(gxByteBuffer* bb, int16_t value);
+  int cosem_setInt32(gxByteBuffer* bb, int32_t value);
+  int cosem_setInt64(gxByteBuffer* bb, int64_t* value);
   int cosem_setVariant(gxByteBuffer* bb, dlmsVARIANT* value);
 
-  int cosem_setStructure(gxByteBuffer* bb, unsigned short count);
-  int cosem_setArray(gxByteBuffer* bb, unsigned short count);
+  int cosem_setStructure(gxByteBuffer* bb, uint16_t count);
+  int cosem_setArray(gxByteBuffer* bb, uint16_t count);
+
+#ifndef DLMS_IGNORE_PROFILE_GENERIC
+  int cosem_getColumns(
+      gxArray* captureObjects,
+      unsigned char selector,
+      dlmsVARIANT* parameters,
+      gxArray* columns);
+#endif //DLMS_IGNORE_PROFILE_GENERIC
 
 #ifdef  __cplusplus
 }

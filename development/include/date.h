@@ -79,12 +79,12 @@ extern "C" {
     typedef struct
     {
 #ifdef DLMS_USE_EPOCH_TIME
-        unsigned long value;
+        uint32_t value;
 #else
         struct tm value;
 #endif
+        int16_t deviation;
         unsigned char skip; //DATETIME_SKIPS
-        short deviation;
         unsigned char extraInfo;// DLMS_DATE_TIME_EXTRA_INFO
         unsigned char status;//DLMS_CLOCK_STATUS
     } gxtime;
@@ -92,14 +92,14 @@ extern "C" {
     // Constructor.
     void time_init(
         gxtime* time,
-        unsigned short year,
+        uint16_t year,
         unsigned char month,
         unsigned char day,
         unsigned char hour,
         unsigned char minute,
         unsigned char second,
-        unsigned short millisecond,
-        signed short devitation);
+        uint16_t millisecond,
+        int16_t devitation);
 
 #ifndef DLMS_USE_EPOCH_TIME
     void time_init2(
@@ -121,7 +121,7 @@ extern "C" {
     //Constructor from Unix time.
     void time_initUnix(
         gxtime* time,
-        unsigned long value);
+        uint32_t value);
 
     void time_clear(
         gxtime* time);
@@ -131,40 +131,40 @@ extern "C" {
         gxtime* src);
 
     //Returns the approximate processor time in ms.
-    extern long time_elapsed(void);
+    extern uint32_t time_elapsed(void);
 
-	/*
-	Get years from time.
-	*/
-	unsigned short time_getYears(
+    /*
+    Get years from time.
+    */
+    uint16_t time_getYears(
         const gxtime* value);
-	/*
-	Get months from time.
-	*/
-	unsigned char time_getMonths(
+    /*
+    Get months from time.
+    */
+    unsigned char time_getMonths(
         const gxtime* value);
-	/*
-	Get days from time.
-	*/
-	unsigned char time_getDays(
-        const gxtime* value);
-
-	/*
-	Get hours from time.
-	*/
-	unsigned char time_getHours(
+    /*
+    Get days from time.
+    */
+    unsigned char time_getDays(
         const gxtime* value);
 
-	/*
-	Get minutes from time.
-	*/
-	unsigned char time_getMinutes(
+    /*
+    Get hours from time.
+    */
+    unsigned char time_getHours(
         const gxtime* value);
 
-	/*
-	Get seconds from time.
-	*/
-	unsigned char time_getSeconds(
+    /*
+    Get minutes from time.
+    */
+    unsigned char time_getMinutes(
+        const gxtime* value);
+
+    /*
+    Get seconds from time.
+    */
+    unsigned char time_getSeconds(
         const gxtime* value);
 
     /*
@@ -227,7 +227,7 @@ extern "C" {
 
     unsigned char date_daysInMonth(
         int year,
-        short month);
+        int16_t month);
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
     //Print time to cout.
@@ -241,7 +241,7 @@ extern "C" {
     int time_toString2(
         const gxtime* time,
         char* buff,
-        unsigned short len);
+        uint16_t len);
 
     //Save time to bytebuffer.
     int time_toString(
@@ -254,27 +254,37 @@ extern "C" {
         int minutes,
         int seconds);
 
-    //Compare times.
+    /////////////////////////////////////////////////////////////////////////
+    // Compare times.
+    //
+    // if Return value < 0 then it indicates value1 is less than value2.
+    // if Return value > 0 then it indicates value2 is less than value1.
+    // if Return value = 0 then it indicates value1 is equal to value2.
     int time_compare(
         gxtime* value1,
         gxtime* value2);
 
-    //Compare time and EPOCH time.
+    /////////////////////////////////////////////////////////////////////////
+    // Compare time and EPOCH time.
+    //
+    // if Return value < 0 then it indicates value1 is less than value2.
+    // if Return value > 0 then it indicates value2 is less than value1.
+    // if Return value = 0 then it indicates value1 is equal to value2.
     int time_compare2(
         gxtime* value1,
-        unsigned long value2);
+        uint32_t value2);
 
 #ifndef DLMS_USE_EPOCH_TIME
     //Get date-time from EPOCH time.
     int time_fromUnixTime(
-        unsigned long epoch,
+        uint32_t epoch,
         struct tm* time);
 #endif //DLMS_USE_EPOCH_TIME
 
     //Get date-time from EPOCH time.
     int time_fromUnixTime2(
-        unsigned long epoch,
-        unsigned short* year,
+        uint32_t epoch,
+        uint16_t* year,
         unsigned char* month,
         unsigned char* day,
         unsigned char* hour,
@@ -285,7 +295,7 @@ extern "C" {
     //Get date-time from EPOCH time.
     int time_fromUnixTime3(
         const gxtime* time,
-        unsigned short* year,
+        uint16_t* year,
         unsigned char* month,
         unsigned char* day,
         unsigned char* hour,
@@ -295,17 +305,17 @@ extern "C" {
 
 #ifndef DLMS_USE_EPOCH_TIME
     // Convert date time to Epoch time.
-    unsigned long time_toUnixTime(
+    uint32_t time_toUnixTime(
         struct tm* time);
 #endif //DLMS_USE_EPOCH_TIME
 
     // Convert date time to Epoch time.
-    unsigned long time_toUnixTime2(
+    uint32_t time_toUnixTime2(
         gxtime* time);
 
     //Get day of week.
     unsigned char time_dayOfWeek(
-        unsigned short year,
+        uint16_t year,
         unsigned char month,
         unsigned char day);
 
@@ -315,6 +325,13 @@ extern "C" {
 
     //Convert date time to UTC date time.
     int time_toUTC(gxtime* value);
+
+    // Get next scheduled date in UTC time.
+    uint32_t time_getNextScheduledDate(
+        //Start time.
+        uint32_t start,
+        //Compared time.
+        gxtime* value);
 
 #ifdef  __cplusplus
 }

@@ -54,7 +54,7 @@ extern "C" {
     int svr_handleRequest2(
         dlmsServerSettings* settings,
         unsigned char* buff,
-        unsigned short size,
+        uint16_t size,
         gxByteBuffer* reply);
 
     //Handle only one received byte.
@@ -70,7 +70,11 @@ extern "C" {
     Run the background processes.
     */
     int svr_run(
-        dlmsServerSettings* settings);
+        dlmsServerSettings* settings,
+        //Current time.
+        uint32_t time,
+        //Next execution time.
+        uint32_t* next);
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     /**

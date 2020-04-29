@@ -37,6 +37,7 @@
 #include "../include/apdu.h"
 #include "../include/errorcodes.h"
 #include "../include/ciphering.h"
+#include "../include/serverevents.h"
 
 #ifndef DLMS_IGNORE_CLIENT
 /**
@@ -55,11 +56,11 @@ int apdu_getAuthenticationString(
     {
         unsigned char p[] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x02 };
         // Add sender ACSE-requirements field component.
-        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS);
+        bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS);
         bb_setUInt8(data, 2);
         bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING);
         bb_setUInt8(data, 0x80);
-        bb_setUInt8(data, (unsigned short)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME);
+        bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME);
         // Len
         bb_setUInt8(data, 7);
         // OBJECT IDENTIFIER
@@ -396,9 +397,9 @@ int apdu_parseUserInformation(
     unsigned char tmp2[4];
     gxByteBuffer bb;
     unsigned char response;
-    unsigned short pduSize;
+    uint16_t pduSize;
     unsigned char ch, len, tag;
-    unsigned long v;
+    uint32_t v;
     if ((ret = bb_getUInt8(data, &len)) != 0)
     {
         return ret;
@@ -659,7 +660,7 @@ int apdu_parseUserInformation(
     if (response)
     {
         // VAA Name
-        unsigned short vaa;
+        uint16_t vaa;
         if ((ret = bb_getUInt16(data, &vaa)) != 0)
         {
             return ret;
@@ -865,6 +866,7 @@ int apdu_updatePassword(
                     (ret = bb_set2(&settings->password, buff, buff->position, len)) != 0)
                 {
                     //Error code is returned at the end of the function.
+                    svr_notifyTrace("updating password failed. ", ret);
                 }
             }
             else
@@ -1071,9 +1073,9 @@ int apdu_generateAarq(
     gxByteBuffer* data)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    unsigned long offset;
+    uint32_t offset;
 #else
-    unsigned short offset;
+    uint16_t offset;
 #endif
     int ret;
     // Length is updated later.
@@ -1086,9 +1088,9 @@ int apdu_generateAarq(
         (ret = apdu_generateApplicationContextName(settings, data)) == 0 &&
         (ret = apdu_getAuthenticationString(settings, data)) == 0 &&
         (ret = apdu_generateUserInformation(settings, data)) == 0)
-        {
-            return bb_setUInt8ByIndex(data, offset, (unsigned char)(data->size - offset - 1));
-        }
+    {
+        return bb_setUInt8ByIndex(data, offset, (unsigned char)(data->size - offset - 1));
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_CLIENT
@@ -1159,7 +1161,7 @@ int apdu_parsePDU(
     unsigned char* command)
 {
     unsigned char ciphered = 0;
-    unsigned short size;
+    uint16_t size;
     unsigned char len;
     unsigned char tag;
     int ret;
@@ -1200,8 +1202,9 @@ int apdu_parsePDU(
             //0xA1
         case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_APPLICATION_CONTEXT_NAME:
         {
-            if (apdu_parseApplicationContextName(settings, buff, &ciphered) != 0)
+            if ((ret = apdu_parseApplicationContextName(settings, buff, &ciphered)) != 0)
             {
+                svr_notifyTrace("apdu_parseApplicationContextName ", ret);
                 *diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
@@ -1217,16 +1220,19 @@ int apdu_parsePDU(
             // Get len.
             if ((ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid AP title ", -1);
                 break;
             }
             if (len != 3)
             {
+                svr_notifyTrace("Invalid AP title ", -1);
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
                 break;
             }
             // Choice for result.
             if ((ret = bb_getUInt8(buff, &tag)) != 0)
             {
+                svr_notifyTrace("Invalid AP title ", -1);
                 break;
             }
             if (settings->server)
@@ -1234,12 +1240,14 @@ int apdu_parsePDU(
                 //Ignore if client sends CalledAPTitle.
                 if (tag != BER_TYPE_OCTET_STRING)
                 {
+                    svr_notifyTrace("Invalid AP title ", -1);
                     ret = DLMS_ERROR_CODE_INVALID_TAG;
                     break;
                 }
                 // Get len.
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
+                    svr_notifyTrace("Invalid AP title ", -1);
                     break;
                 }
                 buff->position += len;
@@ -1275,6 +1283,7 @@ int apdu_parsePDU(
                 (ret = bb_getUInt8(buff, &tag)) != 0 ||
                 (ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid AE qualifier. ", -1);
                 break;
             }
             if (settings->server)
@@ -1282,6 +1291,7 @@ int apdu_parsePDU(
                 //Ignore if client sends CalledAEQualifier.
                 if (tag != BER_TYPE_OCTET_STRING)
                 {
+                    svr_notifyTrace("Invalid AE qualifier. ", -1);
                     ret = DLMS_ERROR_CODE_INVALID_TAG;
                     break;
                 }
@@ -1320,27 +1330,32 @@ int apdu_parsePDU(
             // Get len.
             if ((ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid AP invocationID. ", -1);
                 break;
             }
             if (settings->server)
             {
                 if (len != 3)
                 {
+                    svr_notifyTrace("Invalid AP invocationID. ", -1);
                     ret = DLMS_ERROR_CODE_INVALID_TAG;
                     break;
                 }
                 // ACSE service user tag.
                 if ((ret = bb_getUInt8(buff, &tag)) != 0)
                 {
+                    svr_notifyTrace("Invalid AP invocationID. ", -1);
                     break;
                 }
                 if (tag != BER_TYPE_INTEGER)
                 {
+                    svr_notifyTrace("Invalid AP invocationID. ", -1);
                     ret = DLMS_ERROR_CODE_INVALID_TAG;
                     break;
                 }
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
+                    svr_notifyTrace("Invalid AP invocationID. ", -1);
                     break;
                 }
                 //Ignore if client sends CalledAEQualifier.
@@ -1386,16 +1401,19 @@ int apdu_parsePDU(
                 (ret = bb_getUInt8(buff, &tag)) != 0 ||
                 (ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid client system title. ", -1);
                 break;
             }
             if (ciphered && len != 8)
             {
+                svr_notifyTrace("Invalid client system title. ", -1);
                 *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
             }
             if ((ret = bb_get(buff, settings->sourceSystemTitle, len)) != 0)
             {
+                svr_notifyTrace("Invalid client system title. ", -1);
                 break;
             }
             break;
@@ -1410,13 +1428,14 @@ int apdu_parsePDU(
                 break;
             }
             break;
-            //Client AEInvocationId.
+            //Client AE Invocation id.
         case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AE_INVOCATION_ID:
             if ((ret = bb_getUInt8(buff, &len)) != 0 ||
                 (ret = bb_getUInt8(buff, &tag)) != 0 ||
                 (ret = bb_getUInt8(buff, &len)) != 0 ||
                 (ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid AE Invocation ID. ", -1);
                 break;
             }
             break;
@@ -1426,37 +1445,44 @@ int apdu_parsePDU(
             {
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
+                    svr_notifyTrace("Invalid AE Invocation ID. ", -1);
                     break;
                 }
                 //Invalid length.
                 if (len != 3)
                 {
+                    svr_notifyTrace("Invalid AE Invocation ID. ", -1);
                     ret = DLMS_ERROR_CODE_INVALID_TAG;
                     break;
                 }
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
+                    svr_notifyTrace("Invalid AE Invocation ID. ", -1);
                     break;
                 }
                 //Invalid length.
                 if (len != 2)
                 {
+                    svr_notifyTrace("Invalid AE Invocation ID. ", -1);
                     ret = DLMS_ERROR_CODE_INVALID_TAG;
                     break;
                 }
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
+                    svr_notifyTrace("Invalid AE Invocation ID. ", -1);
                     break;
                 }
                 //Invalid tag length.
                 if (len != 1)
                 {
+                    svr_notifyTrace("Invalid AE Invocation ID. ", -1);
                     ret = DLMS_ERROR_CODE_INVALID_TAG;
                     break;
                 }
                 //Get value.
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
+                    svr_notifyTrace("Invalid AE Invocation ID. ", -1);
                     break;
                 }
             }
@@ -1482,6 +1508,7 @@ int apdu_parsePDU(
                 (ret = bb_getUInt8(buff, &len)) != 0 ||
                 (ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid Responding AE Invocation ID. ", -1);
                 break;
             }
             if (ciphered && len == 0)
@@ -1492,63 +1519,75 @@ int apdu_parsePDU(
         case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AP_INVOCATION_ID://0xA8
             if ((ret = bb_getUInt8(buff, &tag)) != 0)
             {
+                svr_notifyTrace("Invalid Calling AP Invocation ID. ", -1);
                 break;
             }
             if (tag != 3)
             {
+                svr_notifyTrace("Invalid Calling AP Invocation ID. ", -1);
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
                 break;
             }
             if ((ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid Calling AP Invocation ID. ", -1);
                 break;
             }
             if (len != 2)
             {
+                svr_notifyTrace("Invalid Calling AP Invocation ID. ", -1);
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
                 break;
             }
             //Invalid tag length.
             if ((ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid Calling AP Invocation ID. ", -1);
                 return ret;
             }
             if (len != 1)
             {
+                svr_notifyTrace("Invalid Calling AP Invocation ID. ", -1);
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
                 break;
             }
             //Get value.
             if ((ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid Calling AP Invocation ID. ", -1);
                 break;
             }
             break;
             //  0x8A or 0x88
-        case (unsigned short)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS:
-        case (unsigned short)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_CALLING_AP_INVOCATION_ID:
+        case (uint16_t)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS:
+        case (uint16_t)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_CALLING_AP_INVOCATION_ID:
             // Get sender ACSE-requirements field component.
             if ((ret = bb_getUInt8(buff, &len)) != 0)
             {
+                svr_notifyTrace("Invalid sender ACSE-requirements field. ", -1);
                 break;
             }
             if (len != 2)
             {
+                svr_notifyTrace("Invalid sender ACSE-requirements field. ", -1);
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
                 break;
             }
             if ((ret = bb_getUInt8(buff, &tag)) != 0)
             {
+                svr_notifyTrace("Invalid sender ACSE-requirements field. ", -1);
                 break;
             }
             if (tag != BER_TYPE_OBJECT_DESCRIPTOR)
             {
+                svr_notifyTrace("Invalid sender ACSE-requirements field. ", -1);
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
                 break;
             }
             //Get only value because client app is sending system title with LOW authentication.
             if ((ret = bb_getUInt8(buff, &tag)) != 0)
             {
+                svr_notifyTrace("Invalid sender ACSE-requirements field. ", -1);
                 break;
             }
             if (ciphered && tag == 0x80)
@@ -1557,10 +1596,11 @@ int apdu_parsePDU(
             }
             break;
             //  0x8B or 0x89
-        case (unsigned short)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_MECHANISM_NAME:
-        case (unsigned short)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_CALLING_AE_INVOCATION_ID:
+        case (uint16_t)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_MECHANISM_NAME:
+        case (uint16_t)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_CALLING_AE_INVOCATION_ID:
             if ((ret = apdu_updateAuthentication(settings, buff)) != 0)
             {
+                svr_notifyTrace("Invalid mechanism name. ", ret);
                 break;
             }
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -1568,6 +1608,7 @@ int apdu_parsePDU(
             invalidSystemTitle = memcmp(settings->sourceSystemTitle, EMPTY_SYSTEM_TITLE, 8) == 0;
             if (settings->server && settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC && invalidSystemTitle)
             {
+                svr_notifyTrace("Invalid mechanism name. ", -1);
                 *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
@@ -1582,6 +1623,7 @@ int apdu_parsePDU(
         case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AUTHENTICATION_VALUE:
             if ((ret = apdu_updatePassword(settings, buff)) != 0)
             {
+                svr_notifyTrace("Invalid password. ", ret);
                 break;
             }
             if (ciphered)
@@ -1595,18 +1637,24 @@ int apdu_parsePDU(
             if (*result != DLMS_ASSOCIATION_RESULT_ACCEPTED
                 && *diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
             {
-                return apdu_handleResultComponent(*diagnostic);
+                if ((ret = apdu_handleResultComponent(*diagnostic)) != 0)
+                {
+                    svr_notifyTrace("Invalid result component. ", ret);
+                }
+                return ret;
             }
-            if (apdu_parseUserInformation(settings, buff, ciphered, command) != 0)
+            if ((ret = apdu_parseUserInformation(settings, buff, ciphered, command)) != 0)
             {
+                svr_notifyTrace("parseUserInformation. ", ret);
                 //Return confirmed service error.
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
                 break;
             }
             break;
         case BER_TYPE_CONTEXT: //0x80
-            if (apdu_parseProtocolVersion(settings, buff) != 0)
+            if ((ret = apdu_parseProtocolVersion(settings, buff)) != 0)
             {
+                svr_notifyTrace("parseProtocolVersion. ", ret);
                 *diagnostic = 0x80 | DLMS_ACSE_SERVICE_PROVIDER_NO_COMMON_ACSE_VERSION;
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
@@ -1614,6 +1662,7 @@ int apdu_parsePDU(
             break;
         default:
             // Unknown tags.
+            svr_notifyTrace("Unknown tag. ", -1);
             if (buff->position < buff->size)
             {
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
@@ -1630,13 +1679,30 @@ int apdu_parsePDU(
         if (afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED &&
             !(afu == DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE && settings->authentication == DLMS_AUTHENTICATION_NONE))
         {
-            *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+#ifdef DLMS_DEBUG
+            switch (afu)
+            {
+            case DLMS_AFU_MISSING_SENDER_ACSE_REQUIREMENTS:
+                svr_notifyTrace("Sender ACSE requirements is missing.", -1);
+                break;
+            case DLMS_AFU_MISSING_MECHANISM_NAME:
+                svr_notifyTrace("Mechanism name is missing.", -1);
+                break;
+            case DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE:
+                svr_notifyTrace("Calling authentication value is missing.", -1);
+                break;
+            }
+#endif //DLMS_DEBUG
+            * result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             *diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE;
             return 0;
         }
         //All meters don't send user-information if connection is failed.
         //For this reason result component is check again.
-        ret = apdu_handleResultComponent(*diagnostic);
+        if ((ret = apdu_handleResultComponent(*diagnostic)) != 0)
+        {
+            svr_notifyTrace("handleResultComponent. ", ret);
+        }
     }
     return ret;
 }
@@ -1653,9 +1719,9 @@ int apdu_generateAARE(
 {
     int ret;
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    unsigned long offset = data->size;
+    uint32_t offset = data->size;
 #else
-    unsigned short offset = data->size;
+    uint16_t offset = data->size;
 #endif
     // Set AARE tag and length 0x61
     bb_setUInt8(data, BER_TYPE_APPLICATION | BER_TYPE_CONSTRUCTED | PDU_TYPE_APPLICATION_CONTEXT_NAME);
@@ -1728,26 +1794,33 @@ int apdu_generateAARE(
     }
     if (settings->authentication > DLMS_AUTHENTICATION_LOW)
     {
+        if (settings->stoCChallenge.size == 0)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
         // Add server ACSE-requirenents field component.
-        bb_setUInt8(data, 0x88);
-        bb_setUInt8(data, 0x02); // Len.
-        bb_setUInt16(data, 0x0780);
-        // Add tag.
-        bb_setUInt8(data, 0x89);
-        bb_setUInt8(data, 0x07); // Len
-        bb_setUInt8(data, 0x60);
-        bb_setUInt8(data, 0x85);
-        bb_setUInt8(data, 0x74);
-        bb_setUInt8(data, 0x05);
-        bb_setUInt8(data, 0x08);
-        bb_setUInt8(data, 0x02);
-        bb_setUInt8(data, settings->authentication);
-        // Add tag.
-        bb_setUInt8(data, 0xAA);
-        bb_setUInt8(data, (unsigned char)(2 + settings->stoCChallenge.size)); // Len
-        bb_setUInt8(data, BER_TYPE_CONTEXT);
-        bb_setUInt8(data, (unsigned char)settings->stoCChallenge.size);
-        bb_set(data, settings->stoCChallenge.data, settings->stoCChallenge.size);
+        if ((ret = bb_setUInt8(data, 0x88)) != 0 ||
+            (ret = bb_setUInt8(data, 0x02)) != 0 || // Len.
+            (ret = bb_setUInt16(data, 0x0780)) != 0 ||
+            // Add tag.
+            (ret = bb_setUInt8(data, 0x89)) != 0 ||
+            (ret = bb_setUInt8(data, 0x07)) != 0 || // Len
+            (ret = bb_setUInt8(data, 0x60)) != 0 ||
+            (ret = bb_setUInt8(data, 0x85)) != 0 ||
+            (ret = bb_setUInt8(data, 0x74)) != 0 ||
+            (ret = bb_setUInt8(data, 0x05)) != 0 ||
+            (ret = bb_setUInt8(data, 0x08)) != 0 ||
+            (ret = bb_setUInt8(data, 0x02)) != 0 ||
+            (ret = bb_setUInt8(data, settings->authentication)) != 0 ||
+            // Add tag.
+            (ret = bb_setUInt8(data, 0xAA)) != 0 ||
+            (ret = bb_setUInt8(data, (unsigned char)(2 + settings->stoCChallenge.size))) != 0 || // Len
+            (ret = bb_setUInt8(data, BER_TYPE_CONTEXT)) != 0 ||
+            (ret = bb_setUInt8(data, (unsigned char)settings->stoCChallenge.size)) != 0 ||
+            (ret = bb_set(data, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0)
+        {
+            return ret;
+        }
     }
 #ifndef DLMS_IGNORE_HIGH_GMAC
     if (result == DLMS_ASSOCIATION_RESULT_ACCEPTED || !isCiphered(&settings->cipher))

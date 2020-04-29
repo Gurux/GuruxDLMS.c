@@ -87,7 +87,7 @@ int notify_addData(
 int notify_generateDataNotificationMessages2(
     dlmsSettings* settings,
 #ifdef DLMS_USE_EPOCH_TIME
-    unsigned long time,
+    uint32_t time,
 #else
     struct tm* time,
 #endif //DLMS_USE_EPOCH_TIME
@@ -106,7 +106,7 @@ int notify_generateDataNotificationMessages2(
 int notify_generateDataNotificationMessages(
     dlmsSettings* settings,
 #ifdef DLMS_USE_EPOCH_TIME
-    unsigned long date,
+    uint32_t date,
 #else
     struct tm* date,
 #endif //DLMS_USE_EPOCH_TIME
@@ -126,7 +126,7 @@ int notify_generateDataNotificationMessages(
 int notify_generatePushSetupMessages(
     dlmsSettings* settings,
 #ifdef DLMS_USE_EPOCH_TIME
-    unsigned long date,
+    uint32_t date,
 #else
     struct tm* date,
 #endif //DLMS_USE_EPOCH_TIME

@@ -29,72 +29,36 @@
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
+#include "../include/serverevents.h"
 
-#ifndef LN_PARAMETERS_H
-#define LN_PARAMETERS_H
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-#include "dlmssettings.h"
-#include "bytebuffer.h"
-#include "enums.h"
-
-/**
-* LN Parameters
-*/
-typedef struct
+void svr_notifyTrace(const char* str, int err)
 {
-    /**
-     * DLMS settings.
-     */
-    dlmsSettings *settings;
-    /**
-     * DLMS command.
-     */
-    DLMS_COMMAND command;
-    /**
-     * Request type.
-     */
-    int requestType;
-    /**
-     * Attribute descriptor.
-     */
-    gxByteBuffer attributeDescriptor;
-    /**
-     * Data.
-     */
-    gxByteBuffer m_Data;
-
-    /**
-     * Send date and time. This is used in Data notification messages.
-     */
-#ifdef DLMS_USE_EPOCH_TIME
-    uint32_t time;
-#else
-    struct tm time;
-#endif //DLMS_USE_EPOCH_TIME
-    /**
-     * Reply status.
-     */
-    int status;
-    /**
-     * Are there more data to send or more data to receive.
-     */
-    unsigned char multipleBlocks;
-    /**
-     * Is this last block in send.
-     */
-    unsigned char lastBlock;
-    /**
-     * Block index.
-     */
-    int blockIndex;
-} lnParameters;
-
-#ifdef  __cplusplus
+#ifdef DLMS_DEBUG
+    if (err != 0)
+    {
+        char tmp[20];
+        sprintf(tmp, " Error: %d", err);
+        svr_trace(str, tmp);
+    }
+    else
+    {
+        svr_trace(str, " succeeded.");
+    }
+#endif// DLMS_DEBUG
 }
-#endif
 
-#endif //LN_PARAMETERS_H
+void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, int err)
+{
+#ifdef DLMS_DEBUG
+    if (err != 0)
+    {
+        char tmp[20];
+        sprintf(tmp, " %d:%d.%d.%d.%d.%d.%d Error: %d", ot, ln[0], ln[1], ln[2], ln[3], ln[4], ln[5], err);
+        svr_trace(str, tmp);
+    }
+    else
+    {
+        svr_trace(str, " succeeded.");
+    }
+#endif// DLMS_DEBUG
+}

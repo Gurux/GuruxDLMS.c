@@ -281,9 +281,9 @@ unsigned char dlms_getInvokeIDPriority(dlmsSettings* settings, unsigned char inc
 *            DLMS settings->
 * @return Invoke ID and priority.
 */
-long dlms_getLongInvokeIDPriority(dlmsSettings* settings)
+int32_t dlms_getLongInvokeIDPriority(dlmsSettings* settings)
 {
-    long value = 0;
+    int32_t value = 0;
     if (settings->priority == DLMS_PRIORITY_HIGH)
     {
         value = 0x80000000;
@@ -323,13 +323,13 @@ int dlms_getMaxPduSize(
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int dlms_setData2(
     unsigned char* buff,
-    unsigned long length,
+    uint32_t length,
     DLMS_DATA_TYPE type,
     dlmsVARIANT* value)
 #else
 int dlms_setData2(
     unsigned char* buff,
-    unsigned short length,
+    uint16_t length,
     DLMS_DATA_TYPE type,
     dlmsVARIANT* value)
 #endif
@@ -381,12 +381,12 @@ int getCount(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 *            starting index.
 * Returns  CGXDLMSVariant array.
 */
-int getArray(gxByteBuffer* buff, gxDataInfo* info, unsigned short index, dlmsVARIANT* value)
+int getArray(gxByteBuffer* buff, gxDataInfo* info, uint16_t index, dlmsVARIANT* value)
 {
     dlmsVARIANT* tmp;
     gxDataInfo info2;
-    unsigned long size;
-    unsigned short pos, startIndex;
+    uint32_t size;
+    uint16_t pos, startIndex;
     int ret;
     if (info->count == 0)
     {
@@ -430,7 +430,7 @@ int getArray(gxByteBuffer* buff, gxDataInfo* info, unsigned short index, dlmsVAR
         {
             if (info2.count == info2.index)
             {
-                startIndex = (unsigned short)buff->position;
+                startIndex = (uint16_t)buff->position;
                 va_push(value->Arr, tmp);
             }
         }
@@ -502,8 +502,8 @@ int getInt32(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 static int getBitString(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     double t;
-    unsigned short byteCnt;
-    unsigned short cnt = 0;
+    uint16_t byteCnt;
+    uint16_t cnt = 0;
 #ifndef DLMS_IGNORE_MALLOC
     int ret;
 #endif //DLMS_IGNORE_MALLOC
@@ -517,7 +517,7 @@ static int getBitString(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value
     {
         ++t;
     }
-    byteCnt = (unsigned short)t;
+    byteCnt = (uint16_t)t;
     // If there is not enough data available.
     if (buff->size - buff->position < byteCnt)
     {
@@ -577,10 +577,10 @@ static int getBool(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 */
 int getString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVARIANT* value)
 {
-    unsigned short len = 0;
+    uint16_t len = 0;
     if (knownType)
     {
-        len = (unsigned short)buff->size;
+        len = (uint16_t)buff->size;
     }
     else
     {
@@ -589,7 +589,7 @@ int getString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlm
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
         // If there is not enough data available.
-        if (buff->size - buff->position < (unsigned short)len)
+        if (buff->size - buff->position < (uint16_t)len)
         {
             info->complete = 0;
             return 0;
@@ -635,11 +635,11 @@ int getUtfString(
     unsigned char knownType,
     dlmsVARIANT* value)
 {
-    unsigned short len = 0;
+    uint16_t len = 0;
     var_clear(value);
     if (knownType)
     {
-        len = (unsigned short)buff->size;
+        len = (uint16_t)buff->size;
     }
     else
     {
@@ -648,7 +648,7 @@ int getUtfString(
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
         // If there is not enough data available.
-        if (buff->size - buff->position < (unsigned short)(2 * len))
+        if (buff->size - buff->position < (uint16_t)(2 * len))
         {
             info->complete = 0;
             return 0;
@@ -658,11 +658,11 @@ int getUtfString(
     {
         value->strUtfVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         bb_init(value->strUtfVal);
-        bb_set(value->strUtfVal, buff->data + buff->position, (unsigned short)len);
+        bb_set(value->strUtfVal, buff->data + buff->position, (uint16_t)len);
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-        buff->position += (unsigned long)len;
+        buff->position += (uint32_t)len;
 #else
-        buff->position += (unsigned short)len;
+        buff->position += (uint16_t)len;
 #endif
         value->vt = DLMS_DATA_TYPE_STRING_UTF8;
     }
@@ -685,11 +685,11 @@ int getUtfString(
 */
 int getOctetString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVARIANT* value)
 {
-    unsigned short len;
+    uint16_t len;
     int ret = 0;
     if (knownType)
     {
-        len = (unsigned short)buff->size;
+        len = (uint16_t)buff->size;
     }
     else
     {
@@ -725,9 +725,9 @@ int getOctetString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType
     {
         ret = var_addBytes(value, buff->data + buff->position, len);
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-        buff->position += (unsigned long)len;
+        buff->position += (uint32_t)len;
 #else
-        buff->position += (unsigned short)len;
+        buff->position += (uint16_t)len;
 #endif
     }
 #endif //DLMS_IGNORE_MALLOC
@@ -750,11 +750,11 @@ int getBcd(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVA
 #endif //DLMS_IGNORE_MALLOC
     static const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
     int ret = 0, a;
-    unsigned short len;
+    uint16_t len;
     unsigned char ch;
     if (knownType)
     {
-        len = (unsigned short)buff->size;
+        len = (uint16_t)buff->size;
     }
     else
     {
@@ -763,7 +763,7 @@ int getBcd(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVA
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
         // If there is not enough data available.
-        if ((buff->size - buff->position) < (unsigned short)(2 * len))
+        if ((buff->size - buff->position) < (uint16_t)(2 * len))
         {
             info->complete = 0;
             return 0;
@@ -798,7 +798,7 @@ int getBcd(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVA
     value->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
     bb_init(value->strVal);
     value->vt = DLMS_DATA_TYPE_STRING;
-    bb_capacity(value->strVal, (unsigned short)(len * 2));
+    bb_capacity(value->strVal, (uint16_t)(len * 2));
     for (a = 0; a != len; ++a)
     {
         if ((ret = bb_getUInt8(buff, &ch)) != 0)
@@ -1104,7 +1104,7 @@ int getTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     }
 #ifndef DLMS_IGNORE_MALLOC
     value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
-    time_init(value->dateTime, (unsigned short)-1, 0xFF, 0xFF, hour, minute, second, ms, 0x8000);
+    time_init(value->dateTime, (uint16_t)-1, 0xFF, 0xFF, hour, minute, second, ms, 0x8000);
     value->vt = DLMS_DATA_TYPE_TIME;
 #else
     time_init((gxtime*)value->pVal, -1, -1, -1, hour, minute, second, ms, 0x8000);
@@ -1124,7 +1124,7 @@ int getTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret, month, day;
-    unsigned short year;
+    uint16_t year;
     unsigned char ch;
     if (buff->size - buff->position < 5)
     {
@@ -1157,9 +1157,17 @@ int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 #ifndef DLMS_IGNORE_MALLOC
     value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
     time_init(value->dateTime, year, month, day, 0xFF, 0xFF, 0xFF, 0xFF, 0x8000);
+    if (ch > 7)
+    {
+        value->dateTime->skip |= DATETIME_SKIPS_DAYOFWEEK;
+    }
     value->vt = DLMS_DATA_TYPE_DATE;
 #else
     time_init((gxtime*)value->pVal, year, month, day, -1, -1, -1, -1, 0x8000);
+    if (ch > 7)
+    {
+        ((gxtime*)value->pVal)->skip |= DATETIME_SKIPS_DAYOFWEEK;
+    }
 #endif //DLMS_IGNORE_MALLOC
     return 0;
 }
@@ -1175,7 +1183,7 @@ int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 */
 int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
-    unsigned short year;
+    uint16_t year;
 #ifdef DLMS_USE_EPOCH_TIME
     int ret, status;
 #else
@@ -1432,13 +1440,13 @@ int getCompactArrayItem(
     gxByteBuffer* buff,
     DLMS_DATA_TYPE dt,
     variantArray* list,
-    unsigned long len)
+    uint32_t len)
 {
     int ret;
     gxDataInfo tmp;
     di_init(&tmp);
     tmp.type = dt;
-    unsigned long start = buff->position;
+    uint32_t start = buff->position;
     dlmsVARIANT* value = gxmalloc(sizeof(dlmsVARIANT));
     if (value == NULL)
     {
@@ -1561,7 +1569,7 @@ int getDataTypes(
 {
     int ret;
     unsigned char ch;
-    unsigned short cnt;
+    uint16_t cnt;
     DLMS_DATA_TYPE dt;
     if (cols->size == 0)
     {
@@ -1687,7 +1695,7 @@ int getCompactArray(
     unsigned char onlyDataTypes)
 {
     int ret, pos;
-    unsigned short len;
+    uint16_t len;
     unsigned char ch;
     var_clear(value);
     // If there is not enough data available.
@@ -1872,7 +1880,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
     unsigned char ch, knownType;
     int ret = 0;
 #ifndef DLMS_IGNORE_MALLOC
-    unsigned long startIndex = data->position;
+    uint32_t startIndex = data->position;
     var_clear(value);
 #endif //DLMS_IGNORE_MALLOC
     if (data->position == data->size)
@@ -1907,7 +1915,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
     case DLMS_DATA_TYPE_STRUCTURE:
     {
 #ifndef DLMS_IGNORE_MALLOC
-        ret = getArray(data, info, (unsigned short)startIndex, value);
+        ret = getArray(data, info, (uint16_t)startIndex, value);
         value->vt = info->type;
 #else
         value->vt = DLMS_DATA_TYPE_OCTET_STRING;
@@ -2124,14 +2132,14 @@ int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
 
 int dlms_getHDLCAddress(
     gxByteBuffer* buff,
-    unsigned long* address,
+    uint32_t* address,
     unsigned char isClientAddress)
 {
     unsigned char ch;
-    unsigned short s, pos;
-    unsigned long l;
+    uint16_t s, pos;
+    uint32_t l;
     int ret, size = 0;
-    for (pos = (unsigned short)buff->position; pos != (unsigned short)buff->size; ++pos)
+    for (pos = (uint16_t)buff->position; pos != (uint16_t)buff->size; ++pos)
     {
         ++size;
         if ((ret = bb_getUInt8ByIndex(buff, pos, &ch)) != 0)
@@ -2198,11 +2206,11 @@ int dlms_checkHdlcAddress(
     unsigned char server,
     dlmsSettings* settings,
     gxByteBuffer* reply,
-    unsigned short index)
+    uint16_t index)
 {
     unsigned char ch;
     int ret;
-    unsigned long source, target;
+    uint32_t source, target;
     // Get destination and source addresses.
     if ((ret = dlms_getHDLCAddress(reply, &target, !server)) != 0)
     {
@@ -2226,7 +2234,7 @@ int dlms_checkHdlcAddress(
         }
         else
         {
-            settings->serverAddress = (unsigned short)target;
+            settings->serverAddress = (uint16_t)target;
         }
 
         // Check that client addresses match.
@@ -2240,7 +2248,7 @@ int dlms_checkHdlcAddress(
             //If SNRM and client has not call disconnect and changes client ID.
             if (ch == DLMS_COMMAND_SNRM)
             {
-                settings->clientAddress = (unsigned short)source;
+                settings->clientAddress = (uint16_t)source;
             }
             else
             {
@@ -2249,7 +2257,7 @@ int dlms_checkHdlcAddress(
         }
         else
         {
-            settings->clientAddress = (unsigned short)source;
+            settings->clientAddress = (uint16_t)source;
         }
     }
     else
@@ -2275,7 +2283,7 @@ int dlms_checkHdlcAddress(
     return DLMS_ERROR_CODE_OK;
 }
 
-int dlms_getAddress(long value, unsigned long* address, int* size)
+int dlms_getAddress(int32_t value, uint32_t* address, int* size)
 {
     if (value < 0x80)
     {
@@ -2285,12 +2293,12 @@ int dlms_getAddress(long value, unsigned long* address, int* size)
     }
     else if (value < 0x4000)
     {
-        *address = (unsigned short)((value & 0x3F80) << 2 | (value & 0x7F) << 1 | 1);
+        *address = (uint16_t)((value & 0x3F80) << 2 | (value & 0x7F) << 1 | 1);
         *size = 2;
     }
     else if (value < 0x10000000)
     {
-        *address = (unsigned long)((value & 0xFE00000) << 4 | (value & 0x1FC000) << 3
+        *address = (uint32_t)((value & 0xFE00000) << 4 | (value & 0x1FC000) << 3
             | (value & 0x3F80) << 2 | (value & 0x7F) << 1 | 1);
         *size = 4;
     }
@@ -2306,11 +2314,11 @@ int dlms_getAddress(long value, unsigned long* address, int* size)
 * Get HDLC address as bytes.
 */
 int dlms_getAddressBytes(
-    unsigned long value,
+    uint32_t value,
     gxByteBuffer* bytes)
 {
     int ret, size;
-    unsigned long address;
+    uint32_t address;
     if ((ret = dlms_getAddress(value, &address, &size)) != 0)
     {
         return ret;
@@ -2321,7 +2329,7 @@ int dlms_getAddressBytes(
     }
     else if (size == 2)
     {
-        bb_setUInt16(bytes, (unsigned short)address);
+        bb_setUInt16(bytes, (uint16_t)address);
     }
     else if (size == 4)
     {
@@ -2341,23 +2349,30 @@ int dlms_getHdlcFrame(
     gxByteBuffer* reply)
 {
     unsigned char tmp[4], tmp2[4];
-    unsigned short crc;
+    uint16_t crc;
     int ret;
-    unsigned short frameSize, len;
+    uint16_t frameSize, len;
     gxByteBuffer primaryAddress, secondaryAddress;
     bb_clear(reply);
     bb_attach(&primaryAddress, tmp, 0, 4);
     bb_attach(&secondaryAddress, tmp2, 0, 4);
     if (settings->server)
     {
-        ret = bb_capacity(&primaryAddress, 1);
-        if (ret == 0)
+        if ((ret = bb_capacity(&primaryAddress, 1)) == 0 &&
+            (ret = bb_capacity(&secondaryAddress, 4)) == 0)
         {
-            ret = bb_capacity(&secondaryAddress, 4);
-        }
-        if (ret == 0 && (ret = dlms_getAddressBytes(settings->clientAddress, &primaryAddress)) == 0)
-        {
-            ret = dlms_getAddressBytes(settings->serverAddress, &secondaryAddress);
+            if (frame == 0x13 && ((dlmsServerSettings*)settings)->pushClientAddress != 0)
+            {
+                ret = dlms_getAddressBytes(((dlmsServerSettings*)settings)->pushClientAddress, &primaryAddress);
+            }
+            else
+            {
+                ret = dlms_getAddressBytes(settings->clientAddress, &primaryAddress);
+            }
+            if (ret == 0)
+            {
+                ret = dlms_getAddressBytes(settings->serverAddress, &secondaryAddress);
+            }
         }
     }
     else
@@ -2392,7 +2407,7 @@ int dlms_getHdlcFrame(
     }
     else if (ret == 0 && data->size - data->position <= frameSize)
     {
-        len = (unsigned short)(data->size - data->position);
+        len = (uint16_t)(data->size - data->position);
         // Is last packet.
         ret = bb_setUInt8(reply, (unsigned char)(0xA0 | (((7 + primaryAddress.size + secondaryAddress.size + len) >> 8) & 0x7)));
     }
@@ -2409,7 +2424,7 @@ int dlms_getHdlcFrame(
     }
     else if (ret == 0)
     {
-        if ((ret = bb_capacity(reply, (unsigned short)(11 + len))) == 0)
+        if ((ret = bb_capacity(reply, (uint16_t)(11 + len))) == 0)
         {
             ret = bb_setUInt8(reply, (unsigned char)(7 + primaryAddress.size + secondaryAddress.size + len));
         }
@@ -2433,7 +2448,7 @@ int dlms_getHdlcFrame(
     if (ret == 0)
     {
         // Add header CRC.
-        crc = countCRC(reply, 1, reply->size - 1);
+        crc = countCRC(reply, 1, (reply->size - 1));
         ret = bb_setUInt16(reply, crc);
     }
     if (ret == 0 && len != 0)
@@ -2442,7 +2457,7 @@ int dlms_getHdlcFrame(
         if ((ret = bb_set2(reply, data, data->position, len)) == 0)
         {
             // Add data CRC.
-            crc = countCRC(reply, 1, reply->size - 1);
+            crc = countCRC(reply, 1, (reply->size - 1));
             ret = bb_setUInt16(reply, crc);
         }
     }
@@ -2479,11 +2494,11 @@ int dlms_getDataFromFrame(
     gxReplyData* data)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    unsigned long offset = data->data.size;
-    unsigned long cnt;
+    uint32_t offset = data->data.size;
+    uint32_t cnt;
 #else
-    unsigned short offset = data->data.size;
-    unsigned short cnt;
+    uint16_t offset = data->data.size;
+    uint16_t cnt;
 #endif
     if (data->packetLength < reply->position)
     {
@@ -2518,15 +2533,15 @@ int dlms_getHdlcData(
 {
     int ret;
     unsigned char ch;
-    unsigned short eopPos;
+    uint16_t eopPos;
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    unsigned long pos, frameLen = 0;
-    unsigned long packetStartID = reply->position;
+    uint32_t pos, frameLen = 0;
+    uint32_t packetStartID = reply->position;
 #else
-    unsigned short pos, frameLen = 0;
-    unsigned short packetStartID = (unsigned short)reply->position;
+    uint16_t pos, frameLen = 0;
+    uint16_t packetStartID = (uint16_t)reply->position;
 #endif
-    unsigned short crc, crcRead;
+    uint16_t crc, crcRead;
     // If whole frame is not received yet.
     if (reply->size - reply->position < 9)
     {
@@ -2535,7 +2550,7 @@ int dlms_getHdlcData(
     }
     data->complete = 1;
     // Find start of HDLC frame.
-    for (pos = (unsigned short)reply->position; pos < reply->size; ++pos)
+    for (pos = (uint16_t)reply->position; pos < reply->size; ++pos)
     {
         if ((ret = bb_getUInt8(reply, &ch)) != 0)
         {
@@ -2583,7 +2598,7 @@ int dlms_getHdlcData(
         // Not enough data to parse;
         return 0;
     }
-    eopPos = (unsigned short)(frameLen + packetStartID + 1);
+    eopPos = (uint16_t)(frameLen + packetStartID + 1);
     if ((ret = bb_getUInt8ByIndex(reply, eopPos, &ch)) != 0)
     {
         return ret;
@@ -2622,20 +2637,22 @@ int dlms_getHdlcData(
             return ret;
         }
     }
+    // Is there more data available.
+    unsigned char moreData = (*frame & 0x8) != 0;
+    // Get frame type.
+    if ((ret = bb_getUInt8(reply, frame)) != 0)
+    {
+        return ret;
+    }
 
     // Is there more data available.
-    if ((*frame & 0x8) != 0)
+    if (moreData)
     {
         data->moreData |= DLMS_DATA_REQUEST_TYPES_FRAME;
     }
     else
     {
         data->moreData = ((DLMS_DATA_REQUEST_TYPES)(data->moreData & ~DLMS_DATA_REQUEST_TYPES_FRAME));
-    }
-    // Get frame type.
-    if ((ret = bb_getUInt8(reply, frame)) != 0)
-    {
-        return ret;
     }
 
     if (!preEstablished && !checkFrame(settings, *frame))
@@ -2755,9 +2772,9 @@ int dlms_getHdlcData(
             if (reply->size - reply->position > 8)
             {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-                unsigned long pos = reply->position;
+                uint32_t pos = reply->position;
 #else
-                unsigned short pos = reply->position;
+                uint16_t pos = reply->position;
 #endif //!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
                 ret = dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
                 if (settings->serverAddress != 0 && settings->clientAddress != 0)
@@ -2778,7 +2795,7 @@ int dlms_checkWrapperAddress(dlmsSettings* settings,
     gxByteBuffer* buff)
 {
     int ret;
-    unsigned short value;
+    uint16_t value;
     if (settings->server)
     {
         if ((ret = bb_getUInt16(buff, &value)) != 0)
@@ -2850,7 +2867,7 @@ int dlms_getTcpData(
     gxReplyData* data)
 {
     int ret, pos;
-    unsigned short value;
+    uint16_t value;
     // If whole frame is not received yet.
     if (buff->size - buff->position < 8)
     {
@@ -2899,12 +2916,12 @@ int dlms_getTcpData(
 }
 #endif //DLMS_IGNORE_WRAPPER
 
-int dlms_getDataFromBlock(gxByteBuffer* data, unsigned short index)
+int dlms_getDataFromBlock(gxByteBuffer* data, uint16_t index)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    unsigned long pos, len = data->position - index;
+    uint32_t pos, len = data->position - index;
 #else
-    unsigned short pos, len = data->position - index;
+    uint16_t pos, len = data->position - index;
 #endif
     if (data->size == data->position)
     {
@@ -2980,7 +2997,7 @@ int dlms_receiverReady(
     }
     else
     {
-        bb_setUInt16(&bb, (unsigned short)settings->blockIndex);
+        bb_setUInt16(&bb, (uint16_t)settings->blockIndex);
     }
     ++settings->blockIndex;
 #ifdef DLMS_IGNORE_MALLOC
@@ -3022,6 +3039,7 @@ int dlms_receiverReady(
 #ifndef DLMS_IGNORE_WRAPPER
 int dlms_getWrapperFrame(
     dlmsSettings* settings,
+    DLMS_COMMAND command,
     gxByteBuffer* data,
     gxByteBuffer* reply)
 {
@@ -3035,7 +3053,14 @@ int dlms_getWrapperFrame(
         {
             if ((ret = bb_setUInt16(reply, settings->serverAddress)) == 0)
             {
-                ret = bb_setUInt16(reply, settings->clientAddress);
+                if (((dlmsServerSettings*)settings)->pushClientAddress != 0 && (command == DLMS_COMMAND_DATA_NOTIFICATION || command == DLMS_COMMAND_EVENT_NOTIFICATION))
+                {
+                    ret = bb_setUInt16(reply, ((dlmsServerSettings*)settings)->pushClientAddress);
+                }
+                else
+                {
+                    ret = bb_setUInt16(reply, settings->clientAddress);
+                }
             }
         }
         else
@@ -3046,7 +3071,7 @@ int dlms_getWrapperFrame(
             }
         }
         // Data length.
-        if (ret == 0 && (ret = bb_setUInt16(reply, (unsigned short)data->size)) == 0)
+        if (ret == 0 && (ret = bb_setUInt16(reply, (uint16_t)data->size)) == 0)
         {
             // Data
             ret = bb_set2(reply, data, data->position, data->size - data->position);
@@ -3082,12 +3107,12 @@ int dlms_verifyInvokeId(dlmsSettings* settings, gxReplyData* reply)
 int dlms_handleGetResponse(
     dlmsSettings* settings,
     gxReplyData* reply,
-    unsigned short index)
+    uint16_t index)
 {
     int ret;
-    unsigned short count;
+    uint16_t count;
     unsigned char ch;
-    unsigned long number;
+    uint32_t number;
     short type;
     // Get type.
     if ((ret = bb_getUInt8(&reply->data, &ch)) != 0)
@@ -3179,7 +3204,7 @@ int dlms_handleGetResponse(
             if ((reply->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
             {
                 // Check Block length.
-                if (count > (unsigned short)(reply->data.size - reply->data.position))
+                if (count > (uint16_t)(reply->data.size - reply->data.position))
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
@@ -3224,7 +3249,7 @@ int handleWriteResponse(gxReplyData* data)
 {
     unsigned char ch;
     int ret;
-    unsigned short count, pos;
+    uint16_t count, pos;
     if (hlp_getObjectCount2(&data->data, &count) != 0)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -3252,7 +3277,7 @@ int dlms_handleWriteResponse(
 {
     unsigned char ch;
     int ret;
-    unsigned short pos, count;
+    uint16_t pos, count;
     if (hlp_getObjectCount2(&data->data, &count) != 0)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -3278,7 +3303,7 @@ int dlms_handleWriteResponse(
 int dlms_getValueFromData(dlmsSettings* settings,
     gxReplyData* reply)
 {
-    unsigned short index;
+    uint16_t index;
     int ret;
 #ifndef DLMS_IGNORE_MALLOC
     int pos;
@@ -3291,10 +3316,10 @@ int dlms_getValueFromData(dlmsSettings* settings,
     if (reply->dataValue.vt == DLMS_DATA_TYPE_ARRAY)
     {
         info.type = DLMS_DATA_TYPE_ARRAY;
-        info.count = (unsigned short)reply->totalCount;
-        info.index = (unsigned short)reply->data.size;
+        info.count = (uint16_t)reply->totalCount;
+        info.index = (uint16_t)reply->data.size;
     }
-    index = (unsigned short)(reply->data.position);
+    index = (uint16_t)(reply->data.position);
     reply->data.position = reply->readPosition;
     if ((ret = dlms_getData(&reply->data, &info, &value)) != 0)
     {
@@ -3360,11 +3385,11 @@ int dlms_getValueFromData(dlmsSettings* settings,
 int dlms_readResponseDataBlockResult(
     dlmsSettings* settings,
     gxReplyData* reply,
-    unsigned short index)
+    uint16_t index)
 {
     int ret;
-    unsigned short number;
-    unsigned short blockLength;
+    uint16_t number;
+    uint16_t blockLength;
     unsigned char lastBlock;
     if ((ret = bb_getUInt8(&reply->data, &lastBlock)) != 0)
     {
@@ -3423,12 +3448,12 @@ int dlms_readResponseDataBlockResult(
 int dlms_handleReadResponse(
     dlmsSettings* settings,
     gxReplyData* reply,
-    unsigned short index)
+    uint16_t index)
 {
     int ret;
     unsigned char ch;
-    unsigned short number;
-    unsigned short pos, cnt = reply->totalCount;
+    uint16_t number;
+    uint16_t pos, cnt = reply->totalCount;
     DLMS_SINGLE_READ_RESPONSE type;
     variantArray values;
 
@@ -3634,9 +3659,9 @@ int dlms_handleMethodResponse(
 int dlms_handlePush(gxReplyData* reply)
 {
     unsigned char ch;
-    unsigned long ul;
+    uint32_t ul;
     int ret;
-    unsigned short index = (unsigned short)(reply->data.position - 1);
+    uint16_t index = (uint16_t)(reply->data.position - 1);
     // Is last block
     if ((ret = bb_getUInt8(&reply->data, &ch)) != 0)
     {
@@ -3732,7 +3757,7 @@ int dlms_handleSetResponse(
     }
     else if (type == DLMS_SET_RESPONSE_TYPE_DATA_BLOCK || type == DLMS_SET_RESPONSE_TYPE_LAST_DATA_BLOCK)
     {
-        unsigned long  tmp;
+        uint32_t  tmp;
         if ((ret = bb_getUInt32(&data->data, &tmp)) != 0)
         {
             return ret;
@@ -3831,12 +3856,12 @@ int dlms_handleDataNotification(
     dlmsSettings* settings,
     gxReplyData* reply)
 {
-    unsigned long id;
+    uint32_t id;
     int ret;
     unsigned char len;
     gxByteBuffer tmp;
     dlmsVARIANT t;
-    unsigned short start = (unsigned short)(reply->data.position - 1);
+    uint16_t start = (uint16_t)(reply->data.position - 1);
     // Get invoke id.
     if ((ret = bb_getUInt32(&reply->data, &id)) != 0)
     {
@@ -3901,8 +3926,8 @@ int dlms_handleGbt(
 {
     int ret;
     unsigned char bc;
-    unsigned short bn, bna;
-    unsigned short index = (unsigned short)(data->data.position - 1);
+    uint16_t bn, bna;
+    uint16_t index = (uint16_t)(data->data.position - 1);
     if ((ret = bb_getUInt8(&data->data, &bc)) != 0)
     {
         return ret;
@@ -3937,7 +3962,7 @@ int dlms_handleGbt(
     // Block number acknowledged.
     data->blockNumberAck = bna;
     data->command = DLMS_COMMAND_NONE;
-    unsigned short len;
+    uint16_t len;
     if (hlp_getObjectCount2(&data->data, &len) != 0)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -4071,17 +4096,17 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
         }
         data->encryptedCommand = data->command;
         data->command = (DLMS_COMMAND)ch;
-        }
+    }
     else
     {
         data->data.position = (data->data.position - 1);
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-    }
+}
 
 int dlms_handledGloDedResponse(dlmsSettings* settings,
-    gxReplyData* data, unsigned short index)
+    gxReplyData* data, uint16_t index)
 {
 #ifdef DLMS_IGNORE_HIGH_GMAC
     return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
@@ -4106,7 +4131,7 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
                 bb_clear(&bb);
                 return ret;
             }
-    }
+        }
         else
         {
             if ((ret = cip_decrypt(&settings->cipher,
@@ -4127,8 +4152,8 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
         bb_clear(&bb);
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
-        data->cipherIndex = (unsigned short)data->data.size;
-}
+        data->cipherIndex = (uint16_t)data->data.size;
+    }
     return ret;
 #endif //DLMS_IGNORE_HIGH_GMAC
 }
@@ -4183,7 +4208,7 @@ int dlms_getPdu(
     unsigned char first)
 {
     int ret = DLMS_ERROR_CODE_OK;
-    unsigned short index;
+    uint16_t index;
     unsigned char ch;
     DLMS_COMMAND cmd = data->command;
     // If header is not read yet or GBT message.
@@ -4195,7 +4220,7 @@ int dlms_getPdu(
             // Invalid PDU.
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        index = (unsigned short)(data->data.position);
+        index = (uint16_t)(data->data.position);
         // Get command.
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
         {
@@ -4342,7 +4367,7 @@ int dlms_getPdu(
         {
             data->data.position = data->cipherIndex + 1;
             ret = dlms_handleGbt(settings, data);
-            data->cipherIndex = (unsigned short)data->data.size;
+            data->cipherIndex = (uint16_t)data->data.size;
             data->command = DLMS_COMMAND_NONE;
         }
         // Get command if operating as a server.
@@ -4448,13 +4473,13 @@ int dlms_appendMultipleSNBlocks(
     gxSNParameters* p,
     gxByteBuffer* reply)
 {
-    unsigned long maxSize;
+    uint32_t maxSize;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     unsigned char ciphering = p->settings->cipher.security != DLMS_SECURITY_NONE;
 #else
     unsigned char ciphering = 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
-    unsigned long hSize = reply->size + 3;
+    uint32_t hSize = reply->size + 3;
     // Add LLC bytes.
     if (p->command == DLMS_COMMAND_WRITE_REQUEST
         || p->command == DLMS_COMMAND_READ_REQUEST)
@@ -4471,7 +4496,7 @@ int dlms_appendMultipleSNBlocks(
         }
     }
     maxSize -= hlp_getObjectCountSizeInBytes(maxSize);
-    if ((unsigned short)(p->data->size - p->data->position) > maxSize)
+    if ((uint16_t)(p->data->size - p->data->position) > maxSize)
     {
         // More blocks.
         bb_setUInt8(reply, 0);
@@ -4735,7 +4760,7 @@ int dlms_getLNPdu(
 #else
     unsigned char ciphering = 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
-    unsigned short len = 0;
+    uint16_t len = 0;
     if (p->command == DLMS_COMMAND_AARQ)
     {
         //Data is already added to reply when malloc is not used.
@@ -4819,7 +4844,7 @@ int dlms_getLNPdu(
             else
             {
                 // Data is send in octet string. Remove data type.
-                unsigned short pos = (unsigned short)h->size;
+                uint16_t pos = (uint16_t)h->size;
                 dlmsVARIANT tmp;
                 gxtime t;
 #ifndef DLMS_IGNORE_MALLOC
@@ -4843,7 +4868,7 @@ int dlms_getLNPdu(
                     bb_move(h, pos + 1, pos, reply->size - pos - 1);
                 }
             }
-            }
+        }
         else if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
             // Get request size can be bigger than PDU size.
@@ -4931,7 +4956,7 @@ int dlms_getLNPdu(
                 // Block size.
                 if (p->data != NULL)
                 {
-                    len = (unsigned short)(p->data->size - p->data->position);
+                    len = (uint16_t)(p->data->size - p->data->position);
                 }
                 else
                 {
@@ -4946,7 +4971,7 @@ int dlms_getLNPdu(
 #endif //DLMS_IGNORE_HIGH_GMAC
                 if (totalLength > p->settings->maxPduSize)
                 {
-                    len = (unsigned short)(p->settings->maxPduSize - h->size);
+                    len = (uint16_t)(p->settings->maxPduSize - h->size);
 #ifndef DLMS_IGNORE_HIGH_GMAC
                     if (ciphering)
                     {
@@ -4978,9 +5003,9 @@ int dlms_getLNPdu(
                         ret = bb_set2(reply, p->data, p->data->position, len);
                     }
 #endif //DLMS_IGNORE_MALLOC
-                        }
-                    }
                 }
+            }
+        }
         // Add data that fits to one block.
         if (ret == 0 && len == 0)
         {
@@ -4996,10 +5021,10 @@ int dlms_getLNPdu(
             }
             if (ret == 0 && p->data != NULL && p->data->size != 0)
             {
-                len = (unsigned short)(p->data->size - p->data->position);
+                len = (uint16_t)(p->data->size - p->data->position);
                 if (len + reply->size > p->settings->maxPduSize)
                 {
-                    len = (unsigned short)(p->settings->maxPduSize - h->size - p->data->size - p->data->position);
+                    len = (uint16_t)(p->settings->maxPduSize - h->size - p->data->size - p->data->position);
                 }
 #ifdef DLMS_IGNORE_MALLOC
                 ret = bb_insert(h->data, h->size, reply, 0);
@@ -5028,8 +5053,8 @@ int dlms_getLNPdu(
                     ret = bb_insert(h->data, h->size, reply, 0);
                 }
 #endif //DLMS_IGNORE_MALLOC
-                }
             }
+        }
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (ret == 0 && ciphering && reply->size != 0 && p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
@@ -5064,9 +5089,9 @@ int dlms_getLNPdu(
                 key,
                 reply);
             ++p->settings->cipher.invocationCounter;
-            }
-#endif //DLMS_IGNORE_HIGH_GMAC1
         }
+#endif //DLMS_IGNORE_HIGH_GMAC1
+    }
     if (ret == 0 && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         ret = dlms_addLLCBytes(p->settings, reply);
@@ -5102,45 +5127,45 @@ int dlms_getLnMessages(
             if (p->attributeDescriptor == NULL)
             {
                 ++p->settings->blockIndex;
-        }
-    } while (ret == 0 && pdu->position != pdu->size)
-    {
-#ifdef DLMS_IGNORE_MALLOC
-        if (!(messages->size < messages->capacity))
+            }
+        } while (ret == 0 && pdu->position != pdu->size)
         {
-            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-            break;
-        }
-        it = messages->data[messages->size];
-        ++messages->size;
-        bb_clear(it);
+#ifdef DLMS_IGNORE_MALLOC
+            if (!(messages->size < messages->capacity))
+            {
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                break;
+            }
+            it = messages->data[messages->size];
+            ++messages->size;
+            bb_clear(it);
 #else
-        it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(it);
+            it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+            bb_init(it);
 #endif //DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_WRAPPER
-        if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
-        {
-            ret = dlms_getWrapperFrame(p->settings, pdu, it);
-        }
-        else
-#endif //DLMS_IGNORE_WRAPPER
-        {
-            ret = dlms_getHdlcFrame(p->settings, frame, pdu, it);
-            if (pdu->position != pdu->size)
+            if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
-                frame = getNextSend(p->settings, 0);
+                ret = dlms_getWrapperFrame(p->settings, p->command, pdu, it);
             }
-    }
+            else
+#endif //DLMS_IGNORE_WRAPPER
+            {
+                ret = dlms_getHdlcFrame(p->settings, frame, pdu, it);
+                if (pdu->position != pdu->size)
+                {
+                    frame = getNextSend(p->settings, 0);
+                }
+            }
 #ifndef DLMS_IGNORE_MALLOC
-        mes_push(messages, it);
+            mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
+        }
+        bb_clear(pdu);
+        frame = 0;
+    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    return ret;
 }
-    bb_clear(pdu);
-    frame = 0;
-        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-        return ret;
-            }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getSnMessages(
@@ -5180,7 +5205,7 @@ int dlms_getSnMessages(
             bb_init(it);
             if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
-                ret = dlms_getWrapperFrame(p->settings, &data, it);
+                ret = dlms_getWrapperFrame(p->settings, p->command, &data, it);
             }
             else
             {
@@ -5189,7 +5214,7 @@ int dlms_getSnMessages(
                 {
                     frame = getNextSend(p->settings, 0);
                 }
-        }
+            }
             if (ret != 0)
             {
                 break;
@@ -5197,12 +5222,12 @@ int dlms_getSnMessages(
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
-    }
+        }
         bb_clear(&data);
         frame = 0;
-} while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-return 0;
-        }
+    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    return 0;
+}
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_getData2(
@@ -5267,7 +5292,7 @@ int dlms_generateChallenge(
     gxByteBuffer* challenge)
 {
     // Random challenge is 8 to 64 bytes.
-    // Texas Instruments accepts only 16 byte long challenge.
+    // Texas Instruments accepts only 16 byte int32_t challenge.
     // For this reason challenge size is 16 bytes at the moment.
     int ret = 0, pos, len = 16;//hlp_rand() % 58 + 8;
     bb_clear(challenge);
@@ -5392,7 +5417,7 @@ int dlms_getActionInfo(
 
 int dlms_secure(
     dlmsSettings* settings,
-    long ic,
+    int32_t ic,
     gxByteBuffer* data,
     gxByteBuffer* secret,
     gxByteBuffer* reply)
@@ -5410,15 +5435,15 @@ int dlms_secure(
 #ifndef DLMS_IGNORE_AES
         unsigned char tmp[16];
         gxByteBuffer s;
-        unsigned short len = (unsigned short)data->size;
+        uint16_t len = (uint16_t)data->size;
         bb_attach(&s, tmp, 0, sizeof(tmp));
         if (len % 16 != 0)
         {
             len += (16 - (data->size % 16));
-    }
+        }
         if (secret->size > data->size)
         {
-            len = (unsigned short)secret->size;
+            len = (uint16_t)secret->size;
             if (len % 16 != 0)
             {
                 len += (16 - (secret->size % 16));
@@ -5441,7 +5466,7 @@ int dlms_secure(
 #else
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_AES
-}
+    }
     // Get server Challenge.
     // Get shared secret
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -5475,8 +5500,8 @@ int dlms_secure(
                     (ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0)
                 {
                     return ret;
-        }
-    }
+                }
+            }
             else
             {
                 if ((ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0 ||
@@ -5561,10 +5586,10 @@ int dlms_secure(
         }
         bb_clear(&challenge);
 #endif //DLMS_IGNORE_HIGH_GMAC
-            }
+    }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-        }
+}
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,
@@ -5641,10 +5666,10 @@ int dlms_parseSnrmUaResponse(
         switch (id)
         {
         case HDLC_INFO_MAX_INFO_TX:
-            settings->maxInfoRX = (unsigned short)var_toInteger(&value);
+            settings->maxInfoRX = (uint16_t)var_toInteger(&value);
             break;
         case HDLC_INFO_MAX_INFO_RX:
-            settings->maxInfoTX = (unsigned short)var_toInteger(&value);
+            settings->maxInfoTX = (uint16_t)var_toInteger(&value);
             break;
         case HDLC_INFO_WINDOW_SIZE_TX:
             settings->windowSizeRX = (unsigned char)var_toInteger(&value);
@@ -5660,7 +5685,7 @@ int dlms_parseSnrmUaResponse(
     return ret;
 }
 
-int dlms_appendHdlcParameter(gxByteBuffer* data, unsigned short value)
+int dlms_appendHdlcParameter(gxByteBuffer* data, uint16_t value)
 {
     if (value < 0x100)
     {
@@ -5675,17 +5700,17 @@ int dlms_appendHdlcParameter(gxByteBuffer* data, unsigned short value)
     return 0;
 }
 
-int dlms_isPduFull(dlmsSettings* settings, gxByteBuffer* data, unsigned short* size)
+int dlms_isPduFull(dlmsSettings* settings, gxByteBuffer* data, uint16_t* size)
 {
     unsigned char ret;
     if (bb_isAttached(data))
     {
-        unsigned short len = 0;
+        uint16_t len = 0;
         if (size != NULL)
         {
             if (*size == 0)
             {
-                *size = (unsigned short)data->size;
+                *size = (uint16_t)data->size;
             }
             len = *size;
         }
@@ -5693,12 +5718,12 @@ int dlms_isPduFull(dlmsSettings* settings, gxByteBuffer* data, unsigned short* s
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (settings->cipher.security != DLMS_SECURITY_NONE)
         {
-            len += 20 + CIPHERING_HEADER_SIZE + (unsigned short)data->size;
+            len += 20 + CIPHERING_HEADER_SIZE + (uint16_t)data->size;
         }
         else
 #endif //DLMS_IGNORE_HIGH_GMAC
         {
-            len += 20 + (unsigned short)data->size;
+            len += 20 + (uint16_t)data->size;
         }
         ret = settings->maxPduSize < len;
     }

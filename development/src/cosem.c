@@ -628,7 +628,7 @@ int cosem_checkStructure(gxByteBuffer* bb, unsigned char expectedItemCount)
 {
     int ret;
     unsigned char value;
-    unsigned short cnt;
+    uint16_t cnt;
     if ((ret = bb_getUInt8(bb, &value)) != 0)
     {
         return ret;
@@ -649,11 +649,11 @@ int cosem_checkStructure(gxByteBuffer* bb, unsigned char expectedItemCount)
     return 0;
 }
 
-int cosem_checkArray(gxByteBuffer* bb, unsigned short* count)
+int cosem_checkArray(gxByteBuffer* bb, uint16_t* count)
 {
     int ret;
     unsigned char ch;
-    unsigned short cnt;
+    uint16_t cnt;
     if ((ret = bb_getUInt8(bb, &ch)) != 0)
     {
         return ret;
@@ -694,7 +694,7 @@ int cosem_getUInt8(gxByteBuffer* bb, unsigned char* value)
     return 0;
 }
 
-int cosem_getUInt16(gxByteBuffer* bb, unsigned short* value)
+int cosem_getUInt16(gxByteBuffer* bb, uint16_t* value)
 {
     int ret;
     unsigned char tmp;
@@ -713,7 +713,7 @@ int cosem_getUInt16(gxByteBuffer* bb, unsigned short* value)
     return 0;
 }
 
-int cosem_getUInt32(gxByteBuffer* bb, unsigned long* value)
+int cosem_getUInt32(gxByteBuffer* bb, uint32_t* value)
 {
     int ret;
     unsigned char tmp;
@@ -770,7 +770,7 @@ int cosem_getInt16(gxByteBuffer* bb, short* value)
     return 0;
 }
 
-int cosem_getInt32(gxByteBuffer* bb, int* value)
+int cosem_getInt32(gxByteBuffer* bb, int32_t* value)
 {
     int ret;
     unsigned char tmp;
@@ -793,7 +793,7 @@ int cosem_getOctectStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned ch
 {
     int ret;
     unsigned char tmp;
-    unsigned short count;
+    uint16_t count;
     if ((ret = bb_clear(value)) != 0)
     {
         return ret;
@@ -821,11 +821,11 @@ int cosem_getOctectStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned ch
     return 0;
 }
 
-int cosem_getOctectStringBase2(gxByteBuffer* bb, unsigned char* value, unsigned short capacity, unsigned short* size, unsigned char type)
+int cosem_getOctectStringBase2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size, unsigned char type)
 {
     int ret;
     unsigned char tmp;
-    unsigned short count;
+    uint16_t count;
     memset(value, 0, capacity);
     if ((ret = bb_getUInt8(bb, &tmp)) != 0)
     {
@@ -861,14 +861,14 @@ int cosem_getString(gxByteBuffer* bb, gxByteBuffer* value)
     return cosem_getOctectStringBase(bb, value, DLMS_DATA_TYPE_STRING);
 }
 
-int cosem_getOctectString2(gxByteBuffer* bb, unsigned char* value, unsigned short capacity, unsigned short* size)
+int cosem_getOctectString2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size)
 {
     return cosem_getOctectStringBase2(bb, value, capacity, size, DLMS_DATA_TYPE_OCTET_STRING);
 }
 
-int cosem_getString2(gxByteBuffer* bb, char* value, unsigned short capacity)
+int cosem_getString2(gxByteBuffer* bb, char* value, uint16_t capacity)
 {
-    unsigned short size;
+    uint16_t size;
     int ret = cosem_getOctectStringBase2(bb, (unsigned char*)value, capacity - 1, &size, DLMS_DATA_TYPE_STRING);
     if (ret == 0)
     {
@@ -896,7 +896,7 @@ int cosem_getDateTimeFromOctectStringBase(gxByteBuffer* bb, gxtime* value, unsig
 {
     int ret;
     unsigned char ch;
-    unsigned short count;
+    uint16_t count;
     gxDataInfo info;
     dlmsVARIANT tmp;
     time_clear(value);
@@ -965,7 +965,7 @@ int cosem_getBitString(gxByteBuffer* bb, bitArray* value)
 {
     int ret;
     unsigned char ch;
-    unsigned short count;
+    uint16_t count;
     ba_clear(value);
     if ((ret = bb_getUInt8(bb, &ch)) != 0)
     {
@@ -1044,7 +1044,7 @@ int cosem_getUtf8String(gxByteBuffer* bb, gxByteBuffer* value)
     return cosem_getOctectStringBase(bb, value, DLMS_DATA_TYPE_STRING_UTF8);
 }
 
-int cosem_getUtf8String2(gxByteBuffer* bb, char* value, unsigned short capacity, unsigned short* size)
+int cosem_getUtf8String2(gxByteBuffer* bb, char* value, uint16_t capacity, uint16_t* size)
 {
     return cosem_getOctectStringBase2(bb, (unsigned char*)value, capacity, size, DLMS_DATA_TYPE_STRING_UTF8);
 }
@@ -1098,7 +1098,7 @@ int cosem_setOctectString(gxByteBuffer* bb, gxByteBuffer* value)
     }
     else if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
         (ret = bb_setUInt8(bb, (unsigned char)value->size)) != 0 ||
-        (ret = bb_set(bb, value->data, (unsigned short)value->size)) != 0)
+        (ret = bb_set(bb, value->data, (uint16_t)value->size)) != 0)
     {
         //Error code is returned at the end of the function.
     }
@@ -1142,7 +1142,7 @@ int cosem_setTime(gxByteBuffer* bb, gxtime* value)
 int cosem_setOctectString2(
     gxByteBuffer* bb,
     const unsigned char* value,
-    unsigned short size)
+    uint16_t size)
 {
     int ret;
     if (value == NULL || size == 0)
@@ -1189,7 +1189,7 @@ int cosem_setUInt8(gxByteBuffer* bb, unsigned char value)
     return ret;
 }
 
-int cosem_setUInt16(gxByteBuffer* bb, unsigned short value)
+int cosem_setUInt16(gxByteBuffer* bb, uint16_t value)
 {
     int ret;
     if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_UINT16)) != 0 ||
@@ -1200,7 +1200,7 @@ int cosem_setUInt16(gxByteBuffer* bb, unsigned short value)
     return ret;
 }
 
-int cosem_setUInt32(gxByteBuffer* bb, unsigned long value)
+int cosem_setUInt32(gxByteBuffer* bb, uint32_t value)
 {
     int ret;
     if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_UINT32)) != 0 ||
@@ -1211,7 +1211,7 @@ int cosem_setUInt32(gxByteBuffer* bb, unsigned long value)
     return ret;
 }
 
-int cosem_setUInt64(gxByteBuffer* bb, unsigned long long* value)
+int cosem_setUInt64(gxByteBuffer* bb, uint64_t* value)
 {
     int ret;
     if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_UINT64)) != 0 ||
@@ -1244,7 +1244,7 @@ int cosem_setInt16(gxByteBuffer* bb, short value)
     return ret;
 }
 
-int cosem_setInt32(gxByteBuffer* bb, long value)
+int cosem_setInt32(gxByteBuffer* bb, int32_t value)
 {
     int ret;
     if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_INT32)) != 0 ||
@@ -1255,7 +1255,7 @@ int cosem_setInt32(gxByteBuffer* bb, long value)
     return ret;
 }
 
-int cosem_setInt64(gxByteBuffer* bb, long long* value)
+int cosem_setInt64(gxByteBuffer* bb, int64_t* value)
 {
     int ret;
     if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_INT64)) != 0 ||
@@ -1275,7 +1275,7 @@ int cosem_setVariant(gxByteBuffer* bb, dlmsVARIANT* value)
     return dlms_setData(bb, value->vt, value);
 }
 
-int cosem_setStructure(gxByteBuffer* bb, unsigned short count)
+int cosem_setStructure(gxByteBuffer* bb, uint16_t count)
 {
     int ret;
     if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
@@ -1286,7 +1286,7 @@ int cosem_setStructure(gxByteBuffer* bb, unsigned short count)
     return ret;
 }
 
-int cosem_setArray(gxByteBuffer* bb, unsigned short count)
+int cosem_setArray(gxByteBuffer* bb, uint16_t count)
 {
     int ret;
     if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_ARRAY)) != 0 ||
@@ -1296,3 +1296,259 @@ int cosem_setArray(gxByteBuffer* bb, unsigned short count)
     }
     return ret;
 }
+
+#ifndef DLMS_IGNORE_PROFILE_GENERIC
+
+/**
+     * Get selected columns.
+     *
+     * @param cols
+     *            selected columns.
+     * @param columns
+     *            Selected columns.
+     */
+#ifndef DLMS_IGNORE_MALLOC
+int getSelectedColumns(
+    gxArray* captureObjects,
+    variantArray* cols,
+    gxArray* columns)
+{
+    gxKey* c;
+    dlmsVARIANT* it, * it2;
+    unsigned char* ln;
+    DLMS_OBJECT_TYPE ot;
+    int ret, pos, pos2, dataIndex;
+    unsigned char attributeIndex;
+    for (pos = 0; pos != cols->size; ++pos)
+    {
+        if ((ret = va_getByIndex(cols, pos, &it)) != 0 ||
+            //Get object type.
+            (ret = va_getByIndex(it->Arr, 0, &it2)) != 0)
+        {
+            break;
+        }
+        ot = (DLMS_OBJECT_TYPE)var_toInteger(it2);
+        //Get logical name.
+        if ((ret = va_getByIndex(it->Arr, 1, &it2)) != 0)
+        {
+            break;
+        }
+        ln = it2->byteArr->data;
+        //Get attribute index.
+        if ((ret = va_getByIndex(it->Arr, 2, &it2)) != 0)
+        {
+            break;
+        }
+        attributeIndex = (char)var_toInteger(it2);
+        //Get data index.
+        if ((ret = va_getByIndex(it->Arr, 3, &it2)) != 0)
+        {
+            break;
+        }
+        dataIndex = var_toInteger(it2);
+        // Find columns and update only them.
+        for (pos2 = 0; pos2 != captureObjects->size; ++pos2)
+        {
+            if ((ret = arr_getByIndex(captureObjects, pos2, (void**)&c)) != 0)
+            {
+                return ret;
+            }
+            if (((gxObject*)c->key)->objectType == ot &&
+                ((gxTarget*)c->value)->attributeIndex == attributeIndex &&
+                ((gxTarget*)c->value)->dataIndex == dataIndex &&
+                memcmp(((gxObject*)c->key)->logicalName, ln, 6) == 0)
+            {
+                if ((ret = arr_push(columns, c)) != 0)
+                {
+                    return ret;
+                }
+                break;
+            }
+        }
+    }
+    return 0;
+}
+#endif //DLMS_IGNORE_MALLOC
+
+int cosem_getColumns(
+    gxArray* captureObjects,
+    unsigned char selector,
+    dlmsVARIANT* parameters,
+    gxArray* columns)
+{
+    uint16_t pos, start = 0, count = 0;
+    int ret = 0;
+    arr_empty(columns);
+#ifdef DLMS_IGNORE_MALLOC
+    int index = 0;
+    gxTarget* k;
+    gxTarget* k2;
+    if (selector == 1) //Read by range
+    {
+        count = arr_getCapacity(columns);
+        if ((ret = cosem_checkArray(parameters->byteArr, &count)) != 0)
+        {
+            return ret;
+        }
+        //Add all.
+        if (count == 0)
+        {
+            count = captureObjects->size;
+            columns->size = count;
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k, sizeof(gxTarget))) != 0 ||
+                    (ret = arr_getByIndex(columns, pos, (void**)&k2, sizeof(gxTarget))) != 0)
+                {
+                    break;
+                }
+                memcpy(k2, k, sizeof(gxTarget));
+            }
+        }
+        else
+        {
+            int pos2;
+            uint16_t ot;
+            unsigned char ln[6];
+            signed char aIndex;
+            short dIndex;
+            columns->size = 0;
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_checkStructure(parameters->byteArr, 4)) != 0 ||
+                    (ret = cosem_getUInt16(parameters->byteArr, &ot)) != 0 ||
+                    (ret = cosem_getOctectString2(parameters->byteArr, ln, 6, NULL)) != 0 ||
+                    (ret = cosem_getInt8(parameters->byteArr, &aIndex)) != 0 ||
+                    (ret = cosem_getInt16(parameters->byteArr, &dIndex)) != 0)
+                {
+                    break;
+                }
+                for (pos2 = 0; pos2 != captureObjects->size; ++pos2)
+                {
+                    if ((ret = arr_getByIndex(captureObjects, pos2, (void**)&k, sizeof(gxTarget))) != 0)
+                    {
+                        break;
+                    }
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
+                    if (k->objectType == ot && memcmp(k->logicalName, ln, 6) == 0)
+#else
+                    if (k->target->objectType == ot && memcmp(k->target->logicalName, ln, 6) == 0)
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+                    {
+                        if (!(columns->size < arr_getCapacity(columns)))
+                        {
+                            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+                        }
+                        ++columns->size;
+                        if ((ret = arr_getByIndex(columns, index, (void**)&k2, sizeof(gxTarget))) != 0)
+                        {
+                            break;
+                        }
+                        memcpy(k2, k, sizeof(gxTarget));
+                        ++index;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    else if (selector == 2) //Read by entry.
+    {
+        if ((ret = cosem_getUInt16(parameters->byteArr, &start)) != 0 ||
+            (ret = cosem_getUInt16(parameters->byteArr, &count)) != 0)
+        {
+            return ret;
+        }
+        if (count == 0)
+        {
+            count = captureObjects->size - start + 1;
+        }
+        if (!(count < captureObjects->size || start < count))
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        columns->size = count;
+        for (pos = start - 1; pos != count; ++pos)
+        {
+            if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k, sizeof(gxTarget))) != 0 ||
+                (ret = arr_getByIndex(columns, index, (void**)&k2, sizeof(gxTarget))) != 0)
+            {
+                break;
+            }
+            memcpy(k2, k, sizeof(gxTarget));
+            ++index;
+        }
+    }
+#else
+    uint16_t addAllColumns = 1;
+    gxKey* k;
+    dlmsVARIANT* it;
+    if (parameters->vt == DLMS_DATA_TYPE_STRUCTURE)
+    {
+        if (selector == 1) //Read by range
+        {
+            if (parameters->Arr->size > 3)
+            {
+                if ((ret = va_getByIndex(parameters->Arr, 3, &it)) == 0)
+                {
+                    ret = getSelectedColumns(captureObjects, it->Arr, columns);
+                }
+                addAllColumns = 0;
+            }
+        }
+        else if (selector == 2) //Read by entry.
+        {
+            if (parameters->Arr->size > 2)
+            {
+                if ((ret = va_getByIndex(parameters->Arr, 2, &it)) != 0)
+                {
+                    return ret;
+                }
+                start = var_toInteger(it);
+            }
+            if (parameters->Arr->size > 3)
+            {
+                if ((ret = va_getByIndex(parameters->Arr, 3, &it)) != 0)
+                {
+                    return ret;
+                }
+                count = var_toInteger(it);
+            }
+            else if (start != 1)
+            {
+                count = captureObjects->size;
+            }
+            if (start != 1 || count != 0)
+            {
+                addAllColumns = 0;
+                if (count == 0)
+                {
+                    count = captureObjects->size - start;
+                }
+                for (pos = start - 1; pos != count; ++pos)
+                {
+                    if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k)) != 0 ||
+                        (ret = arr_push(columns, k)) != 0)
+                    {
+                        return ret;
+                    }
+                }
+            }
+        }
+        //Add all objects.
+        if (addAllColumns)
+        {
+            for (pos = 0; pos != captureObjects->size; ++pos)
+            {
+                if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k)) != 0 ||
+                    (ret = arr_push(columns, k)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+#endif //DLMS_IGNORE_MALLOC
+    return ret;
+}
+#endif //DLMS_IGNORE_PROFILE_GENERIC

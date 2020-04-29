@@ -345,7 +345,7 @@ extern "C" {
     typedef struct
     {
         unsigned char value[MAX_DESTINATION_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxDestination;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -361,14 +361,14 @@ extern "C" {
 
     typedef struct
     {
-        unsigned short objectType; //DLMS_OBJECT_TYPE
+        uint16_t objectType; //DLMS_OBJECT_TYPE
         unsigned char version;
 #ifndef DLMS_IGNORE_MALLOC
         //Is this component free when collection is clear.
         unsigned char free;
 #endif //DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-        unsigned short shortName;
+        uint16_t shortName;
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         unsigned char logicalName[6];
         gxAccess* access;
@@ -386,10 +386,10 @@ extern "C" {
     typedef struct
     {
         gxObject** data;
-        unsigned short capacity;
-        unsigned short size;
+        uint16_t capacity;
+        uint16_t size;
 #if !(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
-        unsigned short position;
+        uint16_t position;
 #endif //!(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
     } objectArray;
 
@@ -457,8 +457,8 @@ extern "C" {
         dlmsVARIANT status;
         gxtime captureTime;
         gxtime startTimeCurrent;
-        unsigned short numberOfPeriods;
-        unsigned long period;
+        uint16_t numberOfPeriods;
+        uint32_t period;
     } gxDemandRegister;
 #endif // DLMS_IGNORE_DEMAND_REGISTER
 
@@ -515,10 +515,15 @@ extern "C" {
     typedef struct
     {
         signed char attributeIndex;
-        unsigned short dataIndex;
+        uint16_t dataIndex;
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
+        unsigned char logicalName[6];
+        uint16_t objectType;
+#else
 #ifdef DLMS_IGNORE_MALLOC
         gxObject* target;
 #endif //DLMS_IGNORE_MALLOC
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     } gxTarget;
 
 
@@ -527,7 +532,7 @@ extern "C" {
     typedef struct
     {
         char attributeIndex;
-        unsigned short dataIndex;
+        uint16_t dataIndex;
     } gxCaptureObject;
 
 #endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA) && defined(DLMS_IGNORE_PUSH_SETUP) && defined(DLMS_IGNORE_PARAMETER_MONITOR))
@@ -555,21 +560,23 @@ extern "C" {
         gxArray buffer;
 #endif //DLMS_IGNORE_MALLOC
         gxArray captureObjects;
-        int capturePeriod;
+        uint32_t capturePeriod;
         DLMS_SORT_METHOD sortMethod;
         gxObject* sortObject;
-        unsigned long profileEntries;
-        unsigned long entriesInUse;
+        uint32_t profileEntries;
+        uint32_t entriesInUse;
         signed char sortObjectAttributeIndex;
-        unsigned short sortObjectDataIndex;
+        uint16_t sortObjectDataIndex;
 
         /*
         * Max row count is used with Profile Generic to tell how many rows are read
         * to one PDU. Default value is 1. Change this for your needs.
         */
 #ifndef DLMS_IGNORE_MALLOC
-        unsigned short maxRowCount;
+        uint16_t maxRowCount;
 #endif //DLMS_IGNORE_MALLOC
+        //Executed time. This is for internal use.
+        uint32_t executedTime;
     } gxProfileGeneric;
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
@@ -584,13 +591,13 @@ extern "C" {
         */
         gxObject base;
 
-        DLMS_CLOCK_BASE clockBase;
+        DLMS_CLOCK_BASE clockBase : 3;
         signed char deviation;
         unsigned char enabled;
         gxtime end;
-        DLMS_CLOCK_STATUS status;
+        DLMS_CLOCK_STATUS status : 8;
         gxtime begin;
-        short timeZone;
+        uint16_t timeZone;
         gxtime time;
         gxtime presetTime;
     } gxClock;
@@ -632,7 +639,7 @@ extern "C" {
     typedef struct
     {
         //Script ID.
-        unsigned short id;
+        uint16_t id;
         //Script actions.
         gxArray actions;
     } gxScript;
@@ -661,7 +668,7 @@ extern "C" {
         /*
         * Schedule entry index.
         */
-        unsigned short index;
+        uint16_t index;
 
         /*
         * Is Schedule entry enabled.
@@ -679,7 +686,7 @@ extern "C" {
         /*
         * Script identifier of the script to be executed.
         */
-        short scriptSelector;
+        uint16_t scriptSelector;
 
         /*
         *
@@ -689,7 +696,7 @@ extern "C" {
         /*
         * Defines a period in minutes, in which an entry shall be processed after power fail.
         */
-        short validityWindow;
+        uint16_t validityWindow;
 
         /*
         * BitArray days of the week on which the entry is valid.
@@ -740,7 +747,7 @@ extern "C" {
     */
     typedef struct
     {
-        unsigned short index;
+        uint16_t index;
         gxtime date;
         unsigned char dayId;
     } gxSpecialDay;
@@ -846,7 +853,7 @@ extern "C" {
         unsigned char logicalName[6];
         unsigned char jointIsoCtt;
         unsigned char country;
-        unsigned short countryName;
+        uint16_t countryName;
         unsigned char identifiedOrganization;
         unsigned char dlmsUA;
         unsigned char applicationContext;
@@ -861,8 +868,8 @@ extern "C" {
     typedef struct
     {
         DLMS_CONFORMANCE conformance;
-        unsigned short maxReceivePduSize;
-        unsigned short maxSendPpuSize;
+        uint16_t maxReceivePduSize;
+        uint16_t maxSendPpuSize;
         unsigned char dlmsVersionNumber;
         signed char qualityOfService;
         gxByteBuffer cypheringInfo;
@@ -877,7 +884,7 @@ extern "C" {
     {
         unsigned char jointIsoCtt;
         unsigned char country;
-        unsigned short countryName;
+        uint16_t countryName;
         unsigned char identifiedOrganization;
         unsigned char dlmsUA;
         unsigned char authenticationMechanismName;
@@ -909,7 +916,7 @@ extern "C" {
         DLMS_ASSOCIATION_STATUS associationStatus;
         objectArray objectList;
         signed char clientSAP;
-        unsigned short serverSAP;
+        uint16_t serverSAP;
         gxApplicationContextName applicationContextName;
         gxXDLMSContextType xDLMSContextInfo;
         gxAuthenticationMechanismName authenticationMechanismName;
@@ -941,7 +948,7 @@ extern "C" {
     typedef struct
     {
         unsigned char value[MAX_SAP_ITEM_NAME_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxSapItemName;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -952,7 +959,7 @@ extern "C" {
     */
     typedef struct
     {
-        unsigned short id;
+        uint16_t id;
 #ifdef DLMS_IGNORE_MALLOC
         gxSapItemName name;
 #else
@@ -982,13 +989,13 @@ extern "C" {
     typedef struct
     {
         unsigned char data[MAX_IMAGE_IDENTIFICATION_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxImageIdentification;
 
     typedef struct
     {
         unsigned char data[MAX_IMAGE_SIGNATURE_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxImageSignature;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -999,7 +1006,7 @@ extern "C" {
     */
     typedef struct
     {
-        unsigned long size;
+        uint32_t size;
 
 #ifdef DLMS_IGNORE_MALLOC
         gxImageIdentification identification;
@@ -1021,9 +1028,9 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        unsigned long imageBlockSize;
+        uint32_t imageBlockSize;
         bitArray imageTransferredBlocksStatus;
-        unsigned long imageFirstNotTransferredBlockNumber;
+        uint32_t imageFirstNotTransferredBlockNumber;
         unsigned char imageTransferEnabled;
         DLMS_IMAGE_TRANSFER_STATUS imageTransferStatus;
         gxArray imageActivateInfo; // gxImageActivateInfo
@@ -1059,17 +1066,15 @@ extern "C" {
     typedef struct
     {
         unsigned char value[MAX_SEASON_PROFILE_NAME_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxSeasonProfileName;
 #endif //DLMS_IGNORE_MALLOC
-
-#define SET_OCTECT_STRING(X, V, S) memcpy(X.value, V, S);X.size=S
 
 #ifdef DLMS_IGNORE_MALLOC
     typedef struct
     {
         unsigned char value[MAX_SEASON_PROFILE_WEEK_NAME_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxSeasonProfileWeekName;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -1097,7 +1102,7 @@ extern "C" {
     typedef struct
     {
         unsigned char value[MAX_SEASON_WEEK_PROFILE_NAME_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxWeekProfileName;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -1135,7 +1140,7 @@ extern "C" {
 #else
         unsigned char scriptLogicalName[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        unsigned short scriptSelector;
+        uint16_t scriptSelector;
     } gxDayProfileAction;
 
     /*
@@ -1187,7 +1192,7 @@ extern "C" {
 #else
         unsigned char logicalName[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        unsigned short scriptSelector;
+        uint16_t scriptSelector;
     } gxActionItem;
 
 #endif //!(defined(DLMS_IGNORE_LIMITER) && defined(DLMS_IGNORE_REGISTER_MONITOR))
@@ -1256,9 +1261,11 @@ extern "C" {
 #else
         unsigned char executedScriptLogicalName[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        unsigned short executedScriptSelector;
-        DLMS_SINGLE_ACTION_SCHEDULE_TYPE type;
+        uint16_t executedScriptSelector;
+        DLMS_SINGLE_ACTION_SCHEDULE_TYPE type: 8;
         gxArray executionTime; //gxTime
+        //Executed time. This is for internal use.
+        uint32_t executedTime;
     } gxActionSchedule;
 
 #endif //DLMS_IGNORE_ACTION_SCHEDULE
@@ -1275,14 +1282,14 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        unsigned short inactivityTimeout;
-        unsigned short deviceAddress;
-        unsigned short maximumInfoLengthTransmit;
+        uint16_t inactivityTimeout;
+        uint16_t deviceAddress;
+        uint16_t maximumInfoLengthTransmit;
         DLMS_BAUD_RATE communicationSpeed;
         unsigned char windowSizeTransmit;
         unsigned char windowSizeReceive;
-        unsigned short interCharachterTimeout;
-        unsigned short maximumInfoLengthReceive;
+        uint16_t interCharachterTimeout;
+        uint16_t maximumInfoLengthReceive;
     } gxIecHdlcSetup;
 
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
@@ -1369,7 +1376,7 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        unsigned short tableId;
+        uint16_t tableId;
         gxByteBuffer buffer;
     } gxUtilityTables;
 #endif //DLMS_IGNORE_UTILITY_TABLES
@@ -1380,7 +1387,7 @@ extern "C" {
     typedef struct
     {
         unsigned char value[MAX_MODEM_INITIALIZATION_STRING_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxModemInitialisationString;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -1398,14 +1405,14 @@ extern "C" {
         gxByteBuffer request;
         gxByteBuffer response;
 #endif //DLMS_IGNORE_MALLOC
-        unsigned short delay;
+        uint16_t delay;
     } gxModemInitialisation;
 
 #ifdef DLMS_IGNORE_MALLOC
     typedef struct
     {
         unsigned char value[MAX_MODEM_PROFILE_STRING_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxModemProfile;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -1470,8 +1477,10 @@ extern "C" {
         gxArray callingWindow;
         //Array of destination strings.
         gxArray destinations;
-        unsigned short repetitionDelay;
+        uint16_t repetitionDelay;
         unsigned char repetitions;
+        //Executed time. This is for internal use.
+        uint32_t executedTime;
     } gxAutoConnect;
 #endif //DLMS_IGNORE_AUTO_CONNECT
 
@@ -1487,7 +1496,7 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        unsigned short port;
+        uint16_t port;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         gxObject* ipSetup;
 #else
@@ -1495,8 +1504,8 @@ extern "C" {
         unsigned char ipReference[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         unsigned char maximumSimultaneousConnections;
-        unsigned short inactivityTimeout;
-        unsigned short maximumSegmentSize;
+        uint16_t inactivityTimeout;
+        uint16_t maximumSegmentSize;
     } gxTcpUdpSetup;
 
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
@@ -1506,7 +1515,7 @@ extern "C" {
     typedef struct
     {
         unsigned char value[MAX_IP4_SETUP_IP_OPTION_DATA_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxip4SetupIpOptionData;
 #endif //DLMS_IGNORE_MALLOC
     /*
@@ -1548,11 +1557,11 @@ extern "C" {
         variantArray multicastIPAddress;
 #endif //DLMS_IGNORE_MALLOC
         gxArray ipOptions; //gxip4SetupIpOption
-        unsigned long subnetMask;
-        unsigned long gatewayIPAddress;
+        uint32_t subnetMask;
+        uint32_t gatewayIPAddress;
         unsigned char useDHCP;
-        unsigned long primaryDNSAddress;
-        unsigned long secondaryDNSAddress;
+        uint32_t primaryDNSAddress;
+        uint32_t secondaryDNSAddress;
         dlmsVARIANT value;
     } gxIp4Setup;
 #endif //DLMS_IGNORE_IP4_SETUP
@@ -1671,7 +1680,7 @@ extern "C" {
         */
         gxObject base;
         gxByteBuffer apn;
-        unsigned short pinCode;
+        uint16_t pinCode;
         gxQualityOfService defaultQualityOfService;
         gxQualityOfService requestedQualityOfService;
     } gxGPRSSetup;
@@ -1703,12 +1712,12 @@ extern "C" {
         /*
         * Cell ID.
         */
-        unsigned long cellId;
+        uint32_t cellId;
 
         /*
         * Location area code (LAC).
         */
-        unsigned short locationId;
+        uint16_t locationId;
 
         /*
         * Signal quality.
@@ -1721,17 +1730,17 @@ extern "C" {
         /*
         * Mobile Country Code.
         */
-        unsigned short mobileCountryCode;
+        uint16_t mobileCountryCode;
 
         /*
         * Mobile Network Code.
         */
-        unsigned short mobileNetworkCode;
+        uint16_t mobileNetworkCode;
 
         /*
         * Absolute radio frequency channel number.
         */
-        unsigned long channelNumber;
+        uint32_t channelNumber;
     }gxGSMCellInfo;
 
     /*
@@ -1744,7 +1753,7 @@ extern "C" {
         /*
         * Four-byte cell ID.
         */
-        unsigned long cellId;
+        uint32_t cellId;
 
         /*
         * Signal quality.
@@ -1867,9 +1876,9 @@ extern "C" {
     */
     typedef struct
     {
-        unsigned short id;
+        uint16_t id;
         gxtime activationTime;
-        unsigned long duration;
+        uint32_t duration;
     } gxEmergencyProfile;
 
     /*
@@ -1891,8 +1900,8 @@ extern "C" {
         dlmsVARIANT thresholdActive;
         dlmsVARIANT thresholdNormal;
         dlmsVARIANT thresholdEmergency;
-        long minOverThresholdDuration;
-        long minUnderThresholdDuration;
+        int32_t minOverThresholdDuration;
+        int32_t minUnderThresholdDuration;
         gxEmergencyProfile emergencyProfile;
 #ifdef DLMS_IGNORE_MALLOC
         gxArray emergencyProfileGroupIDs;
@@ -1920,7 +1929,7 @@ extern "C" {
     typedef struct
     {
         unsigned char value[MAX_CAPTURE_DEFINITION_ELEMENT_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxCaptureDefinitionElement;
 
     typedef struct
@@ -1941,7 +1950,7 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        unsigned long capturePeriod;
+        uint32_t capturePeriod;
         unsigned char primaryAddress;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         gxObject* mBusPort;
@@ -1949,14 +1958,14 @@ extern "C" {
         unsigned char mBusPortReference[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         gxArray captureDefinition;
-        unsigned long identificationNumber;
-        unsigned short manufacturerID;
+        uint32_t identificationNumber;
+        uint16_t manufacturerID;
         unsigned char dataHeaderVersion;
         unsigned char deviceType;
         unsigned char accessNumber;
         unsigned char status;
         unsigned char alarm;
-        unsigned short configuration;
+        uint16_t configuration;
         DLMS_MBUS_ENCRYPTION_KEY_STATUS encryptionKeyStatus;
     } gxMBusClient;
 #endif //DLMS_IGNORE_MBUS_CLIENT
@@ -1967,7 +1976,7 @@ extern "C" {
     typedef struct
     {
         unsigned char value[MAX_PUSH_SETUP_TARGET_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxPushSetupDestination;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -1995,9 +2004,11 @@ extern "C" {
         DLMS_MESSAGE_TYPE message;
 
         gxArray communicationWindow;
-        unsigned short randomisationStartInterval;
+        uint16_t randomisationStartInterval;
         unsigned char numberOfRetries;
-        unsigned short repetitionDelay;
+        uint16_t repetitionDelay;
+        //Executed time. This is for internal use.
+        uint32_t executedTime;
     } gxPushSetup;
 #endif //DLMS_IGNORE_PUSH_SETUP
 
@@ -2096,6 +2107,29 @@ extern "C" {
         DLMS_PROTECTION_TYPE_AUTHENTICATION_ENCRYPTION = 3
     } DLMS_PROTECTION_TYPE;
 
+    //Global key types.
+    typedef enum
+    {
+        /*
+        * Global unicast encryption key. <br>
+        * Client and server uses this message to send Ephemeral Public Key to other
+        * party.
+        */
+        DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION,
+        /*
+         * Global broadcast encryption key.
+        */
+        DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION,
+        /*
+         * Authentication key.
+        */
+        DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION,
+        /*
+         * Key Encrypting Key, also known as Master key.
+        */
+        DLMS_GLOBAL_KEY_TYPE_KEK
+    }DLMS_GLOBAL_KEY_TYPE;
+
 #ifndef DLMS_IGNORE_DATA_PROTECTION
     typedef enum
     {
@@ -2121,29 +2155,6 @@ extern "C" {
         //Restriction by entry.
         DLMS_RESTRICTION_TYPE_ENTRY = 2
     } DLMS_RESTRICTION_TYPE;
-
-    //Global key types.
-    typedef enum
-    {
-        /*
-        * Global unicast encryption key. <br>
-        * Client and server uses this message to send Ephemeral Public Key to other
-        * party.
-        */
-        DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION,
-        /*
-         * Global broadcast encryption key.
-        */
-        DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION,
-        /*
-         * Authentication key.
-        */
-        DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION,
-        /*
-         * Key Encrypting Key, also known as Master key.
-        */
-        DLMS_GLOBAL_KEY_TYPE_KEK
-    }DLMS_GLOBAL_KEY_TYPE;
 
     /*
     ---------------------------------------------------------------------------
@@ -2352,7 +2363,7 @@ extern "C" {
     typedef struct
     {
         char value[MAX_CURRENCY_NAME_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxCurrencyName;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -2508,7 +2519,7 @@ extern "C" {
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
-        unsigned short maxProvision;
+        uint16_t maxProvision;
 
         /*
         * Max provision period.<br/>
@@ -2532,15 +2543,15 @@ extern "C" {
         */
         gxObject base;
 
-        long currentCreditAmount;
+        int32_t currentCreditAmount;
         unsigned char type;
         unsigned char priority;
-        long warningThreshold;
-        long limit;
+        int32_t warningThreshold;
+        int32_t limit;
         bitArray creditConfiguration;
         unsigned char status;
-        long presetCreditAmount;
-        long creditAvailableThreshold;
+        int32_t presetCreditAmount;
+        int32_t creditAvailableThreshold;
         gxtime period;
     } gxCredit;
 
@@ -2578,7 +2589,7 @@ extern "C" {
     typedef struct
     {
         unsigned char data[MAX_CHARGE_TABLE_INDEX_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxChargeTableIndex;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -2594,7 +2605,7 @@ extern "C" {
 #else
         gxByteBuffer index;
 #endif //DLMS_IGNORE_MALLOC
-        short chargePerUnit;
+        int16_t chargePerUnit;
     } gxChargeTable;
 
     /*
@@ -2618,7 +2629,7 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        short totalAmountPaid;
+        uint16_t totalAmountPaid;
 
         //CONSUMPTION_BASED_COLLECTION, TIME_BASED_COLLECTION, PAYMENT_EVENT_BASED_COLLECTION
         unsigned char chargeType;
@@ -2629,9 +2640,9 @@ extern "C" {
         unsigned int period;
         bitArray chargeConfiguration;
         gxtime lastCollectionTime;
-        long lastCollectionAmount;
-        long totalAmountRemaining;
-        unsigned short proportion;
+        int32_t lastCollectionAmount;
+        int32_t totalAmountRemaining;
+        uint16_t proportion;
     } gxCharge;
 #endif //DLMS_IGNORE_CHARGE
 
@@ -2640,7 +2651,7 @@ extern "C" {
     typedef struct
     {
         unsigned char value[MAX_TOKEN_GATEWAY_DESCRIPTION_LENGTH];
-        unsigned short size;
+        uint16_t size;
     }gxTokenGatewayDescription;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -2722,7 +2733,7 @@ extern "C" {
         gxObject base;
 
         unsigned char enableDisableJoining;
-        unsigned short joinTimeout;
+        uint16_t joinTimeout;
         gxArray activeDevices;
     } gxZigBeeNetworkControl;
 
@@ -2742,9 +2753,9 @@ extern "C" {
         */
         gxObject base;
         /*Address assigned to the service node during its registration by the base node.*/
-        unsigned short serviceNodeAddress;
+        uint16_t serviceNodeAddress;
         /* Base node address to which the service node is registered.*/
-        unsigned short baseNodeAddress;
+        uint16_t baseNodeAddress;
 
     } gxLlcSscsSetup;
 #endif //DLMS_IGNORE_LLC_SSCS_SETUP
@@ -2764,16 +2775,16 @@ extern "C" {
         gxObject base;
 
         /*Number of bursts received on the physical layer for which the CRC was incorrect.*/
-        unsigned short crcIncorrectCount;
+        uint16_t crcIncorrectCount;
 
         /* Number of bursts received on the physical layer for which the CRC was correct, but the Protocol field of PHY header had invalid value.*/
-        unsigned short crcFailedCount;
+        uint16_t crcFailedCount;
 
         /*Number of times when PHY layer received new data to transmit.*/
-        unsigned short txDropCount;
+        uint16_t txDropCount;
 
         /*Number of times when the PHY layer received new data on the channel.*/
-        unsigned short rxDropCount;
+        uint16_t rxDropCount;
     }gxPrimeNbOfdmPlcPhysicalLayerCounters;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
 
@@ -2828,7 +2839,7 @@ extern "C" {
         gxObject base;
 
         /*LNID allocated to this node at time of its registration.*/
-        short lnId;
+        uint16_t lnId;
 
         /*LSID allocated to this node at the time of its promotion.*/
         unsigned char lsId;
@@ -2844,7 +2855,7 @@ extern "C" {
         DLMS_MAC_STATE state;
 
         /*The SCP length, in symbols, in present frame.*/
-        unsigned short scpLength;
+        uint16_t scpLength;
 
         /*Level of this node in subnetwork hierarchy.*/
         unsigned char nodeHierarchyLevel;
@@ -2882,22 +2893,22 @@ extern "C" {
         gxObject base;
 
         /*Count of successfully transmitted MSDUs.*/
-        unsigned long txDataPktCount;
+        uint32_t txDataPktCount;
 
         /*Count of successfully received MSDUs whose destination address was this node.*/
-        unsigned long rxDataPktCount;
+        uint32_t rxDataPktCount;
 
         /*Count of successfully transmitted MAC control packets.*/
-        unsigned long txCtrlPktCount;
+        uint32_t txCtrlPktCount;
 
         /*Count of successfully received MAC control packets whose destination was this node.*/
-        unsigned long rxCtrlPktCount;
+        uint32_t rxCtrlPktCount;
 
         /*Count of failed CSMA transmit attempts.*/
-        unsigned long csmaFailCount;
+        uint32_t csmaFailCount;
 
         /*Count of number of times this node has to back off SCP transmission due to channel busy state.*/
-        unsigned long csmaChBusyCount;
+        uint32_t csmaChBusyCount;
     }gxPrimeNbOfdmPlcMacCounters;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 
@@ -2906,29 +2917,29 @@ extern "C" {
     typedef struct
     {
         /*LCID of multicast group.*/
-        char id;
+        signed char id;
         /*Number of child nodes.*/
-        short members;
+        uint16_t members;
     }gxMacMulticastEntry;
 
     /*MAC direct table element.*/
     typedef struct
     {
         /*SID of switch through which the source service node is connected.*/
-        short sourceSId;
+        uint16_t sourceSId;
 
         /*NID allocated to the source service node.*/
-        short sourceLnId;
+        uint16_t sourceLnId;
         /*LCID allocated to this connection at the source.*/
-        short sourceLcId;
+        uint16_t sourceLcId;
 
         /*SID of the switch through which the destination service node is connected.*/
-        short destinationSId;
+        uint16_t destinationSId;
         /*NID allocated to the destination service node.*/
-        short destinationLnId;
+        uint16_t destinationLnId;
 
         /*LCID allocated to this connection at the destination.*/
-        short destinationLcId;
+        int16_t destinationLcId;
         /*Entry DID is the EUI-48 of the direct switch.*/
         unsigned char did[6];
     }gxMacDirectTable;
@@ -2940,15 +2951,15 @@ extern "C" {
         gxByteBuffer sna;
 
         /*SID of this switch.*/
-        long lsId;
+        uint16_t lsId;
 
         /*Level of this switch in subnetwork hierarchy.*/
-        unsigned short level;
+        signed char level;
 
         /*The received signal level for this switch.*/
-        unsigned short rxLevel;
+        signed char rxLevel;
         /*The signal to noise ratio for this switch.*/
-        unsigned short rxSnr;
+        signed char rxSnr;
     }gxMacAvailableSwitch;
 
     /*MAC PHY communication parameters.*/
@@ -2958,28 +2969,28 @@ extern "C" {
         unsigned char eui[6];
 
         /*The tx power of GPDU packets sent to the device.*/
-        unsigned short txPower;
+        signed char txPower;
 
         /*The Tx coding of GPDU packets sent to the device.*/
-        unsigned short txCoding;
+        signed char txCoding;
 
         /*The Rx coding of GPDU packets received from the device.*/
-        unsigned short rxCoding;
+        signed char rxCoding;
 
         /*The Rx power level of GPDU packets received from the device.*/
-        unsigned short rxLvl;
+        signed char rxLvl;
 
         /*SNR of GPDU packets received from the device.*/
-        unsigned short snr;
+        signed char snr;
 
         /*The number of times the Tx power was modified.*/
-        unsigned short txPowerModified;
+        signed char txPowerModified;
 
         /*The number of times the Tx coding was modified.*/
-        unsigned short txCodingModified;
+        signed char txCodingModified;
 
         /*The number of times the Rx coding was modified.*/
-        unsigned short rxCodingModified;
+        signed char rxCodingModified;
     }gxMacPhyCommunication;
 
     /*
@@ -2998,7 +3009,7 @@ extern "C" {
         gxArray multicastEntries;//gxMacMulticastEntry[]
 
         /*Switch table.*/
-        gxArray switchTable;//short[]
+        gxArray switchTable;//uint16_t[]
 
         /*List of entries in multicast switching table.*/
         gxArray directTable; //gxMacDirectTable[]
@@ -3034,10 +3045,10 @@ extern "C" {
 #endif //DLMS_IGNORE_MALLOC
 
         /*Unique vendor identifier assigned by PRIME Alliance.*/
-        unsigned short vendorId;
+        uint16_t vendorId;
 
         /*Vendor assigned unique identifier for specific product.*/
-        unsigned short productId;
+        uint16_t productId;
     }gxPrimeNbOfdmPlcApplicationsIdentification;
 
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
@@ -3284,6 +3295,7 @@ extern "C" {
 #define BASE(X) &X.base
 
 #define INIT_OBJECT(X, Y, Z) cosem_init2(&X.base, Y, Z)
+#define SET_OCTECT_STRING(X, V, S) memcpy(X.value, V, S);X.size=S
 
 #ifdef  __cplusplus
 }

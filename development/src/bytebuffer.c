@@ -60,19 +60,19 @@ char bb_isAttached(gxByteBuffer * arr)
 #endif
 }
 
-unsigned short bb_available(gxByteBuffer* arr)
+uint16_t bb_available(gxByteBuffer* arr)
 {
     if (arr == NULL)
     {
         return 0;
     }
-    return (unsigned short) (arr->size - arr->position);
+    return (uint16_t) (arr->size - arr->position);
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-unsigned long bb_getCapacity(gxByteBuffer* arr)
+uint32_t bb_getCapacity(gxByteBuffer* arr)
 #else
-unsigned short bb_getCapacity(gxByteBuffer* arr)
+uint16_t bb_getCapacity(gxByteBuffer* arr)
 #endif
 {
 #if !defined(GX_DLMS_MICROCONTROLLER)&& (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
@@ -85,9 +85,9 @@ unsigned short bb_getCapacity(gxByteBuffer* arr)
 
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-unsigned long bb_size(gxByteBuffer* arr)
+uint32_t bb_size(gxByteBuffer* arr)
 #else
-unsigned short bb_size(gxByteBuffer* arr)
+uint16_t bb_size(gxByteBuffer* arr)
 #endif
 {
     if (arr == NULL)
@@ -110,11 +110,11 @@ int bb_init(
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_capacity(
     gxByteBuffer* arr,
-    unsigned long capacity)
+    uint32_t capacity)
 #else
 int bb_capacity(
     gxByteBuffer* arr,
-    unsigned short capacity)
+    uint16_t capacity)
 #endif
 {
 #ifndef DLMS_IGNORE_MALLOC
@@ -168,13 +168,13 @@ int bb_capacity(
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_zero(
     gxByteBuffer* arr,
-    unsigned long index,
-    unsigned long count)
+    uint32_t index,
+    uint32_t count)
 #else
 int bb_zero(
     gxByteBuffer* arr,
-    unsigned short index,
-    unsigned short count)
+    uint16_t index,
+    uint16_t count)
 #endif
 {
     short ret;
@@ -208,12 +208,12 @@ int bb_setUInt8(
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_insertUInt8(
     gxByteBuffer* arr,
-    unsigned long index,
+    uint32_t index,
     unsigned char item)
 #else
 int bb_insertUInt8(
     gxByteBuffer* arr,
-    unsigned short index,
+    uint16_t index,
     unsigned char item)
 #endif
 {
@@ -228,13 +228,13 @@ int bb_insertUInt8(
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_allocate(
     gxByteBuffer* arr,
-    unsigned long index,
-    unsigned long dataSize)
+    uint32_t index,
+    uint32_t dataSize)
 #else
 int bb_allocate(
     gxByteBuffer* arr,
-    unsigned short index,
-    unsigned short dataSize)
+    uint16_t index,
+    uint16_t dataSize)
 #endif
 {
 #ifndef DLMS_IGNORE_MALLOC
@@ -275,12 +275,12 @@ int bb_allocate(
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_setUInt8ByIndex(
     gxByteBuffer* arr,
-    unsigned long index,
+    uint32_t index,
     unsigned char item)
 #else
 int bb_setUInt8ByIndex(
     gxByteBuffer* arr,
-    unsigned short index,
+    uint16_t index,
     unsigned char item)
 #endif
 {
@@ -298,7 +298,7 @@ int bb_setUInt8ByIndex(
 
 int bb_setUInt16(
     gxByteBuffer* arr,
-    unsigned short item)
+    uint16_t item)
 {
     int ret = bb_allocate(arr, arr->size, 2);
     if (ret == 0)
@@ -312,7 +312,7 @@ int bb_setUInt16(
 
 int bb_setUInt32(
     gxByteBuffer* arr,
-    unsigned long item)
+    uint32_t item)
 {
     int ret = bb_setUInt32ByIndex(arr, arr->size, item);
     if (ret == 0)
@@ -325,13 +325,13 @@ int bb_setUInt32(
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_setUInt32ByIndex(
     gxByteBuffer* arr,
-    unsigned long index,
-    unsigned long item)
+    uint32_t index,
+    uint32_t item)
 #else
 int bb_setUInt32ByIndex(
     gxByteBuffer* arr,
-    unsigned short index,
-    unsigned long item)
+    uint16_t index,
+    uint32_t item)
 #endif //!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 {
     int ret = bb_allocate(arr, index, 4);
@@ -344,7 +344,7 @@ int bb_setUInt32ByIndex(
 
 int bb_setUInt64(
     gxByteBuffer* arr,
-    unsigned long long item)
+    uint64_t item)
 {
     int ret = bb_allocate(arr, arr->size, 8);
     if (ret == 0)
@@ -436,33 +436,33 @@ int bb_setInt16(
     gxByteBuffer* arr,
     short item)
 {
-    return bb_setUInt16(arr, (unsigned short)item);
+    return bb_setUInt16(arr, (uint16_t)item);
 }
 
 int bb_setInt32(
     gxByteBuffer* arr,
-    long item)
+    int32_t item)
 {
-    return bb_setUInt32(arr, (unsigned long)item);
+    return bb_setUInt32(arr, (uint32_t)item);
 }
 
 int bb_setInt64(
     gxByteBuffer* arr,
-    long long item)
+    int64_t item)
 {
-    return bb_setUInt64(arr, (unsigned long long) item);
+    return bb_setUInt64(arr, (uint64_t) item);
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_set(
     gxByteBuffer* arr,
     const unsigned char* pSource,
-    unsigned long count)
+    uint32_t count)
 #else
 int bb_set(
     gxByteBuffer* arr,
     const unsigned char* pSource,
-    unsigned short count)
+    uint16_t count)
 #endif
 {
     int ret = bb_allocate(arr, arr->size, count);
@@ -478,22 +478,22 @@ int bb_set(
 int bb_set2(
     gxByteBuffer* arr,
     gxByteBuffer* data,
-    unsigned long index,
-    unsigned long count)
+    uint32_t index,
+    uint32_t count)
 #else
 int bb_set2(
     gxByteBuffer* arr,
     gxByteBuffer* data,
-    unsigned short index,
-    unsigned short count)
+    uint16_t index,
+    uint16_t count)
 #endif
 {
     if (data != NULL && count != 0)
     {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-        if (count == (unsigned long)-1)
+        if (count == (uint32_t)-1)
 #else
-        if (count == (unsigned short)-1)
+        if (count == (uint16_t)-1)
 #endif
         {
             count = data->size - index;
@@ -517,7 +517,7 @@ int bb_addString(
         int len = (int)strlen(value);
         if (len > 0)
         {
-            int ret = bb_set(arr, (const unsigned char*)value, (unsigned short)(len + 1));
+            int ret = bb_set(arr, (const unsigned char*)value, (uint16_t)(len + 1));
             if (ret == 0)
             {
                 //Add end of string, but that is not added to the length.
@@ -534,21 +534,21 @@ int bb_addString(
 void bb_attach(
     gxByteBuffer* arr,
     unsigned char* value,
-    unsigned long count,
-    unsigned long capacity)
+    uint32_t count,
+    uint32_t capacity)
 #else
 void bb_attach(
     gxByteBuffer* arr,
     unsigned char* value,
-    unsigned short count,
-    unsigned short capacity)
+    uint16_t count,
+    uint16_t capacity)
 #endif
 {
     arr->data = value;
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     arr->capacity = (0x80000000 | capacity);
 #else
-    arr->capacity = (unsigned short)(0x8000 | capacity);
+    arr->capacity = (uint16_t)(0x8000 | capacity);
 #endif
     arr->size = count;
     arr->position = 0;
@@ -560,7 +560,7 @@ void bb_attachString(
     char* value)
 {
     int len = (int)strlen(value);
-    bb_set(arr, (const unsigned char*)value, (unsigned short)len);
+    bb_set(arr, (const unsigned char*)value, (uint16_t)len);
     gxfree(value);
 }
 #endif //DLMS_IGNORE_MALLOC
@@ -621,7 +621,7 @@ int bb_getInt8(
 
 int bb_getUInt8ByIndex(
     gxByteBuffer* arr,
-    unsigned long index,
+    uint32_t index,
     unsigned char* value)
 {
     if (index >= arr->size)
@@ -635,7 +635,7 @@ int bb_getUInt8ByIndex(
 
 int bb_getUInt16(
     gxByteBuffer* arr,
-    unsigned short* value)
+    uint16_t* value)
 {
 
     if (arr->position + 2 > arr->size)
@@ -650,7 +650,7 @@ int bb_getUInt16(
 
 int bb_getUInt32(
     gxByteBuffer* arr,
-    unsigned long* value)
+    uint32_t* value)
 {
 
     if (arr->position + 4 > arr->size)
@@ -679,7 +679,7 @@ int bb_getInt16(
 
 int bb_getUInt24(
     gxByteBuffer* arr,
-    unsigned long* value)
+    uint32_t* value)
 {
     int ret = bb_getUInt24ByIndex(arr, arr->position, value);
     arr->position += 3;
@@ -688,33 +688,33 @@ int bb_getUInt24(
 
 int bb_getInt32(
     gxByteBuffer* arr,
-    long* value)
+    int32_t* value)
 {
 
-    int ret = bb_getUInt32ByIndex(arr, arr->position, (unsigned long*)value);
+    int ret = bb_getUInt32ByIndex(arr, arr->position, (uint32_t*)value);
     arr->position += 4;
     return ret;
 }
 
 int bb_getUInt24ByIndex(
     gxByteBuffer* arr,
-    unsigned long index,
-    unsigned long* value)
+    uint32_t index,
+    uint32_t* value)
 {
     if (index + 3 > bb_size(arr))
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = ((unsigned long)(arr->data)[index] << 16) |
-        ((unsigned long)(arr->data)[index + 1] << 8) |
-        ((unsigned long)(arr->data)[index + 2]);
+    *value = ((uint32_t)(arr->data)[index] << 16) |
+        ((uint32_t)(arr->data)[index + 1] << 8) |
+        ((uint32_t)(arr->data)[index + 2]);
     return 0;
 }
 
 int bb_getUInt32ByIndex(
     gxByteBuffer* arr,
-    unsigned long index,
-    unsigned long* value)
+    uint32_t index,
+    uint32_t* value)
 {
 
     if (index + 4 > arr->size)
@@ -727,9 +727,9 @@ int bb_getUInt32ByIndex(
 
 int bb_getInt64(
     gxByteBuffer* arr,
-    long long* value)
+    int64_t* value)
 {
-    int ret = bb_getUInt64ByIndex(arr, arr->position, (unsigned long long*) value);
+    int ret = bb_getUInt64ByIndex(arr, arr->position, (uint64_t*) value);
     if (ret == 0)
     {
         arr->position += 8;
@@ -739,7 +739,7 @@ int bb_getInt64(
 
 int bb_getUInt64(
     gxByteBuffer* arr,
-    unsigned long long* value)
+    uint64_t* value)
 {
     int ret = bb_getUInt64ByIndex(arr, arr->position, value);
     if (ret == 0)
@@ -751,8 +751,8 @@ int bb_getUInt64(
 
 int bb_getUInt64ByIndex(
     gxByteBuffer* arr,
-    unsigned long index,
-    unsigned long long* value)
+    uint32_t index,
+    uint64_t* value)
 {
     if (index + 8 > arr->size)
     {
@@ -769,19 +769,19 @@ int bb_getUInt64ByIndex(
 
 int bb_getUInt128ByIndex(
     gxByteBuffer* arr,
-    unsigned long index,
+    uint32_t index,
     unsigned char* value)
 {
-    int ret = bb_getUInt32ByIndex(arr, index, (unsigned long*)value);
+    int ret = bb_getUInt32ByIndex(arr, index, (uint32_t*)value);
     if (ret == 0)
     {
-        ret = bb_getUInt32ByIndex(arr, index + 4, (unsigned long*)value + 1);
+        ret = bb_getUInt32ByIndex(arr, index + 4, (uint32_t*)value + 1);
         if (ret == 0)
         {
-            ret = bb_getUInt32ByIndex(arr, index + 8, (unsigned long*)value + 2);
+            ret = bb_getUInt32ByIndex(arr, index + 8, (uint32_t*)value + 2);
             if (ret == 0)
             {
-                ret = bb_getUInt32ByIndex(arr, index + 12, (unsigned long*)value + 3);
+                ret = bb_getUInt32ByIndex(arr, index + 12, (uint32_t*)value + 3);
             }
         }
     }
@@ -844,8 +844,8 @@ int bb_getDouble(
 
 int bb_getUInt16ByIndex(
     gxByteBuffer* arr,
-    unsigned long index,
-    unsigned short* value)
+    uint32_t index,
+    uint16_t* value)
 {
     if (index + 2 > arr->size)
     {
@@ -861,7 +861,7 @@ int bb_addHexString(
     gxByteBuffer* arr,
     const char* str)
 {
-    unsigned short count;
+    uint16_t count;
     int ret;
     unsigned char* buffer = NULL;
     ret = hlp_hexToBytes(str, &buffer, &count);
@@ -894,9 +894,9 @@ int bb_addLogicalName(
 int bb_toHexString2(
     gxByteBuffer* arr,
     char* buffer,
-    unsigned short size)
+    uint16_t size)
 {
-    return hlp_bytesToHex2(arr->data, (unsigned short) arr->size, buffer, size);
+    return hlp_bytesToHex2(arr->data, (uint16_t) arr->size, buffer, size);
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
@@ -925,7 +925,7 @@ void bb_addDoubleAsString(
 {
     char buff[20];
     //Show as integer value if there is no fractal part.
-    if (value - (long)value == 0)
+    if (value - (int32_t)value == 0)
     {
         bb_addIntAsString(bb, (int)value);
     }
@@ -956,14 +956,14 @@ void bb_addIntAsString2(gxByteBuffer* bb, int value, unsigned char digits)
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_subArray(
     gxByteBuffer* bb,
-    unsigned long index,
-    unsigned long count,
+    uint32_t index,
+    uint32_t count,
     gxByteBuffer* target)
 #else
 int bb_subArray(
     gxByteBuffer* bb,
-    unsigned short index,
-    unsigned short count,
+    uint16_t index,
+    uint16_t count,
     gxByteBuffer* target)
 #endif
 {
@@ -974,14 +974,14 @@ int bb_subArray(
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_insert(const unsigned char* src,
-    unsigned long count,
+    uint32_t count,
     gxByteBuffer* target,
-    unsigned long index)
+    uint32_t index)
 #else
 int bb_insert(const unsigned char* src,
-    unsigned short count,
+    uint16_t count,
     gxByteBuffer* target,
-    unsigned short index)
+    uint16_t index)
 #endif
 {
     int ret;
@@ -1004,15 +1004,15 @@ int bb_insert(const unsigned char* src,
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 int bb_move(
     gxByteBuffer* bb,
-    unsigned long srcPos,
-    unsigned long destPos,
-    unsigned long count)
+    uint32_t srcPos,
+    uint32_t destPos,
+    uint32_t count)
 #else
 int bb_move(
     gxByteBuffer* bb,
-    unsigned short srcPos,
-    unsigned short destPos,
-    unsigned short count)
+    uint16_t srcPos,
+    uint16_t destPos,
+    uint16_t count)
 #endif
 {
     //If items are removed.
@@ -1075,12 +1075,12 @@ int bb_trim(
 unsigned char bb_compare(
     gxByteBuffer* bb,
     unsigned char* buff,
-    unsigned long length)
+    uint32_t length)
 #else
 unsigned char bb_compare(
     gxByteBuffer* bb,
     unsigned char* buff,
-    unsigned short length)
+    uint16_t length)
 #endif
 
 {
@@ -1101,12 +1101,12 @@ unsigned char bb_compare(
 int bb_get(
     gxByteBuffer* bb,
     unsigned char* value,
-    unsigned long count)
+    uint32_t count)
 #else
 int bb_get(
     gxByteBuffer* bb,
     unsigned char* value,
-    unsigned short count)
+    uint16_t count)
 #endif
 {
     if (bb == NULL || value == NULL || bb->size - bb->position < count)
@@ -1118,14 +1118,14 @@ int bb_get(
     return 0;
 }
 
-unsigned long bb_indexOf(
+uint32_t bb_indexOf(
     gxByteBuffer* bb,
     char ch)
 {
-    unsigned long pos;
+    uint32_t pos;
     if (bb == NULL)
     {
-        return (unsigned long)-1;
+        return (uint32_t)-1;
     }
     for (pos = bb->position; pos < bb->size; ++pos)
     {
@@ -1134,7 +1134,7 @@ unsigned long bb_indexOf(
             return pos;
         }
     }
-    return (unsigned long)-1;
+    return (uint32_t)-1;
 }
 
 #ifndef GX_DLMS_MICROCONTROLLER
@@ -1142,7 +1142,7 @@ unsigned long bb_indexOf(
 void bb_print(gxByteBuffer* bb)
 {
     const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
-    unsigned long pos;
+    uint32_t pos;
     char hexChars[4];
     hexChars[2] = ' ';
     hexChars[3] = '\0';

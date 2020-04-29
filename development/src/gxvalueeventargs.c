@@ -63,7 +63,7 @@ void vec_attach(
     unsigned char capacity)
 {
     arr->data = value;
-    arr->capacity = (unsigned short)(0x80 | capacity);
+    arr->capacity = (uint16_t)(0x80 | capacity);
     arr->size = count;
     arr->position = 0;
 }

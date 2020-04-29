@@ -61,8 +61,8 @@ extern "C" {
   */
     extern unsigned char svr_isTarget(
         dlmsSettings *settings,
-        unsigned long serverAddress,
-        unsigned long clientAddress);
+        uint32_t serverAddress,
+        uint32_t clientAddress);
 
     /**
   * called when client makes connection to the server.
@@ -96,6 +96,7 @@ extern "C" {
     */
     int dlms_getWrapperFrame(
         dlmsSettings* settings,
+        DLMS_COMMAND command,
         gxByteBuffer* data,
         gxByteBuffer* reply);
 #endif //DLMS_IGNORE_WRAPPER
@@ -110,14 +111,14 @@ extern "C" {
     //Set data from DLMS Varuant to DLMS byte stream.
     int dlms_setData2(
         unsigned char *buff,
-        unsigned long length,
+        uint32_t length,
         DLMS_DATA_TYPE type,
         dlmsVARIANT *value);
 #else
     //Set data from DLMS Varuant to DLMS byte stream.
     int dlms_setData2(
         unsigned char *buff,
-        unsigned short length,
+        uint16_t length,
         DLMS_DATA_TYPE type,
         dlmsVARIANT *value);
 #endif
@@ -262,7 +263,7 @@ extern "C" {
         */
     int dlms_secure(
         dlmsSettings* settings,
-        long ic,
+        int32_t ic,
         gxByteBuffer* data,
         gxByteBuffer* secret,
         gxByteBuffer* reply);
@@ -274,13 +275,13 @@ extern "C" {
     // Add HDLC parameter.
     int dlms_appendHdlcParameter(
         gxByteBuffer* data,
-        unsigned short value);
+        uint16_t value);
 
     //Is it possible to add more data to the PDU before it's full.
     int dlms_isPduFull(
         dlmsSettings* settings,
         gxByteBuffer* data,
-        unsigned short* size);
+        uint16_t* size);
 
 #ifdef  __cplusplus
 }

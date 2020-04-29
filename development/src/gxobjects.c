@@ -530,7 +530,7 @@ int obj_clearCertificateInfo(gxArray* arr)
     int ret = 0;
 #ifndef DLMS_IGNORE_MALLOC
     gxCertificateInfo* it;
-    unsigned short pos;
+    uint16_t pos;
     for (pos = 0; pos != arr->size; ++pos)
     {
         if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0)
@@ -1688,7 +1688,7 @@ int obj_updateAttributeAccessModes(gxObject* object, variantArray* arr)
 {
     unsigned char id;
     int ret;
-    unsigned short pos, cnt;
+    uint16_t pos, cnt;
     dlmsVARIANT* tmp, * it, * value;
     //If accessmodes are not returned. Some meters do not return them.
     if (arr->size != 2)
@@ -1847,7 +1847,7 @@ int obj_clearParametersList(gxArray* buffer)
 #ifndef DLMS_IGNORE_SERVER
 void clock_updateDST(gxClock* object, gxtime* value)
 {
-    if (object->enabled && time_compare(&object->begin, value) != 1 && time_compare(value, &object->end) != -1)
+    if (object->enabled && time_compare(&object->begin, value) != -1 && time_compare(value, &object->end) != 1)
     {
         object->status |= DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
     }

@@ -88,6 +88,10 @@ int com_read(
     gxObject* object,
     unsigned char attributeOrdinal);
 
+//Send keepalive message.
+int com_getKeepAlive(
+    connection* connection);
+
 //Write object.
 int com_write(
     connection *connection,

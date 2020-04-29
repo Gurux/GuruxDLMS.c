@@ -35,7 +35,7 @@
 #include <string.h>
 #include "../include/gxsha256.h"
 
-const unsigned long sha256_k[64] =
+const uint32_t sha256_k[64] =
 { 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -71,18 +71,18 @@ const unsigned long sha256_k[64] =
 }
 #define SHA2_PACK32(str, x)                   \
 {                                             \
-    *(x) =   ((unsigned long) *((str) + 3)      )    \
-           | ((unsigned long) *((str) + 2) <<  8)    \
-           | ((unsigned long) *((str) + 1) << 16)    \
-           | ((unsigned long) *((str) + 0) << 24);   \
+    *(x) =   ((uint32_t) *((str) + 3)      )    \
+           | ((uint32_t) *((str) + 2) <<  8)    \
+           | ((uint32_t) *((str) + 1) << 16)    \
+           | ((uint32_t) *((str) + 0) << 24);   \
 }
 
 
-void gxsha256_transform(unsigned long *h, const unsigned char *message, unsigned int block_nb)
+void gxsha256_transform(uint32_t *h, const unsigned char *message, unsigned int block_nb)
 {
-    unsigned long w[64];
-    unsigned long wv[8];
-    unsigned long t1, t2;
+    uint32_t w[64];
+    uint32_t wv[8];
+    uint32_t t1, t2;
     const unsigned char *sub_block;
     unsigned int i;
     int j;
@@ -121,7 +121,7 @@ void gxsha256_transform(unsigned long *h, const unsigned char *message, unsigned
     }
 }
 
-int gxsha256_update(unsigned long *h, unsigned char *block, gxByteBuffer* data, unsigned int *len, unsigned int *totalLen)
+int gxsha256_update(uint32_t *h, unsigned char *block, gxByteBuffer* data, unsigned int *len, unsigned int *totalLen)
 {
     unsigned int block_nb;
     unsigned int new_len, rem_len, tmp_len;
@@ -146,11 +146,11 @@ int gxsha256_update(unsigned long *h, unsigned char *block, gxByteBuffer* data, 
     return 0;
 }
 
-int gxsha256_final(unsigned long *h, unsigned char *block, unsigned char *digest, unsigned int len, unsigned int totalLen)
+int gxsha256_final(uint32_t *h, unsigned char *block, unsigned char *digest, unsigned int len, unsigned int totalLen)
 {
     unsigned int block_nb;
     unsigned int pm_len;
-    unsigned long len_b;
+    uint32_t len_b;
     int i;
     block_nb = (1 + ((64 - 9) < (len % 64)));
     len_b = (totalLen + len) << 3;
@@ -169,11 +169,11 @@ int gxsha256_final(unsigned long *h, unsigned char *block, unsigned char *digest
 int gxsha256_encrypt(gxByteBuffer* data, gxByteBuffer* digest)
 {
     unsigned int len = data->size, totalLen = 0;
-    unsigned long h[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 };
+    uint32_t h[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 };
     unsigned char block[128];
     bb_capacity(digest, 32);
     digest->size = 32;
-    gxsha256_update((unsigned long*)&h, block, data, &len, &totalLen);
+    gxsha256_update((uint32_t*)&h, block, data, &len, &totalLen);
     return gxsha256_final(h, block, digest->data, len, totalLen);
 }
 

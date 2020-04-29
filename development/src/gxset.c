@@ -142,7 +142,7 @@ int cosem_setRegistertable(gxRegisterTable* object, unsigned char index, dlmsVAR
     if (index == 2)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = va_getCapacity(&object->tableCellValues);
+        uint16_t count = va_getCapacity(&object->tableCellValues);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->tableCellValues.size = count;
@@ -361,7 +361,7 @@ int updateSeasonProfile(gxArray* profile, dlmsVARIANT* data)
     gxSeasonProfile* sp = NULL;
     obj_clearSeasonProfile(profile);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned short count = arr_getCapacity(profile);
+    uint16_t count = arr_getCapacity(profile);
     if ((ret = cosem_checkArray(data->byteArr, &count)) == 0) {
         profile->size = count;
         for (pos = 0; pos != count; ++pos)
@@ -442,7 +442,7 @@ int updateWeekProfileTable(gxArray* profile, dlmsVARIANT* data)
     gxWeekProfile* wp = NULL;
     obj_clearWeekProfileTable(profile);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned short count = arr_getCapacity(profile);
+    uint16_t count = arr_getCapacity(profile);
     if ((ret = cosem_checkArray(data->byteArr, &count)) == 0) {
         profile->size = count;
         for (pos = 0; pos != count; ++pos)
@@ -549,8 +549,8 @@ int updateDayProfileTableActive(dlmsSettings* settings, gxArray* profile, dlmsVA
     gxDayProfileAction* ac = NULL;
     obj_clearDayProfileTable(profile);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned short count = arr_getCapacity(profile);
-    unsigned short count2;
+    uint16_t count = arr_getCapacity(profile);
+    uint16_t count2;
     if ((ret = cosem_checkArray(data->byteArr, &count)) == 0) {
         profile->size = count;
         for (pos = 0; pos != count; ++pos)
@@ -666,7 +666,7 @@ int updateDayProfileTableActive(dlmsSettings* settings, gxArray* profile, dlmsVA
             {
                 break;
             }
-            ac->scriptSelector = (unsigned short)var_toInteger(tmp2);
+            ac->scriptSelector = (uint16_t)var_toInteger(tmp2);
             arr_push(&dp->daySchedules, ac);
         }
         if (ret != 0)
@@ -828,7 +828,7 @@ int cosem_setActionSchedule(
         {
             return ret;
         }
-        object->executedScriptSelector = (unsigned short)var_toInteger(tmp);
+        object->executedScriptSelector = (uint16_t)var_toInteger(tmp);
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (index == 3)
@@ -840,7 +840,7 @@ int cosem_setActionSchedule(
         arr_clear(&object->executionTime);
 #ifdef DLMS_IGNORE_MALLOC
         gxtime t;
-        unsigned short count = arr_getCapacity(&object->executionTime);
+        uint16_t count = arr_getCapacity(&object->executionTime);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0) {
             object->executionTime.size = count;
             for (pos = 0; pos != count; ++pos)
@@ -1039,7 +1039,7 @@ int cosem_setAssociationLogicalName(
         {
             return ret;
         }
-        object->serverSAP = (unsigned short)var_toInteger(tmp);
+        object->serverSAP = (uint16_t)var_toInteger(tmp);
 #else
         if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
             (ret = cosem_getInt8(value->byteArr, &object->clientSAP)) != 0 ||
@@ -1198,7 +1198,7 @@ int cosem_setAssociationLogicalName(
             {
                 return ret;
             }
-            object->applicationContextName.countryName = (unsigned short)var_toInteger(tmp);
+            object->applicationContextName.countryName = (uint16_t)var_toInteger(tmp);
             ret = va_getByIndex(value->Arr, 3, &tmp);
             if (ret != DLMS_ERROR_CODE_OK)
             {
@@ -1266,14 +1266,14 @@ int cosem_setAssociationLogicalName(
         {
             return ret;
         }
-        object->xDLMSContextInfo.maxReceivePduSize = (unsigned short)var_toInteger(tmp);
+        object->xDLMSContextInfo.maxReceivePduSize = (uint16_t)var_toInteger(tmp);
 
         ret = va_getByIndex(value->Arr, 2, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
-        object->xDLMSContextInfo.maxSendPpuSize = (unsigned short)var_toInteger(tmp);
+        object->xDLMSContextInfo.maxSendPpuSize = (uint16_t)var_toInteger(tmp);
 
         ret = va_getByIndex(value->Arr, 3, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -1352,7 +1352,7 @@ int cosem_setAssociationLogicalName(
             {
                 return ret;
             }
-            object->authenticationMechanismName.countryName = (unsigned short)var_toInteger(tmp);
+            object->authenticationMechanismName.countryName = (uint16_t)var_toInteger(tmp);
             ret = va_getByIndex(value->Arr, 3, &tmp);
             if (ret != DLMS_ERROR_CODE_OK)
             {
@@ -1432,7 +1432,7 @@ int cosem_setAssociationLogicalName(
     {
 #ifdef DLMS_IGNORE_MALLOC
         gxUser* it;
-        unsigned short count = arr_getCapacity(&object->userList);
+        uint16_t count = arr_getCapacity(&object->userList);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->userList.size = count;
@@ -1543,7 +1543,7 @@ int updateSNAccessRights(
     objectArray* objectList,
     variantArray* data)
 {
-    unsigned short sn;
+    uint16_t sn;
     int pos, ret;
     dlmsVARIANT* it, * tmp;
     gxObject* obj = NULL;
@@ -1559,7 +1559,7 @@ int updateSNAccessRights(
         {
             return ret;
         }
-        sn = (unsigned short)var_toInteger(tmp);
+        sn = (uint16_t)var_toInteger(tmp);
 
         ret = oa_findBySN(objectList, sn, &obj);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -1647,7 +1647,7 @@ int cosem_setAssociationShortName(
 {
     int ret;
 #ifndef DLMS_IGNORE_MALLOC
-    unsigned short sn;
+    uint16_t sn;
     DLMS_OBJECT_TYPE type;
     int pos, version;
     dlmsVARIANT* tmp, * tmp2;
@@ -1673,7 +1673,7 @@ int cosem_setAssociationShortName(
                     return ret;
                 }
 
-                sn = (unsigned short)var_toInteger(tmp2);
+                sn = (uint16_t)var_toInteger(tmp2);
                 ret = oa_findBySN(&settings->objects, sn, &obj);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
@@ -1773,7 +1773,7 @@ int cosem_setAutoAnswer(gxAutoAnswer* object, unsigned char index, dlmsVARIANT* 
         arr_clearKeyValuePair(&object->listeningWindow);
 #ifdef DLMS_IGNORE_MALLOC
         gxTimePair* it;
-        unsigned short count = arr_getCapacity(&object->listeningWindow);
+        uint16_t count = arr_getCapacity(&object->listeningWindow);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->listeningWindow.size = count;
@@ -1888,13 +1888,13 @@ int cosem_setAutoConnect(gxAutoConnect* object, unsigned char index, dlmsVARIANT
     }
     else if (index == 4)
     {
-        object->repetitionDelay = (unsigned short)var_toInteger(value);
+        object->repetitionDelay = (uint16_t)var_toInteger(value);
     }
     else if (index == 5)
     {
 #ifdef DLMS_IGNORE_MALLOC
         gxTimePair* k;
-        unsigned short count = arr_getCapacity(&object->callingWindow);
+        uint16_t count = arr_getCapacity(&object->callingWindow);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->callingWindow.size = count;
@@ -1963,7 +1963,7 @@ int cosem_setAutoConnect(gxAutoConnect* object, unsigned char index, dlmsVARIANT
     {
 #ifdef DLMS_IGNORE_MALLOC
         gxDestination* d;
-        unsigned short count = arr_getCapacity(&object->destinations);
+        uint16_t count = arr_getCapacity(&object->destinations);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->destinations.size = count;
@@ -2137,7 +2137,7 @@ int cosem_setDemandRegister(gxDemandRegister* object, unsigned char index, dlmsV
     }
     else if (index == 9)
     {
-        object->numberOfPeriods = (unsigned short)var_toInteger(value);
+        object->numberOfPeriods = (uint16_t)var_toInteger(value);
     }
     else
     {
@@ -2400,7 +2400,7 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
     case 6:
         obj_clearCertificateInfo(&object->certificates);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->certificates);
+        uint16_t count = arr_getCapacity(&object->certificates);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->certificates.size = count;
@@ -2571,23 +2571,23 @@ int cosem_setIecHdlcSetup(gxIecHdlcSetup* object, unsigned char index, dlmsVARIA
     }
     else if (index == 5)
     {
-        object->maximumInfoLengthTransmit = (unsigned short)var_toInteger(value);
+        object->maximumInfoLengthTransmit = (uint16_t)var_toInteger(value);
     }
     else if (index == 6)
     {
-        object->maximumInfoLengthReceive = (unsigned short)var_toInteger(value);
+        object->maximumInfoLengthReceive = (uint16_t)var_toInteger(value);
     }
     else if (index == 7)
     {
-        object->interCharachterTimeout = (unsigned short)var_toInteger(value);
+        object->interCharachterTimeout = (uint16_t)var_toInteger(value);
     }
     else if (index == 8)
     {
-        object->inactivityTimeout = (unsigned short)var_toInteger(value);
+        object->inactivityTimeout = (uint16_t)var_toInteger(value);
     }
     else if (index == 9)
     {
-        object->deviceAddress = (unsigned short)var_toInteger(value);
+        object->deviceAddress = (uint16_t)var_toInteger(value);
     }
     else
     {
@@ -2700,14 +2700,14 @@ int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char 
     else if (index == 4)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned long* v;
-        unsigned short count = arr_getCapacity(&object->multicastIPAddress);
+        uint32_t* v;
+        uint16_t count = arr_getCapacity(&object->multicastIPAddress);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->multicastIPAddress.size = count;
             for (pos = 0; pos != count; ++pos)
             {
-                if ((ret = arr_getByIndex(&object->multicastIPAddress, pos, (void**)&v, sizeof(unsigned long))) != 0 ||
+                if ((ret = arr_getByIndex(&object->multicastIPAddress, pos, (void**)&v, sizeof(uint32_t))) != 0 ||
                     (ret = cosem_getUInt32(value->byteArr, v)) != 0)
                 {
                     break;
@@ -2737,7 +2737,7 @@ int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char 
     else if (index == 5)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->ipOptions);
+        uint16_t count = arr_getCapacity(&object->ipOptions);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->ipOptions.size = count;
@@ -2832,7 +2832,7 @@ int cosem_setUtilityTables(gxUtilityTables* object, unsigned char index, dlmsVAR
 {
     if (index == 2)
     {
-        object->tableId = (unsigned short)var_toInteger(value);
+        object->tableId = (uint16_t)var_toInteger(value);
     }
     else if (index == 3)
     {
@@ -2902,10 +2902,10 @@ int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index,
 #ifndef DLMS_IGNORE_LIMITER
 int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char index, dlmsVARIANT* value)
 {
-    DLMS_OBJECT_TYPE ot;
+    DLMS_OBJECT_TYPE ot = DLMS_OBJECT_TYPE_NONE;
     int ret = DLMS_ERROR_CODE_OK, pos;
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned short* tmp;
+    uint16_t* tmp;
 #else
     dlmsVARIANT* tmp, * tmp3;
     dlmsVARIANT tmp2;
@@ -2916,7 +2916,7 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
         unsigned char ln[6];
         ot = 0;
         if ((ret = cosem_checkStructure(value->byteArr, 3)) == 0 &&
-            (ret = cosem_getUInt16(value->byteArr, (unsigned short*)&ot)) == 0 &&
+            (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&ot)) == 0 &&
             (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) == 0 &&
             (ret = cosem_getInt8(value->byteArr, &object->selectedAttributeIndex)) == 0)
         {
@@ -2988,7 +2988,7 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
         {
             return ret;
         }
-        object->emergencyProfile.id = (unsigned short)var_toInteger(tmp);
+        object->emergencyProfile.id = (uint16_t)var_toInteger(tmp);
         ret = va_getByIndex(value->Arr, 1, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
@@ -3017,13 +3017,13 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
     else if (index == 9)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->emergencyProfileGroupIDs);
+        uint16_t count = arr_getCapacity(&object->emergencyProfileGroupIDs);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->emergencyProfileGroupIDs.size = count;
             for (pos = 0; pos != count; ++pos)
             {
-                if ((ret = arr_getByIndex(&object->emergencyProfileGroupIDs, pos, (void**)&tmp, sizeof(unsigned short))) != 0 ||
+                if ((ret = arr_getByIndex(&object->emergencyProfileGroupIDs, pos, (void**)&tmp, sizeof(uint16_t))) != 0 ||
                     (ret = bb_getUInt16(value->byteArr, tmp)) != 0)
                 {
                     break;
@@ -3113,7 +3113,7 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
         {
             return ret;
         }
-        object->actionOverThreshold.scriptSelector = (unsigned short)var_toInteger(tmp3);
+        object->actionOverThreshold.scriptSelector = (uint16_t)var_toInteger(tmp3);
 
         ret = va_getByIndex(value->Arr, 1, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -3138,7 +3138,7 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
         {
             return ret;
         }
-        object->actionUnderThreshold.scriptSelector = (unsigned short)var_toInteger(tmp3);
+        object->actionUnderThreshold.scriptSelector = (uint16_t)var_toInteger(tmp3);
 #endif //DLMS_IGNORE_MALLOC
     }
     else
@@ -3182,7 +3182,7 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
     {
 #ifdef DLMS_IGNORE_MALLOC
         gxCaptureDefinition* it;
-        unsigned short count = arr_getCapacity(&object->captureDefinition);
+        uint16_t count = arr_getCapacity(&object->captureDefinition);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->captureDefinition.size = count;
@@ -3247,7 +3247,7 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
     }
     else if (index == 7)
     {
-        object->manufacturerID = (unsigned short)var_toInteger(value);
+        object->manufacturerID = (uint16_t)var_toInteger(value);
     }
     else if (index == 8)
     {
@@ -3271,7 +3271,7 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
     }
     else if (index == 13 && object->base.version != 0)
     {
-        object->configuration = (unsigned short)var_toInteger(value);
+        object->configuration = (uint16_t)var_toInteger(value);
     }
     else if (index == 14 && object->base.version != 0)
     {
@@ -3303,7 +3303,7 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
     else if (index == 3)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->initialisationStrings);
+        uint16_t count = arr_getCapacity(&object->initialisationStrings);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             unsigned cnt = object->base.version != 0 ? 3 : 2;
@@ -3374,7 +3374,7 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
     else if (index == 4)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->modemProfile);
+        uint16_t count = arr_getCapacity(&object->modemProfile);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->modemProfile.size = count;
@@ -3462,7 +3462,7 @@ int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char 
     {
         arr_clear(&object->lcpOptions);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->lcpOptions);
+        uint16_t count = arr_getCapacity(&object->lcpOptions);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->lcpOptions.size = count;
@@ -3531,7 +3531,7 @@ int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char 
     {
         arr_clear(&object->ipcpOptions);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->ipcpOptions);
+        uint16_t count = arr_getCapacity(&object->ipcpOptions);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->ipcpOptions.size = count;
@@ -3660,9 +3660,9 @@ int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* ob
     {
 #ifdef DLMS_IGNORE_MALLOC
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
-        unsigned short count = oa_getCapacity(&object->registerAssignment);
+        uint16_t count = oa_getCapacity(&object->registerAssignment);
 #else
-        unsigned short count = arr_getCapacity(&object->registerAssignment);
+        uint16_t count = arr_getCapacity(&object->registerAssignment);
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
@@ -3676,10 +3676,10 @@ int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* ob
 #else
                     (ret = oa_getByIndex(&object->registerAssignment, pos, &objectDefinition)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
-                    (ret = cosem_getUInt16(value->byteArr, (unsigned short*)&objectDefinition->objectType)) != 0 ||
+                    (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&objectDefinition->objectType)) != 0 ||
 #else
                     (ret = arr_getByIndex(&object->registerAssignment, pos, (void**)&objectDefinition, sizeof(gxObjectDefinition))) != 0 ||
-                    (ret = cosem_getUInt16(value->byteArr, (unsigned short*)&objectDefinition->objectType)) != 0 ||
+                    (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&objectDefinition->objectType)) != 0 ||
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                     (ret = cosem_getOctectString2(value->byteArr, objectDefinition->logicalName, 6, NULL)) != 0)
                 {
@@ -3752,7 +3752,7 @@ int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* ob
         obj_clearRegisterActivationMaskList(&object->maskList);
 #ifdef DLMS_IGNORE_MALLOC
         gxRegisterActivationMask* k;
-        unsigned short count = arr_getCapacity(&object->maskList);
+        uint16_t count = arr_getCapacity(&object->maskList);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             unsigned char ch;
@@ -3880,7 +3880,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
     {
         va_clear(&object->thresholds);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = va_getCapacity(&object->thresholds);
+        uint16_t count = va_getCapacity(&object->thresholds);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->thresholds.size = count;
@@ -3988,7 +3988,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
         unsigned char lnDown[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
-        unsigned short count;
+        uint16_t count;
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->actions.size = count;
@@ -4061,7 +4061,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
                 {
                     break;
                 }
-                actionSet->actionUp.scriptSelector = (unsigned short)var_toInteger(tmp);
+                actionSet->actionUp.scriptSelector = (uint16_t)var_toInteger(tmp);
                 //Update action down.
                 ret = va_getByIndex(tmp4->Arr, 1, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -4087,7 +4087,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
                 {
                     break;
                 }
-                actionSet->actionDown.scriptSelector = (unsigned short)var_toInteger(tmp);
+                actionSet->actionDown.scriptSelector = (uint16_t)var_toInteger(tmp);
                 arr_push(&object->actions, actionSet);
             }
             if (ret != 0 && actionSet != NULL)
@@ -4114,7 +4114,7 @@ int cosem_setSapAssignment(gxSapAssignment* object, unsigned char index, dlmsVAR
     {
         obj_clearSapList(&object->sapAssignmentList);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count;
+        uint16_t count;
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->sapAssignmentList.size = count;
@@ -4153,7 +4153,7 @@ int cosem_setSapAssignment(gxSapAssignment* object, unsigned char index, dlmsVAR
                     break;
                 }
                 bb_init(&it->name);
-                it->id = (unsigned short)var_toInteger(tmp2);
+                it->id = (uint16_t)var_toInteger(tmp2);
                 ret = va_getByIndex(tmp->Arr, 1, &tmp2);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
@@ -4188,7 +4188,7 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         unsigned char ln[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        unsigned short count = arr_getCapacity(&object->entries);
+        uint16_t count = arr_getCapacity(&object->entries);
         unsigned char ch;
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
@@ -4252,7 +4252,7 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 {
                     break;
                 }
-                se->index = (unsigned short)var_toInteger(it);
+                se->index = (uint16_t)var_toInteger(it);
                 ret = va_getByIndex(tmp->Arr, 1, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
@@ -4278,7 +4278,7 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 {
                     break;
                 }
-                se->scriptSelector = (unsigned short)var_toInteger(it);
+                se->scriptSelector = (uint16_t)var_toInteger(it);
                 ret = va_getByIndex(tmp->Arr, 4, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
@@ -4301,7 +4301,7 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 {
                     break;
                 }
-                se->validityWindow = (unsigned short)var_toInteger(it);
+                se->validityWindow = (uint16_t)var_toInteger(it);
 
                 ret = va_getByIndex(tmp->Arr, 6, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -4321,7 +4321,7 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 }
                 if (it->bitArr != NULL)
                 {
-                    ba_copy(&se->execSpecDays, it->bitArr->data, (unsigned short)it->bitArr->size);
+                    ba_copy(&se->execSpecDays, it->bitArr->data, (uint16_t)it->bitArr->size);
                 }
                 ret = va_getByIndex(tmp->Arr, 8, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -4385,13 +4385,13 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
     {
         obj_clearScriptTable(&object->scripts);
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-        unsigned short type;
+        uint16_t type;
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #ifdef DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         unsigned char ln[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        unsigned short count = arr_getCapacity(&object->scripts), count2;
+        uint16_t count = arr_getCapacity(&object->scripts), count2;
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->scripts.size = count;
@@ -4417,7 +4417,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                         (ret = cosem_getUInt16(value->byteArr, &type)) != 0 ||
                         (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) != 0 ||
 #else
-                        (ret = cosem_getUInt16(value->byteArr, (unsigned short*)&scriptAction->objectType)) != 0 ||
+                        (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&scriptAction->objectType)) != 0 ||
                         (ret = cosem_getOctectString2(value->byteArr, scriptAction->logicalName, 6, NULL)) != 0 ||
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                         (ret = cosem_getInt8(value->byteArr, &scriptAction->index)) != 0 ||
@@ -4468,7 +4468,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                         break;
                     }
                     arr_init(&script->actions);
-                    script->id = (unsigned short)var_toInteger(tmp3);
+                    script->id = (uint16_t)var_toInteger(tmp3);
                     arr_push(&object->scripts, script);
                     ret = va_getByIndex(tmp->Arr, 1, &tmp3);
                     if (ret != DLMS_ERROR_CODE_OK)
@@ -4590,7 +4590,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                 }
 #endif //DLMS_IGNORE_MALLOC
                 arr_init(&script->actions);
-                script->id = (unsigned short)var_toInteger(tmp3);
+                script->id = (uint16_t)var_toInteger(tmp3);
 #ifndef DLMS_IGNORE_MALLOC
                 arr_push(&object->scripts, script);
 #endif //DLMS_IGNORE_MALLOC
@@ -4672,7 +4672,7 @@ int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, d
     {
         arr_clear(&object->entries);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->entries);
+        uint16_t count = arr_getCapacity(&object->entries);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->entries.size = count;
@@ -4713,7 +4713,7 @@ int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, d
                 {
                     return ret;
                 }
-                specialDay->index = (unsigned short)var_toInteger(tmp3);
+                specialDay->index = (uint16_t)var_toInteger(tmp3);
                 ret = va_getByIndex(tmp->Arr, 1, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
@@ -4755,7 +4755,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
     int ret = 0;
     if (index == 2)
     {
-        object->port = (unsigned short)var_toInteger(value);
+        object->port = (uint16_t)var_toInteger(value);
     }
     else if (index == 3)
     {
@@ -4795,7 +4795,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
     }
     else if (index == 4)
     {
-        object->maximumSegmentSize = (unsigned short)var_toInteger(value);
+        object->maximumSegmentSize = (uint16_t)var_toInteger(value);
     }
     else if (index == 5)
     {
@@ -4803,7 +4803,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
     }
     else if (index == 6)
     {
-        object->inactivityTimeout = (unsigned short)var_toInteger(value);
+        object->inactivityTimeout = (uint16_t)var_toInteger(value);
     }
     else
     {
@@ -4848,7 +4848,7 @@ int cosem_setMessageHandler(
     {
         arr_clear(&object->listeningWindow);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->listeningWindow);
+        uint16_t count = arr_getCapacity(&object->listeningWindow);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->listeningWindow.size = count;
@@ -4907,7 +4907,7 @@ int cosem_setMessageHandler(
     {
         va_clear(&object->allowedSenders);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = va_getCapacity(&object->allowedSenders);
+        uint16_t count = va_getCapacity(&object->allowedSenders);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->allowedSenders.size = count;
@@ -4978,25 +4978,49 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
     dlmsVARIANT* tmp, * tmp3;
     gxtime* s, * e;
 #endif //DLMS_IGNORE_MALLOC
-    DLMS_OBJECT_TYPE type;
     if (index == 2)
     {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        DLMS_OBJECT_TYPE type = DLMS_OBJECT_TYPE_NONE;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         obj_clearPushObjectList(&object->pushObjectList);
 #ifdef DLMS_IGNORE_MALLOC
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
         unsigned char ln[6];
-        unsigned short count = arr_getCapacity(&object->pushObjectList);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        uint16_t count = arr_getCapacity(&object->pushObjectList);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0) {
             object->pushObjectList.size = count;
             for (pos = 0; pos != count; ++pos)
             {
-                if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)&it, sizeof(gxTarget))) != 0 ||
-                    (ret = cosem_checkStructure(value->byteArr, 4)) != 0 ||
-                    (ret = cosem_getUInt16(value->byteArr, (unsigned short*)&type)) != 0 ||
-                    (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) != 0 ||
-                    (ret = cosem_getInt8(value->byteArr, &it->attributeIndex)) != 0 ||
-                    (ret = cosem_getUInt16(value->byteArr, &it->dataIndex)) != 0)
+                if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)&it, sizeof(gxTarget))) == 0)
                 {
-                    break;
+                    if ((ret = cosem_checkStructure(value->byteArr, 4)) != 0 ||
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
+                        (ret = cosem_getUInt16(value->byteArr, &it->objectType)) != 0 ||
+                        (ret = cosem_getOctectString2(value->byteArr, it->logicalName, 6, NULL)) != 0 ||
+#else
+                        (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&type)) != 0 ||
+                        (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) != 0 ||
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+                        (ret = cosem_getInt8(value->byteArr, &it->attributeIndex)) != 0 ||
+                        (ret = cosem_getUInt16(value->byteArr, &it->dataIndex)) != 0)
+                    {
+                        break;
+                    }
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+                    if ((ret = oa_findByLN(&settings->objects, type, ln, &it->target)) != 0)
+                    {
+                        return ret;
+                    }
+                    if (it->target == NULL)
+                    {
+                        svr_notifyTrace2("Invalid object", type, ln, -1);
+                        object->pushObjectList.size = pos;
+                        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    }
+                    svr_notifyTrace2("Adding object ", type, ln, 0);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
                 }
             }
         }
@@ -5108,7 +5132,7 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
     {
 #ifdef DLMS_IGNORE_MALLOC
         gxTimePair* it;
-        unsigned short count = arr_getCapacity(&object->communicationWindow);
+        uint16_t count = arr_getCapacity(&object->communicationWindow);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->communicationWindow.size = count;
@@ -5153,7 +5177,7 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
     }
     else if (index == 5)
     {
-        object->randomisationStartInterval = (unsigned short)var_toInteger(value);
+        object->randomisationStartInterval = (uint16_t)var_toInteger(value);
     }
     else if (index == 6)
     {
@@ -5161,7 +5185,7 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
     }
     else if (index == 7)
     {
-        object->repetitionDelay = (unsigned short)var_toInteger(value);
+        object->repetitionDelay = (uint16_t)var_toInteger(value);
     }
     else
     {
@@ -5188,7 +5212,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     unsigned char ln[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    unsigned short count = arr_getCapacity(&target->chargeTables);
+    uint16_t count = arr_getCapacity(&target->chargeTables);
     if ((ret = cosem_checkStructure(value->byteArr, 3)) != 0 ||
         //charge per unit scaling
         (ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
@@ -5397,7 +5421,7 @@ int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char inde
 #ifdef DLMS_IGNORE_MALLOC
         ret = cosem_getBitString(value->byteArr, &object->chargeConfiguration);
 #else
-        ret = ba_copy(&object->chargeConfiguration, value->bitArr->data, (unsigned short)value->bitArr->size);
+        ret = ba_copy(&object->chargeConfiguration, value->bitArr->data, (uint16_t)value->bitArr->size);
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (index == 10)
@@ -5433,7 +5457,7 @@ int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char inde
     }
     else if (index == 13)
     {
-        object->proportion = (unsigned short)var_toInteger(value);
+        object->proportion = (uint16_t)var_toInteger(value);
     }
     else
     {
@@ -5601,7 +5625,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
     {
         arr_clear(&object->creditReferences);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->creditReferences);
+        uint16_t count = arr_getCapacity(&object->creditReferences);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->creditReferences.size = count;
@@ -5636,7 +5660,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
     {
         arr_clear(&object->chargeReferences);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->chargeReferences);
+        uint16_t count = arr_getCapacity(&object->chargeReferences);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->chargeReferences.size = count;
@@ -5675,7 +5699,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
         unsigned char tmp[1] = { 0 };
         bitArray ba;
         ba_attach(&ba, tmp, 0, 8);
-        unsigned short count = arr_getCapacity(&object->creditChargeConfigurations);
+        uint16_t count = arr_getCapacity(&object->creditChargeConfigurations);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->creditChargeConfigurations.size = count;
@@ -5757,7 +5781,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
         obj_clearTokenGatewayConfigurations(&object->tokenGatewayConfigurations);
         gwc = NULL;
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->tokenGatewayConfigurations);
+        uint16_t count = arr_getCapacity(&object->tokenGatewayConfigurations);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->tokenGatewayConfigurations.size = count;
@@ -5889,7 +5913,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
     }
     else if (index == 18)
     {
-        object->maxProvision = (unsigned short)var_toInteger(value);
+        object->maxProvision = (uint16_t)var_toInteger(value);
     }
     else if (index == 19)
     {
@@ -5922,7 +5946,7 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
         ba_clear(&object->imageTransferredBlocksStatus);
         if (value->bitArr != NULL)
         {
-            ba_copy(&object->imageTransferredBlocksStatus, value->bitArr->data, (unsigned short)value->bitArr->size);
+            ba_copy(&object->imageTransferredBlocksStatus, value->bitArr->data, (uint16_t)value->bitArr->size);
         }
 #endif //DLMS_IGNORE_MALLOC
     }
@@ -5942,7 +5966,7 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
     {
         arr_clear(&object->imageActivateInfo);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->imageActivateInfo);
+        uint16_t count = arr_getCapacity(&object->imageActivateInfo);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->imageActivateInfo.size = count;
@@ -6031,7 +6055,7 @@ int setCaptureObjects(
         return ret;
     }
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned short count = arr_getCapacity(objects);
+    uint16_t count = arr_getCapacity(objects);
     if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
     {
         unsigned char ln[6];
@@ -6040,7 +6064,7 @@ int setCaptureObjects(
         {
             if ((ret = arr_getByIndex(objects, pos, (void**)&co, sizeof(gxTarget))) != 0 ||
                 (ret = cosem_checkStructure(value->byteArr, 4)) != 0 ||
-                (ret = cosem_getUInt16(value->byteArr, (unsigned short*)&type)) != 0 ||
+                (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&type)) != 0 ||
                 (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) != 0 ||
                 (ret = cosem_getInt8(value->byteArr, &co->attributeIndex)) != 0 ||
                 (ret = cosem_getUInt16(value->byteArr, &co->dataIndex)) != 0)
@@ -6168,14 +6192,14 @@ int cosem_setProfileGeneric(
         {
             if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
             {
-                unsigned short rIndex, rCount = arr_getCapacity(&object->buffer);
+                uint16_t rIndex, rCount = arr_getCapacity(&object->buffer);
                 dlmsVARIANT* row;
                 if ((ret = cosem_checkArray(value->byteArr, &rCount)) == 0)
                 {
                     object->buffer.size = rCount;
                     if (rCount != 0 && (ret = arr_getByIndex(&object->buffer, 0, (void**)&row)) == 0)
                     {
-                        unsigned short cCount = row->Arr->size;
+                        uint16_t cCount = row->Arr->size;
                         if (cCount > object->captureObjects.size)
                         {
                             //Number of columns do not match.
@@ -6359,7 +6383,7 @@ int cosem_setProfileGeneric(
             {
                 return ret;
             }
-            object->sortObjectDataIndex = (unsigned short)var_toInteger(tmp);
+            object->sortObjectDataIndex = (uint16_t)var_toInteger(tmp);
         }
 #endif //DLMS_IGNORE_MALLOC
     }
@@ -6493,12 +6517,12 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
             {
                 return ret;
             }
-            object->cellInfo.cellId = (unsigned long)var_toInteger(tmp);
+            object->cellInfo.cellId = (uint32_t)var_toInteger(tmp);
             if ((ret = va_getByIndex(value->Arr, 1, &tmp)) != 0)
             {
                 return ret;
             }
-            object->cellInfo.locationId = (unsigned short)var_toInteger(tmp);
+            object->cellInfo.locationId = (uint16_t)var_toInteger(tmp);
             if ((ret = va_getByIndex(value->Arr, 2, &tmp)) != 0)
             {
                 return ret;
@@ -6515,13 +6539,13 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
                 {
                     return ret;
                 }
-                object->cellInfo.mobileCountryCode = (unsigned short)var_toInteger(tmp);
+                object->cellInfo.mobileCountryCode = (uint16_t)var_toInteger(tmp);
 
                 if ((ret = va_getByIndex(value->Arr, 5, &tmp)) != 0)
                 {
                     return ret;
                 }
-                object->cellInfo.mobileNetworkCode = (unsigned short)var_toInteger(tmp);
+                object->cellInfo.mobileNetworkCode = (uint16_t)var_toInteger(tmp);
 
                 if ((ret = va_getByIndex(value->Arr, 6, &tmp)) != 0)
                 {
@@ -6535,7 +6559,7 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
     case 7:
         arr_clear(&object->adjacentCells);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count = arr_getCapacity(&object->adjacentCells);
+        uint16_t count = arr_getCapacity(&object->adjacentCells);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->adjacentCells.size = count;
@@ -6666,7 +6690,7 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
         arr_clear(&object->descriptions);
 #ifdef DLMS_IGNORE_MALLOC
         gxTokenGatewayDescription* d;
-        unsigned short count = arr_getCapacity(&object->descriptions);
+        uint16_t count = arr_getCapacity(&object->descriptions);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
             object->descriptions.size = count;
@@ -6811,7 +6835,7 @@ int compactData_updateTemplateDescription(
                     {
                         gxDataInfo info;
                         dlmsVARIANT value;
-                        unsigned short count;
+                        uint16_t count;
                         di_init(&info);
                         var_init(&value);
                         if ((ret = hlp_getObjectCount2(e.value.byteArr, &count)) != 0 ||
@@ -6822,7 +6846,7 @@ int compactData_updateTemplateDescription(
                         //If all data is captured.
                         if (kv->dataIndex == 0)
                         {
-                            unsigned short count2;
+                            uint16_t count2;
                             if ((ret = bb_setUInt8(&object->templateDescription, ch)) != 0)
                             {
                                 break;
@@ -6858,7 +6882,7 @@ int compactData_updateTemplateDescription(
                                     {
                                         break;
                                     }
-                                    for (unsigned short pos = 0; pos < count2; ++pos)
+                                    for (uint16_t pos = 0; pos < count2; ++pos)
                                     {
                                         var_clear(&value);
                                         if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0 ||
@@ -6904,7 +6928,7 @@ int compactData_updateTemplateDescription(
                                 dlmsVARIANT* value2;
                                 bb_setUInt8(&object->templateDescription, DLMS_DATA_TYPE_STRUCTURE);
                                 bb_setUInt8(&object->templateDescription, (unsigned char)value.Arr->size);
-                                for (unsigned short pos = 0; pos < value.Arr->size; ++pos)
+                                for (uint16_t pos = 0; pos < value.Arr->size; ++pos)
                                 {
                                     if ((ret = va_getByIndex(value.Arr, pos, &value2)) != 0)
                                     {
@@ -6971,7 +6995,7 @@ int compactData_updateTemplateDescription(
                     {
                         gxDataInfo info;
                         dlmsVARIANT value;
-                        unsigned short count;
+                        uint16_t count;
                         di_init(&info);
                         var_init(&value);
                         e.value.byteArr->position = 1;
@@ -7010,7 +7034,7 @@ int compactData_updateTemplateDescription(
                                     dlmsVARIANT* value2;
                                     bb_setUInt8(&object->templateDescription, info.type);
                                     bb_setUInt8(&object->templateDescription, (unsigned char)value.Arr->size);
-                                    for (unsigned short pos = 0; pos < value.Arr->size; ++pos)
+                                    for (uint16_t pos = 0; pos < value.Arr->size; ++pos)
                                     {
                                         if ((ret = va_getByIndex(value.Arr, pos, &value2)) != 0)
                                         {
@@ -7055,7 +7079,7 @@ int compactData_updateTemplateDescription(
                                 dlmsVARIANT* value2;
                                 bb_setUInt8(&object->templateDescription, DLMS_DATA_TYPE_STRUCTURE);
                                 bb_setUInt8(&object->templateDescription, (unsigned char)value.Arr->size);
-                                for (unsigned short pos = 0; pos < value.Arr->size; ++pos)
+                                for (uint16_t pos = 0; pos < value.Arr->size; ++pos)
                                 {
                                     if ((ret = va_getByIndex(value.Arr, pos, &value2)) != 0)
                                     {
@@ -7179,7 +7203,7 @@ int cosem_setParameterMonitor(
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #ifdef DLMS_IGNORE_MALLOC
         unsigned char ln[6];
-        unsigned short type;
+        uint16_t type;
         if ((ret = cosem_checkStructure(value->byteArr, 4)) == 0 &&
             (ret = cosem_getUInt16(value->byteArr, &type)) == 0 &&
             (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) == 0 &&
@@ -7273,23 +7297,37 @@ int cosem_setParameterMonitor(
     case 4:
     {
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short type;
-        unsigned char ln[6];
+        uint16_t type;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        unsigned char* ln;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         gxTarget* it;
-        unsigned short count = arr_getCapacity(&object->parameters);
+        uint16_t count = arr_getCapacity(&object->parameters);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0) {
             object->parameters.size = count;
             for (pos = 0; pos != count; ++pos)
             {
-                if ((ret = arr_getByIndex(&object->parameters, pos, (void**)&it, sizeof(gxTarget))) != 0 ||
-                    (ret = cosem_checkStructure(value->byteArr, 3)) != 0 ||
-                    (ret = cosem_getUInt16(value->byteArr, (unsigned short*)&type)) != 0 ||
-                    (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) != 0 ||
-                    (ret = cosem_getInt8(value->byteArr, &it->attributeIndex)) != 0 ||
-                    (ret = oa_findByLN(&settings->objects, type, ln, &it->target)) != 0)
+                if ((ret = arr_getByIndex(&object->parameters, pos, (void**)&it, sizeof(gxTarget))) != 0)
                 {
                     break;
                 }
+                if ((ret = cosem_checkStructure(value->byteArr, 3)) != 0 ||
+                    (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&type)) != 0 ||
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
+                    (ret = cosem_getOctectString2(value->byteArr, it->logicalName, 6, NULL)) != 0 ||
+#else
+                    (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) != 0 ||
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+                    (ret = cosem_getInt8(value->byteArr, &it->attributeIndex)) != 0)
+                {
+                    break;
+                }
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+                if ((ret = oa_findByLN(&settings->objects, type, ln, &it->target)) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
             }
         }
 #else
@@ -7553,13 +7591,13 @@ int cosem_setMulticastEntries(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obje
     gxMacMulticastEntry* it;
     arr_clear(&object->multicastEntries);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned short count = arr_getCapacity(&object->multicastEntries);
+    uint16_t count = arr_getCapacity(&object->multicastEntries);
     if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
     {
         object->multicastEntries.size = count;
         for (pos = 0; pos != count; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->multicastEntries, pos, &it, sizeof(gxMacMulticastEntry))) != 0 ||
+            if ((ret = arr_getByIndex(&object->multicastEntries, pos, (void**)&it, sizeof(gxMacMulticastEntry))) != 0 ||
                 (ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
                 (ret = cosem_getInt8(value->byteArr, &it->id)) != 0 ||
                 (ret = cosem_getInt16(value->byteArr, &it->members)) != 0)
@@ -7606,13 +7644,13 @@ int cosem_setSwitchTable(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, d
     arr_empty(&object->switchTable);
 #ifdef DLMS_IGNORE_MALLOC
     short* it;
-    unsigned short count = arr_getCapacity(&object->switchTable);
+    uint16_t count = arr_getCapacity(&object->switchTable);
     if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
     {
         object->switchTable.size = count;
         for (pos = 0; pos != count; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->switchTable, pos, &it, sizeof(short))) != 0 ||
+            if ((ret = arr_getByIndex(&object->switchTable, pos, (void**)&it, sizeof(short))) != 0 ||
                 (ret = cosem_getInt16(value->byteArr, it)) != 0)
             {
                 break;
@@ -7643,13 +7681,13 @@ int cosem_setDirectTable(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, d
     gxMacDirectTable* it;
     arr_clear(&object->directTable);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned short count = arr_getCapacity(&object->directTable);
+    uint16_t count = arr_getCapacity(&object->directTable);
     if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
     {
         object->directTable.size = count;
         for (pos = 0; pos != count; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->directTable, pos, &it, sizeof(gxMacDirectTable))) != 0 ||
+            if ((ret = arr_getByIndex(&object->directTable, pos, (void**)&it, sizeof(gxMacDirectTable))) != 0 ||
                 (ret = cosem_checkStructure(value->byteArr, 7)) != 0 ||
                 (ret = cosem_getInt16(value->byteArr, &it->sourceSId)) != 0 ||
                 (ret = cosem_getInt16(value->byteArr, &it->sourceLnId)) != 0 ||
@@ -7728,19 +7766,19 @@ int cosem_setAvailableSwitches(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obj
     gxMacAvailableSwitch* it;
     obj_clearAvailableSwitches(&object->availableSwitches);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned short count = arr_getCapacity(&object->availableSwitches);
+    uint16_t count = arr_getCapacity(&object->availableSwitches);
     if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
     {
         object->availableSwitches.size = count;
         for (pos = 0; pos != count; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->availableSwitches, pos, &it, sizeof(gxMacAvailableSwitch))) != 0 ||
+            if ((ret = arr_getByIndex(&object->availableSwitches, pos, (void**)&it, sizeof(gxMacAvailableSwitch))) != 0 ||
                 (ret = cosem_checkStructure(value->byteArr, 5)) != 0 ||
                 (ret = cosem_getOctectString2(value->byteArr, it->sna.data, sizeof(it->sna), NULL)) != 0 ||
-                (ret = cosem_getInt32(value->byteArr, &it->lsId)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->level)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->rxLevel)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->rxSnr)) != 0)
+                (ret = cosem_getInt16(value->byteArr, &it->lsId)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->level)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->rxLevel)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->rxSnr)) != 0)
             {
                 break;
             }
@@ -7808,23 +7846,23 @@ int cosem_setCommunications(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object
     gxMacPhyCommunication* it;
     arr_clear(&object->communications);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned short count = arr_getCapacity(&object->communications);
+    uint16_t count = arr_getCapacity(&object->communications);
     if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
     {
         object->communications.size = count;
         for (pos = 0; pos != count; ++pos)
         {
-            if ((ret = arr_getByIndex(&object->communications, pos, &it, sizeof(gxMacPhyCommunication))) != 0 ||
+            if ((ret = arr_getByIndex(&object->communications, pos, (void**)&it, sizeof(gxMacPhyCommunication))) != 0 ||
                 (ret = cosem_checkStructure(value->byteArr, 9)) != 0 ||
                 (ret = cosem_getOctectString2(value->byteArr, it->eui, sizeof(it->eui), NULL)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->txPower)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->txCoding)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->rxCoding)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->rxLvl)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->snr)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->txPowerModified)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->txCodingModified)) != 0 ||
-                (ret = cosem_getInt16(value->byteArr, &it->rxCodingModified)) != 0)
+                (ret = cosem_getInt8(value->byteArr, &it->txPower)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->txCoding)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->rxCoding)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->rxLvl)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->snr)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->txPowerModified)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->txCodingModified)) != 0 ||
+                (ret = cosem_getInt8(value->byteArr, &it->rxCodingModified)) != 0)
             {
                 break;
             }
@@ -7945,7 +7983,7 @@ int cosem_setPrimeNbOfdmPlcApplicationsIdentification(
     {
         int len = bb_size(value->byteArr);
 #ifdef DLMS_IGNORE_MALLOC
-        ret = bb_get(value->byteArr, object->firmwareVersion, len);
+        ret = bb_get(value->byteArr, (unsigned char*)object->firmwareVersion, len);
         object->firmwareVersion[len] = 0;
 #else
         gxfree(object->firmwareVersion);
@@ -7962,7 +8000,7 @@ int cosem_setPrimeNbOfdmPlcApplicationsIdentification(
             }
             else
             {
-                ret = bb_get(value->byteArr, object->firmwareVersion, len);
+                ret = bb_get(value->byteArr, (unsigned char*)object->firmwareVersion, len);
                 object->firmwareVersion[len] = 0;
             }
         }

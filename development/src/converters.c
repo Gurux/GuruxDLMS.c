@@ -1677,7 +1677,7 @@ int obj_extendedRegisterToString(gxExtendedRegister* object, char** buff)
 int obj_objectsToString(gxByteBuffer* ba, objectArray* objects)
 {
     char str[30];
-    unsigned short pos;
+    uint16_t pos;
     int ret = DLMS_ERROR_CODE_OK;
     gxObject* it;
     for (pos = 0; pos != objects->size; ++pos)

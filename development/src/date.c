@@ -113,13 +113,13 @@ time_t gxmktime(struct tm* value)
 // Constructor.
 void time_init(
     gxtime* time,
-    unsigned short year,
+    uint16_t year,
     unsigned char month,
     unsigned char day,
     unsigned char hour,
     unsigned char minute,
     unsigned char second,
-    unsigned short millisecond,
+    uint16_t millisecond,
     signed short devitation)
 {
     if (devitation == -1)
@@ -127,6 +127,8 @@ void time_init(
         devitation = 0x8000;
     }
 #ifdef DLMS_USE_EPOCH_TIME
+    //multiply to tmp variable or it'll fails for some compilers.
+    uint32_t tmp;
     //January and February are counted as months 13 and 14 of the previous year
     if (month != 0xFF && month <= 2)
     {
@@ -143,7 +145,17 @@ void time_init(
         time->skip = (unsigned char)(DATETIME_SKIPS_YEAR | DATETIME_SKIPS_DEVITATION);
         year = 1970;
     }
-    time->value = (365 * year) + (year / 4) - (year / 100) + (year / 400);
+    time->value = year;
+    time->value *= 365L;
+    tmp = year;
+    tmp /= 4L;
+    time->value += tmp;
+    tmp = year;
+    tmp /= 100L;
+    time->value -= tmp;
+    tmp = year;
+    tmp /= 400L;
+    time->value += tmp;
     //Convert months to days
     if (month == 0xFF)
     {
@@ -175,7 +187,14 @@ void time_init(
         time->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2;
         day = 1;
     }
-    time->value += (30 * month) + (3 * (month + 1) / 5) + day;
+    tmp = month;
+    tmp *= 30L;
+    time->value += tmp;
+    tmp = 1 + month;
+    tmp = tmp * 3L;
+    tmp = tmp / 5L;
+    time->value += tmp;
+    time->value += day;
     //Unix time starts on January 1st, 1970
     if (time->value < 719561)
     {
@@ -183,17 +202,17 @@ void time_init(
     }
     else
     {
-        time->value -= 719561;
+        time->value -= 719561L;
     }
     //Convert days to seconds
     if (time->value != 0)
     {
-        time->value *= 86400;
+        time->value *= 86400L;
     }
     //Add hours, minutes and seconds
     if (hour != 0xFF)
     {
-        time->value += (3600 * hour);
+        time->value += (3600L * hour);
     }
     else
     {
@@ -201,7 +220,7 @@ void time_init(
     }
     if (minute != 0xFF)
     {
-        time->value += (60 * minute);
+        time->value += (60L * minute);
     }
     else
     {
@@ -300,13 +319,12 @@ void time_clearDate(
     //Get hours, minutes and seconds
     if (value->value > 60)
     {
-        unsigned long t = value->value / 60;
-        unsigned char seconds = t % 60;
+        unsigned char seconds = value->value % 60;
+        uint32_t t = value->value;
         t /= 60;
         unsigned char minutes = t % 60;
         t /= 60;
         unsigned char hours = t % 24;
-        t /= 24;
         value->value = seconds;
         value->value += 60 * minutes;
         value->value += 3600 * hours;
@@ -326,9 +344,9 @@ void time_clearTime(
     if (value->value != 0)
     {
         //Remove hours, minutes and seconds
-        value->value /= 60;
-        value->value /= 60;
-        value->value /= 24;
+        value->value -= value->value % 60;
+        value->value -= (value->value / 60) % 60;
+        value->value -= (value->value / 3600) % 24;
     }
 #else
     value->value.tm_sec = value->value.tm_min = value->value.tm_hour = 0;
@@ -351,19 +369,19 @@ void time_clearSeconds(gxtime* value)
     time_addSeconds(value, -time_getSeconds(value));
 }
 
-unsigned short time_getYears(
+uint16_t time_getYears(
     const gxtime* value)
 {
 #ifdef DLMS_USE_EPOCH_TIME
-    unsigned long t = value->value;
+    uint32_t t = value->value;
     //remove hours, minutes and seconds
     t /= 86400;
     //Convert Unix time to date
-    unsigned long a = (unsigned long)((4 * t + 102032) / 146097 + 15);
-    unsigned long b = (unsigned long)(t + 2442113 + a - (a / 4));
-    unsigned long c = (20 * b - 2442) / 7305;
-    unsigned long d = b - 365 * c - (c / 4);
-    unsigned long e = d * 1000 / 30601;
+    uint32_t a = (uint32_t)((4 * t + 102032) / 146097 + 15);
+    uint32_t b = (uint32_t)(t + 2442113 + a - (a / 4));
+    uint32_t c = (20 * b - 2442) / 7305;
+    uint32_t d = b - 365 * c - (c / 4);
+    uint32_t e = d * 1000 / 30601;
     //January and February are counted as months 13 and 14 of the previous year
     if (e <= 13)
     {
@@ -375,7 +393,7 @@ unsigned short time_getYears(
         c -= 4715;
         e -= 13;
     }
-    return (unsigned short)c;
+    return (uint16_t)c;
 #else
     return 1900 + value->value.tm_year;
 #endif // DLMS_USE_EPOCH_TIME
@@ -385,15 +403,15 @@ unsigned char time_getMonths(
     const gxtime* value)
 {
 #ifdef DLMS_USE_EPOCH_TIME
-    unsigned long t = value->value;
+    uint32_t t = value->value;
     //remove hours, minutes and seconds
     t /= 86400;
     //Convert Unix time to date
-    unsigned long a = (unsigned long)((4 * t + 102032) / 146097 + 15);
-    unsigned long b = (unsigned long)(t + 2442113 + a - (a / 4));
-    unsigned long c = (20 * b - 2442) / 7305;
-    unsigned long d = b - 365 * c - (c / 4);
-    unsigned long e = d * 1000 / 30601;
+    uint32_t a = (uint32_t)((4 * t + 102032) / 146097 + 15);
+    uint32_t b = (uint32_t)(t + 2442113 + a - (a / 4));
+    uint32_t c = (20 * b - 2442) / 7305;
+    uint32_t d = b - 365 * c - (c / 4);
+    uint32_t e = d * 1000 / 30601;
     //January and February are counted as months 13 and 14 of the previous year
     if (e <= 13)
     {
@@ -415,16 +433,16 @@ unsigned char time_getDays(
     const gxtime* value)
 {
 #ifdef DLMS_USE_EPOCH_TIME
-    unsigned long t = value->value;
+    uint32_t t = value->value;
     //remove hours, minutes and seconds
     t /= 86400;
     //Convert Unix time to date
-    unsigned long a = (unsigned long)((4 * t + 102032) / 146097 + 15);
-    unsigned long b = (unsigned long)(t + 2442113 + a - (a / 4));
-    unsigned long c = (20 * b - 2442) / 7305;
-    unsigned long d = b - 365 * c - (c / 4);
-    unsigned long e = d * 1000 / 30601;
-    unsigned long f = d - e * 30 - e * 601 / 1000;
+    uint32_t a = (uint32_t)((4 * t + 102032) / 146097 + 15);
+    uint32_t b = (uint32_t)(t + 2442113 + a - (a / 4));
+    uint32_t c = (20 * b - 2442) / 7305;
+    uint32_t d = b - 365 * c - (c / 4);
+    uint32_t e = d * 1000 / 30601;
+    uint32_t f = d - e * 30 - e * 601 / 1000;
     return (unsigned char)f;
 #else
     return value->value.tm_mday;
@@ -538,7 +556,7 @@ void time_init2(
     struct tm* value)
 {
 #ifdef DLMS_USE_EPOCH_TIME
-    unsigned short y;
+    uint16_t y;
     unsigned char m, d;
     //Year
     y = value->tm_year;
@@ -576,7 +594,7 @@ void time_init2(
 
 void time_initUnix(
     gxtime* time,
-    unsigned long value)
+    uint32_t value)
 {
     time->deviation = 0;
 #ifdef DLMS_USE_EPOCH_TIME
@@ -716,7 +734,7 @@ int time_print(const char* format, gxtime* time)
 int time_toString2(
     const gxtime* time,
     char* buff,
-    unsigned short len)
+    uint16_t len)
 {
     gxByteBuffer bb;
     bb_attach(&bb, (unsigned char*)buff, 0, len);
@@ -730,7 +748,7 @@ int time_toString(
     int ret = 0;
     GXDLMS_DATE_FORMAT format;
     char separator;
-    unsigned short year = 0;
+    uint16_t year = 0;
     unsigned char mon = 0, day = 0, hour = 0, min = 0, sec = 0;
 #ifdef DLMS_USE_EPOCH_TIME
     time_fromUnixTime2(time->value, &year, &mon, &day, &hour, &min, &sec, NULL);
@@ -941,12 +959,16 @@ void time_addTime(
 
 int time_compareWithDiff(
     gxtime* value1,
-    unsigned long value2,
+    uint32_t value2,
     short deviationDiff)
 {
-    unsigned short year1;
+    if (value2 == 0xFFFFFFFF)
+    {
+        return 1;
+    }
+    uint16_t year1;
     unsigned char month1, day1, hour1, minute1, second1;
-    unsigned short year2;
+    uint16_t year2;
     unsigned char month2, day2, hour2, minute2, second2;
 #ifdef DLMS_USE_EPOCH_TIME
     time_fromUnixTime2(value1->value, &year1, &month1,
@@ -970,61 +992,62 @@ int time_compareWithDiff(
     }
     time_fromUnixTime2(value2, &year2, &month2,
         &day2, &hour2, &minute2, &second2, NULL);
-
-    if ((value1->skip & DATETIME_SKIPS_YEAR) == 0 && year1 != year2)
+    if (value1->skip != 0)
     {
-        if (year1 < year2)
+        if ((value1->skip & DATETIME_SKIPS_SECOND) == 0)
         {
-            return -1;
+            if (second1 != second2)
+            {
+                return second1 < second2 ? -1 : 1;
+            }
         }
-        return 1;
+        if ((value1->skip & DATETIME_SKIPS_MINUTE) == 0)
+        {
+            if (minute1 != minute2)
+            {
+                return minute1 < minute2 ? -1 : 1;
+            }
+        }
+        if ((value1->skip & DATETIME_SKIPS_HOUR) == 0)
+        {
+            if (hour1 != hour2)
+            {
+                return hour1 < hour2 ? -1 : 1;
+            }
+        }
+        if ((value1->skip & DATETIME_SKIPS_DAY) == 0)
+        {
+            if (day1 != day2)
+            {
+                return day1 < day2 ? -1 : 1;
+            }
+        }
+        if ((value1->skip & DATETIME_SKIPS_MONTH) == 0)
+        {
+            if (month1 != month2)
+            {
+                return month1 < month2 ? -1 : 1;
+            }
+        }
+        if ((value1->skip & DATETIME_SKIPS_YEAR) == 0)
+        {
+            if (year1 != year2)
+            {
+                return year1 < year2 ? -1 : 1;
+            }
+        }
+        return 0;
     }
-    if ((value1->skip & DATETIME_SKIPS_MONTH) == 0 && month1 != month2)
+    if (value1->value == value2)
     {
-        if (month1 < month2)
-        {
-            return -1;
-        }
-        return 1;
+        return 0;
     }
-    if ((value1->skip & DATETIME_SKIPS_DAY) == 0 && day1 != day2)
-    {
-        if (day1 < day2)
-        {
-            return -1;
-        }
-        return 1;
-    }
-    if ((value1->skip & DATETIME_SKIPS_HOUR) == 0 && hour1 != hour2)
-    {
-        if (hour1 < hour2)
-        {
-            return -1;
-        }
-        return 1;
-    }
-    if ((value1->skip & DATETIME_SKIPS_MINUTE) == 0 && minute1 != minute2)
-    {
-        if (minute1 < minute2)
-        {
-            return -1;
-        }
-        return 1;
-    }
-    if ((value1->skip & DATETIME_SKIPS_SECOND) == 0 && second1 != second2)
-    {
-        if (second1 < second2)
-        {
-            return -1;
-        }
-        return 1;
-    }
-    return 0;
+    return value1->value < value2 ? -1 : 1;
 }
 
 int time_compare2(
     gxtime* value1,
-    unsigned long value2)
+    uint32_t value2)
 {
     return time_compareWithDiff(value1, value2, value1->deviation);
 }
@@ -1038,8 +1061,8 @@ int time_compare(
 }
 
 int time_fromUnixTime2(
-    unsigned long epoch,
-    unsigned short* year,
+    uint32_t epoch,
+    uint16_t* year,
     unsigned char* month,
     unsigned char* day,
     unsigned char* hour,
@@ -1064,12 +1087,12 @@ int time_fromUnixTime2(
     }
     epoch /= 24;
     //Convert Unix time to date
-    unsigned long a = (unsigned long)((4 * epoch + 102032) / 146097 + 15);
-    unsigned long b = (unsigned long)(epoch + 2442113 + a - (a / 4));
-    unsigned long c = (20 * b - 2442) / 7305;
-    unsigned long d = b - 365 * c - (c / 4);
-    unsigned long e = d * 1000 / 30601;
-    unsigned long f = d - e * 30 - e * 601 / 1000;
+    uint32_t a = (uint32_t)((4 * epoch + 102032) / 146097 + 15);
+    uint32_t b = (uint32_t)(epoch + 2442113 + a - (a / 4));
+    uint32_t c = (20 * b - 2442) / 7305;
+    uint32_t d = b - 365 * c - (c / 4);
+    uint32_t e = d * 1000 / 30601;
+    uint32_t f = d - e * 30 - e * 601 / 1000;
     //January and February are counted as months 13 and 14 of the previous year
     if (e <= 13)
     {
@@ -1084,7 +1107,7 @@ int time_fromUnixTime2(
     //Retrieve year, month and day
     if (year != NULL)
     {
-        *year = (unsigned short)c;
+        *year = (uint16_t)c;
     }
     if (month != NULL)
     {
@@ -1104,7 +1127,7 @@ int time_fromUnixTime2(
 
 int time_fromUnixTime3(
     const gxtime* time,
-    unsigned short* year,
+    uint16_t* year,
     unsigned char* month,
     unsigned char* day,
     unsigned char* hour,
@@ -1149,11 +1172,11 @@ int time_fromUnixTime3(
 }
 
 unsigned char time_dayOfWeek(
-    unsigned short year,
+    uint16_t year,
     unsigned char month,
     unsigned char day)
 {
-    unsigned short h, j, k;
+    uint16_t h, j, k;
     //January and February are counted as months 13 and 14 of the previous year
     if (month <= 2)
     {
@@ -1171,9 +1194,9 @@ unsigned char time_dayOfWeek(
 
 #ifndef DLMS_USE_EPOCH_TIME
 //Get date time from Epoch time.
-int time_fromUnixTime(unsigned long epoch, struct tm* time)
+int time_fromUnixTime(uint32_t epoch, struct tm* time)
 {
-    unsigned short year;
+    uint16_t year;
     unsigned char month, day, hour, minute, second, dayOfWeek;
     time_fromUnixTime2(epoch, &year, &month,
         &day, &hour, &minute, &second, &dayOfWeek);
@@ -1189,16 +1212,16 @@ int time_fromUnixTime(unsigned long epoch, struct tm* time)
 }
 
 // Convert date time to Epoch time.
-unsigned long time_toUnixTime(struct tm* time)
+uint32_t time_toUnixTime(struct tm* time)
 {
-    return (unsigned long)gxmktime(time);
+    return (uint32_t)gxmktime(time);
 }
 #endif //DLMS_USE_EPOCH_TIME
 
 // Convert date time to Epoch time.
-unsigned long time_toUnixTime2(gxtime* time)
+uint32_t time_toUnixTime2(gxtime* time)
 {
-    unsigned long value;
+    uint32_t value;
 #ifdef DLMS_USE_EPOCH_TIME
     value = time->value;
     if (time->deviation != 0 && time->deviation != (short)0x8000)
@@ -1210,7 +1233,7 @@ unsigned long time_toUnixTime2(gxtime* time)
 #endif //DLMS_USE_UTC_TIME_ZONE
     }
 #else
-    value = (unsigned long)gxmktime(&time->value);
+    value = (uint32_t)gxmktime(&time->value);
 #endif //DLMS_USE_EPOCH_TIME
     return value;
 }
@@ -1235,4 +1258,46 @@ int time_toUTC(gxtime* value)
         value->status &= ~DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
     }
     return 0;
+}
+
+// Get next scheduled date in UTC time.
+uint32_t time_getNextScheduledDate(uint32_t start, gxtime* value)
+{
+    if ((value->skip & DATETIME_SKIPS_SECOND) == 0)
+    {
+        uint32_t offset = ((60 + (value->value % 60)) - (start % 60));
+        if (offset % 60 == 0)
+        {
+            start += 60;
+        }
+        else
+        {
+            start += offset % 60;
+        }
+    }
+    if ((value->skip & DATETIME_SKIPS_MINUTE) == 0)
+    {
+        start += 60 - (start % 60);
+    }
+    if ((value->skip & DATETIME_SKIPS_HOUR) == 0)
+    {
+        start += 3600 - (time_getMinutes(value) * 60 - time_getSeconds(value));
+    }
+    if ((value->skip & DATETIME_SKIPS_DAY) == 0)
+    {
+        start += (24 * 3600) - (time_getHours(value) * 3600 - (time_getMinutes(value) * 60 - time_getSeconds(value)));
+    }
+    if ((value->skip & DATETIME_SKIPS_MONTH) == 0)
+    {
+        start += (24 * 3600) - (time_getHours(value) * 3600 - (time_getMinutes(value) * 60 - time_getSeconds(value)));
+    }
+    if ((value->skip & DATETIME_SKIPS_YEAR) == 0)
+    {
+        start += (24 * 3600) - (time_getHours(value) * 3600 - (time_getMinutes(value) * 60 - time_getSeconds(value)));
+    }
+    if (value->skip == 0)
+    {
+        start = time_toUnixTime2(value) - start;
+    }
+    return start;
 }

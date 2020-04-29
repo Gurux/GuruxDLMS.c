@@ -165,12 +165,6 @@ extern "C" {
         dlmsSettings* settings,
         gxValueEventArg* e);
 
-    int cosem_getColumns(
-        gxArray* captureObjects,
-        unsigned char selector,
-        dlmsVARIANT* parameters,
-        gxArray* columns);
-
 #ifndef DLMS_IGNORE_MALLOC
     int cosem_getRow(
         gxArray* table,

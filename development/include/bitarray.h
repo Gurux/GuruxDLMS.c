@@ -45,10 +45,10 @@ extern "C" {
     typedef struct
     {
         unsigned char* data;
-        unsigned short capacity;
-        unsigned short size;
+        uint16_t capacity;
+        uint16_t size;
 #ifndef GX_DLMS_MICROCONTROLLER
-        unsigned short position;
+        uint16_t position;
 #endif //GX_DLMS_MICROCONTROLLER
     } bitArray;
 
@@ -60,8 +60,8 @@ extern "C" {
     void ba_attach(
         bitArray* arr,
         unsigned char* value,
-        unsigned short count,
-        unsigned short capacity);
+        uint16_t count,
+        uint16_t capacity);
 
     /*
     * Is static buffer used.
@@ -70,17 +70,17 @@ extern "C" {
         bitArray* arr);
 
     //Bit array capacity.
-    unsigned short ba_getCapacity(
+    uint16_t ba_getCapacity(
         bitArray* arr);
 
     //How many bytes bit array will take.
-    unsigned short ba_getByteCount(
-        unsigned short bitCount);
+    uint16_t ba_getByteCount(
+        uint16_t bitCount);
 
     //Allocate new size for the array in bits.
     int ba_capacity(
         bitArray* arr,
-        unsigned short capacity);
+        uint16_t capacity);
 
     //Push new data to the bit array.
     int ba_set(
@@ -97,14 +97,14 @@ extern "C" {
     int ba_add(
         bitArray *arr,
         gxByteBuffer *bytes,
-        unsigned short count,
+        uint16_t count,
         unsigned char intelByteOrder);
 
     //Copy bit array.
     int ba_copy(
         bitArray *target,
         unsigned char *source,
-        unsigned short count);
+        uint16_t count);
 
     //Clear bit array.
     void ba_clear(

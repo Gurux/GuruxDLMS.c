@@ -53,13 +53,13 @@ char oa_isAttached(objectArray* arr)
     return (arr->capacity & 0x8000) == 0x8000;
 }
 
-unsigned short oa_getCapacity(objectArray* arr)
+uint16_t oa_getCapacity(objectArray* arr)
 {
     return arr->capacity & 0x7FFF;
 }
 
 //Allocate new size for the array in bytes.
-int oa_capacity(objectArray* arr, const unsigned short capacity)
+int oa_capacity(objectArray* arr, const uint16_t capacity)
 {
 #ifndef DLMS_IGNORE_MALLOC
     if (!oa_isAttached(arr))
@@ -83,7 +83,7 @@ int oa_capacity(objectArray* arr, const unsigned short capacity)
 }
 
 //Attach object to objectArray.
-void oa_attach(objectArray* arr, gxObject** item, unsigned short count)
+void oa_attach(objectArray* arr, gxObject** item, uint16_t count)
 {
     arr->capacity = 0x8000 + count;
     arr->size = count;
@@ -95,7 +95,7 @@ void oa_attach(objectArray* arr, gxObject** item, unsigned short count)
 
 int oa_verify(objectArray* arr)
 {
-    unsigned short pos;
+    uint16_t pos;
     int ret;
     gxObject* it;
     for (pos = 0; pos != arr->size; ++pos)
@@ -154,10 +154,10 @@ void oa_copy(objectArray* target, objectArray* source)
 
 void oa_clear2(
     objectArray* arr,
-    unsigned short index,
-    unsigned short count)
+    uint16_t index,
+    uint16_t count)
 {
-    unsigned short pos;
+    uint16_t pos;
     if (arr->data != NULL)
     {
         //Clear objects first.
@@ -181,7 +181,7 @@ void oa_clear2(
 void oa_clear(objectArray* arr)
 {
 #ifndef DLMS_IGNORE_MALLOC
-    unsigned short pos;
+    uint16_t pos;
     if (arr->data != NULL)
     {
         //Clear objects first.
@@ -232,7 +232,7 @@ void oa_empty(objectArray* arr)
 //Get item from object array by index.
 int oa_getByIndex(
     const objectArray* arr,
-    unsigned short index,
+    uint16_t index,
     gxObject** item)
 {
     if (index >= arr->size)
@@ -246,10 +246,10 @@ int oa_getByIndex(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int oa_findBySN(
     objectArray* objects,
-    unsigned short sn,
+    uint16_t sn,
     gxObject** object)
 {
-    unsigned short pos;
+    uint16_t pos;
     int ret = DLMS_ERROR_CODE_OK;
     gxObject* obj = NULL;
     *object = NULL;
@@ -276,7 +276,7 @@ int oa_findByLN(
     const unsigned char* ln,
     gxObject** object)
 {
-    unsigned short pos;
+    uint16_t pos;
     int ret = DLMS_ERROR_CODE_OK;
     gxObject* obj = NULL;
     *object = NULL;
@@ -302,7 +302,7 @@ int oa_findByLN(
 
 int oa_getObjects(objectArray* src, DLMS_OBJECT_TYPE type, objectArray* objects)
 {
-    unsigned short pos;
+    uint16_t pos;
     int ret = DLMS_ERROR_CODE_OK;
     gxObject* obj = NULL;
     if (src == NULL || objects == NULL)
@@ -337,7 +337,7 @@ int oa_getObjects2(
     unsigned char typeCount,
     objectArray* objects)
 {
-    unsigned short pos, pos2;
+    uint16_t pos, pos2;
     int ret = DLMS_ERROR_CODE_OK;
     gxObject* obj = NULL;
     oa_empty(objects);

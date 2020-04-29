@@ -86,7 +86,7 @@ extern "C" {
     //Get objects count in association view.
     int cl_parseObjectCount(
         gxByteBuffer* data,
-        unsigned short* count);
+        uint16_t* count);
 
     /*Parse next association view object. This method can be used when malloc is not used.*/
     int cl_parseNextObject(
@@ -96,7 +96,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     int cl_readSN(
         dlmsSettings* settings,
-        unsigned short address,
+        uint16_t address,
         unsigned char attributeOrdinal,
         gxByteBuffer* data,
         message* messages);
@@ -121,21 +121,25 @@ extern "C" {
         unsigned char attributeOrdinal,
         message* messages);
 
+    int cl_getKeepAlive(
+        dlmsSettings* settings,
+        message* messages);
+
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
     int cl_readRowsByEntry(
         dlmsSettings* settings,
         gxProfileGeneric* object,
-        unsigned long index,
-        unsigned long count,
+        uint32_t index,
+        uint32_t count,
         message* messages);
 
     int cl_readRowsByEntry2(
         dlmsSettings* settings,
         gxProfileGeneric* object,
-        unsigned long index,
-        unsigned long count,
-        unsigned short colStart,
-        unsigned short colEnd,
+        uint32_t index,
+        uint32_t count,
+        uint16_t colStart,
+        uint16_t colEnd,
         message* messages);
 
 
@@ -143,8 +147,8 @@ extern "C" {
     int cl_readRowsByRange(
         dlmsSettings* settings,
         gxProfileGeneric* object,
-        unsigned long start,
-        unsigned long end,
+        uint32_t start,
+        uint32_t end,
         message* messages);
 #else
     int cl_readRowsByRange(
@@ -181,7 +185,7 @@ extern "C" {
 
     int cl_writeSN(
         dlmsSettings* settings,
-        unsigned short address,
+        uint16_t address,
         int index,
         dlmsVARIANT* data,
         message* messages);
@@ -291,7 +295,7 @@ extern "C" {
         */
     int cl_methodSN(
         dlmsSettings* settings,
-        unsigned short address,
+        uint16_t address,
         DLMS_OBJECT_TYPE objectType,
         int index,
         dlmsVARIANT* data,

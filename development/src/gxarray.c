@@ -56,7 +56,7 @@ char arr_isAttached(gxArray* arr)
     return (arr->capacity & 0x8000) == 0x8000;
 }
 
-unsigned short arr_getCapacity(gxArray* arr)
+uint16_t arr_getCapacity(gxArray* arr)
 {
     return arr->capacity & 0x7FFF;
 }
@@ -64,11 +64,11 @@ unsigned short arr_getCapacity(gxArray* arr)
 void arr_attach(
     gxArray* arr,
     void* value,
-    unsigned short count,
-    unsigned short capacity)
+    uint16_t count,
+    uint16_t capacity)
 {
     arr->data = value;
-    arr->capacity = (unsigned short)(0x8000 | capacity);
+    arr->capacity = (uint16_t)(0x8000 | capacity);
     arr->size = count;
 #ifndef DLMS_IGNORE_MALLOC
     arr->position = 0;
@@ -201,7 +201,7 @@ int arr_get(gxArray* arr, void** value)
 #endif //DLMS_IGNORE_MALLOC
 
 #ifndef DLMS_IGNORE_MALLOC
-int arr_getByIndex(gxArray* arr, unsigned short index, void** value)
+int arr_getByIndex(gxArray* arr, uint16_t index, void** value)
 {
     if (index >= arr->size)
     {
@@ -211,7 +211,7 @@ int arr_getByIndex(gxArray* arr, unsigned short index, void** value)
     return 0;
 }
 #else
-int arr_getByIndex(gxArray* arr, unsigned short index, void** value, unsigned short itemSize)
+int arr_getByIndex(gxArray* arr, uint16_t index, void** value, uint16_t itemSize)
 {
     if (index >= arr->size)
     {
@@ -223,7 +223,7 @@ int arr_getByIndex(gxArray* arr, unsigned short index, void** value, unsigned sh
 #endif //DLMS_IGNORE_MALLOC
 
 
-int arr_getByIndex2(gxArray* arr, unsigned short index, void** value, unsigned short itemSize)
+int arr_getByIndex2(gxArray* arr, uint16_t index, void** value, uint16_t itemSize)
 {
 #ifndef DLMS_IGNORE_MALLOC
     return arr_getByIndex(arr, index, value);
@@ -283,7 +283,7 @@ void arr_clearStrings(gxArray* arr)
 }
 
 #ifndef DLMS_IGNORE_MALLOC
-int arr_removeByIndex(gxArray* arr, unsigned short index, void** value)
+int arr_removeByIndex(gxArray* arr, uint16_t index, void** value)
 {
     int pos;
     if (index >= arr->size)
@@ -301,11 +301,11 @@ int arr_removeByIndex(gxArray* arr, unsigned short index, void** value)
 #else
 int arr_removeByIndex(
     gxArray* arr,
-    unsigned short index,
-    unsigned short itemSize)
+    uint16_t index,
+    uint16_t itemSize)
 {
     int ret;
-    unsigned short pos;
+    uint16_t pos;
     void** prev = NULL;
     void** item = NULL;
     if ((ret = arr_getByIndex(arr, index, prev, itemSize)) == 0)

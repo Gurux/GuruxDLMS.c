@@ -151,7 +151,7 @@ static unsigned char getSBoxInvert(unsigned char num)
 static void KeyExpansion(void)
 {
     unsigned char k;
-    unsigned long i;
+    uint32_t i;
     // Used for the column/row operations
     unsigned char tempa[4];
 
@@ -443,7 +443,7 @@ static void InvCipher(void)
 /*****************************************************************************/
 #if defined(ECB) && (ECB == 1)
 
-void gxaes_ecb_encrypt(const unsigned char* input, const unsigned char* key, unsigned char* output, const unsigned long length)
+void gxaes_ecb_encrypt(const unsigned char* input, const unsigned char* key, unsigned char* output, const size_t length)
 {
     // Copy input to output, and work in-memory on output
     memcpy(output, input, length);
@@ -456,7 +456,7 @@ void gxaes_ecb_encrypt(const unsigned char* input, const unsigned char* key, uns
     Cipher();
 }
 
-void gxaes_ecb_decrypt(const unsigned char* input, const unsigned char* key, unsigned char *output, const unsigned long length)
+void gxaes_ecb_decrypt(const unsigned char* input, const unsigned char* key, unsigned char *output, const size_t length)
 {
     // Copy input to output, and work in-memory on output
     memcpy(output, input, length);
@@ -483,7 +483,7 @@ static void XorWithIv(unsigned char* buf)
     }
 }
 
-void gxaes_cbc_encrypt(unsigned char* output, unsigned char* input, unsigned long length, const unsigned char* key, const unsigned char* iv)
+void gxaes_cbc_encrypt(unsigned char* output, unsigned char* input, uint32_t length, const unsigned char* key, const unsigned char* iv)
 {
     uintptr_t i;
     unsigned char extra = length % BLOCKLEN; /* Remaining bytes in the last non-full block */
@@ -520,7 +520,7 @@ void gxaes_cbc_encrypt(unsigned char* output, unsigned char* input, unsigned lon
     }
 }
 
-void gxaes_cbc_decrypt(unsigned char* output, unsigned char* input, unsigned long length, const unsigned char* key, const unsigned char* iv)
+void gxaes_cbc_decrypt(unsigned char* output, unsigned char* input, uint32_t length, const unsigned char* key, const unsigned char* iv)
 {
     uintptr_t i;
     unsigned char extra = length % BLOCKLEN; /* Remaining bytes in the last non-full block */

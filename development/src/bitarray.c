@@ -44,7 +44,7 @@
 #include "../include/helpers.h"
 
 //Returs needed amount of bytes to store bits.
-unsigned short ba_getByteCount(unsigned short bitCount)
+uint16_t ba_getByteCount(uint16_t bitCount)
 {
     double d = bitCount;
     if (bitCount != 0)
@@ -55,7 +55,7 @@ unsigned short ba_getByteCount(unsigned short bitCount)
             ++d;
         }
     }
-    return (unsigned short)d;
+    return (uint16_t)d;
 }
 
 //Return byte index where bit is saved.
@@ -83,7 +83,7 @@ char ba_isAttached(bitArray* arr)
     return (arr->capacity & 0x8000) == 0x8000;
 }
 
-unsigned short ba_getCapacity(bitArray* arr)
+uint16_t ba_getCapacity(bitArray* arr)
 {
     return arr->capacity & 0x7FFF;
 }
@@ -91,11 +91,11 @@ unsigned short ba_getCapacity(bitArray* arr)
 void ba_attach(
     bitArray* arr,
     unsigned char* value,
-    unsigned short count,
-    unsigned short capacity)
+    uint16_t count,
+    uint16_t capacity)
 {
     arr->data = value;
-    arr->capacity = (unsigned short)(0x8000 | capacity);
+    arr->capacity = (uint16_t)(0x8000 | capacity);
     arr->size = count;
 #ifndef GX_DLMS_MICROCONTROLLER
     arr->position = 0;
@@ -103,7 +103,7 @@ void ba_attach(
 }
 
 //Allocate new size for the array in bytes.
-int ba_capacity(bitArray* arr, unsigned short capacity)
+int ba_capacity(bitArray* arr, uint16_t capacity)
 {
 #ifndef DLMS_IGNORE_MALLOC
     if (!ba_isAttached(arr))
@@ -198,22 +198,22 @@ int ba_setByIndex(bitArray *arr, int index, unsigned char item)
 }
 
 //Add bits from byte array to bit array.
-int ba_add(bitArray *arr, gxByteBuffer * bytes, unsigned short count, unsigned char intelByteOrder)
+int ba_add(bitArray *arr, gxByteBuffer * bytes, uint16_t count, unsigned char intelByteOrder)
 {
-    unsigned short index, pos, bytePos = 0;
+    uint16_t index, pos, bytePos = 0;
     int ret;
     unsigned char ch = 0;
     if (count == 0xFFFF)
     {
-        count = (unsigned short) (bytes->size - bytes->position);
+        count = (uint16_t) (bytes->size - bytes->position);
     }
     if (intelByteOrder)
     {
-        index = (unsigned short) (bytes->position + ba_getByteCount(count) - 1);
+        index = (uint16_t) (bytes->position + ba_getByteCount(count) - 1);
     }
     else
     {
-        index = (unsigned short) bytes->position;
+        index = (uint16_t) bytes->position;
     }
     for (pos = 0; pos != count; ++pos)
     {
@@ -249,7 +249,7 @@ int ba_add(bitArray *arr, gxByteBuffer * bytes, unsigned short count, unsigned c
 int ba_copy(
     bitArray *target,
     unsigned char *source,
-    unsigned short count)
+    uint16_t count)
 {
     ba_clear(target);
     if (count != 0)

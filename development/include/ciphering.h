@@ -75,7 +75,7 @@ typedef struct
     /**
     * Invocation (Frame) counter.
     */
-    unsigned long invocationCounter;
+    uint32_t invocationCounter;
 #ifndef DLMS_IGNORE_MALLOC
     gxByteBuffer authenticationKey;
 #else
@@ -102,7 +102,7 @@ int cip_encrypt(
     ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
-    unsigned long frameCounter,
+    uint32_t frameCounter,
     unsigned char tag,
     unsigned char* systemTitle,
     gxByteBuffer* key,
@@ -112,7 +112,7 @@ int cip_encrypt(
     ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
-    unsigned long frameCounter,
+    uint32_t frameCounter,
     unsigned char tag,
     unsigned char* systemTitle,
     unsigned char* key,

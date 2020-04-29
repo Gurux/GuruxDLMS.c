@@ -51,12 +51,12 @@ void svr_init(
     dlmsServerSettings* settings,
     unsigned char useLogicalNameReferencing,
     DLMS_INTERFACE_TYPE interfaceType,
-    unsigned short frameSize,
-    unsigned short pduSize,
+    uint16_t frameSize,
+    uint16_t pduSize,
     unsigned char* frameBuffer,
-    unsigned short frameBufferSize,
+    uint16_t frameBufferSize,
     unsigned char* pduBuffer,
-    unsigned short pduBufferSize)
+    uint16_t pduBufferSize)
 {
     cl_init(&settings->base, useLogicalNameReferencing, 0, 0, DLMS_AUTHENTICATION_NONE, NULL, interfaceType);
     settings->base.proposedConformance |= DLMS_CONFORMANCE_GENERAL_PROTECTION;
@@ -78,6 +78,7 @@ void svr_init(
     settings->dataReceived = 0;
     settings->frameReceived = 0;
     resetFrameSequence(&settings->base);
+    settings->pushClientAddress = 0;
 }
 
 //Initialize client.
@@ -99,8 +100,8 @@ void cl_init(
     memset(settings->preEstablishedSystemTitle, 0, 8);
 #endif //DLMS_IGNORE_MALLOC
     settings->blockIndex = 1;
-    settings->clientAddress = (unsigned short)clientAddress;
-    settings->serverAddress = (unsigned short)serverAddress;
+    settings->clientAddress = (uint16_t)clientAddress;
+    settings->serverAddress = (uint16_t)serverAddress;
     settings->dlmsVersionNumber = 6;
     settings->useLogicalNameReferencing = useLogicalNameReferencing;
     settings->interfaceType = interfaceType;

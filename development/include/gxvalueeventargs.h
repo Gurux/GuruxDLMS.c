@@ -54,6 +54,7 @@ extern "C" {
         * Target DLMS object
         */
         gxObject* target;
+
         /**
         * Attribute index.
         */
@@ -99,13 +100,13 @@ extern "C" {
         /**
         *  Transaction begin index.
         */
-        unsigned long transactionStartIndex;
+        uint32_t transactionStartIndex;
         /**
         *  Transaction end index.
         */
-        unsigned long transactionEndIndex;
+        uint32_t transactionEndIndex;
         //It this transaction.
-        unsigned short transaction;
+        uint16_t transaction;
     } gxValueEventArg;
 
     /**

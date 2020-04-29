@@ -983,7 +983,7 @@ void com_reportError(const char* description,
     unsigned char attributeOrdinal, int ret)
 {
     char ln[25];
-    char type[30];
+    char type[70];
     hlp_getLogicalNameToString(object->logicalName, ln);
     obj_typeToString(object->objectType, type);
     printf("%s %s %s:%d %s\r\n", description, type, ln, attributeOrdinal, hlp_getErrorMessage(ret));
@@ -1010,6 +1010,7 @@ int com_getAssociationView(connection* connection)
     return ret;
 }
 
+
 //Read object.
 int com_read(
     connection* connection,
@@ -1026,6 +1027,23 @@ int com_read(
         (ret = cl_updateValue(&connection->settings, object, attributeOrdinal, &reply.dataValue)) != 0)
     {
         com_reportError("ReadObject failed", object, attributeOrdinal, ret);
+    }
+    mes_clear(&data);
+    reply_clear(&reply);
+    return ret;
+}
+
+int com_getKeepAlive(
+    connection* connection)
+{
+    int ret;
+    message data;
+    gxReplyData reply;
+    mes_init(&data);
+    reply_init(&reply);
+    if ((ret = cl_getKeepAlive(&connection->settings, &data)) != 0 ||
+        (ret = com_readDataBlock(connection, &data, &reply)) != 0)
+    {
     }
     mes_clear(&data);
     reply_clear(&reply);
@@ -1483,7 +1501,7 @@ int com_readValues(connection* connection)
     gxByteBuffer attributes;
     unsigned char ch;
     char* data = NULL;
-    char str[50];
+    char str[70];
     char ln[25];
     gxObject* object;
     unsigned long index;

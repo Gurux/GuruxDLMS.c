@@ -375,7 +375,7 @@ int cl_parseApplicationAssociationResponse(
     gxByteBuffer bb2;
 #endif //DLMS_IGNORE_HIGH_GMAC
     int ret;
-    unsigned long ic = 0;
+    uint32_t ic = 0;
 #ifdef DLMS_IGNORE_MALLOC
     gxByteBuffer value;
     unsigned char tmp[MAX_CHALLENGE_SIZE];
@@ -422,7 +422,7 @@ int cl_parseApplicationAssociationResponse(
 #ifndef DLMS_IGNORE_MALLOC
                 var_clear(&value);
 #endif //DLMS_IGNORE_MALLOC
-                    bb_clear(&challenge);
+                bb_clear(&challenge);
                 return ret;
             }
             bb_clear(&challenge);
@@ -481,7 +481,7 @@ int cl_parseLNObjects(gxByteBuffer* data, objectArray* objects)
 {
     gxObject* object;
     int ret;
-    unsigned short pos, count;
+    uint16_t pos, count;
     unsigned char size;
     oa_clear(objects);
     unsigned char version;
@@ -506,7 +506,7 @@ int cl_parseLNObjects(gxByteBuffer* data, objectArray* objects)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    oa_capacity(objects, (unsigned short)count);
+    oa_capacity(objects, (uint16_t)count);
     for (pos = 0; pos != count; ++pos)
     {
         var_clear(&value);
@@ -591,7 +591,7 @@ int cl_parseSNObjects(gxByteBuffer* data, objectArray* objects)
     dlmsVARIANT* it1 = NULL, * it2 = NULL, * it3 = NULL, * ln = NULL;
     gxObject* object;
     int ret;
-    unsigned short count, pos;
+    uint16_t count, pos;
     unsigned char size, version;
     oa_clear(objects);
     var_init(&value);
@@ -611,7 +611,7 @@ int cl_parseSNObjects(gxByteBuffer* data, objectArray* objects)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    oa_capacity(objects, (unsigned short)count);
+    oa_capacity(objects, (uint16_t)count);
     for (pos = 0; pos != count; ++pos)
     {
         var_clear(&value);
@@ -684,7 +684,7 @@ int cl_parseObjects(dlmsSettings* settings, gxByteBuffer* data)
 
 int cl_parseObjectCount(
     gxByteBuffer* data,
-    unsigned short* count)
+    uint16_t* count)
 {
     unsigned char ch;
     int ret;
@@ -712,7 +712,7 @@ int cl_parseNextObject(
     gxObject* object)
 {
     int ret = 0;
-    unsigned short pos, size, capacity = sizeof(object->logicalName);
+    uint16_t pos, size, capacity = sizeof(object->logicalName);
     signed char id;
     unsigned char mode;
     dlmsVARIANT selector;
@@ -790,7 +790,7 @@ int cl_parseNextObject(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int cl_readSN(
     dlmsSettings* settings,
-    unsigned short address,
+    uint16_t address,
     unsigned char attributeOrdinal,
     gxByteBuffer* data,
     message* messages)
@@ -895,10 +895,10 @@ int cl_readList(
 {
     gxListItem* it;
     gxObject* obj;
-    unsigned short pos = 0, count;
+    uint16_t pos = 0, count;
     int ret;
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-    unsigned short sn;
+    uint16_t sn;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     gxByteBuffer bb;
     if (list->size == 0)
@@ -988,7 +988,7 @@ int cl_readList(
             // Add variable type.
             bb_setUInt8(&bb, 2);
             sn = ((gxObject*)it->key)->shortName;
-            sn += ((unsigned short)it->value - 1) * 8;
+            sn += ((uint16_t)it->value - 1) * 8;
             bb_setUInt16(&bb, sn);
         }
         params_initSN(&p, settings, DLMS_COMMAND_READ_REQUEST, list->size, 0xFF, &bb, NULL, DLMS_COMMAND_NONE);
@@ -1000,6 +1000,7 @@ int cl_readList(
     bb_clear(&bb);
     return ret;
 }
+
 
 int cl_read(
     dlmsSettings* settings,
@@ -1027,13 +1028,34 @@ int cl_read(
     return ret;
 }
 
+int cl_getKeepAlive(
+    dlmsSettings* settings,
+    message* messages)
+{
+    int ret;
+    if (settings->useLogicalNameReferencing)
+    {
+        unsigned char ln[6] = { 0, 0, 40, 0, 0, 255 };
+        ret = cl_readLN(settings, ln, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, 1, NULL, messages);
+    }
+    else
+    {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+        ret = cl_readSN(settings, 0xFA00, 1, NULL, messages);
+#else
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+    }
+    return ret;
+}
+
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
-int cl_readRowsByEntry(dlmsSettings* settings, gxProfileGeneric* object, unsigned long index, unsigned long count, message* messages)
+int cl_readRowsByEntry(dlmsSettings* settings, gxProfileGeneric* object, uint32_t index, uint32_t count, message* messages)
 {
     return cl_readRowsByEntry2(settings, object, index, count, 1, 0, messages);
 }
 
-int cl_readRowsByEntry2(dlmsSettings* settings, gxProfileGeneric* object, unsigned long index, unsigned long count, unsigned short colStart, unsigned short colEnd, message* messages)
+int cl_readRowsByEntry2(dlmsSettings* settings, gxProfileGeneric* object, uint32_t index, uint32_t count, uint16_t colStart, uint16_t colEnd, message* messages)
 {
     int ret;
     gxByteBuffer data;
@@ -1072,7 +1094,7 @@ int cl_readRowsByEntry2(dlmsSettings* settings, gxProfileGeneric* object, unsign
     }
     bb_clear(&data);
     return ret;
-}
+    }
 
 int cl_readRowsByRange2(
     dlmsSettings* settings,
@@ -1092,8 +1114,8 @@ int cl_readRowsByRange2(
 int cl_readRowsByRange(
     dlmsSettings* settings,
     gxProfileGeneric* object,
-    unsigned long start,
-    unsigned long end,
+    uint32_t start,
+    uint32_t end,
     message* messages)
 #else
 int cl_readRowsByRange(
@@ -1124,8 +1146,13 @@ int cl_readRowsByRange(
         {
             return ret;
         }
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
         type = kv->target->objectType;
         ln = kv->target->logicalName;
+#else
+        type = kv->objectType;
+        ln = kv->logicalName;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
 #else
         gxKey* kv;
         ret = arr_getByIndex(&object->captureObjects, 0, (void**)&kv);
@@ -1137,7 +1164,7 @@ int cl_readRowsByRange(
         ln = ((gxObject*)kv->key)->logicalName;
 #endif //DLMS_IGNORE_MALLOC
         unixTime = type == DLMS_OBJECT_TYPE_DATA;
-    }
+}
 #ifndef DLMS_IGNORE_MALLOC
     if ((ret = obj_clearProfileGenericBuffer(&object->buffer)) != 0)
     {
@@ -1265,7 +1292,7 @@ int cl_updateValues(
     gxArray* list,
     gxByteBuffer* data)
 {
-    unsigned short count;
+    uint16_t count;
     int pos, ret = 0;
     gxListItem* it;
     gxDataInfo info;
@@ -1288,7 +1315,7 @@ int cl_updateValues(
         if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxListItem))) != 0)
         {
             break;
-        }
+    }
 #else
         if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
         {
@@ -1320,7 +1347,7 @@ int cl_updateValues(
             ret = ch;
             break;
         }
-    }
+}
     ve_clear(&e);
     return ret;
 }
@@ -1388,7 +1415,7 @@ int cl_releaseRequest(dlmsSettings* settings, message* packets)
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     bb_clear(&bb);
     return ret;
-}
+    }
 
 int cl_disconnectRequest(dlmsSettings* settings, message* packets)
 {
@@ -1432,7 +1459,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
     bb_init(&bb);
     bb_setUInt8(&bb, DLMS_COMMAND_RELEASE_REQUEST);
     bb_setUInt8(&bb, 0x0);
-    ret = dlms_getWrapperFrame(settings, &bb, reply);
+    ret = dlms_getWrapperFrame(settings, DLMS_COMMAND_NONE, &bb, reply);
 #ifndef DLMS_IGNORE_MALLOC
     if (ret == 0)
     {
@@ -1569,7 +1596,7 @@ int cl_writeLN(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int cl_writeSN(
     dlmsSettings* settings,
-    unsigned short address,
+    uint16_t address,
     int index,
     dlmsVARIANT* value,
     message* messages)
@@ -1591,7 +1618,7 @@ int cl_writeSN(
     }
 
     // Add name.
-    address += (unsigned short)((index - 1) * 8);
+    address += (uint16_t)((index - 1) * 8);
     bb_setUInt16(&bb, address);
     // Add data count.
     bb_setUInt8(&bb, 1);
@@ -1684,7 +1711,7 @@ int cl_methodLN(
             {
                 ret = dlms_setData(pdu, value->vt, value);
             }
-        }
+    }
 #else
         if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
         {
@@ -1698,7 +1725,7 @@ int cl_methodLN(
             }
         }
 #endif //DLMS_IGNORE_MALLOC
-    }
+}
     if (ret == 0)
     {
         params_initLN(&p, settings, 0,
@@ -1714,7 +1741,7 @@ int cl_methodLN(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int cl_methodSN(
     dlmsSettings* settings,
-    unsigned short address,
+    uint16_t address,
     DLMS_OBJECT_TYPE objectType,
     int index,
     dlmsVARIANT* value,
@@ -1764,7 +1791,7 @@ int cl_methodSN(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     index = (v + (index - 1) * 0x8);
-    address += (unsigned short)index;
+    address += (uint16_t)index;
     // Add SN count.
     bb_setUInt8(&bb, 1);
     // Add name length.

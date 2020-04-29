@@ -50,7 +50,6 @@
 #include "../include/gxset.h"
 #include "../include/gxget.h"
 #include "../include/gxinvoke.h"
-#include "../include/serverevents.h"
 
 typedef struct
 {
@@ -90,7 +89,7 @@ int svr_handleWriteRequest(
 //Copy association view.
 void svr_copyAssociationView(objectArray* target, objectArray* source)
 {
-    unsigned short cnt = 0, pos;
+    uint16_t cnt = 0, pos;
     oa_clear(target);
     oa_capacity(target, source->size);
     for (pos = 0; pos != source->size; ++pos)
@@ -109,7 +108,7 @@ void svr_copyAssociationView(objectArray* target, objectArray* source)
 int svr_initialize(
     dlmsServerSettings* settings)
 {
-    unsigned short pos;
+    uint16_t pos;
     int ret;
     gxObject* associationObject = NULL, * it;
     settings->initialized = 1;
@@ -173,7 +172,7 @@ int svr_initialize(
         if (settings->base.useLogicalNameReferencing)
         {
             gxAssociationLogicalName* ln;
-            if ((ret = cosem_createObject(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, (gxObject * *)& ln)) != 0)
+            if ((ret = cosem_createObject(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, (gxObject**)&ln)) != 0)
             {
                 return ret;
             }
@@ -187,7 +186,7 @@ int svr_initialize(
         {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
             gxAssociationShortName* it2;
-            if ((ret = cosem_createObject(DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME, (gxObject * *)& it2)) != 0)
+            if ((ret = cosem_createObject(DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME, (gxObject**)&it2)) != 0)
             {
                 return ret;
             }
@@ -216,13 +215,13 @@ int svr_updateShortNames(
     unsigned char force)
 {
     gxObject* it;
-    unsigned short sn = 0xA0;
-    unsigned short pos;
+    uint16_t sn = 0xA0;
+    uint16_t pos;
     int ret;
     unsigned char offset, count;
     for (pos = 0; pos != settings->base.objects.size; ++pos)
     {
-        if ((ret = oa_getByIndex(&settings->base.objects, pos, (gxObject * *)& it)) != 0)
+        if ((ret = oa_getByIndex(&settings->base.objects, pos, (gxObject**)&it)) != 0)
         {
             return ret;
         }
@@ -248,12 +247,12 @@ int svr_updateShortNames(
             {
                 // If there are no methods.
                 // Add attribute index addresses.
-                sn += (unsigned short)(8 * obj_attributeCount(it));
+                sn += (uint16_t)(8 * obj_attributeCount(it));
             }
         }
         else
         {
-            sn = (unsigned short)(it->shortName + (8 * obj_attributeCount(it)));
+            sn = (uint16_t)(it->shortName + (8 * obj_attributeCount(it)));
         }
     }
     return 0;
@@ -332,12 +331,14 @@ int svr_HandleAarqRequest(
         return DLMS_ERROR_CODE_REJECTED;
     }
     ret = apdu_parsePDU(&settings->base, data, &result, &diagnostic, &command);
+    svr_notifyTrace("parsePDU", ret);
     bb_clear(data);
     bb_init(&error);
     if (ret == 0 && result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
     {
         if (settings->base.dlmsVersionNumber < 6)
         {
+            svr_notifyTrace("Invalid DLMS version number.", DLMS_INITIATE_DLMS_VERSION_TOO_LOW);
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
             bb_setUInt8(&error, 0xE);
@@ -348,6 +349,7 @@ int svr_HandleAarqRequest(
         }
         else if (settings->base.maxPduSize < 64)
         {
+            svr_notifyTrace("Max PDU size is too short.", DLMS_INITIATE_PDU_SIZE_TOOSHORT);
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
             bb_setUInt8(&error, 0xE);
@@ -358,6 +360,7 @@ int svr_HandleAarqRequest(
         }
         else if (settings->base.negotiatedConformance == 0)
         {
+            svr_notifyTrace("Invalid negotiated conformance.", DLMS_INITIATE_INCOMPATIBLE_CONFORMANCE);
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
             bb_setUInt8(&error, 0xE);
@@ -367,24 +370,27 @@ int svr_HandleAarqRequest(
         }
         else if (diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
         {
+            svr_notifyTrace("Connection rejected.", -1);
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
         }
         else
         {
+            svr_notifyTrace("svr_validateAuthentication.", 0);
             diagnostic = svr_validateAuthentication(
                 settings,
                 settings->base.authentication,
                 &settings->base.password);
             if (diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
             {
+                svr_notifyTrace("Connection rejected.", -1);
                 result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             }
             else if (settings->base.authentication > DLMS_AUTHENTICATION_LOW)
             {
+                svr_notifyTrace("High authentication is used.", 0);
                 // If High authentication is used.
                 result = DLMS_ASSOCIATION_RESULT_ACCEPTED;
-                diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
             }
         }
         // Generate AARE packet.
@@ -393,6 +399,7 @@ int svr_HandleAarqRequest(
             // If High authentication is used.
             if ((ret = dlms_generateChallenge(&settings->base.stoCChallenge)) != 0)
             {
+                svr_notifyTrace("generateChallenge ", ret);
                 bb_clear(&error);
                 return ret;
             }
@@ -400,8 +407,9 @@ int svr_HandleAarqRequest(
             {
                 gxAssociationLogicalName* it;
                 unsigned char ln[] = { 0, 0, 40, 0, 0, 255 };
-                if ((ret = oa_findByLN(&settings->base.objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln, (gxObject * *)& it)) != 0)
+                if ((ret = oa_findByLN(&settings->base.objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln, (gxObject**)&it)) != 0)
                 {
+                    svr_notifyTrace("oa_findByLN ", ret);
                     return ret;
                 }
                 if (it == NULL)
@@ -428,6 +436,10 @@ int svr_HandleAarqRequest(
                     it->authenticationMechanismName.mechanismId = settings->base.authentication;
                     it->associationStatus = DLMS_ASSOCIATION_STATUS_ASSOCIATION_PENDING;
                 }
+                else
+                {
+                    svr_notifyTrace("Association logical name not found. ", -1);
+                }
             }
         }
         else
@@ -436,7 +448,7 @@ int svr_HandleAarqRequest(
             {
                 gxAssociationLogicalName* it;
                 unsigned char ln[] = { 0, 0, 40, 0, 0, 255 };
-                if ((ret = oa_findByLN(&settings->base.objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln, (gxObject * *)& it)) != 0)
+                if ((ret = oa_findByLN(&settings->base.objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln, (gxObject**)&it)) != 0)
                 {
                     return ret;
                 }
@@ -469,6 +481,7 @@ int svr_HandleAarqRequest(
     }
     else if (diagnostic == DLMS_SOURCE_DIAGNOSTIC_NONE)
     {
+        svr_notifyTrace("Permanent rejected.", -1);
         result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
         diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
         bb_setUInt8(&error, 0xE);
@@ -482,6 +495,7 @@ int svr_HandleAarqRequest(
         dlms_addLLCBytes(&settings->base, data);
     }
     ret = apdu_generateAARE(&settings->base, data, result, diagnostic, &error, NULL, command);
+    svr_notifyTrace("apdu_generateAARE.", ret);
     bb_clear(&error);
     return ret;
 }
@@ -498,7 +512,7 @@ int svr_handleSnrmRequest(
 {
     int ret;
     unsigned char len;
-    unsigned short serverAddress, clientAddress;
+    uint16_t serverAddress, clientAddress;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     DLMS_SECURITY security;
 #endif
@@ -689,7 +703,7 @@ int svr_reportError(
 #ifndef DLMS_IGNORE_WRAPPER
     else if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
     {
-        ret = dlms_getWrapperFrame(&settings->base, &data, reply);
+        ret = dlms_getWrapperFrame(&settings->base, command, &data, reply);
     }
 #endif //DLMS_IGNORE_WRAPPER
     else
@@ -712,7 +726,7 @@ int svr_handleSetRequest2(
     int ret;
     DLMS_OBJECT_TYPE ci;
     unsigned char ch;
-    unsigned short tmp;
+    uint16_t tmp;
     unsigned char* ln = NULL;
 #ifdef DLMS_IGNORE_MALLOC
     list = settings->transaction.targets;
@@ -747,8 +761,8 @@ int svr_handleSetRequest2(
     }
     if (type == DLMS_SET_COMMAND_TYPE_FIRST_DATABLOCK)
     {
-        unsigned long blockNumber;
-        unsigned short size;
+        uint32_t blockNumber;
+        uint16_t size;
         if ((ret = bb_getUInt8(data, &ch)) != 0)
         {
             vec_clear(&list);
@@ -873,8 +887,8 @@ int svr_hanleSetRequestWithDataBlock(
     gxLNParameters* p)
 {
     int ret;
-    unsigned long blockNumber;
-    unsigned short size;
+    uint32_t blockNumber;
+    uint16_t size;
     unsigned char ch;
     if ((ret = bb_getUInt8(data, &ch)) != 0)
     {
@@ -1041,7 +1055,7 @@ int svr_getRequestNormal(
     unsigned char invokeId)
 {
     gxValueEventCollection* arr;
-    unsigned short ci;
+    uint16_t ci;
     gxValueEventArg* e;
     unsigned char index;
     int ret;
@@ -1249,7 +1263,7 @@ int svr_getRequestNextDataBlock(
     gxLNParameters p;
     unsigned char moreData;
     int ret;
-    unsigned long index, pos;
+    uint32_t index, pos;
     // Get block index.
     if ((ret = bb_getUInt32(data, &index)) != 0)
     {
@@ -1347,8 +1361,8 @@ int svr_getRequestWithList(
     DLMS_OBJECT_TYPE ci;
     gxLNParameters p;
     unsigned char attributeIndex;
-    unsigned short id;
-    unsigned short pos, cnt;
+    uint16_t id;
+    uint16_t pos, cnt;
     unsigned char* ln;
 #ifdef DLMS_IGNORE_MALLOC
     if (hlp_getObjectCount2(data, &cnt) != 0 || cnt > settings->transaction.targets.capacity)
@@ -1454,9 +1468,9 @@ int svr_getRequestWithList(
         if (e->error == 0 && !e->handled)
         {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-            unsigned long pos2 = data->size;
+            uint32_t pos2 = data->size;
 #else
-            unsigned short pos2 = data->size;
+            uint16_t pos2 = data->size;
 #endif
             bb_setUInt8(data, 0);
             if ((ret = cosem_getValue(&settings->base, e)) != 0)
@@ -1586,7 +1600,7 @@ int svr_handleGetRequest(
  */
 int svr_findSNObject(dlmsServerSettings* settings, int sn, gxSNInfo* i)
 {
-    unsigned short pos;
+    uint16_t pos;
     int ret;
     gxObject* it;
     unsigned char offset, count;
@@ -1643,7 +1657,7 @@ int svr_handleRead(
     gxValueEventArg* e;
     int ret;
     gxDataInfo di;
-    unsigned short sn;
+    uint16_t sn;
     di_init(&di);
     if ((ret = bb_getUInt16(data, &sn)) != 0)
     {
@@ -1732,11 +1746,11 @@ int svr_getReadData(
 {
     int ret;
     gxValueEventArg* e;
-    unsigned long pos;
+    uint32_t pos;
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    unsigned long statusindex;
+    uint32_t statusindex;
 #else
-    unsigned short statusindex;
+    uint16_t statusindex;
 #endif
     unsigned char first = 1;
     *type = DLMS_SINGLE_READ_RESPONSE_DATA;
@@ -1809,7 +1823,7 @@ int svr_handleReadBlockNumberAccess(
 {
     gxSNParameters p;
     gxValueEventArg* e;
-    unsigned short pos, blockNumber;
+    uint16_t pos, blockNumber;
     unsigned char lastBlock = 1;
     int ret;
     unsigned char multipleBlocks;
@@ -1908,8 +1922,8 @@ int svr_handleReadDataBlockAccess(
 {
     gxSNParameters p;
     int ret;
-    unsigned short size;
-    unsigned short blockNumber;
+    uint16_t size;
+    uint16_t blockNumber;
     unsigned char isLast, ch;
     unsigned char count = 1, type = DLMS_DATA_TYPE_OCTET_STRING;
     if ((ret = bb_getUInt8(data, &ch)) != 0)
@@ -2026,7 +2040,7 @@ int svr_handleReadRequest(
     gxSNParameters p;
     int ret = 0;
     unsigned char ch, multipleBlocks = 0;
-    unsigned short pos, cnt = 0;
+    uint16_t pos, cnt = 0;
     DLMS_VARIABLE_ACCESS_SPECIFICATION type;
     gxValueEventCollection list;
     gxValueEventCollection reads;
@@ -2147,8 +2161,8 @@ int svr_handleWriteRequest(
     int ret = 0;
     gxValueEventArg* e;
     unsigned char ch;
-    unsigned short sn;
-    unsigned short cnt, pos;
+    uint16_t sn;
+    uint16_t cnt, pos;
     gxDataInfo di;
     DLMS_ACCESS_MODE am;
     gxSNInfo i;
@@ -2323,7 +2337,7 @@ int svr_handleMethodRequest(
     int error = DLMS_ERROR_CODE_OK;
     int ret;
     unsigned char invokeId, ch, id;
-    unsigned short tmp;
+    uint16_t tmp;
     gxValueEventCollection* list;
 #ifndef DLMS_IGNORE_MALLOC
     gxValueEventCollection arr;
@@ -2617,12 +2631,23 @@ int svr_handleCommand(
 #ifndef DLMS_IGNORE_ACTION
     case DLMS_COMMAND_METHOD_REQUEST:
         ret = svr_handleMethodRequest(settings, data);
+        if (ret != 0)
+        {
+            svr_notifyTrace("handleMethodRequest failed. ", ret);
+        }
         break;
 #endif //DLMS_IGNORE_ACTION
     case DLMS_COMMAND_SNRM:
-        ret = svr_handleSnrmRequest(settings, data);
-        settings->base.connected = DLMS_CONNECTION_STATE_HDLC;
-        frame = DLMS_COMMAND_UA;
+        if ((ret = svr_handleSnrmRequest(settings, data)) == 0)
+        {
+            settings->base.connected = DLMS_CONNECTION_STATE_HDLC;
+            frame = DLMS_COMMAND_UA;
+        }
+        else
+        {
+            svr_notifyTrace("handleSnrmRequest failed. ", ret);
+        }
+
         break;
     case DLMS_COMMAND_AARQ:
         ret = svr_HandleAarqRequest(settings, data);
@@ -2630,6 +2655,10 @@ int svr_handleCommand(
         {
             settings->base.connected |= DLMS_CONNECTION_STATE_DLMS;
             svr_connected(settings);
+        }
+        else
+        {
+            svr_notifyTrace("HandleAarqRequest failed. ", ret);
         }
         break;
     case DLMS_COMMAND_RELEASE_REQUEST:
@@ -2653,6 +2682,7 @@ int svr_handleCommand(
         break;
     default:
         //Invalid command.
+        svr_notifyTrace("Unknown command. ", cmd);
         return DLMS_ERROR_CODE_INVALID_COMMAND;
     }
     if (ret != 0)
@@ -2661,16 +2691,23 @@ int svr_handleCommand(
     }
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
-        ret = dlms_getHdlcFrame(&settings->base, frame, data, reply);
+        if ((ret = dlms_getHdlcFrame(&settings->base, frame, data, reply)) != 0)
+        {
+            svr_notifyTrace("getHdlcFrame failed. ", ret);
+        }
     }
 #ifndef DLMS_IGNORE_WRAPPER
     else if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
     {
-        ret = dlms_getWrapperFrame(&settings->base, data, reply);
+        if ((ret = dlms_getWrapperFrame(&settings->base, cmd, data, reply)) != 0)
+        {
+            svr_notifyTrace("getHdlcFrame failed. ", ret);
+        }
     }
 #endif //DLMS_IGNORE_WRAPPER
     else
     {
+        svr_notifyTrace("Unknown frame type. ", -1);
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     if (cmd == DLMS_COMMAND_DISC ||
@@ -2686,7 +2723,7 @@ int svr_handleRequest(
     gxByteBuffer* data,
     gxByteBuffer* reply)
 {
-    return svr_handleRequest2(settings, data->data, (unsigned short)(data->size - data->position), reply);
+    return svr_handleRequest2(settings, data->data, (uint16_t)(data->size - data->position), reply);
 }
 
 int svr_handleRequest3(
@@ -2700,7 +2737,7 @@ int svr_handleRequest3(
 int svr_handleRequest2(
     dlmsServerSettings* settings,
     unsigned char* buff,
-    unsigned short size,
+    uint16_t size,
     gxByteBuffer* reply)
 {
     unsigned char first;
@@ -2719,8 +2756,8 @@ int svr_handleRequest2(
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC && settings->hdlc != NULL && settings->hdlc->interCharachterTimeout != 0)
     {
-        long now = time_elapsed();
-        unsigned short elapsed = (unsigned short)(now - settings->frameReceived) / 1000;
+        uint32_t now = time_elapsed();
+        uint16_t elapsed = (uint16_t)(now - settings->frameReceived) / 1000;
         //If frame shoud be fully received.
         if (elapsed >= settings->hdlc->interCharachterTimeout)
         {
@@ -2980,9 +3017,349 @@ int handleInactivityTimeout(dlmsServerSettings* settings)
     return 0;
 }
 
-int svr_run(
-    dlmsServerSettings* settings)
+int svr_invoke(
+    dlmsServerSettings* settings,
+    gxObject* target,
+    unsigned char index,
+    uint32_t time,
+    gxtime* start,
+    gxtime* end,
+    uint32_t* executed,
+    uint32_t* next)
 {
+    int ret = 0;
+    if ((start == NULL || time_compare2(start, time) != 1) &&
+        (end == NULL || time_compare2(end, time) != -1) &&
+        //Not executed yet.
+        (*executed == 0 ||
+            (start == NULL || !(time_getNextScheduledDate(*executed, start) > time))))
+    {
+        *executed = time;
+        gxValueEventCollection args;
+        gxValueEventArg e;
+        ve_init(&e);
+        e.target = target;
+        e.index = index;
+#ifdef DLMS_IGNORE_MALLOC
+        gxValueEventArg tmp[1] = { e };
+        vec_attach(&args, tmp, 1, 1);
+#else
+        vec_init(&args);
+        vec_push(&args, &e);
+#endif //DLMS_IGNORE_MALLOC
+        e.target = target;
+        e.index = index;
+        svr_preAction(&settings->base, &args);
+        if (!e.handled)
+        {
+            ret = cosem_invoke(settings, &e);
+            svr_postAction(&settings->base, &args);
+        }
+        vec_empty(&args);
+    }
+    if (start != NULL && time_compare2(start, *next) == 1)
+    {
+        uint32_t tmp = time_getNextScheduledDate(time, start);
+        if (tmp < *next)
+        {
+            *next = tmp;
+        }
+    }
+    return ret;
+}
+
+
+#ifndef DLMS_IGNORE_PROFILE_GENERIC
+
+int svr_handleProfileGeneric(
+    dlmsServerSettings* settings,
+    gxProfileGeneric* object,
+    uint32_t time,
+    uint32_t* next)
+{
+    int ret = 0;
+    if (object->capturePeriod != 0)
+    {
+        //Get seconds.
+        uint32_t tm = time % 60L;
+        //Time where seconds part is zero.
+        uint32_t tm2 = time - tm;
+        tm = time % object->capturePeriod;
+        if (tm == 0)
+        {
+            if (*next == -1 || *next > time + object->capturePeriod)
+            {
+                *next = time + object->capturePeriod;
+            }
+            ret = svr_invoke(
+                settings,
+                (gxObject*)object,
+                2,
+                time,
+                NULL,
+                NULL,
+                &object->executedTime,
+                next);
+        }
+        else if (tm2 + object->capturePeriod < *next)
+        {
+            tm = time - tm2;
+            tm %= object->capturePeriod;
+            uint32_t offset = object->capturePeriod - tm;
+            *next = time + offset;
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PROFILE_GENERIC
+
+
+#ifndef DLMS_IGNORE_ACTION_SCHEDULE
+
+int svr_handleSingleActionSchedule(
+    dlmsServerSettings* settings,
+    gxActionSchedule* object,
+    uint32_t time,
+    uint32_t* next)
+{
+    gxtime* s;
+    int ret = 0;
+    int pos;
+    for (pos = 0; pos != object->executionTime.size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&s)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&s, sizeof(gxtime))) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+        if (object->executedScript != NULL)
+        {
+            gxScript* it;
+            gxScriptAction* a;
+            int posS;
+            for (posS = 0; posS != object->executedScript->scripts.size; ++posS)
+            {
+#ifdef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->executedScript->scripts, posS, (void**)&it, sizeof(gxScript))) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->executedScript->scripts, posS, (void**)&it)) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if (it->id == object->executedScriptSelector)
+                {
+                    int posA;
+                    for (posA = 0; posA != it->actions.size; ++posA)
+                    {
+#ifdef DLMS_IGNORE_MALLOC
+                        if ((ret = arr_getByIndex(&it->actions, posA, (void**)&a, sizeof(gxScriptAction))) != 0)
+                        {
+                            break;
+                        }
+#else
+                        if ((ret = arr_getByIndex(&it->actions, posA, (void**)&a)) != 0)
+                        {
+                            break;
+                        }
+#endif //DLMS_IGNORE_MALLOC
+                        if ((ret = svr_invoke(
+                            settings,
+                            (gxObject*)a->target,
+                            a->index,
+                            time,
+                            s,
+                            NULL,
+                            &object->executedTime,
+                            next)) != 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_ACTION_SCHEDULE
+
+#ifndef DLMS_IGNORE_PUSH_SETUP
+
+int svr_handlePushSetup(
+    dlmsServerSettings* settings,
+    gxPushSetup* object,
+    uint32_t time,
+    uint32_t* next)
+{
+    gxtime* s, * e;
+#ifndef DLMS_IGNORE_MALLOC
+    gxKey* k;
+#else
+    gxTimePair* k;
+#endif //DLMS_IGNORE_MALLOC
+    int ret = 0;
+    int pos;
+    for (pos = 0; pos != object->communicationWindow.size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&k)) != 0)
+        {
+            break;
+        }
+        s = (gxtime*)k->key;
+        e = (gxtime*)k->value;
+#else
+        if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&k, sizeof(gxTimePair))) != 0)
+        {
+            break;
+        }
+        s = &k->first;
+        e = &k->second;
+#endif //DLMS_IGNORE_MALLOC
+        if ((ret = svr_invoke(
+            settings,
+            (gxObject*)object,
+            1,
+            time,
+            s,
+            e,
+            &object->executedTime,
+            next)) != 0)
+        {
+            //Save infor that invoke failed.
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PUSH_SETUP
+
+#ifndef DLMS_IGNORE_AUTO_CONNECT
+int svr_handleAutoConnect(
+    dlmsServerSettings* settings,
+    gxAutoConnect* object,
+    uint32_t time,
+    uint32_t* next)
+{
+    gxtime* s, * e;
+#ifndef DLMS_IGNORE_MALLOC
+    gxKey* k;
+#else
+    gxTimePair* k;
+#endif //DLMS_IGNORE_MALLOC
+    int ret = 0;
+    int pos;
+    for (pos = 0; pos != object->callingWindow.size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->callingWindow, pos, (void**)&k)) != 0)
+        {
+            break;
+        }
+        s = (gxtime*)k->key;
+        e = (gxtime*)k->value;
+#else
+        if ((ret = arr_getByIndex(&object->callingWindow, pos, (void**)&k, sizeof(gxTimePair))) != 0)
+        {
+            break;
+        }
+        s = &k->first;
+        e = &k->second;
+#endif //DLMS_IGNORE_MALLOC
+        if ((ret = svr_invoke(
+            settings,
+            (gxObject*)object,
+            1,
+            time,
+            s,
+            e,
+            &object->executedTime,
+            next)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_AUTO_CONNECT
+
+int svr_run(
+    dlmsServerSettings* settings,
+    uint32_t time,
+    uint32_t* next)
+{
+    uint16_t pos;
+    int ret = 0;
+    gxObject* obj;
+    *next = -1;
+#ifndef DLMS_IGNORE_PROFILE_GENERIC
+    //Push objects.
+    for (pos = 0; pos != settings->base.objects.size; ++pos)
+    {
+        if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        if (obj->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
+        {
+            svr_handleProfileGeneric(settings, (gxProfileGeneric*)obj, time, next);
+        }
+    }
+#endif //DLMS_IGNORE_PROFILE_GENERIC
+
+#ifndef DLMS_IGNORE_ACTION_SCHEDULE
+    //Single action schedules.
+    for (pos = 0; pos != settings->base.objects.size; ++pos)
+    {
+        if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        if (obj->objectType == DLMS_OBJECT_TYPE_ACTION_SCHEDULE)
+        {
+            svr_handleSingleActionSchedule(settings, (gxActionSchedule*)obj, time, next);
+        }
+    }
+#endif //DLMS_IGNORE_PROFILE_GENERIC
+
+#ifndef DLMS_IGNORE_PUSH_SETUP
+    //Push objects.
+    for (pos = 0; pos != settings->base.objects.size; ++pos)
+    {
+        if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        if (obj->objectType == DLMS_OBJECT_TYPE_PUSH_SETUP)
+        {
+            svr_handlePushSetup(settings, (gxPushSetup*)obj, time, next);
+        }
+    }
+#endif //DLMS_IGNORE_PUSH_SETUP
+#ifndef DLMS_IGNORE_AUTO_CONNECT
+    //Get auto connect objects.
+    for (pos = 0; pos != settings->base.objects.size; ++pos)
+    {
+        if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        if (obj->objectType == DLMS_OBJECT_TYPE_AUTO_CONNECT)
+        {
+            //Handle calling window execution times. Ignore errors.
+            svr_handleAutoConnect(settings, (gxAutoConnect*)obj, time, next);
+        }
+    }
+#endif //DLMS_IGNORE_AUTO_CONNECT
     return handleInactivityTimeout(settings);
 }
 #endif //DLMS_IGNORE_SERVER

@@ -50,7 +50,7 @@ extern "C" {
     void oa_attach(
         objectArray * arr,
         gxObject** item,
-        unsigned short count);
+        uint16_t count);
 
     //Verify that all objects are called init2. This is used for developing purposes.
     int oa_verify(
@@ -60,12 +60,12 @@ extern "C" {
 
     char oa_isAttached(objectArray* arr);
 
-    unsigned short oa_getCapacity(objectArray* arr);
+    uint16_t oa_getCapacity(objectArray* arr);
 
     //Allocate new size for the array in bytes.
     int oa_capacity(
         objectArray* arr,
-        const unsigned short capacity);
+        const uint16_t capacity);
 
 #ifndef DLMS_IGNORE_MALLOC
     //Push new data to the variantArray.
@@ -82,8 +82,8 @@ extern "C" {
     //Clear object array. Clear will free objects as well.
     void oa_clear2(
         objectArray* arr,
-        unsigned short index,
-        unsigned short count);
+        uint16_t index,
+        uint16_t count);
 
     //Clear object array. Clear will free objects as well.
     void oa_clear(
@@ -96,14 +96,14 @@ extern "C" {
     //Get item from object array by index.
     int oa_getByIndex(
         const objectArray* arr,
-        unsigned short index,
+        uint16_t index,
         gxObject** item);
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     //Find object using Short Name.
     int oa_findBySN(
         objectArray* objects,
-        unsigned short sn,
+        uint16_t sn,
         gxObject** object);
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 

@@ -293,6 +293,7 @@
     <ClCompile Include="..\src\parameters.c" />
     <ClCompile Include="..\src\replydata.c" />
     <ClCompile Include="..\src\server.c" />
+    <ClCompile Include="..\src\serverevents.c" />
     <ClCompile Include="..\src\variant.c" />
   </ItemGroup>
   <ItemGroup>
@@ -316,6 +317,7 @@
     <ClInclude Include="..\include\gxdefine.h" />
     <ClInclude Include="..\include\gxget.h" />
     <ClInclude Include="..\include\gxignore.h" />
+    <ClInclude Include="..\include\gxint.h" />
     <ClInclude Include="..\include\gxinvoke.h" />
     <ClInclude Include="..\include\gxkey.h" />
     <ClInclude Include="..\include\gxmd5.h" />

@@ -47,13 +47,13 @@
 /*
 * Hash block is a single 512-bit block.
 */
-void gxsha1_transform(unsigned long* block, unsigned long* digest, unsigned long* transforms)
+void gxsha1_transform(uint32_t* block, uint32_t* digest, uint32_t* transforms)
 {
-    unsigned long a = digest[0];
-    unsigned long b = digest[1];
-    unsigned long c = digest[2];
-    unsigned long d = digest[3];
-    unsigned long e = digest[4];
+    uint32_t a = digest[0];
+    uint32_t b = digest[1];
+    uint32_t c = digest[2];
+    uint32_t d = digest[3];
+    uint32_t e = digest[4];
 
     SHA1_R0(a, b, c, d, e, 0);
     SHA1_R0(e, a, b, c, d, 1);
@@ -145,10 +145,10 @@ void gxsha1_transform(unsigned long* block, unsigned long* digest, unsigned long
     ++* transforms;
 }
 
-void gxsha1_update(gxByteBuffer* data, unsigned long* digest, unsigned long* transforms)
+void gxsha1_update(gxByteBuffer* data, uint32_t* digest, uint32_t* transforms)
 {
     unsigned int pos;
-    unsigned long block[16];
+    uint32_t block[16];
     while (data->size - data->position > 64)
     {
         for (pos = 0; pos != 16; ++pos)
@@ -159,19 +159,19 @@ void gxsha1_update(gxByteBuffer* data, unsigned long* digest, unsigned long* tra
     }
 }
 
-int gxsha1_final(gxByteBuffer* data, unsigned long* digest, unsigned long* transforms, gxByteBuffer* reply)
+int gxsha1_final(gxByteBuffer* data, uint32_t* digest, uint32_t* transforms, gxByteBuffer* reply)
 {
     int pos;
-    bb_capacity(reply, (unsigned short) *transforms * 64);
+    bb_capacity(reply, (uint16_t) *transforms * 64);
     bb_set(reply, data->data, data->size);
     /* Total number of hashed bits */
-    unsigned long long total_bits = (*transforms * 64 + data->size) * 8;
+    uint64_t total_bits = (*transforms * 64 + data->size) * 8;
 
     /* Padding */
     bb_setUInt8(reply, 0x80);
-    unsigned long orig_size = reply->size;
+    uint32_t orig_size = reply->size;
     bb_zero(reply, reply->size, 64 - reply->size);
-    unsigned long block[16];
+    uint32_t block[16];
     for (pos = 0; pos != 16; ++pos)
     {
         bb_getUInt32(reply, &block[pos]);
@@ -186,8 +186,8 @@ int gxsha1_final(gxByteBuffer* data, unsigned long* digest, unsigned long* trans
     }
 
     /* Append total_bits, split this uint64 into two uint32 */
-    block[16 - 1] = (unsigned long)total_bits;
-    block[16 - 2] = (unsigned long)(total_bits >> 32);
+    block[16 - 1] = (uint32_t)total_bits;
+    block[16 - 2] = (uint32_t)(total_bits >> 32);
     gxsha1_transform(block, digest, transforms);
     bb_capacity(reply, 20);
     reply->position = reply->size = 0;
@@ -200,8 +200,8 @@ int gxsha1_final(gxByteBuffer* data, unsigned long* digest, unsigned long* trans
 
 int gxsha1_encrypt(gxByteBuffer* data, gxByteBuffer* result)
 {
-    unsigned long digest[5] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0 };
-    unsigned long transforms = 0;
+    uint32_t digest[5] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0 };
+    uint32_t transforms = 0;
     gxsha1_update(data, digest, &transforms);
     return gxsha1_final(data, digest, &transforms, result);
 }

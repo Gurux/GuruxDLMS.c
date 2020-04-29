@@ -69,7 +69,7 @@ typedef struct
      * Send date and time. This is used in Data notification messages.
      */
 #ifdef DLMS_USE_EPOCH_TIME
-    unsigned long time;
+    uint32_t time;
 #else
     struct tm time;
 #endif // DLMS_USE_EPOCH_TIME

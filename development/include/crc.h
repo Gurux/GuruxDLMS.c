@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
     //CRC table.
-    const unsigned short FCS16Table[256] =
+    const uint16_t FCS16Table[256] =
     {
         0x0000, 0x1189, 0x2312, 0x329B, 0x4624, 0x57AD, 0x6536, 0x74BF,
         0x8C48, 0x9DC1, 0xAF5A, 0xBED3, 0xCA6C, 0xDBE5, 0xE97E, 0xF8F7,
@@ -74,11 +74,11 @@ extern "C" {
         0x7BC7, 0x6A4E, 0x58D5, 0x495C, 0x3DE3, 0x2C6A, 0x1EF1, 0x0F78
     };
 
-    static unsigned short countCRC(gxByteBuffer* Buff, int index, int count)
+    static uint16_t countCRC(gxByteBuffer* Buff, uint32_t index, uint32_t count)
     {
-        unsigned short tmp;
-        unsigned short FCS16 = 0xFFFF;
-        short pos;
+        uint16_t tmp;
+        uint16_t FCS16 = 0xFFFF;
+        uint16_t pos;
         for (pos = 0; pos < count; ++pos)
         {
             FCS16 = (FCS16 >> 8) ^ FCS16Table[(FCS16 ^ ((unsigned char*)Buff->data)[index + pos]) & 0xFF];

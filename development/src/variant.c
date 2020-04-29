@@ -64,7 +64,7 @@ int var_setUInt8(dlmsVARIANT* data, unsigned char value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setUInt16(dlmsVARIANT* data, unsigned short value)
+int var_setUInt16(dlmsVARIANT* data, uint16_t value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_UINT16;
@@ -72,7 +72,7 @@ int var_setUInt16(dlmsVARIANT* data, unsigned short value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setUInt32(dlmsVARIANT* data, unsigned long value)
+int var_setUInt32(dlmsVARIANT* data, uint32_t value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_UINT32;
@@ -80,7 +80,7 @@ int var_setUInt32(dlmsVARIANT* data, unsigned long value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setUInt64(dlmsVARIANT* data, unsigned long long value)
+int var_setUInt64(dlmsVARIANT* data, uint64_t value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_UINT64;
@@ -104,7 +104,7 @@ int var_setInt16(dlmsVARIANT* data, short value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setInt32(dlmsVARIANT* data, long value)
+int var_setInt32(dlmsVARIANT* data, int32_t value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_INT32;
@@ -112,7 +112,7 @@ int var_setInt32(dlmsVARIANT* data, long value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_setInt64(dlmsVARIANT* data, long long value)
+int var_setInt64(dlmsVARIANT* data, int64_t value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_INT64;
@@ -143,7 +143,7 @@ int var_getUInt8(dlmsVARIANT* data, unsigned char* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getUInt16(dlmsVARIANT* data, unsigned short* value)
+int var_getUInt16(dlmsVARIANT* data, uint16_t* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -156,7 +156,7 @@ int var_getUInt16(dlmsVARIANT* data, unsigned short* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getUInt32(dlmsVARIANT* data, unsigned long* value)
+int var_getUInt32(dlmsVARIANT* data, uint32_t* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -169,7 +169,7 @@ int var_getUInt32(dlmsVARIANT* data, unsigned long* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getUInt64(dlmsVARIANT* data, unsigned long long* value)
+int var_getUInt64(dlmsVARIANT* data, uint64_t* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -208,7 +208,7 @@ int var_getInt16(dlmsVARIANT* data, short* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getInt32(dlmsVARIANT* data, long* value)
+int var_getInt32(dlmsVARIANT* data, int32_t* value)
 {
     var_clear(data);
     if (data->vt == DLMS_DATA_TYPE_NONE)
@@ -222,7 +222,7 @@ int var_getInt32(dlmsVARIANT* data, long* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_getInt64(dlmsVARIANT* data, long long* value)
+int var_getInt64(dlmsVARIANT* data, int64_t* value)
 {
     if (data->vt == DLMS_DATA_TYPE_NONE)
     {
@@ -235,7 +235,7 @@ int var_getInt64(dlmsVARIANT* data, long long* value)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_addBytes(dlmsVARIANT* data, const unsigned char* value, unsigned short count)
+int var_addBytes(dlmsVARIANT* data, const unsigned char* value, uint16_t count)
 {
     if (data->vt != DLMS_DATA_TYPE_OCTET_STRING)
     {
@@ -258,7 +258,7 @@ int var_addBytes(dlmsVARIANT* data, const unsigned char* value, unsigned short c
 }
 
 #ifndef DLMS_IGNORE_MALLOC
-int var_setString(dlmsVARIANT* data, const char* value, unsigned short count)
+int var_setString(dlmsVARIANT* data, const char* value, uint16_t count)
 {
     var_clear(data);
     if (data->vt != DLMS_DATA_TYPE_STRING)
@@ -278,14 +278,14 @@ int var_addOctetString(
     gxByteBuffer* ba)
 {
     var_clear(data);
-    return var_addBytes(data, ba->data + ba->position, (unsigned short)(ba->size - ba->position));
+    return var_addBytes(data, ba->data + ba->position, (uint16_t)(ba->size - ba->position));
 }
 
 int var_addByteArray(
     dlmsVARIANT* data,
     gxByteBuffer* ba,
-    unsigned short index,
-    unsigned short count)
+    uint16_t index,
+    uint16_t count)
 {
     return var_addBytes(data, ba->data + index, count);
 }
@@ -301,7 +301,7 @@ int var_init(dlmsVARIANT* data)
 #ifndef DLMS_IGNORE_MALLOC
 void var_attachArray(dlmsVARIANT* data,
     const variantArray* arr,
-    const unsigned short count)
+    const uint16_t count)
 {
     data->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
     data->vt = DLMS_DATA_TYPE_ARRAY;
@@ -314,7 +314,7 @@ void var_attachArray(dlmsVARIANT* data,
 #ifndef DLMS_IGNORE_MALLOC
 void var_attachStructure(dlmsVARIANT* data,
     const dlmsVARIANT** arr,
-    const unsigned short count)
+    const uint16_t count)
 {
     data->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
     data->vt = DLMS_DATA_TYPE_STRUCTURE;
@@ -403,7 +403,7 @@ int var_getDateTime2(
     gxtime* dateTime,
     gxByteBuffer* ba)
 {
-    unsigned short year = 0xFFFF;
+    uint16_t year = 0xFFFF;
     unsigned char month = 0xFF, day = 0xFF, hour = 0xFF, minute = 0xFF, second = 0xFF, dayOfWeek = 0xFF;
 #ifdef DLMS_USE_EPOCH_TIME
     time_fromUnixTime2(dateTime->value, &year, &month,
@@ -425,7 +425,7 @@ int var_getDateTime2(
     //Add year.
     if (dateTime->value.tm_year != -1 && (dateTime->skip & DATETIME_SKIPS_YEAR) == 0)
     {
-        year = (unsigned short)(1900 + dateTime->value.tm_year);
+        year = (uint16_t)(1900 + dateTime->value.tm_year);
     }
     if (dateTime->value.tm_mon != -1 && (dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
     {
@@ -595,7 +595,7 @@ int var_getDate(
     gxtime* dateTime,
     gxByteBuffer* ba)
 {
-    unsigned short year = 0xFFFF;
+    uint16_t year = 0xFFFF;
     unsigned char month = 0xFF, day = 0xFF, dayOfWeek = 0xFF;
 #ifdef DLMS_USE_EPOCH_TIME
     time_fromUnixTime2(dateTime->value, &year, &month,
@@ -609,7 +609,7 @@ int var_getDate(
     //Add year.
     if (dateTime->value.tm_year != -1 && (dateTime->skip & DATETIME_SKIPS_YEAR) == 0)
     {
-        year = (unsigned short)(1900 + dateTime->value.tm_year);
+        year = (uint16_t)(1900 + dateTime->value.tm_year);
     }
     if (dateTime->value.tm_mon != -1 && (dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
     {
@@ -1169,7 +1169,7 @@ char va_isAttached(variantArray* arr)
     return (arr->capacity & 0x8000) == 0x8000;
 }
 
-unsigned short va_getCapacity(variantArray* arr)
+uint16_t va_getCapacity(variantArray* arr)
 {
     return arr->capacity & 0x7FFF;
 }
@@ -1183,7 +1183,7 @@ void va_init(variantArray* arr)
 }
 
 //Allocate new size for the array in bytes.
-int va_capacity(variantArray* arr, unsigned short capacity)
+int va_capacity(variantArray* arr, uint16_t capacity)
 {
 #ifndef DLMS_IGNORE_MALLOC
     if (!va_isAttached(arr))
@@ -1290,11 +1290,11 @@ void va_clear(
 void va_attach(
     variantArray* trg,
     dlmsVARIANT* src,
-    unsigned short size,
-    unsigned short capacity)
+    uint16_t size,
+    uint16_t capacity)
 {
     trg->data = src;
-    trg->capacity = (unsigned short)(0x8000 | capacity);
+    trg->capacity = (uint16_t)(0x8000 | capacity);
     trg->size = size;
 }
 #endif //DLMS_IGNORE_MALLOC
@@ -1407,7 +1407,7 @@ int va_toString(
 static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
 {
     int ret, fromSize, toSize;
-    unsigned short pos;
+    uint16_t pos;
     char buff[250];
     dlmsVARIANT tmp, tmp3;
     dlmsVARIANT* it;
@@ -1673,7 +1673,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         else if (type == DLMS_DATA_TYPE_UINT16)
         {
-            item->uiVal = (unsigned short)hlp_stringToInt((char*)tmp.strVal->data);
+            item->uiVal = (uint16_t)hlp_stringToInt((char*)tmp.strVal->data);
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
@@ -1687,7 +1687,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         else if (type == DLMS_DATA_TYPE_UINT64)
         {
-            item->ullVal = (unsigned long long) hlp_stringToInt64((char*)tmp.strVal->data);
+            item->ullVal = (uint64_t) hlp_stringToInt64((char*)tmp.strVal->data);
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
@@ -2023,7 +2023,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
     }
     if ((target->vt & DLMS_DATA_TYPE_BYREF) != 0)
     {
-        unsigned short count;
+        uint16_t count;
         if (source->vt == DLMS_DATA_TYPE_OCTET_STRING || source->vt == DLMS_DATA_TYPE_STRING)
         {
             if ((ret = hlp_getObjectCount2(source->byteArr, &count)) != 0)
@@ -2159,7 +2159,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
 #ifndef DLMS_IGNORE_MALLOC
         target->bitArr = (bitArray*)gxmalloc(sizeof(bitArray));
         ba_init(target->bitArr);
-        ret = ba_copy(target->bitArr, source->bitArr->data, (unsigned short)source->bitArr->size);
+        ret = ba_copy(target->bitArr, source->bitArr->data, (uint16_t)source->bitArr->size);
 #else
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_MALLOC

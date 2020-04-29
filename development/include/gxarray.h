@@ -38,6 +38,7 @@ extern "C" {
 #endif
 
 #include <string.h> /* memset */
+#include "gxint.h"
 
 #define GXARRAY_CAPACITY 10
 
@@ -49,8 +50,8 @@ extern "C" {
         void* data;
 #endif //DLMS_IGNORE_MALLOC
 
-        unsigned short capacity;
-        unsigned short size;
+        uint16_t capacity;
+        uint16_t size;
 #ifndef DLMS_IGNORE_MALLOC
         int position;
 #endif //DLMS_IGNORE_MALLOC
@@ -62,8 +63,8 @@ extern "C" {
     void arr_attach(
         gxArray* arr,
         void* value,
-        unsigned short count,
-        unsigned short capacity);
+        uint16_t count,
+        uint16_t capacity);
     /*
        * Is static buffer used.
        */
@@ -71,7 +72,7 @@ extern "C" {
         gxArray* arr);
 
     /*Get maximum buffer size.*/
-    unsigned short arr_getCapacity(
+    uint16_t arr_getCapacity(
         gxArray* arr);
 
     //Allocate new size for the array in bytes.
@@ -101,28 +102,28 @@ extern "C" {
 
     int arr_getByIndex(
         gxArray* arr,
-        unsigned short index,
+        uint16_t index,
         void** value);
 
     int arr_removeByIndex(
         gxArray* arr,
-        unsigned short index,
+        uint16_t index,
         void** value);
 #else
     int arr_getByIndex(
         gxArray* arr,
-        unsigned short index,
+        uint16_t index,
         void** value,
-        unsigned short itemSize);
+        uint16_t itemSize);
 
     int arr_removeByIndex(
         gxArray* arr,
-        unsigned short index,
-        unsigned short itemSize);
+        uint16_t index,
+        uint16_t itemSize);
 
 #endif //DLMS_IGNORE_MALLOC
 
-    int arr_getByIndex2(gxArray* arr, unsigned short index, void** value, unsigned short itemSize);
+    int arr_getByIndex2(gxArray* arr, uint16_t index, void** value, uint16_t itemSize);
 
 #define ARR_ATTACH(X, V, S) arr_attach(&X, V, S, sizeof(V)/sizeof(V[0]))
 

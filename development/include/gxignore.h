@@ -119,13 +119,16 @@ extern "C" {
 // #define DLMS_IGNORE_FLOAT64
 
 //Use EPOCH time. This can be used to improve memory usage.
-// #define DLMS_USE_EPOCH_TIME
+#define DLMS_USE_EPOCH_TIME
 
 //Use UTC time zone. Read more: https://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSClock
 // #define DLMS_USE_UTC_TIME_ZONE
 
 // #define DLMS_IGNORE_SET
 // #define DLMS_IGNORE_ACTION
+
+//Framework send debug information that can be used in debugging.
+// #define DLMS_DEBUG
 
 #ifdef  __cplusplus
 }

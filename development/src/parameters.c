@@ -44,7 +44,7 @@ void params_initSN(
     DLMS_COMMAND encryptedCommand)
 {
     target->settings = settings;
-    target->blockIndex = (unsigned short)settings->blockIndex;
+    target->blockIndex = (uint16_t)settings->blockIndex;
     target->command = command;
     target->encryptedCommand = encryptedCommand;
     target->count = count;

@@ -74,26 +74,26 @@ extern "C" {
         /**
          * Expected count of element in the array.
          */
-        unsigned short totalCount;
+        uint16_t totalCount;
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         /**
         * Last read position. This is used in peek to solve how far data is read.
         */
-        unsigned long readPosition;
+        uint32_t readPosition;
         /**
         * Packet length.
         */
-        unsigned long packetLength;
+        uint32_t packetLength;
 #else
         /**
         * Last read position. This is used in peek to solve how far data is read.
         */
-        unsigned short readPosition;
+        uint16_t readPosition;
         /**
         * Packet length.
         */
-        unsigned short packetLength;
+        uint16_t packetLength;
 #endif
         /**
          * Try Get value.
@@ -110,13 +110,13 @@ extern "C" {
         /**
         * Cipher index is position where data is decrypted.
         */
-        unsigned short cipherIndex;
+        uint16_t cipherIndex;
 
         /**
          * Data notification date time.
          */
 #ifdef DLMS_USE_EPOCH_TIME
-        unsigned long time;
+        uint32_t time;
 #else
         struct tm time;
 #endif // DLMS_USE_EPOCH_TIME
@@ -127,9 +127,9 @@ extern "C" {
         unsigned char invokeId;
 
         //GBT block number.
-        unsigned short blockNumber;
+        uint16_t blockNumber;
         //GBT block number ACK.
-        unsigned short blockNumberAck;
+        uint16_t blockNumberAck;
         //GBT is streaming used.
         unsigned streaming;
         //GBT window size

@@ -106,7 +106,7 @@ void cip_clear(ciphering* target)
 *            System title.
 * @return
 */
-static int cip_getNonse(unsigned long frameCounter, unsigned char* systemTitle, gxByteBuffer* nonce)
+static int cip_getNonse(uint32_t frameCounter, unsigned char* systemTitle, gxByteBuffer* nonce)
 {
     int ret;
     nonce->size = 0;
@@ -125,7 +125,7 @@ static const unsigned char Rcon[11] = {
 
 
 //There is only one TE table. Counting is taking little bit longer, but memory is needed less.
-const unsigned long Te0[256] = {
+const uint32_t Te0[256] = {
     0xc66363a5U, 0xf87c7c84U, 0xee777799U, 0xf67b7b8dU,
     0xfff2f20dU, 0xd66b6bbdU, 0xde6f6fb1U, 0x91c5c554U,
     0x60303050U, 0x02010103U, 0xce6767a9U, 0x562b2b7dU,
@@ -192,7 +192,7 @@ const unsigned long Te0[256] = {
     0x7bb0b0cbU, 0xa85454fcU, 0x6dbbbbd6U, 0x2c16163aU,
 };
 
-#define RCON(i) ((unsigned long) Rcon[(i)] << 24)
+#define RCON(i) ((uint32_t) Rcon[(i)] << 24)
 
 #define ROTATE(val, bits) ((val >> bits) | (val << (32 - bits)))
 
@@ -228,12 +228,12 @@ const unsigned long Te0[256] = {
 
 #define TE444(i) ((Te0[(i) & 0xff] >> 8) & 0x000000ff)
 
-int cip_int(unsigned long* rk,
+int cip_int(uint32_t* rk,
     const unsigned char* cipherKey,
-    unsigned short keyBits)
+    uint16_t keyBits)
 {
-    unsigned long i;
-    unsigned long temp;
+    uint32_t i;
+    uint32_t temp;
 
     rk[0] = GETU32(cipherKey);
     rk[1] = GETU32(cipherKey + 4);
@@ -305,9 +305,9 @@ int cip_int(unsigned long* rk,
     return DLMS_ERROR_CODE_INVALID_PARAMETER;
 }
 
-void aes_encrypt(const unsigned long* rk, int Nr, const unsigned char* pt, unsigned char* ct)
+void aes_encrypt(const uint32_t* rk, int Nr, const unsigned char* pt, unsigned char* ct)
 {
-    unsigned long s0, s1, s2, s3, t0, t1, t2, t3;
+    uint32_t s0, s1, s2, s3, t0, t1, t2, t3;
     int r;
     s0 = GETU32(pt) ^ rk[0];
     s1 = GETU32(pt + 4) ^ rk[1];
@@ -360,8 +360,8 @@ static void cip_xor(
         dst[pos] ^= src[pos];
     }
     /*
-    unsigned long *d = (unsigned long *)dst;
-    unsigned long *s = (unsigned long *)src;
+    uint32_t *d = (uint32_t *)dst;
+    uint32_t *s = (uint32_t *)src;
     *d++ ^= *s++;
     *d++ ^= *s++;
     *d++ ^= *s++;
@@ -371,7 +371,7 @@ static void cip_xor(
 
 static void shift_right_block(unsigned char* v)
 {
-    unsigned long val = GETU32(v + 12);
+    uint32_t val = GETU32(v + 12);
     val >>= 1;
     if (v[11] & 0x01)
     {
@@ -477,25 +477,25 @@ static void cip_init_j0(
         unsigned char tmp[16];
         memset(J0, 0, 16);
         cip_getGHash(H, iv, len, J0);
-        PUT32(tmp, (unsigned long)0);
-        PUT32(tmp + 4, (unsigned long)0);
+        PUT32(tmp, (uint32_t)0);
+        PUT32(tmp + 4, (uint32_t)0);
         //Here is expected that data is newer longger than 32 bit.
         //This is done because microcontrollers show warning here.
-        PUT32(tmp + 8, (unsigned long)0);
-        PUT32(tmp + 12, (unsigned long)(len * 8));
+        PUT32(tmp + 8, (uint32_t)0);
+        PUT32(tmp + 12, (uint32_t)(len * 8));
         cip_getGHash(H, tmp, sizeof(tmp), J0);
     }
 }
 
 static void cip_inc32(unsigned char* block)
 {
-    unsigned long val;
+    uint32_t val;
     val = GETU32(block + 16 - 4);
     val++;
     PUT32(block + 16 - 4, val);
 }
 
-static void cip_gctr(unsigned long* aes, const unsigned char* icb, unsigned char* in, int len, unsigned char* out)
+static void cip_gctr(uint32_t* aes, const unsigned char* icb, unsigned char* in, int len, unsigned char* out)
 {
     size_t i, n, last;
     unsigned char cb[16], tmp[16];
@@ -546,7 +546,7 @@ static void cip_gctr(unsigned long* aes, const unsigned char* icb, unsigned char
     }
 }
 
-static void aes_gcm_gctr(unsigned long* aes, const unsigned char* J0, unsigned char* in, int len, unsigned char* out)
+static void aes_gcm_gctr(uint32_t* aes, const unsigned char* J0, unsigned char* in, int len, unsigned char* out)
 {
     unsigned char J0inc[16];
     if (len == 0)
@@ -567,10 +567,10 @@ static void aes_gcm_ghash(const unsigned char* H, const unsigned char* aad, int 
     cip_getGHash(H, crypt, crypt_len, S);
     //Here is expected that data is newer longger than 32 bit.
     //This is done because microcontrollers show warning here.
-    PUT32(len_buf, (unsigned long)0);
-    PUT32(len_buf + 4, (unsigned long)(aad_len * 8));
-    PUT32(len_buf + 8, (unsigned long)0);
-    PUT32(len_buf + 12, (unsigned long)(crypt_len * 8));
+    PUT32(len_buf, (uint32_t)0);
+    PUT32(len_buf + 4, (uint32_t)(aad_len * 8));
+    PUT32(len_buf + 8, (uint32_t)0);
+    PUT32(len_buf + 12, (uint32_t)(crypt_len * 8));
     cip_getGHash(H, len_buf, sizeof(len_buf), S);
 }
 
@@ -579,7 +579,7 @@ int cip_crypt(
     ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
-    unsigned long frameCounter,
+    uint32_t frameCounter,
     unsigned char tag,
     unsigned char* systemTitle,
     gxByteBuffer* key,
@@ -590,7 +590,7 @@ int cip_crypt(
     ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
-    unsigned long frameCounter,
+    uint32_t frameCounter,
     unsigned char tag,
     unsigned char* systemTitle,
     unsigned char* key,
@@ -599,7 +599,7 @@ int cip_crypt(
 #endif //DLMS_IGNORE_MALLOC
 {
     int ret;
-    unsigned long aes[61] = { 0 };
+    uint32_t aes[61] = { 0 };
     unsigned char H[16] = { 0 };
     unsigned char J0[16] = { 0 };
     unsigned char S[16] = { 0 };
@@ -751,7 +751,7 @@ int cip_encrypt(
     ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
-    unsigned long frameCounter,
+    uint32_t frameCounter,
     unsigned char tag,
     unsigned char* systemTitle,
     gxByteBuffer* key,
@@ -761,7 +761,7 @@ int cip_encrypt(
     ciphering* settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
-    unsigned long frameCounter,
+    uint32_t frameCounter,
     unsigned char tag,
     unsigned char* systemTitle,
     unsigned char* key,
@@ -796,10 +796,10 @@ int cip_decrypt(
     DLMS_SECURITY* security)
 #endif //DLMS_IGNORE_MALLOC
 {
-    unsigned short length;
+    uint16_t length;
     int ret;
     unsigned char ch;
-    unsigned long frameCounter;
+    uint32_t frameCounter;
     DLMS_COMMAND cmd;
     unsigned char systemTitle[8];
     if (data == NULL || data->size - data->position < 2)
@@ -949,7 +949,7 @@ int cip_decryptKey(
     unsigned char buf2[16];
     signed char j, i;
     unsigned char k, v, n;
-    unsigned short t;
+    uint16_t t;
     // Amount of 64-bit blocks.
     n = (unsigned char)(bb_size(data) >> 3);
     if (kek == NULL || size != 16 || data == NULL || data->size != n * 8 ||
@@ -980,7 +980,7 @@ int cip_decryptKey(
             {
                 v = (unsigned char)t;
                 buf[sizeof(WRAP_IV) - k] ^= v;
-                t = (unsigned short)(t >> 8);
+                t = (uint16_t)(t >> 8);
             }
             gxaes_ecb_decrypt(buf, kek, buf2, 16);
             memcpy(a, buf2, 8);

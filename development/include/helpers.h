@@ -43,10 +43,10 @@ extern "C" {
 static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0 };
 static const unsigned char EMPTY_LN[6] = { 0 };
 //Get UInt32.
-#define GETU32(pt) (((unsigned long)(pt)[0] << 24) | \
-                    ((unsigned long)(pt)[1] << 16) | \
-                    ((unsigned long)(pt)[2] <<  8) | \
-                    ((unsigned long)(pt)[3]))
+#define GETU32(pt) (((uint32_t)(pt)[0] << 24) | \
+                    ((uint32_t)(pt)[1] << 16) | \
+                    ((uint32_t)(pt)[2] <<  8) | \
+                    ((uint32_t)(pt)[3]))
 
 //Set Int32 as Big Endian value.
 #define PUT32(ct, st) { \
@@ -66,14 +66,14 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     //Returns items count.
     int hlp_getObjectCount2(
         gxByteBuffer * buff,
-        unsigned short* count);
+        uint16_t* count);
 
     //Get count size in bytes.
-    unsigned char hlp_getObjectCountSizeInBytes(unsigned long count);
+    unsigned char hlp_getObjectCountSizeInBytes(uint32_t count);
 
     // Set count of items.
     int hlp_setObjectCount(
-        unsigned long count,
+        uint32_t count,
         gxByteBuffer * buff);
 
 #ifndef DLMS_IGNORE_MALLOC
@@ -86,7 +86,7 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     /**
     * Convert byte array to hex string.
     */
-    int hlp_bytesToHex2(const unsigned char* bytes, unsigned short count, char* buff, unsigned short size);
+    int hlp_bytesToHex2(const unsigned char* bytes, uint16_t count, char* buff, uint16_t size);
 
 #ifndef DLMS_IGNORE_MALLOC
     /**
@@ -95,7 +95,7 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     int hlp_hexToBytes(
         const char* str,
         unsigned char** arr,
-        unsigned short* count);
+        uint16_t* count);
 #endif //DLMS_IGNORE_MALLOC
 
     /**
@@ -104,7 +104,7 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     int hlp_hexToBytes2(
         const char* str,
         unsigned char* arr,
-        unsigned short* count);
+        uint16_t* count);
 
 #if !defined(DLMS_IGNORE_MALLOC)
     //Set logical name from string.
@@ -162,7 +162,7 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     int hlp_intToString(
         char* str,
         int bufsize,
-        long value,
+        int32_t value,
         unsigned char isSigned,
         unsigned char digits);
 
@@ -173,7 +173,7 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     *            Parsed string.
     * @return Value of string as integer.
     */
-    long hlp_stringToInt(
+    int32_t hlp_stringToInt(
         const char* str);
     /**
     * Convert integer to string.
@@ -191,7 +191,7 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     int hlp_int64ToString(
         char* str,
         int bufsize,
-        long long value,
+        int64_t value,
         unsigned char isSigned);
 
     /**
@@ -201,7 +201,7 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     *            Parsed string.
     * @return Value of string as integer.
     */
-    long long hlp_stringToInt64(
+    int64_t hlp_stringToInt64(
         const char* str);
 
     /**

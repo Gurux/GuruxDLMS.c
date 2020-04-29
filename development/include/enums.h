@@ -860,14 +860,14 @@ extern "C" {
         * Low authentication is used.
         */
         DLMS_AUTHENTICATION_LOW = 1,
-
+#ifndef DLMS_IGNORE_AES
         /*
         * High authentication is used. Because DLMS/COSEM specification does not
         * specify details of the HLS mechanism we have implemented Indian standard.
         * Texas Instruments also uses this.
         */
         DLMS_AUTHENTICATION_HIGH = 2,
-
+#endif //DLMS_IGNORE_AES
         /*
         * High authentication is used. Password is hashed with MD5.
         */

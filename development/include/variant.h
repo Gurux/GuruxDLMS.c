@@ -66,15 +66,15 @@ extern "C" {
 #define GX_DATE(X) GX_UNION(&X, pVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_DATE))
 #define GX_TIME(X) GX_UNION(&X, pVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_TIME))
 #define GX_UINT8_BYREF(X) GX_UNION(&X, pbVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT8))
-#define GX_UINT16_BYREF(X) GX_UNION(&X, puiVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT16))
-#define GX_UINT32_BYREF(X) GX_UNION(&X, pulVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT32))
-#define GX_UINT64_BYREF(X) GX_UNION(&X, pullVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT64))
-#define GX_INT8_BYREF(X) GX_UNION(&X, pcVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_INT8))
-#define GX_INT16_BYREF(X) GX_UNION(&X, piVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_INT16))
-#define GX_INT32_BYREF(X) GX_UNION(&X, plVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_INT32))
-#define GX_INT64_BYREF(X) GX_UNION(&X, pllVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_INT64))
-#define GX_FLOAT_BYREF(X) GX_UNION(&X, pfltVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_FLOAT32))
-#define GX_DOUBLE_BYREF(X) GX_UNION(&X, pdblVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_FLOAT64))
+#define GX_UINT16_BYREF(X, VALUE_) GX_UNION(&X, puiVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT16))
+#define GX_UINT32_BYREF(X, VALUE_) GX_UNION(&X, pulVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT32))
+#define GX_UINT64_BYREF(X, VALUE_) GX_UNION(&X, pullVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT64))
+#define GX_INT8_BYREF(X, VALUE_) GX_UNION(&X, pcVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_INT8))
+#define GX_INT16_BYREF(X, VALUE_) GX_UNION(&X, piVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_INT16))
+#define GX_INT32_BYREF(X, VALUE_) GX_UNION(&X, plVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_INT32))
+#define GX_INT64_BYREF(X, VALUE_) GX_UNION(&X, pllVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_INT64))
+#define GX_FLOAT_BYREF(X, VALUE_) GX_UNION(&X, pfltVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_FLOAT32))
+#define GX_DOUBLE_BYREF(X, VALUE_) GX_UNION(&X, pdblVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_FLOAT64))
 #define GX_OCTECT_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE) (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING), SIZE_, sizeof(VALUE_)/sizeof(VALUE_[0]))
 #define GX_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRING), SIZE_, sizeof(VALUE_)/sizeof(VALUE_[0]))
 #define GX_ARRAY(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_ARRAY), SIZE_, sizeof(VALUE_)/sizeof(VALUE_[0]))
@@ -87,8 +87,8 @@ extern "C" {
 #else
         void** data;
 #endif //DLMS_IGNORE_MALLOC
-        unsigned short capacity;
-        unsigned short size;
+        uint16_t capacity;
+        uint16_t size;
     } variantArray;
 
     typedef struct tagdlmsVARIANT
@@ -99,8 +99,8 @@ extern "C" {
             unsigned char bVal;
             signed char cVal;
             short iVal;
-            long lVal;
-            long long llVal;
+            int32_t lVal;
+            int64_t llVal;
 #ifndef DLMS_IGNORE_FLOAT32
             float fltVal;
 #endif //DLMS_IGNORE_FLOAT32
@@ -108,9 +108,9 @@ extern "C" {
             double dblVal;
 #endif //DLMS_IGNORE_FLOAT64
             unsigned char boolVal;
-            unsigned short uiVal;
-            unsigned long ulVal;
-            unsigned long long ullVal;
+            uint16_t uiVal;
+            uint32_t ulVal;
+            uint64_t ullVal;
 #ifndef DLMS_IGNORE_MALLOC
             gxtime* dateTime;
             gxByteBuffer* strVal;
@@ -122,19 +122,19 @@ extern "C" {
             unsigned char* pbVal;
             signed char* pcVal;
             short* piVal;
-            long* plVal;
-            long long* pllVal;
+            int32_t* plVal;
+            int64_t* pllVal;
             float* pfltVal;
             double* pdblVal;
             unsigned char* pboolVal;
-            unsigned short* puiVal;
-            unsigned long* pulVal;
-            unsigned long long* pullVal;
+            uint16_t* puiVal;
+            uint32_t* pulVal;
+            uint64_t* pullVal;
             void* pVal;
         };
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short size;
-        unsigned short capacity;
+        uint16_t size;
+        uint16_t capacity;
 #endif //DLMS_IGNORE_MALLOC
     } dlmsVARIANT;
 
@@ -153,8 +153,8 @@ extern "C" {
     void va_attach(
         variantArray* trg,
         dlmsVARIANT* src,
-        unsigned short size,
-        unsigned short capacity);
+        uint16_t size,
+        uint16_t capacity);
 #endif //DLMS_IGNORE_MALLOC
 
     void va_attach2(
@@ -165,14 +165,14 @@ extern "C" {
     char va_isAttached(variantArray* arr);
 
     ///Get variant array capacity.
-    unsigned short va_getCapacity(
+    uint16_t va_getCapacity(
         variantArray* arr);
 
 
     //Allocate new size for the array in bytes.
     int va_capacity(
         variantArray* arr,
-        unsigned short capacity);
+        uint16_t capacity);
 
     //Push new data to the variantArray.
     int va_push(
@@ -190,17 +190,17 @@ extern "C" {
     //Set UInt16 value to variant.
     int var_setUInt16(
         dlmsVARIANT* data,
-        unsigned short value);
+        uint16_t value);
 
     //Set UInt32 value to variant.
     int var_setUInt32(dlmsVARIANT
         * data,
-        unsigned long value);
+        uint32_t value);
 
     //Set UInt64 value to variant.
     int var_setUInt64(
         dlmsVARIANT* data,
-        unsigned long long value);
+        uint64_t value);
 
     //Set signed byte value to variant.
     int var_setInt8(
@@ -215,12 +215,12 @@ extern "C" {
     //Set Int32 value to variant.
     int var_setInt32(
         dlmsVARIANT* data,
-        long value);
+        int32_t value);
 
     //Set Int64 value to variant.
     int var_setInt64(
         dlmsVARIANT* data,
-        long long value);
+        int64_t value);
 
 #ifndef DLMS_IGNORE_FLOAT64
     int var_setDouble(
@@ -282,17 +282,17 @@ extern "C" {
     //Get UInt16 value from variant.
     int var_getUInt16(
         dlmsVARIANT* data,
-        unsigned short* value);
+        uint16_t* value);
 
     //Get UInt32 value from variant.
     int var_getUInt32(
         dlmsVARIANT* data,
-        unsigned long* value);
+        uint32_t* value);
 
     //Get UInt64 value from variant.
     int var_getUInt64(
         dlmsVARIANT* data,
-        unsigned long long* value);
+        uint64_t* value);
 
     //Get signed byte value from variant.
     int var_getInt8(
@@ -307,25 +307,25 @@ extern "C" {
     //Get Int32 value from variant.
     int var_getInt32(
         dlmsVARIANT* data,
-        long* value);
+        int32_t* value);
 
     //Get Int64 value from variant.
     int var_getInt64(
         dlmsVARIANT* data,
-        long long* value);
+        int64_t* value);
 
 #ifndef DLMS_IGNORE_MALLOC
     int var_addBytes(
         dlmsVARIANT* data,
         const unsigned char* value,
-        unsigned short count);
+        uint16_t count);
 #endif //DLMS_IGNORE_MALLOC
 
 #ifndef DLMS_IGNORE_MALLOC
     int var_setString(
         dlmsVARIANT* data,
         const char* value,
-        unsigned short count);
+        uint16_t count);
 #endif //DLMS_IGNORE_MALLOC
 
 #ifndef DLMS_IGNORE_MALLOC
@@ -344,8 +344,8 @@ extern "C" {
     int var_addByteArray(
         dlmsVARIANT* data,
         gxByteBuffer* ba,
-        unsigned short index,
-        unsigned short count);
+        uint16_t index,
+        uint16_t count);
 
     //Initialize variant.
     int var_init(
@@ -356,7 +356,7 @@ extern "C" {
     void var_attachArray(
         dlmsVARIANT* data,
         const variantArray* arr,
-        const unsigned short count);
+        const uint16_t count);
 #endif //DLMS_IGNORE_MALLOC
 
 #ifndef DLMS_IGNORE_MALLOC
@@ -364,7 +364,7 @@ extern "C" {
     void var_attachStructure(
         dlmsVARIANT* data,
         const dlmsVARIANT** arr,
-        const unsigned short count);
+        const uint16_t count);
 #endif //DLMS_IGNORE_MALLOC
 
     //copy variant.

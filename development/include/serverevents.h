@@ -45,23 +45,23 @@ extern "C" {
     * Get attribute access level.
     */
     extern DLMS_ACCESS_MODE svr_getAttributeAccess(
-        dlmsSettings *settings,
-        gxObject *obj,
+        dlmsSettings* settings,
+        gxObject* obj,
         unsigned char index);
 
     /**
     * Get method access level.
     */
     extern DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
-        dlmsSettings *settings,
-        gxObject *obj,
+        dlmsSettings* settings,
+        gxObject* obj,
         unsigned char index);
 
     /**
     * called when client makes connection to the server.
     */
     extern int svr_connected(
-        dlmsServerSettings *settings);
+        dlmsServerSettings* settings);
 
     /**
         * Client has try to made invalid connection. Password is incorrect.
@@ -70,13 +70,13 @@ extern "C" {
         *            Connection information.
         */
     extern int svr_invalidConnection(
-        dlmsServerSettings *settings);
+        dlmsServerSettings* settings);
 
     /**
     * called when client clses connection to the server.
     */
     extern int svr_disconnected(
-        dlmsServerSettings *settings);
+        dlmsServerSettings* settings);
 
     extern void svr_preGet(
         dlmsSettings* settings,
@@ -176,7 +176,7 @@ extern "C" {
         DLMS_OBJECT_TYPE objectType,
         int sn,
         unsigned char* ln,
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
     /**
     * This is reserved for future use.
@@ -187,6 +187,25 @@ extern "C" {
     extern void svr_getDataType(
         dlmsSettings* settings,
         gxValueEventCollection* args);
+
+
+#ifdef DLMS_DEBUG
+    /**
+    * Trace that can be used in debugging.
+    *
+    * str: Method info.
+    * Data: optional data.
+    */
+    extern void svr_trace(
+        const char* str,
+        const char* data);
+#endif //DLMS_DEBUG
+
+    //Server uses notify trace if DLMS_DEBUG is defined.
+    void svr_notifyTrace(const char* str, int err);
+
+    //Server uses notify trace if DLMS_DEBUG is defined.
+    void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, int err);
 
 #ifdef  __cplusplus
 }

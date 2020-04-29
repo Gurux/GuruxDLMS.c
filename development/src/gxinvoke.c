@@ -187,26 +187,29 @@ int invoke_AssociationLogicalName(
 #endif //DLMS_IGNORE_HIGH_GMAC
         unsigned char tmp2[64];
         unsigned char equal;
-        unsigned long ic = 0;
+        uint32_t ic = 0;
         gxByteBuffer bb;
         gxByteBuffer* readSecret;
         bb_init(&bb);
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned short count;
+        uint16_t count;
         if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0)
         {
             return ret;
         }
         if (ch != DLMS_DATA_TYPE_OCTET_STRING)
         {
+            svr_notifyTrace("High authentication failed. ", DLMS_ERROR_CODE_INVALID_PARAMETER);
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
         if ((ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) != 0)
         {
+            svr_notifyTrace("High authentication failed. ", DLMS_ERROR_CODE_INVALID_PARAMETER);
             return ret;
         }
         if (count > bb_available(e->parameters.byteArr))
         {
+            svr_notifyTrace("High authentication failed. ", DLMS_ERROR_CODE_INVALID_PARAMETER);
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
 #endif //DLMS_IGNORE_MALLOC
@@ -350,7 +353,7 @@ int invoke_AssociationLogicalName(
             (ret = cosem_getUInt8(e->parameters.byteArr, &id)) == 0 &&
             (ret = cosem_getString2(e->parameters.byteArr, name, sizeof(name))) == 0)
         {
-            unsigned short size = (unsigned short)strlen(name);
+            uint16_t size = (uint16_t)strlen(name);
             for (pos = 0; pos != ((gxAssociationLogicalName*)e->target)->userList.size; ++pos)
             {
                 if ((ret = arr_getByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)&it, sizeof(gxUser))) != 0)
@@ -474,7 +477,7 @@ int invoke_ImageTransfer(
 #endif //DLMS_IGNORE_MALLOC
             item->size = var_toInteger(size);
             item->identification.size = 0;
-            if ((ret = cosem_getOctectString2(imageIdentifier->byteArr, item->identification.data, sizeof(item->identification.data), (unsigned short*)&item->identification.size)) != 0)
+            if ((ret = cosem_getOctectString2(imageIdentifier->byteArr, item->identification.data, sizeof(item->identification.data), (uint16_t*)&item->identification.size)) != 0)
             {
                 return ret;
             }
@@ -487,7 +490,7 @@ int invoke_ImageTransfer(
             target->imageTransferredBlocksStatus.position = 0;
 #endif //GX_DLMS_MICROCONTROLLER
             target->imageTransferredBlocksStatus.size = 0;
-            ba_capacity(&target->imageTransferredBlocksStatus, (unsigned short)cnt);
+            ba_capacity(&target->imageTransferredBlocksStatus, (uint16_t)cnt);
             for (pos = 0; pos != cnt; ++pos)
             {
                 ba_set(&target->imageTransferredBlocksStatus, 0);
@@ -529,7 +532,7 @@ int invoke_SapAssigment(
     gxValueEventArg* e)
 {
     int pos, ret = 0;
-    unsigned short id;
+    uint16_t id;
     gxSapItem* it;
     //Image transfer initiate
     if (e->index == 1)
@@ -540,7 +543,7 @@ int invoke_SapAssigment(
         {
             if (id == 0)
             {
-                unsigned short size;
+                uint16_t size;
                 unsigned char name[MAX_SAP_ITEM_NAME_LENGTH];
                 if ((ret = cosem_getOctectString2(e->value.byteArr, name, sizeof(name), &size)) == 0)
                 {
@@ -652,7 +655,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
             gxByteBuffer bb;
             BB_ATTACH(bb, BUFF, 0);
             unsigned  char type;
-            unsigned short count = 10;
+            uint16_t count = 10;
             if ((ret = cosem_checkArray(e->parameters.byteArr, &count)) == 0)
             {
                 for (pos = 0; pos != count; ++pos)
@@ -761,7 +764,7 @@ int invoke_AssociationShortName(
 {
     int ret;
     unsigned char equal;
-    unsigned long ic = 0;
+    uint32_t ic = 0;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     gxByteBuffer bb;
 #endif //DLMS_IGNORE_HIGH_GMAC
@@ -1271,7 +1274,7 @@ int compactDataAppend(unsigned char byteArray, dlmsVARIANT* value3, gxByteBuffer
         return 0;
     }
     int ret;
-    unsigned short startPos = (unsigned short)bb->size;
+    uint16_t startPos = (uint16_t)bb->size;
     if ((ret = dlms_setData(bb, value3->vt, value3)) != 0)
     {
         return ret;
@@ -1288,7 +1291,7 @@ int compactDataAppend(unsigned char byteArray, dlmsVARIANT* value3, gxByteBuffer
     return 0;
 }
 
-int compactDataAppendArray(dlmsVARIANT* value, gxByteBuffer* bb, unsigned short dataIndex)
+int compactDataAppendArray(dlmsVARIANT* value, gxByteBuffer* bb, uint16_t dataIndex)
 {
     int ret, pos;
     int cnt = value->Arr->size;
@@ -1337,7 +1340,7 @@ int cosem_captureCompactData(
     gxCompactData* object)
 {
     int ret = 0;
-    unsigned short pos;
+    uint16_t pos;
 #ifdef DLMS_IGNORE_MALLOC
     gxTarget* kv;
 #else
@@ -1365,7 +1368,7 @@ int cosem_captureCompactData(
     svr_preGet(settings, &args);
     if (!e.handled)
     {
-        unsigned short dataIndex;
+        uint16_t dataIndex;
         for (pos = 0; pos != object->captureObjects.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
@@ -1471,6 +1474,33 @@ int invoke_CompactData(
     return ret;
 }
 #endif //DLMS_IGNORE_COMPACT_DATA
+
+#ifndef DLMS_IGNORE_DISCONNECT_CONTROL
+int invoke_DisconnectControl(
+    dlmsServerSettings* settings,
+    gxDisconnectControl* object,
+    unsigned char index)
+{
+    int ret = 0;
+    //Reset.
+    if (index == 1)
+    {
+        object->controlState = DLMS_CONTROL_STATE_DISCONNECTED;
+        object->outputState = 0;
+    }
+    //Capture.
+    else if (index == 2)
+    {
+        object->controlState = DLMS_CONTROL_STATE_CONNECTED;
+        object->outputState = 1;
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_DISCONNECT_CONTROL
 
 int cosem_invoke(
     dlmsServerSettings* settings,
@@ -1582,7 +1612,11 @@ int cosem_invoke(
         ret = invoke_CompactData(settings, (gxCompactData*)e->target, e->index);
         break;
 #endif //DLMS_IGNORE_COMPACT_DATA
-        //There are no actions on data component.
+#ifndef DLMS_IGNORE_DISCONNECT_CONTROL
+    case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
+        ret = invoke_DisconnectControl(settings, (gxDisconnectControl*)e->target, e->index);
+        break;
+#endif //DLMS_IGNORE_DISCONNECT_CONTROL
     default:
         //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

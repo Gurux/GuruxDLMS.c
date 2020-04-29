@@ -30,71 +30,36 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-#ifndef LN_PARAMETERS_H
-#define LN_PARAMETERS_H
+#ifndef GXINT_H
+#define GXINT_H
+
+#include <stdint.h>
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
+#ifndef uint16_t
+#define uint16_t unsigned short
+#endif //uint16_t
+#ifndef uint32_t
+#define uint32_t unsigned long
+#endif //uint32_t
+#ifndef uint64_t
+#define uint64_t unsigned long long
+#endif //uint64_t
 
-#include "dlmssettings.h"
-#include "bytebuffer.h"
-#include "enums.h"
-
-/**
-* LN Parameters
-*/
-typedef struct
-{
-    /**
-     * DLMS settings.
-     */
-    dlmsSettings *settings;
-    /**
-     * DLMS command.
-     */
-    DLMS_COMMAND command;
-    /**
-     * Request type.
-     */
-    int requestType;
-    /**
-     * Attribute descriptor.
-     */
-    gxByteBuffer attributeDescriptor;
-    /**
-     * Data.
-     */
-    gxByteBuffer m_Data;
-
-    /**
-     * Send date and time. This is used in Data notification messages.
-     */
-#ifdef DLMS_USE_EPOCH_TIME
-    uint32_t time;
-#else
-    struct tm time;
-#endif //DLMS_USE_EPOCH_TIME
-    /**
-     * Reply status.
-     */
-    int status;
-    /**
-     * Are there more data to send or more data to receive.
-     */
-    unsigned char multipleBlocks;
-    /**
-     * Is this last block in send.
-     */
-    unsigned char lastBlock;
-    /**
-     * Block index.
-     */
-    int blockIndex;
-} lnParameters;
+#ifndef int16_t
+#define int16_t short
+#endif //uint16_t
+#ifndef int32_t
+#define int32_t long
+#endif //int32_t
+#ifndef int64_t
+#define int64_t long long
+#endif //int64_t
 
 #ifdef  __cplusplus
 }
 #endif
 
-#endif //LN_PARAMETERS_H
+#endif //GXINT_H

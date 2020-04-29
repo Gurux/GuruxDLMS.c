@@ -48,7 +48,7 @@
 //Check byte order.
 unsigned char hlp_isBigEndian(void)
 {
-    unsigned short a = 0x1234;
+    uint16_t a = 0x1234;
     return *((unsigned char*)&a) == 0x12;
 }
 
@@ -151,7 +151,7 @@ char* hlp_getErrorMessage(short err)
     }
 }
 
-unsigned char hlp_getObjectCountSizeInBytes(unsigned long count)
+unsigned char hlp_getObjectCountSizeInBytes(uint32_t count)
 {
     if (count < 0x80)
     {
@@ -188,7 +188,7 @@ int hlp_getObjectCount(gxByteBuffer* buff)
         }
         else if (ch == 0x82)
         {
-            unsigned short value;
+            uint16_t value;
             ret = bb_getUInt16(buff, &value);
             if (ret != 0)
             {
@@ -198,7 +198,7 @@ int hlp_getObjectCount(gxByteBuffer* buff)
         }
         else if (ch == 0x83)
         {
-            unsigned long value;
+            uint32_t value;
             ret = bb_getUInt24(buff, &value);
             if (ret != 0)
             {
@@ -208,7 +208,7 @@ int hlp_getObjectCount(gxByteBuffer* buff)
         }
         else if (ch == 0x84)
         {
-            unsigned long value;
+            uint32_t value;
             ret = bb_getUInt32(buff, &value);
             if (ret != 0)
             {
@@ -224,7 +224,7 @@ int hlp_getObjectCount(gxByteBuffer* buff)
     return ch;
 }
 
-int hlp_getObjectCount2(gxByteBuffer* buff, unsigned short* count)
+int hlp_getObjectCount2(gxByteBuffer* buff, uint16_t* count)
 {
     int ret;
     unsigned char ch;
@@ -246,15 +246,15 @@ int hlp_getObjectCount2(gxByteBuffer* buff, unsigned short* count)
         }
         else if (ch == 0x83)
         {
-            unsigned long value;
+            uint32_t value;
             ret = bb_getUInt24(buff, &value);
-            *count = (unsigned short)value;
+            *count = (uint16_t)value;
         }
         else if (ch == 0x84)
         {
-            unsigned long value;
+            uint32_t value;
             ret = bb_getUInt32(buff, &value);
-            *count = (unsigned short)value;
+            *count = (uint16_t)value;
         }
         else
         {
@@ -269,7 +269,7 @@ int hlp_getObjectCount2(gxByteBuffer* buff, unsigned short* count)
 }
 
 // Set count of items.
-int hlp_setObjectCount(unsigned long count, gxByteBuffer* buff)
+int hlp_setObjectCount(uint32_t count, gxByteBuffer* buff)
 {
     int ret;
     if (count < 0x80)
@@ -287,7 +287,7 @@ int hlp_setObjectCount(unsigned long count, gxByteBuffer* buff)
     {
         if ((ret = bb_setUInt8(buff, 0x82)) == 0)
         {
-            ret = bb_setUInt16(buff, (unsigned short)count);
+            ret = bb_setUInt16(buff, (uint16_t)count);
         }
     }
     else
@@ -331,7 +331,7 @@ char* hlp_bytesToHex(const unsigned char* bytes, int count)
 }
 #endif //DLMS_IGNORE_MALLOC
 
-int hlp_bytesToHex2(const unsigned char* bytes, unsigned short count, char* buff, unsigned short size)
+int hlp_bytesToHex2(const unsigned char* bytes, uint16_t count, char* buff, uint16_t size)
 {
     const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
     unsigned char tmp;
@@ -383,7 +383,7 @@ unsigned char getValue(char c)
 int hlp_hexToBytes(
     const char* str,
     unsigned char** buffer,
-    unsigned short* count)
+    uint16_t* count)
 {
     *count = 0;
     if (buffer != NULL && *buffer != NULL)
@@ -440,9 +440,9 @@ int hlp_hexToBytes(
 int hlp_hexToBytes2(
     const char* str,
     unsigned char* buffer,
-    unsigned short* count)
+    uint16_t* count)
 {
-    unsigned short max = *count;
+    uint16_t max = *count;
     *count = 0;
     if (buffer == NULL)
     {
@@ -695,7 +695,7 @@ int hlp_setLogicalName(unsigned char ln[6], const char* name)
 
 void hlp_replace(gxByteBuffer* str, char oldCh, char newCh)
 {
-    unsigned long pos;
+    uint32_t pos;
     for (pos = 0; pos != str->size; ++pos)
     {
         if (str->data[pos] == oldCh)
@@ -780,10 +780,10 @@ int hlp_getDataTypeSize(DLMS_DATA_TYPE type)
     return size;
 }
 
-int hlp_intToString(char* str, int bufsize, long value, unsigned char isSigned, unsigned char digits)
+int hlp_intToString(char* str, int bufsize, int32_t value, unsigned char isSigned, unsigned char digits)
 {
     int cnt = 0;
-    long val = value;
+    int32_t val = value;
     if (isSigned && value < 0)
     {
         if (bufsize < 1)
@@ -837,13 +837,13 @@ int hlp_intToString(char* str, int bufsize, long value, unsigned char isSigned, 
     return cnt;
 }
 
-long hlp_stringToInt(const char* str)
+int32_t hlp_stringToInt(const char* str)
 {
     if (str == NULL)
     {
         return -1;
     }
-    long value = 0;
+    int32_t value = 0;
     unsigned char minus = 0;
     if (*str == '-')
     {
@@ -867,10 +867,10 @@ long hlp_stringToInt(const char* str)
     return value;
 }
 
-int hlp_int64ToString(char* str, int bufsize, long long value, unsigned char isSigned)
+int hlp_int64ToString(char* str, int bufsize, int64_t value, unsigned char isSigned)
 {
     int cnt = 0;
-    long long val = value;
+    int64_t val = value;
     if (isSigned && value < 0)
     {
         if (bufsize < 1)
@@ -904,13 +904,13 @@ int hlp_int64ToString(char* str, int bufsize, long long value, unsigned char isS
     return cnt;
 }
 
-long long hlp_stringToInt64(const char* str)
+int64_t hlp_stringToInt64(const char* str)
 {
     if (str == NULL)
     {
         return -1;
     }
-    long value = 0;
+    int32_t value = 0;
     unsigned char minus = 0;
     if (*str == '-')
     {
@@ -933,11 +933,11 @@ long long hlp_stringToInt64(const char* str)
     }
     return value;
 }
-unsigned short lfsr = 0xACE1u;
+uint16_t lfsr = 0xACE1u;
 unsigned bit;
 
 unsigned char hlp_rand(void)
 {
     bit = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5)) & 1;
-    return (unsigned char)(lfsr = (unsigned short)((lfsr >> 1) | (bit << 15)));
+    return (unsigned char)(lfsr = (uint16_t)((lfsr >> 1) | (bit << 15)));
 }

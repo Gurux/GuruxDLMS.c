@@ -51,6 +51,14 @@ extern "C" {
         DLMS_OBJECT_TYPE type,
         char* buff);
 
+    //Get object type as string.
+    const char* obj_typeToString2(
+        DLMS_OBJECT_TYPE type);
+
+    //Get object type as string.
+    const char* obj_typeToString2(
+        DLMS_OBJECT_TYPE type);
+
 #ifndef DLMS_IGNORE_MALLOC
 #ifndef GX_DLMS_MICROCONTROLLER
 

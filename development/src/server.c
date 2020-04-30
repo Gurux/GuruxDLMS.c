@@ -3057,7 +3057,7 @@ int svr_invoke(
         }
         vec_empty(&args);
     }
-    if (start != NULL && time_compare2(start, *next) == 1)
+    if (start != NULL)
     {
         uint32_t tmp = time_getNextScheduledDate(time, start);
         if (tmp < *next)
@@ -3065,7 +3065,7 @@ int svr_invoke(
             *next = tmp;
         }
     }
-    return ret;
+    return 0;
 }
 
 

@@ -1038,11 +1038,11 @@ int time_compareWithDiff(
         }
         return 0;
     }
-    if (value1->value == value2)
+    if (time_toUnixTime2(value1) == value2)
     {
         return 0;
     }
-    return value1->value < value2 ? -1 : 1;
+    return time_toUnixTime2(value1) < value2 ? -1 : 1;
 }
 
 int time_compare2(
@@ -1265,7 +1265,7 @@ uint32_t time_getNextScheduledDate(uint32_t start, gxtime* value)
 {
     if ((value->skip & DATETIME_SKIPS_SECOND) == 0)
     {
-        uint32_t offset = ((60 + (value->value % 60)) - (start % 60));
+        uint32_t offset = ((60 + (time_toUnixTime2(value) % 60)) - (start % 60));
         if (offset % 60 == 0)
         {
             start += 60;

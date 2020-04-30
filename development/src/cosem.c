@@ -361,14 +361,12 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
 #if _MSC_VER > 1400
     {
         /*
-        char buff[40];
-            obj_typeToString(type, buff);
-            printf("Object %s size: %d\r\n", buff, size);
-        */
+            printf("Object %s size: %d\r\n", obj_typeToString2(type), size);
+            */
     }
 #endif
     return size;
-    }
+}
 
 #ifndef DLMS_IGNORE_MALLOC
 int cosem_createObject(DLMS_OBJECT_TYPE type, gxObject** object)
@@ -389,9 +387,7 @@ int cosem_createObject(DLMS_OBJECT_TYPE type, gxObject** object)
     /*
     #if _MSC_VER > 1400
     {
-    char buff[40];
-    obj_typeToString(type, buff);
-    printf("Object %s size: %d\r\n", buff, (int)_msize(*object));
+    printf("Object %s size: %d\r\n", obj_typeToString2(type), (int)_msize(*object));
     }
     #endif
     */
@@ -1478,7 +1474,7 @@ int cosem_getColumns(
             memcpy(k2, k, sizeof(gxTarget));
             ++index;
         }
-    }
+}
 #else
     uint16_t addAllColumns = 1;
     gxKey* k;

@@ -54,201 +54,210 @@
 #endif //DLMS_IGNORE_MALLOC
 #include <string.h>
 
-void append(char* buff, char* data)
-{
-#if _MSC_VER > 1400
-    strcat_s(buff, 70, data);
-#else
-    strcat(buff, data);
-#endif
-}
-
 int obj_typeToString(DLMS_OBJECT_TYPE type, char* buff)
 {
-    buff[0] = '\0';
+    const char* str = obj_typeToString2(type);
+    if (str != NULL)
+    {
+        memcpy(buff, str, strlen(str));
+    }
+    else
+    {
+        buff[0] = '\0';
+    }
+    return 0;
+}
+
+const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
+{
+    const char* ret;
     switch (type)
     {
+    case DLMS_OBJECT_TYPE_NONE:
+        ret = "";
+        break;
     case DLMS_OBJECT_TYPE_DATA:
-        append(buff, "Data");
+        ret = "Data";
         break;
     case DLMS_OBJECT_TYPE_REGISTER:
-        append(buff, "Register");
+        ret = "Register";
         break;
     case DLMS_OBJECT_TYPE_CLOCK:
-        append(buff, "Clock");
+        ret = "Clock";
         break;
     case DLMS_OBJECT_TYPE_ACTION_SCHEDULE:
-        append(buff, "Action Schedule");
+        ret = "ActionSchedule";
         break;
     case DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR:
-        append(buff, "Activity Calendar");
+        ret = "Activity Calendar";
         break;
     case DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME:
-        append(buff, "Association Logical Name");
+        ret = "Association Logical Name";
         break;
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
-        append(buff, "Association Short Name");
+        ret = "Association Short Name";
         break;
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
-        append(buff, "Auto Answer");
+        ret = "Auto Answer";
         break;
     case DLMS_OBJECT_TYPE_AUTO_CONNECT:
-        append(buff, "Auto Connect");
+        ret = "Auto Connect";
         break;
     case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
-        append(buff, "Demand Register");
+        ret = "Demand Register";
         break;
     case DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP:
-        append(buff, "MAC Address Setup");
+        ret = "MAC Address Setup";
         break;
     case DLMS_OBJECT_TYPE_EXTENDED_REGISTER:
-        append(buff, "Extended Register");
+        ret = "Extended Register";
         break;
     case DLMS_OBJECT_TYPE_GPRS_SETUP:
-        append(buff, "GPRS Setup");
+        ret = "GPRS Setup";
         break;
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
-        append(buff, "Security Setup");
+        ret = "Security Setup";
         break;
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
-        append(buff, "IEC HDLC Setup");
+        ret = "IEC HDLC Setup";
         break;
     case DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP:
-        append(buff, "IEC Local Port Setup");
+        ret = "IEC Local Port Setup";
         break;
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-        append(buff, "IEC Twisted Pair Setup");
+        ret = "IEC Twisted Pair Setup";
         break;
     case DLMS_OBJECT_TYPE_IP4_SETUP:
-        append(buff, "IP4 Setup");
+        ret = "IP4 Setup";
         break;
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
-        append(buff, "MBUS Slave Port Setup");
+        ret = "MBUS Slave Port Setup";
         break;
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
-        append(buff, "Image Transfer");
+        ret = "Image Transfer";
         break;
     case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
-        append(buff, "Disconnect Control");
+        ret = "Disconnect Control";
         break;
     case DLMS_OBJECT_TYPE_LIMITER:
-        append(buff, "Limiter");
+        ret = "Limiter";
         break;
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
-        append(buff, "MBUS Client");
+        ret = "MBUS Client";
         break;
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
-        append(buff, "Modem Configuration");
+        ret = "Modem Configuration";
         break;
     case DLMS_OBJECT_TYPE_PPP_SETUP:
-        append(buff, "PPP Setup");
+        ret = "PPP Setup";
         break;
     case DLMS_OBJECT_TYPE_PROFILE_GENERIC:
-        append(buff, "Profile Generic");
+        ret = "Profile Generic";
         break;
     case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
-        append(buff, "Register Activation");
+        ret = "Register Activation";
         break;
     case DLMS_OBJECT_TYPE_REGISTER_MONITOR:
-        append(buff, "Register Monitor");
+        ret = "Register Monitor";
         break;
     case DLMS_OBJECT_TYPE_REGISTER_TABLE:
-        append(buff, "Register Table");
+        ret = "Register Table";
         break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_STARTUP:
-        append(buff, "ZigBee SAS Startup");
+        ret = "ZigBee SAS Startup";
         break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN:
-        append(buff, "ZigBee SAS Join");
+        ret = "ZigBee SAS Join";
         break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION:
-        append(buff, "ZigBee SAS APS Fragmentation");
+        ret = "ZigBee SAS APS Fragmentation";
         break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL:
-        append(buff, "ZigBee Network Control");
+        ret = "ZigBee Network Control";
         break;
     case DLMS_OBJECT_TYPE_SAP_ASSIGNMENT:
-        append(buff, "SAP Assignment");
+        ret = "SAP Assignment";
         break;
 #ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
-        append(buff, "Schedule");
+        ret = "Schedule";
         break;
 #endif //DLMS_IGNORE_SCHEDULE
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SCRIPT_TABLE:
-        append(buff, "Script Table");
+        ret = "Script Table";
         break;
 #endif //DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SMTP_SETUP:
-        append(buff, "SMTP Setup");
+        ret = "SMTP Setup";
         break;
     case DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE:
-        append(buff, "Special Days Table");
+        ret = "Special Days Table";
         break;
     case DLMS_OBJECT_TYPE_STATUS_MAPPING:
-        append(buff, "Status Mapping");
+        ret = "Status Mapping";
         break;
     case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
-        append(buff, "TCP UDP Setup");
+        ret = "TCP UDP Setup";
         break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
-        append(buff, "Utility Tables");
+        ret = "Utility Tables";
         break;
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
-        append(buff, "MBUS Master Port Setup");
+        ret = "MBUS Master Port Setup";
         break;
     case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
-        append(buff, "Message Handler");
+        ret = "Message Handler";
         break;
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
-        append(buff, "Push Setup");
+        ret = "Push Setup";
         break;
     case DLMS_OBJECT_TYPE_DATA_PROTECTION:
-        append(buff, "Data Protection");
+        ret = "Data Protection";
         break;
     case DLMS_OBJECT_TYPE_ACCOUNT:
-        append(buff, "Account");
+        ret = "Account";
         break;
     case DLMS_OBJECT_TYPE_CREDIT:
-        append(buff, "Credit");
+        ret = "Credit";
         break;
     case DLMS_OBJECT_TYPE_CHARGE:
-        append(buff, "Charge");
+        ret = "Charge";
         break;
     case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
-        append(buff, "Token Gateway");
+        ret = "Token Gateway";
         break;
     case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
-        append(buff, "LLC SSCS Setup");
+        ret = "LLC SSCS Setup";
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
-        append(buff, "Prime Nb Ofdm PLC physical layer counters");
+        ret = "Prime Nb Ofdm PLC physical layer counters";
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
-        append(buff, "Prime Nb Ofdm PLC Mac Setup");
+        ret = "Prime Nb Ofdm PLC Mac Setup";
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
-        append(buff, "Prime Nb Ofdm PLC Mac functional parameters");
+        ret = "Prime Nb Ofdm PLC Mac functional parameters";
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
-        append(buff, "Prime Nb Ofdm PLC Mac counters");
+        ret = "Prime Nb Ofdm PLC Mac counters";
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
-        append(buff, "Prime Nb Ofdm PLC Mac network administration data");
+        ret = "Prime Nb Ofdm PLC Mac network administration data";
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
-        append(buff, "Prime Nb Ofdm PLC applications identification");
+        ret = "Prime Nb Ofdm PLC applications identification";
         break;
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
-        append(buff, "Tariff Plan");
+        ret = "Tariff Plan";
         break;
 #endif //DLMS_ITALIAN_STANDARD
     default: //Unknown type.
+        ret = NULL;
         break;
     }
-    return 0;
+    return ret;
 }
 
 #ifndef DLMS_IGNORE_MALLOC
@@ -1090,7 +1099,6 @@ void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
 }
 int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
 {
-    char str[30];
     int pos, ret;
     dlmsVARIANT* tmp;
     gxByteBuffer ba;
@@ -1119,20 +1127,19 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
     {
         hlp_appendLogicalName(&ba, EMPTY_LN);
         bb_addString(&ba, " ");
-        obj_typeToString(0, str);
+        bb_addString(&ba, obj_typeToString2(0));
     }
     else
     {
         hlp_appendLogicalName(&ba, object->monitoredValue.target->logicalName);
         bb_addString(&ba, " ");
-        obj_typeToString(object->monitoredValue.target->objectType, str);
+        bb_addString(&ba, obj_typeToString2(object->monitoredValue.target->objectType));
     }
 #else
     hlp_appendLogicalName(&ba, object->monitoredValue.logicalName);
     bb_addString(&ba, " ");
-    obj_typeToString(object->monitoredValue.objectType, str);
+    bb_addString(&ba, object->monitoredValue.objectType);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    bb_addString(&ba, str);
     bb_addString(&ba, " ");
     bb_addIntAsString(&ba, object->monitoredValue.attributeIndex);
 
@@ -1676,7 +1683,6 @@ int obj_extendedRegisterToString(gxExtendedRegister* object, char** buff)
 
 int obj_objectsToString(gxByteBuffer* ba, objectArray* objects)
 {
-    char str[30];
     uint16_t pos;
     int ret = DLMS_ERROR_CODE_OK;
     gxObject* it;
@@ -1691,11 +1697,10 @@ int obj_objectsToString(gxByteBuffer* ba, objectArray* objects)
         {
             bb_addString(ba, ", ");
         }
-        ret = obj_typeToString((DLMS_OBJECT_TYPE)it->objectType, str);
+        bb_addString(ba, obj_typeToString2((DLMS_OBJECT_TYPE)it->objectType));
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(ret == 0);
 #endif
-        bb_addString(ba, str);
         bb_addString(ba, " ");
         hlp_appendLogicalName(ba, it->logicalName);
     }

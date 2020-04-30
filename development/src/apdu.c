@@ -1676,7 +1676,7 @@ int apdu_parsePDU(
     }
     if (ret == 0)
     {
-        if (afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED &&
+        if (settings->server && afu != 0 && *result == DLMS_ASSOCIATION_RESULT_ACCEPTED &&
             !(afu == DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE && settings->authentication == DLMS_AUTHENTICATION_NONE))
         {
 #ifdef DLMS_DEBUG

@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
 #include <conio.h>
 #include "../include/getopt.h"
@@ -578,14 +577,11 @@ int connectMeter(int argc, char* argv[])
             printf("Missing mandatory host option.\n");
             return 1;
         }
-        if (readTcpIpConnection(&con, address, port, readObjects, invocationCounter) != 0)
-        {
-            printf("Error.");
-        }
+        ret = readTcpIpConnection(&con, address, port, readObjects, invocationCounter);
     }
     else if (serialPort != NULL)
     {
-        readSerialPort(&con, serialPort, iec, readObjects, invocationCounter);
+        ret = readSerialPort(&con, serialPort, iec, readObjects, invocationCounter);
     }
     else
     {
@@ -594,7 +590,14 @@ int connectMeter(int argc, char* argv[])
     }
 
     //Clear objects.
-    printf("All items are read.\r\n");
+    if (ret != 0)
+    {
+        printf("Error. %d", ret);
+    }
+    else
+    {
+        printf("All items are read.\r\n");
+    }
     cl_clear(&con.settings);
     return 0;
 }

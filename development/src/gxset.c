@@ -4299,7 +4299,7 @@ int cosem_setSapAssignment(gxSapAssignment* object, unsigned char index, dlmsVAR
 int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char index, dlmsVARIANT* value)
 {
     gxScheduleEntry* se;
-    int ret, pos;
+    int ret = 0, pos;
     if (index == 2)
     {
         arr_clear(&object->entries);
@@ -7652,7 +7652,7 @@ int cosem_setPrimeNbOfdmPlcMacFunctionalParameters(
         break;
     case 5:
         object->sna.size = 0;
-        ret = bb_set(&object->sna, value->byteArr->data, bb_size(value->byteArr));
+        ret = bb_set2(&object->sna, value->byteArr, 0, bb_size(value->byteArr));
         break;
     case 6:
         object->state = (DLMS_MAC_STATE)var_toInteger(value);

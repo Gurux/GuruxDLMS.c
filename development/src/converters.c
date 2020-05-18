@@ -2208,6 +2208,14 @@ int  obj_PrimeNbOfdmPlcApplicationsIdentificationToString(gxPrimeNbOfdmPlcApplic
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+
+#ifndef DLMS_IGNORE_SCHEDULE
+int obj_scheduleToString(gxSchedule* object, char** buff)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SCHEDULE
+
 #ifdef DLMS_ITALIAN_STANDARD
 int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
 {
@@ -2421,9 +2429,7 @@ int obj_toString(gxObject* object, char** buff)
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 #ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
+        ret = obj_scheduleToString((gxSchedule*)object, buff);
         break;
 #endif //DLMS_IGNORE_SCHEDULE
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
@@ -2513,25 +2519,39 @@ int obj_toString(gxObject* object, char** buff)
         break;
 #endif //DLMS_IGNORE_COMPACT_DATA
 #ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+    case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
         ret = obj_LlcSscsSetupToString((gxLlcSscsSetup*)object, buff);
+        break;
 #endif //DLMS_IGNORE_LLC_SSCS_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
         ret = obj_PrimeNbOfdmPlcPhysicalLayerCountersToString((gxPrimeNbOfdmPlcPhysicalLayerCounters*)object, buff);
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
         ret = obj_PrimeNbOfdmPlcMacSetupToString((gxPrimeNbOfdmPlcMacSetup*)object, buff);
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
         ret = obj_PrimeNbOfdmPlcMacFunctionalParametersToString((gxPrimeNbOfdmPlcMacFunctionalParameters*)object, buff);
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
         ret = obj_PrimeNbOfdmPlcMacCountersToString((gxPrimeNbOfdmPlcMacCounters*)object, buff);
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
         ret = obj_PrimeNbOfdmPlcMacNetworkAdministrationDataToString((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object, buff);
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
         ret = obj_PrimeNbOfdmPlcApplicationsIdentificationToString((gxPrimeNbOfdmPlcApplicationsIdentification*)object, buff);
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:

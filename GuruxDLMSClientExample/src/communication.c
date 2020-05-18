@@ -55,6 +55,13 @@ int com_makeConnect(connection* connection, const char* address, int port)
     connection->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if (connection->socket == -1)
     {
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+        int err = WSAGetLastError();
+        printf("Socket creation failed: %d\r\n", err);
+#else
+        int err = errno;
+        printf("Socket creation failed: %d, %s\r\n", err, strerror(err));
+#endif
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
 
@@ -71,7 +78,7 @@ int com_makeConnect(connection* connection, const char* address, int port)
             int err = WSAGetLastError();
             closesocket(connection->socket);
 #else
-            int err = h_errno;
+            int err = errno;
             close(connection->socket);
 #endif
             connection->socket = -1;
@@ -87,6 +94,13 @@ int com_makeConnect(connection* connection, const char* address, int port)
         closesocket(connection->socket);
 #else
         close(connection->socket);
+#endif
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+        int err = WSAGetLastError();
+        printf("Connection failed: %d\r\n", err);
+#else
+        int err = errno;
+        printf("Connection failed: %d, %s\r\n", err, strerror(err));
 #endif
         connection->socket = -1;
         return DLMS_ERROR_CODE_INVALID_PARAMETER;

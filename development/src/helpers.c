@@ -577,7 +577,7 @@ int hlp_printLogicalName(const char* format, const unsigned char value[6])
     }
     else
     {
-        printf(ln);
+        printf("%s", ln);
     }
     return 0;
 }

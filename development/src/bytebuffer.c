@@ -1192,7 +1192,7 @@ void bb_print(gxByteBuffer* bb)
     {
         hexChars[0] = hexArray[bb->data[pos] >> 4];
         hexChars[1] = hexArray[bb->data[pos] & 0x0F];
-        printf(hexChars);
+        printf("%s", hexChars);
     }
 }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)

@@ -512,7 +512,8 @@ int svr_handleSnrmRequest(
 {
     int ret;
     unsigned char len;
-    uint16_t serverAddress, clientAddress;
+    uint16_t clientAddress;
+    uint32_t serverAddress;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     DLMS_SECURITY security;
 #endif
@@ -3027,7 +3028,6 @@ int svr_invoke(
     uint32_t* executed,
     uint32_t* next)
 {
-    int ret = 0;
     if ((start == NULL || time_compare2(start, time) != 1) &&
         (end == NULL || time_compare2(end, time) != -1) &&
         //Not executed yet.
@@ -3052,7 +3052,7 @@ int svr_invoke(
         svr_preAction(&settings->base, &args);
         if (!e.handled)
         {
-            ret = cosem_invoke(settings, &e);
+            cosem_invoke(settings, &e);
             svr_postAction(&settings->base, &args);
         }
         vec_empty(&args);
@@ -3114,7 +3114,7 @@ int svr_handleProfileGeneric(
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
 
-#ifndef DLMS_IGNORE_ACTION_SCHEDULE
+#if !defined(DLMS_IGNORE_ACTION_SCHEDULE) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
 
 int svr_handleSingleActionSchedule(
     dlmsServerSettings* settings,
@@ -3191,7 +3191,7 @@ int svr_handleSingleActionSchedule(
     }
     return ret;
 }
-#endif //DLMS_IGNORE_ACTION_SCHEDULE
+#endif //!defined(DLMS_IGNORE_ACTION_SCHEDULE) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
 
@@ -3316,7 +3316,7 @@ int svr_run(
     }
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
-#ifndef DLMS_IGNORE_ACTION_SCHEDULE
+#if !defined(DLMS_IGNORE_ACTION_SCHEDULE) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
     //Single action schedules.
     for (pos = 0; pos != settings->base.objects.size; ++pos)
     {
@@ -3329,7 +3329,7 @@ int svr_run(
             svr_handleSingleActionSchedule(settings, (gxActionSchedule*)obj, time, next);
         }
     }
-#endif //DLMS_IGNORE_PROFILE_GENERIC
+#endif //!defined(DLMS_IGNORE_ACTION_SCHEDULE) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
     //Push objects.

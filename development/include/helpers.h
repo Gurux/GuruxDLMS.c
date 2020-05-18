@@ -58,6 +58,9 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     //Check byte order.
     unsigned char hlp_isBigEndian(void);
 
+    //Convert ASCII value to numeric unsigned char value.
+    unsigned char hlp_getValue(char c);
+
     char* hlp_getErrorMessage(short err);
 
     //Returns items count. Use hlp_getObjectCount22.

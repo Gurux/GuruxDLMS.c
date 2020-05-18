@@ -358,7 +358,7 @@ int hlp_bytesToHex2(const unsigned char* bytes, uint16_t count, char* buff, uint
     return 0;
 }
 
-unsigned char getValue(char c)
+unsigned char hlp_getValue(char c)
 {
     unsigned char value;
     if (c > '9')
@@ -412,18 +412,18 @@ int hlp_hexToBytes(
         {
             if (lastValue == -1)
             {
-                lastValue = getValue(*str);
+                lastValue = hlp_getValue(*str);
             }
             else if (lastValue != -1)
             {
-                tmp[*count] = (unsigned char)(lastValue << 4 | getValue(*str));
+                tmp[*count] = (unsigned char)(lastValue << 4 | hlp_getValue(*str));
                 lastValue = -1;
                 ++* count;
             }
         }
         else if (lastValue != -1)
         {
-            tmp[*count] = getValue(*str);
+            tmp[*count] = hlp_getValue(*str);
             lastValue = -1;
             ++* count;
         }
@@ -464,18 +464,18 @@ int hlp_hexToBytes2(
         {
             if (lastValue == -1)
             {
-                lastValue = getValue(*str);
+                lastValue = hlp_getValue(*str);
             }
             else if (lastValue != -1)
             {
-                buffer[*count] = (unsigned char)(lastValue << 4 | getValue(*str));
+                buffer[*count] = (unsigned char)(lastValue << 4 | hlp_getValue(*str));
                 lastValue = -1;
                 ++* count;
             }
         }
         else if (lastValue != -1)
         {
-            buffer[*count] = getValue(*str);
+            buffer[*count] = hlp_getValue(*str);
             lastValue = -1;
             ++* count;
         }

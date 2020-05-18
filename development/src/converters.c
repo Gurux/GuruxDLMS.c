@@ -38,10 +38,10 @@
 #include <crtdbg.h>
 #endif
 #include "../include/gxignore.h"
+#include "../include/converters.h"
 #include "../include/gxobjects.h"
 #ifndef DLMS_IGNORE_MALLOC
 #include "../include/gxmem.h"
-#include "../include/converters.h"
 #ifndef GX_DLMS_MICROCONTROLLER
 #include <string.h>
 #include "../include/helpers.h"
@@ -1138,7 +1138,7 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
 #else
     hlp_appendLogicalName(&ba, object->monitoredValue.logicalName);
     bb_addString(&ba, " ");
-    bb_addString(&ba, object->monitoredValue.objectType);
+    bb_addString(&ba, obj_typeToString2(object->monitoredValue.objectType));
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     bb_addString(&ba, " ");
     bb_addIntAsString(&ba, object->monitoredValue.attributeIndex);

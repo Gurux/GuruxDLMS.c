@@ -2570,7 +2570,9 @@ int cosem_getProfileGeneric(
 #else
         gxValueEventCollection arr;
         vec_attach(&arr, e, 1, 1);
+#ifndef DLMS_IGNORE_SERVER
         svr_preGet(settings, &arr);
+#endif //DLMS_IGNORE_SERVER
         e->byteArray = 1;
 #endif //DLMS_IGNORE_MALLOC
     }

@@ -620,7 +620,21 @@ int cosem_init2(
     return 0;
 }
 
-int cosem_checkStructure(gxByteBuffer* bb, unsigned char expectedItemCount)
+int cosem_checkStructure(gxByteBuffer* bb, uint16_t expectedItemCount)
+{
+    int ret;
+    uint16_t cnt;
+    if ((ret = cosem_getStructure(bb, &cnt)) == 0)
+    {
+        if (cnt != expectedItemCount)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+    }
+    return ret;
+}
+
+int cosem_getStructure(gxByteBuffer* bb, uint16_t* count)
 {
     int ret;
     unsigned char value;
@@ -638,10 +652,11 @@ int cosem_checkStructure(gxByteBuffer* bb, unsigned char expectedItemCount)
     {
         return ret;
     }
-    if (cnt != expectedItemCount)
+    if (*count < cnt)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
+    *count = cnt;
     return 0;
 }
 
@@ -939,7 +954,7 @@ int cosem_getDateTimeFromOctectStringBase(gxByteBuffer* bb, gxtime* value, unsig
     di_init(&info);
     info.type = (DLMS_DATA_TYPE)type;
     return dlms_getData(bb, &info, &tmp);
-}
+    }
 
 
 int cosem_getDateTimeFromOctectString(gxByteBuffer* bb, gxtime* value)
@@ -1474,7 +1489,7 @@ int cosem_getColumns(
             memcpy(k2, k, sizeof(gxTarget));
             ++index;
         }
-}
+    }
 #else
     uint16_t addAllColumns = 1;
     gxKey* k;
@@ -1488,10 +1503,10 @@ int cosem_getColumns(
                 if ((ret = va_getByIndex(parameters->Arr, 3, &it)) == 0)
                 {
                     ret = getSelectedColumns(captureObjects, it->Arr, columns);
-                }
+    }
                 addAllColumns = 0;
-            }
-        }
+}
+}
         else if (selector == 2) //Read by entry.
         {
             if (parameters->Arr->size > 2)

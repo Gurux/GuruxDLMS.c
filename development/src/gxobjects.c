@@ -868,9 +868,7 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 #ifndef DLMS_IGNORE_SCHEDULE
         case DLMS_OBJECT_TYPE_SCHEDULE:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(0);
-#endif
+            arr_clear(&((gxSchedule*)object)->entries);
             break;
 #endif //DLMS_IGNORE_SCHEDULE
 #ifndef DLMS_IGNORE_SCRIPT_TABLE

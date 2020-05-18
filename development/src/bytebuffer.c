@@ -878,6 +878,48 @@ int bb_addHexString(
 }
 #endif //DLMS_IGNORE_MALLOC
 
+int bb_addHexString2(
+    gxByteBuffer* arr,
+    const char* str)
+{
+    if (str == NULL)
+    {
+        return 0;
+    }
+    int len = (int)strlen(str);
+    if (len == 0)
+    {
+        return 0;
+    }
+    int ret = 0;
+    int lastValue = -1;
+    for (int pos = 0; pos != len; ++pos)
+    {
+        if (*str >= '0' && *str < 'g')
+        {
+            if (lastValue == -1)
+            {
+                lastValue = hlp_getValue(*str);
+            }
+            else if (lastValue != -1)
+            {
+                if ((ret = bb_setUInt8(arr, (unsigned char)(lastValue << 4 | hlp_getValue(*str)))) != 0)
+                {
+                    break;
+                }
+                lastValue = -1;
+            }
+        }
+        else if (lastValue != -1)
+        {
+            ret = bb_setUInt8(arr, hlp_getValue(*str));
+            lastValue = -1;
+        }
+        ++str;
+    }
+    return ret;
+}
+
 int bb_addLogicalName(
     gxByteBuffer* arr,
     const unsigned char* str)

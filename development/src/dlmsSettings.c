@@ -85,8 +85,8 @@ void svr_init(
 void cl_init(
     dlmsSettings* settings,
     unsigned char useLogicalNameReferencing,
-    int clientAddress,
-    int serverAddress,
+    uint16_t clientAddress,
+    uint32_t serverAddress,
     DLMS_AUTHENTICATION authentication,
     const char* password,
     DLMS_INTERFACE_TYPE interfaceType)
@@ -100,8 +100,8 @@ void cl_init(
     memset(settings->preEstablishedSystemTitle, 0, 8);
 #endif //DLMS_IGNORE_MALLOC
     settings->blockIndex = 1;
-    settings->clientAddress = (uint16_t)clientAddress;
-    settings->serverAddress = (uint16_t)serverAddress;
+    settings->clientAddress = clientAddress;
+    settings->serverAddress = serverAddress;
     settings->dlmsVersionNumber = 6;
     settings->useLogicalNameReferencing = useLogicalNameReferencing;
     settings->interfaceType = interfaceType;
@@ -153,6 +153,7 @@ void cl_init(
 #ifdef DLMS_IGNORE_MALLOC
     settings->serializedPdu = NULL;
 #endif //DLMS_IGNORE_MALLOC
+    oa_init(&settings->releasedObjects);
 }
 
 void cl_clear(
@@ -189,6 +190,7 @@ void cl_clear(
 #endif //DLMS_IGNORE_HIGH_GMAC
     settings->maxPduSize = 0xFFFF;
     settings->userId = -1;
+    oa_clear(&settings->releasedObjects);
 }
 
 void svr_clear(

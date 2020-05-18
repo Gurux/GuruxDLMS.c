@@ -2223,7 +2223,7 @@ int dlms_checkHdlcAddress(
     if (server)
     {
         // Check that server addresses match.
-        if (settings->serverAddress != 0 && settings->serverAddress != (int)target)
+        if (settings->serverAddress != 0 && settings->serverAddress != target)
         {
             // Get frame command.
             if (bb_getUInt8ByIndex(reply, reply->position, &ch) != 0)
@@ -2238,7 +2238,7 @@ int dlms_checkHdlcAddress(
         }
 
         // Check that client addresses match.
-        if (settings->clientAddress != 0 && settings->clientAddress != (int)source)
+        if (settings->clientAddress != 0 && settings->clientAddress != source)
         {
             // Get frame command.
             if (bb_getUInt8ByIndex(reply, reply->position, &ch) != 0)
@@ -2263,17 +2263,17 @@ int dlms_checkHdlcAddress(
     else
     {
         // Check that client addresses match.
-        if (settings->clientAddress != (int)target)
+        if (settings->clientAddress != target)
         {
             // If echo.
-            if (settings->clientAddress == (int)source && settings->serverAddress == (int)target)
+            if (settings->clientAddress == source && settings->serverAddress == target)
             {
                 reply->position = index + 1;
             }
             return DLMS_ERROR_CODE_FALSE;
         }
         // Check that server addresses match.
-        if (settings->serverAddress != (int)source &&
+        if (settings->serverAddress != source &&
             // If All-station (Broadcast).
             settings->serverAddress != 0x7F && settings->serverAddress != 0x3FFF)
         {
@@ -3051,7 +3051,7 @@ int dlms_getWrapperFrame(
     {
         if (settings->server)
         {
-            if ((ret = bb_setUInt16(reply, settings->serverAddress)) == 0)
+            if ((ret = bb_setUInt16(reply, (unsigned short)settings->serverAddress)) == 0)
             {
                 if (((dlmsServerSettings*)settings)->pushClientAddress != 0 && (command == DLMS_COMMAND_DATA_NOTIFICATION || command == DLMS_COMMAND_EVENT_NOTIFICATION))
                 {
@@ -3067,7 +3067,7 @@ int dlms_getWrapperFrame(
         {
             if ((ret = bb_setUInt16(reply, settings->clientAddress)) == 0)
             {
-                ret = bb_setUInt16(reply, settings->serverAddress);
+                ret = bb_setUInt16(reply, (unsigned short) settings->serverAddress);
             }
         }
         // Data length.

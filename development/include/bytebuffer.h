@@ -371,6 +371,11 @@ extern "C" {
 #endif //DLMS_IGNORE_MALLOC
 
     //Add hex string to byte buffer.
+    int bb_addHexString2(
+        gxByteBuffer* arr,
+        const char* str);
+
+    //Add hex string to byte buffer.
     int bb_addLogicalName(
         gxByteBuffer* arr,
         const unsigned char* str);

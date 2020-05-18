@@ -74,7 +74,7 @@ extern "C" {
         // Client address.
         uint16_t clientAddress;
         //Server address.
-        uint16_t serverAddress;
+        uint32_t serverAddress;
 
         unsigned char useLogicalNameReferencing;
         DLMS_INTERFACE_TYPE interfaceType;
@@ -162,6 +162,8 @@ extern "C" {
 #endif //DLMS_IGNORE_MALLOC
         //Auto increase Invoke ID.
         unsigned char autoIncreaseInvokeID;
+        //Client adds objects that are not found from the association view here so they are released when client is clear.
+        objectArray releasedObjects;
     } dlmsSettings;
 
     typedef struct
@@ -239,8 +241,8 @@ extern "C" {
     void cl_init(
         dlmsSettings* settings,
         unsigned char useLogicalNameReferencing,
-        int clientAddress,
-        int serverAddress,
+        uint16_t clientAddress,
+        uint32_t serverAddress,
         DLMS_AUTHENTICATION authentication,
         const char* password,
         DLMS_INTERFACE_TYPE interfaceType);

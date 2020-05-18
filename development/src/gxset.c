@@ -542,7 +542,7 @@ int updateWeekProfileTable(gxArray* profile, dlmsVARIANT* data)
     return ret;
 }
 
-int updateDayProfileTableActive(dlmsSettings* settings, gxArray* profile, dlmsVARIANT* data)
+int updateDayProfileTable(dlmsSettings* settings, gxArray* profile, dlmsVARIANT* data)
 {
     int ret = DLMS_ERROR_CODE_OK, pos, pos2;
     gxDayProfile* dp = NULL;
@@ -658,6 +658,20 @@ int updateDayProfileTableActive(dlmsSettings* settings, gxArray* profile, dlmsVA
             {
                 break;
             }
+            if (ac->script == NULL)
+            {
+                if ((ret = cosem_createObject(DLMS_OBJECT_TYPE_SCRIPT_TABLE, &ac->script)) != 0)
+                {
+                    return ret;
+                }
+                memcpy(ac->script->logicalName, tmp2->byteArr->data, tmp2->byteArr->size);
+                //Add object to released objects list.
+                ret = oa_push(&settings->releasedObjects, ac->script);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    return ret;
+                }
+            }
 #else
             memcpy(ac->scriptLogicalName, tmp2->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -715,7 +729,7 @@ int cosem_setActivityCalendar(dlmsSettings* settings, gxActivityCalendar* object
     }
     else if (index == 5)
     {
-        ret = updateDayProfileTableActive(settings, &object->dayProfileTableActive, value);
+        ret = updateDayProfileTable(settings, &object->dayProfileTableActive, value);
     }
     else if (index == 6)
     {
@@ -736,7 +750,7 @@ int cosem_setActivityCalendar(dlmsSettings* settings, gxActivityCalendar* object
     }
     else if (index == 9)
     {
-        ret = updateDayProfileTableActive(settings, &object->dayProfileTablePassive, value);
+        ret = updateDayProfileTable(settings, &object->dayProfileTablePassive, value);
     }
     else if (index == 10)
     {
@@ -2949,7 +2963,21 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
             return ret;
         }
         object->selectedAttributeIndex = (unsigned char)var_toInteger(tmp);
-        oa_findByLN(&settings->objects, ot, tmp3->byteArr->data, &object->monitoredValue);
+        if ((ret = oa_findByLN(&settings->objects, ot, tmp3->byteArr->data, &object->monitoredValue)) == 0 &&
+            object->monitoredValue == NULL)
+        {
+            if ((ret = cosem_createObject(ot, &object->monitoredValue)) != 0)
+            {
+                return ret;
+            }
+            memcpy(object->monitoredValue->logicalName, tmp3->byteArr->data, tmp3->byteArr->size);
+            //Add object to released objects list.
+            ret = oa_push(&settings->releasedObjects, object->monitoredValue);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+        }
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (index == 3)
@@ -3105,6 +3133,20 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
         {
             return ret;
         }
+        if (object->actionOverThreshold.script == NULL)
+        {
+            if ((ret = cosem_createObject(ot, (gxObject**)&object->actionOverThreshold.script)) != 0)
+            {
+                return ret;
+            }
+            memcpy(object->actionOverThreshold.script->base.logicalName, tmp3->byteArr->data, tmp3->byteArr->size);
+            //Add object to released objects list.
+            ret = oa_push(&settings->releasedObjects, (gxObject*)object->actionOverThreshold.script);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+        }
 #else
         memcpy(object->actionOverThreshold.logicalName, tmp3->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -3129,6 +3171,20 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
         if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_SCRIPT_TABLE, tmp3->byteArr->data, (gxObject**)&object->actionUnderThreshold.script)) != 0)
         {
             return ret;
+        }
+        if (object->actionUnderThreshold.script == NULL)
+        {
+            if ((ret = cosem_createObject(ot, (gxObject**) &object->actionUnderThreshold.script)) != 0)
+            {
+                return ret;
+            }
+            memcpy(object->actionUnderThreshold.script->base.logicalName, tmp3->byteArr->data, tmp3->byteArr->size);
+            //Add object to released objects list.
+            ret = oa_push(&settings->releasedObjects, (gxObject*)object->actionUnderThreshold.script);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
         }
 #else
         memcpy(object->actionUnderThreshold.logicalName, tmp3->byteArr->data, 6);
@@ -3159,7 +3215,7 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
         unsigned char ln[6];
         if ((ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) == 0)
         {
-            if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, ln, &object->mBusPort)) != 0)
+            if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP, ln, &object->mBusPort)) != 0)
             {
                 return ret;
             }
@@ -3169,9 +3225,23 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #else
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-        if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, value->byteArr->data, &object->mBusPort)) != 0)
+        if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP, value->byteArr->data, &object->mBusPort)) != 0)
         {
             return ret;
+        }
+        if (object->mBusPort == NULL)
+        {
+            if ((ret = cosem_createObject(DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP, &object->mBusPort)) != 0)
+            {
+                return ret;
+            }
+            memcpy(object->mBusPort->logicalName, value->byteArr->data, value->byteArr->size);
+            //Add object to released objects list.
+            ret = oa_push(&settings->releasedObjects, object->mBusPort);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
         }
 #else
         ret = bb_get(value->byteArr, object->mBusPortReference, 6);
@@ -3452,6 +3522,10 @@ int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char 
         if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, value->byteArr->data, &object->phy)) != 0)
         {
             return ret;
+        }
+        if (object->phy == NULL)
+        {
+            ret = DLMS_ERROR_CODE_OUTOFMEMORY;
         }
 #else
         ret = bb_get(value->byteArr, object->PHYReference, 6);
@@ -3968,6 +4042,21 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
         {
             return ret;
         }
+        if (object->monitoredValue.target == NULL)
+        {
+            ret = cosem_createObject(type, &object->monitoredValue.target);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            ret = cosem_setLogicalName(object->monitoredValue.target, tmp->byteArr->data);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            //Add object to released objects list.
+            ret = oa_push(&settings->releasedObjects, object->monitoredValue.target);
+        }
 #else
         memcpy(object->monitoredValue.logicalName, tmp->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -4053,6 +4142,21 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
                 {
                     return ret;
                 }
+                if (actionSet->actionUp.script == NULL)
+                {
+                    ret = cosem_createObject(DLMS_OBJECT_TYPE_SCRIPT_TABLE, (gxObject**)&actionSet->actionUp.script);
+                    if (ret != DLMS_ERROR_CODE_OK)
+                    {
+                        return ret;
+                    }
+                    ret = cosem_setLogicalName((gxObject*)actionSet->actionUp.script, tmp->byteArr->data);
+                    if (ret != DLMS_ERROR_CODE_OK)
+                    {
+                        return ret;
+                    }
+                    //Add object to released objects list.
+                    ret = oa_push(&settings->releasedObjects, (gxObject*)actionSet->actionUp.script);
+                }
 #else
                 memcpy(actionSet->actionUp.logicalName, tmp->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -4078,6 +4182,21 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
                 if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_SCRIPT_TABLE, tmp->byteArr->data, (gxObject**)&actionSet->actionDown.script)) != 0)
                 {
                     return ret;
+                }
+                if (actionSet->actionDown.script == NULL)
+                {
+                    ret = cosem_createObject(DLMS_OBJECT_TYPE_SCRIPT_TABLE, (gxObject**)&actionSet->actionDown.script);
+                    if (ret != DLMS_ERROR_CODE_OK)
+                    {
+                        return ret;
+                    }
+                    ret = cosem_setLogicalName((gxObject*)actionSet->actionDown.script, tmp->byteArr->data);
+                    if (ret != DLMS_ERROR_CODE_OK)
+                    {
+                        return ret;
+                    }
+                    //Add object to released objects list.
+                    ret = oa_push(&settings->releasedObjects, (gxObject*)actionSet->actionDown.script);
                 }
 #else
                 memcpy(actionSet->actionDown.logicalName, tmp->byteArr->data, 6);
@@ -4269,6 +4388,21 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_SCRIPT_TABLE, it->byteArr->data, (gxObject**)&se->scriptTable)) != 0)
                 {
                     break;
+                }
+                if (se->scriptTable == NULL)
+                {
+                    ret = cosem_createObject(DLMS_OBJECT_TYPE_SCRIPT_TABLE, (gxObject**)&se->scriptTable);
+                    if (ret != DLMS_ERROR_CODE_OK)
+                    {
+                        return ret;
+                    }
+                    ret = cosem_setLogicalName((gxObject*)se->scriptTable, tmp->byteArr->data);
+                    if (ret != DLMS_ERROR_CODE_OK)
+                    {
+                        return ret;
+                    }
+                    //Add object to released objects list.
+                    ret = oa_push(&settings->releasedObjects, (gxObject*)se->scriptTable);
                 }
 #else
                 memcpy(se->logicalName, it->byteArr->data, bb_size(it->byteArr));
@@ -4980,9 +5114,7 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
 #endif //DLMS_IGNORE_MALLOC
     if (index == 2)
     {
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
         DLMS_OBJECT_TYPE type = DLMS_OBJECT_TYPE_NONE;
-#endif //DLMS_IGNORE_OBJECT_POINTERS
         obj_clearPushObjectList(&object->pushObjectList);
 #ifdef DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -4997,7 +5129,7 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                 {
                     if ((ret = cosem_checkStructure(value->byteArr, 4)) != 0 ||
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
-                        (ret = cosem_getUInt16(value->byteArr, &it->objectType)) != 0 ||
+                    (ret = cosem_getUInt16(value->byteArr, &it->objectType)) != 0 ||
                         (ret = cosem_getOctectString2(value->byteArr, it->logicalName, 6, NULL)) != 0 ||
 #else
                         (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&type)) != 0 ||
@@ -5015,11 +5147,15 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                     }
                     if (it->target == NULL)
                     {
+#ifdef DLMS_DEBUG
                         svr_notifyTrace2("Invalid object", type, ln, -1);
+#endif //DLMS_DEBUG
                         object->pushObjectList.size = pos;
                         return DLMS_ERROR_CODE_INVALID_PARAMETER;
                     }
+#ifdef DLMS_DEBUG
                     svr_notifyTrace2("Adding object ", type, ln, 0);
+#endif //DLMS_DEBUG
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                 }
             }
@@ -6116,6 +6252,12 @@ int setCaptureObjects(
                     return ret;
                 }
                 ret = cosem_setLogicalName(obj, tmp2->byteArr->data);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    return ret;
+                }
+                //Add object to released objects list.
+                ret = oa_push(&settings->releasedObjects, obj);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
                     return ret;
@@ -7299,7 +7441,7 @@ int cosem_setParameterMonitor(
 #ifdef DLMS_IGNORE_MALLOC
         uint16_t type;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-        unsigned char* ln;
+        unsigned char ln[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         gxTarget* it;
         uint16_t count = arr_getCapacity(&object->parameters);

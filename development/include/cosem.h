@@ -66,7 +66,9 @@ extern "C" {
     DLMS_OBJECT_TYPE type,
     const unsigned char* ln);
 
-  int cosem_checkStructure(gxByteBuffer* bb, unsigned char expectedItemCount);
+  int cosem_checkStructure(gxByteBuffer* bb, uint16_t expectedItemCount);
+
+  int cosem_getStructure(gxByteBuffer* bb, uint16_t* count);
 
   int cosem_checkArray(gxByteBuffer* bb, uint16_t* count);
 

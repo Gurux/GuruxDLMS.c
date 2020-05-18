@@ -274,6 +274,10 @@ static void ShowHelp()
     printf(" -C \t Security Level. (None, Authentication, Encrypted, AuthenticationEncryption)");
     printf(" -v \t Invocation counter data object Logical Name. Ex. 0.0.43.1.1.255");
     printf(" -I \t Auto increase invoke ID");
+    printf(" -T \t System title that is used with chiphering. Ex -T 4775727578313233");
+    printf(" -A \t Authentication key that is used with chiphering. Ex -A D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF");
+    printf(" -B \t Block cipher key that is used with chiphering. Ex -B 000102030405060708090A0B0C0D0E0F");
+    printf(" -D \t Dedicated key that is used with chiphering. Ex -D 00112233445566778899AABBCCDDEEFF");
     printf("Example:\r\n");
     printf("Read LG device using TCP/IP connection.\r\n");
     printf("GuruxDlmsSample -r SN -c 16 -s 1 -h [Meter IP Address] -p [Meter Port No]\r\n");
@@ -299,7 +303,7 @@ int connectMeter(int argc, char* argv[])
     char* p, * readObjects = NULL;
     int index, a, b, c, d, e, f;
     char* invocationCounter = NULL;
-    while ((opt = getopt(argc, argv, "h:p:c:s:r:iIt:a:p:wP:g:S:C:v:")) != -1)
+    while ((opt = getopt(argc, argv, "h:p:c:s:r:iIt:a:p:wP:g:S:C:v:T:A:B:D:")) != -1)
     {
         switch (opt)
         {
@@ -379,6 +383,43 @@ int connectMeter(int argc, char* argv[])
             else
             {
                 printf("Invalid Ciphering option '%s'. (None, Authentication, Encryption, AuthenticationEncryption)", optarg);
+                return 1;
+            }
+            break;
+        case 'T':
+            bb_clear(&con.settings.cipher.systemTitle);
+            bb_addHexString(&con.settings.cipher.systemTitle, optarg);
+            if (con.settings.cipher.systemTitle.size != 8)
+            {
+                printf("Invalid system title '%s'.", optarg);
+                return 1;
+            }
+            break;
+        case 'A':
+            bb_clear(&con.settings.cipher.authenticationKey);
+            bb_addHexString(&con.settings.cipher.authenticationKey, optarg);
+            if (con.settings.cipher.authenticationKey.size != 16)
+            {
+                printf("Invalid authentication key '%s'.", optarg);
+                return 1;
+            }
+            break;
+        case 'B':
+            bb_clear(&con.settings.cipher.blockCipherKey);
+            bb_addString(&con.settings.cipher.blockCipherKey, optarg);
+            if (con.settings.cipher.blockCipherKey.size != 16)
+            {
+                printf("Invalid block cipher key '%s'.", optarg);
+                return 1;
+            }
+            break;
+        case 'D':
+            con.settings.cipher.dedicatedKey = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
+            bb_init(con.settings.cipher.dedicatedKey);
+            bb_addString(con.settings.cipher.dedicatedKey, optarg);
+            if (con.settings.cipher.dedicatedKey->size != 16)
+            {
+                printf("Invalid dedicated key '%s'.", optarg);
                 return 1;
             }
             break;
@@ -490,6 +531,27 @@ int connectMeter(int argc, char* argv[])
             else if (optarg[0] == 'S')
             {
                 printf("Missing mandatory Serial port option.\n");
+            }
+            else if (optarg[0] == 'g') {
+                printf("Missing mandatory OBIS code option.\n");
+            }
+            else if (optarg[0] == 'C') {
+                printf("Missing mandatory Ciphering option.\n");
+            }
+            else if (optarg[0] == 'v') {
+                printf("Missing mandatory invocation counter logical name option.\n");
+            }
+            else if (optarg[0] == 'T') {
+                printf("Missing mandatory system title option.");
+            }
+            else if (optarg[0] == 'A') {
+                printf("Missing mandatory authentication key option.");
+            }
+            else if (optarg[0] == 'B') {
+                printf("Missing mandatory block cipher key option.");
+            }
+            else if (optarg[0] == 'D') {
+                printf("Missing mandatory dedicated key option.");
             }
             else
             {

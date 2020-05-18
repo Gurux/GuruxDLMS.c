@@ -983,10 +983,8 @@ void com_reportError(const char* description,
     unsigned char attributeOrdinal, int ret)
 {
     char ln[25];
-    char type[70];
     hlp_getLogicalNameToString(object->logicalName, ln);
-    obj_typeToString(object->objectType, type);
-    printf("%s %s %s:%d %s\r\n", description, type, ln, attributeOrdinal, hlp_getErrorMessage(ret));
+    printf("%s %s %s:%d %s\r\n", description, obj_typeToString2(object->objectType), ln, attributeOrdinal, hlp_getErrorMessage(ret));
 }
 
 //Get Association view.
@@ -1448,13 +1446,7 @@ int com_readValue(connection* connection, gxObject* object, unsigned char index)
 {
     int ret;
     char* data = NULL;
-    char str[50];
     char ln[25];
-    ret = obj_typeToString(object->objectType, str);
-    if (ret != DLMS_ERROR_CODE_OK)
-    {
-        return ret;
-    }
     ret = hlp_getLogicalNameToString(object->logicalName, ln);
     if (ret != DLMS_ERROR_CODE_OK)
     {
@@ -1462,14 +1454,14 @@ int com_readValue(connection* connection, gxObject* object, unsigned char index)
     }
     if (connection->trace > GX_TRACE_LEVEL_WARNING)
     {
-        printf("-------- Reading Object %s %s\r\n", str, ln);
+        printf("-------- Reading Object %s %s\r\n", obj_typeToString2(object->objectType), ln);
     }
     ret = com_read(connection, object, index);
     if (ret != DLMS_ERROR_CODE_OK)
     {
         if (connection->trace > GX_TRACE_LEVEL_OFF)
         {
-            printf("Failed to read object %s %s attribute index %d\r\n", str, ln, index);
+            printf("Failed to read object %s %s attribute index %d\r\n", obj_typeToString2(object->objectType), ln, index);
         }
         //Return error if not DLMS error.
         if (ret != DLMS_ERROR_CODE_READ_WRITE_DENIED)
@@ -1501,7 +1493,6 @@ int com_readValues(connection* connection)
     gxByteBuffer attributes;
     unsigned char ch;
     char* data = NULL;
-    char str[70];
     char ln[25];
     gxObject* object;
     unsigned long index;
@@ -1521,11 +1512,6 @@ int com_readValues(connection* connection)
         {
             continue;
         }
-        ret = obj_typeToString(object->objectType, str);
-        if (ret != DLMS_ERROR_CODE_OK)
-        {
-            break;
-        }
         ret = hlp_getLogicalNameToString(object->logicalName, ln);
         if (ret != DLMS_ERROR_CODE_OK)
         {
@@ -1533,7 +1519,7 @@ int com_readValues(connection* connection)
         }
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
-            printf("-------- Reading Object %s %s\r\n", str, ln);
+            printf("-------- Reading Object %s %s\r\n", obj_typeToString2(object->objectType), ln);
         }
         ret = obj_getAttributeIndexToRead(object, &attributes);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -1552,7 +1538,7 @@ int com_readValues(connection* connection)
             {
                 if (connection->trace > GX_TRACE_LEVEL_OFF)
                 {
-                    printf("Failed to read object %s %s attribute index %d\r\n", str, ln, ch);
+                    printf("Failed to read object %s %s attribute index %d\r\n", obj_typeToString2(object->objectType), ln, ch);
                 }
                 //Return error if not DLMS error.
                 if (ret != DLMS_ERROR_CODE_READ_WRITE_DENIED)

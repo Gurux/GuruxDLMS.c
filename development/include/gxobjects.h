@@ -597,7 +597,7 @@ extern "C" {
         gxtime end;
         DLMS_CLOCK_STATUS status : 8;
         gxtime begin;
-        uint16_t timeZone;
+        int16_t timeZone;
         gxtime time;
         gxtime presetTime;
     } gxClock;
@@ -2629,7 +2629,7 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        uint16_t totalAmountPaid;
+        int16_t totalAmountPaid;
 
         //CONSUMPTION_BASED_COLLECTION, TIME_BASED_COLLECTION, PAYMENT_EVENT_BASED_COLLECTION
         unsigned char chargeType;
@@ -2855,7 +2855,7 @@ extern "C" {
         DLMS_MAC_STATE state;
 
         /*The SCP length, in symbols, in present frame.*/
-        uint16_t scpLength;
+        int16_t scpLength;
 
         /*Level of this node in subnetwork hierarchy.*/
         unsigned char nodeHierarchyLevel;
@@ -2919,24 +2919,24 @@ extern "C" {
         /*LCID of multicast group.*/
         signed char id;
         /*Number of child nodes.*/
-        uint16_t members;
+        int16_t members;
     }gxMacMulticastEntry;
 
     /*MAC direct table element.*/
     typedef struct
     {
         /*SID of switch through which the source service node is connected.*/
-        uint16_t sourceSId;
+        int16_t sourceSId;
 
         /*NID allocated to the source service node.*/
-        uint16_t sourceLnId;
+        int16_t sourceLnId;
         /*LCID allocated to this connection at the source.*/
-        uint16_t sourceLcId;
+        int16_t sourceLcId;
 
         /*SID of the switch through which the destination service node is connected.*/
-        uint16_t destinationSId;
+        int16_t destinationSId;
         /*NID allocated to the destination service node.*/
-        uint16_t destinationLnId;
+        int16_t destinationLnId;
 
         /*LCID allocated to this connection at the destination.*/
         int16_t destinationLcId;
@@ -2951,7 +2951,7 @@ extern "C" {
         gxByteBuffer sna;
 
         /*SID of this switch.*/
-        uint16_t lsId;
+        int16_t lsId;
 
         /*Level of this switch in subnetwork hierarchy.*/
         signed char level;
@@ -3216,6 +3216,10 @@ extern "C" {
 
 #if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA) && defined(DLMS_IGNORE_PUSH_SETUP))
     int obj_clearPushObjectList(gxArray* buffer);
+    /////////////////////////////////////////////////////////////////////////
+    // Clear capture object list.
+    //
+    // captureObjects: List of objects to clear.
     int obj_clearProfileGenericCaptureObjects(gxArray* captureObjects);
 #endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA))
 

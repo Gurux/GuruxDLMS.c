@@ -726,7 +726,7 @@ int time_print(const char* format, gxtime* time)
     }
     else
     {
-        printf(buff);
+        printf("%s", buff);
     }
     return 0;
 }

@@ -2033,14 +2033,14 @@ int cosem_setDemandRegister(gxDemandRegister* object, unsigned char index, dlmsV
         if (object->scaler != 0)
         {
 #ifndef DLMS_IGNORE_FLOAT64
-            ret = var_setDouble(&object->currentAvarageValue, var_toDouble(value) * hlp_getScaler(object->scaler));
+            ret = var_setDouble(&object->currentAverageValue, var_toDouble(value) * hlp_getScaler(object->scaler));
 #else
-            ret = var_copy(&object->currentAvarageValue, value);
+            ret = var_copy(&object->currentAverageValue, value);
 #endif //DLMS_IGNORE_FLOAT64
         }
         else
         {
-            ret = var_copy(&object->currentAvarageValue, value);
+            ret = var_copy(&object->currentAverageValue, value);
         }
     }
     else if (index == 3)
@@ -2048,14 +2048,14 @@ int cosem_setDemandRegister(gxDemandRegister* object, unsigned char index, dlmsV
         if (object->scaler != 0)
         {
 #ifndef DLMS_IGNORE_FLOAT64
-            ret = var_setDouble(&object->lastAvarageValue, var_toDouble(value) * hlp_getScaler(object->scaler));
+            ret = var_setDouble(&object->lastAverageValue, var_toDouble(value) * hlp_getScaler(object->scaler));
 #else
-            ret = var_copy(&object->lastAvarageValue, value);
+            ret = var_copy(&object->lastAverageValue, value);
 #endif //DLMS_IGNORE_FLOAT64
         }
         else
         {
-            ret = var_copy(&object->lastAvarageValue, value);
+            ret = var_copy(&object->lastAverageValue, value);
         }
     }
     else if (index == 4)

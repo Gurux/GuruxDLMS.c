@@ -985,13 +985,13 @@ int obj_demandRegisterToString(gxDemandRegister* object, char** buff)
     gxByteBuffer ba;
     bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
-    ret = var_toString(&object->currentAvarageValue, &ba);
+    ret = var_toString(&object->currentAverageValue, &ba);
     if (ret != 0)
     {
         return ret;
     }
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
-    ret = var_toString(&object->lastAvarageValue, &ba);
+    ret = var_toString(&object->lastAverageValue, &ba);
     if (ret != 0)
     {
         return ret;

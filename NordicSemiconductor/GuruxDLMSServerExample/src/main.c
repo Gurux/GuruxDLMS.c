@@ -83,8 +83,7 @@ void time_now(
 gxtime* value)
 {
   long offset = time_current();
-  //(_impl_k_uptime_get() - started) / 1000;
-  time_init4(value, offset);
+  time_initUnix(value, offset);
 }
 
 ///////////////////////////////////////////////////////////////////////

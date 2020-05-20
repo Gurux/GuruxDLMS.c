@@ -164,7 +164,7 @@ void println(char* desc, unsigned char* data, unsigned char length)
 }
 
 //Returns the approximate processor time in ms.
-long time_elapsed(void)
+uint32_t time_elapsed(void)
 {
     return (long)clock() * 1000;
 }
@@ -529,7 +529,7 @@ int addRegisterObject()
     const unsigned char ln[6] = { 1,1,21,25,0,255 };
     if ((ret = INIT_OBJECT(activePowerL1, DLMS_OBJECT_TYPE_REGISTER, ln)) == 0)
     {
-        GX_UINT32_BYREF(activePowerL1.value) = &activePowerL1Value;
+        GX_UINT32_BYREF(activePowerL1.value, activePowerL1Value);
         //10 ^ 3 =  1000
         activePowerL1.scaler = -2;
         activePowerL1.unit = DLMS_UNIT_ACTIVE_ENERGY;
@@ -808,8 +808,8 @@ int addDemandRegister()
     const unsigned char ln[6] = { 1,0,31,4,0,255 };
     if ((ret = INIT_OBJECT(demandRegister, DLMS_OBJECT_TYPE_DEMAND_REGISTER, ln)) == 0)
     {
-        GX_UINT16(demandRegister.currentAvarageValue) = 10;
-        GX_UINT16(demandRegister.lastAvarageValue) = 20;
+        GX_UINT16(demandRegister.currentAverageValue) = 10;
+        GX_UINT16(demandRegister.lastAverageValue) = 20;
         GX_UINT8(demandRegister.status) = 1;
         time_now(&demandRegister.startTimeCurrent, 0);
         time_now(&demandRegister.captureTime, 0);
@@ -1146,7 +1146,7 @@ int addPushSetup()
     {
         SET_OCTECT_STRING(pushSetup.destination, DEST, (unsigned short)strlen(DEST));
 
-        ARR_ATTACH(pushSetup.pushObjectList, CAPTURE_OBJECTS, 2);
+        ARR_ATTACH(pushSetup.pushObjectList, CAPTURE_OBJECTS, 3);
         // Add push object itself. This is needed to tell structure of data to
         // the Push listener.
         CAPTURE_OBJECTS[0].target = &pushSetup.base;
@@ -2561,4 +2561,12 @@ void svr_getDataType(
     gxValueEventCollection* args)
 {
 
+}
+
+//Print detailed information to the trace.
+void svr_trace(const char* str, const char* data)
+{
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+    printf("%s %s.\r\n", str, data);
+#endif
 }

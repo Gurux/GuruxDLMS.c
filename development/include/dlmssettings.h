@@ -211,6 +211,10 @@ extern "C" {
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
         gxTcpUdpSetup *wrapper;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
+#ifndef DLMS_IGNORE_CLOCK
+        gxClock* defaultClock;
+#endif //DLMS_IGNORE_CLOCK
+
         //Time when last frame was received. HDLC framing is using this.
         uint32_t dataReceived;
         //Time when last byte was received. HDLC framing is using this.

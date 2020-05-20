@@ -64,6 +64,7 @@
     <ClCompile Include="..\dlms\src\parameters.c" />
     <ClCompile Include="..\dlms\src\replydata.c" />
     <ClCompile Include="..\dlms\src\server.c" />
+    <ClCompile Include="..\dlms\src\serverevents.c" />
     <ClCompile Include="..\dlms\src\variant.c" />
     <ClCompile Include="..\src\connection.c" />
     <ClCompile Include="..\src\exampleserver.c" />

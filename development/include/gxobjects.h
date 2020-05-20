@@ -449,8 +449,8 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        dlmsVARIANT currentAvarageValue;
-        dlmsVARIANT lastAvarageValue;
+        dlmsVARIANT currentAverageValue;
+        dlmsVARIANT lastAverageValue;
         signed char scaler;
         unsigned char unit;
         unsigned char unitRead;

@@ -660,8 +660,8 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_AUTO_CONNECT
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
         case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
-            var_clear(&((gxDemandRegister*)object)->currentAvarageValue);
-            var_clear(&((gxDemandRegister*)object)->lastAvarageValue);
+            var_clear(&((gxDemandRegister*)object)->currentAverageValue);
+            var_clear(&((gxDemandRegister*)object)->lastAverageValue);
             var_clear(&((gxDemandRegister*)object)->status);
             break;
 #endif //DLMS_IGNORE_DEMAND_REGISTER

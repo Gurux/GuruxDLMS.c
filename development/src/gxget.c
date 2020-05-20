@@ -1482,11 +1482,11 @@ int cosem_getDemandRegister(
     gxDemandRegister* object = (gxDemandRegister*)e->target;
     if (e->index == 2)
     {
-        ret = var_setUInt32(&e->value, (int32_t)(var_toDouble(&object->currentAvarageValue) / hlp_getScaler(object->scaler)));
+        ret = var_setUInt32(&e->value, (int32_t)(var_toDouble(&object->currentAverageValue) / hlp_getScaler(object->scaler)));
     }
     else if (e->index == 3)
     {
-        ret = var_setUInt32(&e->value, (int32_t)(var_toDouble(&object->lastAvarageValue) / hlp_getScaler(object->scaler)));
+        ret = var_setUInt32(&e->value, (int32_t)(var_toDouble(&object->lastAverageValue) / hlp_getScaler(object->scaler)));
     }
     else if (e->index == 4)
     {

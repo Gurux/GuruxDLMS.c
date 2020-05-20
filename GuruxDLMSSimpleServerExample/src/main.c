@@ -21,7 +21,7 @@
 #endif
 #include <tchar.h>
 #include <conio.h>
-#include <Winsock.h> //Add support for sockets	
+#include <Winsock.h> //Add support for sockets
 #include <time.h>
 #include <process.h>//Add support for threads
 #else //Linux includes.
@@ -45,16 +45,15 @@
 #include "../../development/include/cosem.h"
 #include "../../development/include/server.h"
 
-#if !defined(_WIN32) && !defined(_WIN64) && !defined(__linux__)
 long time_current(void)
 {
     //Get current time somewhere.
     return (long)time(NULL);
 }
 
-long time_elapsed(void)
+uint32_t time_elapsed(void)
 {
-    return (long)0;//millis();
+    return (long)0;// millis();
 }
 
 void time_now(
@@ -62,20 +61,25 @@ void time_now(
 {
     //Get local time somewhere.
     time_t tm1 = time(NULL);
-    //   struct tm dt = *localtime(&tm1);
-    //   time_init2(value, &dt);
+    struct tm dt = *localtime(&tm1);
+    time_init2(value, &dt);
 }
-#endif //!defined(_WIN32) && !defined(_WIN64) && !defined(__linux__)
 
 //DLMS settings.
 dlmsServerSettings settings;
 //Meter serial number.
 unsigned long SERIAL_NUMBER = 123456;
 
+
+#define HDLC_HEADER_SIZE 17
 #define HDLC_BUFFER_SIZE 128
-#define PDU_BUFFER_SIZE 256
+#define PDU_BUFFER_SIZE 1024
+#define WRAPPER_BUFFER_SIZE 8 + PDU_BUFFER_SIZE
+//Buffer where frames are saved.
+unsigned char frame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
+//Buffer where PDUs are saved.
 unsigned char pdu[PDU_BUFFER_SIZE];
-unsigned char frame[HDLC_BUFFER_SIZE];
+
 gxByteBuffer reply;
 gxData ldn;
 //Don't use clock as a name. Some compilers are using clock as reserved word.
@@ -83,21 +87,24 @@ gxClock clock1;
 gxAssociationLogicalName association;
 gxRegister activePowerL1;
 
-const gxObject* ALL_OBJECTS[] = { &association.base, &ldn.base, &clock1.base, &activePowerL1.base };
+gxObject* ALL_OBJECTS[] = { BASE(association), BASE(ldn), BASE(clock1), BASE(activePowerL1) };
 
 ///////////////////////////////////////////////////////////////////////
 //This method adds example Logical Name Association object.
 ///////////////////////////////////////////////////////////////////////
 int addAssociation()
 {
+    int ret;
     const unsigned char ln[6] = { 0, 0, 40, 0, 1, 255 };
-    cosem_init2((gxObject*)&association, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
-    //Only Logical Device Name is add to this Association View.
-    //Use this if you  need to save heap.
-    oa_attach(&association.objectList, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
-    bb_addString(&association.secret, "Gurux");
-    association.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_NONE;
-    return 0;
+    if ((ret = INIT_OBJECT(association, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+    {
+        //Only Logical Device Name is add to this Association View.
+        //Use this if you  need to save heap.
+        oa_attach(&association.objectList, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
+        association.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_NONE;
+        association.clientSAP = 0x10;
+    }
+    return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -108,7 +115,7 @@ int addAssociation()
 // to the manufacturer's identification in IEC 62056-21.
 // The following 13 octets are assigned by the manufacturer.
 //The manufacturer is responsible for guaranteeing the uniqueness of these octets.
-void addLogicalDeviceName() 
+void addLogicalDeviceName()
 {
     //Meter serial number.
     char buff[17];
@@ -149,7 +156,7 @@ int addRegisterObject()
 }
 
 int svr_InitObjects(
-    dlmsServerSettings *settings)
+    dlmsServerSettings* settings)
 {
     addLogicalDeviceName();
     addClockObject();
@@ -164,7 +171,7 @@ int svr_findObject(
     DLMS_OBJECT_TYPE objectType,
     int sn,
     unsigned char* ln,
-    gxValueEventArg *e)
+    gxValueEventArg* e)
 {
     if (objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
     {
@@ -180,7 +187,7 @@ void svr_preRead(
     dlmsSettings* settings,
     gxValueEventCollection* args)
 {
-    gxValueEventArg *e;
+    gxValueEventArg* e;
     int ret, pos;
     DLMS_OBJECT_TYPE type;
     for (pos = 0; pos != args->size; ++pos)
@@ -225,7 +232,7 @@ void svr_preWrite(
 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
     char str[25];
-    gxValueEventArg *e;
+    gxValueEventArg* e;
     int ret, pos;
     for (pos = 0; pos != args->size; ++pos)
     {
@@ -250,7 +257,7 @@ void svr_preAction(
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
     char str[25];
 #endif
-    gxValueEventArg *e;
+    gxValueEventArg* e;
     int ret, pos;
     for (pos = 0; pos != args->size; ++pos)
     {
@@ -289,7 +296,7 @@ void svr_postAction(
     dlmsSettings* settings,
     gxValueEventCollection* args)
 {
-    gxValueEventArg *e;
+    gxValueEventArg* e;
     int ret, pos;
     for (pos = 0; pos != args->size; ++pos)
     {
@@ -301,7 +308,7 @@ void svr_postAction(
 }
 
 unsigned char svr_isTarget(
-    dlmsSettings *settings,
+    dlmsSettings* settings,
     unsigned long serverAddress,
     unsigned long clientAddress)
 {
@@ -343,8 +350,8 @@ DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
 * Get attribute access level.
 */
 DLMS_ACCESS_MODE svr_getAttributeAccess(
-    dlmsSettings *settings,
-    gxObject *obj,
+    dlmsSettings* settings,
+    gxObject* obj,
     unsigned char index)
 {
     if (index == 1)
@@ -373,8 +380,8 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
 * Get method access level.
 */
 DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
-    dlmsSettings *settings,
-    gxObject *obj,
+    dlmsSettings* settings,
+    gxObject* obj,
     unsigned char index)
 {
     // Methods are not allowed.
@@ -398,7 +405,7 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
 //Client has made connection to the server.
 /////////////////////////////////////////////////////////////////////////////
 int svr_connected(
-    dlmsServerSettings *settings)
+    dlmsServerSettings* settings)
 {
     return 0;
 }
@@ -409,7 +416,7 @@ int svr_connected(
     * @param connectionInfo
     *            Connection information.
     */
-int svr_invalidConnection(dlmsServerSettings *settings)
+int svr_invalidConnection(dlmsServerSettings* settings)
 {
     return 0;
 }
@@ -418,7 +425,7 @@ int svr_invalidConnection(dlmsServerSettings *settings)
 // Client has close the connection.
 /////////////////////////////////////////////////////////////////////////////
 int svr_disconnected(
-    dlmsServerSettings *settings)
+    dlmsServerSettings* settings)
 {
     return 0;
 }
@@ -427,7 +434,7 @@ void svr_preGet(
     dlmsSettings* settings,
     gxValueEventCollection* args)
 {
-    gxValueEventArg *e;
+    gxValueEventArg* e;
     int ret, pos;
     for (pos = 0; pos != args->size; ++pos)
     {
@@ -485,7 +492,7 @@ int main(int argc, char* argv[])
 #endif
     bb_init(&reply);
     //Start server using logical name referencing and HDLC framing.
-    svr_init(&settings, 1, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, frame, HDLC_BUFFER_SIZE, pdu, PDU_BUFFER_SIZE);
+    svr_init(&settings, 1, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, frame, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, pdu, PDU_BUFFER_SIZE);
     //Add COSEM objects.
     svr_InitObjects(&settings);
     //Start server
@@ -499,7 +506,7 @@ int main(int argc, char* argv[])
     add.sin_port = htons(4061);
     add.sin_addr.s_addr = htonl(INADDR_ANY);
     add.sin_family = AF_INET;
-    if ((ret = bind(ls, (struct sockaddr*) &add, sizeof(add))) == -1)
+    if ((ret = bind(ls, (struct sockaddr*) & add, sizeof(add))) == -1)
     {
         return -1;
     }
@@ -512,7 +519,7 @@ int main(int argc, char* argv[])
             return -1;
         }
         len = sizeof(client);
-        s = accept(ls, (struct sockaddr*)&client, &len);
+        s = accept(ls, (struct sockaddr*) & client, &len);
         while (1)
         {
             //Read one char at the time.

@@ -1015,6 +1015,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
 #endif //DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
 int invoke_ExtendedRegister(
+    dlmsServerSettings* settings,
     gxExtendedRegister* object,
     unsigned char index)
 {
@@ -1027,7 +1028,14 @@ int invoke_ExtendedRegister(
         {
             return ret;
         }
-        ret = var_clear(&object->status);
+        if (settings->defaultClock != NULL)
+        {
+            object->captureTime = settings->defaultClock->time;
+        }
+        else
+        {
+            time_clear(&object->captureTime);
+        }
     }
     else
     {
@@ -1036,6 +1044,58 @@ int invoke_ExtendedRegister(
     return ret;
 }
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
+
+#ifndef DLMS_IGNORE_DEMAND_REGISTER
+int invoke_DemandRegister(
+    dlmsServerSettings* settings,
+    gxDemandRegister* object,
+    unsigned char index)
+{
+    int ret = 0;
+    //Reset.
+    if (index == 1)
+    {
+        if ((ret = var_clear(&object->currentAverageValue)) != 0 ||
+            (ret = var_clear(&object->lastAverageValue)) != 0)
+        {
+            return ret;
+        }
+        if (settings->defaultClock != NULL)
+        {
+            object->startTimeCurrent = object->captureTime = settings->defaultClock->time;
+        }
+        else
+        {
+            time_clear(&object->captureTime);
+            time_clear(&object->startTimeCurrent);
+        }
+    }
+    else if (index == 1)
+    {
+        if ((ret = var_copy(&object->lastAverageValue, &object->currentAverageValue)) != 0 ||
+            (ret = var_clear(&object->currentAverageValue)) != 0)
+        {
+            return ret;
+        }
+        if (settings->defaultClock != NULL)
+        {
+            object->startTimeCurrent = object->captureTime = settings->defaultClock->time;
+        }
+        else
+        {
+            time_clear(&object->captureTime);
+            time_clear(&object->startTimeCurrent);
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_DEMAND_REGISTER
+
+
 #ifndef DLMS_IGNORE_CLOCK
 int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -1530,11 +1590,18 @@ int cosem_invoke(
 #endif //DLMS_IGNORE_CLOCK
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
     case DLMS_OBJECT_TYPE_EXTENDED_REGISTER:
-        ret = invoke_ExtendedRegister(
+        ret = invoke_ExtendedRegister(settings,
             (gxExtendedRegister*)e->target,
             e->index);
         break;
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
+#ifndef DLMS_IGNORE_DEMAND_REGISTER
+    case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
+        ret = invoke_DemandRegister(settings,
+            (gxDemandRegister*)e->target,
+            e->index);
+        break;
+#endif //DLMS_IGNORE_DEMAND_REGISTER
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
     case DLMS_OBJECT_TYPE_PROFILE_GENERIC:
         ret = invoke_ProfileGeneric(

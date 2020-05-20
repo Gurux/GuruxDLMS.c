@@ -229,6 +229,17 @@ extern "C" {
         dlmsSettings* settings,
         message* packets);
 
+    /**
+* Generates a release request.
+*
+* @return Release request, as byte array.
+*/
+    int cl_releaseRequest2(
+        dlmsSettings* settings,
+        message* packets,
+        unsigned char useProtectedRelease);
+
+
     int cl_disconnectRequest(
         dlmsSettings* settings,
         message* messages);

@@ -104,9 +104,9 @@ gxCompactData compactData;
 int imageSize = 0;
 
 //Returns the approximate processor time in ms.
-long time_elapsed(void)
+uint32_t time_elapsed(void)
 {
-    return (long)clock() /(CLOCKS_PER_SEC / 1000);
+    return (uint32_t)clock() /(CLOCKS_PER_SEC / 1000);
 }
 
 //Returns current time.
@@ -805,8 +805,8 @@ int addDemandRegister(
     const unsigned char ln[6] = { 1,0,31,4,0,255 };
     cosem_init2((gxObject*)& demandRegister, DLMS_OBJECT_TYPE_DEMAND_REGISTER, ln);
 
-    var_setUInt16(&demandRegister.currentAvarageValue, 10);
-    var_setUInt16(&demandRegister.lastAvarageValue, 20);
+    var_setUInt16(&demandRegister.currentAverageValue, 10);
+    var_setUInt16(&demandRegister.lastAverageValue, 20);
     var_setUInt8(&demandRegister.status, 1);
     time_now(&demandRegister.startTimeCurrent, 1);
     time_now(&demandRegister.captureTime, 1);
@@ -1348,6 +1348,7 @@ int svr_start(
     unsigned short port)
 {
     int ret;
+    con->settings.pushClientAddress = 64;
     if ((ret = svr_listen(con, port)) != 0)
     {
         return ret;
@@ -2375,10 +2376,8 @@ int sendPush(
 {
     char* p, * host;
     int ret, pos, port, s;
-    //    dlmsSettings cl;
     message messages;
     gxByteBuffer* bb;
-
     p = strchr(push->destination, ':');
     if (p == NULL)
     {
@@ -2392,7 +2391,6 @@ int sendPush(
     mes_init(&messages);
     if ((ret = connectServer(host, port, &s)) == 0)
     {
-        //        cl_init(&cl, 1, 1, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_WRAPPER);
         if ((ret = notify_generatePushSetupMessages(settings, 0, push, &messages)) == 0)
         {
             for (pos = 0; pos != messages.size; ++pos)
@@ -2405,7 +2403,6 @@ int sendPush(
                 }
             }
         }
-        //        cl_clear(&cl);
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         closesocket(s);
 #else

@@ -1094,7 +1094,7 @@ int cl_readRowsByEntry2(dlmsSettings* settings, gxProfileGeneric* object, uint32
     }
     bb_clear(&data);
     return ret;
-    }
+}
 
 int cl_readRowsByRange2(
     dlmsSettings* settings,
@@ -1164,7 +1164,7 @@ int cl_readRowsByRange(
         ln = ((gxObject*)kv->key)->logicalName;
 #endif //DLMS_IGNORE_MALLOC
         unixTime = type == DLMS_OBJECT_TYPE_DATA;
-}
+    }
 #ifndef DLMS_IGNORE_MALLOC
     if ((ret = obj_clearProfileGenericBuffer(&object->buffer)) != 0)
     {
@@ -1315,7 +1315,7 @@ int cl_updateValues(
         if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxListItem))) != 0)
         {
             break;
-    }
+        }
 #else
         if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
         {
@@ -1347,7 +1347,7 @@ int cl_updateValues(
             ret = ch;
             break;
         }
-}
+    }
     ve_clear(&e);
     return ret;
 }
@@ -1364,6 +1364,16 @@ int cl_receiverReady(dlmsSettings* settings, DLMS_DATA_REQUEST_TYPES type, gxByt
 */
 int cl_releaseRequest(dlmsSettings* settings, message* packets)
 {
+    return cl_releaseRequest2(settings, packets, 0);
+}
+
+/**
+* Generates a release request.
+*
+* @return Release request, as byte array.
+*/
+int cl_releaseRequest2(dlmsSettings* settings, message* packets, unsigned char useProtectedRelease)
+{
     int ret;
     gxByteBuffer bb;
     mes_clear(packets);
@@ -1376,22 +1386,35 @@ int cl_releaseRequest(dlmsSettings* settings, message* packets)
     }
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
     bb_init(&bb);
-    // Length.
-    if ((ret = bb_setUInt8(&bb, 0x0)) != 0 ||
-        (ret = bb_setUInt8(&bb, 0x80)) != 0 ||
-        (ret = bb_setUInt8(&bb, 0x01)) != 0 ||
-        (ret = bb_setUInt8(&bb, 0x0)) != 0)
+    if (!useProtectedRelease)
     {
-        return ret;
+        if ((ret = bb_setUInt8(&bb, 0x3)) != 0 ||
+            (ret = bb_setUInt8(&bb, 0x80)) != 0 ||
+            (ret = bb_setUInt8(&bb, 0x01)) != 0 ||
+            (ret = bb_setUInt8(&bb, 0x0)) != 0)
+        {
+            return ret;
+        }
     }
+    else
+    {
+        // Length.
+        if ((ret = bb_setUInt8(&bb, 0x0)) != 0 ||
+            (ret = bb_setUInt8(&bb, 0x80)) != 0 ||
+            (ret = bb_setUInt8(&bb, 0x01)) != 0 ||
+            (ret = bb_setUInt8(&bb, 0x0)) != 0)
+        {
+            return ret;
+        }
 #ifndef DLMS_IGNORE_HIGH_GMAC
-    if (isCiphered(&settings->cipher))
-    {
-        ++settings->cipher.invocationCounter;
-    }
+        if (isCiphered(&settings->cipher))
+        {
+            ++settings->cipher.invocationCounter;
+        }
 #endif //DLMS_IGNORE_HIGH_GMAC
-    apdu_generateUserInformation(settings, &bb);
-    bb.data[0] = (unsigned char)(bb.size - 1);
+        apdu_generateUserInformation(settings, &bb);
+        bb.data[0] = (unsigned char)(bb.size - 1);
+    }
     if (settings->useLogicalNameReferencing)
     {
         gxLNParameters p;
@@ -1415,7 +1438,7 @@ int cl_releaseRequest(dlmsSettings* settings, message* packets)
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     bb_clear(&bb);
     return ret;
-    }
+}
 
 int cl_disconnectRequest(dlmsSettings* settings, message* packets)
 {
@@ -1430,7 +1453,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
     if ((settings->connected & DLMS_CONNECTION_STATE_HDLC) == 0)
     {
         return ret;
-    }
+}
     settings->connected &= ~DLMS_CONNECTION_STATE_HDLC;
 #ifdef DLMS_IGNORE_MALLOC
     reply = packets->data[0];
@@ -1539,7 +1562,7 @@ int cl_writeLN(
     {
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+}
     pdu = settings->serializedPdu;
     //Use same buffer for header and data. Header size is 10 bytes.
     bb_init(&data);
@@ -1645,7 +1668,7 @@ int cl_method(
     if (settings->useLogicalNameReferencing)
     {
         ret = cl_methodLN(settings, object->logicalName, object->objectType, index, data, messages);
-    }
+}
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1679,7 +1702,7 @@ int cl_methodLN(
     {
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+}
     pdu = settings->serializedPdu;
     //Use same buffer for header and data. Header size is 10 bytes.
     bb_init(&data);

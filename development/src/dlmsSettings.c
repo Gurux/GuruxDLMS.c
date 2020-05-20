@@ -74,7 +74,9 @@ void svr_init(
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     settings->hdlc = NULL;
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
-
+#ifndef DLMS_IGNORE_CLOCK
+    settings->defaultClock = NULL;
+#endif //DLMS_IGNORE_CLOCK
     settings->dataReceived = 0;
     settings->frameReceived = 0;
     resetFrameSequence(&settings->base);

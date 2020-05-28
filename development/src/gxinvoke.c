@@ -473,14 +473,23 @@ int invoke_ImageTransfer(
             ++target->imageActivateInfo.size;
 #else
             item = (gxImageActivateInfo*)gxmalloc(sizeof(gxImageActivateInfo));
+            bb_init(&item->identification);
+            bb_init(&item->signature);
             arr_push(&target->imageActivateInfo, item);
 #endif //DLMS_IGNORE_MALLOC
             item->size = var_toInteger(size);
             item->identification.size = 0;
+#ifdef DLMS_IGNORE_MALLOC
             if ((ret = cosem_getOctectString2(imageIdentifier->byteArr, item->identification.data, sizeof(item->identification.data), (uint16_t*)&item->identification.size)) != 0)
             {
                 return ret;
             }
+#else
+            if ((ret = bb_set2(&item->identification, imageIdentifier->byteArr, 0, bb_size(imageIdentifier->byteArr))) != 0)
+            {
+                return ret;
+            }
+#endif //DLMS_IGNORE_MALLOC
             int cnt = item->size / target->imageBlockSize;
             if (item->size % target->imageBlockSize != 0)
             {

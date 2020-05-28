@@ -742,6 +742,7 @@ void obj_clear(gxObject* object)
                     bb_clear(&it->identification);
                     bb_clear(&it->signature);
                 }
+                ++pos;
             }
 #endif //DLMS_IGNORE_MALLOC
             ba_clear(&((gxImageTransfer*)object)->imageTransferredBlocksStatus);

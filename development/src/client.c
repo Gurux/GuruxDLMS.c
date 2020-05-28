@@ -1103,37 +1103,13 @@ int cl_readRowsByRange2(
     gxtime* end,
     message* messages)
 {
-#ifdef DLMS_USE_EPOCH_TIME
-    return cl_readRowsByRange(settings, object, start->value, end->value, messages);
-#else
-    return cl_readRowsByRange(settings, object, &start->value, &end->value, messages);
-#endif //DLMS_USE_EPOCH_TIME
-}
-
-#ifdef DLMS_USE_EPOCH_TIME
-int cl_readRowsByRange(
-    dlmsSettings* settings,
-    gxProfileGeneric* object,
-    uint32_t start,
-    uint32_t end,
-    message* messages)
-#else
-int cl_readRowsByRange(
-    dlmsSettings* settings,
-    gxProfileGeneric* object,
-    struct tm* start,
-    struct tm* end,
-    message* messages)
-#endif //DLMS_USE_EPOCH_TIME
-{
     unsigned char unixTime = 0;
     static unsigned char LN[] = { 0, 0, 1, 0, 0, 255 };
     DLMS_OBJECT_TYPE type = DLMS_OBJECT_TYPE_CLOCK;
     unsigned char* ln = LN;
-    gxtime t;
     int ret;
     gxByteBuffer data;
-    if (object == NULL || start == 0 || end == 0 || messages == NULL)
+    if (object == NULL || start == NULL || end == NULL || messages == NULL)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
@@ -1171,7 +1147,6 @@ int cl_readRowsByRange(
         return ret;
     }
 #endif //DLMS_IGNORE_MALLOC
-    time_clear(&t);
 #ifdef DLMS_IGNORE_MALLOC
     unsigned char buff[100];
     bb_attach(&data, buff, 0, sizeof(buff));
@@ -1196,20 +1171,11 @@ int cl_readRowsByRange(
         //Add start time
         if (unixTime)
         {
-#ifdef DLMS_USE_EPOCH_TIME
-            ret = cosem_setUInt32(&data, start);
-#else
-            ret = cosem_setUInt32(&data, time_toUnixTime(start));
-#endif //DLMS_USE_EPOCH_TIME
+            ret = cosem_setUInt32(&data, time_toUnixTime2(start));
         }
         else
         {
-#ifdef DLMS_USE_EPOCH_TIME
-            time_initUnix(&t, start);
-#else
-            time_init2(&t, start);
-#endif //DLMS_USE_EPOCH_TIME
-            if ((ret = cosem_setDateTimeAsOctectString(&data, &t)) != 0)
+            if ((ret = cosem_setDateTimeAsOctectString(&data, start)) != 0)
             {
                 bb_clear(&data);
                 return ret;
@@ -1218,20 +1184,11 @@ int cl_readRowsByRange(
         //Add end time
         if (unixTime)
         {
-#ifdef DLMS_USE_EPOCH_TIME
-            ret = cosem_setUInt32(&data, end);
-#else
-            ret = cosem_setUInt32(&data, time_toUnixTime(end));
-#endif //DLMS_USE_EPOCH_TIME
+            ret = cosem_setUInt32(&data, time_toUnixTime2(end));
         }
         else
         {
-#ifdef DLMS_USE_EPOCH_TIME
-            time_initUnix(&t, end);
-#else
-            time_init2(&t, end);
-#endif //DLMS_USE_EPOCH_TIME
-            if ((ret = cosem_setDateTimeAsOctectString(&data, &t)) != 0)
+            if ((ret = cosem_setDateTimeAsOctectString(&data, end)) != 0)
             {
                 bb_clear(&data);
                 return ret;
@@ -1254,6 +1211,33 @@ int cl_readRowsByRange(
     }
     bb_clear(&data);
     return ret;
+}
+
+#ifdef DLMS_USE_EPOCH_TIME
+int cl_readRowsByRange(
+    dlmsSettings* settings,
+    gxProfileGeneric* object,
+    uint32_t start,
+    uint32_t end,
+    message* messages)
+#else
+int cl_readRowsByRange(
+    dlmsSettings* settings,
+    gxProfileGeneric* object,
+    struct tm* start,
+    struct tm* end,
+    message* messages)
+#endif //DLMS_USE_EPOCH_TIME
+{
+    gxtime s, e;
+#ifdef DLMS_USE_EPOCH_TIME
+    time_initUnix(&s, start);
+    time_initUnix(&e, end);
+#else
+    time_initUnix(&s, time_toUnixTime(start));
+    time_initUnix(&e, time_toUnixTime(end));
+#endif //DLMS_USE_EPOCH_TIME
+    return cl_readRowsByRange2(settings, object, &s, &e, messages);
 }
 #endif // DLMS_IGNORE_PROFILE_GENERIC
 
@@ -1453,7 +1437,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
     if ((settings->connected & DLMS_CONNECTION_STATE_HDLC) == 0)
     {
         return ret;
-}
+    }
     settings->connected &= ~DLMS_CONNECTION_STATE_HDLC;
 #ifdef DLMS_IGNORE_MALLOC
     reply = packets->data[0];
@@ -1562,7 +1546,7 @@ int cl_writeLN(
     {
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-}
+    }
     pdu = settings->serializedPdu;
     //Use same buffer for header and data. Header size is 10 bytes.
     bb_init(&data);
@@ -1668,7 +1652,7 @@ int cl_method(
     if (settings->useLogicalNameReferencing)
     {
         ret = cl_methodLN(settings, object->logicalName, object->objectType, index, data, messages);
-}
+    }
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1702,7 +1686,7 @@ int cl_methodLN(
     {
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-}
+    }
     pdu = settings->serializedPdu;
     //Use same buffer for header and data. Header size is 10 bytes.
     bb_init(&data);
@@ -1734,7 +1718,7 @@ int cl_methodLN(
             {
                 ret = dlms_setData(pdu, value->vt, value);
             }
-    }
+        }
 #else
         if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
         {
@@ -1748,7 +1732,7 @@ int cl_methodLN(
             }
         }
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     if (ret == 0)
     {
         params_initLN(&p, settings, 0,

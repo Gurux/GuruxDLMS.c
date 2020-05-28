@@ -84,7 +84,7 @@ extern "C" {
         struct tm value;
 #endif
         int16_t deviation;
-        unsigned char skip; //DATETIME_SKIPS
+        uint16_t skip; //DATETIME_SKIPS
         unsigned char extraInfo;// DLMS_DATE_TIME_EXTRA_INFO
         unsigned char status;//DLMS_CLOCK_STATUS
     } gxtime;

@@ -499,10 +499,12 @@ int invoke_ImageTransfer(
             target->imageTransferredBlocksStatus.position = 0;
 #endif //GX_DLMS_MICROCONTROLLER
             target->imageTransferredBlocksStatus.size = 0;
-            ba_capacity(&target->imageTransferredBlocksStatus, (uint16_t)cnt);
-            for (pos = 0; pos != cnt; ++pos)
+            if ((ret = ba_capacity(&target->imageTransferredBlocksStatus, (uint16_t)cnt)) == 0)
             {
-                ba_set(&target->imageTransferredBlocksStatus, 0);
+                for (pos = 0; pos != cnt; ++pos)
+                {
+                    ba_set(&target->imageTransferredBlocksStatus, 0);
+                }
             }
         }
     }
@@ -515,7 +517,7 @@ int invoke_ImageTransfer(
             e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
             return ret;
         }
-        ba_setByIndex(&target->imageTransferredBlocksStatus, var_toInteger(imageIndex), 1);
+        ret = ba_setByIndex(&target->imageTransferredBlocksStatus, var_toInteger(imageIndex), 1);
         target->imageFirstNotTransferredBlockNumber = var_toInteger(imageIndex) + 1;
         target->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
     }

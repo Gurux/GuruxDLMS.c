@@ -296,7 +296,7 @@ int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index,
             time_clear(&object->begin);
         }
 #endif //DLMS_IGNORE_MALLOC
-            object->begin.skip |= DATETIME_SKIPS_YEAR | DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MS | DATETIME_SKIPS_DEVITATION;
+        object->begin.skip |= DATETIME_SKIPS_YEAR | DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MS | DATETIME_SKIPS_DEVITATION;
     }
     else if (index == 6)
     {
@@ -4503,22 +4503,22 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 time_copy(&se->endDate, tmp3.dateTime);
                 arr_push(&object->entries, se);
 #endif //DLMS_IGNORE_MALLOC
-                }
+            }
 #ifndef DLMS_IGNORE_MALLOC
             if (ret != 0 && se != NULL)
             {
                 gxfree(se);
             }
 #endif //DLMS_IGNORE_MALLOC
-                }
+        }
 #endif //DLMS_IGNORE_MALLOC
-            }
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-        }
+}
 #endif //DLMS_IGNORE_SCHEDULE
 
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
@@ -4578,8 +4578,8 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                     }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                 }
-    }
-}
+            }
+        }
 #else
         dlmsVARIANT* tmp, * tmp2, * tmp3;
         if (value->Arr->size != 0)
@@ -4667,7 +4667,10 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                             break;
                         }
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
-                        memcpy(scriptAction->logicalName, tmp->byteArr, 6);
+                        if (bb_size(tmp->byteArr) == 6)
+                        {
+                            memcpy(scriptAction->logicalName, tmp->byteArr->data, 6);
+                        }
 #else
                         if ((ret = oa_findByLN(&settings->objects, type, tmp->byteArr->data, &scriptAction->target)) != 0)
                         {
@@ -4687,7 +4690,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                         }
                         var_copy(&scriptAction->parameter, tmp);
                         arr_push(&script->actions, scriptAction);
-                        }
+                    }
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
 #ifndef DLMS_IGNORE_MALLOC
@@ -4698,14 +4701,14 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
 #endif //DLMS_IGNORE_MALLOC
                         break;
                     }
-                        }
+                }
 #ifndef DLMS_IGNORE_MALLOC
                 if (ret != 0 && script != NULL)
                 {
                     gxfree(script);
                 }
 #endif //DLMS_IGNORE_MALLOC
-                    }
+            }
             else //Read Xemex meter here.
             {
                 ret = va_getByIndex(value->Arr, 0, &tmp);
@@ -4798,16 +4801,16 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
 #ifndef DLMS_IGNORE_MALLOC
                 arr_push(&script->actions, scriptAction);
 #endif //DLMS_IGNORE_MALLOC
-                }
-                }
-#endif //DLMS_IGNORE_MALLOC
             }
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-                }
+}
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
 int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, dlmsVARIANT* value)
@@ -4832,8 +4835,8 @@ int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, d
                 {
                     break;
                 }
-}
             }
+        }
 #else
         dlmsVARIANT* tmp, * tmp3;
         dlmsVARIANT tmp2;
@@ -4887,13 +4890,13 @@ int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, d
             }
         }
 #endif //DLMS_IGNORE_MALLOC
-        }
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
 int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned char index, dlmsVARIANT* value)
@@ -4937,7 +4940,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
             ret = bb_get(value->byteArr, object->ipReference, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
-            }
+        }
     }
     else if (index == 4)
     {
@@ -5007,7 +5010,7 @@ int cosem_setMessageHandler(
                 {
                     break;
                 }
-}
+            }
         }
 #else
         if (value->Arr != NULL)
@@ -5170,8 +5173,8 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
 #endif //DLMS_DEBUG
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                 }
-    }
-}
+            }
+        }
 #else
         if (value->Arr != NULL)
         {
@@ -5394,7 +5397,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
             (ret = cosem_getInt16(value->byteArr, &ct->chargePerUnit)) != 0)
         {
             break;
-}
+        }
     }
 #else
     dlmsVARIANT* it, * it2, * tmp;
@@ -5559,7 +5562,7 @@ int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char inde
             time_clear(&object->unitChargeActivationTime);
         }
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     else if (index == 8)
     {
         object->period = var_toInteger(value);
@@ -5645,7 +5648,7 @@ int cosem_setCredit(gxCredit* object, unsigned char index, dlmsVARIANT* value)
         if ((ret = cosem_getIntegerFromBitString(value->byteArr, &val)) == 0)
         {
             object->creditConfiguration = val;
-}
+        }
 #else
         object->creditConfiguration = var_toInteger(value);
 #endif //DLMS_IGNORE_MALLOC
@@ -5703,7 +5706,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
             (ret = cosem_getEnum(value->byteArr, (unsigned char*)&object->accountStatus)) != 0)
         {
             //Error is returned at the end of the function.
-}
+        }
 #else
         //payment mode
         ret = va_getByIndex(value->Arr, 0, &it);
@@ -5914,7 +5917,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
                 {
                     break;
                 }
-    }
+            }
         }
 #else
         for (pos = 0; pos != value->Arr->size; ++pos)
@@ -6069,7 +6072,7 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
             ba_copy(&object->imageTransferredBlocksStatus, value->bitArr->data, (uint16_t)value->bitArr->size);
         }
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     else if (index == 4)
     {
         object->imageFirstNotTransferredBlockNumber = var_toInteger(value);
@@ -6191,8 +6194,8 @@ int setCaptureObjects(
             {
                 break;
             }
+        }
     }
-}
 #else
     arr_capacity(objects, value->Arr->size);
     if (value->Arr != NULL)
@@ -6249,7 +6252,7 @@ int setCaptureObjects(
 #else
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_MALLOC
-                }
+            }
 #ifndef DLMS_IGNORE_MALLOC
             co = (gxTarget*)gxmalloc(sizeof(gxTarget));
             if (co == NULL)
@@ -6278,13 +6281,13 @@ int setCaptureObjects(
 #ifndef DLMS_IGNORE_MALLOC
             arr_push(objects, key_init(obj, co));
 #endif //DLMS_IGNORE_MALLOC
-            }
         }
+    }
     //Trim array.
     arr_capacity(objects, objects->size);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-    }
+}
 #endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_CONPACT_DATA))
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
@@ -6414,7 +6417,7 @@ int cosem_setProfileGeneric(
         //Trim array.
         arr_capacity(&object->buffer, object->buffer.size);
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     else if (index == 3)
     {
         object->entriesInUse = 0;
@@ -6569,7 +6572,7 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
             if (value->strVal != NULL && bb_size(value->strVal) != 0)
             {
                 bb_set(&object->operatorName, value->strVal->data, value->strVal->size);
-}
+            }
 #else
             if (object->operatorName != NULL)
             {
@@ -6827,7 +6830,7 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
                 {
                     break;
                 }
-}
+            }
         }
 #else
         if (value != NULL)
@@ -7245,8 +7248,8 @@ int compactData_updateTemplateDescription(
             var_clear(&e.value);
             ve_clear(&e);
 #endif //DLMS_IGNORE_MALLOC
+        }
     }
-}
     bb_clear(&tmp);
     //svr_postGet(settings, &args);
     vec_empty(&args);
@@ -7299,7 +7302,7 @@ int cosem_setCompactData(
         break;
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_COMPACT_DATA
@@ -7342,7 +7345,7 @@ int cosem_setParameterMonitor(
             object->changedParameter.type = type;
             memcpy(object->changedParameter.logicalName, ln, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    }
+        }
 #else
         if (value->Arr != NULL)
         {
@@ -7418,7 +7421,7 @@ int cosem_setParameterMonitor(
             time_clear(&object->captureTime);
         }
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     break;
     case 4:
     {
@@ -7730,7 +7733,7 @@ int cosem_setMulticastEntries(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obje
             {
                 break;
             }
-}
+        }
     }
 #else
     if (value->Arr != NULL)
@@ -7781,7 +7784,7 @@ int cosem_setSwitchTable(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, d
             {
                 break;
             }
-}
+        }
     }
 #else
     if (value->Arr != NULL)
@@ -7825,7 +7828,7 @@ int cosem_setDirectTable(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, d
             {
                 break;
             }
-}
+        }
     }
 #else
     if (value->Arr != NULL)
@@ -7908,7 +7911,7 @@ int cosem_setAvailableSwitches(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obj
             {
                 break;
             }
-}
+        }
     }
 #else
     if (value->Arr != NULL)
@@ -7992,7 +7995,7 @@ int cosem_setCommunications(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object
             {
                 break;
             }
-}
+        }
     }
 #else
     if (value->Arr != NULL)
@@ -8142,7 +8145,7 @@ int cosem_setPrimeNbOfdmPlcApplicationsIdentification(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
@@ -8366,7 +8369,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
         }
 #endif //DLMS_IGNORE_MALLOC
         return ret;
-}
+    }
     switch (e->target->objectType)
     {
 #ifndef DLMS_IGNORE_DATA

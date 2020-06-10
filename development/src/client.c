@@ -544,7 +544,7 @@ int cl_parseLNObjects(gxByteBuffer* data, objectArray* objects)
         version = (unsigned char)var_toInteger(it2);
         ret = cosem_createObject(class_id, &object);
         //If known object.
-        if (ret != DLMS_ERROR_CODE_INVALID_PARAMETER)
+        if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
         {
             object->version = version;
             ret = obj_updateAttributeAccessModes(object, it3->Arr);

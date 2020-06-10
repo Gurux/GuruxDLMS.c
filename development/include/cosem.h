@@ -106,6 +106,9 @@ extern "C" {
 
   int cosem_getBitString(gxByteBuffer* bb, bitArray* value);
 
+  //Get integer value from bit string.
+  int cosem_getIntegerFromBitString(gxByteBuffer* bb, uint32_t* value);
+
   int cosem_getVariant(gxByteBuffer* bb, dlmsVARIANT* value);
 
   int cosem_getEnum(gxByteBuffer* bb, unsigned char* value);
@@ -119,6 +122,8 @@ extern "C" {
   int cosem_setDateTimeAsOctectString(gxByteBuffer* bb, gxtime* value);
 
   int cosem_setDateAsOctectString(gxByteBuffer* bb, gxtime* value);
+
+  int cosem_setBitString(gxByteBuffer* bb, uint32_t value, uint16_t count);
 
   int cosem_setTimeAsOctectString(gxByteBuffer* bb, gxtime* value);
 

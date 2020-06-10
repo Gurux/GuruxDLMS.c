@@ -344,13 +344,12 @@ int addRegisterActivation()
 int addCharge()
 {
     int ret;
-    static unsigned char CHARGE_CONFIGURATION[20] = { 0 };
     static gxChargeTable ACTIVE_CHARGE_TABLES[10] = { 0 };
     static gxChargeTable PASSIVE_CHARGE_TABLES[10] = { 0 };
     const unsigned char ln[6] = { 0, 0, 19, 20, 0, 255 };
     if ((ret = INIT_OBJECT(charge, DLMS_OBJECT_TYPE_CHARGE, ln)) == 0)
     {
-        BIT_ATTACH(charge.chargeConfiguration, CHARGE_CONFIGURATION, 0);
+        charge.chargeConfiguration = DLMS_CHARGE_CONFIGURATION_CONTINUOUS_COLLECTION;
         ARR_ATTACH(charge.unitChargeActive.chargeTables, ACTIVE_CHARGE_TABLES, 0);
         ARR_ATTACH(charge.unitChargePassive.chargeTables, PASSIVE_CHARGE_TABLES, 0);
     }
@@ -362,12 +361,10 @@ int addCharge()
 ///////////////////////////////////////////////////////////////////////
 int addCredit()
 {
-    static unsigned char CREDIT_CONFIGURATION[20] = { 0 };
     int ret;
     const unsigned char ln[6] = { 0, 0, 19, 10, 0, 255 };
     if ((ret = INIT_OBJECT(credit, DLMS_OBJECT_TYPE_CREDIT, ln)) == 0)
     {
-        BIT_ATTACH(credit.creditConfiguration, CREDIT_CONFIGURATION, 0);
     }
     return ret;
 }

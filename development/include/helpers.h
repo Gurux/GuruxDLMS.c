@@ -41,6 +41,7 @@ extern "C" {
 #include "variant.h"
 
 static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0 };
+static const unsigned char EMPTY_KEY[16] = { 0 };
 static const unsigned char EMPTY_LN[6] = { 0 };
 //Get UInt32.
 #define GETU32(pt) (((uint32_t)(pt)[0] << 24) | \
@@ -214,6 +215,16 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     * @return Random number.
     */
     unsigned char hlp_rand(void);
+
+    //Add bits from byte array to bit array.
+    int hlp_add(
+        bitArray* arr,
+        gxByteBuffer* bytes,
+        uint16_t count);
+
+
+    //Swap bits. Reserved for internal use.
+    unsigned char hlp_swapBits(unsigned char value);
 
 #ifdef  __cplusplus
 }

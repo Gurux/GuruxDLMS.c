@@ -220,6 +220,47 @@ unsigned char useDedicatedKey(dlmsSettings* settings)
 }
 #endif //DLMS_IGNORE_HIGH_GMAC
 
+// Reserved for internal use.
+int apdu_getConformanceFromArray(gxByteBuffer* data, uint32_t* value)
+{
+    int ret;
+    unsigned char v;
+    uint32_t tmp;
+    if ((ret = bb_getUInt8(data, &v)) == 0)
+    {
+        *value = hlp_swapBits(v);
+        if ((ret = bb_getUInt8(data, &v)) == 0)
+        {
+            tmp = hlp_swapBits(v);
+            tmp <<= 8;
+            *value |= tmp;
+            if ((ret = bb_getUInt8(data, &v)) == 0)
+            {
+                tmp = hlp_swapBits(v);
+                tmp <<= 16;
+                *value |= tmp;
+            }
+        }
+    }
+    return ret;
+}
+
+// Reserved for internal use.
+int apdu_setConformanceToArray(uint32_t value, gxByteBuffer* data)
+{
+    int ret;
+    if ((ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(value & 0xFF)))) == 0)
+    {
+        value >>= 8;
+        if ((ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(value & 0xFF)))) == 0)
+        {
+            value >>= 8;
+            ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(value & 0xFF)));
+        }
+    }
+    return ret;
+}
+
 /**
  * Generate User information initiate request.
  *
@@ -233,9 +274,6 @@ int apdu_getInitiateRequest(
     gxByteBuffer* data)
 {
     int ret;
-    unsigned char tmp[4];
-    gxByteBuffer bb;
-    bb_attach(&bb, tmp, 0, sizeof(tmp));
     // Tag for xDLMS-Initiate request
     bb_setUInt8(data, DLMS_COMMAND_INITIATE_REQUEST);
     // Usage field for the response allowed component.
@@ -285,8 +323,7 @@ int apdu_getInitiateRequest(
         (ret = bb_setUInt8(data, 0x04)) != 0 ||
         // encoding the number of unused bits in the bit string
         (ret = bb_setUInt8(data, 0x00)) != 0 ||
-        (ret = bb_setUInt32(&bb, settings->proposedConformance)) != 0 ||
-        (ret = bb_set2(data, &bb, 1, 3)) != 0 ||
+        (ret = apdu_setConformanceToArray(settings->proposedConformance, data)) != 0 ||
         (ret = bb_setUInt16(data, settings->maxPduSize)) != 0)
     {
         return ret;
@@ -393,9 +430,6 @@ int apdu_parseUserInformation(
     unsigned char* command)
 {
     int ret;
-    unsigned char tmp[3];
-    unsigned char tmp2[4];
-    gxByteBuffer bb;
     unsigned char response;
     uint16_t pduSize;
     unsigned char ch, len, tag;
@@ -544,11 +578,10 @@ int apdu_parseUserInformation(
         // Skip if used.
         if (tag != 0)
         {
-            if ((ret = bb_getUInt8(data, &len)) != 0)
+            if ((ret = bb_getUInt8(data, &tag)) != 0)
             {
                 return ret;
             }
-            data->position = (data->position + len);
         }
         // Optional usage field of the proposed quality of service component
         if ((ret = bb_getUInt8(data, &tag)) != 0)
@@ -614,19 +647,14 @@ int apdu_parseUserInformation(
     {
         return ret;
     }
-    bb_get(data, tmp, 3);
-    bb_attach(&bb, tmp2, 0, sizeof(tmp2));
-    bb_setInt8(&bb, 0);
-    bb_set(&bb, tmp, 3);
-    if ((ret = bb_getUInt32(&bb, &v)) != 0)
+    if ((ret = apdu_getConformanceFromArray(data, &v)) != 0)
     {
         return ret;
     }
-    bb_clear(&bb);
     if (settings->server)
     {
         settings->negotiatedConformance = (DLMS_CONFORMANCE)(v & settings->proposedConformance);
-        //Remove geneal protection if ciphered connection is not used.
+        //Remove general protection if ciphered connection is not used.
         if (!ciphered && (settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
         {
             settings->negotiatedConformance &= ~DLMS_CONFORMANCE_GENERAL_PROTECTION;
@@ -985,8 +1013,6 @@ int apdu_getUserInformation(
     unsigned char command)
 {
     int ret = 0;
-    gxByteBuffer bb;
-    unsigned char buff[4];
     // Tag for xDLMS-Initiate
     if ((ret = bb_setUInt8(data, DLMS_COMMAND_INITIATE_RESPONSE)) != 0)
     {
@@ -1009,8 +1035,6 @@ int apdu_getUserInformation(
             return ret;
         }
     }
-    bb_attach(&bb, buff, 0, sizeof(buff));
-
     // DLMS Version Number
     if ((ret = bb_setUInt8(data, 06)) != 0 ||
         (ret = bb_setUInt8(data, 0x5F)) != 0 ||
@@ -1019,8 +1043,7 @@ int apdu_getUserInformation(
         (ret = bb_setUInt8(data, 0x04)) != 0 ||
         // encoding the number of unused bits in the bit string
         (ret = bb_setUInt8(data, 0x00)) != 0 ||
-        (ret = bb_setUInt32(&bb, settings->negotiatedConformance)) != 0 ||
-        (ret = bb_set2(data, &bb, 1, 3)) != 0 ||
+        (ret = apdu_setConformanceToArray(settings->negotiatedConformance, data)) != 0 ||
         (ret = bb_setUInt16(data, settings->maxPduSize)) != 0)
     {
         return ret;

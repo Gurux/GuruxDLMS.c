@@ -852,15 +852,30 @@ int invoke_AssociationShortName(
 }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
-int invoke_ScriptTable(dlmsServerSettings* settings, gxValueEventArg* e)
+int invoke_ScriptTable(
+    dlmsServerSettings* settings,
+    gxValueEventArg* e)
 {
     gxScript* s;
     gxScriptAction* sa;
+    gxValueEventArg* e1;
     int ret = 0, pos, pos2;
     unsigned char id = var_toInteger(&e->parameters);
     //Find index and execute it.
     if (e->index == 1)
     {
+        gxValueEventCollection args;
+#ifdef DLMS_IGNORE_MALLOC
+        gxValueEventArg tmp[1];
+        ve_init(&tmp[0]);
+        vec_attach(&args, tmp, 1, 1);
+        e1 = &tmp[0];
+#else
+        e1 = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+        ve_init(e1);
+        vec_init(&args);
+        vec_push(&args, e1);
+#endif //DLMS_IGNORE_MALLOC
         for (pos = 0; pos != ((gxScriptTable*)e->target)->scripts.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
@@ -883,44 +898,58 @@ int invoke_ScriptTable(dlmsServerSettings* settings, gxValueEventArg* e)
                     {
                         break;
                     }
-                    gxValueEventArg e2;
-                    ve_init(&e2);
-                    e2.parameters = sa->parameter;
-                    e2.index = sa->index;
+                    e1->parameters = sa->parameter;
+                    e1->index = sa->index;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-                    e2.target = sa->target;
+                    e1->target = sa->target;
 #else
-                    if ((ret = oa_findByLN(&settings->base.objects, sa->objectType, sa->logicalName, &e2.target)) != 0)
+                    if ((ret = oa_findByLN(&settings->base.objects, sa->objectType, sa->logicalName, &e1->target)) != 0)
                     {
+                        break;
+                    }
+                    if (e1->target == NULL)
+                    {
+                        ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
                         break;
                     }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                     if (sa->type == DLMS_SCRIPT_ACTION_TYPE_WRITE)
                     {
-                        if ((ret = cosem_setValue(&settings->base, &e2)) != 0)
+                        svr_preWrite(&settings->base, &args);
+                        if (!e->handled)
                         {
-                            break;
+                            if ((ret = cosem_setValue(&settings->base, e1)) != 0)
+                            {
+                                break;
+                            }
+                            svr_postWrite(&settings->base, &args);
                         }
                     }
                     else if (sa->type == DLMS_SCRIPT_ACTION_TYPE_EXECUTE)
                     {
-                        if ((ret = cosem_invoke(settings, &e2)) != 0)
+                        svr_preAction(&settings->base, &args);
+                        if (!e->handled)
                         {
-                            break;
+                            if ((ret = cosem_invoke(settings, e1)) != 0)
+                            {
+                                break;
+                            }
+                            svr_postAction(&settings->base, &args);
                         }
                     }
                     else
                     {
-                        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                        ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
                         break;
                     }
                 }
             }
         }
+        vec_clear(&args);
     }
     else
     {
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
     }
     return ret;
 }

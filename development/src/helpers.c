@@ -941,3 +941,46 @@ unsigned char hlp_rand(void)
     bit = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5)) & 1;
     return (unsigned char)(lfsr = (uint16_t)((lfsr >> 1) | (bit << 15)));
 }
+
+unsigned char hlp_swapBits(unsigned char value)
+{
+    unsigned char ret = 0, pos;
+    for (pos = 0; pos != 8; ++pos)
+    {
+        ret = (unsigned char)((ret << 1) | (value & 0x01));
+        value = (unsigned char)(value >> 1);
+    }
+    return ret;
+}
+
+int hlp_add(bitArray* arr, gxByteBuffer* bytes, uint16_t count)
+{
+    uint16_t pos, bytePos = 0;
+    int ret;
+    unsigned char ch = 0;
+    if (count == 0xFFFF)
+    {
+        count = (uint16_t)(bytes->size - bytes->position);
+    }
+    for (pos = 0; pos != count; ++pos)
+    {
+        //Get next byte.
+        if ((pos % 8) == 0)
+        {
+            bytePos = 7;
+            ret = bb_getUInt8ByIndex(bytes, bytes->position, &ch);
+            if (ret != 0)
+            {
+                return ret;
+            }
+            ++bytes->position;
+        }
+        if ((ret = ba_setByIndex(arr, pos, (unsigned char)(ch & (1 << bytePos)))) != 0)
+        {
+            return ret;
+        }
+        --bytePos;
+        ++arr->size;
+    }
+    return 0;
+}

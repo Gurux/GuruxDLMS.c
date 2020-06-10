@@ -949,11 +949,7 @@ int cosem_getAssociationLogicalName(
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(data, 6)) != 0 ||
             //Add data.
-            (ret = bb_setUInt32(&tmp, object->xDLMSContextInfo.conformance)) != 0 ||
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
-            (ret = hlp_setObjectCount(3 * 8, data)) != 0 ||
-            (ret = bb_set(data, tmp.data + 1, 3)) != 0 ||
-            (ret = bb_clear(&tmp)) != 0 ||
+            (ret = cosem_setBitString(data, object->xDLMSContextInfo.conformance, 24)) != 0 ||
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
             (ret = bb_setUInt16(data, object->xDLMSContextInfo.maxReceivePduSize)) != 0 ||
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
@@ -2568,12 +2564,7 @@ int cosem_getProfileGeneric(
             ret = getProfileGenericData(settings, object, e, e->value.byteArr);
         }
 #else
-        gxValueEventCollection arr;
-        vec_attach(&arr, e, 1, 1);
-#ifndef DLMS_IGNORE_SERVER
-        svr_preGet(settings, &arr);
-#endif //DLMS_IGNORE_SERVER
-        e->byteArray = 1;
+        ret = DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (e->index == 3)
@@ -4066,7 +4057,7 @@ int cosem_getPushSetup(
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
                 (ret = bb_set(data, it->logicalName, 6)) != 0 ||
 #else
-                    (ret = bb_set(data, it->target->logicalName, 6)) != 0 ||
+                (ret = bb_set(data, it->target->logicalName, 6)) != 0 ||
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                 //attributeIndex
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_INT8)) != 0 ||
@@ -4431,14 +4422,8 @@ int cosem_getCharge(
         {
             return ret;
         }
-        gxByteBuffer* data = e->value.byteArr;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
-        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
-            (ret = hlp_setObjectCount(object->chargeConfiguration.size, data)) != 0 ||
-            (ret = bb_set(data, object->chargeConfiguration.data, ba_getByteCount(object->chargeConfiguration.size))) != 0)
-        {
-            return ret;
-        }
+        ret = cosem_setBitString(e->value.byteArr, object->chargeConfiguration, 2);
     }
     else if (e->index == 10)
     {
@@ -4595,14 +4580,8 @@ int cosem_getCredit(
         {
             return ret;
         }
-        gxByteBuffer* data = e->value.byteArr;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
-        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
-            (ret = hlp_setObjectCount(object->creditConfiguration.size, data)) != 0 ||
-            (ret = bb_set(data, object->creditConfiguration.data, ba_getByteCount(object->creditConfiguration.size))) != 0)
-        {
-            return ret;
-        }
+        ret = cosem_setBitString(e->value.byteArr, object->creditConfiguration, 5);
     }
     else if (e->index == 8)
     {
@@ -4670,14 +4649,8 @@ int cosem_getAccount(
         {
             return ret;
         }
-        gxByteBuffer* data = e->value.byteArr;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
-        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
-            (ret = bb_setUInt8(data, 8)) != 0 ||
-            (ret = bb_setUInt8(data, object->currentCreditStatus & 0xFF)) != 0)
-        {
-            return ret;
-        }
+        ret = cosem_setBitString(e->value.byteArr, object->currentCreditStatus, 7);
     }
     else if (e->index == 5)
     {
@@ -4781,12 +4754,10 @@ int cosem_getAccount(
                     (ret = hlp_setObjectCount(6, data)) != 0 ||
                     (ret = bb_set(data, ccc->chargeReference, 6)) != 0 ||
                     //collection configuration
-                    (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
-                    (ret = bb_setUInt8(data, 3)) != 0 ||
-                    (ret = bb_setUInt8(data, (unsigned char)(ccc->collectionConfiguration << 5))) != 0)
-            {
-                break;
-            }
+                    (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
+                {
+                    break;
+                }
     }
     else if (e->index == 12)
     {

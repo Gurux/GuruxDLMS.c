@@ -1241,6 +1241,30 @@ int com_readRowsByRange(
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
+int com_readRowsByRange2(
+    connection* connection,
+    gxProfileGeneric* object,
+    gxtime* start,
+    gxtime* end)
+{
+    int ret;
+    message data;
+    gxReplyData reply;
+    mes_init(&data);
+    reply_init(&reply);
+    if ((ret = cl_readRowsByRange2(&connection->settings, object, start, end, &data)) != 0 ||
+        (ret = com_readDataBlock(connection, &data, &reply)) != 0 ||
+        (ret = cl_updateValue(&connection->settings, (gxObject*)object, 2, &reply.dataValue)) != 0)
+    {
+        printf("ReadObject failed %s\r\n", hlp_getErrorMessage(ret));
+    }
+    mes_clear(&data);
+    reply_clear(&reply);
+    return ret;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////
 //Read scalers and units. They are static so they are read only once.
 int com_readScalerAndUnits(
     connection* connection)
@@ -1430,7 +1454,7 @@ int com_readProfileGenerics(
         time_now(&startTime);
         endTime = startTime;
         time_clearTime(&startTime);
-        ret = com_readRowsByRange(connection, pg, &startTime.value, &endTime.value);
+        ret = com_readRowsByRange2(connection, pg, &startTime, &endTime);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             if (connection->trace > GX_TRACE_LEVEL_OFF)

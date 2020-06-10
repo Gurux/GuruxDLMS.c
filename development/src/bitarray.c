@@ -148,7 +148,7 @@ int ba_capacity(bitArray* arr, uint16_t capacity)
 }
 
 //Push new data to the bit array.
-int ba_set(bitArray *arr, unsigned char item)
+int ba_set(bitArray* arr, unsigned char item)
 {
     int ret = ba_setByIndex(arr, arr->size, item);
     if (ret == 0)
@@ -159,7 +159,7 @@ int ba_set(bitArray *arr, unsigned char item)
 }
 
 //Set bit by index.
-int ba_setByIndex(bitArray *arr, int index, unsigned char item)
+int ba_setByIndex(bitArray* arr, int index, unsigned char item)
 {
     int ret;
     unsigned char newItem = 0;
@@ -197,74 +197,28 @@ int ba_setByIndex(bitArray *arr, int index, unsigned char item)
     return 0;
 }
 
-//Add bits from byte array to bit array.
-int ba_add(bitArray *arr, gxByteBuffer * bytes, uint16_t count, unsigned char intelByteOrder)
-{
-    uint16_t index, pos, bytePos = 0;
-    int ret;
-    unsigned char ch = 0;
-    if (count == 0xFFFF)
-    {
-        count = (uint16_t) (bytes->size - bytes->position);
-    }
-    if (intelByteOrder)
-    {
-        index = (uint16_t) (bytes->position + ba_getByteCount(count) - 1);
-    }
-    else
-    {
-        index = (uint16_t) bytes->position;
-    }
-    for (pos = 0; pos != count; ++pos)
-    {
-        //Get next byte.
-        if ((pos % 8) == 0)
-        {
-            bytePos = 7;
-            ret = bb_getUInt8ByIndex(bytes, index, &ch);
-            if (ret != 0)
-            {
-                return ret;
-            }
-            if (intelByteOrder)
-            {
-                --index;
-            }
-            else
-            {
-                ++index;
-            }
-            ++bytes->position;
-        }
-        if ((ret = ba_setByIndex(arr, pos, (unsigned char)(ch & (1 << bytePos)))) != 0)
-        {
-            return ret;
-        }
-        --bytePos;
-        ++arr->size;
-    }
-    return 0;
-}
-
 int ba_copy(
-    bitArray *target,
-    unsigned char *source,
+    bitArray* target,
+    unsigned char* source,
     uint16_t count)
 {
+    int ret = 0;
     ba_clear(target);
     if (count != 0)
     {
-        ba_capacity(target, count);
-        memcpy(target->data, source, ba_getByteCount(count));
-        target->size = count;
+        if ((ret = ba_capacity(target, count)) == 0)
+        {
+            memcpy(target->data, source, ba_getByteCount(count));
+            target->size = count;
 #ifndef GX_DLMS_MICROCONTROLLER
-        target->position = 0;
+            target->position = 0;
 #endif //GX_DLMS_MICROCONTROLLER
+        }
     }
-    return 0;
+    return ret;
 }
 
-void ba_clear(bitArray *arr)
+void ba_clear(bitArray* arr)
 {
 #ifndef DLMS_IGNORE_MALLOC
     if (arr->data != NULL)
@@ -281,7 +235,7 @@ void ba_clear(bitArray *arr)
 }
 
 #ifndef GX_DLMS_MICROCONTROLLER
-int ba_get(bitArray *arr, unsigned char* value)
+int ba_get(bitArray* arr, unsigned char* value)
 {
     int ret = ba_getByIndex(arr, arr->position, value);
     if (ret == 0)
@@ -292,7 +246,7 @@ int ba_get(bitArray *arr, unsigned char* value)
 }
 #endif //GX_DLMS_MICROCONTROLLER
 
-int ba_getByIndex(bitArray *arr, int index, unsigned char *value)
+int ba_getByIndex(bitArray* arr, int index, unsigned char* value)
 {
     char ch;
     if (index >= arr->size)
@@ -300,11 +254,11 @@ int ba_getByIndex(bitArray *arr, int index, unsigned char *value)
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     ch = arr->data[getByteIndex(index)];
-    *value = (ch &  (1 << (7 - (index % 8)))) != 0;
+    *value = (ch & (1 << (7 - (index % 8)))) != 0;
     return 0;
 }
 
-int ba_toInteger(bitArray *arr, int *value)
+int ba_toInteger(bitArray* arr, uint32_t* value)
 {
     *value = 0;
     unsigned char ch;
@@ -315,13 +269,13 @@ int ba_toInteger(bitArray *arr, int *value)
         {
             return ret;
         }
-        *value |= ch << (arr->size - pos - 1);
+        *value |= ch << pos;
     }
     return 0;
 }
 
 #ifndef DLMS_IGNORE_MALLOC
-char* ba_toString(bitArray *arr)
+char* ba_toString(bitArray* arr)
 {
     unsigned char ch;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)

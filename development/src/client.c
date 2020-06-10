@@ -1596,6 +1596,7 @@ int cl_writeLN(
         DLMS_COMMAND_SET_REQUEST, DLMS_SET_COMMAND_TYPE_NORMAL,
         pdu, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
     ret = dlms_getLnMessages(&p, messages);
+    bb_clear(&data);
     bb_clear(pdu);
     return ret;
 }

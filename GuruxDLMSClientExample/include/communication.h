@@ -131,6 +131,12 @@ int com_readRowsByRange(
     struct tm* start,
     struct tm* end);
 
+int com_readRowsByRange2(
+    connection* connection,
+    gxProfileGeneric* object,
+    gxtime* start,
+    gxtime* end);
+
 int com_readValue(
     connection *connection,
     gxObject* object,

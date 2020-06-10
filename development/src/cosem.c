@@ -376,7 +376,7 @@ int cosem_createObject(DLMS_OBJECT_TYPE type, gxObject** object)
     int size = cosem_getObjectSize(type);
     if (size == 0)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
     }
     *object = (gxObject*)gxcalloc(1, size);
     if (*object == NULL)
@@ -452,7 +452,7 @@ int cosem_init2(
     int size = cosem_getObjectSize(type);
     if (size == 0)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
     }
     memset(object, 0, size);
     object->objectType = type;
@@ -628,7 +628,7 @@ int cosem_checkStructure(gxByteBuffer* bb, uint16_t expectedItemCount)
     {
         if (cnt != expectedItemCount)
         {
-            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
         }
     }
     return ret;
@@ -645,16 +645,12 @@ int cosem_getStructure(gxByteBuffer* bb, uint16_t* count)
     }
     if (value != DLMS_DATA_TYPE_STRUCTURE)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     //Get structure count.
     if ((ret = hlp_getObjectCount2(bb, &cnt)) != 0)
     {
         return ret;
-    }
-    if (*count < cnt)
-    {
-        return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     *count = cnt;
     return 0;
@@ -671,7 +667,7 @@ int cosem_checkArray(gxByteBuffer* bb, uint16_t* count)
     }
     if (ch != DLMS_DATA_TYPE_ARRAY)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     //Get array count.
     if ((ret = hlp_getObjectCount2(bb, &cnt)) != 0)
@@ -680,7 +676,7 @@ int cosem_checkArray(gxByteBuffer* bb, uint16_t* count)
     }
     if (*count < cnt)
     {
-        return DLMS_ERROR_CODE_OUTOFMEMORY;
+        return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
     }
     *count = cnt;
     return 0;
@@ -696,7 +692,7 @@ int cosem_getUInt8(gxByteBuffer* bb, unsigned char* value)
     }
     if (tmp != DLMS_DATA_TYPE_UINT8)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = bb_getUInt8(bb, value)) != 0)
     {
@@ -715,7 +711,7 @@ int cosem_getUInt16(gxByteBuffer* bb, uint16_t* value)
     }
     if (tmp != DLMS_DATA_TYPE_UINT16)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = bb_getUInt16(bb, value)) != 0)
     {
@@ -734,7 +730,7 @@ int cosem_getUInt32(gxByteBuffer* bb, uint32_t* value)
     }
     if (tmp != DLMS_DATA_TYPE_UINT32)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = bb_getUInt32(bb, value)) != 0)
     {
@@ -753,7 +749,7 @@ int cosem_getInt8(gxByteBuffer* bb, signed char* value)
     }
     if (tmp != DLMS_DATA_TYPE_INT8)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = bb_getInt8(bb, value)) != 0)
     {
@@ -772,7 +768,7 @@ int cosem_getInt16(gxByteBuffer* bb, short* value)
     }
     if (tmp != DLMS_DATA_TYPE_INT16)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = bb_getInt16(bb, value)) != 0)
     {
@@ -791,7 +787,7 @@ int cosem_getInt32(gxByteBuffer* bb, int32_t* value)
     }
     if (tmp != DLMS_DATA_TYPE_INT32)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = bb_getInt32(bb, value)) != 0)
     {
@@ -815,7 +811,7 @@ int cosem_getOctectStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned ch
     }
     if (tmp != type)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = hlp_getObjectCount2(bb, &count)) != 0)
     {
@@ -823,7 +819,7 @@ int cosem_getOctectStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned ch
     }
     if (count > bb_getCapacity(value))
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
     }
     if ((ret = bb_set2(value, bb, bb->position, count)) != 0)
     {
@@ -844,7 +840,7 @@ int cosem_getOctectStringBase2(gxByteBuffer* bb, unsigned char* value, uint16_t 
     }
     if (tmp != type)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = hlp_getObjectCount2(bb, &count)) != 0)
     {
@@ -856,7 +852,7 @@ int cosem_getOctectStringBase2(gxByteBuffer* bb, unsigned char* value, uint16_t 
     }
     if (count > capacity)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
     }
     return bb_get(bb, value, count);
 }
@@ -924,7 +920,7 @@ int cosem_getDateTimeFromOctectStringBase(gxByteBuffer* bb, gxtime* value, unsig
     }
     if (ch != DLMS_DATA_TYPE_OCTET_STRING)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = hlp_getObjectCount2(bb, &count)) != 0)
     {
@@ -934,27 +930,27 @@ int cosem_getDateTimeFromOctectStringBase(gxByteBuffer* bb, gxtime* value, unsig
     {
         if (count != 12)
         {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return DLMS_ERROR_CODE_UNMATCH_TYPE;
         }
     }
     else if (type == DLMS_DATA_TYPE_DATE)
     {
         if (count != 5)
         {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return DLMS_ERROR_CODE_UNMATCH_TYPE;
         }
     }
     else if (type == DLMS_DATA_TYPE_TIME)
     {
         if (count != 4)
         {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return DLMS_ERROR_CODE_UNMATCH_TYPE;
         }
     }
     di_init(&info);
     info.type = (DLMS_DATA_TYPE)type;
     return dlms_getData(bb, &info, &tmp);
-    }
+}
 
 
 int cosem_getDateTimeFromOctectString(gxByteBuffer* bb, gxtime* value)
@@ -984,13 +980,35 @@ int cosem_getBitString(gxByteBuffer* bb, bitArray* value)
     }
     if (ch != DLMS_DATA_TYPE_BIT_STRING)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = hlp_getObjectCount2(bb, &count)) != 0)
     {
         return ret;
     }
-    return ba_add(value, bb, count, 0);
+    return hlp_add(value, bb, count);
+}
+
+int cosem_getIntegerFromBitString(gxByteBuffer* bb, uint32_t* value)
+{
+    int ret;
+    unsigned char ch;
+    uint16_t count;
+    bitArray ba;
+    if ((ret = bb_getUInt8(bb, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != DLMS_DATA_TYPE_BIT_STRING)
+    {
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
+    }
+    if ((ret = hlp_getObjectCount2(bb, &count)) != 0)
+    {
+        return ret;
+    }
+    ba_attach(&ba, bb->data + bb->position, count, count);
+    return ba_toInteger(&ba, value);
 }
 
 int cosem_getVariant(gxByteBuffer* bb, dlmsVARIANT* value)
@@ -1022,7 +1040,7 @@ int cosem_getEnum(gxByteBuffer* bb, unsigned char* value)
     }
     if (tmp != DLMS_DATA_TYPE_ENUM)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = bb_getUInt8(bb, value)) != 0)
     {
@@ -1041,7 +1059,7 @@ int cosem_getBoolean(gxByteBuffer* bb, unsigned char* value)
     }
     if (tmp != DLMS_DATA_TYPE_BOOLEAN)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     if ((ret = bb_getUInt8(bb, value)) != 0)
     {
@@ -1083,6 +1101,36 @@ int cosem_setDateAsOctectString(gxByteBuffer* bb, gxtime* value)
     }
     return ret;
 }
+
+int cosem_setBitString(gxByteBuffer* bb, uint32_t value, uint16_t count)
+{
+    int ret = 0;
+    uint16_t pos;
+    uint16_t capacity = count == 0 ? 2 : (3 + (count / 8));
+    capacity += (uint16_t)bb_size(bb);
+    if (bb_getCapacity(bb) < capacity)
+    {
+        ret = bb_capacity(bb, capacity);
+    }
+    if (ret == 0 &&
+        (ret = bb_setUInt8(bb, DLMS_DATA_TYPE_BIT_STRING)) == 0 &&
+        (ret = hlp_setObjectCount(count, bb)) == 0)
+    {
+        bitArray ba;
+        ba_attach(&ba, bb->data + bb->size, 0, (uint16_t)(8 * (bb->size - bb->size)));
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = ba_setByIndex(&ba, pos, value & 01)) != 0)
+            {
+                break;
+            }
+            value >>= 1;
+        }
+        bb->size += ba_getByteCount(count);
+    }
+    return ret;
+}
+
 
 int cosem_setTimeAsOctectString(gxByteBuffer* bb, gxtime* value)
 {
@@ -1448,7 +1496,7 @@ int cosem_getColumns(
                     {
                         if (!(columns->size < arr_getCapacity(columns)))
                         {
-                            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+                            return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
                         }
                         ++columns->size;
                         if ((ret = arr_getByIndex(columns, index, (void**)&k2, sizeof(gxTarget))) != 0)
@@ -1476,7 +1524,7 @@ int cosem_getColumns(
         }
         if (!(count < captureObjects->size || start < count))
         {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
         }
         columns->size = count;
         for (pos = start - 1; pos != count; ++pos)
@@ -1503,10 +1551,10 @@ int cosem_getColumns(
                 if ((ret = va_getByIndex(parameters->Arr, 3, &it)) == 0)
                 {
                     ret = getSelectedColumns(captureObjects, it->Arr, columns);
-    }
+                }
                 addAllColumns = 0;
-}
-}
+            }
+        }
         else if (selector == 2) //Read by entry.
         {
             if (parameters->Arr->size > 2)

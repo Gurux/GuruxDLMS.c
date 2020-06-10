@@ -84,26 +84,19 @@ extern "C" {
 
     //Push new data to the bit array.
     int ba_set(
-        bitArray * arr,
+        bitArray* arr,
         unsigned char item);
 
     //Push new data to the bit array.
     int ba_setByIndex(
-        bitArray *arr,
+        bitArray* arr,
         int index,
         unsigned char item);
 
-    //Add bits from byte array to bit array.
-    int ba_add(
-        bitArray *arr,
-        gxByteBuffer *bytes,
-        uint16_t count,
-        unsigned char intelByteOrder);
-
     //Copy bit array.
     int ba_copy(
-        bitArray *target,
-        unsigned char *source,
+        bitArray* target,
+        unsigned char* source,
         uint16_t count);
 
     //Clear bit array.
@@ -123,8 +116,8 @@ extern "C" {
 
     //Convert bit array to integer.
     int ba_toInteger(
-        bitArray *arr,
-        int *value);
+        bitArray* arr,
+        uint32_t* value);
 
 #ifndef DLMS_IGNORE_MALLOC
     //Get bit array as a string.

@@ -84,6 +84,24 @@ int dlms_checkInit(dlmsSettings* settings)
     return DLMS_ERROR_CODE_OK;
 }
 
+unsigned char dlms_useDedicatedKey(dlmsSettings* settings)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    return settings->cipher.dedicatedKey != NULL;
+#else
+    return memcmp(settings->cipher.dedicatedKey, EMPTY_KEY, 16) != 0;
+#endif //DLMS_IGNORE_MALLOC
+}
+
+unsigned char dlms_usePreEstablishedSystemTitle(dlmsSettings* settings)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    return settings->preEstablishedSystemTitle != NULL;
+#else
+    return memcmp(settings->preEstablishedSystemTitle, EMPTY_SYSTEM_TITLE, 8) != 0;
+#endif //DLMS_IGNORE_MALLOC
+}
+
 #ifndef DLMS_IGNORE_HIGH_GMAC
 /**
 * Get used glo message.
@@ -96,7 +114,7 @@ unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, D
 {
     unsigned char cmd;
     unsigned glo = settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION;
-    unsigned ded = settings->cipher.dedicatedKey != NULL && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0;
+    unsigned ded = dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0;
     if (encryptedCommand == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
         encryptedCommand == DLMS_COMMAND_GENERAL_DED_CIPHERING)
     {
@@ -539,7 +557,7 @@ static int getBitString(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value
 #else
     value->bitArr = (bitArray*)gxmalloc(sizeof(bitArray));
     ba_init(value->bitArr);
-    if ((ret = ba_add(value->bitArr, buff, cnt, 0)) != 0)
+    if ((ret = hlp_add(value->bitArr, buff, cnt)) != 0)
     {
         return ret;
     }
@@ -1143,7 +1161,7 @@ int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         return ret;
     }
     month = ch;
-    // Get day
+    // Get day.
     if ((ret = bb_getUInt8(buff, &ch)) != 0)
     {
         return ret;
@@ -3067,7 +3085,7 @@ int dlms_getWrapperFrame(
         {
             if ((ret = bb_setUInt16(reply, settings->clientAddress)) == 0)
             {
-                ret = bb_setUInt16(reply, (unsigned short) settings->serverAddress);
+                ret = bb_setUInt16(reply, (unsigned short)settings->serverAddress);
             }
         }
         // Data length.
@@ -4023,7 +4041,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
         --data->data.position;
         unsigned char emptySourceSystemTile;
         emptySourceSystemTile = memcmp(settings->sourceSystemTitle, EMPTY_SYSTEM_TITLE, 8) == 0;
-        if (settings->cipher.dedicatedKey != NULL && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+        if (dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
         {
             if ((ret = cip_decrypt(&settings->cipher,
                 settings->sourceSystemTitle,
@@ -4035,7 +4053,7 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
             }
         }
         //If pre-set connection is made.
-        else if (settings->preEstablishedSystemTitle != NULL && emptySourceSystemTile)
+        else if (dlms_usePreEstablishedSystemTitle(settings) && emptySourceSystemTile)
         {
 #ifndef DLMS_IGNORE_SERVER
             if (settings->server && settings->connected == DLMS_CONNECTION_STATE_NONE && !data->preEstablished)
@@ -4120,7 +4138,7 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
         bb_init(&bb);
         bb_set2(&bb, &data->data, data->data.position, bb_size(&data->data) - data->data.position);
         data->data.position = data->data.size = index;
-        if (settings->cipher.dedicatedKey != NULL && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+        if (dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
         {
             if ((ret = cip_decrypt(&settings->cipher,
                 settings->sourceSystemTitle,
@@ -4728,7 +4746,7 @@ void dlms_multipleBlocks(
     unsigned char ciphering)
 {
     // Check is all data fit to one message if data is given.
-    int len = p->data->size - p->data->position;
+    int len = bb_available(p->data);
     if (p->attributeDescriptor != NULL)
     {
         len += p->attributeDescriptor->size;
@@ -4789,32 +4807,11 @@ int dlms_getLNPdu(
             h = reply;
 #endif //DLMS_IGNORE_MALLOC
         }
-        if ((p->settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER) != 0)
-        {
-            bb_setUInt8(h, DLMS_COMMAND_GENERAL_BLOCK_TRANSFER);
-            dlms_multipleBlocks(p, h, ciphering);
-            // Is last block
-            if (!p->lastBlock)
-            {
-                bb_setUInt8(h, 0);
-            }
-            else
-            {
-                bb_setUInt8(h, 0x80);
-            }
-            // Set block number sent.
-            bb_setUInt8(h, 0);
-            // Set block number acknowledged
-            bb_setUInt8(h, (unsigned char)p->blockIndex);
-            p->blockIndex = p->blockIndex + 1;
-            // Add APU tag.
-            bb_setUInt8(h, 0);
-            // Add Addl fields
-            bb_setUInt8(h, 0);
-        }
         // Add command.
-        ret = bb_setUInt8(h, (unsigned char)p->command);
-
+        if (p->command != DLMS_COMMAND_GENERAL_BLOCK_TRANSFER)
+        {
+            ret = bb_setUInt8(h, (unsigned char)p->command);
+        }
         if (p->command == DLMS_COMMAND_EVENT_NOTIFICATION ||
             p->command == DLMS_COMMAND_DATA_NOTIFICATION ||
             p->command == DLMS_COMMAND_ACCESS_REQUEST ||
@@ -5005,7 +5002,7 @@ int dlms_getLNPdu(
 #endif //DLMS_IGNORE_MALLOC
                 }
             }
-        }
+                    }
         // Add data that fits to one block.
         if (ret == 0 && len == 0)
         {
@@ -5063,7 +5060,7 @@ int dlms_getLNPdu(
 #else
             unsigned char* key;
 #endif //DLMS_IGNORE_MALLOC
-            if (p->settings->cipher.dedicatedKey != NULL && (p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+            if (dlms_useDedicatedKey(p->settings) && (p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
             {
                 key = p->settings->cipher.dedicatedKey;
             }
@@ -5091,13 +5088,38 @@ int dlms_getLNPdu(
             ++p->settings->cipher.invocationCounter;
         }
 #endif //DLMS_IGNORE_HIGH_GMAC1
-    }
+
+        if (p->command == DLMS_COMMAND_GENERAL_BLOCK_TRANSFER ||
+            (p->multipleBlocks && (p->settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER) != 0))
+        {
+            bb_setUInt8(h, DLMS_COMMAND_GENERAL_BLOCK_TRANSFER);
+            dlms_multipleBlocks(p, h, ciphering);
+            // Is last block
+            if (!p->lastBlock)
+            {
+                bb_setUInt8(h, 0);
+            }
+            else
+            {
+                bb_setUInt8(h, 0x80);
+            }
+            // Set block number sent.
+            bb_setUInt8(h, 0);
+            // Set block number acknowledged
+            bb_setUInt8(h, (unsigned char)p->blockIndex);
+            p->blockIndex = p->blockIndex + 1;
+            // Add APU tag.
+            bb_setUInt8(h, 0);
+            // Add Addl fields
+            bb_setUInt8(h, 0);
+        }
+                }
     if (ret == 0 && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         ret = dlms_addLLCBytes(p->settings, reply);
     }
     return ret;
-}
+            }
 
 int dlms_getLnMessages(
     gxLNParameters* p,
@@ -5163,8 +5185,8 @@ int dlms_getLnMessages(
         }
         bb_clear(pdu);
         frame = 0;
-    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-    return ret;
+        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+        return ret;
 }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -5198,7 +5220,7 @@ int dlms_getSnMessages(
             if (!(messages->size < messages->capacity))
             {
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
-            }
+        }
             it = messages->data[messages->size];
             ++messages->size;
 #endif //DLMS_IGNORE_MALLOC
@@ -5501,7 +5523,7 @@ int dlms_secure(
                 {
                     return ret;
                 }
-            }
+        }
             else
             {
                 if ((ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0 ||
@@ -5511,7 +5533,7 @@ int dlms_secure(
                 }
             }
 #endif //DLMS_IGNORE_HIGH_SHA256
-        }
+    }
         else
         {
             if ((ret = bb_set(&challenge, data->data, data->size)) != 0 ||
@@ -5520,7 +5542,7 @@ int dlms_secure(
                 return ret;
             }
         }
-    }
+}
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH_MD5)
     {
         //If MD5 is not used.
@@ -5589,7 +5611,7 @@ int dlms_secure(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-}
+                }
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,

@@ -286,10 +286,10 @@ int main(int argc, char* argv[])
 #endif
                     break;
                 }
-                printf("TX: ");
+                printf("TX:\t");
                 bb_toHexString2(&reply, buff, sizeof(buff));
                 printf(buff);
-                printf("\r");
+                printf("\r\n");
                 bb_clear(&reply);
             }
         }

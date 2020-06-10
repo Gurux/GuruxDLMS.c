@@ -701,7 +701,7 @@ extern "C" {
         /*
         * BitArray days of the week on which the entry is valid.
         */
-        unsigned char execWeekdays;
+        DLMS_WEEKDAYS execWeekdays : 7;
 
         /*
         * Perform the link to the IC Special days table, day_id.
@@ -2548,7 +2548,7 @@ extern "C" {
         unsigned char priority;
         int32_t warningThreshold;
         int32_t limit;
-        bitArray creditConfiguration;
+        DLMS_CREDIT_CONFIGURATION creditConfiguration;
         unsigned char status;
         int32_t presetCreditAmount;
         int32_t creditAvailableThreshold;
@@ -2638,7 +2638,7 @@ extern "C" {
         gxUnitCharge unitChargePassive;
         gxtime unitChargeActivationTime;
         unsigned int period;
-        bitArray chargeConfiguration;
+        DLMS_CHARGE_CONFIGURATION chargeConfiguration;
         gxtime lastCollectionTime;
         int32_t lastCollectionAmount;
         int32_t totalAmountRemaining;

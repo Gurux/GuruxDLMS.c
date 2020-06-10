@@ -133,32 +133,27 @@ extern "C" {
         /*
         * Request is authenticated.
         */
-        DLMS_SECURITY_POLICY1_AUTHENTICATED_REQUEST = 0x20,
-
+        DLMS_SECURITY_POLICY1_AUTHENTICATED_REQUEST = 0x4,
         /*
         * Request is encrypted.
         */
-        DLMS_SECURITY_POLICY1_ENCRYPTED_REQUEST = 0x10,
-
+        DLMS_SECURITY_POLICY1_ENCRYPTED_REQUEST = 0x8,
         /*
         * Request is digitally signed.
         */
-        DLMS_SECURITY_POLICY1_DIGITALLY_SIGNED_REQUEST = 0x8,
-
+        DLMS_SECURITY_POLICY1_DIGITALLY_SIGNED_REQUEST = 0x10,
         /*
         * Response is authenticated.
         */
-        DLMS_SECURITY_POLICY1_AUTHENTICATED_RESPONSE = 0x4,
-
+        DLMS_SECURITY_POLICY1_AUTHENTICATED_RESPONSE = 0x20,
         /*
         * Response is encrypted.
         */
-        DLMS_SECURITY_POLICY1_ENCRYPTED_RESPONSE = 0x2,
-
+        DLMS_SECURITY_POLICY1_ENCRYPTED_RESPONSE = 0x40,
         /*
         * Response is digitally signed.
         */
-        DLMS_SECURITY_POLICY1_DIGITALLY_SIGNED_RESPONSE = 0x1
+        DLMS_SECURITY_POLICY1_DIGITALLY_SIGNED_RESPONSE = 0x80
     } DLMS_SECURITY_POLICY1;
 
     //Security suite Specifies authentication, encryption and key wrapping algorithm.
@@ -1669,109 +1664,113 @@ extern "C" {
     } DLMS_VARIABLE_ACCESS_SPECIFICATION;
 
     /*
-    * Enumerates all conformance bits.
-    * https://www.gurux.fi/Gurux.DLMS.Conformance
-    */
+* Enumerates all conformance bits.
+* https://www.gurux.fi/Gurux.DLMS.Conformance
+*/
     typedef enum
     {
         /*
         * Reserved zero conformance bit.
         */
-        DLMS_CONFORMANCE_RESERVED_ZERO = 0x800000,
+        DLMS_CONFORMANCE_NONE = 0,
+        /*
+        * Reserved zero conformance bit.
+        */
+        DLMS_CONFORMANCE_RESERVED_ZERO = 0x1,
 
         /*
         * General protection conformance bit.
         */
-        DLMS_CONFORMANCE_GENERAL_PROTECTION = 0x400000,
+        DLMS_CONFORMANCE_GENERAL_PROTECTION = 0x2,
 
         /*
         * General block transfer conformance bit.
         */
-        DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER = 0x200000,
+        DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER = 0x4,
         /*
         * Read conformance bit.
         */
-        DLMS_CONFORMANCE_READ = 0x100000,
+        DLMS_CONFORMANCE_READ = 0x8,
         /*
         * Write conformance bit.
         */
-        DLMS_CONFORMANCE_WRITE = 0x80000,
+        DLMS_CONFORMANCE_WRITE = 0x10,
         /*
         * Un confirmed write conformance bit.
         */
-        DLMS_CONFORMANCE_UN_CONFIRMED_WRITE = 0x40000,
+        DLMS_CONFORMANCE_UN_CONFIRMED_WRITE = 0x20,
         /*
         * Reserved six conformance bit.
         */
-        DLMS_CONFORMANCE_RESERVED_SIX = 0x20000,
+        DLMS_CONFORMANCE_RESERVED_SIX = 0x40,
         /*
         * Reserved seven conformance bit.
         */
-        DLMS_CONFORMANCE_RESERVED_SEVEN = 0x10000,
+        DLMS_CONFORMANCE_RESERVED_SEVEN = 0x80,
         /*
         * Attribute 0 supported with set conformance bit.
         */
-        DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_SET = 0x8000,
+        DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_SET = 0x100,
         /*
         * Priority mgmt supported conformance bit.
         */
-        DLMS_CONFORMANCE_PRIORITY_MGMT_SUPPORTED = 0x4000,
+        DLMS_CONFORMANCE_PRIORITY_MGMT_SUPPORTED = 0x200,
         /*
         * Attribute 0 supported with get conformance bit.
         */
-        DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_GET = 0x2000,
+        DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_GET = 0x400,
         /*
         * Block transfer with get or read conformance bit.
         */
-        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ = 0x1000,
+        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ = 0x800,
         /*
         * Block transfer with set or write conformance bit.
         */
-        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE = 0x800,
+        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE = 0x1000,
         /*
         * Block transfer with action conformance bit.
         */
-        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION = 0x400,
+        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION = 0x2000,
         /*
         * multiple references conformance bit.
         */
-        DLMS_CONFORMANCE_MULTIPLE_REFERENCES = 0x200,
+        DLMS_CONFORMANCE_MULTIPLE_REFERENCES = 0x4000,
         /*
         * Information report conformance bit.
         */
-        DLMS_CONFORMANCE_INFORMATION_REPORT = 0x100,
+        DLMS_CONFORMANCE_INFORMATION_REPORT = 0x8000,
         /*
         * Data notification conformance bit.
         */
-        DLMS_CONFORMANCE_DATA_NOTIFICATION = 0x80,
+        DLMS_CONFORMANCE_DATA_NOTIFICATION = 0x10000,
         /*
         * Access conformance bit.
         */
-        DLMS_CONFORMANCE_ACCESS = 0x40,
+        DLMS_CONFORMANCE_ACCESS = 0x20000,
         /*
         * Parameterized access conformance bit.
         */
-        DLMS_CONFORMANCE_PARAMETERIZED_ACCESS = 0x20,
+        DLMS_CONFORMANCE_PARAMETERIZED_ACCESS = 0x40000,
         /*
         * Get conformance bit.
         */
-        DLMS_CONFORMANCE_GET = 0x10,
+        DLMS_CONFORMANCE_GET = 0x80000,
         /*
         * Set conformance bit.
         */
-        DLMS_CONFORMANCE_SET = 0x8,
+        DLMS_CONFORMANCE_SET = 0x100000,
         /*
         * Selective access conformance bit.
         */
-        DLMS_CONFORMANCE_SELECTIVE_ACCESS = 0x4,
+        DLMS_CONFORMANCE_SELECTIVE_ACCESS = 0x200000,
         /*
         * Event notification conformance bit.
         */
-        DLMS_CONFORMANCE_EVENT_NOTIFICATION = 0x2,
+        DLMS_CONFORMANCE_EVENT_NOTIFICATION = 0x400000,
         /*
         * Action conformance bit.
         */
-        DLMS_CONFORMANCE_ACTION = 0x1
+        DLMS_CONFORMANCE_ACTION = 0x800000
     }DLMS_CONFORMANCE;
 
     typedef enum
@@ -2285,50 +2284,54 @@ extern "C" {
     }DLMS_ACCOUNT_STATUS;
 
     /*
-    * Enumerates account credit status modes.<br/>
-    * Online help:<br/>
-    * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
-    */
+* Enumerates account credit status modes.<br/>
+* Online help:<br/>
+* http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
+*/
     typedef enum {
         /*
         * In credit.
         */
-        DLMS_ACCOUNT_CREDIT_STATUS_IN_CREDIT = 0x80,
+        DLMS_ACCOUNT_CREDIT_STATUS_NONE = 0x0,
+        /*
+        * In credit.
+        */
+        DLMS_ACCOUNT_CREDIT_STATUS_IN_CREDIT = 0x1,
 
         /*
         * Low credit.
         */
-        DLMS_ACCOUNT_CREDIT_STATUS_LOW_CREDIT = 0x40,
+        DLMS_ACCOUNT_CREDIT_STATUS_LOW_CREDIT = 0x2,
 
         /*
         * Next credit enabled.
         */
-        DLMS_ACCOUNT_CREDIT_STATUS_NEXT_CREDIT_ENABLED = 0x20,
+        DLMS_ACCOUNT_CREDIT_STATUS_NEXT_CREDIT_ENABLED = 0x4,
 
         /*
         * Next credit selectable.
         */
-        DLMS_ACCOUNT_CREDIT_STATUS_NEXT_CREDIT_SELECTABLE = 0x10,
+        DLMS_ACCOUNT_CREDIT_STATUS_NEXT_CREDIT_SELECTABLE = 0x8,
 
         /*
         * Credit reference list.
         */
-        DLMS_ACCOUNT_CREDIT_STATUS_CREDIT_REFERENCE_LIST = 0x8,
+        DLMS_ACCOUNT_CREDIT_STATUS_CREDIT_REFERENCE_LIST = 0x10,
 
         /*
         * Selectable credit in use.
         */
-        DLMS_ACCOUNT_CREDIT_STATUS_SELECTABLE_CREDIT_IN_USE = 0x4,
+        DLMS_ACCOUNT_CREDIT_STATUS_SELECTABLE_CREDIT_IN_USE = 0x20,
 
         /*
         * Out of credit.
         */
-        DLMS_ACCOUNT_CREDIT_STATUS_OUT_OF_CREDIT = 0x2,
+        DLMS_ACCOUNT_CREDIT_STATUS_OUT_OF_CREDIT = 0x40,
 
         /*
         * Reserved.
         */
-        DLMS_ACCOUNT_CREDIT_STATUS_RESERVED = 0x1
+        DLMS_ACCOUNT_CREDIT_STATUS_RESERVED = 0x80
     }DLMS_ACCOUNT_CREDIT_STATUS;
 
     /*
@@ -2368,17 +2371,25 @@ extern "C" {
         DLMS_REQUIRED_PROTECTION_DIGITALLY_SIGNED_RESPONSE = 0x80,
     }DLMS_REQUIRED_PROTECTION;
 
-    // Defines behaviour under specific conditions
     typedef enum
     {
-        // Collect when supply disconnected.
+        /*
+        * None.
+        */
+        DLMS_CREDIT_COLLECTION_CONFIGURATION_NONE = 0,
+        /*
+        * Collect when supply disconnected.
+        */
         DLMS_CREDIT_COLLECTION_CONFIGURATION_DISCONNECTED = 0x1,
-        // Collect in load limiting periods.
+        /*
+        * Collect in load limiting periods.
+        */
         DLMS_CREDIT_COLLECTION_CONFIGURATION_LOAD_LIMITING = 0x2,
-        // Collect in friendly credit periods.
+        /*
+        * Collect in friendly credit periods.
+        */
         DLMS_CREDIT_COLLECTION_CONFIGURATION_FRIENDLY_CREDIT = 0x4
     }DLMS_CREDIT_COLLECTION_CONFIGURATION;
-
 
     // Enumerates payment Modes.
     typedef enum
@@ -2581,6 +2592,151 @@ extern "C" {
         DLMS_MAC_CAPABILITIES_ARQ_BUFFERING_SWITCHING_CAPABILITY = 0x800
     }
     DLMS_MAC_CAPABILITIES;
+
+    /*
+ * Enumerates credit types.<br>
+ * Online help:<br>
+ * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCredit
+ */
+    typedef enum
+    {
+        /*
+         * Token credit.
+         */
+        DLMS_CREDIT_TYPE_TOKEN,
+        /*
+         * Reserved credit.
+         */
+         DLMS_CREDIT_TYPE_RESERVED,
+         /*
+          * Emergency credit.
+          */
+          DLMS_CREDIT_TYPE_EMERGENCY,
+          /*
+           * TimeBased credit.
+           */
+           DLMS_CREDIT_TYPE_TIME_BASED,
+           /*
+            * Consumption based credit.
+            */
+            DLMS_CREDIT_TYPE_CONSUMPTION_BASED
+    }DLMS_CREDIT_TYPE;
+
+    /*
+     * Enumerates credit status values.<br>
+     * Online help:<br>
+     * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCredit
+     */
+    typedef enum
+    {
+        /*
+        * Enabled state.
+        */
+        DLMS_CREDIT_STATUS_ENABLED,
+        /*
+         * Selectable state.
+         */
+         DLMS_CREDIT_STATUS_SELECTABLE,
+         /*
+          * Selected/Invoked state.
+          */
+          DLMS_CREDIT_STATUS_INVOKED,
+          /*
+           * In use state.
+           */
+           DLMS_CREDIT_STATUS_IN_USE,
+           /*
+            * Consumed state.
+            */
+            DLMS_CREDIT_STATUS_CONSUMED
+    }DLMS_CREDIT_STATUS;
+
+    /*
+     * Enumerated Credit configuration values.<br>
+     * Online help:<br>
+     * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
+     */
+    typedef enum
+    {
+        /*
+        * None.
+        */
+        DLMS_CREDIT_CONFIGURATION_NONE = 0x0,
+        /*
+        * Requires visual indication
+        */
+        DLMS_CREDIT_CONFIGURATION_VISUAL = 0x10,
+        /*
+        * Requires confirmation before it can be selected/invoked
+        */
+        DLMS_CREDIT_CONFIGURATION_CONFIRMATION = 0x2,
+        /*
+        * Requires the credit amount to be paid back.
+        */
+        DLMS_CREDIT_CONFIGURATION_PAID_BACK = 0x4,
+        /*
+        * Resettable.
+        */
+        DLMS_CREDIT_CONFIGURATION_RESETTABLE = 0x8,
+        /*
+        * Able to receive credit amounts from tokens.
+        */
+        DLMS_CREDIT_CONFIGURATION_TOKENS = 0x10
+    }DLMS_CREDIT_CONFIGURATION;
+
+    /*
+     * Enumerates account credit status modes.<br>
+     * Online help:<br>
+     * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
+     */
+    typedef enum
+    {
+        /*
+        * Consumption based collection.
+        */
+        DLMS_CHARGE_TYPE_CONSUMPTION_BASED_COLLECTION,
+        /*
+        * Time based collection.
+        */
+        DLMS_CHARGE_TYPE_TIME_BASED_COLLECTION,
+        /*
+        * Payment based collection.
+        */
+        DLMS_CHARGE_TYPE_PAYMENT_EVENT_BASED_COLLECTION
+    }DLMS_CHARGE_TYPE;
+
+    // Defines the weekdays.
+    typedef enum
+    {
+        /// No day of week is selected.
+        DLMS_WEEKDAYS_NONE = 0,
+        // Indicates Monday.
+        DLMS_WEEKDAYS_MONDAY = 0x1,
+        // Indicates Tuesday.
+        DLMS_WEEKDAYS_TUESDAY = 0x2,
+        // Indicates Wednesday.
+        DLMS_WEEKDAYS_WEDNESDAY = 0x4,
+        // Indicates Thursday.
+        DLMS_WEEKDAYS_THURSDAY = 0x8,
+        // Indicates Friday.
+        DLMS_WEEKDAYS_FRIDAY = 0x10,
+        // Indicates Saturday.
+        DLMS_WEEKDAYS_SATURDAY = 0x20,
+        // Indicates Sunday.
+        DLMS_WEEKDAYS_SUNDAY = 0x40
+    }DLMS_WEEKDAYS;
+
+    // Charge configuration enumeration types.
+    typedef enum
+    {
+        //NONE
+        DLMS_CHARGE_CONFIGURATION_NONE = 0,
+        // Percentage based collection.
+        DLMS_CHARGE_CONFIGURATION_PERCENTAGE_BASED_COLLECTION = 0x1,
+        // Continuous collection.
+        DLMS_CHARGE_CONFIGURATION_CONTINUOUS_COLLECTION = 0x2
+    }DLMS_CHARGE_CONFIGURATION;
+
 #ifdef  __cplusplus
 }
 #endif

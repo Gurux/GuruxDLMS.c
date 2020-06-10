@@ -625,16 +625,16 @@ int var_getDate(
     //Add year.
     bb_setUInt16(ba, year);
     //Add month
-    if ((dateTime->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_DST_BEGIN) != 0)
+    if ((dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
     {
-        bb_setUInt8(ba, 0xFE);
-    }
-    else if ((dateTime->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_DST_END) != 0)
-    {
-        bb_setUInt8(ba, 0xFD);
-    }
-    else if ((dateTime->skip & DATETIME_SKIPS_MONTH) == 0)
-    {
+        if ((dateTime->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_DST_BEGIN) != 0)
+        {
+            month = 0xFE;
+        }
+        else if ((dateTime->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_DST_END) != 0)
+        {
+            month = 0xFD;
+        }
         bb_setUInt8(ba, month);
     }
     else
@@ -644,6 +644,14 @@ int var_getDate(
     //Add day
     if ((dateTime->skip & DATETIME_SKIPS_DAY) == 0)
     {
+        if ((dateTime->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY) != 0)
+        {
+            day = 0xFE;
+        }
+        else if ((dateTime->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2) != 0)
+        {
+            day = 0xFD;
+        }
         bb_setUInt8(ba, day);
     }
     else
@@ -1166,6 +1174,12 @@ int var_toInteger(dlmsVARIANT* data)
     if (data->vt == DLMS_DATA_TYPE_STRING)
     {
         return hlp_stringToInt((const char*)data->strVal);
+    }
+    if (data->vt == DLMS_DATA_TYPE_BIT_STRING)
+    {
+        uint32_t value;
+        ba_toInteger(data->bitArr, &value);
+        return (int) value;
     }
 #endif //DLMS_IGNORE_MALLOC
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)

@@ -296,6 +296,7 @@ int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index,
             time_clear(&object->begin);
         }
 #endif //DLMS_IGNORE_MALLOC
+            object->begin.skip |= DATETIME_SKIPS_YEAR | DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MS | DATETIME_SKIPS_DEVITATION;
     }
     else if (index == 6)
     {
@@ -319,6 +320,7 @@ int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index,
             time_clear(&object->end);
         }
 #endif //DLMS_IGNORE_MALLOC
+        object->end.skip |= DATETIME_SKIPS_YEAR | DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MS | DATETIME_SKIPS_DEVITATION;
     }
     else if (index == 7)
     {
@@ -833,6 +835,20 @@ int cosem_setActionSchedule(
             {
                 //Error code is returned at the end of the function.
             }
+            if (object->executedScript == NULL)
+            {
+                //create object.
+                ret = cosem_createObject(DLMS_OBJECT_TYPE_SCRIPT_TABLE, (gxObject**)&object->executedScript);
+                if (ret == DLMS_ERROR_CODE_OK)
+                {
+                    ret = cosem_setLogicalName((gxObject*)object->executedScript, tmp->byteArr->data);
+                    if (ret == DLMS_ERROR_CODE_OK)
+                    {
+                        //Add object to released objects list.
+                        ret = oa_push(&settings->releasedObjects, (gxObject*)object->executedScript);
+                    }
+                }
+            }
         }
 #else
         memcpy(object->executedScriptLogicalName, tmp->byteArr->data, 6);
@@ -927,7 +943,8 @@ int cosem_setActionSchedule(
                 date.dateTime->value.tm_hour = time.dateTime->value.tm_hour;
                 date.dateTime->value.tm_min = time.dateTime->value.tm_min;
                 date.dateTime->value.tm_sec = time.dateTime->value.tm_sec;
-                date.dateTime->skip = (DATETIME_SKIPS)(date.dateTime->skip & time.dateTime->skip);
+                date.dateTime->skip &= ~(DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MS);
+                date.dateTime->skip |= time.dateTime->skip & (DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MS);
 #endif // DLMS_USE_EPOCH_TIME
                 tm = (gxtime*)gxmalloc(sizeof(gxtime));
                 if (tm == NULL)
@@ -1022,6 +1039,11 @@ int cosem_setAssociationLogicalName(
                         return ret;
                     }
                     obj->version = version;
+                    ret = oa_push(&settings->releasedObjects, obj);
+                    if (ret != DLMS_ERROR_CODE_OK)
+                    {
+                        return ret;
+                    }
                 }
                 ret = va_getByIndex(tmp->Arr, 3, &tmp2);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -1243,19 +1265,11 @@ int cosem_setAssociationLogicalName(
     else if (index == 5)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        int conformance;
-        unsigned char tmp[4];
-        bitArray ba;
-        ba_attach(&ba, tmp, 0, 8 * sizeof(tmp));
+        uint32_t conformance;
         //Get structure count.
         if ((ret = cosem_checkStructure(value->byteArr, 6)) != 0 ||
-            (ret = cosem_getBitString(value->byteArr, &ba)) != 0 ||
-            (ret = ba_toInteger(&ba, &conformance)) != 0)
-        {
-            return ret;
-        }
-        object->xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)conformance;
-        if ((ret = cosem_getUInt16(value->byteArr, &object->xDLMSContextInfo.maxReceivePduSize)) != 0 ||
+            (ret = cosem_getIntegerFromBitString(value->byteArr, &conformance)) != 0 ||
+            (ret = cosem_getUInt16(value->byteArr, &object->xDLMSContextInfo.maxReceivePduSize)) != 0 ||
             (ret = cosem_getUInt16(value->byteArr, &object->xDLMSContextInfo.maxSendPpuSize)) != 0 ||
             (ret = cosem_getUInt8(value->byteArr, &object->xDLMSContextInfo.dlmsVersionNumber)) != 0 ||
             (ret = cosem_getInt8(value->byteArr, &object->xDLMSContextInfo.qualityOfService)) != 0 ||
@@ -1263,18 +1277,14 @@ int cosem_setAssociationLogicalName(
         {
             return ret;
         }
+        object->xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)conformance;
 #else
-        int val;
         ret = va_getByIndex(value->Arr, 0, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
-        if ((ret = ba_toInteger(tmp->bitArr, &val)) != 0)
-        {
-            return ret;
-        }
-        object->xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)val;
+        object->xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)var_toInteger(tmp);
         ret = va_getByIndex(value->Arr, 1, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
         {
@@ -3174,7 +3184,7 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
         }
         if (object->actionUnderThreshold.script == NULL)
         {
-            if ((ret = cosem_createObject(ot, (gxObject**) &object->actionUnderThreshold.script)) != 0)
+            if ((ret = cosem_createObject(ot, (gxObject**)&object->actionUnderThreshold.script)) != 0)
             {
                 return ret;
             }
@@ -4308,9 +4318,9 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
         unsigned char ln[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         uint16_t count = arr_getCapacity(&object->entries);
-        unsigned char ch;
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
+            uint32_t execWeekdays;
             object->entries.size = count;
             for (pos = 0; pos != count; ++pos)
             {
@@ -4323,24 +4333,24 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
 #else
                     (ret = cosem_getOctectString2(value->byteArr, se->logicalName, 6, NULL)) != 0 ||
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-                    (ret = cosem_getInt16(value->byteArr, &se->scriptSelector)) != 0 ||
+                    (ret = cosem_getUInt16(value->byteArr, &se->scriptSelector)) != 0 ||
                     (ret = cosem_getDateTimeFromOctectString(value->byteArr, &se->switchTime)) != 0 ||
-                    (ret = cosem_getInt16(value->byteArr, &se->validityWindow)) != 0 ||
-                    (ret = cosem_getUInt8(value->byteArr, &ch)) != 0 ||
-                    (ret = cosem_getUInt8(value->byteArr, &ch)) != 0 ||
-                    //If len is zero.
-                    (ch != 0 && (ret = cosem_getUInt8(value->byteArr, &se->execWeekdays)) != 0) ||
+                    (ret = cosem_getUInt16(value->byteArr, &se->validityWindow)) != 0 ||
+                    (ret = cosem_getIntegerFromBitString(value->byteArr, &execWeekdays)) != 0 ||
                     (ret = cosem_getBitString(value->byteArr, &se->execSpecDays)) != 0 ||
                     (ret = cosem_getDateTimeFromOctectString(value->byteArr, &se->beginDate)) != 0 ||
                     (ret = cosem_getDateTimeFromOctectString(value->byteArr, &se->endDate)) != 0)
                 {
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
-                    if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln, (gxObject**)&se->scriptTable)) != 0)
-                    {
-                        break;
-                    }
-#endif //DLMS_IGNORE_OBJECT_POINTERS
+                    break;
                 }
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+                if ((ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln, (gxObject**)&se->scriptTable)) != 0)
+                {
+                    break;
+                }
+#else
+                se->execWeekdays = value;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
             }
         }
 #else
@@ -4444,9 +4454,11 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 }
                 if (it->bitArr != NULL)
                 {
-                    int val;
-                    ba_toInteger(it->bitArr, &val);
-                    se->execWeekdays = val;
+                    uint32_t val;
+                    if ((ret = ba_toInteger(it->bitArr, &val)) == 0)
+                    {
+                        se->execWeekdays = val;
+                    }
                 }
                 ret = va_getByIndex(tmp->Arr, 7, &it);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -4491,22 +4503,22 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 time_copy(&se->endDate, tmp3.dateTime);
                 arr_push(&object->entries, se);
 #endif //DLMS_IGNORE_MALLOC
-            }
+                }
 #ifndef DLMS_IGNORE_MALLOC
             if (ret != 0 && se != NULL)
             {
                 gxfree(se);
             }
 #endif //DLMS_IGNORE_MALLOC
-        }
+                }
 #endif //DLMS_IGNORE_MALLOC
-    }
+            }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-}
+        }
 #endif //DLMS_IGNORE_SCHEDULE
 
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
@@ -4566,8 +4578,8 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                     }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                 }
-            }
-        }
+    }
+}
 #else
         dlmsVARIANT* tmp, * tmp2, * tmp3;
         if (value->Arr->size != 0)
@@ -4675,7 +4687,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                         }
                         var_copy(&scriptAction->parameter, tmp);
                         arr_push(&script->actions, scriptAction);
-                    }
+                        }
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
 #ifndef DLMS_IGNORE_MALLOC
@@ -4686,14 +4698,14 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
 #endif //DLMS_IGNORE_MALLOC
                         break;
                     }
-                }
+                        }
 #ifndef DLMS_IGNORE_MALLOC
                 if (ret != 0 && script != NULL)
                 {
                     gxfree(script);
                 }
 #endif //DLMS_IGNORE_MALLOC
-            }
+                    }
             else //Read Xemex meter here.
             {
                 ret = va_getByIndex(value->Arr, 0, &tmp);
@@ -4786,16 +4798,16 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
 #ifndef DLMS_IGNORE_MALLOC
                 arr_push(&script->actions, scriptAction);
 #endif //DLMS_IGNORE_MALLOC
-            }
-        }
+                }
+                }
 #endif //DLMS_IGNORE_MALLOC
-    }
+            }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-}
+                }
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
 int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, dlmsVARIANT* value)
@@ -4820,8 +4832,8 @@ int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, d
                 {
                     break;
                 }
+}
             }
-        }
 #else
         dlmsVARIANT* tmp, * tmp3;
         dlmsVARIANT tmp2;
@@ -4875,13 +4887,13 @@ int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, d
             }
         }
 #endif //DLMS_IGNORE_MALLOC
-    }
+        }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
 int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned char index, dlmsVARIANT* value)
@@ -4925,7 +4937,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
             ret = bb_get(value->byteArr, object->ipReference, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
-        }
+            }
     }
     else if (index == 4)
     {
@@ -4995,7 +5007,7 @@ int cosem_setMessageHandler(
                 {
                     break;
                 }
-            }
+}
         }
 #else
         if (value->Arr != NULL)
@@ -5158,8 +5170,8 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
 #endif //DLMS_DEBUG
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                 }
-            }
-        }
+    }
+}
 #else
         if (value->Arr != NULL)
         {
@@ -5382,7 +5394,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
             (ret = cosem_getInt16(value->byteArr, &ct->chargePerUnit)) != 0)
         {
             break;
-        }
+}
     }
 #else
     dlmsVARIANT* it, * it2, * tmp;
@@ -5547,7 +5559,7 @@ int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char inde
             time_clear(&object->unitChargeActivationTime);
         }
 #endif //DLMS_IGNORE_MALLOC
-    }
+}
     else if (index == 8)
     {
         object->period = var_toInteger(value);
@@ -5555,9 +5567,13 @@ int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char inde
     else if (index == 9)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_getBitString(value->byteArr, &object->chargeConfiguration);
+        uint32_t val;
+        if ((ret = cosem_getIntegerFromBitString(value->byteArr, &val)) == 0)
+        {
+            object->chargeConfiguration = val;
+        }
 #else
-        ret = ba_copy(&object->chargeConfiguration, value->bitArr->data, (uint16_t)value->bitArr->size);
+        object->chargeConfiguration = var_toInteger(value);
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (index == 10)
@@ -5566,16 +5582,9 @@ int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char inde
         ret = cosem_getDateTime(value->byteArr, &object->lastCollectionTime);
 #else
         //Some meters are returning empty octect string here.
-        if (value->vt == DLMS_DATA_TYPE_OCTET_STRING && value->byteArr != NULL)
+        if (value->vt == DLMS_DATA_TYPE_DATETIME && value->dateTime != NULL)
         {
-            var_init(&tmp);
-            ret = dlms_changeType2(value, DLMS_DATA_TYPE_DATETIME, &tmp);
-            if (ret != 0)
-            {
-                return ret;
-            }
-            time_copy(&object->lastCollectionTime, tmp.dateTime);
-            var_clear(&tmp);
+            time_copy(&object->lastCollectionTime, value->dateTime);
         }
         else
         {
@@ -5632,9 +5641,13 @@ int cosem_setCredit(gxCredit* object, unsigned char index, dlmsVARIANT* value)
     else if (index == 7)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_getBitString(value->byteArr, &object->creditConfiguration);
+        uint32_t val;
+        if ((ret = cosem_getIntegerFromBitString(value->byteArr, &val)) == 0)
+        {
+            object->creditConfiguration = val;
+}
 #else
-        ret = ba_copy(&object->creditConfiguration, value->bitArr->data, value->bitArr->size);
+        object->creditConfiguration = var_toInteger(value);
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (index == 8)
@@ -5690,7 +5703,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
             (ret = cosem_getEnum(value->byteArr, (unsigned char*)&object->accountStatus)) != 0)
         {
             //Error is returned at the end of the function.
-        }
+}
 #else
         //payment mode
         ret = va_getByIndex(value->Arr, 0, &it);
@@ -5714,17 +5727,11 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
     }
     else if (index == 4)
     {
-        int v;
 #ifdef DLMS_IGNORE_MALLOC
-        unsigned char tmp[1];
-        bitArray ba;
-        ba_attach(&ba, tmp, 0, 8);
-        if ((ret = cosem_getBitString(value->byteArr, &ba)) == 0)
+        uint32_t v;
+        if ((ret = cosem_getIntegerFromBitString(value->byteArr, &v)) == 0)
         {
-            if ((ret = ba_toInteger(&ba, &v)) == 0)
-            {
-                object->currentCreditStatus = (DLMS_ACCOUNT_CREDIT_STATUS)v;
-            }
+            object->currentCreditStatus = (DLMS_ACCOUNT_CREDIT_STATUS)v;
         }
 #else
         if (value->bitArr == NULL || value->bitArr->size == 0)
@@ -5733,11 +5740,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
         }
         else
         {
-            if ((ret = ba_toInteger(value->bitArr, &v)) != 0)
-            {
-                return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-            }
-            object->currentCreditStatus = (DLMS_ACCOUNT_CREDIT_STATUS)v;
+            object->currentCreditStatus = (DLMS_ACCOUNT_CREDIT_STATUS)var_toInteger(value);
         }
 #endif //DLMS_IGNORE_MALLOC
     }
@@ -5831,10 +5834,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
     {
         obj_clearCreditChargeConfigurations(&object->creditChargeConfigurations);
 #ifdef DLMS_IGNORE_MALLOC
-        int v;
-        unsigned char tmp[1] = { 0 };
-        bitArray ba;
-        ba_attach(&ba, tmp, 0, 8);
+        uint32_t v;
         uint16_t count = arr_getCapacity(&object->creditChargeConfigurations);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
@@ -5845,11 +5845,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
                     (ret = cosem_checkStructure(value->byteArr, 3)) != 0 ||
                     (ret = cosem_getOctectString2(value->byteArr, ccc->creditReference, 6, NULL)) != 0 ||
                     (ret = cosem_getOctectString2(value->byteArr, ccc->chargeReference, 6, NULL)) != 0 ||
-                    (ret = cosem_getBitString(value->byteArr, &ba)) != 0)
-                {
-                    break;
-                }
-                if ((ret = ba_toInteger(&ba, &v)) != 0)
+                    (ret = cosem_getIntegerFromBitString(value->byteArr, &v)) != 0)
                 {
                     break;
                 }
@@ -5871,7 +5867,6 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
                 ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                 break;
             }
-            ccc->collectionConfiguration = (DLMS_CREDIT_COLLECTION_CONFIGURATION)0;
             //credit reference
             ret = va_getByIndex(it->Arr, 0, &tmp2);
             if (ret != 0)
@@ -5892,18 +5887,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
             {
                 break;
             }
-            if (tmp2->bitArr == NULL || tmp2->bitArr->size == 0)
-            {
-                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-                break;
-            }
-            int v;
-            if ((ret = ba_toInteger(tmp2->bitArr, &v)) != 0)
-            {
-                ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
-                break;
-            }
-            ccc->collectionConfiguration = (DLMS_CREDIT_COLLECTION_CONFIGURATION)v;
+            ccc->collectionConfiguration = (DLMS_CREDIT_COLLECTION_CONFIGURATION)var_toInteger(tmp2);
             arr_push(&object->creditChargeConfigurations, ccc);
         }
         if (ret != 0 && ccc != NULL)
@@ -5930,7 +5914,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
                 {
                     break;
                 }
-            }
+    }
         }
 #else
         for (pos = 0; pos != value->Arr->size; ++pos)
@@ -6085,7 +6069,7 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
             ba_copy(&object->imageTransferredBlocksStatus, value->bitArr->data, (uint16_t)value->bitArr->size);
         }
 #endif //DLMS_IGNORE_MALLOC
-    }
+}
     else if (index == 4)
     {
         object->imageFirstNotTransferredBlockNumber = var_toInteger(value);
@@ -6207,8 +6191,8 @@ int setCaptureObjects(
             {
                 break;
             }
-        }
     }
+}
 #else
     arr_capacity(objects, value->Arr->size);
     if (value->Arr != NULL)
@@ -6265,7 +6249,7 @@ int setCaptureObjects(
 #else
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_MALLOC
-            }
+                }
 #ifndef DLMS_IGNORE_MALLOC
             co = (gxTarget*)gxmalloc(sizeof(gxTarget));
             if (co == NULL)
@@ -6294,13 +6278,13 @@ int setCaptureObjects(
 #ifndef DLMS_IGNORE_MALLOC
             arr_push(objects, key_init(obj, co));
 #endif //DLMS_IGNORE_MALLOC
+            }
         }
-    }
     //Trim array.
     arr_capacity(objects, objects->size);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-}
+    }
 #endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_CONPACT_DATA))
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
@@ -6430,7 +6414,7 @@ int cosem_setProfileGeneric(
         //Trim array.
         arr_capacity(&object->buffer, object->buffer.size);
 #endif //DLMS_IGNORE_MALLOC
-    }
+}
     else if (index == 3)
     {
         object->entriesInUse = 0;
@@ -6585,7 +6569,7 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
             if (value->strVal != NULL && bb_size(value->strVal) != 0)
             {
                 bb_set(&object->operatorName, value->strVal->data, value->strVal->size);
-            }
+}
 #else
             if (object->operatorName != NULL)
             {
@@ -6843,7 +6827,7 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
                 {
                     break;
                 }
-            }
+}
         }
 #else
         if (value != NULL)
@@ -7261,8 +7245,8 @@ int compactData_updateTemplateDescription(
             var_clear(&e.value);
             ve_clear(&e);
 #endif //DLMS_IGNORE_MALLOC
-        }
     }
+}
     bb_clear(&tmp);
     //svr_postGet(settings, &args);
     vec_empty(&args);
@@ -7315,7 +7299,7 @@ int cosem_setCompactData(
         break;
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+}
     return ret;
 }
 #endif //DLMS_IGNORE_COMPACT_DATA
@@ -7358,7 +7342,7 @@ int cosem_setParameterMonitor(
             object->changedParameter.type = type;
             memcpy(object->changedParameter.logicalName, ln, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        }
+    }
 #else
         if (value->Arr != NULL)
         {
@@ -7434,7 +7418,7 @@ int cosem_setParameterMonitor(
             time_clear(&object->captureTime);
         }
 #endif //DLMS_IGNORE_MALLOC
-    }
+}
     break;
     case 4:
     {
@@ -7746,7 +7730,7 @@ int cosem_setMulticastEntries(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obje
             {
                 break;
             }
-        }
+}
     }
 #else
     if (value->Arr != NULL)
@@ -7797,7 +7781,7 @@ int cosem_setSwitchTable(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, d
             {
                 break;
             }
-        }
+}
     }
 #else
     if (value->Arr != NULL)
@@ -7841,7 +7825,7 @@ int cosem_setDirectTable(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, d
             {
                 break;
             }
-        }
+}
     }
 #else
     if (value->Arr != NULL)
@@ -7924,7 +7908,7 @@ int cosem_setAvailableSwitches(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obj
             {
                 break;
             }
-        }
+}
     }
 #else
     if (value->Arr != NULL)
@@ -8008,7 +7992,7 @@ int cosem_setCommunications(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object
             {
                 break;
             }
-        }
+}
     }
 #else
     if (value->Arr != NULL)
@@ -8158,7 +8142,7 @@ int cosem_setPrimeNbOfdmPlcApplicationsIdentification(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-    }
+}
     return ret;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
@@ -8382,7 +8366,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
         }
 #endif //DLMS_IGNORE_MALLOC
         return ret;
-    }
+}
     switch (e->target->objectType)
     {
 #ifndef DLMS_IGNORE_DATA

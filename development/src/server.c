@@ -384,6 +384,7 @@ int svr_HandleAarqRequest(
             if (diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
             {
                 svr_notifyTrace("Connection rejected.", -1);
+                svr_invalidConnection(settings);
                 result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             }
             else if (settings->base.authentication > DLMS_AUTHENTICATION_LOW)
@@ -1029,13 +1030,10 @@ int svr_handleSetRequest(
         // Access Error : Device reports Read-Write denied.
         bb_clear(data);
         resetBlockIndex(&settings->base);
-        if (ret == DLMS_ERROR_CODE_UNMATCH_TYPE)
+        //If error is DLMS error code.
+        if (ret > 0 && ret <= DLMS_ERROR_CODE_OTHER_REASON)
         {
-            p.status = DLMS_ERROR_CODE_UNMATCH_TYPE;
-        }
-        else if (ret == DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
-        {
-            p.status = DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
+            p.status = ret;
         }
         else
         {
@@ -1089,7 +1087,6 @@ int svr_getRequestNormal(
 #else
     gxValueEventCollection list;
     e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
-    ve_init(e);
     ve_init(e);
     e->value.byteArr = data;
     e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
@@ -1584,9 +1581,14 @@ int svr_handleGetRequest(
     }
     if (ret != 0)
     {
-        // Access Error : Device reports Read-Write denied.
+        //If error is not DLMS error code.
+        if (!(ret > 0 && ret <= DLMS_ERROR_CODE_OTHER_REASON))
+        {
+            // Access Error : Device reports Read-Write denied.
+            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        }
         gxLNParameters p;
-        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, type, NULL, data, DLMS_ERROR_CODE_READ_WRITE_DENIED, settings->info.encryptedCommand, 0, 0);
+        params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, type, NULL, data, ret, settings->info.encryptedCommand, 0, 0);
         bb_clear(data);
         ret = dlms_getLNPdu(&p, data);
     }
@@ -2919,7 +2921,8 @@ int svr_handleRequest2(
     {
         if (settings->info.command != DLMS_COMMAND_SNRM)
         {
-            int elapsed = (int)(time_elapsed() - settings->dataReceived) / 1000;
+            uint32_t elapsed = time_elapsed() - settings->dataReceived;
+            elapsed /= 1000;
             //If inactivity time out is elapsed.
             if (elapsed >= settings->hdlc->inactivityTimeout)
             {
@@ -2947,7 +2950,8 @@ int svr_handleRequest2(
     {
         if (settings->info.command != DLMS_COMMAND_AARQ)
         {
-            int elapsed = (int)(time_elapsed() - settings->dataReceived) / 1000;
+            uint32_t elapsed = time_elapsed() - settings->dataReceived;
+            elapsed /= 1000;
             //If inactivity time out is elapsed.
             if (elapsed >= settings->wrapper->inactivityTimeout)
             {
@@ -2991,29 +2995,49 @@ int svr_handleRequest2(
     return ret;
 }
 
-int handleInactivityTimeout(dlmsServerSettings* settings)
+int svr_handleInactivityTimeout(
+    dlmsServerSettings* settings,
+    uint32_t time,
+    uint32_t* next)
 {
-    //Check inactivity timeout.
-    unsigned char inactivity = 0;
-#ifndef DLMS_IGNORE_IEC_HDLC_SETUP
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC &&
-        settings->hdlc != NULL && settings->hdlc->inactivityTimeout != 0)
+    //If connection is established.
+    if (settings->info.preEstablished || (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) != 0)
     {
-        inactivity = (time_elapsed() - settings->dataReceived) / 1000 >= settings->hdlc->inactivityTimeout;
-    }
+        //Check inactivity timeout.
+        unsigned char inactivity = 0;
+        //Delay in seconds from last message.
+        uint32_t elapsed = (time_elapsed() - settings->dataReceived);
+        elapsed /= 1000;
+        uint32_t timeout = 0xFFFFFFFF;
+#ifndef DLMS_IGNORE_IEC_HDLC_SETUP
+        if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC &&
+            settings->hdlc != NULL && settings->hdlc->inactivityTimeout != 0)
+        {
+            inactivity = !(elapsed < settings->hdlc->inactivityTimeout);
+            timeout = settings->hdlc->inactivityTimeout - elapsed;
+        }
 #endif // DLMS_IGNORE_IEC_HDLC_SETUP
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER &&
-        settings->wrapper != NULL && settings->wrapper->inactivityTimeout != 0)
-    {
-        inactivity = (time_elapsed() - settings->dataReceived) / 1000 >= settings->wrapper->inactivityTimeout;
-    }
+        if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER &&
+            settings->wrapper != NULL && settings->wrapper->inactivityTimeout != 0)
+        {
+            inactivity = !(elapsed < settings->wrapper->inactivityTimeout);
+            timeout = settings->wrapper->inactivityTimeout - elapsed;
+        }
 #endif // DLMS_IGNORE_TCP_UDP_SETUP
-    //If inactivity time out is elapsed.
-    if (inactivity && (settings->info.preEstablished || settings->base.connected != DLMS_CONNECTION_STATE_NONE))
-    {
-        svr_disconnected(settings);
-        svr_reset(settings);
+        //If inactivity timeout is elapsed.
+        if (inactivity)
+        {
+            svr_disconnected(settings);
+            svr_reset(settings);
+        }
+        else if (timeout != 0xFFFFFFFF)
+        {
+            if (*next > time + timeout)
+            {
+                *next = time + timeout;
+            }
+        }
     }
     return 0;
 }
@@ -3360,6 +3384,6 @@ int svr_run(
         }
     }
 #endif //DLMS_IGNORE_AUTO_CONNECT
-    return handleInactivityTimeout(settings);
+    return svr_handleInactivityTimeout(settings, time, next);
 }
 #endif //DLMS_IGNORE_SERVER

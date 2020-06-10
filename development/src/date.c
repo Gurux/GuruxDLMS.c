@@ -255,6 +255,16 @@ void time_init(
         skip |= DATETIME_SKIPS_MONTH;
         month = 0;
     }
+    else if (month == 0xFE)
+    {
+        time->extraInfo |= DLMS_DATE_TIME_EXTRA_INFO_DST_BEGIN;
+        month = 0;
+    }
+    else if (month == 0xFD)
+    {
+        time->extraInfo |= DLMS_DATE_TIME_EXTRA_INFO_DST_END;
+        month = 0;
+    }
     else
     {
         --month;
@@ -266,11 +276,11 @@ void time_init(
     }
     else if (day == 0xFD)
     {
-        day = date_daysInMonth(year, (short)month) - 1;
+        time->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2;
     }
     else if (day == 0xFE)
     {
-        day = date_daysInMonth(year, (short)month);
+        time->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY;
     }
     if (hour == 0xFF)
     {

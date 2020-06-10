@@ -959,12 +959,12 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_CREDIT
         case DLMS_OBJECT_TYPE_CREDIT:
-            ba_clear(&((gxCredit*)object)->creditConfiguration);
+            ((gxCredit*)object)->creditConfiguration = DLMS_CREDIT_CONFIGURATION_NONE;
             break;
 #endif //DLMS_IGNORE_CREDIT
 #ifndef DLMS_IGNORE_CHARGE
         case DLMS_OBJECT_TYPE_CHARGE:
-            ba_clear(&((gxCharge*)object)->chargeConfiguration);
+            ((gxCharge*)object)->chargeConfiguration = DLMS_CHARGE_CONFIGURATION_NONE;
             arr_clear(&((gxCharge*)object)->unitChargeActive.chargeTables);
             arr_clear(&((gxCharge*)object)->unitChargePassive.chargeTables);
             break;

@@ -38,6 +38,11 @@
 #include <assert.h>
 #endif
 
+#if defined(USE_AVR) || defined(ARDUINO_ARCH_AVR)
+//If AVR is used.
+#include <avr/pgmspace.h>
+#endif //#if defined(USE_AVR) || defined(ARDUINO_ARCH_AVR)
+
 #if _MSC_VER > 1400
 #include <crtdbg.h>
 #endif
@@ -119,13 +124,22 @@ static int cip_getNonse(uint32_t frameCounter, unsigned char* systemTitle, gxByt
     return 0;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////
 //Note! Rcon value is different than in aes!
-static const unsigned char Rcon[11] = {
+#ifndef USE_PROGMEM
+static const unsigned char __R_CON[11] = {
+#else
+static const unsigned char __R_CON[11] PROGMEM = {
+#endif //#if defined(_WIN32) || defined(_WIN64)
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36 };
-
+///////////////////////////////////////////////////////////////////////////////////////
 
 //There is only one TE table. Counting is taking little bit longer, but memory is needed less.
-const uint32_t Te0[256] = {
+#ifndef USE_PROGMEM
+    static const uint32_t __TE[256] = {
+#else
+    static const uint32_t __TE[256] PROGMEM = {
+#endif //#if defined(_WIN32) || defined(_WIN64)
     0xc66363a5U, 0xf87c7c84U, 0xee777799U, 0xf67b7b8dU,
     0xfff2f20dU, 0xd66b6bbdU, 0xde6f6fb1U, 0x91c5c554U,
     0x60303050U, 0x02010103U, 0xce6767a9U, 0x562b2b7dU,
@@ -192,47 +206,66 @@ const uint32_t Te0[256] = {
     0x7bb0b0cbU, 0xa85454fcU, 0x6dbbbbd6U, 0x2c16163aU,
 };
 
-#define RCON(i) ((uint32_t) Rcon[(i)] << 24)
+//Note! return value must be uint32_t.
+static inline uint32_t GetRcon(unsigned char offset)
+{
+#ifdef ARDUINO_ARCH_AVR
+    return pgm_read_dword_far(__R_CON + offset);
+#else
+    return __R_CON[offset];
+#endif //ARDUINO_ARCH_AVR
+}
+
+static inline uint32_t GetTe(unsigned char offset)
+{
+#ifdef ARDUINO_ARCH_AVR
+    return pgm_read_dword_far(__TE + offset);
+#else
+    return __TE[offset];
+#endif //ARDUINO_ARCH_AVR
+}
+
+#define RCON(i) (GetRcon(i) << 24)
 
 #define ROTATE(val, bits) ((val >> bits) | (val << (32 - bits)))
 
-#define TE0(i) Te0[((i) >> 24) & 0xff]
+#define TE0(i) GetTe(((i) >> 24) & 0xff)
 
-#define TE1(i) ROTATE(Te0[((i) >> 16) & 0xff], 8)
+#define TE1(i) ROTATE(GetTe(((i) >> 16) & 0xff), 8)
 
-#define TE2(i) ROTATE(Te0[((i) >> 8) & 0xff], 16)
+#define TE2(i) ROTATE(GetTe(((i) >> 8) & 0xff), 16)
 
-#define TE3(i) ROTATE(Te0[(i) & 0xff], 24)
+#define TE3(i) ROTATE(GetTe((i) & 0xff), 24)
 
-#define TE41(i) ((Te0[((i) >> 24) & 0xff] << 8) & 0xff000000)
+#define TE41(i) ((GetTe(((i) >> 24) & 0xff) << 8) & 0xff000000)
 
-#define TE42(i) (Te0[((i) >> 16) & 0xff] & 0x00ff0000)
+#define TE42(i) (GetTe(((i) >> 16) & 0xff) & 0x00ff0000)
 
-#define TE43(i) (Te0[((i) >> 8) & 0xff] & 0x0000ff00)
+#define TE43(i) (GetTe(((i) >> 8) & 0xff) & 0x0000ff00)
 
-#define TE44(i) ((Te0[(i) & 0xff] >> 8) & 0x000000ff)
+#define TE44(i) ((GetTe((i) & 0xff) >> 8) & 0x000000ff)
 
-#define TE421(i) ((Te0[((i) >> 16) & 0xff] << 8) & 0xff000000)
+#define TE421(i) ((GetTe(((i) >> 16) & 0xff) << 8) & 0xff000000)
 
-#define TE432(i) (Te0[((i) >> 8) & 0xff] & 0x00ff0000)
+#define TE432(i) (GetTe(((i) >> 8) & 0xff) & 0x00ff0000)
 
-#define TE443(i) (Te0[(i) & 0xff] & 0x0000ff00)
+#define TE443(i) (GetTe((i) & 0xff) & 0x0000ff00)
 
-#define TE414(i) ((Te0[((i) >> 24) & 0xff] >> 8) & 0x000000ff)
+#define TE414(i) ((GetTe(((i) >> 24) & 0xff) >> 8) & 0x000000ff)
 
-#define TE411(i) ((Te0[((i) >> 24) & 0xff] << 8) & 0xff000000)
+#define TE411(i) ((GetTe(((i) >> 24) & 0xff) << 8) & 0xff000000)
 
-#define TE422(i) (Te0[((i) >> 16) & 0xff] & 0x00ff0000)
+#define TE422(i) (GetTe(((i) >> 16) & 0xff) & 0x00ff0000)
 
-#define TE433(i) (Te0[((i) >> 8) & 0xff] & 0x0000ff00)
+#define TE433(i) (GetTe(((i) >> 8) & 0xff) & 0x0000ff00)
 
-#define TE444(i) ((Te0[(i) & 0xff] >> 8) & 0x000000ff)
+#define TE444(i) ((GetTe((i) & 0xff) >> 8) & 0x000000ff)
 
 int cip_int(uint32_t* rk,
     const unsigned char* cipherKey,
     uint16_t keyBits)
 {
-    uint32_t i;
+    uint8_t i;
     uint32_t temp;
 
     rk[0] = GETU32(cipherKey);

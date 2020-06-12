@@ -143,7 +143,7 @@ int oa_push(objectArray* arr, gxObject* item)
 void oa_copy(objectArray* target, objectArray* source)
 {
     int pos;
-    oa_clear(target);
+    oa_empty(target);
     oa_capacity(target, source->size);
     for (pos = 0; pos != source->size; ++pos)
     {
@@ -191,10 +191,7 @@ void oa_clear(objectArray* arr)
         }
         for (pos = 0; pos != arr->size; ++pos)
         {
-            if (arr->data[pos]->free)
-            {
-                gxfree(arr->data[pos]);
-            }
+            gxfree(arr->data[pos]);
         }
         if (!oa_isAttached(arr))
         {
@@ -319,7 +316,11 @@ int oa_getObjects(objectArray* src, DLMS_OBJECT_TYPE type, objectArray* objects)
         if (obj->objectType == type || type == DLMS_OBJECT_TYPE_NONE)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            memcpy(&objects->data[objects->size], obj, sizeof(gxObject));
+            if (objects->data == NULL || !(objects->size < oa_getCapacity(objects)))
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            objects->data[objects->size] = obj;
             ++objects->size;
 #else
             oa_push(objects, obj);

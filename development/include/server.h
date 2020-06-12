@@ -53,14 +53,14 @@ extern "C" {
 
     int svr_handleRequest2(
         dlmsServerSettings* settings,
-        unsigned char* buff,
+        const unsigned char* buff,
         uint16_t size,
         gxByteBuffer* reply);
 
     //Handle only one received byte.
     int svr_handleRequest3(
         dlmsServerSettings* settings,
-        unsigned char data,
+        const unsigned char data,
         gxByteBuffer* reply);
 
     void svr_reset(

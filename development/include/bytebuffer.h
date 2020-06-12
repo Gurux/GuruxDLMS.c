@@ -248,18 +248,18 @@ extern "C" {
         gxByteBuffer* bb,
         const char* value);
 
-    void bb_attachString(
+    int bb_attachString(
         gxByteBuffer* bb,
         char* value);
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    void bb_attach(
+    int bb_attach(
         gxByteBuffer* arr,
         unsigned char* value,
         uint32_t count,
         uint32_t capacity);
 #else
-    void bb_attach(
+    int bb_attach(
         gxByteBuffer* arr,
         unsigned char* value,
         uint16_t count,
@@ -488,7 +488,7 @@ extern "C" {
     void bb_print(gxByteBuffer * bb);
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
-#define BB_ATTACH(X, V, S) bb_attach(&X, V, S, sizeof(V))
+#define BB_ATTACH(X, V, S) bb_attach(&X, V, S, sizeof(V) / sizeof(V[0]))
 
 #ifdef  __cplusplus
 }

@@ -953,7 +953,7 @@ int cosem_getAssociationLogicalName(
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
             (ret = bb_setUInt16(data, object->xDLMSContextInfo.maxReceivePduSize)) != 0 ||
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
-            (ret = bb_setUInt16(data, object->xDLMSContextInfo.maxSendPpuSize)) != 0 ||
+            (ret = bb_setUInt16(data, object->xDLMSContextInfo.maxSendPduSize)) != 0 ||
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
             (ret = bb_setUInt8(data, object->xDLMSContextInfo.dlmsVersionNumber)) != 0 ||
             (ret = bb_setUInt8(data, DLMS_DATA_TYPE_INT8)) != 0 ||

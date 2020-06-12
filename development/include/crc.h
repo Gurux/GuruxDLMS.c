@@ -33,13 +33,21 @@
 #ifndef CRC_H
 #define CRC_H
 
+#include "gxignore.h"
+#if defined(USE_AVR) || defined(ARDUINO_ARCH_AVR)
+//If AVR is used.
+#include <avr/pgmspace.h>
+#endif //#if defined(USE_AVR) || defined(ARDUINO_ARCH_AVR)
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
     //CRC table.
-    const uint16_t FCS16Table[256] =
-    {
+#ifndef USE_PROGMEM
+    static const uint16_t FCS16Table[] = {
+#else
+    const uint16_t FCS16Table[] PROGMEM = {
+#endif //USE_PROGMEM
         0x0000, 0x1189, 0x2312, 0x329B, 0x4624, 0x57AD, 0x6536, 0x74BF,
         0x8C48, 0x9DC1, 0xAF5A, 0xBED3, 0xCA6C, 0xDBE5, 0xE97E, 0xF8F7,
         0x1081, 0x0108, 0x3393, 0x221A, 0x56A5, 0x472C, 0x75B7, 0x643E,
@@ -81,7 +89,13 @@ extern "C" {
         uint16_t pos;
         for (pos = 0; pos < count; ++pos)
         {
+#ifdef ARDUINO_ARCH_AVR
+//If Arduino is used data is read from flash like this.
+            tmp = (FCS16 ^ Buff->data[index + pos]) & 0xFF;
+            FCS16 = (FCS16 >> 8) ^ pgm_read_word_near(FCS16Table + tmp);
+#else
             FCS16 = (FCS16 >> 8) ^ FCS16Table[(FCS16 ^ ((unsigned char*)Buff->data)[index + pos]) & 0xFF];
+#endif //ARDUINO_ARCH_AVR
         }
         FCS16 = ~FCS16;
         //CRC is in big endian byte order.
@@ -92,7 +106,7 @@ extern "C" {
     }
 
 #ifdef  __cplusplus
-}
+    }
 #endif
 
 #endif //CRC_H

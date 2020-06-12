@@ -282,15 +282,20 @@ int invoke_AssociationLogicalName(
     }
     else if (e->index == 2)
     {
-        if (e->parameters.byteArr->size == 0)
+#ifdef DLMS_IGNORE_MALLOC
+        ret = cosem_getOctectString(e->parameters.byteArr, &object->secret);
+#else
+        unsigned short size = bb_available(e->parameters.byteArr);
+        if (size == 0)
         {
             ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
         }
         else
         {
             bb_clear(&object->secret);
-            bb_set(&object->secret, e->parameters.byteArr->data, e->parameters.byteArr->size);
+            ret = bb_set(&object->secret, e->parameters.byteArr->data + e->parameters.byteArr->position, size);
         }
+#endif //DLMS_IGNORE_MALLOC
     }
     else if (e->index == 5)
     {
@@ -549,14 +554,18 @@ int invoke_SapAssigment(
     if (e->index == 1)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = cosem_checkStructure(e->value.byteArr, 2)) == 0 &&
-            (ret = cosem_getUInt16(e->value.byteArr, &id)) == 0)
+        if (e->parameters.vt != DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+        }
+        else if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
+            (ret = cosem_getUInt16(e->parameters.byteArr, &id)) == 0)
         {
             if (id == 0)
             {
                 uint16_t size;
                 unsigned char name[MAX_SAP_ITEM_NAME_LENGTH];
-                if ((ret = cosem_getOctectString2(e->value.byteArr, name, sizeof(name), &size)) == 0)
+                if ((ret = cosem_getOctectString2(e->parameters.byteArr, name, sizeof(name), &size)) == 0)
                 {
                     name[size] = 0;
                     for (pos = 0; pos != target->sapAssignmentList.size; ++pos)
@@ -569,7 +578,8 @@ int invoke_SapAssigment(
                         {
                             if ((ret = arr_removeByIndex(&target->sapAssignmentList, pos, sizeof(gxSapItem))) == 0)
                             {
-                                --target->sapAssignmentList.size;
+                                //arr_removeByIndex is decreasing amount already.
+                                break;
                             }
                         }
                     }
@@ -577,11 +587,23 @@ int invoke_SapAssigment(
             }
             else
             {
-                if ((ret = arr_getByIndex(&target->sapAssignmentList, target->sapAssignmentList.size, (void**)&it, sizeof(gxSapItem))) == 0 &&
-                    (ret = cosem_getOctectString2(e->value.byteArr, it->name.value, sizeof(it->name.value), &it->name.size)) == 0)
+                //If buffer is full.
+                if (!(target->sapAssignmentList.size < target->sapAssignmentList.capacity))
                 {
-                    it->id = id;
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+                }
+                else
+                {
                     ++target->sapAssignmentList.size;
+                    if ((ret = arr_getByIndex(&target->sapAssignmentList, target->sapAssignmentList.size - 1, (void**)&it, sizeof(gxSapItem))) == 0 &&
+                        (ret = cosem_getOctectString2(e->parameters.byteArr, it->name.value, sizeof(it->name.value), &it->name.size)) == 0)
+                    {
+                        it->id = id;
+                    }
+                    else
+                    {
+                        --target->sapAssignmentList.size;
+                    }
                 }
             }
         }
@@ -1251,7 +1273,6 @@ int invoke_Register(
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    bb_clear(e->value.byteArr);
     return ret;
 }
 #endif //DLMS_IGNORE_REGISTER

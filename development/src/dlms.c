@@ -84,6 +84,7 @@ int dlms_checkInit(dlmsSettings* settings)
     return DLMS_ERROR_CODE_OK;
 }
 
+#ifndef DLMS_IGNORE_HIGH_GMAC
 unsigned char dlms_useDedicatedKey(dlmsSettings* settings)
 {
 #ifndef DLMS_IGNORE_MALLOC
@@ -102,7 +103,6 @@ unsigned char dlms_usePreEstablishedSystemTitle(dlmsSettings* settings)
 #endif //DLMS_IGNORE_MALLOC
 }
 
-#ifndef DLMS_IGNORE_HIGH_GMAC
 /**
 * Get used glo message.
 *

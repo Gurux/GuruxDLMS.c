@@ -405,7 +405,6 @@ int cosem_createObject(DLMS_OBJECT_TYPE type, gxObject** object)
     }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     ret = cosem_init2(*object, type, ln);
-    (*object)->free = 1;
     return ret;
 }
 
@@ -846,13 +845,13 @@ int cosem_getOctectStringBase2(gxByteBuffer* bb, unsigned char* value, uint16_t 
     {
         return ret;
     }
-    if (size != NULL)
-    {
-        *size = count;
-    }
     if (count > capacity)
     {
         return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+    }
+    if (size != NULL)
+    {
+        *size = count;
     }
     return bb_get(bb, value, count);
 }

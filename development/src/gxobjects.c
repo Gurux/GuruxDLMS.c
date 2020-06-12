@@ -340,7 +340,7 @@ int obj_clearScriptTable(gxArray* list)
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
 int obj_clearRegisterActivationAssignment(objectArray* list)
 {
-    oa_clear(list);
+    oa_empty(list);
     return 0;
 }
 #else
@@ -810,7 +810,7 @@ void obj_clear(gxObject* object)
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
         case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
-            oa_clear(&((gxRegisterActivation*)object)->registerAssignment);
+            oa_empty(&((gxRegisterActivation*)object)->registerAssignment);
 #else
             obj_clearRegisterActivationAssignment(&((gxRegisterActivation*)object)->registerAssignment);
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
@@ -1003,7 +1003,7 @@ void obj_clear(gxObject* object)
             memset(((gxParameterMonitor*)object)->changedParameter.logicalName, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
             var_clear(&((gxParameterMonitor*)object)->changedParameter.value);
-            arr_clear(&((gxParameterMonitor*)object)->parameters);
+            obj_clearParametersList(&((gxParameterMonitor*)object)->parameters);
             break;
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
 #ifndef DLMS_IGNORE_LLC_SSCS_SETUP

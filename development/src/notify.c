@@ -263,6 +263,8 @@ int notify_parsePush(
                 }
                 memcpy(obj->logicalName, tmp->byteArr, 6);
                 oa_push(&settings->objects, obj);
+                //Add object to released objects list.
+                ret = oa_push(&settings->releasedObjects, obj);
 #endif //DLMS_IGNORE_MALLOC
             }
 #ifdef DLMS_IGNORE_MALLOC

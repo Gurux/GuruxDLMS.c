@@ -1766,7 +1766,7 @@ void obj_xDLMSContextTypeToString(gxByteBuffer* ba, gxXDLMSContextType* object)
     bb_addString(ba, " ");
     bb_addIntAsString(ba, object->maxReceivePduSize);
     bb_addString(ba, " ");
-    bb_addIntAsString(ba, object->maxSendPpuSize);
+    bb_addIntAsString(ba, object->maxSendPduSize);
     bb_addString(ba, " ");
     bb_addIntAsString(ba, object->qualityOfService);
     bb_addString(ba, " ");

@@ -36,13 +36,19 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
+#include "gxignore.h"
+#ifdef USE_AVR
+    //If AVR is used.
+#include <avr/pgmspace.h>
+#endif //USE_AVR
 
 #include "bytebuffer.h"
 #include "variant.h"
 
-static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0 };
-static const unsigned char EMPTY_KEY[16] = { 0 };
-static const unsigned char EMPTY_LN[6] = { 0 };
+static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+static const unsigned char EMPTY_LN[6] = { 0, 0, 0, 0, 0, 0 };
+static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
 //Get UInt32.
 #define GETU32(pt) (((uint32_t)(pt)[0] << 24) | \
                     ((uint32_t)(pt)[1] << 16) | \
@@ -65,11 +71,11 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     char* hlp_getErrorMessage(short err);
 
     //Returns items count. Use hlp_getObjectCount22.
-    int hlp_getObjectCount(gxByteBuffer * buff);
+    int hlp_getObjectCount(gxByteBuffer* buff);
 
     //Returns items count.
     int hlp_getObjectCount2(
-        gxByteBuffer * buff,
+        gxByteBuffer* buff,
         uint16_t* count);
 
     //Get count size in bytes.
@@ -78,7 +84,7 @@ static const unsigned char EMPTY_LN[6] = { 0 };
     // Set count of items.
     int hlp_setObjectCount(
         uint32_t count,
-        gxByteBuffer * buff);
+        gxByteBuffer* buff);
 
 #ifndef DLMS_IGNORE_MALLOC
     /**
@@ -118,12 +124,12 @@ static const unsigned char EMPTY_LN[6] = { 0 };
 #if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
     void hlp_trace(unsigned char* data, int index, int count, unsigned char send);
     //Get Logical Name from string.
-    int hlp_parseLogicalName(gxByteBuffer * value, unsigned char ln[6]);
+    int hlp_parseLogicalName(gxByteBuffer* value, unsigned char ln[6]);
 
     //Set logical name from string.
-    int hlp_setLogicalName2(dlmsVARIANT * ln, const char* name);
+    int hlp_setLogicalName2(dlmsVARIANT* ln, const char* name);
 
-    int hlp_appendLogicalName(gxByteBuffer * bb, const unsigned char value[6]);
+    int hlp_appendLogicalName(gxByteBuffer* bb, const unsigned char value[6]);
 
     //Print logical name to cout.
     int hlp_printLogicalName(
@@ -135,7 +141,7 @@ static const unsigned char EMPTY_LN[6] = { 0 };
 
     int hlp_getLogicalNameToString(const unsigned char value[6], char* ln);
 
-    void hlp_replace(gxByteBuffer * str, char oldCh, char newCh);
+    void hlp_replace(gxByteBuffer* str, char oldCh, char newCh);
 
     double hlp_getScaler(int scaler);
 

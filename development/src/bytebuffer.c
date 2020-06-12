@@ -531,19 +531,24 @@ int bb_addString(
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-void bb_attach(
+int bb_attach(
     gxByteBuffer* arr,
     unsigned char* value,
     uint32_t count,
     uint32_t capacity)
 #else
-void bb_attach(
+int bb_attach(
     gxByteBuffer* arr,
     unsigned char* value,
     uint16_t count,
     uint16_t capacity)
 #endif
 {
+    //If capacity is 1 value is cast t
+    if (value == NULL || capacity < count)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     arr->data = value;
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     arr->capacity = (0x80000000 | capacity);
@@ -552,16 +557,18 @@ void bb_attach(
 #endif
     arr->size = count;
     arr->position = 0;
+    return 0;
 }
 
 #ifndef DLMS_IGNORE_MALLOC
-void bb_attachString(
+int bb_attachString(
     gxByteBuffer* arr,
     char* value)
 {
     int len = (int)strlen(value);
-    bb_set(arr, (const unsigned char*)value, (uint16_t)len);
+    int ret = bb_set(arr, (const unsigned char*)value, (uint16_t)len);
     gxfree(value);
+    return ret;
 }
 #endif //DLMS_IGNORE_MALLOC
 
@@ -1127,7 +1134,7 @@ unsigned char bb_compare(
 
 {
     unsigned char equal;
-    if (bb->size - bb->position < length)
+    if (bb_available(bb) != length)
     {
         return 0;
     }

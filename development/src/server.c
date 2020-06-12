@@ -90,7 +90,7 @@ int svr_handleWriteRequest(
 void svr_copyAssociationView(objectArray* target, objectArray* source)
 {
     uint16_t cnt = 0, pos;
-    oa_clear(target);
+    oa_empty(target);
     oa_capacity(target, source->size);
     for (pos = 0; pos != source->size; ++pos)
     {
@@ -161,8 +161,6 @@ int svr_initialize(
             }
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME) && !defined(DLMS_IGNORE_MALLOC)
             associationObject = it;
-            ln->xDLMSContextInfo.maxReceivePduSize = ln->xDLMSContextInfo.maxSendPpuSize = settings->base.maxServerPDUSize;
-            ln->xDLMSContextInfo.conformance = settings->base.proposedConformance;
         }
     }
     if (associationObject == NULL)
@@ -176,10 +174,10 @@ int svr_initialize(
             {
                 return ret;
             }
-            ln->xDLMSContextInfo.maxReceivePduSize = ln->xDLMSContextInfo.maxSendPpuSize = settings->base.maxServerPDUSize;
-            ln->xDLMSContextInfo.conformance = settings->base.proposedConformance;
             list = &((gxAssociationLogicalName*)ln)->objectList;
             oa_push(&settings->base.objects, (gxObject*)ln);
+            //Add object to released objects list.
+            ret = oa_push(&settings->base.releasedObjects, (gxObject*)ln);
             oa_copy(list, &settings->base.objects);
         }
         else
@@ -193,6 +191,8 @@ int svr_initialize(
             list = &((gxAssociationShortName*)it2)->objectList;
             oa_push(&settings->base.objects, (gxObject*)it2);
             oa_copy(list, &settings->base.objects);
+            //Add object to released objects list.
+            ret = oa_push(&settings->base.releasedObjects, (gxObject*)it2);
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         }
 #else
@@ -392,6 +392,7 @@ int svr_HandleAarqRequest(
                 svr_notifyTrace("High authentication is used.", 0);
                 // If High authentication is used.
                 result = DLMS_ASSOCIATION_RESULT_ACCEPTED;
+                diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
             }
         }
         // Generate AARE packet.
@@ -1096,7 +1097,6 @@ int svr_getRequestNormal(
     arr = &list;
 #endif //DLMS_IGNORE_MALLOC
     e->index = index;
-
     // Access selection
     unsigned char selection;
     if ((ret = bb_getUInt8(data, &selection)) != 0)
@@ -1139,7 +1139,6 @@ int svr_getRequestNormal(
 #endif //DLMS_IGNORE_MALLOC
         return ret;
     }
-
     if (e->target == NULL)
     {
         ret = svr_findObject(&settings->base, (DLMS_OBJECT_TYPE)ci, 0, ln, e);
@@ -2636,7 +2635,9 @@ int svr_handleCommand(
         ret = svr_handleMethodRequest(settings, data);
         if (ret != 0)
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("handleMethodRequest failed. ", ret);
+#endif //DLMS_DEBUG
         }
         break;
 #endif //DLMS_IGNORE_ACTION
@@ -2648,9 +2649,10 @@ int svr_handleCommand(
         }
         else
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("handleSnrmRequest failed. ", ret);
+#endif //DLMS_DEBUG
         }
-
         break;
     case DLMS_COMMAND_AARQ:
         ret = svr_HandleAarqRequest(settings, data);
@@ -2661,7 +2663,9 @@ int svr_handleCommand(
         }
         else
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("HandleAarqRequest failed. ", ret);
+#endif //DLMS_DEBUG
         }
         break;
     case DLMS_COMMAND_RELEASE_REQUEST:
@@ -2685,7 +2689,9 @@ int svr_handleCommand(
         break;
     default:
         //Invalid command.
+#ifdef DLMS_DEBUG
         svr_notifyTrace("Unknown command. ", cmd);
+#endif //DLMS_DEBUG
         return DLMS_ERROR_CODE_INVALID_COMMAND;
     }
     if (ret != 0)
@@ -2710,7 +2716,9 @@ int svr_handleCommand(
 #endif //DLMS_IGNORE_WRAPPER
     else
     {
+#ifdef DLMS_DEBUG
         svr_notifyTrace("Unknown frame type. ", -1);
+#endif //DLMS_DEBUG
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     if (cmd == DLMS_COMMAND_DISC ||
@@ -2718,6 +2726,12 @@ int svr_handleCommand(
     {
         svr_reset(settings);
     }
+#ifdef DLMS_DEBUG
+    if (ret != 0)
+    {
+        svr_notifyTrace("svr_handleCommand", ret);
+    }
+#endif //DLMS_DEBUG
     return ret;
 }
 
@@ -2731,7 +2745,7 @@ int svr_handleRequest(
 
 int svr_handleRequest3(
     dlmsServerSettings* settings,
-    unsigned char data,
+    const unsigned char data,
     gxByteBuffer* reply)
 {
     return svr_handleRequest2(settings, &data, 1, reply);
@@ -2739,7 +2753,7 @@ int svr_handleRequest3(
 
 int svr_handleRequest2(
     dlmsServerSettings* settings,
-    unsigned char* buff,
+    const unsigned char* buff,
     uint16_t size,
     gxByteBuffer* reply)
 {
@@ -2792,10 +2806,16 @@ int svr_handleRequest2(
     {
         if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS)
         {
+#ifdef DLMS_DEBUG
+            svr_notifyTrace("Invalid server address. ", -1);
+#endif //DLMS_DEBUG
             return 0;
         }
         else if (ret == DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS)
         {
+#ifdef DLMS_DEBUG
+            svr_notifyTrace("Invalid client address. ", -1);
+#endif //DLMS_DEBUG
             if (settings->info.preEstablished)
             {
                 svr_disconnected(settings);
@@ -2821,6 +2841,9 @@ int svr_handleRequest2(
         }
         else if (ret == DLMS_ERROR_CODE_INVALID_FRAME_NUMBER)
         {
+#ifdef DLMS_DEBUG
+            svr_notifyTrace("Invalid frame number. ", -1);
+#endif //DLMS_DEBUG
             if ((settings->base.connected & DLMS_CONNECTION_STATE_HDLC) != 0)
             {
                 settings->dataReceived = time_elapsed();
@@ -2854,6 +2877,9 @@ int svr_handleRequest2(
     bb_clear(&settings->receivedData);
     if (settings->info.command == DLMS_COMMAND_DISC && (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) == 0)
     {
+#ifdef DLMS_DEBUG
+        svr_notifyTrace("Disconnecting from the meter. ", -1);
+#endif //DLMS_DEBUG
         ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_DISCONNECT_MODE, NULL, reply);
         reply_clear2(&settings->info, 1);
         return ret;

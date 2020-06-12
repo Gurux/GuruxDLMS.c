@@ -130,6 +130,26 @@ extern "C" {
 //Framework send debug information that can be used in debugging.
 // #define DLMS_DEBUG
 
+//Defined if AVR is used.
+// #define USE_AVR
+
+//Defined if program memory (flash) is used instead of SRAM.
+// #define USE_PROGMEM
+
+#ifdef ARDUINO_ARCH_AVR
+/////////////////////////////////////////////////////////////////////////////
+//If Arduino is used.
+#define DLMS_USE_EPOCH_TIME
+#define DLMS_IGNORE_MALLOC
+#define DLMS_IGNORE_NOTIFY
+#define GX_DLMS_MICROCONTROLLER
+#define DLMS_IGNORE_HIGH_SHA256
+#define DLMS_IGNORE_HIGH_SHA1
+#define DLMS_IGNORE_HIGH_MD5
+#define USE_PROGMEM
+/////////////////////////////////////////////////////////////////////////////
+#endif //ARDUINO_ARCH_AVR
+
 #ifdef  __cplusplus
 }
 #endif

@@ -1291,19 +1291,19 @@ uint32_t time_getNextScheduledDate(uint32_t start, gxtime* value)
     }
     if ((value->skip & DATETIME_SKIPS_HOUR) == 0)
     {
-        start += 3600 - (time_getMinutes(value) * 60 - time_getSeconds(value));
+        start += 3600L - (60L * time_getMinutes(value)- time_getSeconds(value));
     }
     if ((value->skip & DATETIME_SKIPS_DAY) == 0)
     {
-        start += (24 * 3600) - (time_getHours(value) * 3600 - (time_getMinutes(value) * 60 - time_getSeconds(value)));
+        start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
     }
     if ((value->skip & DATETIME_SKIPS_MONTH) == 0)
     {
-        start += (24 * 3600) - (time_getHours(value) * 3600 - (time_getMinutes(value) * 60 - time_getSeconds(value)));
+        start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
     }
     if ((value->skip & DATETIME_SKIPS_YEAR) == 0)
     {
-        start += (24 * 3600) - (time_getHours(value) * 3600 - (time_getMinutes(value) * 60 - time_getSeconds(value)));
+        start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
     }
     if (value->skip == 0)
     {

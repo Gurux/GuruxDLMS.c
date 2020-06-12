@@ -1039,6 +1039,7 @@ int cosem_setAssociationLogicalName(
                         return ret;
                     }
                     obj->version = version;
+                    //Add object to released objects list.
                     ret = oa_push(&settings->releasedObjects, obj);
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
@@ -1270,7 +1271,7 @@ int cosem_setAssociationLogicalName(
         if ((ret = cosem_checkStructure(value->byteArr, 6)) != 0 ||
             (ret = cosem_getIntegerFromBitString(value->byteArr, &conformance)) != 0 ||
             (ret = cosem_getUInt16(value->byteArr, &object->xDLMSContextInfo.maxReceivePduSize)) != 0 ||
-            (ret = cosem_getUInt16(value->byteArr, &object->xDLMSContextInfo.maxSendPpuSize)) != 0 ||
+            (ret = cosem_getUInt16(value->byteArr, &object->xDLMSContextInfo.maxSendPduSize)) != 0 ||
             (ret = cosem_getUInt8(value->byteArr, &object->xDLMSContextInfo.dlmsVersionNumber)) != 0 ||
             (ret = cosem_getInt8(value->byteArr, &object->xDLMSContextInfo.qualityOfService)) != 0 ||
             (ret = cosem_getOctectString(value->byteArr, &object->xDLMSContextInfo.cypheringInfo)) != 0)
@@ -1297,7 +1298,7 @@ int cosem_setAssociationLogicalName(
         {
             return ret;
         }
-        object->xDLMSContextInfo.maxSendPpuSize = (uint16_t)var_toInteger(tmp);
+        object->xDLMSContextInfo.maxSendPduSize = (uint16_t)var_toInteger(tmp);
 
         ret = va_getByIndex(value->Arr, 3, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -1739,6 +1740,8 @@ int cosem_setAssociationShortName(
                     }
                     obj->shortName = sn;
                     obj->version = version;
+                    //Add object to released objects list.
+                    ret = oa_push(&settings->releasedObjects, obj);
                 }
                 oa_push(&object->objectList, obj);
             }
@@ -4349,7 +4352,7 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                     break;
                 }
 #else
-                se->execWeekdays = value;
+                se->execWeekdays = execWeekdays;
 #endif //DLMS_IGNORE_OBJECT_POINTERS
             }
         }
@@ -5209,6 +5212,7 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                     {
                         return ret;
                     }
+                    oa_push(&settings->releasedObjects, obj);
                     memcpy(obj->logicalName, tmp3->byteArr->data, tmp3->byteArr->size);
                 }
                 it = (gxTarget*)gxmalloc(sizeof(gxTarget));
@@ -6500,6 +6504,8 @@ int cosem_setProfileGeneric(
                 {
                     return ret;
                 }
+                //Add object to released objects list.
+                ret = oa_push(&settings->releasedObjects, object->sortObject);
             }
             ret = va_getByIndex(value->Arr, 2, &tmp);
             if (ret != DLMS_ERROR_CODE_OK)
@@ -7366,6 +7372,7 @@ int cosem_setParameterMonitor(
                         {
                             return ret;
                         }
+                        oa_push(&settings->releasedObjects, object->changedParameter.target);
                         memcpy(object->changedParameter.target->logicalName, tmp3->byteArr->data, tmp3->byteArr->size);
                     }
                     if ((ret = va_getByIndex(value->Arr, 2, &tmp3)) == DLMS_ERROR_CODE_OK)
@@ -7496,6 +7503,7 @@ int cosem_setParameterMonitor(
                     {
                         return ret;
                     }
+                    oa_push(&settings->releasedObjects, obj);
                     memcpy(obj->logicalName, tmp3->byteArr->data, tmp3->byteArr->size);
                 }
                 it = (gxTarget*)gxmalloc(sizeof(gxTarget));

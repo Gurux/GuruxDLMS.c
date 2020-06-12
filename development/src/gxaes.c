@@ -36,6 +36,11 @@
 #include <stdint.h>
 #include "../include/gxaes.h"
 
+#if defined(USE_AVR) || defined(ARDUINO_ARCH_AVR)
+//If AVR is used.
+#include <avr/pgmspace.h>
+#endif //#if defined(USE_AVR) || defined(ARDUINO_ARCH_AVR)
+
 #define Nb 4
 #define BLOCKLEN 16 //Block length in bytes AES is 128b block only
 
@@ -75,7 +80,11 @@ static const unsigned char* Key;
 static unsigned char* Iv;
 #endif
 
-static const unsigned char sbox[256] = {
+#ifndef USE_PROGMEM
+    static const unsigned char __SBOX[256] = {
+#else
+    static const unsigned char __SBOX[256] PROGMEM = {
+#endif //#if defined(_WIN32) || defined(_WIN64)
     //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -94,7 +103,11 @@ static const unsigned char sbox[256] = {
     0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
     0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16 };
 
-static const unsigned char rsbox[256] = {
+#ifndef USE_PROGMEM
+    static const unsigned char __RS_BOX[256] = {
+    #else
+    static const unsigned char __RS_BOX[256] PROGMEM = {
+#endif //#if defined(_WIN32) || defined(_WIN64)
     0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
     0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
@@ -114,11 +127,19 @@ static const unsigned char rsbox[256] = {
 
 // The round constant word array, Rcon[i], contains the values given by
 // x to th e power (i-1) being powers of x (x is denoted as {02}) in the field GF(2^8)
-static const unsigned char Rcon[11] = {
+#ifndef USE_PROGMEM
+    static const unsigned char __R_CON[11] = {
+#else
+static const unsigned char __R_CON[11] PROGMEM = {
+#endif //#if defined(_WIN32) || defined(_WIN64)
     0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36 };
 
 #if 0
-static const unsigned char Rcon[256] = {
+#ifndef USE_PROGMEM
+static const unsigned char __R_CON[256] = {
+#else
+static const unsigned char __R_CON[256] PROGMEM = {
+#endif //#if defined(_WIN32) || defined(_WIN64)
     0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a,
     0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39,
     0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a,
@@ -137,14 +158,34 @@ static const unsigned char Rcon[256] = {
     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d };
 #endif
 
-static unsigned char getSBoxValue(unsigned char num)
+static unsigned char getSBoxValue(unsigned char offset)
 {
-    return sbox[num];
+#ifdef ARDUINO_ARCH_AVR
+    //If Arduino is used data is read from flash like this.
+    return pgm_read_byte_near(__SBOX + offset);
+#else
+    return __SBOX[offset];
+#endif //ARDUINO_ARCH_AVR
 }
 
-static unsigned char getSBoxInvert(unsigned char num)
+static unsigned char getSBoxInvert(unsigned char offset)
 {
-    return rsbox[num];
+#ifdef ARDUINO_ARCH_AVR
+    //If Arduino is used data is read from flash like this.
+    return pgm_read_byte_near(__RS_BOX + offset);
+#else
+    return __RS_BOX[offset];
+#endif //ARDUINO_ARCH_AVR
+}
+
+static unsigned char getRCon(unsigned char offset)
+{
+#ifdef ARDUINO_ARCH_AVR
+    //If Arduino is used data is read from flash like this.
+    return pgm_read_byte_near(__R_CON + offset);
+#else
+    return __R_CON[offset];
+#endif //ARDUINO_ARCH_AVR
 }
 
 // This function produces Nb(Nr+1) round keys. The round keys are used in each round to decrypt the states.
@@ -200,7 +241,7 @@ static void KeyExpansion(void)
                 tempa[3] = getSBoxValue(tempa[3]);
             }
 
-            tempa[0] = tempa[0] ^ Rcon[i / Nk];
+            tempa[0] = tempa[0] ^ getRCon(i / Nk);
         }
 #if defined(AES256) && (AES256 == 1)
         if (i % Nk == 4)

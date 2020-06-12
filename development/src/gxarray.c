@@ -306,13 +306,13 @@ int arr_removeByIndex(
 {
     int ret;
     uint16_t pos;
-    void** prev = NULL;
-    void** item = NULL;
-    if ((ret = arr_getByIndex(arr, index, prev, itemSize)) == 0)
+    void* prev = NULL;
+    void* item = NULL;
+    if ((ret = arr_getByIndex(arr, index, &prev, itemSize)) == 0)
     {
         for (pos = index + 1; pos < arr->size; ++pos)
         {
-            if ((ret = arr_getByIndex(arr, pos, item, itemSize)) == 0)
+            if ((ret = arr_getByIndex(arr, pos, &item, itemSize)) == 0)
             {
                 memcpy(prev, item, itemSize);
                 prev = item;

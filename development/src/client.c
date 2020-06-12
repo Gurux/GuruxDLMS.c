@@ -477,13 +477,13 @@ int cl_parseApplicationAssociationResponse(
 
 #ifndef DLMS_IGNORE_MALLOC
 // LN referencing
-int cl_parseLNObjects(gxByteBuffer* data, objectArray* objects)
+int cl_parseLNObjects(dlmsSettings* settings, gxByteBuffer* data)
 {
     gxObject* object;
     int ret;
     uint16_t pos, count;
     unsigned char size;
-    oa_clear(objects);
+    oa_clear(&settings->objects);
     unsigned char version;
     gxDataInfo info;
     DLMS_OBJECT_TYPE class_id;
@@ -506,7 +506,7 @@ int cl_parseLNObjects(gxByteBuffer* data, objectArray* objects)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    oa_capacity(objects, (uint16_t)count);
+    oa_capacity(&settings->objects, (uint16_t)count);
     for (pos = 0; pos != count; ++pos)
     {
         var_clear(&value);
@@ -553,7 +553,8 @@ int cl_parseLNObjects(gxByteBuffer* data, objectArray* objects)
                 return ret;
             }
             cosem_setLogicalName(object, ln->byteArr->data);
-            oa_push(objects, object);
+            oa_push(&settings->objects, object);
+            oa_push(&settings->releasedObjects, object);
         }
     }
     var_clear(&value);
@@ -582,7 +583,7 @@ int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
 
 #if !(defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) || defined(DLMS_IGNORE_MALLOC))
 // SN referencing
-int cl_parseSNObjects(gxByteBuffer* data, objectArray* objects)
+int cl_parseSNObjects(dlmsSettings* settings, gxByteBuffer* data)
 {
     gxDataInfo info;
     short sn;
@@ -593,7 +594,7 @@ int cl_parseSNObjects(gxByteBuffer* data, objectArray* objects)
     int ret;
     uint16_t count, pos;
     unsigned char size, version;
-    oa_clear(objects);
+    oa_clear(&settings->objects);
     var_init(&value);
     //Get array tag.
     ret = bb_getUInt8(data, &size);
@@ -611,7 +612,7 @@ int cl_parseSNObjects(gxByteBuffer* data, objectArray* objects)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    oa_capacity(objects, (uint16_t)count);
+    oa_capacity(&settings->objects, (uint16_t)count);
     for (pos = 0; pos != count; ++pos)
     {
         var_clear(&value);
@@ -653,7 +654,8 @@ int cl_parseSNObjects(gxByteBuffer* data, objectArray* objects)
             object->shortName = sn;
             object->version = version;
             cosem_setLogicalName(object, ln->byteArr->data);
-            oa_push(objects, object);
+            oa_push(&settings->objects, object);
+            oa_push(&settings->releasedObjects, object);
         }
     }
     var_clear(&value);
@@ -668,12 +670,12 @@ int cl_parseObjects(dlmsSettings* settings, gxByteBuffer* data)
     int ret;
     if (settings->useLogicalNameReferencing)
     {
-        ret = cl_parseLNObjects(data, &settings->objects);
+        ret = cl_parseLNObjects(settings, data);
     }
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-        ret = cl_parseSNObjects(data, &settings->objects);
+        ret = cl_parseSNObjects(settings, data);
 #else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME

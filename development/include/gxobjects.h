@@ -361,12 +361,8 @@ extern "C" {
 
     typedef struct
     {
-        uint16_t objectType; //DLMS_OBJECT_TYPE
+        uint16_t objectType;
         unsigned char version;
-#ifndef DLMS_IGNORE_MALLOC
-        //Is this component free when collection is clear.
-        unsigned char free;
-#endif //DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         uint16_t shortName;
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -465,7 +461,7 @@ extern "C" {
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
     typedef struct
     {
-        DLMS_OBJECT_TYPE objectType;
+        uint16_t objectType;
         unsigned char logicalName[6];
     } gxObjectDefinition;
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -625,7 +621,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         gxObject* target;
 #else
-        DLMS_OBJECT_TYPE objectType;
+        uint16_t objectType;
         unsigned char logicalName[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         DLMS_SCRIPT_ACTION_TYPE type;
@@ -869,7 +865,7 @@ extern "C" {
     {
         DLMS_CONFORMANCE conformance;
         uint16_t maxReceivePduSize;
-        uint16_t maxSendPpuSize;
+        uint16_t maxSendPduSize;
         unsigned char dlmsVersionNumber;
         signed char qualityOfService;
         gxByteBuffer cypheringInfo;
@@ -1208,7 +1204,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         gxObject* target;
 #else
-        DLMS_OBJECT_TYPE objectType;
+        uint16_t objectType;
         unsigned char logicalName[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         signed char attributeIndex;

@@ -179,7 +179,7 @@ void cl_clear(
 #else
     bb_clear(&settings->kek);
 #endif //DLMS_IGNORE_MALLOC
-    oa_clear(&settings->objects);
+    oa_empty(&settings->objects);
     settings->connected = DLMS_CONNECTION_STATE_NONE;
     settings->customChallenges = 0;
     settings->invokeID = 1;

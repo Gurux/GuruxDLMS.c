@@ -560,6 +560,23 @@ int bb_attach(
     return 0;
 }
 
+#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+int bb_attachString2(
+    gxByteBuffer* arr,
+    char* value,
+    uint32_t count,
+    uint32_t capacity)
+#else
+int bb_attachString2(
+    gxByteBuffer* arr,
+    char* value,
+    uint16_t count,
+    uint16_t capacity)
+#endif
+{
+    return bb_attach(arr, (unsigned char*) value, count, capacity);
+}
+
 #ifndef DLMS_IGNORE_MALLOC
 int bb_attachString(
     gxByteBuffer* arr,

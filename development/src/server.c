@@ -152,8 +152,8 @@ int svr_initialize(
         else if (it->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME
             && settings->base.useLogicalNameReferencing)
         {
-            gxAssociationLogicalName* ln = (gxAssociationLogicalName*)it;
 #if !defined(DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME) && !defined(DLMS_IGNORE_MALLOC)
+            gxAssociationLogicalName* ln = (gxAssociationLogicalName*)it;
             objectArray* list = &ln->objectList;
             if (list->size == 0)
             {
@@ -2766,6 +2766,9 @@ int svr_handleRequest2(
     }
     if (!settings->initialized)
     {
+#ifdef DLMS_DEBUG
+        svr_notifyTrace("Server not Initialized.", -1);
+#endif //DLMS_DEBUG
         //Server not Initialized.
         return DLMS_ERROR_CODE_NOT_INITIALIZED;
     }
@@ -2786,6 +2789,9 @@ int svr_handleRequest2(
 
     if (bb_isAttached(&settings->receivedData) && settings->receivedData.size + size > bb_getCapacity(&settings->receivedData))
     {
+#ifdef DLMS_DEBUG
+        svr_notifyTrace("svr_handleRequest2 bb_isAttached failed. ", -1);
+#endif //DLMS_DEBUG
         //Send U-Frame Frame Reject if we have received more data that can fit to one HDLC frame.
         if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
         {
@@ -2804,6 +2810,9 @@ int svr_handleRequest2(
         && settings->base.clientAddress == 0;
     if ((ret = dlms_getData2(&settings->base, &settings->receivedData, &settings->info, first)) != 0)
     {
+#ifdef DLMS_DEBUG
+        svr_notifyTrace("svr_handleRequest2 dlms_getData2 failed. ", ret);
+#endif //DLMS_DEBUG
         if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS)
         {
 #ifdef DLMS_DEBUG
@@ -2952,6 +2961,9 @@ int svr_handleRequest2(
             //If inactivity time out is elapsed.
             if (elapsed >= settings->hdlc->inactivityTimeout)
             {
+#ifdef DLMS_DEBUG
+                svr_notifyTrace("Inactivity timeout. ", 0);
+#endif //DLMS_DEBUG
                 if (!settings->info.preEstablished)
                 {
                     if (settings->info.command == DLMS_COMMAND_DISC)
@@ -2981,6 +2993,9 @@ int svr_handleRequest2(
             //If inactivity time out is elapsed.
             if (elapsed >= settings->wrapper->inactivityTimeout)
             {
+#ifdef DLMS_DEBUG
+                svr_notifyTrace("Inactivity timeout. ", 0);
+#endif //DLMS_DEBUG
                 if (!settings->info.preEstablished)
                 {
                     svr_disconnected(settings);

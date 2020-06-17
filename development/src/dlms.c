@@ -2697,6 +2697,9 @@ int dlms_getHdlcData(
         {
             return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
         }
+#ifdef DLMS_DEBUG
+        svr_notifyTrace("Invalid CRC. ", -1);
+#endif //DLMS_DEBUG
         return DLMS_ERROR_CODE_WRONG_CRC;
     }
     // Check that packet CRC match only if there is a data part.
@@ -2709,6 +2712,9 @@ int dlms_getHdlcData(
         }
         if (crc != crcRead)
         {
+#ifdef DLMS_DEBUG
+            svr_notifyTrace("Invalid CRC. ", -1);
+#endif //DLMS_DEBUG
             return DLMS_ERROR_CODE_WRONG_CRC;
         }
         // Remove CRC and EOP from packet length.

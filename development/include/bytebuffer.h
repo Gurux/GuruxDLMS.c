@@ -271,7 +271,7 @@ extern "C" {
         uint16_t capacity);
     int bb_attachString2(
         gxByteBuffer* arr,
-        unsigned char* value,
+        char* value,
         uint16_t count,
         uint16_t capacity);
 #endif

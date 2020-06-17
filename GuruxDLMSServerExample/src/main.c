@@ -130,6 +130,11 @@ int startServers(int port, int trace)
     printf("GuruxDLMSClientExample -h localhost -p %d -w\n", port + 3);
 
     printf("----------------------------------------------------------\n");
+    printf("Authentication levels:\n");
+    printf("None: Client address 16 (0x10)\n");
+    printf("Low: Client address 17 (0x11)\n");
+    printf("High: Client address 1 (0x1)\n");
+    printf("----------------------------------------------------------\n");
     println("System Title", &snHdlc.settings.base.cipher.systemTitle);
     println("Authentication key", &snHdlc.settings.base.cipher.authenticationKey);
     println("Block cipher key", &snHdlc.settings.base.cipher.blockCipherKey);

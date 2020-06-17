@@ -4,7 +4,7 @@ TARGET   = gurux.dlms.server.bin
 CC       = gcc
 
 # compiling flags here
-CFLAGS   = -std=gnu99 -Wall -I. -DDLMS_IGNORE_MALLOC
+CFLAGS   = -std=gnu99 -Wall -I. -DGX_DLMS_MICROCONTROLLER -DDLMS_USE_EPOCH_TIME -DDLMS_IGNORE_CLIENT -DDLMS_IGNORE_MALLOC
 
 LINKER   = gcc -o
 

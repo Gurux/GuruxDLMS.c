@@ -132,7 +132,7 @@ typedef struct
 } GXSapList;
 
 //Association settings (passwords).
-struct GXAssociation
+typedef struct 
 {
   //Define low level password.
   char llsPasswordSize;
@@ -140,7 +140,7 @@ struct GXAssociation
   //Define high level password.
   char hlsPasswordSize;
   char hlsPassword[20];
-};
+}GXAssociation;
 
 //Save serialized meter data here.
 typedef struct {
@@ -176,6 +176,7 @@ static gxData eventCode;
 static gxAssociationLogicalName associationNone;
 static gxAssociationLogicalName associationLow;
 static gxAssociationLogicalName associationHigh;
+static gxAssociationLogicalName associationHighGMac;
 static gxRegister activePowerL1;
 static gxScriptTable scriptTableGlobalMeterReset;
 static gxScriptTable scriptTableDisconnectControl;
@@ -193,7 +194,7 @@ static gxSecuritySetup securitySetupHigh;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn), BASE(sapAssignment), BASE(meterData.clock1) };
 
-static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(securitySetupLow), BASE(securitySetupHigh),
+static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupLow), BASE(securitySetupHigh),
                                    BASE(ldn), BASE(sapAssignment), BASE(eventCode),
                                    BASE(meterData.clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
                                    BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(profileGeneric), BASE(eventLog), BASE(meterData.hdlc),
@@ -204,7 +205,7 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
 static uint32_t started = 0;
 #endif //USE_TIME_INTERRUPT
 
-static uint32_t executeTime;
+static uint32_t executeTime = 0;
 
 static uint16_t activePowerL1Value = 0;
 
@@ -456,6 +457,45 @@ int addAssociationHigh(uint16_t serializationVersion)
 
 
 ///////////////////////////////////////////////////////////////////////
+//This method adds example Logical Name Association object for GMAC High authentication.
+// UA in Indian standard.
+///////////////////////////////////////////////////////////////////////
+int addAssociationHighGMac(uint16_t serializationVersion)
+{
+  int ret;
+  //User list.
+  static gxUser USER_LIST[10] = { 0 };
+  //Dedicated key.
+  static unsigned char CYPHERING_INFO[20] = { 0 };
+  const unsigned char ln[6] = { 0, 0, 40, 0, 4, 255 };
+  if ((ret = INIT_OBJECT(associationHighGMac, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+  {
+    associationHighGMac.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH_GMAC;
+    OA_ATTACH(associationHighGMac.objectList, ALL_OBJECTS);
+    BB_ATTACH(associationHighGMac.xDLMSContextInfo.cypheringInfo, CYPHERING_INFO, 0);
+    //All objects are add for this Association View later.
+    ARR_ATTACH(associationHighGMac.userList, USER_LIST, 0);
+    associationHighGMac.clientSAP = 0x1;
+    associationHighGMac.xDLMSContextInfo.maxSendPduSize = associationHighGMac.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
+    associationHighGMac.xDLMSContextInfo.conformance =  (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+        DLMS_CONFORMANCE_SET |
+        DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+        DLMS_CONFORMANCE_ACTION |
+        DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+        DLMS_CONFORMANCE_GET);
+       //GMAC authentication don't need password.
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    associationHighGMac.securitySetup = &securitySetupHigh;
+#else
+    memcpy(associationHighGMac.securitySetupReference, securitySetupHigh.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+  }
+  return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
 //This method adds security setup object for Low authentication.
 ///////////////////////////////////////////////////////////////////////
 int addSecuritySetupLow()
@@ -574,8 +614,6 @@ static int loadTargets(GXPushObjects* savedObjects, gxTarget* objects, uint16_t*
 static int saveTargets(GXPushObjects* savedObjects, gxTarget* objects, uint16_t count)
 {
   uint16_t pos;
-  int ret = 0;
-  gxObject* it;
   savedObjects->count = count;
   for (pos = 0; pos != count; ++pos)
   {
@@ -584,7 +622,7 @@ static int saveTargets(GXPushObjects* savedObjects, gxTarget* objects, uint16_t 
     savedObjects->values[pos].attributeIndex = objects[pos].attributeIndex;
     savedObjects->values[pos].dataIndex = objects[pos].dataIndex;
   }
-  return ret;
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1001,6 +1039,7 @@ void createObjects()
       (ret = addAssociationNone()) != 0 ||
       (ret = addAssociationLow(serializationVersion)) != 0 ||
       (ret = addAssociationHigh(serializationVersion)) != 0 ||
+      (ret = addAssociationHighGMac(serializationVersion)) != 0 ||
       (ret = addSecuritySetupLow()) != 0 ||
       (ret = addSecuritySetupHigh()) != 0 ||
       (ret = addPushSetup(serializationVersion)) != 0 ||
@@ -1019,7 +1058,7 @@ void createObjects()
       (ret = Server.initialize()) != 0)
   {
     GXTRACE_INT(PSTR("Failed to start the meter!"), ret);
-    executeTime = -1;
+    executeTime = 0;
     return;
   }
   //Load Push objects from EEPROM. This is done after all the objects are initialized.
@@ -1175,6 +1214,10 @@ int svr_findObject(
     else if (settings->authentication == DLMS_AUTHENTICATION_HIGH)
     {
       e->target = BASE(associationHigh);
+    }
+    else if (settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
+    {
+      e->target = BASE(associationHighGMac);
     }
   }
   return 0;
@@ -1556,7 +1599,8 @@ void handleEventLogActions(
   if (it->index == 1)
   {
     // Profile generic clear is called. Clear data.
-    meterData.eventLog.entriesInUse = meterData.eventLog.rowIndex = eventLog.entriesInUse = 0;
+    meterData.eventLog.entriesInUse = meterData.eventLog.rowIndex = 0;
+    eventLog.entriesInUse = 0;
   }
   else if (it->index == 2)
   {
@@ -1589,6 +1633,12 @@ void svr_preAction(
     {
       handleEventLogActions(e);
       e->handled = 1;
+    }
+    else if (e->target == BASE(activePowerL1))
+    {
+        //Set default value for active power.
+        activePowerL1Value = 0;
+        e->handled = 1;
     }
     else if (e->target == BASE(pushSetup) && e->index == 1)
     {
@@ -1743,6 +1793,13 @@ void svr_postAction(
       save(&meterData.association, sizeof(GXAssociation));
       GXTRACE(PSTR("High level password: "), associationHigh.secret.data);
     }
+    else if (e->target == BASE(associationHighGMac) && e->index == 2)
+    {
+      //Save HLS passwords.
+      meterData.association.hlsPasswordSize = associationHighGMac.secret.size;
+      save(&meterData.association, sizeof(GXAssociation));
+      GXTRACE(PSTR("High level password: "), associationHighGMac.secret.data);
+    }    
   }
 }
 
@@ -1854,7 +1911,7 @@ DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
   //Check Low Level security..
   if (authentication == DLMS_AUTHENTICATION_LOW)
   {
-    if (bb_compare(&associationLow.secret, password->data, password->size) == 0)
+    if (bb_compare(password, associationLow.secret.data, associationLow.secret.size) == 0)
     {
       GXTRACE(PSTR("Invalid low level password."), (const char*) associationLow.secret.data);
       return DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE;
@@ -1867,118 +1924,133 @@ DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
 
 //Get attribute access level for profile generic.
 DLMS_ACCESS_MODE getProfileGenericAttributeAccess(
-  dlmsSettings * settings,
-  gxObject * obj,
-  unsigned char index)
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index)
 {
-  //Only read is allowed for event log.
-  if (obj == BASE(eventLog))
-  {
+    //Only read is allowed for event log.
+    if (obj == BASE(eventLog))
+    {
+        return DLMS_ACCESS_MODE_READ;
+    }
+    //Write is allowed only for High authentication.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    {
+        switch (index)
+        {
+        case 4://capturePeriod
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        default:
+            break;
+        }
+    }
     return DLMS_ACCESS_MODE_READ;
-  }
-  switch (index)
-  {
-    case 4://capturePeriod
-      return DLMS_ACCESS_MODE_READ_WRITE;
-    default:
-      break;
-  }
-  return DLMS_ACCESS_MODE_READ;
 }
-
 
 //Get attribute access level for Push Setup.
 DLMS_ACCESS_MODE getPushSetupAttributeAccess(
-  dlmsSettings * settings,
-  unsigned char index)
+    dlmsSettings* settings,
+    unsigned char index)
 {
-  switch (index)
-  {
-    case 2://pushObjectList
-    case 4://communicationWindow
-      return DLMS_ACCESS_MODE_READ_WRITE;
-    default:
-      break;
-  }
-  return DLMS_ACCESS_MODE_READ;
+    //Write is allowed only for High authentication.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    {
+        switch (index)
+        {
+        case 2://pushObjectList
+        case 4://communicationWindow
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        default:
+            break;
+        }
+    }
+    return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for Disconnect Control.
 DLMS_ACCESS_MODE getDisconnectControlAttributeAccess(
-  dlmsSettings * settings,
-  unsigned char index)
+    dlmsSettings* settings,
+    unsigned char index)
 {
-  return DLMS_ACCESS_MODE_READ;
+    return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for register schedule.
 DLMS_ACCESS_MODE getActionSchduleAttributeAccess(
-  dlmsSettings * settings,
-  unsigned char index)
+    dlmsSettings* settings,
+    unsigned char index)
 {
-  switch (index)
-  {
-    case 4://Execution time.
-      return DLMS_ACCESS_MODE_READ_WRITE;
-    default:
-      break;
-  }
-  return DLMS_ACCESS_MODE_READ;
+    //Write is allowed only for High authentication.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    {
+        switch (index)
+        {
+        case 4://Execution time.
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        default:
+            break;
+        }
+    }
+    return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for register.
 DLMS_ACCESS_MODE getRegisterAttributeAccess(
-  dlmsSettings * settings,
-  unsigned char index)
+    dlmsSettings* settings,
+    unsigned char index)
 {
-  return DLMS_ACCESS_MODE_READ;
+    return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for data objects.
 DLMS_ACCESS_MODE getDataAttributeAccess(
-  dlmsSettings * settings,
-  unsigned char index)
+    dlmsSettings* settings,
+    unsigned char index)
 {
-  return DLMS_ACCESS_MODE_READ;
+    return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for script table.
 DLMS_ACCESS_MODE getScriptTableAttributeAccess(
-  dlmsSettings * settings,
-  unsigned char index)
+    dlmsSettings* settings,
+    unsigned char index)
 {
-  return DLMS_ACCESS_MODE_READ;
+    return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for IEC HDLS setup.
 DLMS_ACCESS_MODE getHdlcSetupAttributeAccess(
-  dlmsSettings * settings,
-  unsigned char index)
+    dlmsSettings* settings,
+    unsigned char index)
 {
-  switch (index)
-  {
-    case 2: //Communication speed.
-    case 7:
-    case 8:
-      return DLMS_ACCESS_MODE_READ_WRITE;
-    default:
-      break;
-  }
-  return DLMS_ACCESS_MODE_READ;
+    //Write is allowed only for High authentication.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    {
+        switch (index)
+        {
+        case 2: //Communication speed.
+        case 7:
+        case 8:
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        default:
+            break;
+        }
+    }
+    return DLMS_ACCESS_MODE_READ;
 }
 
 
 //Get attribute access level for association LN.
 DLMS_ACCESS_MODE getAssociationAttributeAccess(
-  dlmsSettings * settings,
-  unsigned char index)
+    dlmsSettings* settings,
+    unsigned char index)
 {
-  //If secret
-  if (settings->authentication == DLMS_AUTHENTICATION_LOW && index == 7)
-  {
-    return DLMS_ACCESS_MODE_READ_WRITE;
-  }
-  return DLMS_ACCESS_MODE_READ;
+    //If secret
+    if (settings->authentication == DLMS_AUTHENTICATION_LOW && index == 7)
+    {
+        return DLMS_ACCESS_MODE_READ_WRITE;
+    }
+    return DLMS_ACCESS_MODE_READ;
 }
 
 /**
@@ -1990,12 +2062,8 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
   unsigned char index)
 {
   //GXTRACE("svr_getAttributeAccess", NULL);
-  if (index == 1)
-  {
-    return DLMS_ACCESS_MODE_READ;
-  }
   // Only read is allowed if authentication is not used.
-  if (settings->authentication == DLMS_AUTHENTICATION_NONE)
+  if (index == 1 || settings->authentication == DLMS_AUTHENTICATION_NONE)
   {
     return DLMS_ACCESS_MODE_READ;
   }
@@ -2040,17 +2108,12 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     return getHdlcSetupAttributeAccess(settings, index);
   }
 
-
-  // Only clock write is allowed.
+  // Only read is allowed for Low authentication.
   if (settings->authentication == DLMS_AUTHENTICATION_LOW)
   {
-    if (obj->objectType == DLMS_OBJECT_TYPE_CLOCK)
-    {
-      return DLMS_ACCESS_MODE_READ_WRITE;
-    }
     return DLMS_ACCESS_MODE_READ;
   }
-  // All writes are allowed.
+  // All writes are allowed for High authentication.
   return DLMS_ACCESS_MODE_READ_WRITE;
 }
 

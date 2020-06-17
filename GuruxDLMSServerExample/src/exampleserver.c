@@ -61,7 +61,7 @@
 #include "../../development/include/gxset.h"
 
 //Meter serial number.
-unsigned long sn = 123456;
+unsigned long SERIAL_NUMBER = 123456;
 
 unsigned char useRingBuffer = 0;
 /*Define all COSEM objects here so they are not use stack.*/
@@ -106,7 +106,7 @@ int imageSize = 0;
 //Returns the approximate processor time in ms.
 uint32_t time_elapsed(void)
 {
-    return (uint32_t)clock() /(CLOCKS_PER_SEC / 1000);
+    return (uint32_t)clock() / (CLOCKS_PER_SEC / 1000);
 }
 
 //Returns current time.
@@ -161,7 +161,7 @@ gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &imageTra
     &associationNone.base, &highAssociation.base,
     &securitySetup.base,
 #if !defined(DLMS_ITALIAN_STANDARD)
-    & lowAssociation.base,
+    &lowAssociation.base,
 #endif
 
 #ifdef DLMS_INDIAN_STANDARD
@@ -175,7 +175,7 @@ gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &imageTra
     & frameCounterThresholds.base, &frameCounterOnLine.base, &frameCounterOffLine.base, &frameCounterGuarantor.base, &frameCounterInstaller.base, &frameCounterGateway.base, &frameCounterBroadcast.base,
 #endif // DLMS_ITALIAN_STANDARD
 #if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-    & associationShortName.base,
+    &associationShortName.base,
 #endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
 };
 
@@ -198,23 +198,6 @@ gxObject* SN_OBJECTS[] = { &associationShortName.base, &ldn.base, &id1.base, &id
 gxObject* LOW_OBJECTS[] = { &lowAssociation.base, &ldn.base, &securitySetup.base };
 #endif //!defined(DLMS_ITALIAN_STANDARD)
 
-//Objects what are shown on association view High.
-gxObject* HIGH_OBJECTS[] = {
-    &highAssociation.base,
-    &ldn.base, &id1.base, &id2.base, &fw.base, &imageTransfer.base, &activePowerL1.base, &clock1.base, &udpSetup.base, &profileGeneric.base,
-&autoConnect.base, &activityCalendar.base, &localPortSetup.base, &demandRegister.base, &registerMonitor.base,
-&actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
-&disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base,
-&iecHdlcSetup.base, &compactData.base,
-&securitySetup.base,
-#ifdef DLMS_INDIAN_STANDARD
-& instantData.base, &currentIR.base, &currentIY.base, &currentIB.base, &voltageVRN.base, &voltageVYN.base, &voltageVBN.base, &voltageVRY.base, &voltageVBY.base, &spfR.base, &spfY.base, &spfB.base, &spfBF.base, &frequency.base, &apparentPower.base, &signedActivePower.base, &signedReactivePower.base, &numberOfPowerFailures.base, &cumulativePowerFailureDuration.base, &cumulativeTamperCount.base, &cumulativeBillingCount.base, &cumulativeProgrammingCount.base, &billingDate.base, &cumulativeEnergy.base
-#endif //DLMS_INDIAN_STANDARD
-#ifdef DLMS_ITALIAN_STANDARD
-& frameCounterThresholds.base, &frameCounterOnLine.base, &frameCounterOffLine.base, &frameCounterGuarantor.base, &frameCounterInstaller.base, &frameCounterGateway.base, &frameCounterBroadcast.base,
-#endif // DLMS_ITALIAN_STANDARD
-};
-
 #if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
 ///////////////////////////////////////////////////////////////////////
 //This method adds example Short Name Association object.
@@ -222,7 +205,7 @@ gxObject* HIGH_OBJECTS[] = {
 int addAssociation()
 {
     const unsigned char ln[6] = { 0, 0, 40, 0, 0, 255 };
-    cosem_init2((gxObject*)& associationShortName, DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME, ln);
+    cosem_init2((gxObject*)&associationShortName, DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME, ln);
     associationShortName.base.shortName = 0xFA00;
     bb_addString(&associationShortName.secret, "Gurux");
     oa_attach(&associationShortName.objectList, SN_OBJECTS, sizeof(SN_OBJECTS) / sizeof(SN_OBJECTS[0]));
@@ -239,7 +222,7 @@ int addAssociation()
 int addNoneAssociation()
 {
     const unsigned char ln[6] = { 0, 0, 40, 0, 1, 255 };
-    cosem_init2((gxObject*)& associationNone, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
+    cosem_init2((gxObject*)&associationNone, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
     //Only Logical Device Name is add to this Association View.
     //Use this if you  need to save heap.
     oa_attach(&associationNone.objectList, NONE_OBJECTS, sizeof(NONE_OBJECTS) / sizeof(NONE_OBJECTS[0]));
@@ -262,7 +245,7 @@ int addNoneAssociation()
 int addLowAssociation()
 {
     const unsigned char ln[6] = { 0, 0, 40, 0, 2, 255 };
-    cosem_init2((gxObject*)& lowAssociation, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
+    cosem_init2((gxObject*)&lowAssociation, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
     bb_addString(&lowAssociation.secret, "Gurux");
     lowAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_LOW;
     //Use this if you  need to save heap.
@@ -272,8 +255,11 @@ int addLowAssociation()
 #else
     lowAssociation.securitySetup = &securitySetup;
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-
+#ifdef DLMS_INDIAN_STANDARD
     lowAssociation.clientSAP = 0x20;
+#else
+    lowAssociation.clientSAP = 0x11;
+#endif//DLMS_INDIAN_STANDARD
     lowAssociation.serverSAP = 0x1;
     //All objects are add for this Association View later.
     return 0;
@@ -286,18 +272,22 @@ int addLowAssociation()
 int addHighAssociation()
 {
     const unsigned char ln[6] = { 0, 0, 40, 0, 3, 255 };
-    cosem_init2((gxObject*)& highAssociation, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
+    cosem_init2((gxObject*)&highAssociation, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
     bb_addString(&highAssociation.secret, "Gurux");
     highAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH;
     //Use this if you  need to save heap.
-    oa_attach(&highAssociation.objectList, HIGH_OBJECTS, sizeof(HIGH_OBJECTS) / sizeof(HIGH_OBJECTS[0]));
+    oa_attach(&highAssociation.objectList, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
     memcpy(highAssociation.securitySetupReference, securitySetup.base.logicalName, 6);
 #else
     highAssociation.securitySetup = &securitySetup;
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     //All objects are add for this Association View later.
+#ifdef DLMS_INDIAN_STANDARD
     highAssociation.clientSAP = 0x30;
+#else
+    highAssociation.clientSAP = 0x12;
+#endif//DLMS_INDIAN_STANDARD
     highAssociation.serverSAP = 0x1;
     return 0;
 }
@@ -377,7 +367,7 @@ int addSecuritySetup(
     cosem_init2(&securitySetup.base, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln);
     bb_addString(&securitySetup.serverSystemTitle, "GRX");
     bb_setUInt8(&securitySetup.serverSystemTitle, 0);
-    bb_setUInt32(&securitySetup.serverSystemTitle, sn);
+    bb_setUInt32(&securitySetup.serverSystemTitle, SERIAL_NUMBER);
     return 0;
 }
 
@@ -388,7 +378,7 @@ int addRegisterObject(
     objectArray* objects)
 {
     const unsigned char ln[6] = { 1,1,21,25,0,255 };
-    cosem_init2((gxObject*)& activePowerL1, DLMS_OBJECT_TYPE_REGISTER, ln);
+    cosem_init2((gxObject*)&activePowerL1, DLMS_OBJECT_TYPE_REGISTER, ln);
     //10 ^ 3 =  1000
     var_setUInt32(&activePowerL1.value, 25400);
     activePowerL1.scaler = -2;
@@ -404,7 +394,7 @@ int addClockObject(
 {
     //Add default clock. Clock's Logical Name is 0.0.1.0.0.255.
     const unsigned char ln[6] = { 0,0,1,0,0,255 };
-    cosem_init2((gxObject*)& clock1, DLMS_OBJECT_TYPE_CLOCK, ln);
+    cosem_init2((gxObject*)&clock1, DLMS_OBJECT_TYPE_CLOCK, ln);
     time_init(&clock1.begin, -1, 9, 1, -1, -1, -1, -1, 0);
     time_init(&clock1.end, -1, 3, 1, -1, -1, -1, -1, 0);
     return 0;
@@ -418,7 +408,7 @@ int addTcpUdpSetup(
 {
     //Add Tcp/Udp setup. Default Logical Name is 0.0.25.0.0.255.
     const unsigned char ln[6] = { 0,0,25,0,0,255 };
-    cosem_init2((gxObject*)& udpSetup, DLMS_OBJECT_TYPE_TCP_UDP_SETUP, ln);
+    cosem_init2((gxObject*)&udpSetup, DLMS_OBJECT_TYPE_TCP_UDP_SETUP, ln);
     udpSetup.maximumSimultaneousConnections = 1;
     udpSetup.maximumSegmentSize = 40;
     udpSetup.inactivityTimeout = 180;
@@ -435,7 +425,7 @@ int addProfileGeneric(
     gxKey* k;
     gxTarget* capture;
     const unsigned char ln[6] = { 1,0,99,1,0,255 };
-    cosem_init2((gxObject*)& profileGeneric, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln);
+    cosem_init2((gxObject*)&profileGeneric, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln);
     //Set capture period to 60 second.
     profileGeneric.capturePeriod = 60;
     //Maximum row count.
@@ -466,7 +456,7 @@ int addProfileGeneric(
     time_addHours(&tm, -(rowCount - 1));
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #if _MSC_VER > 1400
-    FILE * f = NULL;
+    FILE* f = NULL;
     fopen_s(&f, DATAFILE, "w");
 #else
     FILE* f = fopen(DATAFILE, "w");
@@ -497,7 +487,7 @@ int addInstantDataProfileGeneric(
 {
     {
         const unsigned char ln[6] = { 1,0,94,91,0,255 };
-        cosem_init2((gxObject*)& instantData, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln);
+        cosem_init2((gxObject*)&instantData, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln);
     }
     //Set capture period to 60 second.
     instantData.capturePeriod = 60;
@@ -514,159 +504,159 @@ int addInstantDataProfileGeneric(
     //Current, IR
     {
         const unsigned char ln[6] = { 1,0,31,7,0,255 };
-        cosem_init2((gxObject*)& currentIR, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&currentIR, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&currentIR, co_init(2, 0)));
     }
 
     //Current, IY
     {
         const unsigned char ln[6] = { 1,0,51,7,0,255 };
-        cosem_init2((gxObject*)& currentIY, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&currentIY, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&currentIY, co_init(2, 0)));
     }
 
     //Current, IB
     {
         const unsigned char ln[6] = { 1,0,71,7,0,255 };
-        cosem_init2((gxObject*)& currentIB, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&currentIB, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&currentIB, co_init(2, 0)));
     }
 
     //Voltage, VRN
     {
         const unsigned char ln[6] = { 1,0,32,7,0,255 };
-        cosem_init2((gxObject*)& voltageVRN, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&voltageVRN, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&voltageVRN, co_init(2, 0)));
     }
 
     //Voltage, VYN
     {
         const unsigned char ln[6] = { 1,0,52,7,0,255 };
-        cosem_init2((gxObject*)& voltageVYN, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&voltageVYN, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&voltageVYN, co_init(2, 0)));
     }
 
     //Voltage, VBN
     {
         const unsigned char ln[6] = { 1,0,72,7,0,255 };
-        cosem_init2((gxObject*)& voltageVBN, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&voltageVBN, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&voltageVBN, co_init(2, 0)));
     }
 
     //Voltage, VRY
     {
         const unsigned char ln[6] = { 1,0,32,7,0,255 };
-        cosem_init2((gxObject*)& voltageVRY, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&voltageVRY, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&voltageVRY, co_init(2, 0)));
     }
 
     //Voltage, VBY
     {
         const unsigned char ln[6] = { 1,0,52,7,0,255 };
-        cosem_init2((gxObject*)& voltageVBY, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&voltageVBY, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&voltageVBY, co_init(2, 0)));
     }
 
     //Signed power factor, R-phase
     {
         const unsigned char ln[6] = { 1,0,33,7,0,255 };
-        cosem_init2((gxObject*)& spfR, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&spfR, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&spfR, co_init(2, 0)));
     }
 
     //Signed power factor, Y-phase
     {
         const unsigned char ln[6] = { 1,0,53,7,0,255 };
-        cosem_init2((gxObject*)& spfY, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&spfY, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&spfY, co_init(2, 0)));
     }
 
     //Signed power factor, B-phase
     {
         const unsigned char ln[6] = { 1,0,73,7,0,255 };
-        cosem_init2((gxObject*)& spfB, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&spfB, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&spfB, co_init(2, 0)));
     }
 
     //Three phase power facto, PF
     {
         const unsigned char ln[6] = { 1,0,13,7,0,255 };
-        cosem_init2((gxObject*)& spfBF, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&spfBF, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&spfBF, co_init(2, 0)));
     }
 
     //Frequency
     {
         const unsigned char ln[6] = { 1,0,14,7,0,255 };
-        cosem_init2((gxObject*)& frequency, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&frequency, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&frequency, co_init(2, 0)));
     }
     //Apparent power, kVA
     {
         const unsigned char ln[6] = { 1,0,9,7,0,255 };
-        cosem_init2((gxObject*)& apparentPower, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&apparentPower, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&apparentPower, co_init(2, 0)));
     }
 
     //Signed active power, kW (+ Forward; – Reverse)
     {
         const unsigned char ln[6] = { 1,0,1,7,0,255 };
-        cosem_init2((gxObject*)& signedActivePower, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&signedActivePower, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&signedActivePower, co_init(2, 0)));
     }
 
     //Signed reactive power, kvar (+ Lag; – Lead)
     {
         const unsigned char ln[6] = { 1,0,37,7,0,255 };
-        cosem_init2((gxObject*)& signedReactivePower, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&signedReactivePower, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&signedReactivePower, co_init(2, 0)));
     }
 
     //Number of power — failures
     {
         const unsigned char ln[6] = { 0,0,96,7,0,255 };
-        cosem_init2((gxObject*)& numberOfPowerFailures, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&numberOfPowerFailures, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&numberOfPowerFailures, co_init(2, 0)));
     }
     //Cumulative power — failure duration.
     {
         const unsigned char ln[6] = { 0,0,94,91,8,255 };
-        cosem_init2((gxObject*)& cumulativePowerFailureDuration, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&cumulativePowerFailureDuration, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&cumulativePowerFailureDuration, co_init(2, 0)));
     }
 
     //Cumulative tamper count.
     {
         const unsigned char ln[6] = { 0,0,94,91,0,255 };
-        cosem_init2((gxObject*)& cumulativeTamperCount, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&cumulativeTamperCount, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&cumulativeTamperCount, co_init(2, 0)));
     }
 
     //Cumulative billing count.
     {
         const unsigned char ln[6] = { 0,0,0,1,0,255 };
-        cosem_init2((gxObject*)& cumulativeBillingCount, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&cumulativeBillingCount, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&cumulativeBillingCount, co_init(2, 0)));
     }
 
     //Cumulative programming count.
     {
         const unsigned char ln[6] = { 0,0,96,2,0,255 };
-        cosem_init2((gxObject*)& cumulativeProgrammingCount, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&cumulativeProgrammingCount, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&cumulativeProgrammingCount, co_init(2, 0)));
     }
 
     //Billing date.
     {
         const unsigned char ln[6] = { 0,0,0,1,2,255 };
-        cosem_init2((gxObject*)& billingDate, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&billingDate, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&billingDate, co_init(2, 0)));
     }
 
     //Cumulative energy, kWh.
     {
         const unsigned char ln[6] = { 1,0,1,8,0,255 };
-        cosem_init2((gxObject*)& cumulativeEnergy, DLMS_OBJECT_TYPE_REGISTER, ln);
+        cosem_init2((gxObject*)&cumulativeEnergy, DLMS_OBJECT_TYPE_REGISTER, ln);
         arr_push(&instantData.captureObjects, key_init(&cumulativeEnergy, co_init(2, 0)));
     }
     return 0;
@@ -682,7 +672,7 @@ int addAutoConnect(
     gxByteBuffer* str;
     gxtime* start, * end;
     const unsigned char ln[6] = { 0,0,2,1,0,255 };
-    cosem_init2((gxObject*)& autoConnect, DLMS_OBJECT_TYPE_AUTO_CONNECT, ln);
+    cosem_init2((gxObject*)&autoConnect, DLMS_OBJECT_TYPE_AUTO_CONNECT, ln);
     autoConnect.mode = DLMS_AUTO_CONNECT_MODE_AUTO_DIALLING_ALLOWED_ANYTIME;
     autoConnect.repetitions = 10;
     autoConnect.repetitionDelay = 60;
@@ -711,7 +701,7 @@ int addActivityCalendar(
     gxDayProfileAction* act;
 
     const unsigned char ln[6] = { 0,0,13,0,0,255 };
-    cosem_init2((gxObject*)& activityCalendar, DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR, ln);
+    cosem_init2((gxObject*)&activityCalendar, DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR, ln);
 
     bb_addString(&activityCalendar.calendarNameActive, "Active");
     //Add season profile.
@@ -784,7 +774,7 @@ int addOpticalPortSetup(
     objectArray* objects)
 {
     const unsigned char ln[6] = { 0,0,20,0,0,255 };
-    cosem_init2((gxObject*)& localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln);
+    cosem_init2((gxObject*)&localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln);
     localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_DEFAULT;
     localPortSetup.proposedBaudrate = DLMS_BAUD_RATE_9600;
     localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
@@ -803,7 +793,7 @@ int addDemandRegister(
     objectArray* objects)
 {
     const unsigned char ln[6] = { 1,0,31,4,0,255 };
-    cosem_init2((gxObject*)& demandRegister, DLMS_OBJECT_TYPE_DEMAND_REGISTER, ln);
+    cosem_init2((gxObject*)&demandRegister, DLMS_OBJECT_TYPE_DEMAND_REGISTER, ln);
 
     var_setUInt16(&demandRegister.currentAverageValue, 10);
     var_setUInt16(&demandRegister.lastAverageValue, 20);
@@ -825,7 +815,7 @@ int addRegisterMonitor(
     dlmsVARIANT* tmp;
 
     const unsigned char ln[6] = { 0,0,16,1,0,255 };
-    cosem_init2((gxObject*)& registerMonitor, DLMS_OBJECT_TYPE_REGISTER_MONITOR, ln);
+    cosem_init2((gxObject*)&registerMonitor, DLMS_OBJECT_TYPE_REGISTER_MONITOR, ln);
 
     //Add low value.
     tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
@@ -889,7 +879,7 @@ int addActionSchedule(
 {
     gxtime* tm;
     const unsigned char ln[6] = { 0,0,15,0,0,255 };
-    cosem_init2((gxObject*)& actionSchedule, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln);
+    cosem_init2((gxObject*)&actionSchedule, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln);
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     actionSchedule.executedScript = &scriptTable;
 #else
@@ -910,7 +900,7 @@ int addImageTransfer(
     objectArray* objects)
 {
     unsigned char ln[6] = { 0,0,44,0,0,255 };
-    cosem_init2((gxObject*)& imageTransfer, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln);
+    cosem_init2((gxObject*)&imageTransfer, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln);
     imageTransfer.imageBlockSize = 100;
     imageTransfer.imageFirstNotTransferredBlockNumber = 0;
     //Enable image transfer.
@@ -925,7 +915,7 @@ int addIecHdlcSetup(
     objectArray* objects)
 {
     unsigned char ln[6] = { 0,0,22,0,0,255 };
-    cosem_init2((gxObject*)& iecHdlcSetup, DLMS_OBJECT_TYPE_IEC_HDLC_SETUP, ln);
+    cosem_init2((gxObject*)&iecHdlcSetup, DLMS_OBJECT_TYPE_IEC_HDLC_SETUP, ln);
     iecHdlcSetup.communicationSpeed = DLMS_BAUD_RATE_9600;
     iecHdlcSetup.windowSizeReceive = iecHdlcSetup.windowSizeTransmit = 1;
     iecHdlcSetup.maximumInfoLengthTransmit = iecHdlcSetup.maximumInfoLengthReceive = 128;
@@ -978,13 +968,13 @@ int addSapAssignment(
 {
     gxSapItem* it;
     const unsigned char ln[6] = { 0,0,41,0,0,255 };
-    cosem_init2((gxObject*)& sapAssignment, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, ln);
+    cosem_init2((gxObject*)&sapAssignment, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, ln);
 
     it = (gxSapItem*)malloc(sizeof(gxSapItem));
     it->id = 1;
     bb_init(&it->name);
     char buff[17];
-    sprintf(buff, "GRX%.13lu", sn);
+    sprintf(buff, "GRX%.13lu", SERIAL_NUMBER);
     bb_addString(&it->name, buff);
     arr_push(&sapAssignment.sapAssignmentList, it);
     return 0;
@@ -999,7 +989,7 @@ int addAutoAnswer(
 {
     gxtime* start, * end;
     const unsigned char ln[6] = { 0,0,2,2,0,255 };
-    cosem_init2((gxObject*)& autoAnswer, DLMS_OBJECT_TYPE_AUTO_ANSWER, ln);
+    cosem_init2((gxObject*)&autoAnswer, DLMS_OBJECT_TYPE_AUTO_ANSWER, ln);
 
     start = (gxtime*)malloc(sizeof(gxtime));
     time_init(start, -1, -1, -1, 6, -1, -1, -1, -1);
@@ -1023,7 +1013,7 @@ int addModemConfiguration(
 {
     gxModemInitialisation* init;
     const unsigned char ln[6] = { 0,0,2,0,0,255 };
-    cosem_init2((gxObject*)& modemConfiguration, DLMS_OBJECT_TYPE_MODEM_CONFIGURATION, ln);
+    cosem_init2((gxObject*)&modemConfiguration, DLMS_OBJECT_TYPE_MODEM_CONFIGURATION, ln);
 
     modemConfiguration.communicationSpeed = DLMS_BAUD_RATE_38400;
     init = (gxModemInitialisation*)malloc(sizeof(gxModemInitialisation));
@@ -1044,7 +1034,7 @@ int addMacAddressSetup(
     objectArray* objects)
 {
     const unsigned char ln[6] = { 0,0,25,2,0,255 };
-    cosem_init2((gxObject*)& macAddressSetup, DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP, ln);
+    cosem_init2((gxObject*)&macAddressSetup, DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP, ln);
     bb_addString(&macAddressSetup.macAddress, "00:11:22:33:44:55:66");
     return 0;
 }
@@ -1056,7 +1046,7 @@ int addDisconnectControl(
     objectArray* objects)
 {
     const unsigned char ln[6] = { 0,0,96,3,10,255 };
-    cosem_init2((gxObject*)& disconnectControl, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln);
+    cosem_init2((gxObject*)&disconnectControl, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln);
     return 0;
 }
 
@@ -1096,7 +1086,7 @@ int addIP4Setup(
     objectArray* objects)
 {
     const unsigned char ln[6] = { 0,0,25,1,0,255 };
-    cosem_init2((gxObject*)& ip4Setup, DLMS_OBJECT_TYPE_IP4_SETUP, ln);
+    cosem_init2((gxObject*)&ip4Setup, DLMS_OBJECT_TYPE_IP4_SETUP, ln);
     ip4Setup.ipAddress = getIpAddress();
     return 0;
 }
@@ -1111,7 +1101,7 @@ int addPushSetup(
 
     gxTarget* co;
     const unsigned char ln[6] = { 0,0,25,9,0,255 };
-    cosem_init2((gxObject*)& pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln);
+    cosem_init2((gxObject*)&pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln);
     pushSetup.destination = (char*)malloc(strlen(dest) + 1);
     strcpy(pushSetup.destination, dest);
 
@@ -1143,7 +1133,7 @@ int addScriptTable(
     gxScript* s = (gxScript*)malloc(sizeof(gxScript));
     gxScriptAction* a = (gxScriptAction*)malloc(sizeof(gxScriptAction));
     const unsigned char ln[6] = { 0,0,10,0,0,255 };
-    cosem_init2((gxObject*)& scriptTable, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln);
+    cosem_init2((gxObject*)&scriptTable, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln);
     s->id = 1;
     arr_init(&s->actions);
     a->type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
@@ -1217,30 +1207,30 @@ int svr_InitObjects(
     // to the manufacturer's identification in IEC 62056-21.
     // The following 13 octets are assigned by the manufacturer.
     //The manufacturer is responsible for guaranteeing the uniqueness of these octets.
-    sprintf(buff, "GRX%.13lu", sn);
+    sprintf(buff, "GRX%.13lu", SERIAL_NUMBER);
     {
         const unsigned char ln[6] = { 0,0,42,0,0,255 };
-        cosem_init2((gxObject*)& ldn.base, DLMS_OBJECT_TYPE_DATA, ln);
+        cosem_init2((gxObject*)&ldn.base, DLMS_OBJECT_TYPE_DATA, ln);
         var_addBytes(&ldn.value, (unsigned char*)buff, 16);
     }
     //Electricity ID 1
     {
         const unsigned char ln[6] = { 1,1,0,0,0,255 };
-        cosem_init2((gxObject*)& id1.base, DLMS_OBJECT_TYPE_DATA, ln);
+        cosem_init2((gxObject*)&id1.base, DLMS_OBJECT_TYPE_DATA, ln);
         var_setString(&id1.value, buff, 16);
     }
 
     //Electricity ID 2.
     {
         const unsigned char ln[6] = { 1,1,0,0,1,255 };
-        cosem_init2((gxObject*)& id2.base, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setUInt32(&id2.value, sn);
+        cosem_init2((gxObject*)&id2.base, DLMS_OBJECT_TYPE_DATA, ln);
+        var_setUInt32(&id2.value, SERIAL_NUMBER);
     }
 
     //Firmware version.
     {
         const unsigned char ln[6] = { 1,0,0,2,0,255 };
-        cosem_init2((gxObject*)& fw.base, DLMS_OBJECT_TYPE_DATA, ln);
+        cosem_init2((gxObject*)&fw.base, DLMS_OBJECT_TYPE_DATA, ln);
         var_setString(&fw.value, FW, (unsigned short)strlen(FW));
     }
     if ((ret = addRegisterObject(objects)) != 0)
@@ -1451,7 +1441,7 @@ unsigned short getHead() {
     int len, month = 0, day = 0, year = 1971, hour = 0, minute = 0, second = 0, value = 0;
     time_init(&last, year, month, day, hour, minute, second, 0, -1);
 #if _MSC_VER > 1400
-    FILE * f = NULL;
+    FILE* f = NULL;
     fopen_s(&f, DATAFILE, "r");
 #else
     FILE* f = fopen(DATAFILE, "r");
@@ -1486,14 +1476,14 @@ unsigned short getHead() {
 void getProfileGenericDataByEntry(gxProfileGeneric* p, long index, long count)
 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    dlmsVARIANT * tmp;
+    dlmsVARIANT* tmp;
     variantArray* row;
     int len, month = 0, day = 0, year = 0, hour = 0, minute = 0, second = 0, value = 0;
     if (count != 0)
     {
 
 #if _MSC_VER > 1400
-        FILE * f = NULL;
+        FILE* f = NULL;
         fopen_s(&f, DATAFILE, "r");
 #else
         FILE* f = fopen(DATAFILE, "r");
@@ -1558,7 +1548,7 @@ int getProfileGenericDataCount() {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     int ch;
 #if _MSC_VER > 1400
-    FILE * f = NULL;
+    FILE* f = NULL;
     fopen_s(&f, DATAFILE, "r");
 #else
     FILE* f = fopen(DATAFILE, "r");
@@ -1636,7 +1626,7 @@ int GetProfileGenericDataByRangeFromRingBuffer(gxValueEventArg* e)
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 #if _MSC_VER > 1400
-    FILE * f = NULL;
+    FILE* f = NULL;
     fopen_s(&f, DATAFILE, "r");
 #else
     FILE* f = fopen(DATAFILE, "r");
@@ -1791,7 +1781,7 @@ int getProfileGenericDataByRange(dlmsSettings* settings, gxValueEventArg* e)
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 #if _MSC_VER > 1400
-    FILE * f = NULL;
+    FILE* f = NULL;
     fopen_s(&f, DATAFILE, "r");
 #else
     FILE* f = fopen(DATAFILE, "r");
@@ -1954,7 +1944,7 @@ void svr_preRead(
         }
 
         //Update date and time of clock object.
-        if (e->target == (gxObject*)& clock1 && e->index == 2)
+        if (e->target == (gxObject*)&clock1 && e->index == 2)
         {
             time_now(&((gxClock*)e->target)->time, 1);
         }
@@ -2095,7 +2085,7 @@ void svr_preAction(
         if (e->target->objectType == DLMS_OBJECT_TYPE_IMAGE_TRANSFER)
         {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            FILE * f;
+            FILE* f;
             gxImageTransfer* i = (gxImageTransfer*)e->target;
             //Image name and size to transfer
             if (e->index == 1)
@@ -2242,7 +2232,7 @@ void svr_postWrite(
 {
     //Show updated values.
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    gxValueEventArg * e;
+    gxValueEventArg* e;
     int ret, pos;
     char* buff;
     for (pos = 0; pos != args->size; ++pos)
@@ -2271,7 +2261,7 @@ void handleProfileGenericActions(
         // Profile generic clear is called. Clear data.
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #if _MSC_VER > 1400
-        FILE * f = NULL;
+        FILE* f = NULL;
         fopen_s(&f, DATAFILE, "w");
 #else
         FILE* f = fopen(DATAFILE, "w");
@@ -2362,7 +2352,7 @@ int connectServer(
     };
 
     //Connect to the meter.
-    ret = connect(*s, (struct sockaddr*) & add, sizeof(struct sockaddr_in));
+    ret = connect(*s, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
     if (ret == -1)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -2448,22 +2438,84 @@ unsigned char svr_isTarget(
         settings->cipher.invocationCounter = frameCounterGuarantor.value.lVal;
     }
 #endif //DLMS_ITALIAN_STANDARD
-    //Check server address using serial number.
-    if ((serverAddress & 0x3FFF) == sn % 10000 + 1000)
+
+    objectArray objects;
+    oa_init(&objects);
+    unsigned char ret = 0;
+    uint16_t pos;
+    gxObject* tmp[6];
+    oa_attach(&objects, tmp, sizeof(tmp) / sizeof(tmp[0]));
+    objects.size = 0;
+    if (oa_getObjects(&settings->objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, &objects) == 0)
     {
-        return 1;
+        gxAssociationLogicalName* a;
+        for (pos = 0; pos != objects.size; ++pos)
+        {
+            if (oa_getByIndex(&objects, pos, (gxObject**)&a) == 0)
+            {
+                if (a->clientSAP == clientAddress)
+                {
+                    ret = 1;
+                    switch (a->authenticationMechanismName.mechanismId)
+                    {
+                    case DLMS_AUTHENTICATION_NONE:
+                        //Client connects without authentication.
+                        break;
+                    case DLMS_AUTHENTICATION_LOW:
+                        //Client connects using low authentication.
+                        break;
+                    default:
+                        //Client connects using High authentication.
+                        break;
+                    }
+                    break;
+                }
+            }
+        }
     }
-    //Check server address with two bytes.
-    if ((serverAddress & 0xFFFF0000) == 0 && (serverAddress & 0x7FFF) == 1)
+    if (ret == 0)
     {
-        return 1;
+        //Authentication is now allowed. Meter is quiet and doesn't return an error.
     }
-    //Check server address with one byte.
-    if ((serverAddress & 0xFFFFFF00) == 0 && (serverAddress & 0x7F) == 1)
+    else
     {
-        return 1;
+        // If address is not broadcast or serial number.
+        if (!(serverAddress == 0x3FFF || serverAddress == 0x7F ||
+            (serverAddress & 0x3FFF) == SERIAL_NUMBER % 10000 + 1000))
+        {
+            ret = 0;
+            // Find address from the SAP table.
+            gxSapAssignment* sap;
+            objects.size = 0;
+            if (oa_getObjects(&settings->objects, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, &objects) == 0)
+            {
+                gxSapItem* it;
+                uint16_t sapIndex, pos;
+                for (sapIndex = 0; sapIndex != objects.size; ++sapIndex)
+                {
+                    if (oa_getByIndex(&objects, sapIndex, (gxObject**)&sap) == 0)
+                    {
+                        for (pos = 0; pos != sap->sapAssignmentList.size; ++pos)
+                        {
+                            if (arr_getByIndex(&sap->sapAssignmentList, pos, (void**)&it) == 0)
+                            {
+                                //Check server address with one byte.
+                                if (((serverAddress & 0xFFFFFF00) == 0 && (serverAddress & 0x7F) == it->id) ||
+                                    //Check server address with two bytes.
+                                    ((serverAddress & 0xFFFF0000) == 0 && (serverAddress & 0x7FFF) == it->id))
+                                {
+                                    ret = 1;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            oa_empty(&objects);
+        }
     }
-    return 0;
+    return ret;
 }
 
 DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
@@ -2527,6 +2579,9 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     {
         return DLMS_ACCESS_MODE_READ;
     }
+    // All writes are allowed.
+    return DLMS_ACCESS_MODE_READ_WRITE;
+
     //Security Setup client_system_title and server_system_title access is not allowed.
     if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP && (index == 4 || index == 5))
     {
@@ -2665,7 +2720,7 @@ void captureToRingBuffer(gxProfileGeneric* pg)
     int cnt = getProfileGenericDataCount() + 1;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #if _MSC_VER > 1400
-    FILE * f = NULL;
+    FILE* f = NULL;
     fopen_s(&f, DATAFILE, "a");
 #else
     FILE* f = fopen(DATAFILE, "a");
@@ -2685,7 +2740,7 @@ void capture2File(gxProfileGeneric* pg)
     int cnt = getProfileGenericDataCount() + 1;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #if _MSC_VER > 1400
-    FILE * f = NULL;
+    FILE* f = NULL;
     fopen_s(&f, DATAFILE, "a");
 #else
     FILE* f = fopen(DATAFILE, "a");

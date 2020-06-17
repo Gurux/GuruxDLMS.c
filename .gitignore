@@ -244,3 +244,4 @@ GuruxDLMSServerExample/trace.txt
 GuruxDLMSServerExample2/VS/trace.txt
 *.testlog
 *.manifest
+*.raw

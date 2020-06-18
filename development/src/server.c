@@ -2490,7 +2490,14 @@ int svr_handleMethodRequest(
         else
         {
             // Add parameters error code.
-            error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            if (e->error > 0 &&  e->error < DLMS_ERROR_CODE_OTHER_REASON + 1)
+            {
+                error = e->error;
+            }
+            else
+            {
+                error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            }
             bb_clear(data);
             bb_setUInt8(data, 0);
         }
@@ -3101,23 +3108,24 @@ int svr_invoke(
     {
         *executed = time;
         gxValueEventCollection args;
-        gxValueEventArg e;
-        ve_init(&e);
-        e.target = target;
-        e.index = index;
+        gxValueEventArg* e;
 #ifdef DLMS_IGNORE_MALLOC
-        gxValueEventArg tmp[1] = { e };
+        gxValueEventArg tmp[1];
+        ve_init(&tmp[0]);
         vec_attach(&args, tmp, 1, 1);
+        e = &tmp[0];
 #else
+        e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+        ve_init(e);
         vec_init(&args);
-        vec_push(&args, &e);
+        vec_push(&args, e);
 #endif //DLMS_IGNORE_MALLOC
-        e.target = target;
-        e.index = index;
+        e->target = target;
+        e->index = index;
         svr_preAction(&settings->base, &args);
-        if (!e.handled)
+        if (!e->handled)
         {
-            cosem_invoke(settings, &e);
+            cosem_invoke(settings, e);
             svr_postAction(&settings->base, &args);
         }
         vec_empty(&args);

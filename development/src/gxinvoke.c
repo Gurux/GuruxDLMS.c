@@ -1623,6 +1623,194 @@ int invoke_DisconnectControl(
 }
 #endif //DLMS_IGNORE_DISCONNECT_CONTROL
 
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+int invoke_LlcSscsSetup(
+    gxLlcSscsSetup* object,
+    unsigned char index)
+{
+    int ret = 0;
+    //Reset.
+    if (index == 1)
+    {
+        object->serviceNodeAddress = 0xFFE;
+        object->baseNodeAddress = 0;
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+int invoke_PrimeNbOfdmPlcPhysicalLayerCounters(
+    gxPrimeNbOfdmPlcPhysicalLayerCounters* object,
+    unsigned char index)
+{
+    int ret = 0;
+    //Reset.
+    if (index == 1)
+    {
+        object->crcIncorrectCount = object->crcFailedCount = object->txDropCount = object->rxDropCount = 0;
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+int invoke_PrimeNbOfdmPlcMacCounters(
+    gxPrimeNbOfdmPlcMacCounters* object,
+    unsigned char index)
+{
+    int ret = 0;
+    //Reset.
+    if (index == 1)
+    {
+        object->txDataPktCount = object->rxDataPktCount = object->txCtrlPktCount = object->rxCtrlPktCount = object->csmaFailCount = object->csmaChBusyCount = 0;
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+int invoke_PrimeNbOfdmPlcMacNetworkAdministrationData(
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object,
+    unsigned char index)
+{
+    int ret = 0;
+    //Reset.
+    if (index == 1)
+    {
+        arr_clear(&object->multicastEntries);
+        arr_empty(&object->switchTable);
+        arr_clear(&object->directTable);
+        obj_clearAvailableSwitches(&object->availableSwitches);
+        arr_clear(&object->communications);
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+
+#ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
+int invoke_SpecialDaysTable(
+    gxSpecialDaysTable* object,
+    gxValueEventArg* e)
+{
+    int ret = 0;
+    gxSpecialDay* specialDay;
+    //Insert.
+    if (e->index == 1)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        uint16_t count = arr_getCapacity(&object->entries);
+        if (object->entries.size < arr_getCapacity(&object->entries))
+        {
+            ++object->entries.size;
+            if ((ret = arr_getByIndex(&object->entries, object->entries.size - 1, (void**)&specialDay, sizeof(gxSpecialDay))) != 0 ||
+                (ret = cosem_checkStructure(e->parameters.byteArr, 3)) != 0 ||
+                (ret = cosem_getUInt16(e->parameters.byteArr, &specialDay->index)) != 0 ||
+                (ret = cosem_getDateFromOctectString(e->parameters.byteArr, &specialDay->date)) != 0 ||
+                (ret = cosem_getUInt8(e->parameters.byteArr, &specialDay->dayId)) != 0)
+            {
+                --object->entries.size;
+            }
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+        }
+#else
+        dlmsVARIANT* tmp3;
+        dlmsVARIANT tmp2;
+        if (e->parameters.Arr != NULL)
+        {
+            int pos;
+            specialDay = NULL;
+            specialDay = (gxSpecialDay*)gxmalloc(sizeof(gxSpecialDay));
+            if (specialDay == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            ret = va_getByIndex(e->parameters.Arr, 0, &tmp3);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            specialDay->index = (uint16_t)var_toInteger(tmp3);
+            ret = va_getByIndex(e->parameters.Arr, 1, &tmp3);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            var_init(&tmp2);
+            ret = dlms_changeType2(tmp3, DLMS_DATA_TYPE_DATE, &tmp2);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            time_copy(&specialDay->date, tmp2.dateTime);
+            var_clear(&tmp2);
+            ret = va_getByIndex(e->parameters.Arr, 2, &tmp3);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            specialDay->dayId = (unsigned char)var_toInteger(tmp3);
+            arr_push(&object->entries, specialDay);
+            if (ret != 0 && specialDay != NULL)
+            {
+                gxfree(specialDay);
+            }
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    //Remove.
+    else if (e->index == 2)
+    {
+        uint16_t pos, index = e->parameters.uiVal;
+        for (pos = 0; pos != object->entries.size; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->entries, pos, (void**)&specialDay, sizeof(gxSpecialDay))) != 0)
+#else
+            if ((ret = arr_getByIndex(&object->entries, pos, (void**)&specialDay)) != 0)
+#endif //DLMS_IGNORE_MALLOC
+            {
+                break;
+            }
+            if (specialDay->index == index)
+            {
+                //Remove item.
+#ifdef DLMS_IGNORE_MALLOC
+                ret = arr_removeByIndex(&object->entries, pos, sizeof(gxSpecialDay));
+#else
+                ret = arr_removeByIndex(&object->entries, pos, NULL);
+#endif //DLMS_IGNORE_MALLOC
+                break;
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
+
 int cosem_invoke(
     dlmsServerSettings* settings,
     gxValueEventArg* e)
@@ -1745,6 +1933,31 @@ int cosem_invoke(
         ret = invoke_DisconnectControl(settings, (gxDisconnectControl*)e->target, e->index);
         break;
 #endif //DLMS_IGNORE_DISCONNECT_CONTROL
+#ifndef DLMS_IGNORE_LLC_SSCS_SETUP
+    case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
+        ret = invoke_LlcSscsSetup((gxLlcSscsSetup*)e->target, e->index);
+        break;
+#endif //DLMS_IGNORE_LLC_SSCS_SETUP
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
+        ret = invoke_PrimeNbOfdmPlcPhysicalLayerCounters((gxPrimeNbOfdmPlcPhysicalLayerCounters*)e->target, e->index);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
+        ret = invoke_PrimeNbOfdmPlcMacCounters((gxPrimeNbOfdmPlcMacCounters*)e->target, e->index);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
+#ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+    case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
+        ret = invoke_PrimeNbOfdmPlcMacNetworkAdministrationData((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target, e->index);
+        break;
+#endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
+#ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
+    case DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE:
+        ret = invoke_SpecialDaysTable((gxSpecialDaysTable*)e->target, e);
+        break;
+#endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
     default:
         //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

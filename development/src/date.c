@@ -133,7 +133,10 @@ void time_init(
     if (month != 0xFF && month <= 2)
     {
         month += 12;
-        year -= 1;
+        if (year != 0xFFFF)
+        {
+            year -= 1;
+        }
     }
     time->skip = DATETIME_SKIPS_NONE;
     time->status = DLMS_CLOCK_STATUS_OK;

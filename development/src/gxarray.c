@@ -290,7 +290,10 @@ int arr_removeByIndex(gxArray* arr, uint16_t index, void** value)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = arr->data[index];
+    if (value != NULL)
+    {
+        *value = arr->data[index];
+    }
     for (pos = index; pos != arr->size; ++pos)
     {
         arr->data[pos] = arr->data[pos + 1];

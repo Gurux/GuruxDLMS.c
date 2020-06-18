@@ -4833,7 +4833,7 @@ int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, d
                 if ((ret = arr_getByIndex(&object->entries, pos, (void**)&specialDay, sizeof(gxSpecialDay))) != 0 ||
                     (ret = cosem_checkStructure(value->byteArr, 3)) != 0 ||
                     (ret = cosem_getUInt16(value->byteArr, &specialDay->index)) != 0 ||
-                    (ret = cosem_getDateTimeFromOctectString(value->byteArr, &specialDay->date)) != 0 ||
+                    (ret = cosem_getDateFromOctectString(value->byteArr, &specialDay->date)) != 0 ||
                     (ret = cosem_getUInt8(value->byteArr, &specialDay->dayId)) != 0)
                 {
                     break;

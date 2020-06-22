@@ -1737,7 +1737,6 @@ int invoke_SpecialDaysTable(
         dlmsVARIANT tmp2;
         if (e->parameters.Arr != NULL)
         {
-            int pos;
             specialDay = NULL;
             specialDay = (gxSpecialDay*)gxmalloc(sizeof(gxSpecialDay));
             if (specialDay == NULL)

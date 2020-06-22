@@ -595,6 +595,7 @@ static int getBool(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 */
 int getString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVARIANT* value)
 {
+    int ret = 0;
     uint16_t len = 0;
     if (knownType)
     {
@@ -631,10 +632,10 @@ int getString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlm
     {
         value->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         bb_init(value->strVal);
-        bb_set(value->strVal, buff->data + buff->position, len);
+        ret = bb_set2(value->strVal, buff, buff->position, len);
     }
 #endif //DLMS_IGNORE_MALLOC
-    return 0;
+    return ret;
 }
 
 #ifndef DLMS_IGNORE_MALLOC
@@ -653,6 +654,7 @@ int getUtfString(
     unsigned char knownType,
     dlmsVARIANT* value)
 {
+    int ret = 0;
     uint16_t len = 0;
     var_clear(value);
     if (knownType)
@@ -676,19 +678,14 @@ int getUtfString(
     {
         value->strUtfVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         bb_init(value->strUtfVal);
-        bb_set(value->strUtfVal, buff->data + buff->position, (uint16_t)len);
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-        buff->position += (uint32_t)len;
-#else
-        buff->position += (uint16_t)len;
-#endif
+        ret = bb_set2(value->strUtfVal, buff, buff->position, len);
         value->vt = DLMS_DATA_TYPE_STRING_UTF8;
     }
     else
     {
         value->strUtfVal = NULL;
     }
-    return 0;
+    return ret;
 }
 #endif //DLMS_IGNORE_MALLOC
 
@@ -5008,7 +5005,7 @@ int dlms_getLNPdu(
 #endif //DLMS_IGNORE_MALLOC
                 }
             }
-                    }
+        }
         // Add data that fits to one block.
         if (ret == 0 && len == 0)
         {
@@ -5119,13 +5116,13 @@ int dlms_getLNPdu(
             // Add Addl fields
             bb_setUInt8(h, 0);
         }
-                }
+    }
     if (ret == 0 && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         ret = dlms_addLLCBytes(p->settings, reply);
     }
     return ret;
-            }
+}
 
 int dlms_getLnMessages(
     gxLNParameters* p,
@@ -5191,8 +5188,8 @@ int dlms_getLnMessages(
         }
         bb_clear(pdu);
         frame = 0;
-        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-        return ret;
+    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    return ret;
 }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -5226,7 +5223,7 @@ int dlms_getSnMessages(
             if (!(messages->size < messages->capacity))
             {
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
+            }
             it = messages->data[messages->size];
             ++messages->size;
 #endif //DLMS_IGNORE_MALLOC
@@ -5529,7 +5526,7 @@ int dlms_secure(
                 {
                     return ret;
                 }
-        }
+            }
             else
             {
                 if ((ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0 ||
@@ -5539,7 +5536,7 @@ int dlms_secure(
                 }
             }
 #endif //DLMS_IGNORE_HIGH_SHA256
-    }
+        }
         else
         {
             if ((ret = bb_set(&challenge, data->data, data->size)) != 0 ||
@@ -5548,7 +5545,7 @@ int dlms_secure(
                 return ret;
             }
         }
-}
+    }
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH_MD5)
     {
         //If MD5 is not used.
@@ -5617,7 +5614,7 @@ int dlms_secure(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-                }
+}
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,

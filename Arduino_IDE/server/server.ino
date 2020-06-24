@@ -368,7 +368,7 @@ int addAssociationNone()
     associationNone.clientSAP = 0x10;
     //Max PDU is half of PDU size. This is for demonstration purposes only.
     associationNone.xDLMSContextInfo.maxSendPduSize = associationNone.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE / 2;
-    associationNone.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_GET | DLMS_CONFORMANCE_SET);
+    associationNone.xDLMSContextInfo.conformance = DLMS_CONFORMANCE_GET;
   }
   return ret;
 }

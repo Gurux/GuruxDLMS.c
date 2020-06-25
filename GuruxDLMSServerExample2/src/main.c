@@ -296,20 +296,23 @@ void captureEventLog(uint16_t value)
     row.time = time_current();
     row.event = value;
     //Own file for events (events.dat).
-    gxLoadProfileData* rows = malloc(sizeof(gxLoadProfileData) * (profileGeneric.entriesInUse + 1));
-#if _MSC_VER > 1400
     FILE* f = NULL;
-    fopen_s(&f, "events.raw", "r");
-#else
-    FILE* f = fopen("events.raw", "r");
-#endif
-    if (f != NULL)
+    gxEventLogData* rows = malloc(sizeof(gxEventLogData) * (eventLog.entriesInUse + 1));
+    if (eventLog.entriesInUse != 0)
     {
-        fread(rows, sizeof(gxLoadProfileData), profileGeneric.entriesInUse, f);
-        fclose(f);
+#if _MSC_VER > 1400
+        fopen_s(&f, "events.raw", "r");
+#else
+        f = fopen("events.raw", "r");
+#endif
+        if (f != NULL)
+        {
+            fread(rows, sizeof(gxEventLogData), eventLog.entriesInUse, f);
+            fclose(f);
+        }
     }
     //Update data.
-    memcpy(&rows[meterData.loadProfile.rowIndex], &row, sizeof(row));
+    memcpy(&rows[meterData.eventLog.rowIndex], &row, sizeof(row));
     //Update how many entries is used until buffer is full.
     if (eventLog.entriesInUse != eventLog.profileEntries)
     {
@@ -323,7 +326,7 @@ void captureEventLog(uint16_t value)
 #endif
     if (f != NULL)
     {
-        fwrite(rows, sizeof(gxLoadProfileData), profileGeneric.entriesInUse, f);
+        fwrite(rows, sizeof(gxEventLogData), eventLog.entriesInUse, f);
         free(rows);
         fclose(f);
     }
@@ -1208,7 +1211,7 @@ int getRestrictingObject(dlmsSettings* settings, gxValueEventArg* e, gxObject** 
 */
 int getProfileGenericDataByRangeFromRingBuffer(
     dlmsSettings* settings,
-    unsigned char type,
+    const char* fileName,
     gxValueEventArg* e)
 {
     gxtime start;
@@ -1229,61 +1232,60 @@ int getProfileGenericDataByRangeFromRingBuffer(
     uint32_t t;
     gxLoadProfileData lp;
     gxEventLogData event1;
-    gxProfileGeneric* p = (gxProfileGeneric*)e->target;
-    for (pos = 0; pos != p->entriesInUse; ++pos)
+    gxProfileGeneric* pg = (gxProfileGeneric*)e->target;
+    if (pg->entriesInUse != 0)
     {
-        //Load data from EEPROM.
-        if (type == 0)
-        {
 #if _MSC_VER > 1400
-            FILE* f = NULL;
-            fopen_s(&f, "loadprofile.raw", "r");
+        FILE* f = NULL;
+        fopen_s(&f, fileName, "r");
 #else
-            FILE* f = fopen("loadprofile.raw", "r");
+        FILE* f = fopen(fileName, "r");
 #endif
-            fread(&lp, sizeof(gxLoadProfileData), 1, f);
-            t = lp.time;
-            fclose(f);
-        }
-        else
+        for (pos = 0; pos != pg->entriesInUse; ++pos)
         {
-#if _MSC_VER > 1400
-            FILE* f = NULL;
-            fopen_s(&f, "events.raw", "r");
-#else
-            FILE* f = fopen("events.raw", "r");
-#endif
-            fread(&event1, sizeof(gxEventLogData), 1, f);
-            t = event1.time;
-            fclose(f);
-        }
-        //If value is inside of start and end time.
-        if (t >= s && t <= l)
-        {
-            if (last == 0)
+            //Load data from EEPROM.
+            if (pg == BASE(profileGeneric))
             {
-                //Save end position if we have only one row.
-                e->transactionEndIndex = e->transactionStartIndex = 1 + pos;
+                fread(&lp, sizeof(gxLoadProfileData), 1, f);
+                t = lp.time;
             }
             else
             {
-                if (last <= t)
+                fread(&event1, sizeof(gxEventLogData), 1, f);
+                t = event1.time;
+            }
+            //If value is inside of start and end time.
+            if (t >= s && t <= l)
+            {
+                if (last == 0)
                 {
-                    e->transactionEndIndex = pos + 1;
+                    //Save end position if we have only one row.
+                    e->transactionEndIndex = e->transactionStartIndex = 1 + pos;
                 }
                 else
                 {
-                    //Index is one based, not zero.
-                    if (e->transactionEndIndex == 0)
+                    if (last <= t)
                     {
-                        ++e->transactionEndIndex;
+                        e->transactionEndIndex = pos + 1;
                     }
-                    e->transactionEndIndex += p->entriesInUse - 1;
-                    e->transactionStartIndex = pos;
-                    break;
+                    else
+                    {
+                        //Index is one based, not zero.
+                        if (e->transactionEndIndex == 0)
+                        {
+                            ++e->transactionEndIndex;
+                        }
+                        e->transactionEndIndex += pg->entriesInUse - 1;
+                        e->transactionStartIndex = pos;
+                        break;
+                    }
                 }
+                last = t;
             }
-            last = t;
+        }
+        if (f != NULL)
+        {
+            fclose(f);
         }
     }
     return ret;
@@ -1292,7 +1294,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
 int readProfileGeneric(
     dlmsSettings* settings,
     gxProfileGeneric* pg,
-    unsigned char type,
+    const char* fileName,
     gxValueEventArg* e)
 {
     unsigned char first = e->transactionEndIndex == 0;
@@ -1315,7 +1317,7 @@ int readProfileGeneric(
         else if (e->selector == 1)
         {
             //Read by entry. Find start and end index from the ring buffer.
-            if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, type, e)) != 0 ||
+            if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, fileName, e)) != 0 ||
                 (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
             {
                 e->transactionStartIndex = e->transactionEndIndex = 0;
@@ -1357,39 +1359,41 @@ int readProfileGeneric(
             ret = cosem_setArray(e->value.byteArr, (uint16_t)(e->transactionEndIndex - e->transactionStartIndex + 1));
         }
     }
+    void* data = NULL;
+    uint16_t dataSize = 0;
+    gxLoadProfileData lp;
+    gxEventLogData event1;
+
+    if (pg == BASE(profileGeneric))
+    {
+        dataSize = sizeof(gxLoadProfileData);
+        data = &lp;
+    }
+    else
+    {
+        dataSize = sizeof(gxEventLogData);
+        data = &event1;
+    }
     if (ret == 0 && e->transactionEndIndex != 0)
     {
         //Loop items.
         uint32_t pos;
         gxtime tm;
         uint16_t pduSize;
-        gxLoadProfileData lp;
-        gxEventLogData event1;
         FILE* f = NULL;
-        if (type == 0)
-        {
 #if _MSC_VER > 1400
-            fopen_s(&f, "loadprofile.raw", "r");
+        fopen_s(&f, fileName, "r");
 #else
-            f = fopen("loadprofile.raw", "r");
+        f = fopen(fileName, "r");
 #endif
-        }
-        else
-        {
-#if _MSC_VER > 1400
-            fopen_s(&f, "events.raw", "r");
-#else
-            f = fopen("events.raw", "r");
-#endif
-        }
-        fseek(f, (e->transactionStartIndex - 1) * sizeof(sizeof(gxLoadProfileData)), SEEK_SET);
+        fseek(f, (e->transactionStartIndex - 1) * dataSize, SEEK_SET);
         for (pos = e->transactionStartIndex - 1; pos != e->transactionEndIndex; ++pos)
         {
             pduSize = e->value.byteArr->size;
             //Load data from EEPROM.
-            if (type == 0)
+            fread(data, dataSize, 1, f);
+            if (pg == BASE(profileGeneric))
             {
-                fread(&lp, sizeof(gxLoadProfileData), 1, f);
                 time_initUnix(&tm, lp.time);
                 if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
                     (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
@@ -1400,7 +1404,6 @@ int readProfileGeneric(
             }
             else
             {
-                fread(&event1, sizeof(gxEventLogData), 1, f);
                 time_initUnix(&tm, event1.time);
                 if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
                     (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
@@ -1477,11 +1480,11 @@ void svr_preRead(
         }
         else if (e->target == BASE(profileGeneric) && e->index == 2)
         {
-            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &profileGeneric, 0, e);
+            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &profileGeneric, "loadprofile.raw", e);
         }
         else if (e->target == BASE(eventLog) && e->index == 2)
         {
-            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &eventLog, 1, e);
+            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &eventLog, "events.raw", e);
         }
     }
 }

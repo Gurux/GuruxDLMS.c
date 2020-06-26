@@ -44,6 +44,7 @@
 #endif
 #endif
 #include "../include/gxmem.h"
+#include "../include/apdu.h"
 #include "../include/server.h"
 #include "../include/cosem.h"
 #include "../include/enums.h"
@@ -331,14 +332,18 @@ int svr_HandleAarqRequest(
         return DLMS_ERROR_CODE_REJECTED;
     }
     ret = apdu_parsePDU(&settings->base, data, &result, &diagnostic, &command);
+#ifdef DLMS_DEBUG
     svr_notifyTrace("parsePDU", ret);
+#endif //DLMS_DEBUG
     bb_clear(data);
     bb_init(&error);
     if (ret == 0 && result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
     {
         if (settings->base.dlmsVersionNumber < 6)
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("Invalid DLMS version number.", DLMS_INITIATE_DLMS_VERSION_TOO_LOW);
+#endif //DLMS_DEBUG
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
             bb_setUInt8(&error, 0xE);
@@ -349,7 +354,9 @@ int svr_HandleAarqRequest(
         }
         else if (settings->base.maxPduSize < 64)
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("Max PDU size is too short.", DLMS_INITIATE_PDU_SIZE_TOOSHORT);
+#endif //DLMS_DEBUG
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
             bb_setUInt8(&error, 0xE);
@@ -360,7 +367,9 @@ int svr_HandleAarqRequest(
         }
         else if (settings->base.negotiatedConformance == 0)
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("Invalid negotiated conformance.", DLMS_INITIATE_INCOMPATIBLE_CONFORMANCE);
+#endif //DLMS_DEBUG
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
             bb_setUInt8(&error, 0xE);
@@ -370,26 +379,34 @@ int svr_HandleAarqRequest(
         }
         else if (diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("Connection rejected.", -1);
+#endif //DLMS_DEBUG
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
         }
         else
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("svr_validateAuthentication.", 0);
+#endif //DLMS_DEBUG
             diagnostic = svr_validateAuthentication(
                 settings,
                 settings->base.authentication,
                 &settings->base.password);
             if (diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
             {
+#ifdef DLMS_DEBUG
                 svr_notifyTrace("Connection rejected.", -1);
+#endif //DLMS_DEBUG
                 svr_invalidConnection(settings);
                 result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             }
             else if (settings->base.authentication > DLMS_AUTHENTICATION_LOW)
             {
+#ifdef DLMS_DEBUG
                 svr_notifyTrace("High authentication is used.", 0);
+#endif //DLMS_DEBUG
                 // If High authentication is used.
                 result = DLMS_ASSOCIATION_RESULT_ACCEPTED;
                 diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
@@ -401,7 +418,9 @@ int svr_HandleAarqRequest(
             // If High authentication is used.
             if ((ret = dlms_generateChallenge(&settings->base.stoCChallenge)) != 0)
             {
+#ifdef DLMS_DEBUG
                 svr_notifyTrace("generateChallenge ", ret);
+#endif //DLMS_DEBUG
                 bb_clear(&error);
                 return ret;
             }
@@ -411,7 +430,9 @@ int svr_HandleAarqRequest(
                 unsigned char ln[] = { 0, 0, 40, 0, 0, 255 };
                 if ((ret = oa_findByLN(&settings->base.objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln, (gxObject**)&it)) != 0)
                 {
+#ifdef DLMS_DEBUG
                     svr_notifyTrace("oa_findByLN ", ret);
+#endif //DLMS_DEBUG
                     return ret;
                 }
                 if (it == NULL)
@@ -440,7 +461,9 @@ int svr_HandleAarqRequest(
                 }
                 else
                 {
+#ifdef DLMS_DEBUG
                     svr_notifyTrace("Association logical name not found. ", -1);
+#endif //DLMS_DEBUG
                 }
             }
         }
@@ -483,8 +506,10 @@ int svr_HandleAarqRequest(
     }
     else if (diagnostic == DLMS_SOURCE_DIAGNOSTIC_NONE)
     {
-        svr_notifyTrace("Permanent rejected.", -1);
-        result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+#ifdef DLMS_DEBUG
+    svr_notifyTrace("Permanent rejected.", -1);
+#endif //DLMS_DEBUG
+    result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
         diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
         bb_setUInt8(&error, 0xE);
         bb_setUInt8(&error, DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR);
@@ -497,7 +522,9 @@ int svr_HandleAarqRequest(
         dlms_addLLCBytes(&settings->base, data);
     }
     ret = apdu_generateAARE(&settings->base, data, result, diagnostic, &error, NULL, command);
+#ifdef DLMS_DEBUG
     svr_notifyTrace("apdu_generateAARE.", ret);
+#endif //DLMS_DEBUG
     bb_clear(&error);
     return ret;
 }
@@ -2490,7 +2517,7 @@ int svr_handleMethodRequest(
         else
         {
             // Add parameters error code.
-            if (e->error > 0 &&  e->error < DLMS_ERROR_CODE_OTHER_REASON + 1)
+            if (e->error > 0 && e->error < DLMS_ERROR_CODE_OTHER_REASON + 1)
             {
                 error = e->error;
             }
@@ -2709,7 +2736,9 @@ int svr_handleCommand(
     {
         if ((ret = dlms_getHdlcFrame(&settings->base, frame, data, reply)) != 0)
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("getHdlcFrame failed. ", ret);
+#endif //DLMS_DEBUG
         }
     }
 #ifndef DLMS_IGNORE_WRAPPER
@@ -2717,7 +2746,9 @@ int svr_handleCommand(
     {
         if ((ret = dlms_getWrapperFrame(&settings->base, cmd, data, reply)) != 0)
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("getHdlcFrame failed. ", ret);
+#endif //DLMS_DEBUG
         }
     }
 #endif //DLMS_IGNORE_WRAPPER
@@ -2747,12 +2778,16 @@ int svr_handleRequest(
     gxByteBuffer* data,
     gxByteBuffer* reply)
 {
-    return svr_handleRequest2(settings, data->data, (uint16_t)(data->size - data->position), reply);
+    if (data == NULL || data->data == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return svr_handleRequest2(settings, data->data, bb_available(data), reply);
 }
 
 int svr_handleRequest3(
     dlmsServerSettings* settings,
-    const unsigned char data,
+    unsigned char data,
     gxByteBuffer* reply)
 {
     return svr_handleRequest2(settings, &data, 1, reply);
@@ -2760,7 +2795,7 @@ int svr_handleRequest3(
 
 int svr_handleRequest2(
     dlmsServerSettings* settings,
-    const unsigned char* buff,
+    unsigned char* buff,
     uint16_t size,
     gxByteBuffer* reply)
 {
@@ -3160,7 +3195,7 @@ int svr_handleProfileGeneric(
         tm = time % object->capturePeriod;
         if (tm == 0)
         {
-            if (*next == -1 || *next > time + object->capturePeriod)
+            if (*next == 0xFFFFFFFF || *next > time + object->capturePeriod)
             {
                 *next = time + object->capturePeriod;
             }

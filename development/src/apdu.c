@@ -47,6 +47,7 @@ int apdu_getAuthenticationString(
     dlmsSettings* settings,
     gxByteBuffer* data)
 {
+    int ret = 0;
     gxByteBuffer* callingAuthenticationValue = NULL;
     if (settings->authentication != DLMS_AUTHENTICATION_NONE
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -56,16 +57,19 @@ int apdu_getAuthenticationString(
     {
         unsigned char p[] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x02 };
         // Add sender ACSE-requirements field component.
-        bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS);
-        bb_setUInt8(data, 2);
-        bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING);
-        bb_setUInt8(data, 0x80);
-        bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME);
-        // Len
-        bb_setUInt8(data, 7);
-        // OBJECT IDENTIFIER
-        bb_set(data, p, 6);
-        bb_setUInt8(data, settings->authentication);
+        if ((ret = bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS)) != 0 ||
+            (ret = bb_setUInt8(data, 2)) != 0 ||
+            (ret = bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING)) != 0 ||
+            (ret = bb_setUInt8(data, 0x80)) != 0 ||
+            (ret = bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME)) != 0 ||
+            // Len
+            (ret = bb_setUInt8(data, 7)) != 0 ||
+            // OBJECT IDENTIFIER
+            (ret = bb_set(data, p, 6)) != 0 ||
+            (ret = bb_setUInt8(data, settings->authentication)) != 0)
+        {
+            //Error code is returned at the end of the function.
+        }
     }
     // If authentication is used.
     if (settings->authentication != DLMS_AUTHENTICATION_NONE)
@@ -83,19 +87,21 @@ int apdu_getAuthenticationString(
             callingAuthenticationValue = &settings->ctoSChallenge;
         }
         // 0xAC
-        bb_setUInt8(data, BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AUTHENTICATION_VALUE);
-        // Len
-        bb_setUInt8(data, (unsigned char)(2 + bb_size(callingAuthenticationValue)));
-        // Add authentication information.
-        bb_setUInt8(data, BER_TYPE_CONTEXT);
-        // Len.
-        bb_setUInt8(data, (unsigned char)bb_size(callingAuthenticationValue));
-        if (callingAuthenticationValue != NULL)
+        if ((ret = bb_setUInt8(data, BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLING_AUTHENTICATION_VALUE)) == 0 &&
+            // Len
+            (ret = bb_setUInt8(data, (unsigned char)(2 + bb_size(callingAuthenticationValue)))) == 0 &&
+            // Add authentication information.
+            (ret = bb_setUInt8(data, BER_TYPE_CONTEXT)) == 0 &&
+            // Len.
+            (ret = bb_setUInt8(data, (unsigned char)bb_size(callingAuthenticationValue))) == 0)
         {
-            bb_set(data, callingAuthenticationValue->data, bb_size(callingAuthenticationValue));
+            if (callingAuthenticationValue != NULL)
+            {
+                ret = bb_set(data, callingAuthenticationValue->data, bb_size(callingAuthenticationValue));
+            }
         }
     }
-    return 0;
+    return ret;
 }
 #endif //DLMS_IGNORE_CLIENT
 
@@ -367,7 +373,13 @@ int apdu_generateUserInformation(
     {
         unsigned char cmd = DLMS_COMMAND_GLO_INITIATE_REQUEST;
         gxByteBuffer crypted;
+#ifndef DLMS_IGNORE_MALLOC
         bb_init(&crypted);
+#else
+        unsigned char tmp[25 + 12];
+        bb_attach(&crypted, tmp, 0, sizeof(tmp));
+#endif //DLMS_IGNORE_MALLOC
+
         if ((ret = apdu_getInitiateRequest(settings, &crypted)) != 0)
         {
             return ret;
@@ -407,13 +419,18 @@ int apdu_generateUserInformation(
         if (ret == 0)
         {
             // Length for AARQ user field
-            bb_setUInt8(data, (unsigned char)(2 + crypted.size));
-            // Coding the choice for user-information (Octet string, universal)
-            bb_setUInt8(data, BER_TYPE_OCTET_STRING);
-            bb_setUInt8(data, (unsigned char)crypted.size);
-            bb_set2(data, &crypted, 0, crypted.size);
+            if ((ret = bb_setUInt8(data, (unsigned char)(2 + crypted.size))) != 0 ||
+                // Coding the choice for user-information (Octet string, universal)
+                (ret = bb_setUInt8(data, BER_TYPE_OCTET_STRING)) != 0 ||
+                (ret = bb_setUInt8(data, (unsigned char)crypted.size)) != 0 ||
+                (ret = bb_set2(data, &crypted, 0, crypted.size)) != 0)
+            {
+                //Error code is returned at the end of the function.
+            }
         }
+#ifndef DLMS_IGNORE_MALLOC
         bb_clear(&crypted);
+#endif //DLMS_IGNORE_MALLOC
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;

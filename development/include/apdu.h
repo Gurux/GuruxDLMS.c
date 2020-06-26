@@ -58,6 +58,7 @@ extern "C" {
         unsigned char* diagnostic,
         unsigned char* command);
 
+#ifndef DLMS_IGNORE_SERVER
     /**
      * Server generates AARE message.
      */
@@ -69,6 +70,7 @@ extern "C" {
         gxByteBuffer* errorData,
         gxByteBuffer* encryptedData,
         unsigned char command);
+#endif //DLMS_IGNORE_SERVER
 
     /**
     * Generate user information.

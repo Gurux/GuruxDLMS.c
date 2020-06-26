@@ -199,17 +199,23 @@ int invoke_AssociationLogicalName(
         }
         if (ch != DLMS_DATA_TYPE_OCTET_STRING)
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("High authentication failed. ", DLMS_ERROR_CODE_INVALID_PARAMETER);
+#endif //DLMS_DEBUG
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
         if ((ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) != 0)
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("High authentication failed. ", DLMS_ERROR_CODE_INVALID_PARAMETER);
+#endif //DLMS_DEBUG
             return ret;
         }
         if (count > bb_available(e->parameters.byteArr))
         {
+#ifdef DLMS_DEBUG
             svr_notifyTrace("High authentication failed. ", DLMS_ERROR_CODE_INVALID_PARAMETER);
+#endif //DLMS_DEBUG
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
 #endif //DLMS_IGNORE_MALLOC

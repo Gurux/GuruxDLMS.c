@@ -896,6 +896,8 @@ int cosem_setActionSchedule(
                 tm->value.tm_sec = t.value.tm_sec;
                 tm->skip |= t.skip;
 #endif // DLMS_USE_EPOCH_TIME
+                tm->deviation = 0;
+                tm->skip |= DATETIME_SKIPS_DEVITATION;
             }
         }
 #else
@@ -946,6 +948,8 @@ int cosem_setActionSchedule(
                 date.dateTime->skip &= ~(DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MS);
                 date.dateTime->skip |= time.dateTime->skip & (DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MS);
 #endif // DLMS_USE_EPOCH_TIME
+                date.dateTime->deviation = 0;
+                date.dateTime->skip |= DATETIME_SKIPS_DEVITATION;
                 tm = (gxtime*)gxmalloc(sizeof(gxtime));
                 if (tm == NULL)
                 {

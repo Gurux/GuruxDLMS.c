@@ -466,7 +466,7 @@ unsigned char time_getHours(
     const gxtime* value)
 {
 #ifdef DLMS_USE_EPOCH_TIME
-    return (unsigned char)((value->value % 86400) / 3600);
+    return (unsigned char)((value->value % 86400L) / 3600L);
 #else
     return value->value.tm_hour;
 #endif // DLMS_USE_EPOCH_TIME
@@ -476,7 +476,7 @@ unsigned char time_getMinutes(
     const gxtime* value)
 {
 #ifdef DLMS_USE_EPOCH_TIME
-    return (unsigned char)((value->value % 3600) / 60);
+    return (unsigned char)((value->value % 3600L) / 60L);
 #else
     return value->value.tm_min;
 #endif // DLMS_USE_EPOCH_TIME
@@ -497,7 +497,7 @@ void time_addDays(
     int days)
 {
 #ifdef DLMS_USE_EPOCH_TIME
-    time_addHours(value, 24 * days);
+    time_addHours(value, 24L * days);
 #else
     value->value.tm_mday += days;
     if (gxmktime(&value->value) == (time_t)-1)
@@ -514,7 +514,7 @@ void time_addHours(
     int hours)
 {
 #ifdef DLMS_USE_EPOCH_TIME
-    time_addMinutes(value, 60 * hours);
+    time_addMinutes(value, 60L * hours);
 #else
     value->value.tm_hour += hours;
     if (gxmktime(&value->value) == (time_t)-1)
@@ -532,7 +532,7 @@ void time_addMinutes(
     int minutes)
 {
 #ifdef DLMS_USE_EPOCH_TIME
-    time_addSeconds(value, 60 * minutes);
+    time_addSeconds(value, 60L * minutes);
 #else
     value->value.tm_min += minutes;
     if (gxmktime(&value->value) == (time_t)-1)
@@ -1276,41 +1276,52 @@ int time_toUTC(gxtime* value)
 // Get next scheduled date in UTC time.
 uint32_t time_getNextScheduledDate(uint32_t start, gxtime* value)
 {
-    if ((value->skip & DATETIME_SKIPS_SECOND) == 0)
+    if ((value->skip & (DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_DAY | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_YEAR)) == 0)
     {
-        uint32_t offset = ((60 + (time_toUnixTime2(value) % 60)) - (start % 60));
-        if (offset % 60 == 0)
+        //If time is not in the past.
+        if (time_toUnixTime2(value) > start)
         {
-            start += 60;
+            start = time_toUnixTime2(value);
         }
         else
         {
-            start += offset % 60;
+            start = 0xFFFFFFFF;
         }
     }
-    if ((value->skip & DATETIME_SKIPS_MINUTE) == 0)
+    else
     {
-        start += 60 - (start % 60);
-    }
-    if ((value->skip & DATETIME_SKIPS_HOUR) == 0)
-    {
-        start += 3600L - (60L * time_getMinutes(value)- time_getSeconds(value));
-    }
-    if ((value->skip & DATETIME_SKIPS_DAY) == 0)
-    {
-        start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
-    }
-    if ((value->skip & DATETIME_SKIPS_MONTH) == 0)
-    {
-        start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
-    }
-    if ((value->skip & DATETIME_SKIPS_YEAR) == 0)
-    {
-        start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
-    }
-    if (value->skip == 0)
-    {
-        start = time_toUnixTime2(value) - start;
+        if ((value->skip & DATETIME_SKIPS_SECOND) == 0)
+        {
+            uint32_t offset = ((60 + (time_toUnixTime2(value) % 60)) - (start % 60));
+            if (offset % 60 == 0)
+            {
+                start += 60;
+            }
+            else
+            {
+                start += offset % 60;
+            }
+        }
+        if ((value->skip & DATETIME_SKIPS_MINUTE) == 0)
+        {
+            start += 60 - (start % 60);
+        }
+        if ((value->skip & DATETIME_SKIPS_HOUR) == 0)
+        {
+            start += 3600L - (60L * time_getMinutes(value) - time_getSeconds(value));
+        }
+        if ((value->skip & DATETIME_SKIPS_DAY) == 0)
+        {
+            start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
+        }
+        if ((value->skip & DATETIME_SKIPS_MONTH) == 0)
+        {
+            start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
+        }
+        if ((value->skip & DATETIME_SKIPS_YEAR) == 0)
+        {
+            start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
+        }
     }
     return start;
 }

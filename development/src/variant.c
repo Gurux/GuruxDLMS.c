@@ -685,8 +685,12 @@ int var_getTime(
 {
     unsigned char hour = 0xFF, minute = 0xFF, second = 0xFF;
 #ifdef DLMS_USE_EPOCH_TIME
-    time_fromUnixTime2(dateTime->value, NULL, NULL,
+    int ret = time_fromUnixTime2(dateTime->value, NULL, NULL,
         NULL, &hour, &minute, &second, NULL);
+    if (ret != 0)
+    {
+        return ret;
+    }
 #else
     //Add Hours
     if (dateTime->value.tm_hour != -1 && (dateTime->skip & DATETIME_SKIPS_HOUR) == 0)

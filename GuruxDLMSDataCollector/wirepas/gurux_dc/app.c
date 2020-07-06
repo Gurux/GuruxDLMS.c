@@ -149,7 +149,9 @@ gxValueEventArg events[1];
 unsigned char CLIENT_ADDRESS = 0x10;
 unsigned short SERVER_ADDRESS = 0x1;
 DLMS_AUTHENTICATION AUTHENTICATION_LEVEL = DLMS_AUTHENTICATION_NONE;
-static char* PASSWORD = "Gurux";
+unsigned char PASSWORD[16];
+static char* DEFAULT_PASSWORD = "Gurux";
+
 
 //All objects.
 const gxObject* ALL_OBJECTS[] = { BASE(associationNone),
@@ -164,7 +166,7 @@ const gxObject* ALL_OBJECTS[] = { BASE(associationNone),
 };
 
 //Returns the approximate processor time in ms.
-long time_elapsed(void)
+uint32_t time_elapsed(void)
 {
     return lib_time->getTimestampS() * 1000;
 }
@@ -926,7 +928,7 @@ static int sendPush(
             meterSettings.serverAddress = SERVER_ADDRESS;
             meterSettings.authentication = AUTHENTICATION_LEVEL;
             bb_clear(&meterSettings.password);
-            bb_set(&meterSettings.password, (unsigned char*)PASSWORD, strlen(PASSWORD));
+            bb_set(&meterSettings.password, (unsigned char*)DEFAULT_PASSWORD, strlen(DEFAULT_PASSWORD));
             if ((ret = com_initializeConnection()) != 0)
             {
                 com_close();
@@ -1264,6 +1266,7 @@ void time_now(
 /**
  * \brief   Make connection to the meter and read needed values.
  */
+ 
 static uint32_t readMeter(void)
 {
     static char* str = "Start read!";
@@ -1332,7 +1335,8 @@ void App_init(const app_global_functions_t* functions)
     //Readlist and write list are not supported.
     serverSettings.base.proposedConformance &= ~DLMS_CONFORMANCE_MULTIPLE_REFERENCES;
     //Allocate space for client password.
-    BB_ATTACH(serverSettings.base.password, (unsigned char*)PASSWORD, 0);
+	strcpy((char*)PASSWORD, DEFAULT_PASSWORD);
+    BB_ATTACH(serverSettings.base.password, PASSWORD, strlen(DEFAULT_PASSWORD));
     //Allocate space for client challenge.
     BB_ATTACH(serverSettings.base.ctoSChallenge, C2S_CHALLENGE, 0);
     //Allocate space for server challenge.
@@ -1340,7 +1344,6 @@ void App_init(const app_global_functions_t* functions)
 
     //Allocate space for read list.
     vec_attach(&serverSettings.transaction.targets, events, 0, sizeof(events) / sizeof(events[0]));
-
     // Open Wirepas public API
     API_Open(functions);
 
@@ -1363,20 +1366,6 @@ void App_init(const app_global_functions_t* functions)
 #else
     serverSettings.wrapper = &udpSetup;
 #endif //USE_HDLC
-
-    //Add COSEM objects.
-    if ((ret = svr_InitObjects(&serverSettings)) != 0)
-    {
-        //TODO: Show error.
-    }
-    ///////////////////////////////////////////////////////////////////////
-    //Server must initialize after all objects are added.
-    ret = svr_initialize(&serverSettings);
-    if (ret != DLMS_ERROR_CODE_OK)
-    {
-        //TODO: Show error.
-    }
-
     // Set a periodic callback to be called after DEFAULT_PERIOD_US
     period_us = DEFAULT_PERIOD_US;
     lib_system->setPeriodicCb(readMeter,
@@ -1393,4 +1382,23 @@ void App_init(const app_global_functions_t* functions)
     gxUart_init();
     // Start the stack
     lib_state->startStack();
+    //Add COSEM objects.
+    if ((ret = svr_InitObjects(&serverSettings)) != 0)
+    {
+		static char* str = "svr_InitObjects failed!";
+		gxUart_write((const unsigned char*) str, strlen(str));
+		SendToSink(false, (unsigned char*)str, strlen(str));
+    }
+    ///////////////////////////////////////////////////////////////////////
+    //Server must initialize after all objects are added.
+    ret = svr_initialize(&serverSettings);
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+		static char* str = "svr_initialize failed!";
+		gxUart_write((const unsigned char*) str, strlen(str));
+		SendToSink(false, (unsigned char*)str, strlen(str));
+    }
+	static char* str = "Meter started!";
+	gxUart_write((const unsigned char*) str, strlen(str));
+    SendToSink(false, (unsigned char*)str, strlen(str));
 }

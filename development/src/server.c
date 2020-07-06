@@ -3144,17 +3144,10 @@ int svr_invoke(
         *executed = time;
         gxValueEventCollection args;
         gxValueEventArg* e;
-#ifdef DLMS_IGNORE_MALLOC
         gxValueEventArg tmp[1];
         ve_init(&tmp[0]);
         vec_attach(&args, tmp, 1, 1);
         e = &tmp[0];
-#else
-        e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
-        ve_init(e);
-        vec_init(&args);
-        vec_push(&args, e);
-#endif //DLMS_IGNORE_MALLOC
         e->target = target;
         e->index = index;
         svr_preAction(&settings->base, &args);

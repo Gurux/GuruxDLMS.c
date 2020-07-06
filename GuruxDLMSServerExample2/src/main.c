@@ -2474,9 +2474,11 @@ int main(int argc, char* argv[])
     println("Master key (KEK)", settings.base.kek, sizeof(settings.base.kek));
     printf("----------------------------------------------------------\n");
     printf("Press Enter to close application.\r\n");
+    gxtime now;
     while (1)
     {
-        uint32_t start = time_current();
+        time_now(&now, 1);
+        uint32_t start = now.value;
         if (executeTime <= start)
         {
             svr_run(&settings, start, &executeTime);
@@ -2520,5 +2522,5 @@ int main(int argc, char* argv[])
 #endif
 
     return 0;
-}
+    }
 

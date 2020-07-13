@@ -120,6 +120,9 @@ public:
 
     //Return collection of objects.
     objectArray* getObjects();
+
+    //Set default clock.
+    void setDefaultClock(gxClock* clock);
 };
 
 extern GXDLMSServer Server;

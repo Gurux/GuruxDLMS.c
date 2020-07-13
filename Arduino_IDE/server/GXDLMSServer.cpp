@@ -162,4 +162,9 @@ objectArray* GXDLMSServer::getObjects()
     return &settings.base.objects;
 }
 
+void GXDLMSServer::setDefaultClock(gxClock* clock)
+{
+  settings.defaultClock = clock;
+}
+
 static GXDLMSServer Server;

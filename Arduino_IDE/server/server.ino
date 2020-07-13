@@ -1130,7 +1130,9 @@ void setup() {
   int ret;
   //Serial 1 is used to send trace.
   Serial1.begin(9600);
-  createObjects();
+  createObjects();  
+  //Set default clock.
+  Server.setDefaultClock(&meterData.clock1);
   char testMode = meterData.testMode;
   meterData.testMode = 1;
   //Communication speed is trace always because this is causing most of the problems.

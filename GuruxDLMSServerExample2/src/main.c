@@ -57,7 +57,6 @@ const static char* FLAG_ID = "GRX";
 //Serialization version is increased every time when structure of serialized data is changed.
 const static uint16_t SERIALIZATION_VERSION = 1;
 
-static gxValueEventArg events[10];
 //Space for client password.
 static unsigned char PASSWORD[20];
 //Space for client challenge.
@@ -274,11 +273,17 @@ typedef enum
 /////////////////////////////////////////////////////////////////////////////
 void save(void* data, uint16_t size)
 {
+#if defined(_WIN64)
+    const char* fileName = "settings64.raw";
+#else // defined(_WIN32) || defined(__linux__)
+    const char* fileName = "settings.raw";
+#endif //defined(_WIN32) || defined(__linux__)
+
 #if _MSC_VER > 1400
     FILE* f = NULL;
-    fopen_s(&f, "settings.raw", "w");
+    fopen_s(&f, fileName, "wb");
 #else
-    FILE* f = fopen("settings.raw", "w");
+    FILE* f = fopen(fileName, "wb");
 #endif
     if (f != NULL)
     {
@@ -286,10 +291,20 @@ void save(void* data, uint16_t size)
         fwrite(&meterData, sizeof(meterData), 1, f);
         fclose(f);
     }
+    else
+    {
+        printf("%s\r\n", "Failed to open file.");
+        return;
+    }
 }
 
 void captureEventLog(uint16_t value)
 {
+#if defined(_WIN64)
+    const char* fileName = "events64.raw";
+#else // defined(_WIN32) || defined(__linux__)
+    const char* fileName = "events.raw";
+#endif //defined(_WIN32) || defined(__linux__)
     gxEventLogData row;
     // Profile generic Capture is called. Save data to the buffer.
     // Ring buffer is used here.
@@ -301,9 +316,9 @@ void captureEventLog(uint16_t value)
     if (eventLog.entriesInUse != 0)
     {
 #if _MSC_VER > 1400
-        fopen_s(&f, "events.raw", "r");
+        fopen_s(&f, fileName, "rb");
 #else
-        f = fopen("events.raw", "r");
+        f = fopen(fileName, "rb");
 #endif
         if (f != NULL)
         {
@@ -320,9 +335,9 @@ void captureEventLog(uint16_t value)
         meterData.eventLog.entriesInUse = (uint16_t)eventLog.entriesInUse;
     }
 #if _MSC_VER > 1400
-    fopen_s(&f, "events.raw", "w");
+    fopen_s(&f, fileName, "wb");
 #else
-    f = fopen("events.raw", "w");
+    f = fopen(fileName, "wb");
 #endif
     if (f != NULL)
     {
@@ -1018,12 +1033,17 @@ int addIecHdlcSetup(dlmsServerSettings* settings, uint16_t serializationVersion)
 /////////////////////////////////////////////////////////////////////////////
 uint16_t load()
 {
+#if defined(_WIN64)
+    const char* fileName = "settings64.raw";
+#else // defined(_WIN32) || defined(__linux__)
+    const char* fileName = "settings.raw";
+#endif //defined(_WIN32) || defined(__linux__)
     uint16_t serializationVersion = 0;
 #if _MSC_VER > 1400
     FILE* f = NULL;
-    fopen_s(&f, "settings.raw", "r");
+    fopen_s(&f, fileName, "rb");
 #else
-    FILE* f = fopen("settings.raw", "r");
+    FILE* f = fopen(fileName, "rb");
 #endif
     if (f != NULL)
     {
@@ -1237,14 +1257,14 @@ int getProfileGenericDataByRangeFromRingBuffer(
     {
 #if _MSC_VER > 1400
         FILE* f = NULL;
-        fopen_s(&f, fileName, "r");
+        fopen_s(&f, fileName, "rb");
 #else
-        FILE* f = fopen(fileName, "r");
+        FILE* f = fopen(fileName, "rb");
 #endif
         for (pos = 0; pos != pg->entriesInUse; ++pos)
         {
             //Load data from EEPROM.
-            if (pg == BASE(profileGeneric))
+            if (pg == &profileGeneric)
             {
                 fread(&lp, sizeof(gxLoadProfileData), 1, f);
                 t = lp.time;
@@ -1364,7 +1384,7 @@ int readProfileGeneric(
     gxLoadProfileData lp;
     gxEventLogData event1;
 
-    if (pg == BASE(profileGeneric))
+    if (pg == &profileGeneric)
     {
         dataSize = sizeof(gxLoadProfileData);
         data = &lp;
@@ -1382,53 +1402,74 @@ int readProfileGeneric(
         uint16_t pduSize;
         FILE* f = NULL;
 #if _MSC_VER > 1400
-        fopen_s(&f, fileName, "r");
-#else
-        f = fopen(fileName, "r");
-#endif
-        fseek(f, (e->transactionStartIndex - 1) * dataSize, SEEK_SET);
-        for (pos = e->transactionStartIndex - 1; pos != e->transactionEndIndex; ++pos)
+        if (fopen_s(&f, fileName, "rb") != 0)
         {
-            pduSize = e->value.byteArr->size;
-            //Load data from EEPROM.
-            fread(data, dataSize, 1, f);
-            if (pg == BASE(profileGeneric))
+            printf("Failed to open %s.\r\n", fileName);
+            return -1;
+        }
+#else
+        if ((f = fopen(fileName, "rb")) != 0)
+        {
+            printf("Failed to open %s.\r\n", fileName);
+            return -1;
+        }
+#endif
+        if (f != NULL)
+        {
+            if (fseek(f, (e->transactionStartIndex - 1) * dataSize, SEEK_SET) != 0)
             {
-                time_initUnix(&tm, lp.time);
-                if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
-                    (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
-                    (ret = cosem_setUInt16(e->value.byteArr, lp.activePowerL1)) != 0)
-                {
-                    //Error is handled later.
-                }
+                printf("Failed to open %s.\r\n", fileName);
+                return -1;
             }
-            else
+            for (pos = e->transactionStartIndex - 1; pos != e->transactionEndIndex; ++pos)
             {
-                time_initUnix(&tm, event1.time);
-                if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
-                    (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
-                    (ret = cosem_setUInt16(e->value.byteArr, event1.event)) != 0)
+                pduSize = e->value.byteArr->size;
+                //Load data from EEPROM.
+                fread(data, dataSize, 1, f);
+                if (pg == &profileGeneric)
                 {
-                    //Error is handled later.
-                }
-            }
-            if (ret != 0)
-            {
-                //Don't set error if PDU is full,
-                if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
-                {
-                    e->value.byteArr->size = pduSize;
-                    ret = 0;
+                    time_initUnix(&tm, lp.time);
+                    clock_utcToMeterTime(&meterData.clock1, &tm);
+                    if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
+                        (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
+                        (ret = cosem_setUInt16(e->value.byteArr, lp.activePowerL1)) != 0)
+                    {
+                        //Error is handled later.
+                    }
                 }
                 else
                 {
+                    time_initUnix(&tm, event1.time);
+                    if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
+                        (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
+                        (ret = cosem_setUInt16(e->value.byteArr, event1.event)) != 0)
+                    {
+                        //Error is handled later.
+                    }
+                }
+                if (ret != 0)
+                {
+                    //Don't set error if PDU is full,
+                    if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+                    {
+                        e->value.byteArr->size = pduSize;
+                        ret = 0;
+                    }
+                    else
+                    {
+                        break;
+                    }
                     break;
                 }
-                break;
+                ++e->transactionStartIndex;
             }
-            ++e->transactionStartIndex;
+            fclose(f);
         }
-        fclose(f);
+        else
+        {
+            printf("Failed to open %s.\r\n", fileName);
+            return -1;
+        }
     }
     return ret;
 }
@@ -1480,11 +1521,21 @@ void svr_preRead(
         }
         else if (e->target == BASE(profileGeneric) && e->index == 2)
         {
-            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &profileGeneric, "loadprofile.raw", e);
+#if defined(_WIN64)
+            const char* fileName = "loadprofile64.raw";
+#else // defined(_WIN32) || defined(__linux__)
+            const char* fileName = "loadprofile.raw";
+#endif //defined(_WIN32) || defined(__linux__)
+            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &profileGeneric, fileName, e);
         }
         else if (e->target == BASE(eventLog) && e->index == 2)
         {
-            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &eventLog, "events.raw", e);
+#if defined(_WIN64)
+            const char* fileName = "events64.raw";
+#else // defined(_WIN32) || defined(__linux__)
+            const char* fileName = "events.raw";
+#endif //defined(_WIN32) || defined(__linux__)
+            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &eventLog, fileName, e);
         }
     }
 }
@@ -1563,6 +1614,11 @@ int sendPush(
 void handleLoadProfileActions(
     gxValueEventArg* it)
 {
+#if defined(_WIN64)
+    const char* fileName = "loadprofile64.raw";
+#else // defined(_WIN32) || defined(__linux__)
+    const char* fileName = "loadprofile.raw";
+#endif //defined(_WIN32) || defined(__linux__)
     if (it->index == 1)
     {
         // Profile generic clear is called. Clear data.
@@ -1571,14 +1627,15 @@ void handleLoadProfileActions(
         //Truncate the file.
 #if _MSC_VER > 1400
         FILE* f = NULL;
-        fopen_s(&f, "loadprofile.raw", "w");
+        fopen_s(&f, fileName, "wb");
 #else
-        FILE* f = fopen("loadprofile.raw", "w");
+        FILE* f = fopen(fileName, "wb");
 #endif
         fclose(f);
     }
     else if (it->index == 2)
     {
+        size_t size;
         gxLoadProfileData row;
         // Profile generic Capture is called. Save data to the buffer.
         //We are using ring buffer here.
@@ -1586,16 +1643,37 @@ void handleLoadProfileActions(
         row.activePowerL1 = readActivePowerValue();
         //Own file for events (events.dat).
         gxLoadProfileData* rows = malloc(sizeof(gxLoadProfileData) * (profileGeneric.entriesInUse + 1));
-#if _MSC_VER > 1400
         FILE* f = NULL;
-        fopen_s(&f, "loadprofile.raw", "r");
+        if (profileGeneric.entriesInUse != 0)
+        {
+#if _MSC_VER > 1400
+            if (fopen_s(&f, fileName, "rb") != 0)
+            {
+                printf("%s %s\r\n", "Failed to open file.", fileName);
+                return;
+            }
 #else
-        FILE* f = fopen("loadprofile.raw", "r");
+            if ((f = fopen(fileName, "rb")) == NULL)
+            {
+                printf("%s %s\r\n", "Failed to open file.", fileName);
+                return;
+            }
 #endif
+        }
         if (f != NULL)
         {
-            fread(rows, sizeof(gxLoadProfileData), profileGeneric.entriesInUse, f);
+            size = fread(rows, sizeof(gxLoadProfileData), profileGeneric.entriesInUse, f);
+            if (size != profileGeneric.entriesInUse)
+            {
+                printf("%s %s %d %d\r\n", "Failed to read file.", fileName, ferror, feof);
+                return;
+            }
             fclose(f);
+        }
+        else if (profileGeneric.entriesInUse != 0)
+        {
+            printf("%s %s\r\n", "Failed to open file.", fileName);
+            return;
         }
         //Update data.
         memcpy(&rows[meterData.loadProfile.rowIndex], &row, sizeof(row));
@@ -1606,14 +1684,24 @@ void handleLoadProfileActions(
             meterData.loadProfile.entriesInUse = (unsigned short)profileGeneric.entriesInUse;
         }
 #if _MSC_VER > 1400
-        fopen_s(&f, "loadprofile.raw", "w");
+        fopen_s(&f, fileName, "wb");
 #else
-        f = fopen("loadprofile.raw", "w");
+        f = fopen(fileName, "wb");
 #endif
         if (f != NULL)
         {
-            fwrite(rows, sizeof(gxLoadProfileData), profileGeneric.entriesInUse, f);
+            size_t size = fwrite(rows, sizeof(gxLoadProfileData), profileGeneric.entriesInUse, f);
             fclose(f);
+            if (size != profileGeneric.entriesInUse)
+            {
+                printf("%s %s\r\n", "Failed to write file.", fileName);
+                return;
+            }
+        }
+        else if (profileGeneric.entriesInUse != 0)
+        {
+            printf("%s %s\r\n", "Failed to open file.", fileName);
+            return;
         }
         //Update row index where next row is added.
         meterData.loadProfile.rowIndex = ++meterData.loadProfile.rowIndex % profileGeneric.profileEntries;
@@ -1643,6 +1731,11 @@ void svr_preAction(
     dlmsSettings* settings,
     gxValueEventCollection* args)
 {
+#if defined(_WIN64)
+    const char* fileName = "settings64.raw";
+#else // defined(_WIN32) || defined(__linux__)
+    const char* fileName = "settings.raw";
+#endif //defined(_WIN32) || defined(__linux__)
     gxValueEventArg* e;
     int ret, pos;
     for (pos = 0; pos != args->size; ++pos)
@@ -1680,9 +1773,9 @@ void svr_preAction(
             //Initialize data size so default values are used on next connection.
 #if _MSC_VER > 1400
             FILE* f = NULL;
-            fopen_s(&f, "settings.raw", "w");
+            fopen_s(&f, fileName, "wb");
 #else
-            FILE* f = fopen("settings.raw", "w");
+            FILE* f = fopen(fileName, "wb");
 #endif
             if (f != NULL)
             {
@@ -2447,6 +2540,8 @@ int main(int argc, char* argv[])
     {
         return 1;
     }
+    //Set default clock.
+    settings.defaultClock = &meterData.clock1;
     ls = socket(AF_INET, SOCK_STREAM, 0);
     add.sin_port = htons(port);
     add.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -2474,17 +2569,15 @@ int main(int argc, char* argv[])
     println("Master key (KEK)", settings.base.kek, sizeof(settings.base.kek));
     printf("----------------------------------------------------------\n");
     printf("Press Enter to close application.\r\n");
-    gxtime now;
     while (1)
     {
-        time_now(&now, 1);
-        uint32_t start = now.value;
+        time_t start = time_current();
         if (executeTime <= start)
         {
             svr_run(&settings, start, &executeTime);
             if (executeTime != -1)
             {
-                printf("%lu seconds before next invoke.\r\n", executeTime - start);
+                printf("%s %lu seconds before next invoke.\r\n", ctime(&start), executeTime - start);
             }
         }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
@@ -2522,5 +2615,5 @@ int main(int argc, char* argv[])
 #endif
 
     return 0;
-    }
+}
 

@@ -226,8 +226,8 @@ extern "C" {
         gxtime* value);
 
     unsigned char date_daysInMonth(
-        int year,
-        int16_t month);
+        uint16_t year,
+        uint8_t month);
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
     //Print time to cout.

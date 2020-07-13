@@ -507,9 +507,9 @@ int svr_HandleAarqRequest(
     else if (diagnostic == DLMS_SOURCE_DIAGNOSTIC_NONE)
     {
 #ifdef DLMS_DEBUG
-    svr_notifyTrace("Permanent rejected.", -1);
+        svr_notifyTrace("Permanent rejected.", -1);
 #endif //DLMS_DEBUG
-    result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+        result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
         diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
         bb_setUInt8(&error, 0xE);
         bb_setUInt8(&error, DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR);
@@ -3135,19 +3135,25 @@ int svr_invoke(
     uint32_t* executed,
     uint32_t* next)
 {
-    if ((start == NULL || time_compare2(start, time) != 1) &&
-        (end == NULL || time_compare2(end, time) != -1) &&
-        //Not executed yet.
-        (*executed == 0 ||
-            (start == NULL || !(time_getNextScheduledDate(*executed, start) > time))))
+    unsigned char exec;
+    //Execute in exact time if end time is not given.
+    if (end == NULL)
+    {
+        exec = *executed < time && time_compare2(start, time) == 0;
+    }
+    else if (*executed < time)
+    {
+        exec = time_compare2(start, time) != 1 && time_compare2(end, time) != -1;
+    }
+    if (exec)
     {
         *executed = time;
-        gxValueEventCollection args;
-        gxValueEventArg* e;
-        gxValueEventArg tmp[1];
-        ve_init(&tmp[0]);
-        vec_attach(&args, tmp, 1, 1);
-        e = &tmp[0];
+            gxValueEventCollection args;
+            gxValueEventArg* e;
+            gxValueEventArg tmp[1];
+            ve_init(&tmp[0]);
+            vec_attach(&args, tmp, 1, 1);
+            e = &tmp[0];
         e->target = target;
         e->index = index;
         svr_preAction(&settings->base, &args);
@@ -3157,6 +3163,8 @@ int svr_invoke(
             svr_postAction(&settings->base, &args);
         }
         vec_empty(&args);
+        //Increase time by one second so next scheduled date is retreaved.
+        ++time;
     }
     if (start != NULL)
     {
@@ -3244,6 +3252,11 @@ int svr_handleSingleActionSchedule(
             gxScript* it;
             gxScriptAction* a;
             int posS;
+            if (settings->defaultClock != NULL)
+            {
+                s->deviation = settings->defaultClock->timeZone;
+                s->status = settings->defaultClock->status;
+            }
             for (posS = 0; posS != object->executedScript->scripts.size; ++posS)
             {
 #ifdef DLMS_IGNORE_MALLOC

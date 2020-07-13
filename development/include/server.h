@@ -71,9 +71,9 @@ extern "C" {
     */
     int svr_run(
         dlmsServerSettings* settings,
-        //Current time.
+        //Current EPOCH time.
         uint32_t time,
-        //Next execution time.
+        //Next EPOCH execution time.
         uint32_t* next);
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME

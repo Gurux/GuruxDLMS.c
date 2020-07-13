@@ -399,12 +399,10 @@ uint16_t time_getYears(
     if (e <= 13)
     {
         c -= 4716;
-        e -= 1;
     }
     else
     {
         c -= 4715;
-        e -= 13;
     }
     return (uint16_t)c;
 #else
@@ -634,32 +632,46 @@ void time_clear(
     time->status = DLMS_CLOCK_STATUS_OK;
 }
 
-unsigned char date_daysInMonth(
-    int year,
-    short month)
+int date_isleap(uint16_t year)
 {
-    if (month == 0 || month == 2 || month == 4 ||
-        month == 6 || month == 7 || month == 9 || month == 11)
+    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+}
+
+unsigned char date_daysInMonth(
+    uint16_t year,
+    uint8_t month)
+{
+    switch (month)
     {
+    case 0:
+    case 2:
+    case 4:
+    case 6:
+    case 7:
+    case 9:
+    case 11:
         return 31;
-    }
-    else if (month == 3 || month == 5 || month == 8 || month == 10)
-    {
+    case 3:
+    case 5:
+    case 8:
+    case 10:
         return 30;
-    }
-    if (year % 4 == 0)
-    {
-        if (year % 100 == 0)
+    default:
+        if (date_isleap(year))
         {
-            if (year % 400 == 0)
-            {
-                return 29;
-            }
-            return 28;
+            return 29;
         }
-        return 29;
+        return 28;
     }
-    return 28;
+}
+
+int date_getYearDay(uint8_t day, uint8_t mon, uint16_t year)
+{
+    static const int days[2][13] = {
+        {0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334},
+        {0, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335}
+    };
+    return days[date_isleap(year)][mon] + day;
 }
 
 //Constants for different orders of date components.
@@ -1005,49 +1017,42 @@ int time_compareWithDiff(
     }
     time_fromUnixTime2(value2, &year2, &month2,
         &day2, &hour2, &minute2, &second2, NULL);
-    if (value1->skip != 0)
+    if ((value1->skip & (DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_DAY | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_YEAR)) != 0)
     {
+        uint32_t val1 = 0, val2 = 0;
         if ((value1->skip & DATETIME_SKIPS_SECOND) == 0)
         {
-            if (second1 != second2)
-            {
-                return second1 < second2 ? -1 : 1;
-            }
+            val1 = second1;
+            val2 = second2;
         }
         if ((value1->skip & DATETIME_SKIPS_MINUTE) == 0)
         {
-            if (minute1 != minute2)
-            {
-                return minute1 < minute2 ? -1 : 1;
-            }
+            val1 += 60L * minute1;
+            val2 += 60L * minute2;
         }
         if ((value1->skip & DATETIME_SKIPS_HOUR) == 0)
         {
-            if (hour1 != hour2)
-            {
-                return hour1 < hour2 ? -1 : 1;
-            }
+            val1 += 3600L * hour1;
+            val2 += 3600L * hour2;
         }
         if ((value1->skip & DATETIME_SKIPS_DAY) == 0)
         {
-            if (day1 != day2)
-            {
-                return day1 < day2 ? -1 : 1;
-            }
+            val1 += 24L * 3600L * day1;
+            val2 += 24L * 3600L;
         }
         if ((value1->skip & DATETIME_SKIPS_MONTH) == 0)
         {
-            if (month1 != month2)
-            {
-                return month1 < month2 ? -1 : 1;
-            }
+            val1 += month1;
+            val2 += month2;
         }
         if ((value1->skip & DATETIME_SKIPS_YEAR) == 0)
         {
-            if (year1 != year2)
-            {
-                return year1 < year2 ? -1 : 1;
-            }
+            val1 += year1;
+            val2 += year2;
+        }
+        if (val1 != val2)
+        {
+            return val1 < val2 ? -1 : 1;
         }
         return 0;
     }
@@ -1184,24 +1189,21 @@ int time_fromUnixTime3(
 #endif //DLMS_USE_EPOCH_TIME
 }
 
+//https://en.wikipedia.org/wiki/Zeller%27s_congruence
 unsigned char time_dayOfWeek(
     uint16_t year,
     unsigned char month,
     unsigned char day)
 {
     uint16_t h, j, k;
-    //January and February are counted as months 13 and 14 of the previous year
     if (month <= 2)
     {
         month += 12;
         year -= 1;
     }
-    //J is century
     j = year / 100;
-    //K is year of the century
     k = year % 100;
     h = day + (26 * (month + 1) / 10) + k + (k / 4) + (5 * j) + (j / 4);
-    //Return the day of the week
     return ((h + 5) % 7) + 1;
 }
 
@@ -1276,16 +1278,16 @@ int time_toUTC(gxtime* value)
 // Get next scheduled date in UTC time.
 uint32_t time_getNextScheduledDate(uint32_t start, gxtime* value)
 {
-    if ((value->skip & (DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_DAY | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_YEAR)) == 0)
+    if ((value->skip & (DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_DAY | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_YEAR)) == 0)
     {
-        //If time is not in the past.
-        if (time_toUnixTime2(value) > start)
+        //If time is in the past.
+        if (time_toUnixTime2(value) < start)
         {
-            start = time_toUnixTime2(value);
+            start = 0xFFFFFFFF;
         }
         else
         {
-            start = 0xFFFFFFFF;
+            start = time_toUnixTime2(value);
         }
     }
     else
@@ -1304,23 +1306,55 @@ uint32_t time_getNextScheduledDate(uint32_t start, gxtime* value)
         }
         if ((value->skip & DATETIME_SKIPS_MINUTE) == 0)
         {
-            start += 60 - (start % 60);
+            uint32_t offset = ((3600L + (time_toUnixTime2(value) % 3600L)) - (start % 3600L));
+            if (offset % 3600L == 0)
+            {
+                start += 3600L;
+            }
+            else
+            {
+                start += offset % 3600L;
+            }
         }
         if ((value->skip & DATETIME_SKIPS_HOUR) == 0)
         {
-            start += 3600L - (60L * time_getMinutes(value) - time_getSeconds(value));
+            uint32_t offset = ((24 * 3600L + (time_toUnixTime2(value) % (24 * 3600L))) - (start % (24 * 3600L)));
+            if (offset % (24L * 3600L) == 0)
+            {
+                start += 24L * 3600L;
+            }
+            else
+            {
+                start += offset % (24L * 3600L);
+            }
         }
         if ((value->skip & DATETIME_SKIPS_DAY) == 0)
         {
-            start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
+            uint32_t offset = (((30 * 24 * 3600L) + (time_toUnixTime2(value) % (31 * 24 * 3600L))) - (start % (31 * 24 * 3600L)));
+            if (offset % (31 * 24L * 3600L) == 0)
+            {
+                start += 31 * 24L * 3600L;
+            }
+            else
+            {
+                start += offset % (31 * 24L * 3600L);
+            }
         }
         if ((value->skip & DATETIME_SKIPS_MONTH) == 0)
         {
-            start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
-        }
-        if ((value->skip & DATETIME_SKIPS_YEAR) == 0)
-        {
-            start += (24L * 3600L) - (3600L * time_getHours(value) - (60L * time_getMinutes(value) - time_getSeconds(value)));
+            gxtime tmp;
+            time_initUnix(&tmp, start);
+            uint32_t offset;
+            if (date_isleap(time_getYears(&start)))
+            {
+                offset = 367;
+            }
+            else
+            {
+                offset = 366;
+            }
+            offset -= date_getYearDay(time_getDays(&start), time_getMonths(&start), time_getYears(&start));
+            start += offset * 24L * 3600L;
         }
     }
     return start;

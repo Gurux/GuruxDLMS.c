@@ -55,7 +55,6 @@ unsigned char vec_getCapacity(gxValueEventCollection* arr)
     return arr->capacity & 0x7F;
 }
 
-#ifdef DLMS_IGNORE_MALLOC
 void vec_attach(
     gxValueEventCollection* arr,
     gxValueEventArg* value,
@@ -67,7 +66,6 @@ void vec_attach(
     arr->size = count;
     arr->position = 0;
 }
-#endif //DLMS_IGNORE_MALLOC
 
 //Allocate new size for the array in bytes.
 int vec_capacity(gxValueEventCollection* arr, unsigned char capacity)

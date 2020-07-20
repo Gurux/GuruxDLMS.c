@@ -3135,7 +3135,7 @@ int svr_invoke(
     uint32_t* executed,
     uint32_t* next)
 {
-    unsigned char exec;
+    unsigned char exec = 0;
     //Execute in exact time if end time is not given.
     if (end == NULL)
     {

@@ -3906,9 +3906,10 @@ int dlms_handleDataNotification(
         gxtime tm;
         GX_DATETIME(t) = &tm;
 #endif //DLMS_IGNORE_MALLOC
-        bb_init(&tmp);
-        bb_set2(&tmp, &reply->data, reply->data.position, len);
-        if ((ret = dlms_changeType(&tmp, DLMS_DATA_TYPE_DATETIME, &t)) != 0)
+        unsigned char buff[12];
+        bb_attach(&tmp, buff, 0, sizeof(buff));
+        if ((ret = bb_set2(&tmp, &reply->data, reply->data.position, len)) != 0 ||
+            (ret = dlms_changeType(&tmp, DLMS_DATA_TYPE_DATETIME, &t)) != 0)
         {
             return ret;
         }
@@ -3930,7 +3931,12 @@ int dlms_handleDataNotification(
     {
         return ret;
     }
+#ifndef DLMS_IGNORE_MALLOC
     return dlms_getValueFromData(settings, reply);
+#else
+    //Client app must do the data parsing if malloc is not used.
+    return 0;
+#endif //DLMS_IGNORE_MALLOC
 }
 
 /**
@@ -4136,20 +4142,19 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
     if ((data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
     {
         DLMS_SECURITY security;
-        gxByteBuffer bb;
         --data->data.position;
-        bb_init(&bb);
-        bb_set2(&bb, &data->data, data->data.position, bb_size(&data->data) - data->data.position);
-        data->data.position = data->data.size = index;
+        data->data.position = index;
+#ifndef DLMS_IGNORE_MALLOC
+        data->data.size = index;
+#endif //DLMS_IGNORE_MALLOC
         if (dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
         {
             if ((ret = cip_decrypt(&settings->cipher,
                 settings->sourceSystemTitle,
                 settings->cipher.dedicatedKey,
-                &bb,
+                &data->data,
                 &security)) != 0)
             {
-                bb_clear(&bb);
                 return ret;
             }
         }
@@ -4162,15 +4167,12 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
 #else
                 settings->cipher.blockCipherKey,
 #endif //DLMS_IGNORE_MALLOC
-                & bb,
+                & data->data,
                 &security)) != 0)
             {
-                bb_clear(&bb);
                 return ret;
             }
         }
-        bb_set2(&data->data, &bb, bb.position, bb.size - bb.position);
-        bb_clear(&bb);
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
         data->cipherIndex = (uint16_t)data->data.size;
@@ -5004,8 +5006,8 @@ int dlms_getLNPdu(
                     }
 #endif //DLMS_IGNORE_MALLOC
                 }
+                }
             }
-        }
         // Add data that fits to one block.
         if (ret == 0 && len == 0)
         {
@@ -5054,7 +5056,7 @@ int dlms_getLNPdu(
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-        }
+            }
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (ret == 0 && ciphering && reply->size != 0 && p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
@@ -5116,13 +5118,13 @@ int dlms_getLNPdu(
             // Add Addl fields
             bb_setUInt8(h, 0);
         }
-    }
+            }
     if (ret == 0 && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         ret = dlms_addLLCBytes(p->settings, reply);
     }
     return ret;
-}
+        }
 
 int dlms_getLnMessages(
     gxLNParameters* p,
@@ -5188,9 +5190,9 @@ int dlms_getLnMessages(
         }
         bb_clear(pdu);
         frame = 0;
-    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-    return ret;
-}
+        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+        return ret;
+    }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getSnMessages(
@@ -5250,9 +5252,9 @@ int dlms_getSnMessages(
         }
         bb_clear(&data);
         frame = 0;
-    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-    return 0;
-}
+        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+        return 0;
+    }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_getData2(
@@ -5614,7 +5616,7 @@ int dlms_secure(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-}
+    }
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,

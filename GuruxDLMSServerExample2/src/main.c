@@ -1440,6 +1440,7 @@ int readProfileGeneric(
                 else
                 {
                     time_initUnix(&tm, event1.time);
+                    clock_utcToMeterTime(&meterData.clock1, &tm);
                     if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
                         (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
                         (ret = cosem_setUInt16(e->value.byteArr, event1.event)) != 0)
@@ -1595,7 +1596,7 @@ int sendPush(
         {
             for (pos = 0; pos != messages.size; ++pos)
             {
-                if (send(socket1, (const char*)reply.data, reply.size - reply.position, 0) == -1)
+                if (send(socket1, (const char*)messages.data[pos]->data, bb_available(messages.data[pos]), 0) == -1)
                 {
                     break;
                 }

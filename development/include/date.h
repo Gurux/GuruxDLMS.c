@@ -274,6 +274,12 @@ extern "C" {
         gxtime* value1,
         uint32_t value2);
 
+
+    int time_compareWithDiff(
+        gxtime* value1,
+        uint32_t value2,
+        short deviationDiff);
+
 #ifndef DLMS_USE_EPOCH_TIME
     //Get date-time from EPOCH time.
     int time_fromUnixTime(

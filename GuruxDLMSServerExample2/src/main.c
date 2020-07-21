@@ -41,12 +41,12 @@
 #include <errno.h>
 #endif
 
-#include "../../development/include/dlmssettings.h"
-#include "../../development/include/variant.h"
-#include "../../development/include/cosem.h"
-#include "../../development/include/server.h"
+#include "../dlms/include/dlmssettings.h"
+#include "../dlms/include/variant.h"
+#include "../dlms/include/cosem.h"
+#include "../dlms/include/server.h"
 //Add this if you want to send notify messages.
-#include "../../development/include/notify.h"
+#include "../dlms/include/notify.h"
 
 //DLMS settings.
 dlmsServerSettings settings;
@@ -2578,7 +2578,9 @@ int main(int argc, char* argv[])
             svr_run(&settings, start, &executeTime);
             if (executeTime != -1)
             {
-                printf("%s %lu seconds before next invoke.\r\n", ctime(&start), executeTime - start);
+                time_t tmp = executeTime;
+                printf("%s", ctime(&start));
+                printf("%lu seconds before next invoke %s.\r\n", executeTime - start, ctime(&tmp));
             }
         }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes

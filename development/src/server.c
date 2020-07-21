@@ -3135,15 +3135,19 @@ int svr_invoke(
     uint32_t* executed,
     uint32_t* next)
 {
-    unsigned char exec = 0;
-    //Execute in exact time if end time is not given.
-    if (end == NULL)
+    unsigned char exec = start == NULL;
+    if (!exec)
     {
-        exec = *executed < time && time_compare2(start, time) == 0;
-    }
-    else if (*executed < time)
-    {
-        exec = time_compare2(start, time) != 1 && time_compare2(end, time) != -1;
+        //Execute in exact time if end time is not given.
+        if (end == NULL)
+        {
+            //Ignore deviation and status for single action script.
+            exec = *executed < time && time_compareWithDiff(start, time, 0) == 0;
+        }
+        else if (*executed < time)
+        {
+            exec = time_compare2(start, time) != 1 && time_compare2(end, time) != -1;
+        }
     }
     if (exec)
     {
@@ -3196,7 +3200,7 @@ int svr_handleProfileGeneric(
         tm = time % object->capturePeriod;
         if (tm == 0)
         {
-            if (*next == 0xFFFFFFFF || *next > time + object->capturePeriod)
+            if (*next == -1 || *next > time + object->capturePeriod)
             {
                 *next = time + object->capturePeriod;
             }
@@ -3254,8 +3258,8 @@ int svr_handleSingleActionSchedule(
             int posS;
             if (settings->defaultClock != NULL)
             {
-                s->deviation = settings->defaultClock->timeZone;
-                s->status = settings->defaultClock->status;
+               s->deviation = settings->defaultClock->timeZone;
+               s->status = settings->defaultClock->status;
             }
             for (posS = 0; posS != object->executedScript->scripts.size; ++posS)
             {

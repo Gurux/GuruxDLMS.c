@@ -1722,7 +1722,7 @@ int invoke_SpecialDaysTable(
     {
 #ifdef DLMS_IGNORE_MALLOC
         uint16_t count = arr_getCapacity(&object->entries);
-        if (object->entries.size < arr_getCapacity(&object->entries))
+        if (object->entries.size < count)
         {
             ++object->entries.size;
             if ((ret = arr_getByIndex(&object->entries, object->entries.size - 1, (void**)&specialDay, sizeof(gxSpecialDay))) != 0 ||

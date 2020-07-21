@@ -587,11 +587,11 @@ extern "C" {
         */
         gxObject base;
 
-        DLMS_CLOCK_BASE clockBase : 3;
+        DLMS_CLOCK_BASE clockBase;
         signed char deviation;
         unsigned char enabled;
         gxtime end;
-        DLMS_CLOCK_STATUS status : 8;
+        DLMS_CLOCK_STATUS status;
         gxtime begin;
         int16_t timeZone;
         gxtime time;
@@ -697,7 +697,7 @@ extern "C" {
         /*
         * BitArray days of the week on which the entry is valid.
         */
-        DLMS_WEEKDAYS execWeekdays : 7;
+        DLMS_WEEKDAYS execWeekdays;
 
         /*
         * Perform the link to the IC Special days table, day_id.
@@ -1258,7 +1258,7 @@ extern "C" {
         unsigned char executedScriptLogicalName[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         uint16_t executedScriptSelector;
-        DLMS_SINGLE_ACTION_SCHEDULE_TYPE type: 8;
+        DLMS_SINGLE_ACTION_SCHEDULE_TYPE type;
         gxArray executionTime; //gxTime
         //Executed time. This is for internal use.
         uint32_t executedTime;

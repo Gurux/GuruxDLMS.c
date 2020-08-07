@@ -145,6 +145,33 @@ int notify_parsePush(
     dlmsSettings* settings,
     variantArray* data,
     gxArray* items);
+
+//Sends Event Notification Request.
+int notify_generateEventNotificationMessages2(
+    dlmsSettings* settings,
+#ifdef DLMS_USE_EPOCH_TIME
+    uint32_t time,
+#else
+    struct tm* time,
+#endif //DLMS_USE_EPOCH_TIME
+    gxListItem* item,
+    gxByteBuffer* data,
+    gxByteBuffer* pdu,
+    message* messages);
+
+//Sends Event Notification Request.
+int notify_generateEventNotificationMessages(
+    dlmsSettings* settings,
+#ifdef DLMS_USE_EPOCH_TIME
+    uint32_t time,
+#else
+    struct tm* time,
+#endif //DLMS_USE_EPOCH_TIME
+    gxListItem* item,
+    variantArray* data,
+    gxByteBuffer* pdu,
+    message* messages);
+
 #endif //DLMS_IGNORE_PUSH_SETUP
 
 #ifdef  __cplusplus

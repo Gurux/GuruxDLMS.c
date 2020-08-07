@@ -30,8 +30,8 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-#ifndef OBJECTS_H
-#define OBJECTS_H
+#ifndef GXOBJECTS_H
+#define GXOBJECTS_H
 
 #ifdef  __cplusplus
 extern "C" {
@@ -3301,4 +3301,4 @@ extern "C" {
 }
 #endif
 
-#endif //OBJECTS_H
+#endif //GXOBJECTS_H

@@ -47,6 +47,7 @@ extern "C" {
         gxByteBuffer* reply,
         gxReplyData* data);
 
+#ifndef DLMS_IGNORE_HDLC
     int cl_snrmRequest(
         dlmsSettings* settings,
         message* messages);
@@ -54,6 +55,7 @@ extern "C" {
     int cl_parseUAResponse(
         dlmsSettings* settings,
         gxByteBuffer* data);
+#endif //DLMS_IGNORE_HDLC
 
     int cl_aarqRequest(
         dlmsSettings* settings,

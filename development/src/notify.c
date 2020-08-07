@@ -44,9 +44,9 @@
 #include "../include/gxset.h"
 
 int notify_getData(
-    dlmsSettings * settings,
-    gxByteBuffer * reply,
-    gxReplyData * data)
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data)
 {
     return dlms_getData2(settings, reply, data, 0);
 }
@@ -134,12 +134,12 @@ int notify_generateDataNotificationMessages(
     for (pos = 0; pos != objects->size; ++pos)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(objects, pos, (void**)& it, sizeof(gxListItem))) != 0)
+        if ((ret = arr_getByIndex(objects, pos, (void**)&it, sizeof(gxListItem))) != 0)
         {
             break;
         }
 #else
-        if ((ret = arr_getByIndex(objects, pos, (void**)& it)) != 0)
+        if ((ret = arr_getByIndex(objects, pos, (void**)&it)) != 0)
         {
             break;
         }
@@ -155,6 +155,92 @@ int notify_generateDataNotificationMessages(
         return notify_generateDataNotificationMessages2(settings, date, &buff, messages);
     }
     bb_clear(&buff);
+    return ret;
+}
+
+//Sends Event Notification Request.
+int notify_generateEventNotificationMessages(
+    dlmsSettings* settings,
+#ifdef DLMS_USE_EPOCH_TIME
+    uint32_t time,
+#else
+    struct tm* time,
+#endif //DLMS_USE_EPOCH_TIME
+    gxListItem* item,
+    variantArray* data,
+    gxByteBuffer* pdu,
+    message* messages)
+{
+    int ret;
+    uint16_t pos;
+    dlmsVARIANT* it;
+    if ((ret = bb_setUInt16(pdu, item->key->objectType)) != 0 ||
+        (ret = bb_set(pdu, item->key->logicalName, 6)) != 0 ||
+        (ret = bb_setUInt8(pdu, item->value)) != 0)
+    {
+        return ret;
+    }
+    if (data == NULL)
+    {
+        if ((ret = notify_addData(settings, item->key, item->value, pdu)) != 0)
+        {
+            return ret;
+        }
+    }
+    else
+    {
+        if ((ret = bb_setUInt8(pdu, DLMS_DATA_TYPE_ARRAY)) == 0 &&
+            (ret = hlp_setObjectCount(data->size, pdu)) == 0)
+        {
+            for (pos = 0; pos != data->size; ++pos)
+            {
+                if ((ret = va_getByIndex(data, pos, &it)) != 0 ||
+                    (ret = dlms_setData(pdu, it->vt, it)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    if (ret == 0)
+    {
+        gxLNParameters p;
+        params_initLN(&p, settings, 0, DLMS_COMMAND_EVENT_NOTIFICATION, 0, pdu, NULL, 0xff, DLMS_COMMAND_NONE, 0, 0);
+        p.time = time;
+        ret = dlms_getLnMessages(&p, messages);
+    }
+    return ret;
+}
+
+
+//Sends Event Notification Request.
+int notify_generateEventNotificationMessages2(
+    dlmsSettings* settings,
+#ifdef DLMS_USE_EPOCH_TIME
+    uint32_t time,
+#else
+    struct tm* time,
+#endif //DLMS_USE_EPOCH_TIME
+    gxListItem* item,
+    gxByteBuffer* data,
+    gxByteBuffer* pdu,
+    message* messages)
+{
+    int ret;
+    if ((ret = bb_setUInt16(pdu, item->key->objectType)) != 0 ||
+        (ret = bb_set(pdu, item->key->logicalName, 6)) != 0 ||
+        (ret = bb_setUInt8(pdu, item->value)) != 0)
+    {
+        return ret;
+    }
+    ret = bb_set2(pdu, data, data->position, bb_available(data));
+    if (ret == 0)
+    {
+        gxLNParameters p;
+        params_initLN(&p, settings, 0, DLMS_COMMAND_EVENT_NOTIFICATION, 0, pdu, NULL, 0xff, DLMS_COMMAND_NONE, 0, 0);
+        p.time = time;
+        ret = dlms_getLnMessages(&p, messages);
+    }
     return ret;
 }
 
@@ -191,13 +277,13 @@ int notify_generatePushSetupMessages(
         for (pos = 0; pos != push->pushObjectList.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)& it, sizeof(gxTarget))) != 0 ||
+            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)&it, sizeof(gxTarget))) != 0 ||
                 (ret = notify_addData(settings, it->target, it->attributeIndex, pdu)) != 0)
             {
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)& it)) != 0 ||
+            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)&it)) != 0 ||
                 (ret = notify_addData(settings, (gxObject*)it->key, ((gxTarget*)it->value)->attributeIndex, pdu)) != 0)
             {
                 break;
@@ -283,12 +369,12 @@ int notify_parsePush(
     for (pos = 0; pos != items->size; ++pos)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(items, pos, (void**)& k, sizeof(gxListItem))) != 0)
+        if ((ret = arr_getByIndex(items, pos, (void**)&k, sizeof(gxListItem))) != 0)
         {
             break;
         }
 #else
-        if ((ret = arr_getByIndex(items, pos, (void**)& k)) != 0)
+        if ((ret = arr_getByIndex(items, pos, (void**)&k)) != 0)
         {
             break;
         }

@@ -34,6 +34,7 @@
 #define CRC_H
 
 #include "gxignore.h"
+#ifndef DLMS_IGNORE_HDLC
 #if defined(USE_AVR) || defined(ARDUINO_ARCH_AVR)
 //If AVR is used.
 #include <avr/pgmspace.h>
@@ -108,5 +109,5 @@ extern "C" {
 #ifdef  __cplusplus
     }
 #endif
-
+#endif //DLMS_IGNORE_HDLC
 #endif //CRC_H

@@ -75,6 +75,7 @@ extern "C" {
     int dlms_checkInit(
         dlmsSettings* settings);
 
+#ifndef DLMS_IGNORE_HDLC
     /**
     * Get PDU as HDLC frame.
     */
@@ -83,6 +84,8 @@ extern "C" {
         int frame,
         gxByteBuffer* data,
         gxByteBuffer* reply);
+
+#endif //DLMS_IGNORE_HDLC
 
 #ifndef DLMS_IGNORE_WRAPPER
     /**
@@ -158,6 +161,7 @@ extern "C" {
 
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
+#ifndef DLMS_IGNORE_HDLC
     //Return DLMS_ERROR_CODE_FALSE if LLC bytes are not included.
     int dlms_checkLLCBytes(
         dlmsSettings* settings,
@@ -171,6 +175,7 @@ extern "C" {
         unsigned char* frame,
         unsigned char preEstablished,
         unsigned char first);
+#endif //DLMS_IGNORE_HDLC
 
 #ifndef DLMS_IGNORE_WRAPPER
     int dlms_getTcpData(
@@ -214,6 +219,7 @@ extern "C" {
         gxLNParameters *p,
         message* reply);
 
+#ifndef DLMS_IGNORE_HDLC
     /**
     * Add LLC bytes to generated message.
     *
@@ -225,6 +231,7 @@ extern "C" {
     int dlms_addLLCBytes(
         dlmsSettings* settings,
         gxByteBuffer* data);
+#endif //DLMS_IGNORE_HDLC
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 

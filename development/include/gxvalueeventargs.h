@@ -138,13 +138,14 @@ extern "C" {
     void vec_init(
         gxValueEventCollection* arr);
 
+#ifdef DLMS_IGNORE_MALLOC
     //Attach value event collection.
     void vec_attach(
         gxValueEventCollection* arr,
         gxValueEventArg* value,
         unsigned char count,
         unsigned char capacity);
-
+#endif //DLMS_IGNORE_MALLOC
     /*
     * Is static buffer used.
     */

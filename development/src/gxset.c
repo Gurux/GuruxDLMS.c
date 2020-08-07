@@ -6174,9 +6174,9 @@ int setCaptureObjects(
     gxArray* objects,
     dlmsVARIANT* value)
 {
-    DLMS_OBJECT_TYPE type;
 #ifndef DLMS_IGNORE_MALLOC
     gxObject* obj;
+    DLMS_OBJECT_TYPE type;
     dlmsVARIANT* tmp, * tmp2;
 #endif //DLMS_IGNORE_MALLOC
     gxTarget* co;
@@ -6186,6 +6186,7 @@ int setCaptureObjects(
         return ret;
     }
 #ifdef DLMS_IGNORE_MALLOC
+    uint16_t type;
     uint16_t count = arr_getCapacity(objects);
     if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
     {
@@ -6195,11 +6196,21 @@ int setCaptureObjects(
         {
             if ((ret = arr_getByIndex(objects, pos, (void**)&co, sizeof(gxTarget))) != 0 ||
                 (ret = cosem_checkStructure(value->byteArr, 4)) != 0 ||
-                (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&type)) != 0 ||
+                (ret = cosem_getUInt16(value->byteArr, &type)) != 0 ||
                 (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) != 0 ||
                 (ret = cosem_getInt8(value->byteArr, &co->attributeIndex)) != 0 ||
                 (ret = cosem_getUInt16(value->byteArr, &co->dataIndex)) != 0)
             {
+                break;
+            }
+            ret = oa_findByLN(&settings->objects, type, ln, &co->target);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            if (co->target == NULL)
+            {
+                ret = DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
                 break;
             }
         }
@@ -7808,7 +7819,8 @@ int cosem_setSwitchTable(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, d
             {
                 break;
             }
-            arr_push(&object->switchTable, (void*)var_toInteger(it));
+            long val = var_toInteger(it);
+            arr_push(&object->switchTable, (void*)val);
         }
     }
 #endif //DLMS_IGNORE_MALLOC

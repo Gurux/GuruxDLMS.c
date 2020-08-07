@@ -1360,7 +1360,7 @@ uint32_t time_getNextScheduledDate(uint32_t start, gxtime* value)
         {
             //Get current time.
             unsigned char currentMonth = time_getMonths2(start);
-            uint32_t currentYear = time_getYears2(start);
+            uint16_t currentYear = time_getYears2(start);
             uint16_t currentDay = date_getYearDay(time_getDays2(start), currentMonth, currentYear);
             //Get executed time.
             uint16_t executed;

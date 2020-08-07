@@ -2122,6 +2122,8 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
     return ret;
 }
 
+#ifndef DLMS_IGNORE_HDLC
+
 //Return DLMS_ERROR_CODE_FALSE if LLC bytes are not included.
 int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
 {
@@ -2290,7 +2292,7 @@ int dlms_checkHdlcAddress(
         // Check that server addresses match.
         if (settings->serverAddress != source &&
             // If All-station (Broadcast).
-            settings->serverAddress != 0x7F && settings->serverAddress != 0x3FFF)
+            (settings->serverAddress & 0x7F) != 0x7F && (settings->serverAddress & 0x3FFF) != 0x3FFF)
         {
             return DLMS_ERROR_CODE_FALSE;
         }
@@ -2503,6 +2505,7 @@ int dlms_getHdlcFrame(
     bb_clear(&secondaryAddress);
     return ret;
 }
+#endif //DLMS_IGNORE_HDLC
 
 int dlms_getDataFromFrame(
     gxByteBuffer* reply,
@@ -2536,6 +2539,8 @@ int dlms_getDataFromFrame(
     data->data.position = offset;
     return 0;
 }
+
+#ifndef DLMS_IGNORE_HDLC
 
 int dlms_getHdlcData(
     unsigned char server,
@@ -2810,6 +2815,7 @@ int dlms_getHdlcData(
     }
     return DLMS_ERROR_CODE_OK;
 }
+#endif //DLMS_IGNORE_HDLC
 
 #ifndef DLMS_IGNORE_WRAPPER
 int dlms_checkWrapperAddress(dlmsSettings* settings,
@@ -2969,6 +2975,7 @@ int dlms_receiverReady(
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
+#ifndef DLMS_IGNORE_HDLC
     // Get next frame.
     if ((type & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
     {
@@ -2978,6 +2985,7 @@ int dlms_receiverReady(
         }
         return ret;
     }
+#endif //DLMS_IGNORE_HDLC
     // Get next block.
     if (settings->useLogicalNameReferencing)
     {
@@ -4467,6 +4475,7 @@ int dlms_getPdu(
     return ret;
 }
 
+#ifndef DLMS_IGNORE_HDLC
 /**
 * Add LLC bytes to generated message.
 *
@@ -4490,6 +4499,7 @@ int dlms_addLLCBytes(
     }
     return ret;
 }
+#endif //DLMS_IGNORE_HDLC
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_appendMultipleSNBlocks(
@@ -5006,8 +5016,8 @@ int dlms_getLNPdu(
                     }
 #endif //DLMS_IGNORE_MALLOC
                 }
-                }
             }
+        }
         // Add data that fits to one block.
         if (ret == 0 && len == 0)
         {
@@ -5056,7 +5066,7 @@ int dlms_getLNPdu(
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-            }
+        }
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (ret == 0 && ciphering && reply->size != 0 && p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
@@ -5118,13 +5128,15 @@ int dlms_getLNPdu(
             // Add Addl fields
             bb_setUInt8(h, 0);
         }
-            }
+    }
+#ifndef DLMS_IGNORE_HDLC
     if (ret == 0 && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
         ret = dlms_addLLCBytes(p->settings, reply);
     }
+#endif //DLMS_IGNORE_HDLC
     return ret;
-        }
+}
 
 int dlms_getLnMessages(
     gxLNParameters* p,
@@ -5133,12 +5145,14 @@ int dlms_getLnMessages(
     int ret;
     gxByteBuffer* pdu;
     gxByteBuffer* it;
+#ifndef DLMS_IGNORE_HDLC
     unsigned char frame = 0;
     if (p->command == DLMS_COMMAND_DATA_NOTIFICATION ||
         p->command == DLMS_COMMAND_EVENT_NOTIFICATION)
     {
         frame = 0x13;
     }
+#endif //DLMS_IGNORE_HDLC
 #ifdef DLMS_IGNORE_MALLOC
     pdu = p->serializedPdu;
 #else
@@ -5155,7 +5169,8 @@ int dlms_getLnMessages(
             {
                 ++p->settings->blockIndex;
             }
-        } while (ret == 0 && pdu->position != pdu->size)
+        }
+        while (ret == 0 && pdu->position != pdu->size)
         {
 #ifdef DLMS_IGNORE_MALLOC
             if (!(messages->size < messages->capacity))
@@ -5170,29 +5185,37 @@ int dlms_getLnMessages(
             it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
             bb_init(it);
 #endif //DLMS_IGNORE_MALLOC
-#ifndef DLMS_IGNORE_WRAPPER
             if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
+#ifndef DLMS_IGNORE_WRAPPER
                 ret = dlms_getWrapperFrame(p->settings, p->command, pdu, it);
+#else
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_WRAPPER
             }
             else
-#endif //DLMS_IGNORE_WRAPPER
             {
+#ifndef DLMS_IGNORE_HDLC
                 ret = dlms_getHdlcFrame(p->settings, frame, pdu, it);
-                if (pdu->position != pdu->size)
+                if (ret == 0 && pdu->position != pdu->size)
                 {
                     frame = getNextSend(p->settings, 0);
                 }
+#else
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_HDLC
             }
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
         }
         bb_clear(pdu);
+#ifndef DLMS_IGNORE_HDLC
         frame = 0;
-        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-        return ret;
-    }
+#endif //DLMS_IGNORE_HDLC
+    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    return ret;
+}
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getSnMessages(
@@ -5232,15 +5255,23 @@ int dlms_getSnMessages(
             bb_init(it);
             if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
+#ifndef DLMS_IGNORE_WRAPPER
                 ret = dlms_getWrapperFrame(p->settings, p->command, &data, it);
+#else
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_WRAPPER
             }
             else
             {
+#ifndef DLMS_IGNORE_HDLC
                 ret = dlms_getHdlcFrame(p->settings, frame, &data, it);
                 if (data.position != data.size)
                 {
                     frame = getNextSend(p->settings, 0);
                 }
+#else
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_HDLC
             }
             if (ret != 0)
             {
@@ -5252,9 +5283,9 @@ int dlms_getSnMessages(
         }
         bb_clear(&data);
         frame = 0;
-        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-        return 0;
-    }
+    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    return 0;
+}
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_getData2(
@@ -5268,10 +5299,15 @@ int dlms_getData2(
     // If DLMS frame is generated.
     if (settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
+#ifndef DLMS_IGNORE_HDLC
         if ((ret = dlms_getHdlcData(settings->server, settings, reply, data, &frame, data->preEstablished, first)) != 0)
         {
             return ret;
         }
+#else
+        // Invalid Interface type.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_HDLC
     }
 #ifndef DLMS_IGNORE_WRAPPER
     else if (settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
@@ -5616,7 +5652,7 @@ int dlms_secure(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-    }
+}
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,

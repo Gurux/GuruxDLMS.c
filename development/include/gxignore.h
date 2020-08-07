@@ -38,6 +38,7 @@ extern "C" {
 
 /* Uncomment defines to ignore non-needed parts to make image size smaller. */
 
+// #define DLMS_IGNORE_HDLC
 // #define DLMS_IGNORE_WRAPPER
 // #define DLMS_IGNORE_NOTIFY
 // #define DLMS_IGNORE_SERVER

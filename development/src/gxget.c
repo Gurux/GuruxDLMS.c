@@ -5968,7 +5968,7 @@ int cosem_getMulticastEntries(gxValueEventArg* e)
 
 int cosem_getSwitchTable(gxValueEventArg* e)
 {
-    short* it;
+    uint16_t* it;
     int ret, pos;
     gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
     if ((ret = cosem_getByteBuffer(e)) != 0)
@@ -5995,7 +5995,7 @@ int cosem_getSwitchTable(gxValueEventArg* e)
             break;
         }
 #endif //DLMS_IGNORE_MALLOC
-        if ((ret = cosem_setInt16(data, (short)*it)) != 0)
+        if ((ret = cosem_setUInt16(data, *it)) != 0)
         {
             break;
         }

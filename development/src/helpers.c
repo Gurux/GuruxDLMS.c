@@ -599,37 +599,37 @@ int hlp_appendLogicalName(gxByteBuffer* bb, const unsigned char value[6])
 int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
 {
     int ret;
-    ret = hlp_intToString(ln, 25, value[0], 0, 2);
+    ret = hlp_intToString(ln, 25, value[0], 0, 1);
     if (ret != -1)
     {
         ln += ret;
         *ln = '.';
         ++ln;
-        ret = hlp_intToString(ln, 25, value[1], 0, 2);
+        ret = hlp_intToString(ln, 25, value[1], 0, 1);
         if (ret != -1)
         {
             ln += ret;
             *ln = '.';
             ++ln;
-            ret = hlp_intToString(ln, 25, value[2], 0, 2);
+            ret = hlp_intToString(ln, 25, value[2], 0, 1);
             if (ret != -1)
             {
                 ln += ret;
                 *ln = '.';
                 ++ln;
-                ret = hlp_intToString(ln, 25, value[3], 0, 2);
+                ret = hlp_intToString(ln, 25, value[3], 0, 1);
                 if (ret != -1)
                 {
                     ln += ret;
                     *ln = '.';
                     ++ln;
-                    ret = hlp_intToString(ln, 25, value[4], 0, 2);
+                    ret = hlp_intToString(ln, 25, value[4], 0, 1);
                     if (ret != -1)
                     {
                         ln += ret;
                         *ln = '.';
                         ++ln;
-                        ret = hlp_intToString(ln, 25, value[5], 0, 2);
+                        ret = hlp_intToString(ln, 25, value[5], 0, 1);
                     }
                 }
             }

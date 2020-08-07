@@ -49,6 +49,7 @@
 #include "../include/dlms.h"
 #include "../include/cosem.h"
 
+#ifndef DLMS_IGNORE_HDLC
 int cl_snrmRequest(dlmsSettings* settings, message* messages)
 {
     int ret;
@@ -160,6 +161,7 @@ int cl_parseUAResponse(dlmsSettings* settings, gxByteBuffer* data)
     settings->connected = DLMS_CONNECTION_STATE_HDLC;
     return ret;
 }
+#endif //DLMS_IGNORE_HDLC
 
 int cl_aarqRequest(
     dlmsSettings* settings,
@@ -1451,7 +1453,11 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
 #endif //DLMS_IGNORE_MALLOC
     if (settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
+#ifndef DLMS_IGNORE_HDLC
         ret = dlms_getHdlcFrame(settings, DLMS_COMMAND_DISC, NULL, reply);
+#else
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_WRAPPER
 #ifndef DLMS_IGNORE_MALLOC
         if (ret == 0)
         {

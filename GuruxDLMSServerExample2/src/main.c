@@ -55,7 +55,7 @@ GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_OFF;
 
 const static char* FLAG_ID = "GRX";
 //Serialization version is increased every time when structure of serialized data is changed.
-const static uint16_t SERIALIZATION_VERSION = 1;
+const static uint16_t SERIALIZATION_VERSION = 2;
 
 //Space for client password.
 static unsigned char PASSWORD[20];
@@ -67,6 +67,9 @@ static unsigned char S2C_CHALLENGE[64];
 static gxValueEventArg events[10];
 
 int socket1 = -1;
+
+//TODO: Allocate space where profile generic row values are serialized.
+#define PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE 100
 #define HDLC_HEADER_SIZE 17
 #define HDLC_BUFFER_SIZE 128
 #define PDU_BUFFER_SIZE 512
@@ -91,24 +94,6 @@ uint32_t time_elapsed(void)
 }
 
 static gxByteBuffer reply;
-
-//Define profile generic buffer row data for Load profile.
-typedef struct
-{
-    //Date-time value of the clock.
-    uint32_t time;
-    //Active power L1 value.
-    uint16_t activePowerL1;
-} gxLoadProfileData;
-
-//Define profile generic buffer row data for event log.
-typedef struct
-{
-    //Date-time value of the clock.
-    uint32_t time;
-    //Occurred event.
-    uint16_t event;
-} gxEventLogData;
 
 //Action schedule execution times.
 typedef struct
@@ -138,7 +123,7 @@ typedef struct
 {
     unsigned char count;
     GXTarget values[5];
-} GXPushObjects;
+} GXObjectCollection;
 
 //Profile Generic settings.
 typedef struct
@@ -146,20 +131,23 @@ typedef struct
     //How often load profile is captured to the EEPROM.
     //Load profile period.
     unsigned long period;
-    //Amount of rows in profile generic buffer.
+    //Amount of used rows in profile generic buffer.
     uint16_t entriesInUse;
+    //Amount of total rows in profile generic buffer.
+    uint16_t profileEntries;
     //Entry where profile generic row is added in ring buffer.
     uint16_t rowIndex;
+    //Capture object list.
+    GXObjectCollection objects;
 } GXProfileGeneric;
-
 
 //Push Setup.
 typedef struct
 {
     //Push communication window.
     GXPushWindow communicationWindow;
-    //Push object list..
-    GXPushObjects objects;
+    //Push object list.
+    GXObjectCollection objects;
 } GXPushSetup;
 
 //SAP assignment list.
@@ -179,6 +167,16 @@ typedef struct
     unsigned char hlsPasswordSize;
     char hlsPassword[20];
 }GXAssociation;
+
+//Security settings
+typedef struct
+{
+    unsigned char authenticationKey[16];
+    unsigned char blockCipherKey[16];
+    unsigned char securityPolicy;
+    uint32_t invacationVector;
+}GXSecuritySettings;
+
 
 //Save serialized meter data here.
 typedef struct {
@@ -203,11 +201,20 @@ typedef struct {
     char testMode;
     //SAP assigment lists.
     GXSapList sapAssignmentList;
+    //Master key, A.K.A KEK.
+    unsigned char masterKey[16];
+    GXSecuritySettings securitySettings;
 } GXSerializedMeterData;
 
 GXSerializedMeterData meterData;
+
 //Push objects are added here.
 static gxTarget PUSH_OBJECTS[6];
+
+//Capture objects for load profile.
+static gxTarget LOAD_PROFILE_CAPTURE_OBJECT[10] = { 0 };
+//Two capture objects for event log.
+static gxTarget EVENT_LOG_CAPTURE_OBJECT[2] = { 0 };
 
 static gxData ldn;
 static gxData eventCode;
@@ -298,62 +305,160 @@ void save(void* data, uint16_t size)
     }
 }
 
-void captureEventLog(uint16_t value)
+//Allocate profile generic buffer.
+void allocateProfileGenericBuffer(const char* fileName, uint32_t size)
 {
-#if defined(_WIN64)
-    const char* fileName = "events64.raw";
-#else // defined(_WIN32) || defined(__linux__)
-    const char* fileName = "events.raw";
-#endif //defined(_WIN32) || defined(__linux__)
-    gxEventLogData row;
-    // Profile generic Capture is called. Save data to the buffer.
-    // Ring buffer is used here.
-    row.time = time_current();
-    row.event = value;
-    //Own file for events (events.dat).
+    uint32_t pos;
     FILE* f = NULL;
-    gxEventLogData* rows = malloc(sizeof(gxEventLogData) * (eventLog.entriesInUse + 1));
-    if (eventLog.entriesInUse != 0)
-    {
 #if _MSC_VER > 1400
-        fopen_s(&f, fileName, "rb");
+    fopen_s(&f, fileName, "ab");
 #else
-        f = fopen(fileName, "rb");
-#endif
-        if (f != NULL)
-        {
-            fread(rows, sizeof(gxEventLogData), eventLog.entriesInUse, f);
-            fclose(f);
-        }
-    }
-    //Update data.
-    memcpy(&rows[meterData.eventLog.rowIndex], &row, sizeof(row));
-    //Update how many entries is used until buffer is full.
-    if (eventLog.entriesInUse != eventLog.profileEntries)
-    {
-        ++eventLog.entriesInUse;
-        meterData.eventLog.entriesInUse = (uint16_t)eventLog.entriesInUse;
-    }
-#if _MSC_VER > 1400
-    fopen_s(&f, fileName, "wb");
-#else
-    f = fopen(fileName, "wb");
+    f = fopen(fileName, "ab");
 #endif
     if (f != NULL)
     {
-        fwrite(rows, sizeof(gxEventLogData), eventLog.entriesInUse, f);
-        free(rows);
+        fseek(f, 0, SEEK_END);
+        if (ftell(f) == 0)
+        {
+            for (pos = 0; pos != size; ++pos)
+            {
+                if (fputc(0x00, f) != 0)
+                {
+                    printf("Error Writing to %s\n", fileName);
+                    break;
+                }
+            }
+        }
         fclose(f);
     }
-    //Update row index where next row is added.
-    meterData.eventLog.rowIndex = ++meterData.eventLog.rowIndex % (uint16_t)eventLog.profileEntries;
-    save(&meterData.eventLog, sizeof(GXProfileGeneric));
+}
+
+int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
+{
+    int ret = hlp_getLogicalNameToString(pg->base.logicalName, fileName);
+#if defined(_WIN64)
+    strcat(fileName, "64.raw");
+#else // defined(_WIN32) || defined(__linux__)
+    strcat(fileName, ".raw");
+#endif //defined(_WIN32) || defined(__linux__)
+    return ret;
+}
+
+//Get max row count for allocated buffer.
+uint32_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
+{
+    uint32_t count = 0;
+    char fileName[30];
+    //Allocate space for load profile buffer.
+    getProfileGenericFileName(pg, fileName);
+    uint16_t rowSize = 0;
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, fileName, "r+b");
+#else
+    f = fopen(fileName, "r+b");
+#endif
+    if (f == NULL)
+    {
+        //Allocate space for the profile generic buffer.
+        allocateProfileGenericBuffer(fileName, 1024);
+#if _MSC_VER > 1400
+        fopen_s(&f, fileName, "r+b");
+#else
+        f = fopen(fileName, "r+b");
+#endif
+    }
+    if (f != NULL)
+    {
+        getProfileGenericBufferColumnSizes(pg, NULL, NULL, &rowSize);
+        if (rowSize != 0)
+        {
+            fseek(f, 0L, SEEK_END);
+            count = ftell(f);
+            count /= rowSize;
+        }
+        fclose(f);
+    }
+    return count;
+}
+
+int captureProfileGeneric(gxProfileGeneric* pg, GXProfileGeneric* data)
+{
+    unsigned char pos;
+    gxTarget* it;
+    int ret = 0;
+    char fileName[30];
+    getProfileGenericFileName(pg, fileName);
+    unsigned char pduBuff[PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE];
+    gxByteBuffer pdu;
+    bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
+    gxValueEventArg e;
+    ve_init(&e);
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, fileName, "r+b");
+#else
+    f = fopen(fileName, "r+b");
+#endif
+    if (f != NULL)
+    {
+        uint16_t dataSize = 0;
+        uint8_t columnSizes[10];
+        DLMS_DATA_TYPE dataTypes[10];
+        getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &dataSize);
+        fseek(f, pg->entriesInUse * dataSize, SEEK_SET);
+        //Loop capture columns and get values.
+        for (pos = 0; pos != pg->captureObjects.size; ++pos)
+        {
+            if ((ret = arr_getByIndex(&pg->captureObjects, pos, (void**)&it, sizeof(gxTarget))) != 0)
+            {
+                break;
+            }
+            bb_clear(&pdu);
+            //Date time is saved in EPOCH to save space.
+            if (it->target->objectType == DLMS_OBJECT_TYPE_CLOCK && it->attributeIndex == 2)
+            {
+                e.value.ulVal = time_current();
+                e.value.vt = DLMS_DATA_TYPE_UINT32;
+            }
+            else
+            {
+                e.target = it->target;
+                e.index = it->attributeIndex;
+                e.value.byteArr = &pdu;
+                e.value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+                if ((ret = cosem_getValue(&settings.base, &e)) != 0)
+                {
+                    break;
+                }
+            }
+            //If data is returned as byte array.
+            if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray)
+            {
+                fwrite(&e.value.byteArr->data[1], columnSizes[pos], 1, f);
+            }
+            else
+            {
+                fwrite(&e.value.bVal, columnSizes[pos], 1, f);
+            }
+        }
+        fclose(f);
+    }
+    //Append data.
+    //Update how many entries is used until buffer is full.
+    if (ret == 0 && pg->entriesInUse != pg->profileEntries)
+    {
+        ++pg->entriesInUse;
+        data->entriesInUse = (uint16_t)pg->entriesInUse;
+        save(&meterData, sizeof(meterData));
+    }
+    return ret;
 }
 
 void updateState(uint16_t value)
 {
     GX_UINT16(eventCode.value) = value;
-    captureEventLog(value);
+    captureProfileGeneric(&eventLog, &meterData.eventLog);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -658,7 +763,7 @@ int addEventCode()
     return ret;
 }
 
-static int loadTargets(dlmsServerSettings* settings, GXPushObjects* savedObjects, gxTarget* objects, uint16_t* count)
+static int loadTargets(dlmsServerSettings* settings, GXObjectCollection* savedObjects, gxTarget* objects, uint16_t* count)
 {
     uint16_t pos;
     int ret = 0;
@@ -683,7 +788,7 @@ static int loadTargets(dlmsServerSettings* settings, GXPushObjects* savedObjects
     return ret;
 }
 
-static int saveTargets(GXPushObjects* savedObjects, gxTarget* objects, uint16_t count)
+static int saveTargets(GXObjectCollection* savedObjects, gxTarget* objects, uint16_t count)
 {
     uint16_t pos;
     savedObjects->count = (unsigned char)count;
@@ -781,6 +886,7 @@ int addRegisterObject()
 
 uint16_t readActivePowerValue()
 {
+    activePowerL1Value = 2;
     return ++activePowerL1Value;
 }
 
@@ -872,6 +978,8 @@ int addscriptTableActivateNormalMode()
     return ret;
 }
 
+#define SET_CAPTURE_OBJECT(ARR, OBJECT, INDEX, DATA_INDEX) memcpy(ARR.logicalName, OBJECT.base.logicalName, 6); ARR.objectType = OBJECT.base.objectType; ARR.objectType = OBJECT.base.objectType; ARR.attributeIndex = INDEX; ARR.dataIndex = DATA_INDEX
+
 ///////////////////////////////////////////////////////////////////////
 //Add profile generic (historical data) object.
 ///////////////////////////////////////////////////////////////////////
@@ -883,30 +991,29 @@ int addLoadProfileProfileGeneric(uint16_t serializationVersion)
         meterData.loadProfile.entriesInUse = 0;
         meterData.loadProfile.period = 0;
         meterData.loadProfile.rowIndex = 0;
+        meterData.loadProfile.objects.count = 0;
     }
     int ret;
-    //Two capture objects.
-    static gxTarget CAPTURE_OBJECT[2] = { 0 };
     const unsigned char ln[6] = { 1, 0, 99, 1, 0, 255 };
     if ((ret = INIT_OBJECT(profileGeneric, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln)) == 0)
     {
         profileGeneric.capturePeriod = meterData.loadProfile.period;
-        //Maximum row count. One row takes 6 bytes. Allocate 150 rows = 900B.
-        profileGeneric.profileEntries = 150;
         profileGeneric.sortMethod = DLMS_SORT_METHOD_FIFO;
         //entries in use.
         profileGeneric.entriesInUse = meterData.loadProfile.entriesInUse;
         ///////////////////////////////////////////////////////////////////
+        ARR_ATTACH(profileGeneric.captureObjects, LOAD_PROFILE_CAPTURE_OBJECT, 0);
         //Add 2 columns.
-        ARR_ATTACH(profileGeneric.captureObjects, CAPTURE_OBJECT, 2);
-        //Add clock obect.
-        CAPTURE_OBJECT[0].target = BASE(meterData.clock1);
-        CAPTURE_OBJECT[0].attributeIndex = 2;
-        CAPTURE_OBJECT[0].dataIndex = 0;
-        //Add active power.
-        CAPTURE_OBJECT[1].target = BASE(activePowerL1);
-        CAPTURE_OBJECT[1].attributeIndex = 2;
-        CAPTURE_OBJECT[1].dataIndex = 0;
+        if (serializationVersion == 0)
+        {
+            //Add clock obect.
+            SET_CAPTURE_OBJECT(meterData.loadProfile.objects.values[0], meterData.clock1, 2, 0);
+            //Add active power.
+            SET_CAPTURE_OBJECT(meterData.loadProfile.objects.values[1], activePowerL1, 2, 0);
+            //Update amount of capture objects.
+            profileGeneric.captureObjects.size = meterData.loadProfile.objects.count = 2;
+        }
+        profileGeneric.profileEntries = meterData.loadProfile.profileEntries;
         //Set clock to sort object.
         profileGeneric.sortObject = BASE(meterData.clock1);
         profileGeneric.sortObjectAttributeIndex = 2;
@@ -925,31 +1032,30 @@ int addEventLogProfileGeneric(uint16_t serializationVersion)
         meterData.eventLog.entriesInUse = 0;
         meterData.eventLog.period = 0;
         meterData.eventLog.rowIndex = 0;
+        meterData.eventLog.objects.count = 0;
     }
     int ret;
-    //Two capture objects. Clock and event code
-    static gxTarget CAPTURE_OBJECT[2] = { 0 };
     const unsigned char ln[6] = { 1, 0, 99, 98, 0, 255 };
     if ((ret = INIT_OBJECT(eventLog, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln)) == 0)
     {
         //events are not captured.
         eventLog.capturePeriod = 0;
-        //Maximum row count. One row takes 6 bytes. Allocate 150 rows = 900B.
-        eventLog.profileEntries = 150;
         eventLog.sortMethod = DLMS_SORT_METHOD_FIFO;
         //entries in use.
         eventLog.entriesInUse = meterData.eventLog.entriesInUse;
+        ARR_ATTACH(eventLog.captureObjects, EVENT_LOG_CAPTURE_OBJECT, 0);
         ///////////////////////////////////////////////////////////////////
-        //Add 2 columns.
-        ARR_ATTACH(eventLog.captureObjects, CAPTURE_OBJECT, 2);
-        //Add clock obect.
-        CAPTURE_OBJECT[0].target = BASE(meterData.clock1);
-        CAPTURE_OBJECT[0].attributeIndex = 2;
-        CAPTURE_OBJECT[0].dataIndex = 0;
-        //Add active power.
-        CAPTURE_OBJECT[1].target = BASE(eventCode);
-        CAPTURE_OBJECT[1].attributeIndex = 2;
-        CAPTURE_OBJECT[1].dataIndex = 0;
+        //Add 2 columns as default.
+        if (serializationVersion == 0)
+        {
+            //Add clock obect.
+            SET_CAPTURE_OBJECT(meterData.eventLog.objects.values[0], meterData.clock1, 2, 0);
+            //Add event code.
+            SET_CAPTURE_OBJECT(meterData.eventLog.objects.values[1], eventCode, 2, 0);
+            //Update amount of capture objects.
+            eventLog.captureObjects.size = meterData.eventLog.objects.count = 2;
+        }
+        eventLog.profileEntries = meterData.eventLog.profileEntries;
         //Set clock to sort object.
         eventLog.sortObject = BASE(meterData.clock1);
         eventLog.sortObjectAttributeIndex = 2;
@@ -1075,6 +1181,10 @@ int createObjects()
     int ret;
     OA_ATTACH(settings.base.objects, ALL_OBJECTS);
     uint16_t serializationVersion = load();
+    if (serializationVersion == 1)
+    {
+        serializationVersion = 0;
+    }
     if ((ret = addLogicalDeviceName()) != 0 ||
         (ret = addSapAssignment(serializationVersion)) != 0 ||
         (ret = addEventCode()) != 0 ||
@@ -1104,17 +1214,59 @@ int createObjects()
         executeTime = 0;
         return ret;
     }
+    if (serializationVersion == 0)
+    {
+        //Set default master key (KEK) to 1111111111111111.
+        unsigned char KEK[16] = { 0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 };
+        memcpy(meterData.masterKey, KEK, sizeof(KEK));
+        //Set default block cipher key.
+        memcpy(meterData.securitySettings.blockCipherKey, settings.base.cipher.blockCipherKey, sizeof(meterData.securitySettings.blockCipherKey));
+        //Set default authentication key.
+        memcpy(meterData.securitySettings.authenticationKey, settings.base.cipher.authenticationKey, sizeof(meterData.securitySettings.authenticationKey));
+    }
+    //Update keys.
+    memcpy(settings.base.cipher.blockCipherKey, meterData.securitySettings.blockCipherKey, sizeof(meterData.securitySettings.blockCipherKey));
+    memcpy(settings.base.cipher.authenticationKey, meterData.securitySettings.authenticationKey, sizeof(meterData.securitySettings.authenticationKey));
+    memcpy(settings.base.kek, meterData.masterKey, sizeof(meterData.masterKey));
+
+
     //Load Push objects from EEPROM. This is done after all the objects are initialized.
     if ((ret = loadTargets(&settings, &meterData.push.objects, PUSH_OBJECTS, &pushSetup.pushObjectList.size)) != 0)
     {
         GXTRACE_INT(("Failed to load Push setup objects"), ret);
     }
-
+    //Load Event Log objects from EEPROM. This is done after all the objects are initialized.
+    if ((ret = loadTargets(&settings, &meterData.loadProfile.objects, LOAD_PROFILE_CAPTURE_OBJECT, &profileGeneric.captureObjects.size)) != 0)
+    {
+        GXTRACE_INT(("Failed to load Push setup objects"), ret);
+    }
+    if (serializationVersion == 0)
+    {
+        //Count how many rows fit to the buffer.
+        profileGeneric.profileEntries = meterData.loadProfile.profileEntries = getProfileGenericBufferMaxRowCount(&profileGeneric);
+    }
+    //Load Load profile objects from EEPROM. This is done after all the objects are initialized.
+    if ((ret = loadTargets(&settings, &meterData.eventLog.objects, EVENT_LOG_CAPTURE_OBJECT, &eventLog.captureObjects.size)) != 0)
+    {
+        GXTRACE_INT(("Failed to load Push setup objects"), ret);
+    }
+    if (serializationVersion == 0)
+    {
+        //Count how many rows fit to the buffer.
+        eventLog.profileEntries = meterData.eventLog.profileEntries = getProfileGenericBufferMaxRowCount(&eventLog);
+    }
     if (serializationVersion != SERIALIZATION_VERSION)
     {
         //Save default settings to the EEPROM.
         save(&meterData, sizeof(meterData));
     }
+    char fileName[30];
+    //Allocate space for load profile buffer.
+    getProfileGenericFileName(&profileGeneric, fileName);
+    allocateProfileGenericBuffer(fileName, 1024);
+    //Allocate space for event log buffer.
+    getProfileGenericFileName(&eventLog, fileName);
+    allocateProfileGenericBuffer(fileName, 1024);
     updateState(GURUX_EVENT_CODES_POWER_UP);
     GXTRACE(("Meter started."), NULL);
     return 0;
@@ -1221,6 +1373,69 @@ int getRestrictingObject(dlmsSettings* settings, gxValueEventArg* e, gxObject** 
     return ret;
 }
 
+//Returns profile generic buffer column sizes.
+int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dataTypes, uint8_t* columnSizes, uint16_t* rowSize)
+{
+    int ret = 0;
+    uint8_t pos;
+    gxTarget* it;
+    unsigned char pduBuff[PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE];
+    gxByteBuffer pdu;
+    bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
+    gxValueEventArg e;
+    ve_init(&e);
+    *rowSize = 0;
+    //Loop capture columns and get values.
+    for (pos = 0; pos != pg->captureObjects.size; ++pos)
+    {
+        if ((ret = arr_getByIndex(&pg->captureObjects, (uint16_t)pos, (void**)&it, sizeof(gxTarget))) != 0)
+        {
+            break;
+        }
+        bb_clear(&pdu);
+        ve_clear(&e);
+        //Date time is saved in EPOCH to save space.
+        if (it->target->objectType == DLMS_OBJECT_TYPE_CLOCK && it->attributeIndex == 2)
+        {
+            e.value.ulVal = time_current();
+            e.value.vt = DLMS_DATA_TYPE_UINT32;
+        }
+        else
+        {
+            e.target = it->target;
+            e.index = it->attributeIndex;
+            e.value.byteArr = &pdu;
+            e.value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+            if ((ret = cosem_getValue(&settings.base, &e)) != 0)
+            {
+                break;
+            }
+        }
+        //If data is returned as byte array.
+        if ((e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray))
+        {
+            e.value.vt = pdu.data[0];
+        }
+        else
+        {
+            if ((ret = dlms_setData(&pdu, e.value.vt, &e.value)) != 0)
+            {
+                break;
+            }
+        }
+        if (dataTypes != NULL)
+        {
+            dataTypes[pos] = e.value.vt;
+        }
+        if (columnSizes != NULL)
+        {
+            columnSizes[pos] = (uint8_t)pdu.size - 1;
+        }
+        *rowSize += pdu.size - 1;
+    }
+    return ret;
+}
+
 /**
   Find start index and row count using start and end date time.
 
@@ -1234,11 +1449,11 @@ int getProfileGenericDataByRangeFromRingBuffer(
     const char* fileName,
     gxValueEventArg* e)
 {
+    int ret = 0;
     gxtime start;
     gxtime end;
     uint32_t pos;
     uint32_t last = 0;
-    int ret;
     gxObject* obj = NULL;
     short index;
     if ((ret = getRestrictingObject(settings, e, &obj, &index)) != 0 ||
@@ -1250,8 +1465,6 @@ int getProfileGenericDataByRangeFromRingBuffer(
     uint32_t s = time_toUnixTime2(&start);
     uint32_t l = time_toUnixTime2(&end);
     uint32_t t;
-    gxLoadProfileData lp;
-    gxEventLogData event1;
     gxProfileGeneric* pg = (gxProfileGeneric*)e->target;
     if (pg->entriesInUse != 0)
     {
@@ -1261,19 +1474,19 @@ int getProfileGenericDataByRangeFromRingBuffer(
 #else
         FILE* f = fopen(fileName, "rb");
 #endif
+        uint16_t rowSize = 0;
+        uint8_t columnSizes[10];
+        DLMS_DATA_TYPE dataTypes[10];
+        if (f != NULL)
+        {
+            getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &rowSize);
+        }
         for (pos = 0; pos != pg->entriesInUse; ++pos)
         {
-            //Load data from EEPROM.
-            if (pg == &profileGeneric)
-            {
-                fread(&lp, sizeof(gxLoadProfileData), 1, f);
-                t = lp.time;
-            }
-            else
-            {
-                fread(&event1, sizeof(gxEventLogData), 1, f);
-                t = event1.time;
-            }
+            //Load time from EEPROM.
+            fread(&t, sizeof(uint32_t), 1, f);
+            //seek to begin of next row.
+            fseek(f, rowSize - sizeof(uint32_t), SEEK_CUR);
             //If value is inside of start and end time.
             if (t >= s && t <= l)
             {
@@ -1314,7 +1527,6 @@ int getProfileGenericDataByRangeFromRingBuffer(
 int readProfileGeneric(
     dlmsSettings* settings,
     gxProfileGeneric* pg,
-    const char* fileName,
     gxValueEventArg* e)
 {
     unsigned char first = e->transactionEndIndex == 0;
@@ -1322,154 +1534,179 @@ int readProfileGeneric(
     gxArray captureObjects;
     gxTarget CAPTURE_OBJECT[10] = { 0 };
     ARR_ATTACH(captureObjects, CAPTURE_OBJECT, 0);
-
-    e->byteArray = 1;
-    e->handled = 1;
-    // If reading first time.
-    if (first)
+    char fileName[20];
+    getProfileGenericFileName(pg, fileName);
+    if (ret == DLMS_ERROR_CODE_OK)
     {
-        //Read all.
-        if (e->selector == 0)
+        e->byteArray = 1;
+        e->handled = 1;
+        // If reading first time.
+        if (first)
         {
-            e->transactionStartIndex = 1;
-            e->transactionEndIndex = pg->entriesInUse;
-        }
-        else if (e->selector == 1)
-        {
-            //Read by entry. Find start and end index from the ring buffer.
-            if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, fileName, e)) != 0 ||
-                (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
+            //Read all.
+            if (e->selector == 0)
             {
-                e->transactionStartIndex = e->transactionEndIndex = 0;
+                e->transactionStartIndex = 1;
+                e->transactionEndIndex = pg->entriesInUse;
             }
-        }
-        else if (e->selector == 2)
-        {
-            if ((ret = cosem_checkStructure(e->parameters.byteArr, 4)) != 0 ||
-                (ret = cosem_getUInt32(e->parameters.byteArr, &e->transactionStartIndex)) != 0 ||
-                (ret = cosem_getUInt32(e->parameters.byteArr, &e->transactionEndIndex)) != 0 ||
-                (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
+            else if (e->selector == 1)
             {
-                e->transactionStartIndex = e->transactionEndIndex = 0;
-            }
-            else
-            {
-                //If start index is too high.
-                if (e->transactionStartIndex > pg->entriesInUse)
+                //Read by entry. Find start and end index from the ring buffer.
+                if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, fileName, e)) != 0 ||
+                    (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
                 {
                     e->transactionStartIndex = e->transactionEndIndex = 0;
                 }
-                //If end index is too high.
-                if (e->transactionEndIndex > pg->entriesInUse)
+            }
+            else if (e->selector == 2)
+            {
+                if ((ret = cosem_checkStructure(e->parameters.byteArr, 4)) != 0 ||
+                    (ret = cosem_getUInt32(e->parameters.byteArr, &e->transactionStartIndex)) != 0 ||
+                    (ret = cosem_getUInt32(e->parameters.byteArr, &e->transactionEndIndex)) != 0 ||
+                    (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
                 {
-                    e->transactionEndIndex = pg->entriesInUse;
+                    e->transactionStartIndex = e->transactionEndIndex = 0;
+                }
+                else
+                {
+                    //If start index is too high.
+                    if (e->transactionStartIndex > pg->entriesInUse)
+                    {
+                        e->transactionStartIndex = e->transactionEndIndex = 0;
+                    }
+                    //If end index is too high.
+                    if (e->transactionEndIndex > pg->entriesInUse)
+                    {
+                        e->transactionEndIndex = pg->entriesInUse;
+                    }
                 }
             }
         }
-    }
-    bb_clear(e->value.byteArr);
-    if (ret == 0 && first)
-    {
-        if (e->transactionEndIndex == 0)
+        bb_clear(e->value.byteArr);
+        if (ret == 0 && first)
         {
-            ret = cosem_setArray(e->value.byteArr, 0);
+            if (e->transactionEndIndex == 0)
+            {
+                ret = cosem_setArray(e->value.byteArr, 0);
+            }
+            else
+            {
+                ret = cosem_setArray(e->value.byteArr, (uint16_t)(e->transactionEndIndex - e->transactionStartIndex + 1));
+            }
         }
-        else
+        if (ret == 0 && e->transactionEndIndex != 0)
         {
-            ret = cosem_setArray(e->value.byteArr, (uint16_t)(e->transactionEndIndex - e->transactionStartIndex + 1));
-        }
-    }
-    void* data = NULL;
-    uint16_t dataSize = 0;
-    gxLoadProfileData lp;
-    gxEventLogData event1;
-
-    if (pg == &profileGeneric)
-    {
-        dataSize = sizeof(gxLoadProfileData);
-        data = &lp;
-    }
-    else
-    {
-        dataSize = sizeof(gxEventLogData);
-        data = &event1;
-    }
-    if (ret == 0 && e->transactionEndIndex != 0)
-    {
-        //Loop items.
-        uint32_t pos;
-        gxtime tm;
-        uint16_t pduSize;
-        FILE* f = NULL;
+            //Loop items.
+            uint32_t pos;
+            gxtime tm;
+            uint16_t pduSize;
+            FILE* f = NULL;
 #if _MSC_VER > 1400
-        if (fopen_s(&f, fileName, "rb") != 0)
-        {
-            printf("Failed to open %s.\r\n", fileName);
-            return -1;
-        }
-#else
-        if ((f = fopen(fileName, "rb")) != 0)
-        {
-            printf("Failed to open %s.\r\n", fileName);
-            return -1;
-        }
-#endif
-        if (f != NULL)
-        {
-            if (fseek(f, (e->transactionStartIndex - 1) * dataSize, SEEK_SET) != 0)
+            if (fopen_s(&f, fileName, "rb") != 0)
             {
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
-            for (pos = e->transactionStartIndex - 1; pos != e->transactionEndIndex; ++pos)
+#else
+            if ((f = fopen(fileName, "rb")) != 0)
             {
-                pduSize = e->value.byteArr->size;
-                //Load data from EEPROM.
-                fread(data, dataSize, 1, f);
-                if (pg == &profileGeneric)
+                printf("Failed to open %s.\r\n", fileName);
+                return -1;
+            }
+#endif
+            uint16_t dataSize = 0;
+            uint8_t columnSizes[10];
+            DLMS_DATA_TYPE dataTypes[10];
+            if (f != NULL)
+            {
+                getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &dataSize);
+            }
+            //Append data.
+            if (ret == 0 && dataSize != 0)
+            {
+                if (fseek(f, (e->transactionStartIndex - 1) * dataSize, SEEK_SET) != 0)
                 {
-                    time_initUnix(&tm, lp.time);
-                    clock_utcToMeterTime(&meterData.clock1, &tm);
-                    if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
-                        (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
-                        (ret = cosem_setUInt16(e->value.byteArr, lp.activePowerL1)) != 0)
-                    {
-                        //Error is handled later.
-                    }
+                    printf("Failed to seek %s.\r\n", fileName);
+                    return -1;
                 }
-                else
+                for (pos = e->transactionStartIndex - 1; pos != e->transactionEndIndex; ++pos)
                 {
-                    time_initUnix(&tm, event1.time);
-                    clock_utcToMeterTime(&meterData.clock1, &tm);
-                    if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
-                        (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
-                        (ret = cosem_setUInt16(e->value.byteArr, event1.event)) != 0)
-                    {
-                        //Error is handled later.
-                    }
-                }
-                if (ret != 0)
-                {
-                    //Don't set error if PDU is full,
-                    if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
-                    {
-                        e->value.byteArr->size = pduSize;
-                        ret = 0;
-                    }
-                    else
+                    pduSize = e->value.byteArr->size;
+                    if ((ret = cosem_setStructure(e->value.byteArr, pg->captureObjects.size)) != 0)
                     {
                         break;
                     }
-                    break;
+                    uint8_t colIndex;
+                    gxTarget* it;
+                    unsigned char pduBuff[PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE];
+                    gxByteBuffer pdu;
+                    bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
+                    //Loop capture columns and get values.
+                    for (colIndex = 0; colIndex != pg->captureObjects.size; ++colIndex)
+                    {
+                        if ((ret = arr_getByIndex(&pg->captureObjects, colIndex, (void**)&it, sizeof(gxTarget))) == 0)
+                        {
+                            bb_clear(&pdu);
+                            //Date time is saved in EPOCH to save space.
+                            if (it->target->objectType == DLMS_OBJECT_TYPE_CLOCK && it->attributeIndex == 2)
+                            {
+                                uint32_t time;
+                                fread(&time, 4, 1, f);
+                                time_initUnix(&tm, time);
+                                clock_utcToMeterTime(&meterData.clock1, &tm);
+                                if ((ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0)
+                                {
+                                    //Error is handled later.
+                                }
+                            }
+                            else
+                            {
+                                if (dataTypes[colIndex] == DLMS_DATA_TYPE_ARRAY || dataTypes[colIndex] == DLMS_DATA_TYPE_STRUCTURE  ||
+                                    dataTypes[colIndex] == DLMS_DATA_TYPE_OCTET_STRING || dataTypes[colIndex] == DLMS_DATA_TYPE_STRING ||
+                                    dataTypes[colIndex] == DLMS_DATA_TYPE_STRING_UTF8)
+                                {
+                                    e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
+                                    ++e->value.byteArr->size;
+                                    fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
+                                    e->value.byteArr->size += columnSizes[colIndex];
+                                }
+                                else
+                                {
+                                    dlmsVARIANT value;
+                                    var_init(&value);
+                                    value.vt = dataTypes[colIndex];
+                                    fread(&value.bVal, columnSizes[colIndex], 1, f);
+                                    if ((ret = cosem_setVariant(e->value.byteArr, &value)) != 0)
+                                    {
+                                        //Error is handled later.
+                                    }
+                                }
+                            }
+                        }
+                        if (ret != 0)
+                        {
+                            //Don't set error if PDU is full,
+                            if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+                            {
+                                e->value.byteArr->size = pduSize;
+                                ret = 0;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                            break;
+                        }
+                    }
+                    ++e->transactionStartIndex;
                 }
-                ++e->transactionStartIndex;
+                fclose(f);
             }
-            fclose(f);
-        }
-        else
-        {
-            printf("Failed to open %s.\r\n", fileName);
-            return -1;
+            else
+            {
+                printf("Failed to open %s.\r\n", fileName);
+                return -1;
+            }
         }
     }
     return ret;
@@ -1522,21 +1759,11 @@ void svr_preRead(
         }
         else if (e->target == BASE(profileGeneric) && e->index == 2)
         {
-#if defined(_WIN64)
-            const char* fileName = "loadprofile64.raw";
-#else // defined(_WIN32) || defined(__linux__)
-            const char* fileName = "loadprofile.raw";
-#endif //defined(_WIN32) || defined(__linux__)
-            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &profileGeneric, fileName, e);
+            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &profileGeneric, e);
         }
         else if (e->target == BASE(eventLog) && e->index == 2)
         {
-#if defined(_WIN64)
-            const char* fileName = "events64.raw";
-#else // defined(_WIN32) || defined(__linux__)
-            const char* fileName = "events.raw";
-#endif //defined(_WIN32) || defined(__linux__)
-            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &eventLog, fileName, e);
+            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &eventLog, e);
         }
     }
 }
@@ -1612,101 +1839,64 @@ int sendPush(
     return ret;
 }
 
+int sendEventNotification(dlmsSettings* settings)
+{
+    GXTRACE_LN(("sendEventNotification"), eventLog.base.objectType, eventLog.base.logicalName);
+    int ret = 0, pos;
+    if (socket1 != -1)
+    {
+        gxListItem item;
+        item.key = BASE(eventLog);
+        item.value = 2;
+        message messages;
+        unsigned char pduBuff[PDU_BUFFER_SIZE];
+        gxByteBuffer pdu;
+        bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
+        settings->serializedPdu = &pdu;
+        unsigned char data[PDU_BUFFER_SIZE];
+        gxByteBuffer bb;
+        bb_attach(&bb, data, 0, sizeof(data));
+        gxByteBuffer* tmp[] = { &bb };
+        mes_attach(&messages, tmp, 1);
+        variantArray values;
+        dlmsVARIANT valuesBuff[2];
+        gxtime dt;
+        time_now(&dt, 1);
+        GX_DATETIME(valuesBuff[0]) = &dt;
+        GX_UINT16(valuesBuff[1]) = 1;
+        VA_ATTACH(values, valuesBuff, 2);
+        if ((ret = notify_generateEventNotificationMessages(settings, 0, &item, &values, &pdu, &messages)) == 0)
+        {
+            for (pos = 0; pos != messages.size; ++pos)
+            {
+                if (send(socket1, (const char*)messages.data[pos]->data, bb_available(messages.data[pos]), 0) == -1)
+                {
+                    break;
+                }
+                bb_clear(&reply);
+            }
+        }
+        if (ret != 0)
+        {
+            GXTRACE(("generatePushSetupMessages Failed."), NULL);
+        }
+        mes_clear(&messages);
+    }
+    return ret;
+}
+
 void handleLoadProfileActions(
     gxValueEventArg* it)
 {
-#if defined(_WIN64)
-    const char* fileName = "loadprofile64.raw";
-#else // defined(_WIN32) || defined(__linux__)
-    const char* fileName = "loadprofile.raw";
-#endif //defined(_WIN32) || defined(__linux__)
     if (it->index == 1)
     {
         // Profile generic clear is called. Clear data.
         meterData.loadProfile.entriesInUse = meterData.loadProfile.rowIndex = 0;
         profileGeneric.entriesInUse = 0;
-        //Truncate the file.
-#if _MSC_VER > 1400
-        FILE* f = NULL;
-        fopen_s(&f, fileName, "wb");
-#else
-        FILE* f = fopen(fileName, "wb");
-#endif
-        fclose(f);
     }
     else if (it->index == 2)
     {
-        size_t size;
-        gxLoadProfileData row;
-        // Profile generic Capture is called. Save data to the buffer.
-        //We are using ring buffer here.
-        row.time = time_current();
-        row.activePowerL1 = readActivePowerValue();
-        //Own file for events (events.dat).
-        gxLoadProfileData* rows = malloc(sizeof(gxLoadProfileData) * (profileGeneric.entriesInUse + 1));
-        FILE* f = NULL;
-        if (profileGeneric.entriesInUse != 0)
-        {
-#if _MSC_VER > 1400
-            if (fopen_s(&f, fileName, "rb") != 0)
-            {
-                printf("%s %s\r\n", "Failed to open file.", fileName);
-                return;
-            }
-#else
-            if ((f = fopen(fileName, "rb")) == NULL)
-            {
-                printf("%s %s\r\n", "Failed to open file.", fileName);
-                return;
-            }
-#endif
-        }
-        if (f != NULL)
-        {
-            size = fread(rows, sizeof(gxLoadProfileData), profileGeneric.entriesInUse, f);
-            if (size != profileGeneric.entriesInUse)
-            {
-                printf("%s %s %d %d\r\n", "Failed to read file.", fileName, ferror, feof);
-                return;
-            }
-            fclose(f);
-        }
-        else if (profileGeneric.entriesInUse != 0)
-        {
-            printf("%s %s\r\n", "Failed to open file.", fileName);
-            return;
-        }
-        //Update data.
-        memcpy(&rows[meterData.loadProfile.rowIndex], &row, sizeof(row));
-        //Update how many entries is used until buffer is full.
-        if (profileGeneric.entriesInUse != profileGeneric.profileEntries)
-        {
-            ++profileGeneric.entriesInUse;
-            meterData.loadProfile.entriesInUse = (unsigned short)profileGeneric.entriesInUse;
-        }
-#if _MSC_VER > 1400
-        fopen_s(&f, fileName, "wb");
-#else
-        f = fopen(fileName, "wb");
-#endif
-        if (f != NULL)
-        {
-            size_t size = fwrite(rows, sizeof(gxLoadProfileData), profileGeneric.entriesInUse, f);
-            fclose(f);
-            if (size != profileGeneric.entriesInUse)
-            {
-                printf("%s %s\r\n", "Failed to write file.", fileName);
-                return;
-            }
-        }
-        else if (profileGeneric.entriesInUse != 0)
-        {
-            printf("%s %s\r\n", "Failed to open file.", fileName);
-            return;
-        }
-        //Update row index where next row is added.
-        meterData.loadProfile.rowIndex = ++meterData.loadProfile.rowIndex % profileGeneric.profileEntries;
-        save(&meterData.loadProfile, sizeof(GXProfileGeneric));
+        captureProfileGeneric(&profileGeneric, &meterData.loadProfile);
     }
 }
 
@@ -1721,7 +1911,7 @@ void handleEventLogActions(
     }
     else if (it->index == 2)
     {
-        captureEventLog(readEventCode());
+        captureProfileGeneric(&eventLog, &meterData.eventLog);
     }
 }
 
@@ -1749,11 +1939,13 @@ void svr_preAction(
         if (e->target == BASE(profileGeneric))
         {
             handleLoadProfileActions(e);
+            save(&meterData.loadProfile, sizeof(meterData.loadProfile));
             e->handled = 1;
         }
         else if (e->target == BASE(eventLog))
         {
             handleEventLogActions(e);
+            save(&meterData.eventLog, sizeof(meterData.eventLog));
             e->handled = 1;
         }
         else if (e->target == BASE(activePowerL1))
@@ -1869,7 +2061,35 @@ void svr_postWrite(
         }
         else if (e->target == BASE(profileGeneric))
         {
-            meterData.loadProfile.period = profileGeneric.capturePeriod;
+            //Use want to change capture objects.
+            if (e->index == 3)
+            {
+                saveTargets(&meterData.loadProfile.objects, LOAD_PROFILE_CAPTURE_OBJECT, profileGeneric.captureObjects.size);
+                //Clear buffer if user changes captured objects.
+                gxValueEventArg it;
+                ve_init(&it);
+                it.index = 1;
+                handleLoadProfileActions(&it);
+                //Count how many rows fit to the buffer.
+                profileGeneric.profileEntries = meterData.loadProfile.profileEntries = getProfileGenericBufferMaxRowCount(&profileGeneric);
+            }
+            //User wants to change capture period.
+            if (e->index == 4)
+            {
+                meterData.loadProfile.period = profileGeneric.capturePeriod;
+            }
+            //Use want to change max amount of profile entries.
+            if (e->index == 8)
+            {
+                //Count how many rows fit to the buffer.
+                uint16_t maxCount = getProfileGenericBufferMaxRowCount(&profileGeneric);
+                //If use try to set max profileEntries bigger than can fit to EEPROM.
+                if (maxCount < profileGeneric.profileEntries)
+                {
+                    profileGeneric.profileEntries = maxCount;
+                }
+                meterData.loadProfile.profileEntries = profileGeneric.profileEntries;
+            }
             save(&meterData.loadProfile, sizeof(meterData.loadProfile));
         }
         else if (e->target == BASE(pushSetup))
@@ -1916,6 +2136,15 @@ void svr_postAction(
             //Save HLS passwords.
             meterData.association.hlsPasswordSize = (char)associationHighGMac.secret.size;
             save(&meterData.association, sizeof(GXAssociation));
+        }
+        else if (e->target == BASE(securitySetupHigh) ||
+            e->target == BASE(securitySetupLow))
+        {
+            //Update block cipher key.
+            memcpy(meterData.securitySettings.blockCipherKey, settings->cipher.blockCipherKey, sizeof(meterData.securitySettings.blockCipherKey));
+            //Update authentication key.
+            memcpy(meterData.securitySettings.authenticationKey, settings->cipher.authenticationKey, sizeof(meterData.securitySettings.authenticationKey));
+            save(&meterData.securitySettings, sizeof(GXSecuritySettings));
         }
     }
 }
@@ -1971,7 +2200,9 @@ unsigned char svr_isTarget(
     else
     {
         // If address is not broadcast or serial number.
-        if (!(serverAddress == 0x3FFF || serverAddress == 0x7F ||
+        //Remove logical address from the server address.
+        unsigned char broadcast = (serverAddress & 0x3FFF) == 0x3FFF || (serverAddress & 0x7F) == 0x7F;
+        if (!(broadcast ||
             (serverAddress & 0x3FFF) == meterData.SERIAL_NUMBER % 10000 + 1000))
         {
             ret = 0;
@@ -2004,6 +2235,11 @@ unsigned char svr_isTarget(
                 }
             }
             oa_empty(&objects);
+        }
+        //Set serial number as meter address if broadcast is used.
+        if (broadcast)
+        {
+            settings->serverAddress = meterData.SERIAL_NUMBER % 10000 + 1000;
         }
         if (ret == 0)
         {
@@ -2055,7 +2291,11 @@ DLMS_ACCESS_MODE getProfileGenericAttributeAccess(
     {
         switch (index)
         {
+        case 3://captureObjects.
+            return DLMS_ACCESS_MODE_READ_WRITE;
         case 4://capturePeriod
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        case 8://Profile entries.
             return DLMS_ACCESS_MODE_READ_WRITE;
         default:
             break;
@@ -2269,7 +2509,7 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
 int svr_connected(
     dlmsServerSettings* settings)
 {
-    if (settings->base.connected == DLMS_CONNECTION_STATE_NONE)
+    if (settings->base.connected == DLMS_CONNECTION_STATE_HDLC)
     {
         GXTRACE(("svr_connected to HDLC level."), NULL);
     }
@@ -2541,6 +2781,7 @@ int main(int argc, char* argv[])
     {
         return 1;
     }
+
     //Set default clock.
     settings.defaultClock = &meterData.clock1;
     ls = socket(AF_INET, SOCK_STREAM, 0);
@@ -2572,14 +2813,15 @@ int main(int argc, char* argv[])
     printf("Press Enter to close application.\r\n");
     while (1)
     {
-        time_t start = time_current();
+        uint32_t start = time_current();
         if (executeTime <= start)
         {
             svr_run(&settings, start, &executeTime);
             if (executeTime != -1)
             {
-                time_t tmp = executeTime;
-                printf("%s", ctime(&start));
+                time_t tmp = start;
+                printf("%s", ctime(&tmp));
+                tmp = executeTime;
                 printf("%lu seconds before next invoke %s.\r\n", executeTime - start, ctime(&tmp));
             }
         }

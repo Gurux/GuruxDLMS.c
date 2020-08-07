@@ -1521,7 +1521,7 @@ int cosem_getColumns(
         {
             count = captureObjects->size - start + 1;
         }
-        if (!(count < captureObjects->size || start < count))
+        if (!(count <= captureObjects->size || start < count))
         {
             return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
         }

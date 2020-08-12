@@ -136,7 +136,7 @@ int readTcpIpConnection(
         printf("Connecting to %s:%d\r\n", address, port);
     }
     //Make connection to the meter.
-    ret = com_makeConnect(connection, address, port);
+    ret = com_makeConnect(connection, address, port, 5000);
     if (ret != DLMS_ERROR_CODE_OK)
     {
         con_close(connection);

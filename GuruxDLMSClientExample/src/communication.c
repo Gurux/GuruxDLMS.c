@@ -13,14 +13,8 @@
 // Copyright (c) Gurux Ltd
 //
 //---------------------------------------------------------------------------
-#include "../include/communication.h"
-#include "../../development/include/gxkey.h"
-#include "../../development/include/converters.h"
-#include "../../development/include/cosem.h"
-
-#include <stdio.h>
-#include <string.h>
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
+#include <ws2tcpip.h>
 #include <Windows.h> //Add support for serial port functions.
 #else
 #define INVALID_HANDLE_VALUE -1
@@ -38,6 +32,12 @@
 #include <fcntl.h>
 #endif
 
+#include "../include/communication.h"
+#include "../../development/include/gxkey.h"
+#include "../../development/include/converters.h"
+#include "../../development/include/cosem.h"
+
+
 //Returns current time.
 //If you are not using operating system you have to implement this by yourself.
 //Reason for this is that all compilers's or HWs don't support time at all.
@@ -46,13 +46,19 @@ void time_now(gxtime* value)
     time_initUnix(value, (unsigned long)time(NULL));
 }
 
+//Check is IP address IPv6 or IPv4 address.
+unsigned char com_isIPv6Address(const char* pAddress)
+{
+    return strstr(pAddress, ":") != NULL;
+}
+
 //Make connection using TCP/IP connection.
-int com_makeConnect(connection* connection, const char* address, int port)
+int com_makeConnect(connection* connection, const char* address, int port, int waitTime)
 {
     int ret;
-    struct sockaddr_in add;
     //create socket.
-    connection->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+    int family = com_isIPv6Address(address) ? AF_INET6 : AF_INET;
+    connection->socket = socket(family, SOCK_STREAM, IPPROTO_IP);
     if (connection->socket == -1)
     {
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
@@ -65,29 +71,61 @@ int com_makeConnect(connection* connection, const char* address, int port)
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
 
-    add.sin_port = htons(port);
-    add.sin_family = AF_INET;
-    add.sin_addr.s_addr = inet_addr(address);
-    //If address is give as name
-    if (add.sin_addr.s_addr == INADDR_NONE)
+    struct sockaddr* add;
+    int addSize;
+    struct sockaddr_in6 addrIP6;
+    struct sockaddr_in addIP4;
+    if (family == AF_INET)
     {
-        struct hostent* hostent = gethostbyname(address);
-        if (hostent == NULL)
+        addIP4.sin_port = htons(port);
+        addIP4.sin_family = AF_INET;
+        addIP4.sin_addr.s_addr = inet_addr(address);
+        addSize = sizeof(struct sockaddr_in);
+        add = (struct sockaddr*)&addIP4;
+        //If address is give as name
+        if (addIP4.sin_addr.s_addr == INADDR_NONE)
         {
+            struct hostent* Hostent = gethostbyname(address);
+            if (Hostent == NULL)
+            {
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
-            int err = WSAGetLastError();
-            closesocket(connection->socket);
+                int err = WSAGetLastError();
+                closesocket(connection->socket);
 #else
-            int err = errno;
-            close(connection->socket);
+                int err = errno;
+                close(connection->socket);
 #endif
-            connection->socket = -1;
-            return err;
-        };
-        add.sin_addr = *(struct in_addr*)(void*)hostent->h_addr_list[0];
+                connection->socket = -1;
+                return err;
+            };
+            addIP4.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
     };
+}
+    else
+    {
+        memset(&addrIP6, 0, sizeof(struct sockaddr_in6));
+        addrIP6.sin6_port = htons(port);
+        addrIP6.sin6_family = AF_INET6;
+        ret = inet_pton(family, address, &(addrIP6.sin6_addr));
+        if (ret == -1)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        };
+        add = (struct sockaddr*)&addrIP6;
+        addSize = sizeof(struct sockaddr_in6);
+    }
+
+    //Set timeout.
+#if defined(_WIN32) || defined(_WIN64)//If Windows
+    setsockopt(connection->socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&waitTime, sizeof(waitTime));
+#else
+    struct timeval tv;
+    tv.tv_sec = waitTime / 1000;
+    tv.tv_usec = 0;
+    setsockopt(connection->socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+#endif //
     //Connect to the meter.
-    ret = connect(connection->socket, (struct sockaddr*) & add, sizeof(struct sockaddr_in));
+    ret = connect(connection->socket, add, addSize);
     if (ret == -1)
     {
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
@@ -580,30 +618,12 @@ int com_open(
     return com_initializeOpticalHead(connection, iec);
 }
 
-// Read DLMS Data frame from the device.
-int readDLMSPacket(
-    connection* connection,
-    gxByteBuffer* data,
-    gxReplyData* reply)
+int sendData(connection* connection, gxByteBuffer* data)
 {
-    char* hex;
+    int ret = 0;
 #if defined(_WIN32) || defined(_WIN64)//Windows
     unsigned long sendSize = 0;
 #endif
-    int index = 0, ret = DLMS_ERROR_CODE_OK, cnt;
-    if (data->size == 0)
-    {
-        return DLMS_ERROR_CODE_OK;
-    }
-    reply->complete = 0;
-    connection->data.size = 0;
-    connection->data.position = 0;
-    if (connection->trace > GX_TRACE_LEVEL_INFO)
-    {
-        hex = bb_toHexString(data);
-        printf("TX:\t%s\r\n", hex);
-        free(hex);
-    }
     if (connection->comPort != INVALID_HANDLE_VALUE)
     {
 #if defined(_WIN32) || defined(_WIN64)//Windows
@@ -648,47 +668,98 @@ int readDLMSPacket(
             return DLMS_ERROR_CODE_SEND_FAILED;
         }
     }
+    return ret;
+}
+
+int readData(connection* connection, gxByteBuffer* data, int index)
+{
+    int ret = 0;
+    if (connection->comPort != INVALID_HANDLE_VALUE)
+    {
+        if (com_readSerialPort(connection, 0x7E) != 0)
+        {
+            return DLMS_ERROR_CODE_SEND_FAILED;
+        }
+    }
+    else
+    {
+        uint32_t cnt = connection->data.capacity - connection->data.size;
+        if (cnt < 1)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        if ((ret = recv(connection->socket, (char*)connection->data.data + connection->data.size, cnt, 0)) == -1)
+        {
+            return DLMS_ERROR_CODE_RECEIVE_FAILED;
+        }
+        connection->data.size += ret;
+    }
+    if (connection->trace > GX_TRACE_LEVEL_INFO)
+    {
+        char* hex = hlp_bytesToHex(connection->data.data + index, connection->data.size - index);
+        if (index == 0)
+        {
+            printf("RX:\t %s", hex);
+        }
+        else
+        {
+            printf(" %s", hex);
+        }
+        free(hex);
+        index = connection->data.size;
+    }
+    return 0;
+}
+
+// Read DLMS Data frame from the device.
+int readDLMSPacket(
+    connection* connection,
+    gxByteBuffer* data,
+    gxReplyData* reply)
+{
+    char* hex;
+    int index = 0, ret;
+    if (data->size == 0)
+    {
+        return DLMS_ERROR_CODE_OK;
+    }
+    reply->complete = 0;
+    connection->data.size = 0;
+    connection->data.position = 0;
+    if (connection->trace > GX_TRACE_LEVEL_INFO)
+    {
+        hex = bb_toHexString(data);
+        printf("TX:\t%s\r\n", hex);
+        free(hex);
+    }
+    if ((ret = sendData(connection, data)) != 0)
+    {
+        return ret;
+    }
     //Loop until packet is complete.
+    unsigned char pos = 0;
     do
     {
-        if (connection->comPort != INVALID_HANDLE_VALUE)
+        if ((ret = readData(connection, &connection->data, index)) != 0)
         {
-            if (com_readSerialPort(connection, 0x7E) != 0)
+            if (ret != DLMS_ERROR_CODE_RECEIVE_FAILED || pos == 3)
             {
-                return DLMS_ERROR_CODE_SEND_FAILED;
+                break;
+            }
+            ++pos;
+            printf("\nData send failed. Try to resend %d/3\n", pos);
+            if ((ret = sendData(connection, data)) != 0)
+            {
+                break;
             }
         }
         else
         {
-            cnt = connection->data.capacity - connection->data.size;
-            if (cnt < 1)
+            ret = cl_getData(&connection->settings, &connection->data, reply);
+            if (ret != 0 && ret != DLMS_ERROR_CODE_FALSE)
             {
-                return DLMS_ERROR_CODE_OUTOFMEMORY;
+                break;
             }
-            if ((ret = recv(connection->socket, (char*)connection->data.data + connection->data.size, cnt, 0)) == -1)
-            {
-                return DLMS_ERROR_CODE_RECEIVE_FAILED;
-            }
-            connection->data.size += ret;
-        }
-        if (connection->trace > GX_TRACE_LEVEL_INFO)
-        {
-            char* hex = hlp_bytesToHex(connection->data.data + index, connection->data.size - index);
-            if (index == 0)
-            {
-                printf("RX:\t %s", hex);
-            }
-            else
-            {
-                printf(" %s", hex);
-            }
-            free(hex);
-            index = connection->data.size;
-        }
-        ret = cl_getData(&connection->settings, &connection->data, reply);
-        if (ret != 0 && ret != DLMS_ERROR_CODE_FALSE)
-        {
-            break;
         }
     } while (reply->complete == 0);
     if (connection->trace > GX_TRACE_LEVEL_WARNING)

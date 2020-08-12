@@ -21,6 +21,7 @@
 #include "../../development/include/dlmssettings.h"
 
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
+#include <Winsock2.h> //Add support for sockets
 #include <Windows.h> //Add support for serial port functions.
 #endif
 

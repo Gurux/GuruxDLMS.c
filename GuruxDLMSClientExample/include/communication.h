@@ -22,15 +22,12 @@
 #include "../../development/include/client.h"
 #include "connection.h"
 
-#if defined(_WIN32) || defined(_WIN64)//Windows includes
-#include <Winsock.h> //Add support for sockets
-#endif
-
 //Make connection using TCP/IP connection.
 int com_makeConnect(
     connection *connection,
     const char* address,
-    int port);
+    int port,
+    int waitTime);
 
 //Make connection serial port connection.
 int com_open(

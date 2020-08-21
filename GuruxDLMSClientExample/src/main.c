@@ -169,8 +169,15 @@ int readTcpIpConnection(
                 sscanf(p2, "%d", &index);
 #endif
                 hlp_setLogicalName(buff, p);
-                oa_findByLN(&connection->settings.objects, DLMS_OBJECT_TYPE_NONE, buff, &obj);
-                com_readValue(connection, obj, index);
+                if ((ret = oa_findByLN(&connection->settings.objects, DLMS_OBJECT_TYPE_NONE, buff, &obj)) == 0)
+                {
+                    if (obj == NULL)
+                    {
+                        printf("Object '%s' not found from the association view.\n", p);
+                        break;
+                    }
+                    com_readValue(connection, obj, index);
+                }
             } while ((p = strchr(p2, ',')) != NULL);
         }
     }
@@ -592,7 +599,7 @@ int connectMeter(int argc, char* argv[])
     //Clear objects.
     if (ret != 0)
     {
-        printf("Error. %d", ret);
+        printf("%s\n", hlp_getErrorMessage(ret));
     }
     else
     {

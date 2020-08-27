@@ -1699,17 +1699,19 @@ int cosem_getSecuritySetup(
     else if (e->index == 4)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_setOctectString(e->value.byteArr, &object->clientSystemTitle);
+        ret = cosem_setOctectString2(e->value.byteArr, object->clientSystemTitle.data, 8);
 #else
         ret = var_addOctetString(&e->value, &object->clientSystemTitle);
+        object->clientSystemTitle.position = 0;
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (e->index == 5)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_setOctectString(e->value.byteArr, &object->serverSystemTitle);
+        ret = cosem_setOctectString2(e->value.byteArr, object->serverSystemTitle.data, 8);
 #else
         ret = var_addOctetString(&e->value, &object->serverSystemTitle);
+        object->serverSystemTitle.position = 0;
 #endif //DLMS_IGNORE_MALLOC
     }
     else if (e->index == 6)

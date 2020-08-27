@@ -396,7 +396,7 @@ extern "C" {
         char* buffer,
         uint16_t size);
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) || !defined(DLMS_IGNORE_MALLOC)
     //Get byte array as a string.
     char* bb_toString(
         gxByteBuffer* bb);
@@ -409,7 +409,7 @@ extern "C" {
     void bb_addDoubleAsString(
         gxByteBuffer* ba,
         double value);
-#endif //!defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 
     //Add integer value to byte array as a string.
     void bb_addIntAsString(

@@ -35,12 +35,12 @@
 #endif
 
 #include "../include/gxmem.h"
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_STRING_CONVERTER
 #include <stdio.h> //printf needs this or error is generated.
 #if _MSC_VER > 1400
 #include <crtdbg.h>
 #endif
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_STRING_CONVERTER
 
 #include <string.h> /* memset */
 
@@ -1614,7 +1614,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         else if (tmp.vt == DLMS_DATA_TYPE_FLOAT32)
         {
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_STRING_CONVERTER
 #if _MSC_VER > 1000
             sprintf_s(buff, 250, "%f", tmp.fltVal);
 #else
@@ -1626,11 +1626,11 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_STRING_CONVERTER
         }
         else if (tmp.vt == DLMS_DATA_TYPE_FLOAT64)
         {
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_STRING_CONVERTER
 #if _MSC_VER > 1000
             sprintf_s(buff, 250, "%lf", tmp.dblVal);
 #else
@@ -1642,7 +1642,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_STRING_CONVERTER
         }
         else if (tmp.vt == DLMS_DATA_TYPE_BIT_STRING)
         {
@@ -1654,19 +1654,19 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         else if (tmp.vt == DLMS_DATA_TYPE_DATETIME)
         {
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_STRING_CONVERTER
             time_toString(tmp.dateTime, item->strVal);
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_STRING_CONVERTER
 
         }
         else if (tmp.vt == DLMS_DATA_TYPE_OCTET_STRING)
         {
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_STRING_CONVERTER
             if (tmp.byteArr != NULL)
             {
                 char* str = bb_toHexString(tmp.byteArr);
@@ -1678,7 +1678,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_STRING_CONVERTER
         }
         else if (tmp.vt == DLMS_DATA_TYPE_NONE)
         {
@@ -1763,7 +1763,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_FLOAT32
         else if (type == DLMS_DATA_TYPE_FLOAT32)
         {
 #if _MSC_VER > 1000
@@ -1786,7 +1786,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_FLOAT32
         else if (type == DLMS_DATA_TYPE_OCTET_STRING)
         {
             char* pBuff = (char*)tmp.strVal->data;
@@ -1860,10 +1860,12 @@ int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
     case DLMS_DATA_TYPE_INT64:
     case DLMS_DATA_TYPE_UINT64:
     case DLMS_DATA_TYPE_ENUM:
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_FLOAT32
     case DLMS_DATA_TYPE_FLOAT32:
+#endif //DLMS_IGNORE_FLOAT32
+#ifndef DLMS_IGNORE_FLOAT64
     case DLMS_DATA_TYPE_FLOAT64:
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_FLOAT64
         return convert(value, newType);
     default:
         //Handled later.
@@ -2483,7 +2485,7 @@ double var_toDouble(dlmsVARIANT* target)
     return 0;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 //Print content of the variant to cout.
 int var_print(const char* format, dlmsVARIANT* target)
 {
@@ -2532,4 +2534,4 @@ int va_print(
     return ret;
 }
 
-#endif //!defined(GX_DLMS_MICROCONTROLLER) && defined(DLMS_IGNORE_MALLOC)
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && defined(DLMS_IGNORE_MALLOC)

@@ -70,8 +70,12 @@ int GXDLMSServer::init(
     BB_ATTACH(settings.base.stoCChallenge, S2C_CHALLENGE, 0);
     //Set master key (KEK) to 1111111111111111.
     unsigned char KEK[16] = { 0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 };
+#ifdef DLMS_IGNORE_MALLOC
     memcpy(settings.base.kek, KEK, sizeof(KEK));
     settings.base.serializedPdu = &settings.info.data;
+#else
+    bb_set(&settings.base.kek, KEK, sizeof(KEK));
+#endif //DLMS_IGNORE_MALLOC
     return 0;
 }
 
@@ -114,14 +118,14 @@ int GXDLMSServer::initialize()
     return 0;
 }
 
-int GXDLMSServer::handleRequest(const unsigned char* data, unsigned short size, gxByteBuffer* reply)
+int GXDLMSServer::handleRequest(unsigned char* data, unsigned short size, gxByteBuffer* reply)
 {
     return svr_handleRequest2(&settings, data, size, reply);
 }
 
 int GXDLMSServer::run(unsigned long start, unsigned long* executeTime)
 {
-    svr_run(&settings, start, executeTime);
+    return svr_run(&settings, start, executeTime);
 }
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
@@ -167,4 +171,4 @@ void GXDLMSServer::setDefaultClock(gxClock* clock)
   settings.defaultClock = clock;
 }
 
-static GXDLMSServer Server;
+//static GXDLMSServer Server;

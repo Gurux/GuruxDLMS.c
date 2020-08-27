@@ -87,7 +87,8 @@ extern "C" {
 
     //Clear object array. Clear will free objects as well.
     void oa_clear(
-        objectArray* arr);
+        objectArray* arr,
+        unsigned char releaseObjects);
 
     //Empty object array. Empty do not free objects.
     void oa_empty(

@@ -272,7 +272,6 @@ void svr_setInitialize(dlmsServerSettings* settings)
     settings->base.authentication = DLMS_AUTHENTICATION_NONE;
     settings->base.isAuthenticationRequired = 0;
 #ifndef DLMS_IGNORE_HIGH_GMAC
-    settings->base.cipher.invocationCounter = 1;
     settings->base.cipher.security = DLMS_SECURITY_NONE;
 #endif //DLMS_IGNORE_HIGH_GMAC
     bb_clear(&settings->base.ctoSChallenge);
@@ -291,6 +290,82 @@ void svr_reset(
     settings->frameReceived = 0;
 }
 
+int svr_generateExceptionResponse(
+    dlmsSettings* settings,
+    int error,
+    gxByteBuffer* data)
+{
+    int ret;
+    if ((ret = bb_setUInt8(data, DLMS_COMMAND_EXCEPTION_RESPONSE)) == 0 &&
+        (ret = bb_setUInt8(data, DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN)) == 0)
+    {
+        if (error == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL)
+        {
+            if ((ret = bb_setUInt8(data, DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR)) == 0)
+            {
+                ret = bb_setUInt32(data, (uint32_t)settings->expectedInvocationCounter);
+            }
+        }
+        else if (error == DLMS_ERROR_CODE_INVALID_COMMAND)
+        {
+            ret = bb_setUInt8(data, DLMS_EXCEPTION_SERVICE_ERROR_SERVICE_NOT_SUPPORTED);
+        }
+        else
+        {
+            ret = bb_setUInt8(data, DLMS_EXCEPTION_SERVICE_ERROR_DECIPHERING_ERROR);
+        }
+    }
+#ifndef DLMS_IGNORE_HIGH_GMAC
+    if (settings->cipher.security != DLMS_SECURITY_NONE)
+    {
+        unsigned char cmd = DLMS_COMMAND_GLO_CONFIRMED_SERVICE_ERROR;
+#ifndef DLMS_IGNORE_MALLOC
+        gxByteBuffer* key;
+#else
+        unsigned char* key;
+#endif //DLMS_IGNORE_MALLOC
+        if (dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            key = settings->cipher.dedicatedKey;
+#else
+            key = settings->cipher.dedicatedKey;
+#endif //DLMS_IGNORE_MALLOC
+            cmd = DLMS_COMMAND_DED_CONFIRMED_SERVICE_ERROR;
+        }
+        else
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            key = &settings->cipher.blockCipherKey;
+#else
+            key = settings->cipher.blockCipherKey;
+#endif //DLMS_IGNORE_MALLOC
+        }
+        ret = cip_encrypt(
+            &settings->cipher,
+            settings->cipher.security,
+            DLMS_COUNT_TYPE_PACKET,
+            settings->cipher.invocationCounter,
+            cmd,
+#ifndef DLMS_IGNORE_MALLOC
+            settings->cipher.systemTitle.data,
+#else
+            settings->cipher.systemTitle,
+#endif //DLMS_IGNORE_MALLOC
+            key,
+            data);
+        ++settings->cipher.invocationCounter;
+    }
+#endif //DLMS_IGNORE_HIGH_GMAC
+#ifndef DLMS_IGNORE_HDLC
+    if (ret == 0 && settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    {
+        ret = dlms_addLLCBytes(settings, data);
+    }
+#endif //DLMS_IGNORE_HDLC
+    return ret;
+}
+
 /**
     * Parse AARQ request that client send and returns AARE request.
     *
@@ -302,7 +377,9 @@ int svr_HandleAarqRequest(
 {
     unsigned char command = 0;
     int ret;
+    unsigned char ERROR_BUFF[4];
     gxByteBuffer error;
+    BB_ATTACH(error, ERROR_BUFF, 0);
     DLMS_ASSOCIATION_RESULT result;
     unsigned char diagnostic;
     // Reset settings for wrapper.
@@ -328,8 +405,13 @@ int svr_HandleAarqRequest(
     svr_notifyTrace("parsePDU", ret);
 #endif //DLMS_DEBUG
     bb_clear(data);
-    bb_init(&error);
-    if (ret == 0 && result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
+    if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL ||
+        ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
+        ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE)
+    {
+        return svr_generateExceptionResponse(&settings->base, ret, data);
+    }
+    else if (ret == 0 && result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
     {
         if (settings->base.dlmsVersionNumber < 6)
         {
@@ -459,7 +541,7 @@ int svr_HandleAarqRequest(
                 }
             }
         }
-        else
+        else if (result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
         {
             if (settings->base.useLogicalNameReferencing)
             {
@@ -818,7 +900,7 @@ int svr_handleSetRequest2(
         if (size != data->size - data->position)
         {
             vec_clear(&list);
-            return DLMS_ERROR_CODE_BLOCK_UNAVAILABLE;
+            return DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE;
         }
     }
     if (!p->multipleBlocks)
@@ -938,7 +1020,7 @@ int svr_hanleSetRequestWithDataBlock(
             }
             else if (size != data->size - data->position)
             {
-                ret = DLMS_ERROR_CODE_BLOCK_UNAVAILABLE;
+                ret = DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE;
             }
             if (ret == 0 && (ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position)) == 0)
             {
@@ -1101,6 +1183,12 @@ int svr_getRequestNormal(
     {
         return ret;
     }
+    if (index < 1)
+    {
+        //Attribute0 Supported With Get is not supported.
+        return DLMS_ERROR_CODE_INVALID_COMMAND;
+    }
+
 #ifdef DLMS_IGNORE_MALLOC
     arr = &settings->transaction.targets;
     if (arr->capacity == 0)
@@ -1589,6 +1677,10 @@ int svr_handleGetRequest(
     if (type == DLMS_GET_COMMAND_TYPE_NORMAL)
     {
         ret = svr_getRequestNormal(settings, data, invokeId);
+        if (ret == DLMS_ERROR_CODE_INVALID_COMMAND)
+        {
+            return ret;
+        }
     }
     else if (type == DLMS_GET_COMMAND_TYPE_NEXT_DATA_BLOCK)
     {
@@ -1597,6 +1689,10 @@ int svr_handleGetRequest(
     }
     else if (type == DLMS_GET_COMMAND_TYPE_WITH_LIST)
     {
+        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_MULTIPLE_REFERENCES) == 0)
+        {
+            return DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
         // Get request with a list.
         ret = svr_getRequestWithList(settings, data, invokeId);
     }
@@ -1992,7 +2088,7 @@ int svr_handleReadDataBlockAccess(
     {
         gxByteBuffer bb;
         bb_init(&bb);
-        bb_setUInt8(&bb, DLMS_ERROR_CODE_BLOCK_UNAVAILABLE);
+        bb_setUInt8(&bb, DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE);
         params_initSN(&p, &settings->base, command, cnt,
             DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL, settings->info.encryptedCommand);
         ret = dlms_getSNPdu(&p, data);
@@ -2633,47 +2729,82 @@ int svr_handleCommand(
     {
 #ifndef DLMS_IGNORE_SET
     case DLMS_COMMAND_SET_REQUEST:
-        ret = svr_handleSetRequest(settings, data);
+        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_SET) == 0)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        else
+        {
+            ret = svr_handleSetRequest(settings, data);
+        }
         break;
 #endif //DLMS_IGNORE_SET
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_WRITE_REQUEST:
-        ret = svr_handleWriteRequest(settings, data);
-        break;
-#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-    case DLMS_COMMAND_GET_REQUEST:
-        //Check is client reading frames.
-        if (settings->transaction.command != DLMS_COMMAND_NONE &&
-            data->position == data->size)
+        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_WRITE) == 0)
         {
-            data->position = 0;
+            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
         else
         {
-            ret = svr_handleGetRequest(settings, data);
+            ret = svr_handleWriteRequest(settings, data);
+        }
+        break;
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+    case DLMS_COMMAND_GET_REQUEST:
+        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_GET) == 0)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        else
+        {
+            //Check is client reading frames.
+            if (settings->transaction.command != DLMS_COMMAND_NONE &&
+                data->position == data->size)
+            {
+                data->position = 0;
+            }
+            else
+            {
+                ret = svr_handleGetRequest(settings, data);
+            }
         }
         break;
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_READ_REQUEST:
-        if (settings->transaction.command != DLMS_COMMAND_NONE &&
-            data->position == data->size)
+        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_READ) == 0)
         {
-            data->position = 0;
+            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
         else
         {
-            ret = svr_handleReadRequest(settings, data);
+            if (settings->transaction.command != DLMS_COMMAND_NONE &&
+                data->position == data->size)
+            {
+                data->position = 0;
+            }
+            else
+            {
+                ret = svr_handleReadRequest(settings, data);
+            }
         }
         break;
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 #ifndef DLMS_IGNORE_ACTION
     case DLMS_COMMAND_METHOD_REQUEST:
-        ret = svr_handleMethodRequest(settings, data);
-        if (ret != 0)
+        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_ACTION) == 0)
         {
+            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        else
+        {
+            ret = svr_handleMethodRequest(settings, data);
+            if (ret != 0)
+            {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("handleMethodRequest failed. ", ret);
+                svr_notifyTrace("handleMethodRequest failed. ", ret);
 #endif //DLMS_DEBUG
+            }
         }
         break;
 #endif //DLMS_IGNORE_ACTION
@@ -2728,7 +2859,12 @@ int svr_handleCommand(
 #ifdef DLMS_DEBUG
         svr_notifyTrace("Unknown command. ", cmd);
 #endif //DLMS_DEBUG
-        return DLMS_ERROR_CODE_INVALID_COMMAND;
+        ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+    }
+    if (ret == DLMS_ERROR_CODE_INVALID_COMMAND)
+    {
+        bb_clear(data);
+        ret = svr_generateExceptionResponse(&settings->base, DLMS_ERROR_CODE_INVALID_COMMAND, data);
     }
     if (ret != 0)
     {
@@ -2866,7 +3002,45 @@ int svr_handleRequest2(
 #ifdef DLMS_DEBUG
         svr_notifyTrace("svr_handleRequest2 dlms_getData2 failed. ", ret);
 #endif //DLMS_DEBUG
-        if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS)
+        if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL ||
+            ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
+            ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE)
+        {
+            bb_clear(reply);
+            gxByteBuffer data;
+            unsigned char tmp[10];
+            bb_attach(&data, tmp, 0, sizeof(tmp));
+            if ((ret = svr_generateConfirmedServiceError(
+                settings,
+                DLMS_SERVICE_ERROR_INITIATE,
+                DLMS_SERVICE_ERROR_APPLICATION_REFERENCE,
+                DLMS_APPLICATION_REFERENCE_DECIPHERING_ERROR,
+                &data)) != 0)
+            {
+                settings->receivedData.position = settings->receivedData.size = 0;
+                return ret;
+            }
+            if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+            {
+#ifndef DLMS_IGNORE_HDLC
+                ret = dlms_getHdlcFrame(&settings->base, 0, &data, reply);
+#else
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_HDLC
+            }
+#ifndef DLMS_IGNORE_WRAPPER
+            else if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
+            {
+                ret = dlms_getWrapperFrame(&settings->base, DLMS_COMMAND_NONE, &data, reply);
+            }
+#endif //DLMS_IGNORE_WRAPPER
+            else
+            {
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            return ret;
+        }
+        else if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS)
         {
 #ifdef DLMS_DEBUG
             svr_notifyTrace("Invalid server address. ", -1);
@@ -3181,7 +3355,7 @@ int svr_invoke(
         if (end == NULL)
         {
             //Ignore deviation and status for single action script.
-            exec = *executed < time && time_compareWithDiff(start, time, 0) == 0;
+            exec = *executed < time&& time_compareWithDiff(start, time, 0) == 0;
         }
         else if (*executed < time)
         {
@@ -3303,8 +3477,8 @@ int svr_handleSingleActionSchedule(
             int posS;
             if (settings->defaultClock != NULL)
             {
-               s->deviation = settings->defaultClock->timeZone;
-               s->status = settings->defaultClock->status;
+                s->deviation = settings->defaultClock->timeZone;
+                s->status = settings->defaultClock->status;
             }
             for (posS = 0; posS != object->executedScript->scripts.size; ++posS)
             {

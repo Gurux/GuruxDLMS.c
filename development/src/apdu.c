@@ -477,6 +477,9 @@ int apdu_parseUserInformation(
     {
         return ret;
     }
+    DLMS_SECURITY security;
+    DLMS_SECURITY_SUITE suite;
+    uint64_t invocationCounter;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     if (tag == DLMS_COMMAND_GLO_INITIATE_RESPONSE ||
         tag == DLMS_COMMAND_GLO_INITIATE_REQUEST ||
@@ -492,7 +495,9 @@ int apdu_parseUserInformation(
             settings->sourceSystemTitle,
             &settings->cipher.blockCipherKey,
             data,
-            &settings->cipher.security)) != 0)
+            &security,
+            &suite,
+            &invocationCounter)) != 0)
         {
             return ret;
         }
@@ -501,11 +506,40 @@ int apdu_parseUserInformation(
             settings->sourceSystemTitle,
             settings->cipher.blockCipherKey,
             data,
-            &settings->cipher.security)) != 0)
+            &security,
+            &suite,
+            &invocationCounter)) != 0)
         {
-            return ret;
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
 #endif //DLMS_IGNORE_MALLOC
+
+        if (settings->expectedSecurityPolicy != 0xFF && security != settings->expectedSecurityPolicy << 4)
+        {
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
+        if (settings->expectedSecuritySuite != 0xFF && suite != settings->expectedSecuritySuite)
+        {
+            return DLMS_ERROR_CODE_INVALID_SECURITY_SUITE;
+        }
+        if (settings->expectedInvocationCounter != 0)
+        {
+            if (invocationCounter != 1 + settings->expectedInvocationCounter)
+            {
+                return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+            }
+            settings->expectedInvocationCounter = 1 + invocationCounter;
+        }
+        //If client system title doesn't match.
+        if (settings->expectedClientSystemTitle != NULL &&
+            memcmp(settings->expectedClientSystemTitle, EMPTY_SYSTEM_TITLE, 8) != 0 &&
+            memcmp(settings->sourceSystemTitle, settings->expectedClientSystemTitle, 8) != 0)
+        {
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
+
+        settings->cipher.security = security;
+        settings->cipher.suite = suite;
         if ((ret = bb_getUInt8(data, &tag)) != 0)
         {
             return ret;
@@ -1772,6 +1806,12 @@ int apdu_parsePDU(
 #ifdef DLMS_DEBUG
                 svr_notifyTrace("parseUserInformation. ", ret);
 #endif //DLMS_DEBUG
+                if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL ||
+                    ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
+                    ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE)
+                {
+                    return ret;
+                }
                 //Return confirmed service error.
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
                 break;
@@ -1834,6 +1874,14 @@ int apdu_parsePDU(
 #ifdef DLMS_DEBUG
             svr_notifyTrace("handleResultComponent. ", ret);
 #endif //DLMS_DEBUG
+        }
+        //Check that user is not trying to connect without ciphered connection.
+        if (ret == 0 && settings->expectedSecurityPolicy != 0xFF)
+        {
+            if (settings->cipher.security != settings->expectedSecurityPolicy << 4)
+            {
+                return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+            }
         }
     }
     return ret;

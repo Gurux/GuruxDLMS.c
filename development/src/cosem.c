@@ -627,7 +627,7 @@ int cosem_checkStructure(gxByteBuffer* bb, uint16_t expectedItemCount)
     {
         if (cnt != expectedItemCount)
         {
-            ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
     }
     return ret;
@@ -675,7 +675,7 @@ int cosem_checkArray(gxByteBuffer* bb, uint16_t* count)
     }
     if (*count < cnt)
     {
-        return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+        return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
     }
     *count = cnt;
     return 0;
@@ -818,7 +818,7 @@ int cosem_getOctectStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned ch
     }
     if (count > bb_getCapacity(value))
     {
-        return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+        return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
     }
     if ((ret = bb_set2(value, bb, bb->position, count)) != 0)
     {
@@ -847,7 +847,7 @@ int cosem_getOctectStringBase2(gxByteBuffer* bb, unsigned char* value, uint16_t 
     }
     if (count > capacity)
     {
-        return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+        return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
     }
     if (size != NULL)
     {
@@ -1495,7 +1495,7 @@ int cosem_getColumns(
                     {
                         if (!(columns->size < arr_getCapacity(columns)))
                         {
-                            return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+                            return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                         }
                         ++columns->size;
                         if ((ret = arr_getByIndex(columns, index, (void**)&k2, sizeof(gxTarget))) != 0)
@@ -1523,7 +1523,7 @@ int cosem_getColumns(
         }
         if (!(count <= captureObjects->size || start < count))
         {
-            return DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+            return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
         columns->size = count;
         for (pos = start - 1; pos != count; ++pos)

@@ -682,8 +682,6 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_GPRS_SETUP
 #ifndef DLMS_IGNORE_SECURITY_SETUP
         case DLMS_OBJECT_TYPE_SECURITY_SETUP:
-            bb_clear(&((gxSecuritySetup*)object)->serverSystemTitle);
-            bb_clear(&((gxSecuritySetup*)object)->clientSystemTitle);
             obj_clearCertificateInfo(&((gxSecuritySetup*)object)->certificates);
             break;
 #endif //DLMS_IGNORE_SECURITY_SETUP

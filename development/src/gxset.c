@@ -2421,12 +2421,41 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
         object->securitySuite = (DLMS_SECURITY_SUITE)var_toInteger(value);
         break;
     case 4:
-        bb_clear(&object->clientSystemTitle);
-        bb_set2(&object->clientSystemTitle, value->byteArr, 0, bb_size(value->byteArr));
+#ifdef DLMS_IGNORE_MALLOC
+        ret = cosem_getOctectString2(value->byteArr, object->clientSystemTitle.data, 8, NULL);
+#else
+        if (value->byteArr == NULL || bb_available(value->byteArr) != 8)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            if (value->byteArr == NULL || bb_available(value->byteArr) != 8)
+            {
+                ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+    }
+            else
+            {
+                bb_clear(&object->clientSystemTitle);
+                bb_set2(&object->clientSystemTitle, value->byteArr, 0, bb_size(value->byteArr));
+            }
+}
+#endif //DLMS_IGNORE_MALLOC
         break;
     case 5:
-        bb_clear(&object->serverSystemTitle);
-        bb_set2(&object->serverSystemTitle, value->byteArr, 0, bb_size(value->byteArr));
+#ifdef DLMS_IGNORE_MALLOC
+        ret = cosem_getOctectString2(value->byteArr, object->serverSystemTitle.data, 8, NULL);
+#else
+        if (value->byteArr == NULL || bb_available(value->byteArr) != 8)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            bb_clear(&object->serverSystemTitle);
+            bb_set2(&object->serverSystemTitle, value->byteArr, 0, bb_size(value->byteArr));
+        }
+#endif //DLMS_IGNORE_MALLOC
         break;
     case 6:
         obj_clearCertificateInfo(&object->certificates);

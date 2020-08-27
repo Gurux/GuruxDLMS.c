@@ -31,24 +31,67 @@
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
-#include "include/dlmssettings.h"
-#include "include/variant.h"
-#include "include/cosem.h"
-#include "include/client.h"
-#include "include/converters.h"
-#include "include/gxobjects.h"
-#include "include/objectarray.h"
+#include "GXDLMSClient.h"
+//---------------------------------------------------------------------------
+// Un-comment following lines from gxignore.h to improve perforamance 
+// and memory usage.
+// #define DLMS_IGNORE_SERVER
+// #define DLMS_IGNORE_CLIENT
+// #define GX_DLMS_MICROCONTROLLER
+//---------------------------------------------------------------------------
 
 //Received data.
 gxByteBuffer frameData;
-dlmsSettings meterSettings;
+
+//How long reply is waited from the meter.
+const uint32_t WAIT_TIME = 2000;
+//How many times message is try to resend to the meter.
+const uint8_t RESEND_COUNT = 3;
+
+///////////////////////////////////////////////////////////////////////
+// Write trace to the serial port.
+//
+// This can be used for debugging.
+///////////////////////////////////////////////////////////////////////
+void GXTRACE(const char* str, const char* data)
+{
+  //Send trace to the serial port.
+  byte c;
+  Serial1.write("\t:", 2);
+  while ((c = pgm_read_byte(str++)) != 0)
+  {
+    Serial1.write(c);
+  }
+  if (data != NULL)
+  {
+    Serial1.write(data, strlen(data));
+  }
+  Serial1.write("\0", 1);
+  //Serial1.flush();
+  delay(10);
+}
+
+
+///////////////////////////////////////////////////////////////////////
+// Write trace to the serial port.
+//
+// This can be used for debugging.
+///////////////////////////////////////////////////////////////////////
+void GXTRACE_INT(const char* str, int32_t value)
+{
+  char data[10];
+  sprintf(data, " %ld", value);
+  GXTRACE(str, data);
+}
+
+uint32_t runTime = 0;
 
 ///////////////////////////////////////////////////////////////////////
 //Returns the approximate processor time in ms.
 ///////////////////////////////////////////////////////////////////////
 uint32_t time_elapsed(void)
 {
-  return (long)millis();
+  return millis();
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -65,11 +108,11 @@ int com_readSerialPort(
   unsigned char eop)
 {
   //Read reply data.
-  int pos;
-  unsigned short available;
+  uint16_t pos;
+  uint16_t available;
   unsigned char eopFound = 0;
-  unsigned short lastReadIndex = 0;
-  int p = 0;
+  uint16_t lastReadIndex = 0;
+  uint32_t start = millis();
   frameData.size = 0;
   frameData.position = 0;
   do
@@ -77,7 +120,7 @@ int com_readSerialPort(
     available = Serial.available();
     if (available != 0)
     {
-      Serial.readBytes(frameData.data + frameData.size, available);
+      Serial.readBytes((char*) (frameData.data + frameData.size), available);
       frameData.size += available;
       //Search eop.
       if (frameData.size > 5)
@@ -94,9 +137,14 @@ int com_readSerialPort(
         lastReadIndex = pos;
       }
     }
-    else if (frameData.size > 0)
+    else
     {
-      delayMicroseconds(9000);
+      delay(100);
+    }
+    //If the meter doesn't reply in given time.
+    if (!(millis() - start < WAIT_TIME))
+    {
+      return DLMS_ERROR_CODE_RECEIVE_FAILED;
     }
   } while (eopFound == 0);
   return DLMS_ERROR_CODE_OK;
@@ -107,7 +155,7 @@ int readDLMSPacket(
   gxByteBuffer* data,
   gxReplyData* reply)
 {
-  int index = 0, ret = DLMS_ERROR_CODE_OK;
+  int resend = 0, ret = DLMS_ERROR_CODE_OK;
   if (data->size == 0)
   {
     return DLMS_ERROR_CODE_OK;
@@ -120,11 +168,16 @@ int readDLMSPacket(
   //Loop until packet is complete.
   do
   {
-    if (com_readSerialPort(0x7E) != 0)
+    if ((ret = com_readSerialPort(0x7E)) != 0)
     {
-      return DLMS_ERROR_CODE_SEND_FAILED;
+      if (ret == DLMS_ERROR_CODE_RECEIVE_FAILED && resend == RESEND_COUNT)
+      {
+        return DLMS_ERROR_CODE_SEND_FAILED;
+      }
+      ++resend;
+      GXTRACE_INT(PSTR("Data send failed. Try to resend."), resend);
     }
-    ret = cl_getData(&meterSettings, &frameData, reply);
+    ret = Client.GetData(&frameData, reply);
     if (ret != 0 && ret != DLMS_ERROR_CODE_FALSE)
     {
       break;
@@ -156,7 +209,7 @@ int com_readDataBlock(
     //Check is there errors or more data from server
     while (reply_isMoreData(reply))
     {
-      if ((ret = cl_receiverReady(&meterSettings, reply->moreData, &rr)) != DLMS_ERROR_CODE_OK)
+      if ((ret = Client.ReceiverReady(reply->moreData, &rr)) != DLMS_ERROR_CODE_OK)
       {
         bb_clear(&rr);
         return ret;
@@ -180,7 +233,7 @@ int com_close()
   message msg;
   reply_init(&reply);
   mes_init(&msg);
-  if ((ret = cl_releaseRequest(&meterSettings, &msg)) != 0 ||
+  if ((ret = Client.ReleaseRequest(true, &msg)) != 0 ||
       (ret = com_readDataBlock(&msg, &reply)) != 0)
   {
     //Show error but continue close.
@@ -188,14 +241,13 @@ int com_close()
   reply_clear(&reply);
   mes_clear(&msg);
 
-  if ((ret = cl_disconnectRequest(&meterSettings, &msg)) != 0 ||
+  if ((ret = Client.DisconnectRequest(&msg)) != 0 ||
       (ret = com_readDataBlock(&msg, &reply)) != 0)
   {
     //Show error but continue close.
   }
   reply_clear(&reply);
   mes_clear(&msg);
-  cl_clear(&meterSettings);
   return ret;
 }
 
@@ -209,9 +261,9 @@ int com_initializeConnection()
   reply_init(&reply);
 
   //Get meter's send and receive buffers size.
-  if ((ret = cl_snrmRequest(&meterSettings, &messages)) != 0 ||
+  if ((ret = Client.SnrmRequest(&messages)) != 0 ||
       (ret = com_readDataBlock(&messages, &reply)) != 0 ||
-      (ret = cl_parseUAResponse(&meterSettings, &reply.data)) != 0)
+      (ret = Client.ParseUAResponse(&reply.data)) != 0)
   {
     mes_clear(&messages);
     reply_clear(&reply);
@@ -219,9 +271,9 @@ int com_initializeConnection()
   }
   mes_clear(&messages);
   reply_clear(&reply);
-  if ((ret = cl_aarqRequest(&meterSettings, &messages)) != 0 ||
+  if ((ret = Client.AarqRequest(&messages)) != 0 ||
       (ret = com_readDataBlock(&messages, &reply)) != 0 ||
-      (ret = cl_parseAAREResponse(&meterSettings, &reply.data)) != 0)
+      (ret = Client.ParseAAREResponse(&reply.data)) != 0)
   {
     mes_clear(&messages);
     reply_clear(&reply);
@@ -234,11 +286,11 @@ int com_initializeConnection()
   mes_clear(&messages);
   reply_clear(&reply);
   // Get challenge Is HLS authentication is used.
-  if (meterSettings.authentication > DLMS_AUTHENTICATION_LOW)
+  if (Client.GetAuthentication() > DLMS_AUTHENTICATION_LOW)
   {
-    if ((ret = cl_getApplicationAssociationRequest(&meterSettings, &messages)) != 0 ||
+    if ((ret = Client.GetApplicationAssociationRequest(&messages)) != 0 ||
         (ret = com_readDataBlock(&messages, &reply)) != 0 ||
-        (ret = cl_parseApplicationAssociationResponse(&meterSettings, &reply.data)) != 0)
+        (ret = Client.ParseApplicationAssociationResponse(&reply.data)) != 0)
     {
       mes_clear(&messages);
       reply_clear(&reply);
@@ -251,12 +303,14 @@ int com_initializeConnection()
 }
 
 //Report error on output;
-void com_reportError(const char* description,
-                     gxObject* object,
-                     unsigned char attributeOrdinal, int ret)
+void com_reportError(
+  const char* description,
+  gxObject* object,
+  unsigned char attributeOrdinal, 
+  int ret)
 {
-  char ln[25];
-  char type[30];
+  //char ln[25];
+  //char type[30];
   /*
     hlp_getLogicalNameToString(object->logicalName, ln);
     obj_typeToString(object->objectType, type);
@@ -272,9 +326,9 @@ int com_getAssociationView()
   gxReplyData reply;
   mes_init(&data);
   reply_init(&reply);
-  if ((ret = cl_getObjectsRequest(&meterSettings, &data)) != 0 ||
+  if ((ret = Client.GetObjectsRequest(&data)) != 0 ||
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
-      (ret = cl_parseObjects(&meterSettings, &reply.data)) != 0)
+      (ret = Client.ParseObjects(&reply.data)) != 0)
   {
   }
   mes_clear(&data);
@@ -292,9 +346,9 @@ int com_read(
   gxReplyData reply;
   mes_init(&data);
   reply_init(&reply);
-  if ((ret = cl_read(&meterSettings, object, attributeOrdinal, &data)) != 0 ||
+  if ((ret = Client.Read(object, attributeOrdinal, &data)) != 0 ||
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
-      (ret = cl_updateValue(&meterSettings, object, attributeOrdinal, &reply.dataValue)) != 0)
+      (ret = Client.UpdateValue(object, attributeOrdinal, &reply.dataValue)) != 0)
   {
     com_reportError("ReadObject failed", object, attributeOrdinal, ret);
   }
@@ -312,7 +366,7 @@ int com_write(
   gxReplyData reply;
   mes_init(&data);
   reply_init(&reply);
-  if ((ret = cl_write(&meterSettings, object, attributeOrdinal, &data)) != 0 ||
+  if ((ret = Client.Write(object, attributeOrdinal, &data)) != 0 ||
       (ret = com_readDataBlock(&data, &reply)) != 0)
   {
     com_reportError("Write failed", object, attributeOrdinal, ret);
@@ -332,7 +386,7 @@ int com_method(
   gxReplyData reply;
   mes_init(&messages);
   reply_init(&reply);
-  if ((ret = cl_method(&meterSettings, object, attributeOrdinal, params, &messages)) != 0 ||
+  if ((ret = Client.Method(object, attributeOrdinal, params, &messages)) != 0 ||
       (ret = com_readDataBlock(&messages, &reply)) != 0)
   {
     //    printf("Method failed %s\r\n", hlp_getErrorMessage(ret));
@@ -353,7 +407,7 @@ int com_readList(
   if (list->size != 0)
   {
     mes_init(&messages);
-    if ((ret = cl_readList(&meterSettings, list, &messages)) != 0)
+    if ((ret = Client.ReadList(list, &messages)) != 0)
     {
       //  printf("ReadList failed %s\r\n", hlp_getErrorMessage(ret));
     }
@@ -374,7 +428,7 @@ int com_readList(
         //Check is there errors or more data from server
         while (reply_isMoreData(&reply))
         {
-          if ((ret = cl_receiverReady(&meterSettings, reply.moreData, &rr)) != DLMS_ERROR_CODE_OK ||
+          if ((ret = Client.ReceiverReady(reply.moreData, &rr)) != DLMS_ERROR_CODE_OK ||
               (ret = readDLMSPacket(&rr, &reply)) != DLMS_ERROR_CODE_OK)
           {
             break;
@@ -385,7 +439,7 @@ int com_readList(
       }
       if (ret == 0)
       {
-        ret = cl_updateValues(&meterSettings, list, &bb);
+        ret = Client.UpdateValues(list, &bb);
       }
       bb_clear(&bb);
       bb_clear(&rr);
@@ -406,9 +460,9 @@ int com_readRowsByEntry(
   gxReplyData reply;
   mes_init(&data);
   reply_init(&reply);
-  if ((ret = cl_readRowsByEntry(&meterSettings, object, index, count, &data)) != 0 ||
+  if ((ret = Client.ReadRowsByEntry(object, index, count, &data)) != 0 ||
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
-      (ret = cl_updateValue(&meterSettings, (gxObject*)object, 2, &reply.dataValue)) != 0)
+      (ret = Client.UpdateValue((gxObject*)object, 2, &reply.dataValue)) != 0)
   {
     //  printf("ReadObject failed %s\r\n", hlp_getErrorMessage(ret));
   }
@@ -428,9 +482,9 @@ int com_readRowsByRange(
   gxReplyData reply;
   mes_init(&data);
   reply_init(&reply);
-  if ((ret = cl_readRowsByRange2(&meterSettings, object, start, end, &data)) != 0 ||
+  if ((ret = Client.ReadRowsByRange(object, start, end, &data)) != 0 ||
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
-      (ret = cl_updateValue(&meterSettings, (gxObject*)object, 2, &reply.dataValue)) != 0)
+      (ret = Client.UpdateValue((gxObject*)object, 2, &reply.dataValue)) != 0)
   {
     //    printf("ReadObject failed %s\r\n", hlp_getErrorMessage(ret));
   }
@@ -451,18 +505,18 @@ int com_readScalerAndUnits()
   DLMS_OBJECT_TYPE types[] = { DLMS_OBJECT_TYPE_EXTENDED_REGISTER, DLMS_OBJECT_TYPE_REGISTER, DLMS_OBJECT_TYPE_DEMAND_REGISTER };
   oa_init(&objects);
   //Find registers and demand registers and read them.
-  ret = oa_getObjects2(&meterSettings.objects, types, 3, &objects);
+  ret = oa_getObjects2(Client.GetObjects(), types, 3, &objects);
   if (ret != DLMS_ERROR_CODE_OK)
   {
     return ret;
   }
-  if ((meterSettings.negotiatedConformance & DLMS_CONFORMANCE_MULTIPLE_REFERENCES) != 0)
+  if ((Client.GetNegotiatedConformance() & DLMS_CONFORMANCE_MULTIPLE_REFERENCES) != 0)
   {
     arr_init(&list);
     //Try to read with list first. All meters do not support it.
-    for (pos = 0; pos != meterSettings.objects.size; ++pos)
+    for (pos = 0; pos != Client.GetObjects()->size; ++pos)
     {
-      ret = oa_getByIndex(&meterSettings.objects, pos, &obj);
+      ret = oa_getByIndex(Client.GetObjects(), pos, &obj);
       if (ret != DLMS_ERROR_CODE_OK)
       {
         oa_empty(&objects);
@@ -514,7 +568,7 @@ int com_readProfileGenericColumns()
   objectArray objects;
   gxObject* object;
   oa_init(&objects);
-  ret = oa_getObjects(&meterSettings.objects, DLMS_OBJECT_TYPE_PROFILE_GENERIC, &objects);
+  ret = oa_getObjects(Client.GetObjects(), DLMS_OBJECT_TYPE_PROFILE_GENERIC, &objects);
   if (ret != DLMS_ERROR_CODE_OK)
   {
     oa_empty(&objects);
@@ -551,7 +605,7 @@ int com_readProfileGenerics()
   objectArray objects;
   gxProfileGeneric* pg;
   oa_init(&objects);
-  ret = oa_getObjects(&meterSettings.objects, DLMS_OBJECT_TYPE_PROFILE_GENERIC, &objects);
+  ret = oa_getObjects(Client.GetObjects(), DLMS_OBJECT_TYPE_PROFILE_GENERIC, &objects);
   if (ret != DLMS_ERROR_CODE_OK)
   {
     //Do not clear objects list because it will free also objects from association view list.
@@ -625,9 +679,9 @@ int com_readValues()
   int ret, pos;
   bb_init(&attributes);
 
-  for (pos = 0; pos != meterSettings.objects.size; ++pos)
+  for (pos = 0; pos != Client.GetObjects()->size; ++pos)
   {
-    ret = oa_getByIndex(&meterSettings.objects, pos, &object);
+    ret = oa_getByIndex(Client.GetObjects(), pos, &object);
     if (ret != DLMS_ERROR_CODE_OK)
     {
       bb_clear(&attributes);
@@ -681,48 +735,52 @@ int com_readAllObjects()
   ret = com_initializeConnection();
   if (ret != DLMS_ERROR_CODE_OK)
   {
+    GXTRACE_INT(PSTR("com_initializeConnection failed"), ret);
     return ret;
   }
-  //Get objects from the meter and read them.
-  ret = com_getAssociationView();
-  if (ret != DLMS_ERROR_CODE_OK)
-  {
-    return ret;
-  }
-  ret = com_readScalerAndUnits();
-  if (ret != DLMS_ERROR_CODE_OK)
-  {
-    return ret;
-  }
-  ///////////////////////////////////////////////////////////////////////////////////
-  //Read Profile Generic columns.
-  ret = com_readProfileGenericColumns();
-  if (ret != DLMS_ERROR_CODE_OK)
-  {
-    return ret;
-  }
-  ret = com_readValues();
-  if (ret != DLMS_ERROR_CODE_OK)
-  {
-    return ret;
-  }
-  ret = com_readProfileGenerics();
-  if (ret != DLMS_ERROR_CODE_OK)
-  {
-    return ret;
-  }
+  GXTRACE_INT(PSTR("com_initializeConnection SUCCEEDED"), ret);
+
+  char* data = NULL;
+  //Read Logical Device Name
+  gxData ldn;
+  cosem_init(BASE(ldn), DLMS_OBJECT_TYPE_DATA, "0.0.42.0.0.255");
+  com_read(BASE(ldn), 2);
+  obj_toString(BASE(ldn), &data);
+  GXTRACE(PSTR("Logical Device Name"), data);
+  obj_clear(BASE(ldn));
+  free(data);
+
+  //Read clock
+  gxClock clock1;
+  cosem_init(BASE(clock1), DLMS_OBJECT_TYPE_CLOCK, "0.0.1.0.0.255");
+  com_read(BASE(clock1), 3);
+  com_read(BASE(clock1), 2);
+  obj_toString(BASE(clock1), &data);
+  GXTRACE(PSTR("Clock"), data);
+  obj_clear(BASE(clock1));
+  free(data);
+
+  //Read Profile generic.
+  gxProfileGeneric pg;
+  cosem_init(BASE(pg), DLMS_OBJECT_TYPE_PROFILE_GENERIC, "1.0.99.1.0.255");
+  com_read(BASE(pg), 3);
+  com_readRowsByEntry(&pg, 1, 10);
+  obj_toString(BASE(pg), &data);
+  GXTRACE(PSTR("Load profile"), data);
+  obj_clear(BASE(pg));
+  free(data);
+  //Release dynamically allocated objects.
+  Client.ReleaseObjects();
   return ret;
 }
-
-gxClock clock1;
 
 void setup() {
   bb_init(&frameData);
   //Set frame size.
   bb_capacity(&frameData, 128);
-  cl_init(&meterSettings, 1, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
-
-  cosem_init(&clock1.base, DLMS_OBJECT_TYPE_CLOCK, "0.0.1.0.0.255");
+  Client.init(true, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
+  //Serial 1 is used to send trace.
+  Serial1.begin(115200);
 
   // start serial port at 9600 bps:
   Serial.begin(9600);
@@ -733,17 +791,17 @@ void setup() {
 
 void loop() {
   int ret;
-  //Initialize connection.
-  ret = com_initializeConnection();
-  if (ret != DLMS_ERROR_CODE_OK)
+  if (millis() - runTime > 5000)
   {
-    return;
+    runTime = millis();
+    GXTRACE(PSTR("Start reading"), NULL);
+    //Initialize connection.
+    ret = com_initializeConnection();
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+      return;
+    }
+    ret = com_readAllObjects();
+    com_close();
   }
-  //Read clock.
-  ret = com_read(&clock1.base, 2);
-  if (ret != DLMS_ERROR_CODE_OK)
-  {
-    return;
-  }
-  com_close();
 }

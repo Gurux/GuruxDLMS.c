@@ -42,13 +42,13 @@
 #include "../include/gxobjects.h"
 #ifndef DLMS_IGNORE_MALLOC
 #include "../include/gxmem.h"
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_STRING_CONVERTER
 #include <string.h>
 #include "../include/helpers.h"
 #include "../include/objectarray.h"
 #include "../include/gxkey.h"
 
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_STRING_CONVERTER
 #else
 #include "../include/enums.h"
 #endif //DLMS_IGNORE_MALLOC
@@ -261,7 +261,7 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
 }
 
 #ifndef DLMS_IGNORE_MALLOC
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_STRING_CONVERTER
 
 const char* obj_getUnitAsString(unsigned char unit)
 {
@@ -2564,114 +2564,10 @@ int obj_toString(gxObject* object, char** buff)
     return ret;
 }
 
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_STRING_CONVERTER
 
 const char* err_toString(int err)
 {
-    switch (err) {
-    case DLMS_ERROR_CODE_REJECTED:
-        return "Rejected.";
-    case         DLMS_ERROR_CODE_FALSE:
-    case    DLMS_ERROR_CODE_OK:
-        return "OK.";
-    case    DLMS_ERROR_CODE_HARDWARE_FAULT:
-        return "Access Error : Device reports a hardware fault.";
-    case    DLMS_ERROR_CODE_TEMPORARY_FAILURE:
-        return "Access Error : Device reports a temporary failure.";
-    case    DLMS_ERROR_CODE_READ_WRITE_DENIED:
-        return "Access Error : Device reports Read-Write denied.";
-    case    DLMS_ERROR_CODE_UNDEFINED_OBJECT:
-        return "Access Error : Device reports a undefined object.";
-    case    DLMS_ERROR_CODE_INCONSISTENT_OBJECT:
-        return "Access Error : Device reports a inconsistent Class or Object.";
-    case    DLMS_ERROR_CODE_UNAVAILABLE_OBJECT:
-        return "Access Error : Device reports a unavailable object.";
-    case    DLMS_ERROR_CODE_UNMATCH_TYPE:
-        return "Access Error : Device reports a unmatched type.";
-    case    DLMS_ERROR_CODE_VIOLATED:
-        return "Access Error : Device reports scope of access violated.";
-    case    DLMS_ERROR_CODE_BLOCK_UNAVAILABLE:
-        return "Access Error : Data Block Unavailable.";
-    case    DLMS_ERROR_CODE_READ_ABORTED:
-        return "Access Error : Long Get Or Read Aborted.";
-    case    DLMS_ERROR_CODE_NO_LONG_GET_OR_READ_IN_PROGRESS:
-        return "Access Error : No Long Get Or Read In Progress.";
-    case    DLMS_ERROR_CODE_WRITE_ABORTED:
-        return "Access Error : Long Set Or Write Aborted.";
-    case    DLMS_ERROR_CODE_NO_LONG_SET_OR_WRITE_IN_PROGRESS:
-        return "Access Error : No Long Set Or Write In Progress.";
-    case    DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID:
-        return "Access Error : Data Block Number Invalid.";
-    case    DLMS_ERROR_CODE_OTHER_REASON:
-        return "Access Error : Other Reason.";
-    case    DLMS_ERROR_CODE_UNKNOWN:
-        return "Unknown error.";
-    case    DLMS_ERROR_CODE_SEND_FAILED:
-        return "Data send failed.";
-    case    DLMS_ERROR_CODE_RECEIVE_FAILED:
-        return "Data receive failed.";
-    case    DLMS_ERROR_CODE_NOT_IMPLEMENTED:
-        return "Not implmented.";
-    case    DLMS_ERROR_CODE_DLMS_SECURITY_NOT_IMPLEMENTED:
-        return "Secure connection is not supported.";
-    case    DLMS_ERROR_CODE_INVALID_COMMAND:
-        return "Invalid DLMS command.";
-    case    DLMS_ERROR_CODE_INVALID_BLOCK_NUMBER:
-        return "Invalid Block number.";
-    case    DLMS_ERROR_CODE_INVALID_PARAMETER:
-        return "Invalid parameter.";
-    case    DLMS_ERROR_CODE_NOT_INITIALIZED:
-        return "Server is not initialized.";
-    case    DLMS_ERROR_CODE_OUTOFMEMORY:
-        return "Not enough memory available.";
-    case    DLMS_ERROR_CODE_NOT_REPLY:
-        return "Packet is not a reply for a send packet.";
-    case    DLMS_ERROR_CODE_INVALID_LOGICAL_NAME:
-        return "Invalid Logical Name.";
-    case    DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS:
-        return "Client HDLC Address is not set.";
-    case    DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS:
-        return "Server HDLC Address is not set.";
-    case    DLMS_ERROR_CODE_INVALID_DATA_FORMAT:
-        return "Not a HDLC frame.";
-    case    DLMS_ERROR_CODE_INVALID_VERSION_NUMBER:
-        return "Invalid DLMS version number.";
-    case    DLMS_ERROR_CODE_CLIENT_ADDRESS_NO_NOT_MATCH:
-        return "Client addresses do not match.";
-    case    DLMS_ERROR_CODE_SERVER_ADDRESS_NO_NOT_MATCH:
-        return "Server addresses do not match.";
-    case    DLMS_ERROR_CODE_WRONG_CRC:
-        return "CRC do not match.";
-    case    DLMS_ERROR_CODE_INVALID_RESPONSE:
-        return "Invalid response.";
-    case    DLMS_ERROR_CODE_INVALID_TAG:
-        return "Invalid Tag.";
-    case    DLMS_ERROR_CODE_ENCODING_FAILED:
-        return "Encoding failed. Not enough data.";
-    case    DLMS_ERROR_CODE_REJECTED_PERMAMENT:
-        return "Rejected permament.";
-    case    DLMS_ERROR_CODE_REJECTED_TRANSIENT:
-        return "Rejected transient.";
-    case    DLMS_ERROR_CODE_NO_REASON_GIVEN:
-        return "No Reason Given.";
-    case    DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED:
-        return "Application context name not supported.";
-    case    DLMS_ERROR_CODE_AUTHENTICATION_MECHANISM_NAME_NOT_RECOGNISED:
-        return "Authentication mechanism name not recognised.";
-    case    DLMS_ERROR_CODE_AUTHENTICATION_MECHANISM_NAME_REQUIRED:
-        return "Authentication mechanism name required.";
-    case    DLMS_ERROR_CODE_AUTHENTICATION_FAILURE:
-        return "Authentication failure.";
-    case    DLMS_ERROR_CODE_AUTHENTICATION_REQUIRED:
-        return "Authentication Required.";
-    case    DLMS_ERROR_CODE_INVALID_FRAME_NUMBER:
-        return "Invalid frame number";
-    case DLMS_ERROR_CODE_INVALID_DATE_TIME:
-        return "Invalid date-time.";
-    case DLMS_ERROR_CODE_INVALID_INVOKE_ID:
-        return "Invalid Invoke ID.";
-    default:
-        return "Unknown error.";
-    }
+    return hlp_getErrorMessage(err);
 }
 #endif //DLMS_IGNORE_MALLOC

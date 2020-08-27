@@ -68,7 +68,7 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     //Convert ASCII value to numeric unsigned char value.
     unsigned char hlp_getValue(char c);
 
-    char* hlp_getErrorMessage(short err);
+    const char* hlp_getErrorMessage(int error);
 
     //Returns items count. Use hlp_getObjectCount22.
     int hlp_getObjectCount(gxByteBuffer* buff);
@@ -121,7 +121,7 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     int hlp_setLogicalName(unsigned char ln[6], const char* name);
 #endif //!defined(DLMS_IGNORE_MALLOC)
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
     void hlp_trace(unsigned char* data, int index, int count, unsigned char send);
     //Get Logical Name from string.
     int hlp_parseLogicalName(gxByteBuffer* value, unsigned char ln[6]);
@@ -137,7 +137,7 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         const char* format,
         //Logical name.
         const unsigned char value[6]);
-#endif //!defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 
     int hlp_getLogicalNameToString(const unsigned char value[6], char* ln);
 

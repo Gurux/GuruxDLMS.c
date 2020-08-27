@@ -31,8 +31,14 @@
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
+#define DLMS_IGNORE_MALLOC
 #include <EEPROM.h>
 #include "GXDLMSServer.h"
+//---------------------------------------------------------------------------
+// Un-comment following lines from gxignore.h to make this example work.
+// #define DLMS_IGNORE_SERVER
+// #define GX_DLMS_MICROCONTROLLER
+//---------------------------------------------------------------------------
 
 unsigned char hdlcChanged = 0;
 const static char *FLAG_ID = "GRX";
@@ -509,7 +515,7 @@ int addSecuritySetupLow()
     BB_ATTACH(securitySetupLow.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
     BB_ATTACH(securitySetupLow.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
     securitySetupLow.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
-    securitySetupLow.securitySuite = DLMS_SECURITY_SUITE_AES_GCM_128;
+    securitySetupLow.securitySuite = DLMS_SECURITY_SUITE_V0;
   }
   return ret;
 }
@@ -529,7 +535,7 @@ int addSecuritySetupHigh()
     BB_ATTACH(securitySetupHigh.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
     BB_ATTACH(securitySetupHigh.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
     securitySetupHigh.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
-    securitySetupHigh.securitySuite = DLMS_SECURITY_SUITE_AES_GCM_128;
+    securitySetupHigh.securitySuite = DLMS_SECURITY_SUITE_V0;
   }
   return ret;
 }
@@ -1030,7 +1036,7 @@ uint16_t load()
 void createObjects()
 {
   int ret;
-  uint16_t serializationVersion = load();
+  uint16_t serializationVersion = 0;// MIKKo load();
   if ((ret = addLogicalDeviceName()) != 0 ||
       (ret = addSapAssignment(serializationVersion)) != 0 ||
       (ret = addEventCode()) != 0 ||
@@ -1895,6 +1901,7 @@ unsigned char svr_isTarget(
       GXTRACE_INT(PSTR("Invalid server address"), serverAddress);
     }
   }
+  ret = 1; //MIKKO
   return ret;
 }
 

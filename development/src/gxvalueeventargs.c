@@ -189,9 +189,6 @@ void ve_init(gxValueEventArg * ve)
     ve->error = DLMS_ERROR_CODE_OK;
     ve->action = 0;
     ve->byteArray = 0;
-#ifndef DLMS_IGNORE_MALLOC
-    oa_init(&ve->releasedObjects);
-#endif //DLMS_IGNORE_MALLOC
     ve->skipMaxPduSize = 0;
     ve->transactionStartIndex = 0;
     ve->transactionEndIndex = 0;
@@ -210,9 +207,6 @@ void ve_clear(gxValueEventArg * ve)
     ve->error = DLMS_ERROR_CODE_OK;
     ve->action = 0;
     ve->byteArray = 0;
-#ifndef DLMS_IGNORE_MALLOC
-    oa_clear(&ve->releasedObjects);
-#endif //DLMS_IGNORE_MALLOC
     ve->skipMaxPduSize = 0;
     ve->transactionStartIndex = 0;
     ve->transactionEndIndex = 0;

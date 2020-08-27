@@ -485,7 +485,7 @@ int cl_parseLNObjects(dlmsSettings* settings, gxByteBuffer* data)
     int ret;
     uint16_t pos, count;
     unsigned char size;
-    oa_clear(&settings->objects);
+    oa_clear(&settings->objects, 1);
     unsigned char version;
     gxDataInfo info;
     DLMS_OBJECT_TYPE class_id;
@@ -596,7 +596,7 @@ int cl_parseSNObjects(dlmsSettings* settings, gxByteBuffer* data)
     int ret;
     uint16_t count, pos;
     unsigned char size, version;
-    oa_clear(&settings->objects);
+    oa_clear(&settings->objects, 1);
     var_init(&value);
     //Get array tag.
     ret = bb_getUInt8(data, &size);

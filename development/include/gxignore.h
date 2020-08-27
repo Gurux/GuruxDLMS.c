@@ -128,6 +128,9 @@ extern "C" {
 // #define DLMS_IGNORE_SET
 // #define DLMS_IGNORE_ACTION
 
+// String converters are not used.
+// #define DLMS_IGNORE_STRING_CONVERTER
+
 //Framework send debug information that can be used in debugging.
 // #define DLMS_DEBUG
 
@@ -141,7 +144,6 @@ extern "C" {
 /////////////////////////////////////////////////////////////////////////////
 //If Arduino is used.
 #define DLMS_USE_EPOCH_TIME
-#define DLMS_IGNORE_MALLOC
 #define DLMS_IGNORE_NOTIFY
 #define GX_DLMS_MICROCONTROLLER
 #define DLMS_IGNORE_HIGH_SHA256

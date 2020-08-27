@@ -229,13 +229,13 @@ extern "C" {
         uint16_t year,
         uint8_t month);
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
     //Print time to cout.
     int time_print(
         //Format.
         const char* format,
         gxtime* time);
-#endif //!defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 
     //Save time to char buffer.
     int time_toString2(

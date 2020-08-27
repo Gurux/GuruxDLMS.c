@@ -164,6 +164,22 @@ extern "C" {
         unsigned char autoIncreaseInvokeID;
         //Client adds objects that are not found from the association view here so they are released when client is clear.
         objectArray releasedObjects;
+
+        /////////////////////////////////////////////////////////////////////////
+        // Expected security suite.
+        // If Expected security suite is set client can't connect with other security suite.
+        unsigned char expectedSecuritySuite;
+        /////////////////////////////////////////////////////////////////////////
+        // Expected security policy.
+        // If Expected security policy is set client can't connect with other security policies.
+        unsigned char expectedSecurityPolicy;
+        /////////////////////////////////////////////////////////////////////////
+        // Expected Invocation(Frame) counter value.
+        // Expected Invocation counter is not check if value is zero.
+        uint64_t expectedInvocationCounter;
+        /////////////////////////////////////////////////////////////////////////
+        // Expected client system title.
+        unsigned char* expectedClientSystemTitle;
     } dlmsSettings;
 
     typedef struct

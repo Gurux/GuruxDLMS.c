@@ -250,7 +250,7 @@ extern "C" {
         * Generate Method (Action) request.
         *
         * @param item
-        *            Method object short name or Logical Name.
+        *            Method object.
         * @param index
         *            Method index.
         * @param data

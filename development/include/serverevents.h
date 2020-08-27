@@ -33,13 +33,27 @@
 #ifndef SERVER_EVENTS_H
 #define SERVER_EVENTS_H
 
+#include "gxignore.h"
+#ifndef DLMS_IGNORE_SERVER
+#include "dlmssettings.h"
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
-#include "gxignore.h"
-#ifndef DLMS_IGNORE_SERVER
-#include "dlmssettings.h"
+    /**
+  * Check is data sent to this server.
+  *
+  * @param serverAddress
+  *            Server address.
+  * @param clientAddress
+  *            Client address.
+  * @return True, if data is sent to this server.
+  */
+    extern unsigned char svr_isTarget(
+        dlmsSettings* settings,
+        uint32_t serverAddress,
+        uint32_t clientAddress);
 
     /**
     * Get attribute access level.

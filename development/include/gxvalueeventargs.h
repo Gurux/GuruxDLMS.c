@@ -85,13 +85,6 @@ extern "C" {
         */
         unsigned char byteArray;
 
-#ifndef DLMS_IGNORE_MALLOC
-        /**
-        * List of objects that are released after use.
-        */
-        objectArray releasedObjects;
-#endif //DLMS_IGNORE_MALLOC
-
         /**
         * Is value max PDU size skipped.
         */

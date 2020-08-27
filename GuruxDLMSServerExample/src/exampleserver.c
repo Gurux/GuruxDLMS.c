@@ -365,6 +365,7 @@ int addSecuritySetup(
 {
     const unsigned char ln[6] = { 0,0,43,0,1,255 };
     cosem_init2(&securitySetup.base, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln);
+    bb_capacity(&securitySetup.serverSystemTitle, 8);
     bb_addString(&securitySetup.serverSystemTitle, "GRX");
     bb_setUInt8(&securitySetup.serverSystemTitle, 0);
     bb_setUInt32(&securitySetup.serverSystemTitle, SERIAL_NUMBER);
@@ -1255,7 +1256,6 @@ int svr_InitObjects(
         return ret;
     }
 #endif //DLMS_INDIAN_STANDARD
-
     if ((ret = addAutoConnect(objects)) != 0)
     {
         return ret;

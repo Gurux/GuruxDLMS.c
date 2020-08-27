@@ -61,6 +61,7 @@ void cip_init(ciphering* target)
                                                                 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF
     };
     target->invocationCounter = 0;
+    target->suite = DLMS_SECURITY_SUITE_V0;
     target->security = DLMS_SECURITY_NONE;
     target->encrypt = 0;
 #ifndef DLMS_IGNORE_MALLOC
@@ -636,7 +637,7 @@ int cip_crypt(
     unsigned char H[16] = { 0 };
     unsigned char J0[16] = { 0 };
     unsigned char S[16] = { 0 };
-    unsigned char NONSE[16] = { 0 };
+    unsigned char NONSE[18] = { 0 };
     gxByteBuffer nonse;
     if (memcmp(systemTitle, EMPTY_SYSTEM_TITLE, 8) == 0)
     {
@@ -751,11 +752,6 @@ int cip_crypt(
             }
         }
     }
-    if (encrypt)
-    {
-        ++settings->invocationCounter;
-    }
-
     if (ret == 0 && encrypt && type == DLMS_COUNT_TYPE_PACKET)
     {
         if ((ret = bb_clear(&nonse)) == 0 &&
@@ -819,14 +815,18 @@ int cip_decrypt(
     unsigned char* title,
     gxByteBuffer* key,
     gxByteBuffer* data,
-    DLMS_SECURITY* security)
+    DLMS_SECURITY* security,
+    DLMS_SECURITY_SUITE* suite,
+    uint64_t* invocationCounter)
 #else
 int cip_decrypt(
     ciphering* settings,
     unsigned char* title,
     unsigned char* key,
     gxByteBuffer* data,
-    DLMS_SECURITY* security)
+    DLMS_SECURITY* security,
+    DLMS_SECURITY_SUITE* suite,
+    uint64_t* invocationCounter)
 #endif //DLMS_IGNORE_MALLOC
 {
     uint16_t length;
@@ -897,6 +897,10 @@ int cip_decrypt(
         return ret;
     }
     *security = (DLMS_SECURITY)(ch & 0x30);
+    if (suite != NULL)
+    {
+        *suite = (DLMS_SECURITY_SUITE) (ch & 0x3);
+    }
     //If Key_Set or authentication or encryption is not used.
     if (ch & 0x40 || *security == DLMS_SECURITY_NONE)
     {
@@ -906,9 +910,9 @@ int cip_decrypt(
     {
         return ret;
     }
-    if (settings->security == DLMS_SECURITY_NONE)
+    if (invocationCounter != NULL)
     {
-        settings->security = *security;
+        *invocationCounter = frameCounter;
     }
     ret = cip_crypt(
         settings,

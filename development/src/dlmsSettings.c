@@ -156,6 +156,10 @@ void cl_init(
     settings->serializedPdu = NULL;
 #endif //DLMS_IGNORE_MALLOC
     oa_init(&settings->releasedObjects);
+    settings->expectedSecurityPolicy = 0xFF;
+    settings->expectedSecuritySuite = 0xFF;
+    settings->expectedInvocationCounter = 0;
+    settings->expectedClientSystemTitle = NULL;
 }
 
 void cl_clear(
@@ -192,7 +196,9 @@ void cl_clear(
 #endif //DLMS_IGNORE_HIGH_GMAC
     settings->maxPduSize = 0xFFFF;
     settings->userId = -1;
-    oa_clear(&settings->releasedObjects);
+    oa_clear(&settings->releasedObjects, 1);
+    resetFrameSequence(settings);
+    settings->expectedInvocationCounter = 0;
 }
 
 void svr_clear(

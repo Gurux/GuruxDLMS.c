@@ -294,7 +294,7 @@ int invoke_AssociationLogicalName(
         unsigned short size = bb_available(e->parameters.byteArr);
         if (size == 0)
         {
-            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
         else
         {
@@ -327,7 +327,7 @@ int invoke_AssociationLogicalName(
 #else
         if (e->parameters.vt != DLMS_DATA_TYPE_STRUCTURE || e->parameters.Arr->size != 2)
         {
-            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
         else
         {
@@ -392,7 +392,7 @@ int invoke_AssociationLogicalName(
 #else
         if (e->parameters.Arr->size != 2)
         {
-            return DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
         else
         {
@@ -562,7 +562,7 @@ int invoke_SapAssigment(
 #ifdef DLMS_IGNORE_MALLOC
         if (e->parameters.vt != DLMS_DATA_TYPE_OCTET_STRING)
         {
-            ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
         else if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
             (ret = cosem_getUInt16(e->parameters.byteArr, &id)) == 0)
@@ -596,7 +596,7 @@ int invoke_SapAssigment(
                 //If buffer is full.
                 if (!(target->sapAssignmentList.size < target->sapAssignmentList.capacity))
                 {
-                    ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                 }
                 else
                 {
@@ -676,14 +676,22 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
     int pos, ret = 0;
     if (e->index == 1)
     {
-        target->securityPolicy = var_toInteger(&e->parameters);
+        //The security policy can only be strengthened.
+        if (target->securityPolicy > var_toInteger(&e->parameters))
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            target->securityPolicy = var_toInteger(&e->parameters);
+        }
     }
     else if (e->index == 2)
     {
 #ifdef DLMS_IGNORE_MALLOC
         if (e->parameters.vt != DLMS_DATA_TYPE_OCTET_STRING)
         {
-            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
         else
         {
@@ -708,7 +716,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     }
                     if (bb.size != 16)
                     {
-                        e->error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                        e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                         break;
                     }
                     switch (type)
@@ -718,7 +726,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                         break;
                     case DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION:
                         //Invalid type
-                        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                         break;
                     case DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION:
                         memcpy(settings->base.cipher.authenticationKey, BUFF, bb.size);
@@ -728,7 +736,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                         break;
                     default:
                         //Invalid type
-                        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                         break;
                     }
                 }
@@ -738,7 +746,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
         dlmsVARIANT* it, * type, * data;
         if (e->parameters.vt != DLMS_DATA_TYPE_ARRAY)
         {
-            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
         else
         {
@@ -756,7 +764,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                 }
                 if (bb.size != 16)
                 {
-                    e->error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                    e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     break;
                 }
                 switch (type->cVal)
@@ -767,7 +775,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION:
                     //Invalid type
-                    ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION:
                     bb_clear(&settings->base.cipher.authenticationKey);
@@ -779,7 +787,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     break;
                 default:
                     //Invalid type
-                    ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     break;
                 }
             }
@@ -937,7 +945,7 @@ int invoke_ScriptTable(
                     }
                     if (e1->target == NULL)
                     {
-                        ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+                        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                         break;
                     }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -967,7 +975,7 @@ int invoke_ScriptTable(
                     }
                     else
                     {
-                        ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+                        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                         break;
                     }
                 }
@@ -977,7 +985,7 @@ int invoke_ScriptTable(
     }
     else
     {
-        ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
     }
     return ret;
 }
@@ -1736,7 +1744,7 @@ int invoke_SpecialDaysTable(
         }
         else
         {
-            ret = DLMS_ERROR_CODE_INCONSISTENT_OBJECT;
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
 #else
         dlmsVARIANT* tmp3;

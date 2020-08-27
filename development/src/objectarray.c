@@ -38,7 +38,7 @@
 #include "../include/objectarray.h"
 
 //Initialize objectArray.
-void oa_init(objectArray * arr)
+void oa_init(objectArray* arr)
 {
     arr->capacity = 0;
     arr->data = NULL;
@@ -67,11 +67,11 @@ int oa_capacity(objectArray* arr, const uint16_t capacity)
         arr->capacity = capacity;
         if (arr->data == NULL)
         {
-            arr->data = (gxObject * *)gxmalloc(arr->capacity * sizeof(gxObject*));
+            arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
         }
         else
         {
-            arr->data = (gxObject * *)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
+            arr->data = (gxObject**)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
         }
     }
 #endif //DLMS_IGNORE_MALLOC
@@ -122,11 +122,11 @@ int oa_push(objectArray* arr, gxObject* item)
         arr->capacity += OBJECT_ARRAY_CAPACITY;
         if (arr->data == NULL)
         {
-            arr->data = (gxObject * *)gxmalloc(arr->capacity * sizeof(gxObject*));
+            arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
         }
         else
         {
-            arr->data = (gxObject * *)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
+            arr->data = (gxObject**)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
         }
     }
     if (oa_getCapacity(arr) <= arr->size)
@@ -178,7 +178,7 @@ void oa_clear2(
 #endif //!(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
 }
 
-void oa_clear(objectArray* arr)
+void oa_clear(objectArray* arr, unsigned char releaseObjects)
 {
 #ifndef DLMS_IGNORE_MALLOC
     uint16_t pos;
@@ -189,9 +189,12 @@ void oa_clear(objectArray* arr)
         {
             obj_clear(arr->data[pos]);
         }
-        for (pos = 0; pos != arr->size; ++pos)
+        if (releaseObjects)
         {
-            gxfree(arr->data[pos]);
+            for (pos = 0; pos != arr->size; ++pos)
+            {
+                gxfree(arr->data[pos]);
+            }
         }
         if (!oa_isAttached(arr))
         {
@@ -236,7 +239,7 @@ int oa_getByIndex(
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *item = (gxObject*) arr->data[index];
+    *item = (gxObject*)arr->data[index];
     return DLMS_ERROR_CODE_OK;
 }
 

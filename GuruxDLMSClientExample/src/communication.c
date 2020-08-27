@@ -89,18 +89,18 @@ int com_makeConnect(connection* connection, const char* address, int port, int w
             if (Hostent == NULL)
             {
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
-                int err = WSAGetLastError();
+                ret = WSAGetLastError();
                 closesocket(connection->socket);
 #else
-                int err = errno;
+                ret = errno;
                 close(connection->socket);
 #endif
                 connection->socket = -1;
-                return err;
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
             };
             addIP4.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
-    };
-}
+        };
+    }
     else
     {
         memset(&addrIP6, 0, sizeof(struct sockaddr_in6));
@@ -109,7 +109,15 @@ int com_makeConnect(connection* connection, const char* address, int port, int w
         ret = inet_pton(family, address, &(addrIP6.sin6_addr));
         if (ret == -1)
         {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+            ret = WSAGetLastError();
+            closesocket(connection->socket);
+#else
+            ret = errno;
+            close(connection->socket);
+#endif
+            connection->socket = -1;
+            return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
         };
         add = (struct sockaddr*)&addrIP6;
         addSize = sizeof(struct sockaddr_in6);
@@ -129,19 +137,16 @@ int com_makeConnect(connection* connection, const char* address, int port, int w
     if (ret == -1)
     {
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
+        ret = WSAGetLastError();
         closesocket(connection->socket);
+        printf("Connection failed: %d\n", ret);
 #else
+        ret = errno;
         close(connection->socket);
-#endif
-#if defined(_WIN32) || defined(_WIN64)//Windows includes
-        int err = WSAGetLastError();
-        printf("Connection failed: %d\r\n", err);
-#else
-        int err = errno;
-        printf("Connection failed: %d, %s\r\n", err, strerror(err));
+        printf("Connection failed: %d, %s\n", ret, strerror(ret));
 #endif
         connection->socket = -1;
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     };
     return DLMS_ERROR_CODE_OK;
 }
@@ -158,11 +163,11 @@ int com_setCommState(HANDLE hWnd, LPDCB DCB)
             unsigned long RecieveErrors;
             if (!ClearCommError(hWnd, &RecieveErrors, &comstat))
             {
-                return GetLastError();
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | GetLastError();
             }
             if (!SetCommState(hWnd, DCB))
             {
-                return GetLastError();
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | GetLastError();
             }
         }
         else
@@ -170,7 +175,7 @@ int com_setCommState(HANDLE hWnd, LPDCB DCB)
             //If USB to serial port converters do not implement this.
             if (err != ERROR_INVALID_FUNCTION)
             {
-                return err;
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | err;
             }
         }
     }
@@ -200,7 +205,8 @@ int com_readSerialPort(
         //We do not want to read byte at the time.
         if (!ClearCommError(connection->comPort, &RecieveErrors, &comstat))
         {
-            return DLMS_ERROR_CODE_SEND_FAILED;
+            ret = GetLastError();
+            return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
         }
         bytesRead = 0;
         cnt = 1;
@@ -214,18 +220,16 @@ int com_readSerialPort(
             ret = GetLastError();
             if (ret != ERROR_IO_PENDING)
             {
-                return DLMS_ERROR_CODE_RECEIVE_FAILED;
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
             }
             //Wait until data is actually read
             if (WaitForSingleObject(connection->osReader.hEvent, connection->waitTime) != WAIT_OBJECT_0)
             {
-                ret = GetLastError();
                 return DLMS_ERROR_CODE_RECEIVE_FAILED;
             }
             if (!GetOverlappedResult(connection->comPort, &connection->osReader, &bytesRead, TRUE))
             {
-                ret = GetLastError();
-                return DLMS_ERROR_CODE_RECEIVE_FAILED;
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | GetLastError();
             }
         }
 #else
@@ -259,14 +263,9 @@ int com_readSerialPort(
                 readTime += 100;
                 bytesRead = 0;
             }
-            //If connection is closed.
-            else if (errno == EBADF)
-            {
-                return DLMS_ERROR_CODE_RECEIVE_FAILED;
-            }
             else
             {
-                return DLMS_ERROR_CODE_RECEIVE_FAILED;
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | errno;
             }
         }
 #endif
@@ -319,7 +318,8 @@ int com_initializeOpticalHead(
     dcb.DCBlength = sizeof(DCB);
     if (!GetCommState(connection->comPort, &dcb))
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = GetLastError();
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
     dcb.fBinary = 1;
     dcb.fOutX = dcb.fInX = 0;
@@ -341,7 +341,7 @@ int com_initializeOpticalHead(
     }
     if ((ret = com_setCommState(connection->comPort, &dcb)) != 0)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return ret;
     }
 #else
     struct termios options;
@@ -544,23 +544,21 @@ int com_initializeOpticalHead(
         dcb.BaudRate = baudRate;
         if ((ret = com_setCommState(connection->comPort, &dcb)) != 0)
         {
-            printf("GXSetCommState %d\r\n", ret);
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return ret;
         }
         printf("New baudrate %d\r\n", dcb.BaudRate);
         len = 6;
         if ((ret = com_readSerialPort(connection, '\n')) != 0)
         {
             printf("Read %d\r\n", ret);
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return ret;
         }
         dcb.ByteSize = 8;
         dcb.StopBits = ONESTOPBIT;
         dcb.Parity = NOPARITY;
         if ((ret = com_setCommState(connection->comPort, &dcb)) != 0)
         {
-            printf("GXSetCommState %d\r\n", ret);
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return ret;
         }
 #else
         //This sleep is in standard. Do not remove.
@@ -585,6 +583,7 @@ int com_open(
     const char* port,
     unsigned char iec)
 {
+    int ret;
     //In Linux serial port name might be very long.
 #if defined(_WIN32) || defined(_WIN64)
     char buff[50];
@@ -599,20 +598,24 @@ int com_open(
         OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (connection->comPort == INVALID_HANDLE_VALUE)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = GetLastError();
+        printf("Failed to open serial port: \"%s\"\n", buff);
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
 #else //#if defined(__LINUX__)
     // read/write | not controlling term | don't wait for DCD line signal.
     connection->comPort = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (connection->comPort == -1) // if open is unsuccessful.
     {
-        printf("Failed to Open port: %s\n", port);
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = errno;
+        printf("Failed to open serial port: %s\n", port);
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
     if (!isatty(connection->comPort))
     {
+        ret = errno;
         printf("Failed to Open port %s. This is not a serial port.\n", port);
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
 #endif
     return com_initializeOpticalHead(connection, iec);
@@ -636,26 +639,29 @@ int sendData(connection* connection, gxByteBuffer* data)
             //If error occurs...
             if (err != ERROR_IO_PENDING)
             {
-                return DLMS_ERROR_CODE_SEND_FAILED;
+                ret = GetLastError();
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
             }
             //Wait until data is actually sent
             ret = WaitForSingleObject(connection->osWrite.hEvent, connection->waitTime);
             if (ret != 0)
             {
-                DWORD err = GetLastError();
-                return DLMS_ERROR_CODE_SEND_FAILED;
+                ret = GetLastError();
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
             }
             //Read bytes in output buffer. Some USB converts require this.
             if (!ClearCommError(connection->comPort, &RecieveErrors, &comstat))
             {
-                return DLMS_ERROR_CODE_SEND_FAILED;
+                ret = GetLastError();
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
             }
         }
 #else
         ret = write(connection->comPort, data->data, data->size);
         if (ret != data->size)
         {
-            return DLMS_ERROR_CODE_SEND_FAILED;
+            ret = errno;
+            return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
         }
 #endif
     }
@@ -663,12 +669,15 @@ int sendData(connection* connection, gxByteBuffer* data)
     {
         if (send(connection->socket, (const char*)data->data, data->size, 0) == -1)
         {
-            //If error has occurred
-            printf("DLMS_ERROR_CODE_SEND_FAILED");
-            return DLMS_ERROR_CODE_SEND_FAILED;
+#if defined(_WIN32) || defined(_WIN64)//If Windows
+            ret = WSAGetLastError();
+#else
+            ret = errno;
+#endif
+            return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
         }
     }
-    return ret;
+    return 0;
 }
 
 int readData(connection* connection, gxByteBuffer* data, int index)
@@ -676,9 +685,9 @@ int readData(connection* connection, gxByteBuffer* data, int index)
     int ret = 0;
     if (connection->comPort != INVALID_HANDLE_VALUE)
     {
-        if (com_readSerialPort(connection, 0x7E) != 0)
+        if ((ret = com_readSerialPort(connection, 0x7E)) != 0)
         {
-            return DLMS_ERROR_CODE_SEND_FAILED;
+            return ret;
         }
     }
     else
@@ -1684,6 +1693,16 @@ int com_readValues(connection* connection)
 int com_readAllObjects(connection* connection)
 {
     int ret;
+    //Read Logical Device Name
+    gxData ldn;
+    char* data = NULL;
+    cosem_init(BASE(ldn), DLMS_OBJECT_TYPE_DATA, "0.0.42.0.0.255");
+    com_read(connection, BASE(ldn), 2);
+    obj_toString(BASE(ldn), &data);
+    printf("Logical Device Name %s", data);
+    obj_clear(BASE(ldn));
+    free(data);
+
     //Get objects from the meter and read them.
     ret = com_getAssociationView(connection);
     if (ret != DLMS_ERROR_CODE_OK)

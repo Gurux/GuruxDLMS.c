@@ -11,5 +11,8 @@ If you have problems you can ask your questions in Gurux [Forum](http://www.guru
 
 Before start you need to copy src and include folders from development folder here.
 
+Because you can't give compiler parameters for Arduino IDE, it's recommended that you un-comment not needed functionality from gitignore.h.
+It makes schets smaller and compiler time is faster.
+
 Read more from:
-https://github.com/gurux/GuruxDLMS.c/GuruxDLMSSimpleServerExample/readme.md
+https://github.com/Gurux/GuruxDLMS.c/blob/master/GuruxDLMSSimpleServerExample/readme.md

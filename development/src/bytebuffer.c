@@ -31,9 +31,9 @@
 //---------------------------------------------------------------------------
 
 #include "../include/gxmem.h"
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_STRING_CONVERTER
 #include <stdio.h> //printf needs this or error is generated.
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_STRING_CONVERTER
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include <assert.h>
@@ -965,7 +965,7 @@ int bb_toHexString2(
     return hlp_bytesToHex2(arr->data, (uint16_t) arr->size, buffer, size);
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 char* bb_toString(
     gxByteBuffer* arr)
 {
@@ -1005,7 +1005,7 @@ void bb_addDoubleAsString(
         bb_addString(bb, buff);
     }
 }
-#endif //!defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 
 void bb_addIntAsString(gxByteBuffer* bb, int value)
 {

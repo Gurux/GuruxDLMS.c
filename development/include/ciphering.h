@@ -48,6 +48,7 @@ typedef struct
     * Used security.
     */
     DLMS_SECURITY security;
+    DLMS_SECURITY_SUITE suite;
 
     /**
     * Is data encrypted.
@@ -128,14 +129,18 @@ int cip_decrypt(
     unsigned char* title,
     gxByteBuffer* key,
     gxByteBuffer* data,
-    DLMS_SECURITY* security);
+    DLMS_SECURITY* security,
+    DLMS_SECURITY_SUITE* suite,
+    uint64_t* invocationCounter);
 #else
 int cip_decrypt(
     ciphering* settings,
     unsigned char* title,
     unsigned char* key,
     gxByteBuffer* data,
-    DLMS_SECURITY* security);
+    DLMS_SECURITY* security,
+    DLMS_SECURITY_SUITE* suite,
+    uint64_t* invocationCounter);
 #endif //DLMS_IGNORE_MALLOC
 
 // Encrypt data using AES RFC3394.

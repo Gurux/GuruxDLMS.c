@@ -37,9 +37,9 @@
 #include <time.h>
 #include <string.h>
 
-#ifndef GX_DLMS_MICROCONTROLLER
+#ifndef DLMS_IGNORE_STRING_CONVERTER
 #include <stdio.h> //printf needs this or error is generated.
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //DLMS_IGNORE_STRING_CONVERTER
 
 #include "../include/gxmem.h"
 #if _MSC_VER > 1400
@@ -696,7 +696,7 @@ typedef enum
     GXDLMS_DATE_FORMAT_YDM = 3
 } GXDLMS_DATE_FORMAT;
 
-#if !defined(GX_DLMS_MICROCONTROLLER)
+#if !defined(DLMS_IGNORE_STRING_CONVERTER)
 int getDateFormat(GXDLMS_DATE_FORMAT* format, char* separator)
 {
     //If OS is used.

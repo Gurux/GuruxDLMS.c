@@ -36,12 +36,22 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-    /////////////////////////////////////////////////////////////////////////
-    // Enumerates all DLMS error codes.
-    // https://www.gurux.fi/Gurux.DLMS.ErrorCodes
-    /////////////////////////////////////////////////////////////////////////
+
     typedef enum
     {
+        DLMS_ERROR_TYPE_EXCEPTION_RESPONSE = 0x80000000,
+        DLMS_ERROR_TYPE_CONFIRMED_SERVICE_ERROR = 0x40000000,
+        DLMS_ERROR_TYPE_COMMUNICATION_ERROR = 0x20000000
+    }DLMS_ERROR_TYPE;
+
+    /////////////////////////////////////////////////////////////////////////////
+// Enumerates all DLMS error codes.
+// https://www.gurux.fi/Gurux.DLMS.ErrorCodes
+/////////////////////////////////////////////////////////////////////////////
+    typedef enum
+    {
+        //Meter is not accept frame.
+        DLMS_ERROR_CODE_UNACCEPTABLE_FRAME = -3,
         //Meter rejects send packet.
         DLMS_ERROR_CODE_REJECTED = -2,
         DLMS_ERROR_CODE_FALSE = -1,
@@ -57,21 +67,21 @@ extern "C" {
         // Access Error : Device reports a undefined object
         DLMS_ERROR_CODE_UNDEFINED_OBJECT = 4,
         // Access Error : Device reports a inconsistent Class or Object
-        DLMS_ERROR_CODE_INCONSISTENT_OBJECT = 9,
+        DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT = 9,
         // Access Error : Device reports a unavailable object
         DLMS_ERROR_CODE_UNAVAILABLE_OBJECT = 11,
         // Access Error : Device reports a unmatched type
         DLMS_ERROR_CODE_UNMATCH_TYPE = 12,
         // Access Error : Device reports scope of access violated
-        DLMS_ERROR_CODE_VIOLATED = 13,
+        DLMS_ERROR_CODE_ACCESS_VIOLATED = 13,
         // Access Error : Data Block Unavailable.
-        DLMS_ERROR_CODE_BLOCK_UNAVAILABLE = 14,
+        DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE = 14,
         // Access Error : Long Get Or Read Aborted.
-        DLMS_ERROR_CODE_READ_ABORTED = 15,
+        DLMS_ERROR_CODE_LONG_GET_OR_READ_ABORTED = 15,
         // Access Error : No Long Get Or Read In Progress.
         DLMS_ERROR_CODE_NO_LONG_GET_OR_READ_IN_PROGRESS = 16,
         // Access Error : Long Set Or Write Aborted.
-        DLMS_ERROR_CODE_WRITE_ABORTED = 17,
+        DLMS_ERROR_CODE_LONG_SET_OR_WRITE_ABORTED = 17,
         // Access Error : No Long Set Or Write In Progress.
         DLMS_ERROR_CODE_NO_LONG_SET_OR_WRITE_IN_PROGRESS = 18,
         // Access Error : Data Block Number Invalid.
@@ -135,8 +145,14 @@ extern "C" {
         //Invalid frame number.
         DLMS_ERROR_CODE_INVALID_FRAME_NUMBER,
         DLMS_ERROR_CODE_INVALID_DATE_TIME,
-        DLMS_ERROR_CODE_INVALID_INVOKE_ID
-    } DLMS_ERROR_CODE;
+        DLMS_ERROR_CODE_INVALID_INVOKE_ID,
+        //Invocation counter value is too small.
+        DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL,
+        //Client try to connect with wrong security.
+        DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR,
+        //Client try to connect with wrong security suite.
+        DLMS_ERROR_CODE_INVALID_SECURITY_SUITE
+    }DLMS_ERROR_CODE;
 
 #ifdef  __cplusplus
 }

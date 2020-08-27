@@ -33,7 +33,6 @@
 //---------------------------------------------------------------------------
 #ifndef DLMS_ARDUINO_SERVER
 #define DLMS_ARDUINO_SERVER
-
 #include <Arduino.h>
 #include "include/gxignore.h"
 #include "include/serverevents.h"
@@ -106,7 +105,7 @@ public:
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 
     //Handle received message from the client.
-    int handleRequest(const unsigned char* data, unsigned short size, gxByteBuffer* reply);
+    int handleRequest(unsigned char* data, unsigned short size, gxByteBuffer* reply);
 
     //Execute invokes.
     //start: current time.
@@ -125,5 +124,5 @@ public:
     void setDefaultClock(gxClock* clock);
 };
 
-extern GXDLMSServer Server;
+static  GXDLMSServer Server;
 #endif //DLMS_ARDUINO_SERVER

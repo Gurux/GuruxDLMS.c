@@ -33,6 +33,7 @@
 #include <termios.h>
 #include <sys/types.h>
 #include <sys/socket.h> //Add support for sockets
+#include <fcntl.h> //O_NONBLOCK needs this.
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -204,6 +205,7 @@ typedef struct {
     //Master key, A.K.A KEK.
     unsigned char masterKey[16];
     GXSecuritySettings securitySettings;
+    uint32_t InvocationCounter;
 } GXSerializedMeterData;
 
 GXSerializedMeterData meterData;
@@ -219,6 +221,7 @@ static gxTarget EVENT_LOG_CAPTURE_OBJECT[2] = { 0 };
 static gxData ldn;
 static gxData eventCode;
 static gxData unixTime;
+static gxData frameCounter;
 static gxAssociationLogicalName associationNone;
 static gxAssociationLogicalName associationLow;
 static gxAssociationLogicalName associationHigh;
@@ -235,16 +238,18 @@ static gxPushSetup pushSetup;
 static gxDisconnectControl disconnectControl;
 static gxProfileGeneric loadProfile;
 static gxSapAssignment sapAssignment;
-static gxSecuritySetup securitySetupLow;
+//Security Setup High is for High authentication.
 static gxSecuritySetup securitySetupHigh;
+//Security Setup HighGMac is for GMac authentication.
+static gxSecuritySetup securitySetupHighGMac;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn), BASE(sapAssignment), BASE(meterData.clock1) };
 
-static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupLow), BASE(securitySetupHigh),
+static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
                                    BASE(ldn), BASE(sapAssignment), BASE(eventCode),
                                    BASE(meterData.clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
                                    BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(meterData.hdlc),
-                                   BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime)
+                                   BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(frameCounter)
 };
 
 static uint32_t executeTime = 0;
@@ -642,12 +647,7 @@ int addAssociationLow(uint16_t serializationVersion)
             DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
             DLMS_CONFORMANCE_GET);
         BB_ATTACH_STR(associationLow.secret, meterData.association.llsPassword, meterData.association.llsPasswordSize);
-
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
-        associationLow.securitySetup = &securitySetupLow;
-#else
-        memcpy(associationLow.securitySetupReference, securitySetupLow.base.logicalName, 6);
-#endif //DLMS_IGNORE_OBJECT_POINTERS
+        associationLow.securitySetup = NULL;
     }
     return ret;
 }
@@ -728,33 +728,13 @@ int addAssociationHighGMac(uint16_t serializationVersion)
             DLMS_CONFORMANCE_GET);
         //GMAC authentication don't need password.
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-        associationHighGMac.securitySetup = &securitySetupHigh;
+        associationHighGMac.securitySetup = &securitySetupHighGMac;
 #else
         memcpy(associationHighGMac.securitySetupReference, securitySetupHigh.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     }
     return ret;
 }
-
-///////////////////////////////////////////////////////////////////////
-//This method adds security setup object for Low authentication.
-///////////////////////////////////////////////////////////////////////
-int addSecuritySetupLow()
-{
-    int ret;
-    //Define client system title.
-    static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0 };
-    const unsigned char ln[6] = { 0, 0, 43, 0, 1, 255 };
-    if ((ret = INIT_OBJECT(securitySetupLow, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
-    {
-        BB_ATTACH(securitySetupLow.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
-        BB_ATTACH(securitySetupLow.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
-        securitySetupLow.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
-        securitySetupLow.securitySuite = DLMS_SECURITY_SUITE_AES_GCM_128;
-    }
-    return ret;
-}
-
 
 ///////////////////////////////////////////////////////////////////////
 //This method adds security setup object for High authentication.
@@ -764,16 +744,37 @@ int addSecuritySetupHigh()
     int ret;
     //Define client system title.
     static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0 };
-    const unsigned char ln[6] = { 0, 0, 43, 0, 2, 255 };
+    const unsigned char ln[6] = { 0, 0, 43, 0, 1, 255 };
     if ((ret = INIT_OBJECT(securitySetupHigh, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
     {
         BB_ATTACH(securitySetupHigh.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
         BB_ATTACH(securitySetupHigh.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
         securitySetupHigh.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
-        securitySetupHigh.securitySuite = DLMS_SECURITY_SUITE_AES_GCM_128;
+        securitySetupHigh.securitySuite = DLMS_SECURITY_SUITE_V0;
     }
     return ret;
 }
+
+///////////////////////////////////////////////////////////////////////
+//This method adds security setup object for High GMAC authentication.
+///////////////////////////////////////////////////////////////////////
+int addSecuritySetupHighGMac()
+{
+    int ret;
+    //Define client system title.
+    static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 43, 0, 2, 255 };
+    if ((ret = INIT_OBJECT(securitySetupHighGMac, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(securitySetupHighGMac.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+        BB_ATTACH(securitySetupHighGMac.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
+        //Only Authenticated encrypted connections are allowed.
+        securitySetupHighGMac.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
+        securitySetupHighGMac.securitySuite = DLMS_SECURITY_SUITE_V0;
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //Add SAP Assignment object.
 ///////////////////////////////////////////////////////////////////////
@@ -836,6 +837,20 @@ int addUnixTime()
     {
         //Set initial value.
         GX_UINT32(unixTime.value) = 0;
+    }
+    return ret;
+}
+
+//Add common frame counter object.
+int addFrameCounter()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,43,1,0,255 };
+    if ((ret = INIT_OBJECT(frameCounter, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        //Update invocation counter value from EEPROM.
+        settings.base.cipher.invocationCounter = meterData.InvocationCounter;
+        GX_UINT32_BYREF(frameCounter.value, settings.base.cipher.invocationCounter);
     }
     return ret;
 }
@@ -1265,14 +1280,15 @@ int createObjects()
         (ret = addSapAssignment(serializationVersion)) != 0 ||
         (ret = addEventCode()) != 0 ||
         (ret = addUnixTime()) != 0 ||
+        (ret = addFrameCounter()) != 0 ||
         (ret = addClockObject(serializationVersion)) != 0 ||
         (ret = addRegisterObject()) != 0 ||
         (ret = addAssociationNone()) != 0 ||
         (ret = addAssociationLow(serializationVersion)) != 0 ||
         (ret = addAssociationHigh(serializationVersion)) != 0 ||
         (ret = addAssociationHighGMac(serializationVersion)) != 0 ||
-        (ret = addSecuritySetupLow()) != 0 ||
         (ret = addSecuritySetupHigh()) != 0 ||
+        (ret = addSecuritySetupHighGMac()) != 0 ||
         (ret = addPushSetup(serializationVersion)) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
@@ -2108,7 +2124,7 @@ void svr_preAction(
             createObjects();
             updateState(GURUX_EVENT_CODES_GLOBAL_METER_RESET);
             e->handled = 1;
-    }
+        }
         else if (e->target == BASE(disconnectControl))
         {
             updateState(GURUX_EVENT_CODES_OUTPUT_RELAY_STATE);
@@ -2134,7 +2150,7 @@ void svr_preAction(
             meterData.testMode = 0;
             save(&meterData.testMode, sizeof(meterData.testMode));
         }
-}
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2279,7 +2295,7 @@ void svr_postAction(
             save(&meterData.association, sizeof(GXAssociation));
         }
         else if (e->target == BASE(securitySetupHigh) ||
-            e->target == BASE(securitySetupLow))
+            e->target == BASE(securitySetupHighGMac))
         {
             //Update block cipher key.
             memcpy(meterData.securitySettings.blockCipherKey, settings->cipher.blockCipherKey, sizeof(meterData.securitySettings.blockCipherKey));
@@ -2327,6 +2343,34 @@ unsigned char svr_isTarget(
                         //Client connects using High authentication.
                         GXTRACE(("Connecting using High authentication."), NULL);
                         break;
+                    }
+                    //Update frame counter value.
+                    settings->cipher.invocationCounter = meterData.InvocationCounter;
+                    settings->expectedClientSystemTitle = NULL;
+                    //Set Invocation counter value.
+                    settings->expectedInvocationCounter = 0;
+                    //Client can establish a ciphered connection only with Security Suite 1.
+                    settings->expectedSecuritySuite = 0;
+                    //Security policy is not defined by default. Client can connect using any security policy.
+                    //settings->expectedSecurityPolicy = 0xFF;
+                    //Client can't establish ciphered connection if there is no security setup.
+                    settings->expectedSecurityPolicy = 0;
+                    if (a->securitySetup != NULL)
+                    {
+                        //Set expected client system title. If this is set only client that is using expected client system title can connect to the meter.
+                        if (a->securitySetup->clientSystemTitle.size == 8)
+                        {
+                            settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
+                        }
+                        //Set invocation counter value. If this is set client's invocation counter must match with server IC.
+                        settings->expectedInvocationCounter = settings->cipher.invocationCounter;
+                        //Set security suite that client must use.
+                        settings->expectedSecuritySuite = a->securitySetup->securitySuite;
+                        //Set security policy that client must use if it is set.
+                        if (a->securitySetup->securityPolicy != 0)
+                        {
+                            settings->expectedSecurityPolicy = a->securitySetup->securityPolicy;
+                        }
                     }
                     break;
                 }
@@ -2552,6 +2596,19 @@ DLMS_ACCESS_MODE getAssociationAttributeAccess(
     return DLMS_ACCESS_MODE_READ;
 }
 
+//Get attribute access level for security setup.
+DLMS_ACCESS_MODE getSecuritySetupAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    //Only client system title is writable.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW && index == 4)
+    {
+        return DLMS_ACCESS_MODE_READ_WRITE;
+    }
+    return DLMS_ACCESS_MODE_READ;
+}
+
 /**
 * Get attribute access level.
 */
@@ -2605,6 +2662,10 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     if (obj->objectType == DLMS_OBJECT_TYPE_IEC_HDLC_SETUP)
     {
         return getHdlcSetupAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP)
+    {
+        return getSecuritySetupAttributeAccess(settings, index);
     }
     // Only clock write is allowed.
     if (settings->authentication == DLMS_AUTHENTICATION_LOW)
@@ -2681,6 +2742,12 @@ int svr_disconnected(
     dlmsServerSettings* settings)
 {
     GXTRACE(("svr_disconnected"), NULL);
+    if (settings->base.cipher.security != 0 && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+    {
+        //Save Invocation counter value when connection is closed.
+        meterData.InvocationCounter = settings->base.cipher.invocationCounter;
+        save(&meterData.InvocationCounter, sizeof(meterData.InvocationCounter));
+    }
     return 0;
 }
 
@@ -2706,6 +2773,85 @@ void svr_postGet(
 
 }
 
+#if defined(_WIN32) || defined(_WIN64)//If Windows
+void serialPortThread(void* pVoid)
+{
+    int ret;
+    unsigned char data;
+    DWORD bytesHandled = 0;
+    HANDLE comPort = *((HANDLE*)pVoid);
+    OVERLAPPED		osWrite;
+    OVERLAPPED		osReader;
+    memset(&osReader, 0, sizeof(OVERLAPPED));
+    memset(&osWrite, 0, sizeof(OVERLAPPED));
+    osReader.hEvent = CreateEvent(NULL, 1, FALSE, NULL);
+    osWrite.hEvent = CreateEvent(NULL, 1, FALSE, NULL);
+    unsigned char first = 1;
+    while (1)
+    {
+        if (!ReadFile(comPort, &data, 1, &bytesHandled, &osReader))
+        {
+            ret = GetLastError();
+            if (ret != ERROR_IO_PENDING)
+            {
+                break;
+            }
+            //Wait until data is actually read
+            if (WaitForSingleObject(osReader.hEvent, -1) != WAIT_OBJECT_0)
+            {
+                break;
+            }
+            if (!GetOverlappedResult(comPort, &osReader, &bytesHandled, TRUE))
+            {
+                break;
+            }
+        }
+        if (trace > GX_TRACE_LEVEL_WARNING)
+        {
+            if (first)
+            {
+                printf("\nRX:\t");
+                first = 0;
+            }
+            printf("%.2X ", data);
+        }
+        if (svr_handleRequest3(&settings, data, &reply) != 0)
+        {
+            first = 1;
+            break;
+        }
+        if (reply.size != 0)
+        {
+            first = 1;
+            if (trace > GX_TRACE_LEVEL_WARNING)
+            {
+                int pos;
+                printf("\nTX\t");
+                for (pos = 0; pos != reply.size; ++pos)
+                {
+                    printf("%.2X ", reply.data[pos]);
+                }
+                printf("\n");
+            }
+            if ((ret = WriteFile(comPort, reply.data, reply.size, &bytesHandled, &osWrite)) == 0)
+            {
+                int err = GetLastError();
+                //If error occurs...
+                if (err != ERROR_IO_PENDING)
+                {
+                    printf("WriteFile %d\r\n", err);
+                    break;
+                }
+                //Wait until data is actually sent
+                WaitForSingleObject(osWrite.hEvent, 5000);
+            }
+        }
+    }
+    CloseHandle(osReader.hEvent);
+    CloseHandle(osWrite.hEvent);
+}
+#endif
+
 void ListenerThread(void* pVoid)
 {
 #if defined(_WIN32) || defined(_WIN64)//If Windows
@@ -2725,6 +2871,8 @@ void ListenerThread(void* pVoid)
             return;
         }
         len = sizeof(client);
+        uint16_t pos;
+        unsigned char first = 1;
         socket1 = accept(ls, (struct sockaddr*)&client, &len);
         while (1)
         {
@@ -2739,7 +2887,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-        }
+            }
             //If client closes the connection.
             if (ret == 0)
             {
@@ -2751,7 +2899,18 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-    }
+            }
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+            if (trace > GX_TRACE_LEVEL_WARNING)
+            {
+                if (first)
+                {
+                    printf("\nRX:\t");
+                    first = 0;
+                }
+                printf("%.2X ", data);
+            }
+#endif //OS
             if (svr_handleRequest3(&settings, data, &reply) != 0)
             {
 #if defined(_WIN32) || defined(_WIN64)//If Windows
@@ -2765,6 +2924,18 @@ void ListenerThread(void* pVoid)
             }
             if (reply.size != 0)
             {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+                if (trace > GX_TRACE_LEVEL_WARNING)
+                {
+                    first = 1;
+                    printf("\nTX %u:\t", (uint16_t)reply.size);
+                    for (pos = 0; pos != reply.size; ++pos)
+                    {
+                        printf("%.2X ", reply.data[pos]);
+                    }
+                    printf("\n");
+                }
+#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
                 if (send(socket1, (const char*)reply.data, reply.size - reply.position, 0) == -1)
                 {
 #if defined(_WIN32) || defined(_WIN64)//If Windows
@@ -2775,16 +2946,72 @@ void ListenerThread(void* pVoid)
                     socket1 = -1;
 #endif
                     break;
-            }
+                }
                 bb_clear(&reply);
             }
         }
     }
 }
 
-
 //If Linux
 #if defined(__linux__)
+void* UnixSerialPortThread(void* pVoid)
+{
+    int ret;
+    int comPort = *((int*)pVoid);
+    unsigned char data;
+    unsigned char first = 1;
+    uint16_t pos;
+    int bytesRead;
+    while (1)
+    {
+        bytesRead = read(comPort, &data, 1);
+        if (bytesRead < 1)
+        {
+            //If there is no data on the read buffer.
+            if (errno != EAGAIN)
+            {
+                break;
+            }
+        }
+        else
+        {
+            if (trace > GX_TRACE_LEVEL_WARNING)
+            {
+                if (first)
+                {
+                    printf("\nRX:\t");
+                    first = 0;
+                }
+                printf("%.2X ", data);
+            }
+            if (svr_handleRequest3(&settings, data, &reply) != 0)
+            {
+                break;
+            }
+            if (reply.size != 0)
+            {
+                first = 1;
+                if (trace > GX_TRACE_LEVEL_WARNING)
+                {
+                    printf("\nTX\t");
+                    for (pos = 0; pos != reply.size; ++pos)
+                    {
+                        printf("%.2X ", reply.data[pos]);
+                    }
+                    printf("\n");
+                }
+                ret = write(comPort, reply.data, reply.size);
+                if (ret != reply.size)
+                {
+                    printf("Write failed\n");
+                }
+            }
+        }
+    }
+    return NULL;
+}
+
 void* UnixListenerThread(void* pVoid)
 {
     ListenerThread(pVoid);
@@ -2808,12 +3035,12 @@ char _getch()
 }
 #endif
 
-
 void showHelp()
 {
-    printf("Gurux DLMS example Server implements four DLMS/COSEM devices.\r\n");
-    printf(" -t [Error, Warning, Info, Verbose] Trace messages.\r\n");
-    printf(" -p Start port number. Default is 4060.\r\n");
+    printf("Gurux DLMS example Server implements four DLMS/COSEM devices.\n");
+    printf(" -t\t [Error, Warning, Info, Verbose] Trace messages.\n");
+    printf(" -p\t Start port number. Default is 4060.\n");
+    printf(" -S\t serial port.\n");
 }
 
 void println(char* desc, unsigned char* data, char size)
@@ -2825,6 +3052,162 @@ void println(char* desc, unsigned char* data, char size)
         printf("%s: %s\r\n", desc, str);
     }
 }
+
+#if defined(_WIN32) || defined(_WIN64)
+int com_setCommState(HANDLE hWnd, LPDCB DCB)
+{
+    if (!SetCommState(hWnd, DCB))
+    {
+        DWORD err = GetLastError(); //Save occured error.
+        if (err == 995)
+        {
+            COMSTAT comstat;
+            unsigned long RecieveErrors;
+            if (!ClearCommError(hWnd, &RecieveErrors, &comstat))
+            {
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | GetLastError();
+            }
+            if (!SetCommState(hWnd, DCB))
+            {
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | GetLastError();
+            }
+        }
+        else
+        {
+            //If USB to serial port converters do not implement this.
+            if (err != ERROR_INVALID_FUNCTION)
+            {
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | err;
+            }
+        }
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+int com_initializeSerialPort(
+    HANDLE* comPort,
+    char* serialPort,
+    unsigned char iec)
+{
+    int ret = 0;
+    char buff[10];
+#if _MSC_VER > 1000
+    sprintf_s(buff, 10, "\\\\.\\%s", serialPort);
+#else
+    sprintf(buff, "\\\\.\\%s", serialPort);
+#endif
+    //Open serial port for read / write. Port can't share.
+    *comPort = CreateFileA(buff,
+        GENERIC_READ | GENERIC_WRITE, 0, NULL,
+        OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+    if (*comPort == INVALID_HANDLE_VALUE)
+    {
+        ret = GetLastError();
+        printf("Failed to open serial port: \"%s\"\n", buff);
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+    }
+    DCB dcb = { 0 };
+    unsigned long sendSize = 0;
+    if (*comPort == INVALID_HANDLE_VALUE)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    dcb.DCBlength = sizeof(DCB);
+    if (!GetCommState(*comPort, &dcb))
+    {
+        ret = GetLastError();
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+    }
+    dcb.fBinary = 1;
+    dcb.fOutX = dcb.fInX = 0;
+    //Abort all reads and writes on Error.
+    dcb.fAbortOnError = 1;
+    if (iec)
+    {
+        dcb.BaudRate = 300;
+        dcb.ByteSize = 7;
+        dcb.StopBits = ONESTOPBIT;
+        dcb.Parity = EVENPARITY;
+    }
+    else
+    {
+        dcb.BaudRate = 9600;
+        dcb.ByteSize = 8;
+        dcb.StopBits = ONESTOPBIT;
+        dcb.Parity = NOPARITY;
+    }
+    if ((ret = com_setCommState(*comPort, &dcb)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+#else //#if defined(__LINUX__)
+int com_initializeSerialPort(
+    int* comPort,
+    char* serialPort,
+    unsigned char iec)
+{
+    int ret;
+    // read/write | not controlling term | don't wait for DCD line signal.
+    *comPort = open(serialPort, O_RDWR | O_NOCTTY | O_NONBLOCK);
+    if (*comPort == -1) // if open is unsuccessful.
+    {
+        ret = errno;
+        printf("Failed to open serial port: %s\n", serialPort);
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+    }
+    if (!isatty(*comPort))
+    {
+        ret = errno;
+        printf("Failed to Open port %s. This is not a serial port.\n", serialPort);
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+    }
+    struct termios options;
+    memset(&options, 0, sizeof(options));
+    options.c_iflag = 0;
+    options.c_oflag = 0;
+    if (iec)
+    {
+        options.c_cflag |= PARENB;
+        options.c_cflag &= ~PARODD;
+        options.c_cflag &= ~CSTOPB;
+        options.c_cflag &= ~CSIZE;
+        options.c_cflag |= CS7;
+        //Set Baud Rates
+        cfsetospeed(&options, B300);
+        cfsetispeed(&options, B300);
+    }
+    else
+    {
+        // 8n1, see termios.h for more information
+        options.c_cflag = CS8 | CREAD | CLOCAL;
+        /*
+        options.c_cflag &= ~PARENB
+        options.c_cflag &= ~CSTOPB
+        options.c_cflag &= ~CSIZE;
+        options.c_cflag |= CS8;
+        */
+        //Set Baud Rates
+        cfsetospeed(&options, B9600);
+        cfsetispeed(&options, B9600);
+    }
+    options.c_lflag = 0;
+    options.c_cc[VMIN] = 1;
+    //How long we are waiting reply charachter from serial port.
+    options.c_cc[VTIME] = 5;
+
+    //hardware flow control is used as default.
+    //options.c_cflag |= CRTSCTS;
+    if (tcsetattr(*comPort, TCSAFLUSH, &options) != 0)
+    {
+        ret = errno;
+        printf("Failed to Open port. tcsetattr failed.\r");
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+    }
+    return 0;
+}
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
 int _tmain(int argc, _TCHAR* argv[])
@@ -2840,9 +3223,18 @@ int main(int argc, char* argv[])
     //Receiver thread handle.
     pthread_t receiverThread;
 #endif
-    int ret, ls;
+
+    //Serial port handlers.
+#if defined(_WIN32) || defined(_WIN64)// If Windows
+    HANDLE comPort = INVALID_HANDLE_VALUE;
+#else //If Linux
+    int comPort = -1;
+#endif
+
+    int ret, ls = 0;
     struct sockaddr_in add = { 0 };
-    while ((opt = getopt(argc, argv, "t:p:")) != -1)
+    char* serialPort = NULL;
+    while ((opt = getopt(argc, argv, "t:p:S:")) != -1)
     {
         switch (opt)
         {
@@ -2868,6 +3260,9 @@ int main(int argc, char* argv[])
             //Port.
             port = atoi(optarg);
             break;
+        case 'S':
+            serialPort = optarg;
+            break;
         case '?':
         {
             if (optarg[0] == 'p')
@@ -2877,6 +3272,10 @@ int main(int argc, char* argv[])
             else if (optarg[0] == 't')
             {
                 printf("Missing mandatory trace option.\n");
+            }
+            else if (optarg[0] == 'S')
+            {
+                printf("Missing mandatory Serial port option.\n");
             }
             else
             {
@@ -2920,24 +3319,50 @@ int main(int argc, char* argv[])
     //Add COSEM objects.
     if ((ret = createObjects()) != 0)
     {
-        return 1;
+        return ret;
     }
 
     //Set default clock.
     settings.defaultClock = &meterData.clock1;
-    ls = socket(AF_INET, SOCK_STREAM, 0);
-    add.sin_port = htons(port);
-    add.sin_addr.s_addr = htonl(INADDR_ANY);
-    add.sin_family = AF_INET;
-    if ((ret = bind(ls, (struct sockaddr*)&add, sizeof(add))) == -1)
+    if (serialPort != NULL)
     {
-        return -1;
-    }
+        printf("Serial port server started in port: %s\n", serialPort);
+        if ((ret = com_initializeSerialPort(
+            &comPort,
+            serialPort,
+            0)) != 0)
+        {
+            return ret;
+        }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
-    receiverThread = (HANDLE)_beginthread(ListenerThread, 0, &ls);
+        receiverThread = (HANDLE)_beginthread(serialPortThread, 0, &comPort);
 #else
-    ret = pthread_create(&receiverThread, NULL, UnixListenerThread, &ls);
+        ret = pthread_create(&receiverThread, NULL, UnixSerialPortThread, &comPort);
 #endif
+
+    }
+    else
+    {
+        printf("TCP/IP server started in port: %d\n", port);
+        ls = socket(AF_INET, SOCK_STREAM, 0);
+        add.sin_port = htons(port);
+        add.sin_addr.s_addr = htonl(INADDR_ANY);
+        add.sin_family = AF_INET;
+        if ((ret = bind(ls, (struct sockaddr*)&add, sizeof(add))) == -1)
+        {
+#if defined(_WIN32) || defined(_WIN64)//Windows
+            ret = GetLastError();
+#else
+            ret = errno;
+#endif
+            return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+        }
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+        receiverThread = (HANDLE)_beginthread(ListenerThread, 0, &ls);
+#else
+        ret = pthread_create(&receiverThread, NULL, UnixListenerThread, &ls);
+#endif
+    }
     printf("----------------------------------------------------------\n");
     printf("Authentication levels:\n");
     printf("None: Client address 16 (0x10)\n");
@@ -2963,7 +3388,7 @@ int main(int argc, char* argv[])
                 time_t tmp = start;
                 printf("%s", ctime(&tmp));
                 tmp = executeTime;
-                printf("%lu seconds before next invoke %s.\r\n", executeTime - start, ctime(&tmp));
+                printf("%lu seconds before next invoke %s", executeTime - start, ctime(&tmp));
             }
         }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
@@ -2971,27 +3396,45 @@ int main(int argc, char* argv[])
             char c = _getch();
             if (c == '\r')
             {
-                closesocket(ls);
-                WaitForSingleObject(receiverThread, 5000);
+                printf("Closing the server.\n");
+                if (comPort != INVALID_HANDLE_VALUE)
+                {
+                    CloseHandle(comPort);
+                }
+                else
+                {
+                    closesocket(ls);
+                    WaitForSingleObject(receiverThread, 5000);
+                }
                 break;
             }
         }
         Sleep(1000);
 #else
         char ch = _getch();
-        printf("%c\n", ch);
         if (ch == '\n')
         {
-            shutdown(ls, SHUT_RDWR);
-            closesocket(ls);
-            void* res;
-            pthread_join(receiverThread, (void**)&res);
-            free(res);
-            break;
+            printf("Closing the server.\n");
+            if (comPort != -1)
+            {
+                close(comPort);
+                void* res;
+                pthread_join(receiverThread, (void**)&res);
+                free(res);
             }
+            else
+            {
+                shutdown(ls, SHUT_RDWR);
+                closesocket(ls);
+                void* res;
+                pthread_join(receiverThread, (void**)&res);
+                free(res);
+            }
+            break;
+        }
         usleep(1000000);
 #endif
-        }
+    }
 
 #if defined(_WIN32) || defined(_WIN64)//Windows
     WSACleanup();
@@ -3001,5 +3444,5 @@ int main(int argc, char* argv[])
 #endif
 
     return 0;
-    }
+}
 

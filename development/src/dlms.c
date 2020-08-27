@@ -31,6 +31,7 @@
 //---------------------------------------------------------------------------
 
 #include "../include/gxignore.h"
+#include "../include/serverevents.h"
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include <assert.h>
 #endif
@@ -2509,7 +2510,8 @@ int dlms_getHdlcFrame(
 
 int dlms_getDataFromFrame(
     gxByteBuffer* reply,
-    gxReplyData* data)
+    gxReplyData* data,
+    unsigned char hdlc)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     uint32_t offset = data->data.size;
@@ -2533,6 +2535,10 @@ int dlms_getDataFromFrame(
             (ret = bb_set2(&data->data, reply, reply->position, cnt)) != 0)
         {
             return ret;
+        }
+        if (hdlc)
+        {
+            reply->position += 3;
         }
     }
     // Set position to begin of new data.
@@ -3233,7 +3239,7 @@ int dlms_handleGetResponse(
             if ((reply->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
             {
                 // Check Block length.
-                if (count > (uint16_t)(reply->data.size - reply->data.position))
+                if (count > (uint16_t)(bb_available(&reply->data)))
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
@@ -3458,10 +3464,10 @@ int dlms_readResponseDataBlockResult(
         dlms_getDataFromBlock(&reply->data, index);
         return DLMS_ERROR_CODE_FALSE;
     }
-    if (blockLength != reply->data.size - reply->data.position)
+    if (blockLength != bb_available(&reply->data))
     {
         //Invalid block length.
-        return DLMS_ERROR_CODE_BLOCK_UNAVAILABLE;
+        return DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE;
     }
     reply->command = DLMS_COMMAND_NONE;
 
@@ -4043,10 +4049,12 @@ int dlms_handleGbt(
     return ret;
 }
 
-int dlms_handledGloDedRequest(dlmsSettings* settings,
+int dlms_handleGloDedRequest(dlmsSettings* settings,
     gxReplyData* data)
 {
     int ret = 0;
+    DLMS_SECURITY_SUITE suite;
+    uint64_t invocationCounter;
 #ifdef DLMS_IGNORE_HIGH_GMAC
     ret = DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #else
@@ -4064,7 +4072,9 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
                 settings->sourceSystemTitle,
                 settings->cipher.dedicatedKey,
                 &data->data,
-                &security)) != 0)
+                &security,
+                &suite,
+                &invocationCounter)) != 0)
             {
                 return ret;
             }
@@ -4099,7 +4109,9 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
                 settings->cipher.blockCipherKey,
 #endif //DLMS_IGNORE_MALLOC
                 & data->data,
-                &security)) != 0)
+                &security,
+                &suite,
+                &invocationCounter)) != 0)
             {
                 return ret;
             }
@@ -4119,7 +4131,9 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
                 settings->cipher.blockCipherKey,
 #endif //DLMS_IGNORE_MALLOC
                 & data->data,
-                &security)) != 0)
+                &security,
+                &suite,
+                &invocationCounter)) != 0)
             {
                 return ret;
             }
@@ -4134,34 +4148,37 @@ int dlms_handledGloDedRequest(dlmsSettings* settings,
     }
     else
     {
-        data->data.position = (data->data.position - 1);
+        data->data.position -= 1;
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
 }
 
-int dlms_handledGloDedResponse(dlmsSettings* settings,
+int dlms_handleGloDedResponse(dlmsSettings* settings,
     gxReplyData* data, uint16_t index)
 {
 #ifdef DLMS_IGNORE_HIGH_GMAC
     return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #else
     int ret = 0;
+    DLMS_SECURITY_SUITE suite;
+    uint64_t invocationCounter;
     if ((data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
     {
         DLMS_SECURITY security;
         --data->data.position;
         data->data.position = index;
-#ifndef DLMS_IGNORE_MALLOC
-        data->data.size = index;
-#endif //DLMS_IGNORE_MALLOC
+        gxByteBuffer bb;
+        bb_attach(&bb, data->data.data + index, bb_available(&data->data), bb_getCapacity(&data->data));
         if (dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
         {
             if ((ret = cip_decrypt(&settings->cipher,
                 settings->sourceSystemTitle,
                 settings->cipher.dedicatedKey,
-                &data->data,
-                &security)) != 0)
+                &bb,
+                &security,
+                &suite,
+                &invocationCounter)) != 0)
             {
                 return ret;
             }
@@ -4175,11 +4192,28 @@ int dlms_handledGloDedResponse(dlmsSettings* settings,
 #else
                 settings->cipher.blockCipherKey,
 #endif //DLMS_IGNORE_MALLOC
-                & data->data,
-                &security)) != 0)
+                &bb,
+                &security,
+                &suite,
+                &invocationCounter)) != 0)
             {
                 return ret;
             }
+        }
+        data->data.size = bb.size + index;
+        //If target is sending data ciphered using different security policy.
+        if (settings->cipher.security != security)
+        {
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
+        if (settings->expectedInvocationCounter != 0)
+        {
+            //If data is ciphered using invalid invocation counter value.
+            if (invocationCounter != settings->expectedInvocationCounter)
+            {
+                return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+            }
+            settings->expectedInvocationCounter = 1 + invocationCounter;
         }
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
@@ -4203,6 +4237,8 @@ int dlms_handleGeneralCiphering(
     {
         --data->data.position;
         DLMS_SECURITY security;
+        DLMS_SECURITY_SUITE suite;
+        uint64_t invocationCounter;
         if ((ret = cip_decrypt(&settings->cipher,
             settings->sourceSystemTitle,
 #ifndef DLMS_IGNORE_MALLOC
@@ -4211,7 +4247,9 @@ int dlms_handleGeneralCiphering(
             settings->cipher.blockCipherKey,
 #endif //DLMS_IGNORE_MALLOC
             & data->data,
-            &security)) != 0)
+            &security,
+            &suite,
+            &invocationCounter)) != 0)
         {
             return ret;
         }
@@ -4233,6 +4271,51 @@ int dlms_handleGeneralCiphering(
 #endif //DLMS_IGNORE_HIGH_GMAC
 }
 
+int dlms_handleConfirmedServiceError(gxByteBuffer* data)
+{
+    int ret;
+    unsigned char ch;
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    DLMS_CONFIRMED_SERVICE_ERROR service = (DLMS_CONFIRMED_SERVICE_ERROR)ch;
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    DLMS_SERVICE_ERROR type = (DLMS_SERVICE_ERROR)ch;
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    return DLMS_ERROR_TYPE_CONFIRMED_SERVICE_ERROR | service << 16 | type << 8 | ch;
+}
+
+int dlms_handleExceptionResponse(gxByteBuffer* data)
+{
+    int ret;
+    unsigned char ch;
+    // DLMS_EXCEPTION_STATE_ERROR state;
+    DLMS_EXCEPTION_SERVICE_ERROR error;
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    // state = (DLMS_EXCEPTION_STATE_ERROR)ch;
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    error = (DLMS_EXCEPTION_SERVICE_ERROR)ch;
+    unsigned long value = 0;
+    if (error == DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR && bb_available(data) > 3)
+    {
+        bb_getUInt32(data, &value);
+    }
+    return DLMS_ERROR_TYPE_EXCEPTION_RESPONSE | value << 8 | error;
+}
+
 int dlms_getPdu(
     dlmsSettings* settings,
     gxReplyData* data,
@@ -4246,7 +4329,7 @@ int dlms_getPdu(
     if (cmd == DLMS_COMMAND_NONE)
     {
         // If PDU is missing.
-        if (data->data.size - data->data.position == 0)
+        if (bb_available(&data->data) == 0)
         {
             // Invalid PDU.
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -4300,16 +4383,16 @@ int dlms_getPdu(
         case DLMS_COMMAND_AARQ:
         case DLMS_COMMAND_AARE:
             // This is parsed later.
-            data->data.position = (data->data.position - 1);
+            data->data.position -= 1;
             break;
         case DLMS_COMMAND_RELEASE_RESPONSE:
             break;
+        case DLMS_COMMAND_CONFIRMED_SERVICE_ERROR:
+            ret = dlms_handleConfirmedServiceError(&data->data);
+            break;
         case DLMS_COMMAND_EXCEPTION_RESPONSE:
-            /* TODO:
-            throw new GXDLMSException(
-            StateError.values()[data->data.getUInt8() - 1],
-            ServiceError.values()[data->data.getUInt8() - 1]);
-            */
+            ret = dlms_handleExceptionResponse(&data->data);
+            break;
         case DLMS_COMMAND_GET_REQUEST:
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_READ_REQUEST:
@@ -4333,7 +4416,7 @@ int dlms_getPdu(
         case DLMS_COMMAND_DED_GET_REQUEST:
         case DLMS_COMMAND_DED_SET_REQUEST:
         case DLMS_COMMAND_DED_METHOD_REQUEST:
-            ret = dlms_handledGloDedRequest(settings, data);
+            ret = dlms_handleGloDedRequest(settings, data);
             // Server handles this.
             break;
         case DLMS_COMMAND_GLO_READ_RESPONSE:
@@ -4343,20 +4426,24 @@ int dlms_getPdu(
         case DLMS_COMMAND_GLO_METHOD_RESPONSE:
         case DLMS_COMMAND_DED_GET_RESPONSE:
         case DLMS_COMMAND_DED_SET_RESPONSE:
-        case DLMS_COMMAND_DED_METHOD_RESPONSE:
         case DLMS_COMMAND_DED_EVENT_NOTIFICATION:
+        case DLMS_COMMAND_DED_METHOD_RESPONSE:
             // If all frames are read.
-            ret = dlms_handledGloDedResponse(settings, data, index);
+            ret = dlms_handleGloDedResponse(settings, data, index);
             break;
         case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
         case DLMS_COMMAND_GENERAL_DED_CIPHERING:
             if (settings->server)
             {
-                ret = dlms_handledGloDedRequest(settings, data);
+                if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0)
+                {
+                    return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+                }
+                ret = dlms_handleGloDedRequest(settings, data);
             }
             else
             {
-                ret = dlms_handledGloDedResponse(settings, data, index);
+                ret = dlms_handleGloDedResponse(settings, data, index);
             }
             break;
         case DLMS_COMMAND_GENERAL_CIPHERING:
@@ -5328,7 +5415,7 @@ int dlms_getData2(
     {
         return 0;
     }
-    if ((ret = dlms_getDataFromFrame(reply, data)) != 0)
+    if ((ret = dlms_getDataFromFrame(reply, data, settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)) != 0)
     {
         return ret;
     }

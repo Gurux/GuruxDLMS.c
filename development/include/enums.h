@@ -162,9 +162,12 @@ extern "C" {
         /*
          AES-GCM-128 for authenticated encryption and AES-128 for key wrapping.
         */
-        DLMS_SECURITY_SUITE_AES_GCM_128
+        DLMS_SECURITY_SUITE_V0 = 0,
+        /*
+         AES-GCM-128 authenticated encryption, ECDSA P-256 digital signature, ECDH P-256 key agreement, SHA-256 hash, V.44 compression and AES-128 key wrap,
+        */
+        DLMS_SECURITY_SUITE_V1 = 1
     } DLMS_SECURITY_SUITE;
-
 
     typedef enum
     {
@@ -1122,6 +1125,12 @@ extern "C" {
         * Glo write response.
         */
         DLMS_COMMAND_GLO_WRITE_RESPONSE = 45,
+
+        /*
+        * Glo Confirmed Service Error..
+        */
+        DLMS_COMMAND_GLO_CONFIRMED_SERVICE_ERROR = 46,
+
         /*
         * General GLO ciphering.
         */
@@ -1188,6 +1197,10 @@ extern "C" {
         * Ded write response.
         */
         DLMS_COMMAND_DED_WRITE_RESPONSE = 77,
+        /*
+        * Glo Confirmed Service Error..
+        */
+        DLMS_COMMAND_DED_CONFIRMED_SERVICE_ERROR = 78,
 
         /*Ded initiate request.*/
         DLMS_COMMAND_DED_INITIATE_REQUEST = 65,
@@ -1329,9 +1342,20 @@ extern "C" {
         /*
         * Other reason.
         */
-        DLMS_EXCEPTION_SERVICE_ERROR_OTHER_REASON = 3
+        DLMS_EXCEPTION_SERVICE_ERROR_OTHER_REASON = 3,
+        /*
+        * PDU is too long.
+        */
+        DLMS_EXCEPTION_SERVICE_ERROR_PDU_TOO_LONG = 4,
+        /*
+        * Ciphering failed.
+        */
+        DLMS_EXCEPTION_SERVICE_ERROR_DECIPHERING_ERROR = 5,
+        /*
+        * Invocation counter is invalid.
+        */
+        DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR = 6
     } DLMS_EXCEPTION_SERVICE_ERROR;
-
 
     /*
      * Hardware resource describes hardware errors.
@@ -2736,6 +2760,16 @@ extern "C" {
         // Continuous collection.
         DLMS_CHARGE_CONFIGURATION_CONTINUOUS_COLLECTION = 0x2
     }DLMS_CHARGE_CONFIGURATION;
+
+    // DLMS state errors.
+    typedef enum {
+        //Invalid value.
+        DLMS_EXCEPTION_STATE_ERROR_SERVICE_INVALID = 0,
+        //Service is not allowed.
+        DLMS_EXCEPTION_STATE_ERROR_SERVICE_NOT_ALLOWED = 1,
+        //Unknown service.
+        DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN = 2
+}DLMS_EXCEPTION_STATE_ERROR;
 
 #ifdef  __cplusplus
 }

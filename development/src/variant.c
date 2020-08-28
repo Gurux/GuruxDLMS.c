@@ -1614,7 +1614,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         else if (tmp.vt == DLMS_DATA_TYPE_FLOAT32)
         {
-#ifndef DLMS_IGNORE_STRING_CONVERTER
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT32)
 #if _MSC_VER > 1000
             sprintf_s(buff, 250, "%f", tmp.fltVal);
 #else
@@ -1626,11 +1626,11 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //DLMS_IGNORE_STRING_CONVERTER
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT32)
         }
         else if (tmp.vt == DLMS_DATA_TYPE_FLOAT64)
         {
-#ifndef DLMS_IGNORE_STRING_CONVERTER
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT64)
 #if _MSC_VER > 1000
             sprintf_s(buff, 250, "%lf", tmp.dblVal);
 #else
@@ -1642,7 +1642,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
 #else
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //DLMS_IGNORE_STRING_CONVERTER
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT64)
         }
         else if (tmp.vt == DLMS_DATA_TYPE_BIT_STRING)
         {

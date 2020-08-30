@@ -57,16 +57,16 @@ void GXTRACE(const char* str, const char* data)
 {
   //Send trace to the serial port.
   byte c;
-  Serial1.write("\t:", 2);
+  Serial1.write("\t:");
   while ((c = pgm_read_byte(str++)) != 0)
   {
     Serial1.write(c);
   }
   if (data != NULL)
   {
-    Serial1.write(data, strlen(data));
+    Serial1.write(data);
   }
-  Serial1.write("\0", 1);
+  Serial1.write("\0");
   //Serial1.flush();
   delay(10);
 }

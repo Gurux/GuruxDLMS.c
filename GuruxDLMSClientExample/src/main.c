@@ -301,7 +301,7 @@ int connectMeter(int argc, char* argv[])
     connection con;
     gxByteBuffer item;
     bb_init(&item);
-    con_init(&con, 0);
+    con_init(&con, GX_TRACE_LEVEL_INFO);
     //Initialize settings using Logical Name referencing and HDLC.
     cl_init(&con.settings, 1, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
     int ret, opt = 0;

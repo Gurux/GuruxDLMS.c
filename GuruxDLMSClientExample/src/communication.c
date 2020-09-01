@@ -735,7 +735,7 @@ int readDLMSPacket(
     reply->complete = 0;
     connection->data.size = 0;
     connection->data.position = 0;
-    if (connection->trace > GX_TRACE_LEVEL_INFO)
+    if (connection->trace == GX_TRACE_LEVEL_VERBOSE)
     {
         hex = bb_toHexString(data);
         printf("TX:\t%s\r\n", hex);
@@ -771,7 +771,7 @@ int readDLMSPacket(
             }
         }
     } while (reply->complete == 0);
-    if (connection->trace > GX_TRACE_LEVEL_WARNING)
+    if (connection->trace == GX_TRACE_LEVEL_VERBOSE)
     {
         printf("\r\n");
     }
@@ -1693,16 +1693,6 @@ int com_readValues(connection* connection)
 int com_readAllObjects(connection* connection)
 {
     int ret;
-    //Read Logical Device Name
-    gxData ldn;
-    char* data = NULL;
-    cosem_init(BASE(ldn), DLMS_OBJECT_TYPE_DATA, "0.0.42.0.0.255");
-    com_read(connection, BASE(ldn), 2);
-    obj_toString(BASE(ldn), &data);
-    printf("Logical Device Name %s", data);
-    obj_clear(BASE(ldn));
-    free(data);
-
     //Get objects from the meter and read them.
     ret = com_getAssociationView(connection);
     if (ret != DLMS_ERROR_CODE_OK)

@@ -33,7 +33,7 @@
 //---------------------------------------------------------------------------
 #include "GXDLMSClient.h"
 //---------------------------------------------------------------------------
-// Un-comment following lines from gxignore.h to improve perforamance 
+// Un-comment following lines from gxignore.h to improve perforamance
 // and memory usage.
 // #define DLMS_IGNORE_SERVER
 // #define DLMS_IGNORE_CLIENT
@@ -120,6 +120,10 @@ int com_readSerialPort(
     available = Serial.available();
     if (available != 0)
     {
+      if (frameData.size + available > frameData.capacity)
+      {
+        bb_capacity(&frameData, 20 + frameData.size + available);
+      }
       Serial.readBytes((char*) (frameData.data + frameData.size), available);
       frameData.size += available;
       //Search eop.
@@ -144,6 +148,7 @@ int com_readSerialPort(
     //If the meter doesn't reply in given time.
     if (!(millis() - start < WAIT_TIME))
     {
+      GXTRACE_INT(PSTR("Received bytes: \n"), frameData.size);
       return DLMS_ERROR_CODE_RECEIVE_FAILED;
     }
   } while (eopFound == 0);
@@ -164,7 +169,11 @@ int readDLMSPacket(
   frameData.size = 0;
   frameData.position = 0;
   //Send data.
-  Serial.write(data->data, data->size);
+  if ((ret = Serial.write(data->data, data->size)) != data->size)
+  {
+    //If failed to write all bytes.
+    GXTRACE(PSTR("Failed to write all data to the serial port.\n"), NULL);
+  }
   //Loop until packet is complete.
   do
   {
@@ -302,22 +311,6 @@ int com_initializeConnection()
   return DLMS_ERROR_CODE_OK;
 }
 
-//Report error on output;
-void com_reportError(
-  const char* description,
-  gxObject* object,
-  unsigned char attributeOrdinal, 
-  int ret)
-{
-  //char ln[25];
-  //char type[30];
-  /*
-    hlp_getLogicalNameToString(object->logicalName, ln);
-    obj_typeToString(object->objectType, type);
-    printf("%s %s %s:%d %s\r\n", description, type, ln, attributeOrdinal, hlp_getErrorMessage(ret));
-  */
-}
-
 //Get Association view.
 int com_getAssociationView()
 {
@@ -350,7 +343,7 @@ int com_read(
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
       (ret = Client.UpdateValue(object, attributeOrdinal, &reply.dataValue)) != 0)
   {
-    com_reportError("ReadObject failed", object, attributeOrdinal, ret);
+    GXTRACE_INT(PSTR("com_read failed."), ret);
   }
   mes_clear(&data);
   reply_clear(&reply);
@@ -369,7 +362,7 @@ int com_write(
   if ((ret = Client.Write(object, attributeOrdinal, &data)) != 0 ||
       (ret = com_readDataBlock(&data, &reply)) != 0)
   {
-    com_reportError("Write failed", object, attributeOrdinal, ret);
+    GXTRACE_INT(PSTR("com_write failed."), ret);
   }
   mes_clear(&data);
   reply_clear(&reply);
@@ -389,7 +382,7 @@ int com_method(
   if ((ret = Client.Method(object, attributeOrdinal, params, &messages)) != 0 ||
       (ret = com_readDataBlock(&messages, &reply)) != 0)
   {
-    //    printf("Method failed %s\r\n", hlp_getErrorMessage(ret));
+    GXTRACE_INT(PSTR("com_method failed."), ret);
   }
   mes_clear(&messages);
   reply_clear(&reply);
@@ -409,7 +402,7 @@ int com_readList(
     mes_init(&messages);
     if ((ret = Client.ReadList(list, &messages)) != 0)
     {
-      //  printf("ReadList failed %s\r\n", hlp_getErrorMessage(ret));
+      GXTRACE_INT(PSTR("com_readList failed."), ret);
     }
     else
     {
@@ -464,7 +457,7 @@ int com_readRowsByEntry(
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
       (ret = Client.UpdateValue((gxObject*)object, 2, &reply.dataValue)) != 0)
   {
-    //  printf("ReadObject failed %s\r\n", hlp_getErrorMessage(ret));
+    GXTRACE_INT(PSTR("com_readRowsByEntry failed."), ret);
   }
   mes_clear(&data);
   reply_clear(&reply);
@@ -486,7 +479,7 @@ int com_readRowsByRange(
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
       (ret = Client.UpdateValue((gxObject*)object, 2, &reply.dataValue)) != 0)
   {
-    //    printf("ReadObject failed %s\r\n", hlp_getErrorMessage(ret));
+    GXTRACE_INT(PSTR("com_readRowsByRange failed."), ret);
   }
   mes_clear(&data);
   reply_clear(&reply);
@@ -775,8 +768,9 @@ int com_readAllObjects()
 }
 
 void setup() {
+  GXTRACE(PSTR("Start application"), NULL);
   bb_init(&frameData);
-  //Set frame size.
+  //Set frame capacity.
   bb_capacity(&frameData, 128);
   Client.init(true, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
   //Serial 1 is used to send trace.

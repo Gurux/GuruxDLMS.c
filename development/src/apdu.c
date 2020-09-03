@@ -1221,7 +1221,8 @@ int apdu_parseProtocolVersion(dlmsSettings* settings,
         return ret;
     }
     //Protocol version must be 100001.
-    if (value != 0x84)
+    //This is not checked in client side because some meters are returning wrong value here.
+    if (settings->server && value != 0x84)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }

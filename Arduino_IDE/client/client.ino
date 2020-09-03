@@ -57,16 +57,16 @@ void GXTRACE(const char* str, const char* data)
 {
   //Send trace to the serial port.
   byte c;
-  Serial1.write("\t:", 2);
+  Serial1.write("\t:");
   while ((c = pgm_read_byte(str++)) != 0)
   {
     Serial1.write(c);
   }
   if (data != NULL)
   {
-    Serial1.write(data, strlen(data));
+    Serial1.write(data);
   }
-  Serial1.write("\0", 1);
+  Serial1.write("\0");
   //Serial1.flush();
   delay(10);
 }
@@ -753,11 +753,11 @@ int com_readAllObjects()
   obj_clear(BASE(clock1));
   free(data);
 
-  //Read Profile generic.
+  //Read Profile generic. 
   gxProfileGeneric pg;
   cosem_init(BASE(pg), DLMS_OBJECT_TYPE_PROFILE_GENERIC, "1.0.99.1.0.255");
   com_read(BASE(pg), 3);
-  com_readRowsByEntry(&pg, 1, 10);
+  com_readRowsByEntry(&pg, 1, 2);
   obj_toString(BASE(pg), &data);
   GXTRACE(PSTR("Load profile"), data);
   obj_clear(BASE(pg));

@@ -31,13 +31,13 @@
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
-#define DLMS_IGNORE_MALLOC
 #include <EEPROM.h>
 #include "GXDLMSServer.h"
 //---------------------------------------------------------------------------
-// Un-comment following lines from gxignore.h to make this example work.
+// Un-comment following lines from gxignore.h or this this example doesn't work.
 // #define DLMS_IGNORE_SERVER
 // #define GX_DLMS_MICROCONTROLLER
+// #define DLMS_IGNORE_MALLOC
 //---------------------------------------------------------------------------
 
 unsigned char hdlcChanged = 0;

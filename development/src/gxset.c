@@ -891,6 +891,7 @@ int cosem_setActionSchedule(
                 tm->skip |= t.skip;
 #else
                 time_clearTime(tm);
+                time_clearDate(&t);
                 tm->value.tm_hour = t.value.tm_hour;
                 tm->value.tm_min = t.value.tm_min;
                 tm->value.tm_sec = t.value.tm_sec;

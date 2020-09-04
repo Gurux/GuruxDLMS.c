@@ -1036,7 +1036,7 @@ uint16_t load()
 void createObjects()
 {
   int ret;
-  uint16_t serializationVersion = 0;// MIKKo load();
+  uint16_t serializationVersion = load();
   if ((ret = addLogicalDeviceName()) != 0 ||
       (ret = addSapAssignment(serializationVersion)) != 0 ||
       (ret = addEventCode()) != 0 ||
@@ -1901,7 +1901,6 @@ unsigned char svr_isTarget(
       GXTRACE_INT(PSTR("Invalid server address"), serverAddress);
     }
   }
-  ret = 1; //MIKKO
   return ret;
 }
 

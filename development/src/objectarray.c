@@ -106,6 +106,18 @@ int oa_verify(objectArray* arr)
         }
         if (it->objectType == 0)
         {
+#if defined(_WIN64) || defined(_WIN32) || defined(__linux__)
+            if (pos > 0)
+            {
+                char ln[25];
+                if ((ret = oa_getByIndex(arr, pos - 1, &it)) != 0 ||
+                    (ret = hlp_getLogicalNameToString(it->logicalName, ln)) != 0)
+                {
+                    return ret;
+                }
+                printf("Last initialized object:%s\n", ln);
+            }
+#endif
             //If init2 is not called.
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }

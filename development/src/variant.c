@@ -244,7 +244,7 @@ int var_addBytes(dlmsVARIANT* data, const unsigned char* value, uint16_t count)
 #else
         var_clear(data);
         data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(data->byteArr);
+        BYTE_BUFFER_INIT(data->byteArr);
         data->vt = DLMS_DATA_TYPE_OCTET_STRING;
 #endif //DLMS_IGNORE_MALLOC
     }
@@ -265,7 +265,7 @@ int var_setString(dlmsVARIANT* data, const char* value, uint16_t count)
     {
         var_clear(data);
         data->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(data->strVal);
+        BYTE_BUFFER_INIT(data->strVal);
         data->vt = DLMS_DATA_TYPE_STRING;
     }
     bb_set(data->strVal, (const unsigned char*)value, count);
@@ -774,7 +774,7 @@ int var_setOctetString(gxByteBuffer* buff, dlmsVARIANT* value)
     if (value->vt == DLMS_DATA_TYPE_STRING)
     {
         gxByteBuffer bb;
-        bb_init(&bb);
+        BYTE_BUFFER_INIT(&bb);
         bb_addHexString(&bb, (char*)value->strVal->data);
         hlp_setObjectCount(bb.size, buff);
         bb_set2(buff, &bb, 0, bb.size);
@@ -1490,7 +1490,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
     if (type == DLMS_DATA_TYPE_STRING)
     {
         item->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(item->strVal);
+        BYTE_BUFFER_INIT(item->strVal);
         if (tmp.vt == DLMS_DATA_TYPE_ARRAY || tmp.vt == DLMS_DATA_TYPE_STRUCTURE)
         {
             bb_setUInt8(item->strVal, '{');
@@ -1791,7 +1791,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         {
             char* pBuff = (char*)tmp.strVal->data;
             item->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(item->byteArr);
+            BYTE_BUFFER_INIT(item->byteArr);
             bb_addHexString(item->byteArr, pBuff);
             item->vt = type;
             var_clear(&tmp);
@@ -2140,7 +2140,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
         if (source->strVal != NULL)
         {
             target->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(target->strVal);
+            BYTE_BUFFER_INIT(target->strVal);
             bb_set(target->strVal, source->strVal->data, source->strVal->size);
     }
 #else
@@ -2153,7 +2153,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
         if (source->byteArr != 0)
         {
             target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(target->byteArr);
+            BYTE_BUFFER_INIT(target->byteArr);
             bb_set(target->byteArr, source->byteArr->data, source->byteArr->size);
         }
 #else
@@ -2289,7 +2289,7 @@ int var_setDateTimeAsOctetString(
     if ((ret = var_clear(target)) == DLMS_ERROR_CODE_OK)
     {
         target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(target->byteArr);
+        BYTE_BUFFER_INIT(target->byteArr);
         bb_capacity(target->byteArr, 12);
         if ((ret = var_getDateTime2(value, target->byteArr)) == 0)
         {
@@ -2307,7 +2307,7 @@ int var_setDateAsOctetString(
     if ((ret = var_clear(target)) == DLMS_ERROR_CODE_OK)
     {
         target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(target->byteArr);
+        BYTE_BUFFER_INIT(target->byteArr);
         bb_capacity(target->byteArr, 5);
         if ((ret = var_getDate(value, target->byteArr)) == 0)
         {
@@ -2325,7 +2325,7 @@ int var_setTimeAsOctetString(
     if ((ret = var_clear(target)) == DLMS_ERROR_CODE_OK)
     {
         target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(target->byteArr);
+        BYTE_BUFFER_INIT(target->byteArr);
         bb_capacity(target->byteArr, 4);
         if ((ret = var_getTime(value, target->byteArr)) == 0)
         {

@@ -399,7 +399,7 @@ int updateSeasonProfile(gxArray* profile, dlmsVARIANT* data)
         {
             break;
         }
-        bb_init(&sp->name);
+        BYTE_BUFFER_INIT(&sp->name);
         bb_set2(&sp->name, tmp->byteArr, 0, bb_size(tmp->byteArr));
 
         ret = va_getByIndex(it->Arr, 1, &tmp);
@@ -424,7 +424,7 @@ int updateSeasonProfile(gxArray* profile, dlmsVARIANT* data)
         {
             break;
         }
-        bb_init(&sp->weekName);
+        BYTE_BUFFER_INIT(&sp->weekName);
         bb_set2(&sp->weekName, tmp->byteArr, 0, bb_size(tmp->byteArr));
 #ifndef DLMS_IGNORE_MALLOC
         arr_push(profile, sp);
@@ -484,7 +484,7 @@ int updateWeekProfileTable(gxArray* profile, dlmsVARIANT* data)
         {
             break;
         }
-        bb_init(&wp->name);
+        BYTE_BUFFER_INIT(&wp->name);
         bb_set2(&wp->name, tmp->byteArr, 0, bb_size(tmp->byteArr));
         ret = va_getByIndex(it->Arr, 1, &tmp);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -2021,7 +2021,7 @@ int cosem_setAutoConnect(gxAutoConnect* object, unsigned char index, dlmsVARIANT
                     return ret;
                 }
                 str = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                bb_init(str);
+                BYTE_BUFFER_INIT(str);
                 bb_set2(str, tmp->byteArr, 0, bb_size(tmp->byteArr));
                 arr_push(&object->destinations, str);
             }
@@ -2836,7 +2836,7 @@ int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char 
                     ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                     break;
                 }
-                bb_init(&ipItem->data);
+                BYTE_BUFFER_INIT(&ipItem->data);
                 ipItem->type = (DLMS_IP_OPTION_TYPE)var_toInteger(tmp3);
                 ret = va_getByIndex(tmp->Arr, 1, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -3333,8 +3333,8 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
                 }
                 start = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
                 end = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                bb_init(start);
-                bb_init(end);
+                BYTE_BUFFER_INIT(start);
+                BYTE_BUFFER_INIT(end);
                 bb_set(start, tmp3->byteArr->data, tmp3->byteArr->size);
                 ret = va_getByIndex(tmp->Arr, 1, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -3464,8 +3464,8 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
                     ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                     break;
                 }
-                bb_init(&modemInit->request);
-                bb_init(&modemInit->response);
+                BYTE_BUFFER_INIT(&modemInit->request);
+                BYTE_BUFFER_INIT(&modemInit->response);
                 bb_set(&modemInit->request, tmp3->byteArr->data, tmp3->byteArr->size);
                 ret = va_getByIndex(tmp->Arr, 1, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -3516,7 +3516,7 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
                 }
 #ifndef DLMS_IGNORE_MALLOC
                 str = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                bb_init(str);
+                BYTE_BUFFER_INIT(str);
 #else
                 if (ret = arr_getByIndex(&object->modemProfile, pos, (void**)&str) != 0)
                 {
@@ -3933,9 +3933,9 @@ int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* ob
                     break;
                 }
                 start = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                bb_init(start);
+                BYTE_BUFFER_INIT(start);
                 end = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                bb_init(end);
+                BYTE_BUFFER_INIT(end);
                 bb_set(start, tmp3->byteArr->data, tmp3->byteArr->size);
                 ret = va_getByIndex(tmp->Arr, 1, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -4317,7 +4317,7 @@ int cosem_setSapAssignment(gxSapAssignment* object, unsigned char index, dlmsVAR
                     ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                     break;
                 }
-                bb_init(&it->name);
+                BYTE_BUFFER_INIT(&it->name);
                 it->id = (uint16_t)var_toInteger(tmp2);
                 ret = va_getByIndex(tmp->Arr, 1, &tmp2);
                 if (ret != DLMS_ERROR_CODE_OK)
@@ -5530,7 +5530,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
         {
             break;
         }
-        bb_init(&ct->index);
+        BYTE_BUFFER_INIT(&ct->index);
         //index
         ret = va_getByIndex(it2->Arr, 0, &tmp);
         if (ret != 0)
@@ -6160,8 +6160,8 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
                     ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                     break;
                 }
-                bb_init(&item->identification);
-                bb_init(&item->signature);
+                BYTE_BUFFER_INIT(&item->identification);
+                BYTE_BUFFER_INIT(&item->signature);
                 ret = va_getByIndex(it->Arr, 0, &tmp);
                 if (ret != 0)
                 {
@@ -6966,7 +6966,7 @@ int compactData_updateTemplateDescription(
     e.target = &object->base;
     e.index = 2;
     vec_init(&args);
-    bb_init(&tmp);
+    BYTE_BUFFER_INIT(&tmp);
 #ifndef DLMS_IGNORE_MALLOC
     vec_push(&args, &e);
 #else
@@ -7983,7 +7983,7 @@ int cosem_setAvailableSwitches(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obj
                 break;
             }
             it = (gxMacAvailableSwitch*)gxmalloc(sizeof(gxMacAvailableSwitch));
-            bb_init(&it->sna);
+            BYTE_BUFFER_INIT(&it->sna);
             bb_capacity(&it->sna, tmp2->byteArr->size);
             if ((ret = bb_set(&it->sna, tmp2->byteArr->data, tmp2->byteArr->size)) != DLMS_ERROR_CODE_OK)
             {

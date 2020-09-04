@@ -80,9 +80,9 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     bb_clear(pData);
 #else
     reply = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-    bb_init(reply);
+    BYTE_BUFFER_INIT(reply);
     gxByteBuffer bb;
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     bb_capacity(&bb, 30);
     pData = &bb;
 #endif //DLMS_IGNORE_MALLOC
@@ -182,7 +182,7 @@ int cl_aarqRequest(
     bb_clear(pdu);
 #else
     gxByteBuffer buff;
-    bb_init(&buff);
+    BYTE_BUFFER_INIT(&buff);
     pdu = &buff;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -286,7 +286,7 @@ int cl_getApplicationAssociationRequest(
     unsigned char tmp[MAX_CHALLENGE_SIZE];
     bb_attach(&challenge, tmp, 0, sizeof(tmp));
 #else
-    bb_init(&challenge);
+    BYTE_BUFFER_INIT(&challenge);
 #endif //DLMS_IGNORE_MALLOC
 
     if (settings->authentication != DLMS_AUTHENTICATION_HIGH_ECDSA &&
@@ -335,7 +335,7 @@ int cl_getApplicationAssociationRequest(
 
 #else
         data.byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(data.byteArr);
+        BYTE_BUFFER_INIT(data.byteArr);
         if ((ret = bb_setUInt8(data.byteArr, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
             (ret = hlp_setObjectCount(challenge.size, data.byteArr)) == 0 &&
             (ret = bb_set2(data.byteArr, &challenge, 0, challenge.size)) == 0 &&
@@ -403,7 +403,7 @@ int cl_parseApplicationAssociationResponse(
         return ret;
     }
     empty = value.vt == DLMS_DATA_TYPE_NONE;
-    bb_init(&challenge);
+    BYTE_BUFFER_INIT(&challenge);
 #endif //DLMS_IGNORE_MALLOC
     if (!empty)
     {
@@ -808,7 +808,7 @@ int cl_readSN(
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    bb_init(&attributeDescriptor);
+    BYTE_BUFFER_INIT(&attributeDescriptor);
     resetBlockIndex(settings);
     address += (attributeOrdinal - 1) * 8;
     bb_setUInt16(&attributeDescriptor, address);
@@ -855,7 +855,7 @@ int cl_readLN(
     bb_clear(pdu);
 #else
     gxByteBuffer attributeDescriptor;
-    bb_init(&attributeDescriptor);
+    BYTE_BUFFER_INIT(&attributeDescriptor);
     pdu = &attributeDescriptor;
 #endif //DLMS_IGNORE_MALLOC
     resetBlockIndex(settings);
@@ -910,7 +910,7 @@ int cl_readList(
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     resetBlockIndex(settings);
     if (settings->useLogicalNameReferencing)
     {
@@ -1071,7 +1071,7 @@ int cl_readRowsByEntry2(dlmsSettings* settings, gxProfileGeneric* object, uint32
     unsigned char buff[20];
     bb_attach(&data, buff, 0, sizeof(buff));
 #else
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
 #endif //DLMS_IGNORE_MALLOC
     //Add AccessSelector
     if ((ret = bb_setUInt8(&data, 2)) == 0 &&
@@ -1155,7 +1155,7 @@ int cl_readRowsByRange2(
     unsigned char buff[100];
     bb_attach(&data, buff, 0, sizeof(buff));
 #else
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
 #endif //DLMS_IGNORE_MALLOC
     //Add AccessSelector
     if ((ret = bb_setUInt8(&data, 1)) == 0 &&
@@ -1373,7 +1373,7 @@ int cl_releaseRequest2(dlmsSettings* settings, message* packets, unsigned char u
         return 0;
     }
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     if (!useProtectedRelease)
     {
         if ((ret = bb_setUInt8(&bb, 0x3)) != 0 ||
@@ -1449,7 +1449,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
     bb_clear(reply);
 #else
     reply = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-    bb_init(reply);
+    BYTE_BUFFER_INIT(reply);
 #endif //DLMS_IGNORE_MALLOC
     if (settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
@@ -1471,7 +1471,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
         return ret;
     }
 #ifndef DLMS_IGNORE_WRAPPER
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     bb_setUInt8(&bb, DLMS_COMMAND_RELEASE_REQUEST);
     bb_setUInt8(&bb, 0x0);
     ret = dlms_getWrapperFrame(settings, DLMS_COMMAND_NONE, &bb, reply);
@@ -1557,13 +1557,13 @@ int cl_writeLN(
     }
     pdu = settings->serializedPdu;
     //Use same buffer for header and data. Header size is 10 bytes.
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
     bb_clear(pdu);
 #else
     gxByteBuffer bb;
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     pdu = &bb;
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
 #endif //DLMS_IGNORE_MALLOC
     resetBlockIndex(settings);
     // Add CI.
@@ -1626,8 +1626,8 @@ int cl_writeSN(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     resetBlockIndex(settings);
-    bb_init(&bb);
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&bb);
+    BYTE_BUFFER_INIT(&data);
     if ((ret = dlms_setData(&data, value->vt, value)) != 0)
     {
         return ret;
@@ -1698,13 +1698,13 @@ int cl_methodLN(
     }
     pdu = settings->serializedPdu;
     //Use same buffer for header and data. Header size is 10 bytes.
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
     bb_clear(pdu);
 #else
     gxByteBuffer bb;
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     pdu = &bb;
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
 #endif //DLMS_IGNORE_MALLOC
     resetBlockIndex(settings);
     // CI
@@ -1774,7 +1774,7 @@ int cl_methodSN(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     resetBlockIndex(settings);
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
     if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
     {
         if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
@@ -1786,7 +1786,7 @@ int cl_methodSN(
             dlms_setData(&data, value->vt, value);
         }
     }
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     if (value == NULL || value->vt == DLMS_DATA_TYPE_NONE)
     {
         requestType = DLMS_VARIABLE_ACCESS_SPECIFICATION_VARIABLE_NAME;

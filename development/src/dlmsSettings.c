@@ -108,13 +108,13 @@ void cl_init(
     settings->useLogicalNameReferencing = useLogicalNameReferencing;
     settings->interfaceType = interfaceType;
     settings->authentication = authentication;
-    bb_init(&settings->password);
+    BYTE_BUFFER_INIT(&settings->password);
     bb_addString(&settings->password, password);
     memset(settings->sourceSystemTitle, 0, sizeof(settings->sourceSystemTitle));
 #ifdef DLMS_IGNORE_MALLOC
     memset(settings->kek, 0, sizeof(settings->kek));
 #else
-    bb_init(&settings->kek);
+    BYTE_BUFFER_INIT(&settings->kek);
 #endif //DLMS_IGNORE_MALLOC
     settings->maxServerPDUSize = 1024;
     settings->maxPduSize = 0xFFFF;
@@ -143,8 +143,8 @@ void cl_init(
     settings->connected = DLMS_CONNECTION_STATE_NONE;
     settings->customChallenges = 0;
     settings->invokeID = 1;
-    bb_init(&settings->ctoSChallenge);
-    bb_init(&settings->stoCChallenge);
+    BYTE_BUFFER_INIT(&settings->ctoSChallenge);
+    BYTE_BUFFER_INIT(&settings->stoCChallenge);
     settings->priority = DLMS_PRIORITY_HIGH;
     settings->serviceClass = DLMS_SERVICE_CLASS_UN_CONFIRMED;
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -348,7 +348,7 @@ void trans_init(gxLongTransaction* trans)
 {
     trans->command = DLMS_COMMAND_NONE;
 #ifndef DLMS_IGNORE_MALLOC
-    bb_init(&trans->data);
+    BYTE_BUFFER_INIT(&trans->data);
 #endif //DLMS_IGNORE_MALLOC
     vec_init(&trans->targets);
 }

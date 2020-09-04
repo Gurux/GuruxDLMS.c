@@ -40,6 +40,13 @@ extern "C" {
 #include "gxint.h"
 #include "gxignore.h"
 
+//Arduino DOIT ESP32 uses bb_init. bb_Init is used instead.
+#ifndef ESP_PLATFORM
+#define BYTE_BUFFER_INIT bb_init
+#else
+#define BYTE_BUFFER_INIT bb_Init
+#endif //DESP_PLATFORM
+
 #define VECTOR_CAPACITY 50
 
     typedef struct
@@ -79,7 +86,7 @@ extern "C" {
     /*
     * Initialize gxByteBuffer.
     */
-    int bb_init(
+    int BYTE_BUFFER_INIT(
         gxByteBuffer* bb);
 
     /*

@@ -1793,13 +1793,13 @@ void init_ProtectionParameter(gxProtectionParameter* target)
     target->type = DLMS_PROTECTION_TYPE_AUTHENTICATION;
     target->options.info.identifiedOptions = DLMS_IDENTIFIED_KEY_INFO_OPTIONS_GLOBAL_UNICAST_ENCRYPTION_KEY;
     target->options.info.type = DLMS_KEY_INFO_TYPE_IDENTIFIED_KEY;
-    bb_init(&target->options.id);
-    bb_init(&target->options.info.agreedOptions.cipheredData);
-    bb_init(&target->options.info.agreedOptions.parameters);
-    bb_init(&target->options.info.wrappedKeyoptions.data);
-    bb_init(&target->options.information);
-    bb_init(&target->options.originator);
-    bb_init(&target->options.recipient);
+    BYTE_BUFFER_INIT(&target->options.id);
+    BYTE_BUFFER_INIT(&target->options.info.agreedOptions.cipheredData);
+    BYTE_BUFFER_INIT(&target->options.info.agreedOptions.parameters);
+    BYTE_BUFFER_INIT(&target->options.info.wrappedKeyoptions.data);
+    BYTE_BUFFER_INIT(&target->options.information);
+    BYTE_BUFFER_INIT(&target->options.originator);
+    BYTE_BUFFER_INIT(&target->options.recipient);
 }
 
 void clear_ProtectionParameter(gxProtectionParameter* target)

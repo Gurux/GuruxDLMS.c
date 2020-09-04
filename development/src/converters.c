@@ -436,7 +436,7 @@ int obj_DataToString(gxData* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     ret = var_toString(&object->value, &ba);
     bb_addString(&ba, "\r\n");
@@ -450,7 +450,7 @@ int obj_RegisterToString(gxRegister* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 3 Value: Scaler: ");
     bb_addIntAsString(&ba, object->scaler);
     bb_addString(&ba, " Unit: ");
@@ -468,7 +468,7 @@ int obj_clockToString(gxClock* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     ret = time_toString(&object->time, &ba);
     if (ret != 0)
@@ -510,7 +510,7 @@ int obj_ScriptTableToString(gxScriptTable* object, char** buff)
     gxByteBuffer ba;
     gxScript* s;
     gxScriptAction* sa;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     for (pos = 0; pos != object->scripts.size; ++pos)
     {
@@ -579,7 +579,7 @@ int obj_specialDaysTableToString(gxSpecialDaysTable* object, char** buff)
     int ret, pos;
     gxSpecialDay* sd;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     for (pos = 0; pos != object->entries.size; ++pos)
     {
@@ -612,7 +612,7 @@ int obj_specialDaysTableToString(gxSpecialDaysTable* object, char** buff)
 int obj_TcpUdpSetupToString(gxTcpUdpSetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->port);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -638,7 +638,7 @@ int obj_TcpUdpSetupToString(gxTcpUdpSetup* object, char** buff)
 int obj_mBusMasterPortSetupToString(gxMBusMasterPortSetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->commSpeed);
     bb_addString(&ba, "\r\n");
@@ -653,7 +653,7 @@ int obj_messageHandlerToString(
     char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     //TODO: bb_addIntAsString(&ba, object->listeningWindow);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -670,7 +670,7 @@ int obj_messageHandlerToString(
 int obj_pushSetupToString(gxPushSetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     //TODO: bb_addIntAsString(&ba, object->pushObjectList);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -695,7 +695,7 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
     gxKey* k;
     int pos, ret;
     gxByteBuffer ba, * dest;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->mode);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -858,7 +858,7 @@ int obj_activityCalendarToString(gxActivityCalendar* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_attachString(&ba, bb_toString(&object->calendarNameActive));
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -909,7 +909,7 @@ int obj_activityCalendarToString(gxActivityCalendar* object, char** buff)
 int obj_securitySetupToString(gxSecuritySetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->securityPolicy);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -928,7 +928,7 @@ int obj_securitySetupToString(gxSecuritySetup* object, char** buff)
 int obj_hdlcSetupToString(gxIecHdlcSetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->communicationSpeed);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -955,7 +955,7 @@ int obj_hdlcSetupToString(gxIecHdlcSetup* object, char** buff)
 int obj_localPortSetupToString(gxLocalPortSetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->defaultMode);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -983,7 +983,7 @@ int obj_demandRegisterToString(gxDemandRegister* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     ret = var_toString(&object->currentAverageValue, &ba);
     if (ret != 0)
@@ -1032,7 +1032,7 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     gxKey* it;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     for (pos = 0; pos != object->registerAssignment.size; ++pos)
     {
@@ -1103,7 +1103,7 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
     dlmsVARIANT* tmp;
     gxByteBuffer ba;
     gxActionSet* as;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     for (pos = 0; pos != object->thresholds.size; ++pos)
     {
@@ -1171,7 +1171,7 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
     int pos = 0, ret;
     gxtime* tm;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     if (object->executedScript == NULL)
@@ -1224,7 +1224,7 @@ int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
     int pos, ret;
     gxSapItem* it;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     for (pos = 0; pos != object->sapAssignmentList.size; ++pos)
     {
@@ -1253,7 +1253,7 @@ int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
     int pos, ret = 0;
     gxKey* it;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->mode);
     bb_addString(&ba, "\r\nIndex: 3 Value: [");
@@ -1293,7 +1293,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
     dlmsVARIANT* tmp;
     gxip4SetupIpOption* ip;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     if (object->dataLinkLayer != NULL)
@@ -1361,7 +1361,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
 int obj_UtilityTablesToString(gxUtilityTables* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->tableId);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -1379,7 +1379,7 @@ int obj_UtilityTablesToString(gxUtilityTables* object, char** buff)
 int obj_mbusSlavePortSetupToString(gxMbusSlavePortSetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->defaultBaud);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -1400,7 +1400,7 @@ int obj_imageTransferToString(gxImageTransfer* object, char** buff)
     int pos, ret;
     gxImageActivateInfo* it;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->imageBlockSize);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -1439,7 +1439,7 @@ int obj_imageTransferToString(gxImageTransfer* object, char** buff)
 int obj_disconnectControlToString(gxDisconnectControl* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->outputState);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -1457,7 +1457,7 @@ int obj_limiterToString(gxLimiter* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addString(&ba, " ");
     if (object->monitoredValue != NULL)
@@ -1516,7 +1516,7 @@ int obj_limiterToString(gxLimiter* object, char** buff)
 int obj_mBusClientToString(gxMBusClient* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->capturePeriod);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -1562,7 +1562,7 @@ int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
     int pos, ret;
     gxModemInitialisation* mi;
     gxByteBuffer ba, * it;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->communicationSpeed);
     bb_addString(&ba, "\r\nIndex: 3 Value: [");
@@ -1607,7 +1607,7 @@ int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
 int obj_macAddressSetupToString(gxMacAddressSetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_attachString(&ba, bb_toString(&object->macAddress));
     bb_addString(&ba, "\r\n");
@@ -1635,7 +1635,7 @@ void qualityOfServiceToString(gxQualityOfService* target, gxByteBuffer* ba)
 int obj_GPRSSetupToString(gxGPRSSetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_attachString(&ba, bb_toString(&object->apn));
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -1655,7 +1655,7 @@ int obj_extendedRegisterToString(gxExtendedRegister* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     ret = var_toString(&object->value, &ba);
     if (ret != 0)
@@ -1794,7 +1794,7 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** 
     int pos, ret = 0;
     gxKey2* it;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     obj_objectsToString(&ba, &object->objectList);
     bb_addString(&ba, "]\r\nIndex: 3 Value: ");
@@ -1847,7 +1847,7 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** 
 int obj_associationShortNameToString(gxAssociationShortName* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     obj_objectsToString(&ba, &object->objectList);
     bb_addString(&ba, "]\r\nIndex: 3 Value: ");
@@ -1869,7 +1869,7 @@ int obj_associationShortNameToString(gxAssociationShortName* object, char** buff
 int obj_pppSetupToString(gxPppSetup* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     //TODO: ipcpOptions
     bb_addString(&ba, "]\r\nIndex: 3 Value: ");
@@ -1927,7 +1927,7 @@ int obj_ProfileGenericToString(gxProfileGeneric* object, char** buff)
 {
     int ret;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [\r\n");
     obj_rowsToString(&ba, &object->buffer);
     bb_addString(&ba, "]\r\nIndex: 3 Value: [");
@@ -1959,7 +1959,7 @@ int obj_ProfileGenericToString(gxProfileGeneric* object, char** buff)
 int obj_accountToString(gxAccount* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [\r\n");
     bb_addIntAsString(&ba, object->paymentMode);
     bb_addString(&ba, "\r\n");
@@ -2011,7 +2011,7 @@ int obj_accountToString(gxAccount* object, char** buff)
 int obj_creditToString(gxCredit* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->currentCreditAmount);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -2042,7 +2042,7 @@ int obj_creditToString(gxCredit* object, char** buff)
 int obj_chargeToString(gxCharge* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->totalAmountPaid);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -2080,7 +2080,7 @@ int obj_tokenGatewayToString(
     char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addString(&ba, "\r\n");
     *buff = bb_toString(&ba);
@@ -2094,7 +2094,7 @@ int obj_GsmDiagnosticToString(gxGsmDiagnostic* object, char** buff)
     int pos, ret;
     gxAdjacentCell* it;
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value:");
     bb_addString(&ba, object->operatorName);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");
@@ -2145,7 +2145,7 @@ int obj_CompactDataToString(gxCompactData* object, char** buff)
 {
     gxByteBuffer ba;
     char* tmp;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value:");
     tmp = bb_toHexString(&object->buffer);
     bb_addString(&ba, tmp);
@@ -2220,7 +2220,7 @@ int obj_scheduleToString(gxSchedule* object, char** buff)
 int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
 {
     gxByteBuffer ba;
-    bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value:");
     bb_addString(&ba, object->calendarName);
     bb_addString(&ba, "\r\nIndex: 3 Value: ");

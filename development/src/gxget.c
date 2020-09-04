@@ -63,7 +63,7 @@ int cosem_getByteBuffer(gxValueEventArg* e)
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
-        bb_init(e->value.byteArr);
+        BYTE_BUFFER_INIT(e->value.byteArr);
     }
 #endif //DLMS_IGNORE_MALLOC
     return 0;
@@ -4905,7 +4905,7 @@ int compactData_getValues2(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     va_clear(values);
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
     bb_set(&data, templateDescription->data, templateDescription->size);
     hlp_setObjectCount(buffer->size, &data);
     bb_set(&data, buffer->data, buffer->size);

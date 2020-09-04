@@ -56,6 +56,15 @@ unsigned char hlp_isBigEndian(void)
     return *((unsigned char*)&a) == 0x12;
 }
 
+//Get error message directly from EEPROM to save RAM.
+#ifdef ARDUINO_ARCH_AVR
+//If AVR is used.
+#include <avr/pgmspace.h>
+#define GET_STR_FROM_EEPROM(x) PSTR(x)
+#else
+#define GET_STR_FROM_EEPROM(x) x
+#endif//ARDUINO_ARCH_AVR
+
 const char* hlp_getErrorMessage(int error)
 {
     const char* str;
@@ -64,24 +73,24 @@ const char* hlp_getErrorMessage(int error)
         switch (error & 0xFF)
         {
         case DLMS_EXCEPTION_SERVICE_ERROR_OPERATION_NOT_POSSIBLE:
-            return "OperationNotPossible";
+            return GET_STR_FROM_EEPROM("OperationNotPossible");
         case DLMS_EXCEPTION_SERVICE_ERROR_SERVICE_NOT_SUPPORTED:
-            return "ServiceNotSupported";
+            return GET_STR_FROM_EEPROM("ServiceNotSupported");
         case DLMS_EXCEPTION_SERVICE_ERROR_OTHER_REASON:
-            return "OtherReason";
+            return GET_STR_FROM_EEPROM("OtherReason");
         case DLMS_EXCEPTION_SERVICE_ERROR_PDU_TOO_LONG:
-            return "PduTooLong";
+            return GET_STR_FROM_EEPROM("PduTooLong");
         case DLMS_EXCEPTION_SERVICE_ERROR_DECIPHERING_ERROR:
-            return "DecipheringError";
+            return GET_STR_FROM_EEPROM("DecipheringError");
         case DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR:
-            return "InvocationCounterError";
+            return GET_STR_FROM_EEPROM("InvocationCounterError");
         default:
-            return "Unknown Exception response.";
+            return GET_STR_FROM_EEPROM("Unknown Exception response.");
         }
     }
     else if ((error & DLMS_ERROR_TYPE_CONFIRMED_SERVICE_ERROR) != 0)
     {
-        str = "Confirmed Service Error.";
+        str = GET_STR_FROM_EEPROM("Confirmed Service Error.");
     }
     else if ((error & DLMS_ERROR_TYPE_COMMUNICATION_ERROR) != 0)
     {
@@ -106,151 +115,151 @@ const char* hlp_getErrorMessage(int error)
         switch (error)
         {
         case DLMS_ERROR_CODE_OK:
-            str = "OK";
+            str = GET_STR_FROM_EEPROM("OK");
             break;
         case DLMS_ERROR_CODE_INVALID_PARAMETER:
-            str = "Invalid parameter.";
+            str = GET_STR_FROM_EEPROM("Invalid parameter.");
             break;
         case DLMS_ERROR_CODE_NOT_INITIALIZED:
-            str = "Server is not initialized.";
+            str = GET_STR_FROM_EEPROM("Server is not initialized.");
             break;
         case DLMS_ERROR_CODE_OUTOFMEMORY:
-            str = "Not enough memory available.";
+            str = GET_STR_FROM_EEPROM("Not enough memory available.");
             break;
         case DLMS_ERROR_CODE_NOT_REPLY:
-            str = "Packet is not a reply for a send packet.";
+            str = GET_STR_FROM_EEPROM("Packet is not a reply for a send packet.");
             break;
         case DLMS_ERROR_CODE_REJECTED:
-            str = "Meter rejects send packet.";
+            str = GET_STR_FROM_EEPROM("Meter rejects send packet.");
             break;
         case DLMS_ERROR_CODE_INVALID_LOGICAL_NAME:
-            str = "Invalid Logical Name.";
+            str = GET_STR_FROM_EEPROM("Invalid Logical Name.");
             break;
         case DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS:
-            str = "Client HDLC Address is not set.";
+            str = GET_STR_FROM_EEPROM("Client HDLC Address is not set.");
             break;
         case DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS:
-            str = "Server HDLC Address is not set.";
+            str = GET_STR_FROM_EEPROM("Server HDLC Address is not set.");
             break;
         case DLMS_ERROR_CODE_INVALID_DATA_FORMAT:
-            str = "Not a HDLC frame.";
+            str = GET_STR_FROM_EEPROM("Not a HDLC frame.");
             break;
         case DLMS_ERROR_CODE_INVALID_VERSION_NUMBER:
-            str = "Invalid DLMS version number.";
+            str = GET_STR_FROM_EEPROM("Invalid DLMS version number.");
             break;
         case DLMS_ERROR_CODE_CLIENT_ADDRESS_NO_NOT_MATCH:
-            str = "Client addresses do not match.";
+            str = GET_STR_FROM_EEPROM("Client addresses do not match.");
             break;
         case DLMS_ERROR_CODE_SERVER_ADDRESS_NO_NOT_MATCH:
-            str = "Server addresses do not match.";
+            str = GET_STR_FROM_EEPROM("Server addresses do not match.");
             break;
         case DLMS_ERROR_CODE_WRONG_CRC:
-            str = "CRC do not match.";
+            str = GET_STR_FROM_EEPROM("CRC do not match.");
             break;
         case DLMS_ERROR_CODE_INVALID_RESPONSE:
-            str = "Invalid response";
+            str = GET_STR_FROM_EEPROM("Invalid response");
             break;
         case DLMS_ERROR_CODE_INVALID_TAG:
-            str = "Invalid Tag.";
+            str = GET_STR_FROM_EEPROM("Invalid Tag.");
             break;
         case DLMS_ERROR_CODE_ENCODING_FAILED:
-            str = "Encoding failed. Not enough data.";
+            str = GET_STR_FROM_EEPROM("Encoding failed. Not enough data.");
             break;
         case DLMS_ERROR_CODE_REJECTED_PERMAMENT:
-            str = "Rejected permament.";
+            str = GET_STR_FROM_EEPROM("Rejected permament.");
             break;
         case DLMS_ERROR_CODE_REJECTED_TRANSIENT:
-            str = "Rejected transient.";
+            str = GET_STR_FROM_EEPROM("Rejected transient.");
             break;
         case DLMS_ERROR_CODE_NO_REASON_GIVEN:
-            str = "No reason given.";
+            str = GET_STR_FROM_EEPROM("No reason given.");
             break;
         case DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED:
-            str = "Application context name not supported.";
+            str = GET_STR_FROM_EEPROM("Application context name not supported.");
             break;
         case DLMS_ERROR_CODE_AUTHENTICATION_MECHANISM_NAME_NOT_RECOGNISED:
-            str = "Authentication mechanism name not recognised.";
+            str = GET_STR_FROM_EEPROM("Authentication mechanism name not recognised.");
             break;
         case DLMS_ERROR_CODE_AUTHENTICATION_MECHANISM_NAME_REQUIRED:
-            str = "Authentication mechanism name required.";
+            str = GET_STR_FROM_EEPROM("Authentication mechanism name required.");
             break;
         case DLMS_ERROR_CODE_AUTHENTICATION_FAILURE:
-            str = "Authentication failure.";
+            str = GET_STR_FROM_EEPROM("Authentication failure.");
             break;
         case DLMS_ERROR_CODE_AUTHENTICATION_REQUIRED:
-            str = "Authentication required.";
+            str = GET_STR_FROM_EEPROM("Authentication required.");
             break;
         case DLMS_ERROR_CODE_HARDWARE_FAULT:
-            str = "Access Error : Device reports a hardware fault.";
+            str = GET_STR_FROM_EEPROM("Access Error : Device reports a hardware fault.");
             break;
         case DLMS_ERROR_CODE_TEMPORARY_FAILURE:
-            str = "Access Error : Device reports a temporary failure.";
+            str = GET_STR_FROM_EEPROM("Access Error : Device reports a temporary failure.");
             break;
         case DLMS_ERROR_CODE_READ_WRITE_DENIED:
-            str = "Access Error : Device reports Read-Write denied.";
+            str = GET_STR_FROM_EEPROM("Access Error : Device reports Read-Write denied.");
             break;
         case DLMS_ERROR_CODE_UNDEFINED_OBJECT:
-            str = "Access Error : Device reports a undefined object.";
+            str = GET_STR_FROM_EEPROM("Access Error : Device reports a undefined object.");
             break;
         case DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT:
-            str = "Access Error : Device reports a inconsistent Class or Object.";
+            str = GET_STR_FROM_EEPROM("Access Error : Device reports a inconsistent Class or Object.");
             break;
         case DLMS_ERROR_CODE_UNAVAILABLE_OBJECT:
-            str = "Access Error : Device reports a unavailable object.";
+            str = GET_STR_FROM_EEPROM("Access Error : Device reports a unavailable object.");
             break;
         case DLMS_ERROR_CODE_UNMATCH_TYPE:
-            str = "Access Error : Device reports a unmatched type.";
+            str = GET_STR_FROM_EEPROM("Access Error : Device reports a unmatched type.");
             break;
         case DLMS_ERROR_CODE_ACCESS_VIOLATED:
-            str = "Access Error : Device reports scope of access violated.";
+            str = GET_STR_FROM_EEPROM("Access Error : Device reports scope of access violated.");
             break;
         case DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE:
-            str = "Access Error : Data Block Unavailable.";
+            str = GET_STR_FROM_EEPROM("Access Error : Data Block Unavailable.");
             break;
         case DLMS_ERROR_CODE_LONG_GET_OR_READ_ABORTED:
-            str = "Access Error : Long Get Or Read Aborted.";
+            str = GET_STR_FROM_EEPROM("Access Error : Long Get Or Read Aborted.");
             break;
         case DLMS_ERROR_CODE_NO_LONG_GET_OR_READ_IN_PROGRESS:
-            str = "Access Error : No Long Get Or Read In Progress.";
+            str = GET_STR_FROM_EEPROM("Access Error : No Long Get Or Read In Progress.");
             break;
         case DLMS_ERROR_CODE_LONG_SET_OR_WRITE_ABORTED:
-            str = "Access Error : Long Set Or Write Aborted.";
+            str = GET_STR_FROM_EEPROM("Access Error : Long Set Or Write Aborted.");
             break;
         case DLMS_ERROR_CODE_NO_LONG_SET_OR_WRITE_IN_PROGRESS:
-            str = "Access Error : No Long Set Or Write In Progress.";
+            str = GET_STR_FROM_EEPROM("Access Error : No Long Set Or Write In Progress.");
             break;
         case DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID:
-            str = "Access Error : Data Block Number Invalid.";
+            str = GET_STR_FROM_EEPROM("Access Error : Data Block Number Invalid.");
             break;
         case DLMS_ERROR_CODE_OTHER_REASON:
-            str = "Access Error : Other Reason.";
+            str = GET_STR_FROM_EEPROM("Access Error : Other Reason.");
             break;
         case DLMS_ERROR_CODE_UNKNOWN:
-            str = "Unknown error.";
+            str = GET_STR_FROM_EEPROM("Unknown error.");
             break;
         case DLMS_ERROR_CODE_SEND_FAILED:
-            str = "Data send failed.";
+            str = GET_STR_FROM_EEPROM("Data send failed.");
             break;
         case DLMS_ERROR_CODE_RECEIVE_FAILED:
-            str = "Data receive failed.";
+            str = GET_STR_FROM_EEPROM("Data receive failed.");
             break;
         case DLMS_ERROR_CODE_NOT_IMPLEMENTED:
-            str = "Not implemeted.";
+            str = GET_STR_FROM_EEPROM("Not implemeted.");
             break;
         case DLMS_ERROR_CODE_INVALID_INVOKE_ID:
-            str = "Invalid Invoke ID.";
+            str = GET_STR_FROM_EEPROM("Invalid Invoke ID.");
             break;
         case DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL:
-            str = "Invocation counter value is too small.";
+            str = GET_STR_FROM_EEPROM("Invocation counter value is too small.");
             break;
         case DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR:
-            str = "Deciphering error.";
+            str = GET_STR_FROM_EEPROM("Deciphering error.");
             break;
         case DLMS_ERROR_CODE_INVALID_SECURITY_SUITE:
-            str = "Client try to connect with wrong security suite.";
+            str = GET_STR_FROM_EEPROM("Client try to connect with wrong security suite.");
             break;
         default:
-            str = "Unknown error.";
+            str = GET_STR_FROM_EEPROM("Unknown error.");
             break;
         }
     }

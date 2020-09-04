@@ -769,7 +769,7 @@ int svr_reportError(
         }
         break;
     }
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
     if (settings->base.useLogicalNameReferencing)
     {
         gxLNParameters p;
@@ -787,7 +787,7 @@ int svr_reportError(
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         gxSNParameters p;
         gxByteBuffer bb;
-        bb_init(&bb);
+        BYTE_BUFFER_INIT(&bb);
         bb_setUInt8(&bb, error);
         params_initSN(&p, &settings->base, cmd, 1, 1, NULL, &bb, settings->info.encryptedCommand);
         p.lastBlock = 1;
@@ -1959,7 +1959,7 @@ int svr_handleReadBlockNumberAccess(
     if (blockNumber != settings->base.blockIndex)
     {
         gxByteBuffer bb;
-        bb_init(&bb);
+        BYTE_BUFFER_INIT(&bb);
         bb_setUInt8(&bb, DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID);
         params_initSN(&p, &settings->base,
             DLMS_COMMAND_READ_RESPONSE, 1,
@@ -2063,7 +2063,7 @@ int svr_handleReadDataBlockAccess(
     if (blockNumber != settings->base.blockIndex)
     {
         gxByteBuffer bb;
-        bb_init(&bb);
+        BYTE_BUFFER_INIT(&bb);
         bb_setUInt8(&bb, DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID);
         params_initSN(&p, &settings->base, command, 1, DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL, settings->info.encryptedCommand);
         ret = dlms_getSNPdu(&p, data);
@@ -2087,7 +2087,7 @@ int svr_handleReadDataBlockAccess(
         size != data->size - data->position)
     {
         gxByteBuffer bb;
-        bb_init(&bb);
+        BYTE_BUFFER_INIT(&bb);
         bb_setUInt8(&bb, DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE);
         params_initSN(&p, &settings->base, command, cnt,
             DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL, settings->info.encryptedCommand);
@@ -2101,7 +2101,7 @@ int svr_handleReadDataBlockAccess(
     if (!isLast)
     {
         gxByteBuffer bb;
-        bb_init(&bb);
+        BYTE_BUFFER_INIT(&bb);
         bb_setUInt16(&bb, blockNumber);
         ++settings->base.blockIndex;
         if (command == DLMS_COMMAND_READ_RESPONSE)
@@ -2145,7 +2145,7 @@ int svr_returnSNError(
     int ret;
     gxByteBuffer bb;
     gxSNParameters p;
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     bb_setUInt8(&bb, error);
     params_initSN(&p, &settings->base, cmd, 1,
         DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR, &bb, NULL, settings->info.encryptedCommand);
@@ -2316,7 +2316,7 @@ int svr_handleWriteRequest(
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    bb_init(&results);
+    BYTE_BUFFER_INIT(&results);
     bb_capacity(&results, cnt);
     vec_init(&arr);
     for (pos = 0; pos != cnt; ++pos)
@@ -2417,7 +2417,7 @@ int svr_handleWriteRequest(
     if (ret == 0)
     {
         gxByteBuffer bb;
-        bb_init(&bb);
+        BYTE_BUFFER_INIT(&bb);
         bb_capacity(&bb, 2 * cnt);
         for (pos = 0; pos != cnt; ++pos)
         {
@@ -2681,7 +2681,7 @@ int svr_handleReleaseRequest(
     unsigned char offset = settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC ? 12 : 9;
     bb_attach(&tmp, data->data + offset, 0, data->capacity - offset);
 #else
-    bb_init(&tmp);
+    BYTE_BUFFER_INIT(&tmp);
 #endif //DLMS_IGNORE_MALLOC
     if (userInfo && (ret = apdu_getUserInformation(&settings->base, &tmp, 0)) != 0)
     {

@@ -54,7 +54,7 @@ void reply_init(gxReplyData* reply)
     reply->commandType = 0;
     reply->moreData = DLMS_DATA_REQUEST_TYPES_NONE;
     reply->encryptedCommand = reply->command = DLMS_COMMAND_NONE;
-    bb_init(&reply->data);
+    BYTE_BUFFER_INIT(&reply->data);
     reply->complete = 0;
     var_init(&reply->dataValue);
     reply->totalCount = 0;

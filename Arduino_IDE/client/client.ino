@@ -209,7 +209,7 @@ int com_readDataBlock(
   {
     return DLMS_ERROR_CODE_OK;
   }
-  bb_init(&rr);
+  BYTE_BUFFER_INIT(&rr);
   //Send data.
   for (pos = 0; pos != messages->size; ++pos)
   {
@@ -410,8 +410,8 @@ int com_readList(
     else
     {
       reply_init(&reply);
-      bb_init(&rr);
-      bb_init(&bb);
+      BYTE_BUFFER_INIT(&rr);
+      BYTE_BUFFER_INIT(&bb);
       //Send data.
       for (pos = 0; pos != messages.size; ++pos)
       {
@@ -608,7 +608,7 @@ int com_readProfileGenerics()
     oa_empty(&objects);
     return ret;
   }
-  bb_init(&ba);
+  BYTE_BUFFER_INIT(&ba);
   for (pos = 0; pos != objects.size; ++pos)
   {
     ret = oa_getByIndex(&objects, pos, (gxObject**)&pg);
@@ -673,7 +673,7 @@ int com_readValues()
   gxObject* object;
   unsigned long index;
   int ret, pos;
-  bb_init(&attributes);
+  BYTE_BUFFER_INIT(&attributes);
 
   for (pos = 0; pos != Client.GetObjects()->size; ++pos)
   {
@@ -772,7 +772,7 @@ int com_readAllObjects()
 
 void setup() {
   GXTRACE(PSTR("Start application"), NULL);
-  bb_init(&frameData);
+  BYTE_BUFFER_INIT(&frameData);
   //Set frame capacity.
   bb_capacity(&frameData, 128);
   Client.init(true, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);

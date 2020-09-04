@@ -97,7 +97,7 @@ uint16_t bb_size(gxByteBuffer* arr)
     return arr->size;
 }
 
-int bb_init(
+int BYTE_BUFFER_INIT(
     gxByteBuffer* arr)
 {
     arr->capacity = 0;

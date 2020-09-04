@@ -65,11 +65,11 @@ void cip_init(ciphering* target)
     target->security = DLMS_SECURITY_NONE;
     target->encrypt = 0;
 #ifndef DLMS_IGNORE_MALLOC
-    bb_init(&target->blockCipherKey);
+    BYTE_BUFFER_INIT(&target->blockCipherKey);
     bb_set(&target->blockCipherKey, DEFAUlT_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
-    bb_init(&target->systemTitle);
+    BYTE_BUFFER_INIT(&target->systemTitle);
     bb_set(&target->systemTitle, DEFAULT_SYSTEM_TITLE, sizeof(DEFAULT_SYSTEM_TITLE));
-    bb_init(&target->authenticationKey);
+    BYTE_BUFFER_INIT(&target->authenticationKey);
     bb_set(&target->authenticationKey, DEFAUlT_AUTHENTICATION_KEY, sizeof(DEFAUlT_AUTHENTICATION_KEY));
     target->dedicatedKey = NULL;
 #else

@@ -128,7 +128,7 @@ int notify_generateDataNotificationMessages(
     int pos, ret = 0;
     gxListItem* it;
     gxByteBuffer buff;
-    bb_init(&buff);
+    BYTE_BUFFER_INIT(&buff);
     bb_setUInt8(&buff, DLMS_DATA_TYPE_STRUCTURE);
     hlp_setObjectCount(objects->size, &buff);
     for (pos = 0; pos != objects->size; ++pos)
@@ -264,7 +264,7 @@ int notify_generatePushSetupMessages(
 #else
     gxKey* it;
     pdu = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-    bb_init(pdu);
+    BYTE_BUFFER_INIT(pdu);
 #endif //DLMS_IGNORE_MALLOC
     if (push == NULL || messages == NULL)
     {

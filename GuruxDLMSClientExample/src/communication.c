@@ -396,12 +396,12 @@ int com_initializeOpticalHead(
         len = strlen(buff);
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
-            printf("\r\nTX:\t");
+            printf("\nTX:\t");
             for (pos = 0; pos != len; ++pos)
             {
                 printf("%.2X ", buff[pos]);
             }
-            printf("\r\n");
+            printf("\n");
         }
 #if defined(_WIN32) || defined(_WIN64)
         ret = WriteFile(connection->comPort, buff, len, &sendSize, &connection->osWrite);
@@ -425,7 +425,7 @@ int com_initializeOpticalHead(
 #endif
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
-            printf("\r\nRX:\t");
+            printf("\nRX:\t");
         }
         //Read reply data.
         if (com_readSerialPort(connection, '\n') != 0)
@@ -510,12 +510,12 @@ int com_initializeOpticalHead(
         len = 6;
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
-            printf("\r\nTX:\t");
+            printf("\nTX:\t");
             for (pos = 0; pos != len; ++pos)
             {
                 printf("%.2X ", buff[pos]);
             }
-            printf("\r\n");
+            printf("\n");
         }
 #if defined(_WIN32) || defined(_WIN64)//Windows
         ret = WriteFile(connection->comPort, buff, len, &sendSize, &connection->osWrite);
@@ -680,7 +680,7 @@ int sendData(connection* connection, gxByteBuffer* data)
     return 0;
 }
 
-int readData(connection* connection, gxByteBuffer* data, int index)
+int readData(connection* connection, gxByteBuffer* data, int* index)
 {
     int ret = 0;
     if (connection->comPort != INVALID_HANDLE_VALUE)
@@ -705,17 +705,17 @@ int readData(connection* connection, gxByteBuffer* data, int index)
     }
     if (connection->trace > GX_TRACE_LEVEL_INFO)
     {
-        char* hex = hlp_bytesToHex(connection->data.data + index, connection->data.size - index);
-        if (index == 0)
+        char* hex = hlp_bytesToHex(connection->data.data + *index, connection->data.size - *index);
+        if (*index == 0)
         {
-            printf("RX:\t %s", hex);
+            printf("\nRX:\t %s", hex);
         }
         else
         {
             printf(" %s", hex);
         }
         free(hex);
-        index = connection->data.size;
+        *index = connection->data.size;
     }
     return 0;
 }
@@ -738,7 +738,7 @@ int readDLMSPacket(
     if (connection->trace == GX_TRACE_LEVEL_VERBOSE)
     {
         hex = bb_toHexString(data);
-        printf("TX:\t%s\r\n", hex);
+        printf("\nTX:\t%s\n", hex);
         free(hex);
     }
     if ((ret = sendData(connection, data)) != 0)
@@ -749,7 +749,7 @@ int readDLMSPacket(
     unsigned char pos = 0;
     do
     {
-        if ((ret = readData(connection, &connection->data, index)) != 0)
+        if ((ret = readData(connection, &connection->data, &index)) != 0)
         {
             if (ret != DLMS_ERROR_CODE_RECEIVE_FAILED || pos == 3)
             {
@@ -773,7 +773,7 @@ int readDLMSPacket(
     } while (reply->complete == 0);
     if (connection->trace == GX_TRACE_LEVEL_VERBOSE)
     {
-        printf("\r\n");
+        printf("\n");
     }
     return ret;
 }

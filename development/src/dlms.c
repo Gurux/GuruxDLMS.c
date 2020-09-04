@@ -632,7 +632,7 @@ int getString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlm
     if (len > 0)
     {
         value->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(value->strVal);
+        BYTE_BUFFER_INIT(value->strVal);
         ret = bb_set2(value->strVal, buff, buff->position, len);
     }
 #endif //DLMS_IGNORE_MALLOC
@@ -678,7 +678,7 @@ int getUtfString(
     if (len > 0)
     {
         value->strUtfVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(value->strUtfVal);
+        BYTE_BUFFER_INIT(value->strUtfVal);
         ret = bb_set2(value->strUtfVal, buff, buff->position, len);
         value->vt = DLMS_DATA_TYPE_STRING_UTF8;
     }
@@ -812,7 +812,7 @@ int getBcd(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVA
     }
 #else
     value->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-    bb_init(value->strVal);
+    BYTE_BUFFER_INIT(value->strVal);
     value->vt = DLMS_DATA_TYPE_STRING;
     bb_capacity(value->strVal, (uint16_t)(len * 2));
     for (a = 0; a != len; ++a)
@@ -3023,7 +3023,7 @@ int dlms_receiverReady(
     unsigned char buff[40];
     bb_attach(&bb, buff, 0, sizeof(buff));
 #else
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
 #endif //DLMS_IGNORE_MALLOC
 
     if (settings->useLogicalNameReferencing)
@@ -3846,7 +3846,7 @@ int dlms_changeType(
 #if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
         char* tmp = bb_toHexString(value);
         newValue->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(newValue->strVal);
+        BYTE_BUFFER_INIT(newValue->strVal);
         bb_addString(newValue->strVal, tmp);
         gxfree(tmp);
         newValue->vt = DLMS_DATA_TYPE_STRING;
@@ -3870,7 +3870,7 @@ int dlms_changeType(
 #if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_MALLOC)
         char* tmp = bb_toHexString(value);
         newValue->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(newValue->strVal);
+        BYTE_BUFFER_INIT(newValue->strVal);
         bb_addString(newValue->strVal, tmp);
         gxfree(tmp);
         newValue->vt = DLMS_DATA_TYPE_STRING;
@@ -5244,7 +5244,7 @@ int dlms_getLnMessages(
     pdu = p->serializedPdu;
 #else
     gxByteBuffer reply;
-    bb_init(&reply);
+    BYTE_BUFFER_INIT(&reply);
     pdu = &reply;
 #endif //DLMS_IGNORE_MALLOC
     do
@@ -5270,7 +5270,7 @@ int dlms_getLnMessages(
             bb_clear(it);
 #else
             it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(it);
+            BYTE_BUFFER_INIT(it);
 #endif //DLMS_IGNORE_MALLOC
             if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
@@ -5321,7 +5321,7 @@ int dlms_getSnMessages(
     {
         frame = getNextSend(p->settings, 1);
     }
-    bb_init(&data);
+    BYTE_BUFFER_INIT(&data);
     mes_clear(messages);
     do
     {
@@ -5339,7 +5339,7 @@ int dlms_getSnMessages(
             it = messages->data[messages->size];
             ++messages->size;
 #endif //DLMS_IGNORE_MALLOC
-            bb_init(it);
+            BYTE_BUFFER_INIT(it);
             if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
 #ifndef DLMS_IGNORE_WRAPPER
@@ -5578,7 +5578,7 @@ int dlms_secure(
 #ifdef DLMS_IGNORE_MALLOC
     bb_attach(&challenge, pduAttributes, 0, sizeof(pduAttributes));
 #else
-    bb_init(&challenge);
+    BYTE_BUFFER_INIT(&challenge);
 #endif //DLMS_IGNORE_MALLOC
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH)
     {

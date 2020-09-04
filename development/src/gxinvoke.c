@@ -190,7 +190,7 @@ int invoke_AssociationLogicalName(
         uint32_t ic = 0;
         gxByteBuffer bb;
         gxByteBuffer* readSecret;
-        bb_init(&bb);
+        BYTE_BUFFER_INIT(&bb);
 #ifdef DLMS_IGNORE_MALLOC
         uint16_t count;
         if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0)
@@ -239,7 +239,7 @@ int invoke_AssociationLogicalName(
             readSecret = &object->secret;
         }
 
-        bb_init(&bb);
+        BYTE_BUFFER_INIT(&bb);
         bb_attach(&bb, tmp2, 0, sizeof(tmp2));
         if ((ret = dlms_secure(&settings->base,
             ic,
@@ -484,8 +484,8 @@ int invoke_ImageTransfer(
             ++target->imageActivateInfo.size;
 #else
             item = (gxImageActivateInfo*)gxmalloc(sizeof(gxImageActivateInfo));
-            bb_init(&item->identification);
-            bb_init(&item->signature);
+            BYTE_BUFFER_INIT(&item->identification);
+            BYTE_BUFFER_INIT(&item->signature);
             arr_push(&target->imageActivateInfo, item);
 #endif //DLMS_IGNORE_MALLOC
             item->size = var_toInteger(size);
@@ -656,7 +656,7 @@ int invoke_SapAssigment(
         {
             it = (gxSapItem*)gxmalloc(sizeof(gxSapItem));
             it->id = id;
-            bb_init(&it->name);
+            BYTE_BUFFER_INIT(&it->name);
             bb_set(&it->name, name->data, name->size);
             arr_push(&target->sapAssignmentList, it);
         }
@@ -751,7 +751,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
         else
         {
             gxByteBuffer bb;
-            bb_init(&bb);
+            BYTE_BUFFER_INIT(&bb);
             for (pos = 0; pos != e->parameters.Arr->size; ++pos)
             {
                 bb_clear(&bb);
@@ -1006,7 +1006,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
         if ((ret = arr_getByIndex(&object->activeDevices, object->activeDevices.size, (void**)&ad, sizeof(gxActiveDevice))) == 0)
         {
             ++object->activeDevices.size;
-            bb_init(&ad->macAddress);
+            BYTE_BUFFER_INIT(&ad->macAddress);
             ba_init(&ad->status);
             ret = cosem_getOctectString(value->byteArr, &ad->macAddress);
         }
@@ -1014,7 +1014,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
         if ((ret = va_getByIndex(value->Arr, 0, &it)) == 0)
         {
             ad = (gxActiveDevice*)gxcalloc(1, sizeof(gxActiveDevice));
-            bb_init(&ad->macAddress);
+            BYTE_BUFFER_INIT(&ad->macAddress);
             ba_init(&ad->status);
             bb_set(&ad->macAddress, it->byteArr->data, it->byteArr->size);
             arr_push(&object->activeDevices, ad);

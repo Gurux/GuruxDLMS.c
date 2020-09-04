@@ -374,7 +374,7 @@ int apdu_generateUserInformation(
         unsigned char cmd = DLMS_COMMAND_GLO_INITIATE_REQUEST;
         gxByteBuffer crypted;
 #ifndef DLMS_IGNORE_MALLOC
-        bb_init(&crypted);
+        BYTE_BUFFER_INIT(&crypted);
 #else
         unsigned char tmp[25 + 12];
         bb_attach(&crypted, tmp, 0, sizeof(tmp));
@@ -594,7 +594,7 @@ int apdu_parseUserInformation(
             if (settings->cipher.dedicatedKey == NULL)
             {
                 settings->cipher.dedicatedKey = gxmalloc(sizeof(gxByteBuffer));
-                bb_init(settings->cipher.dedicatedKey);
+                BYTE_BUFFER_INIT(settings->cipher.dedicatedKey);
             }
             else
             {

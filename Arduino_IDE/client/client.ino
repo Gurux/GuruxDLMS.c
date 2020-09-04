@@ -111,10 +111,8 @@ int com_readSerialPort(
   uint16_t pos;
   uint16_t available;
   unsigned char eopFound = 0;
-  uint16_t lastReadIndex = 0;
+  uint16_t lastReadIndex = frameData.position;
   uint32_t start = millis();
-  frameData.size = 0;
-  frameData.position = 0;
   do
   {
     available = Serial.available();
@@ -143,7 +141,7 @@ int com_readSerialPort(
     }
     else
     {
-      delay(100);
+      delay(50);
     }
     //If the meter doesn't reply in given time.
     if (!(millis() - start < WAIT_TIME))
@@ -185,6 +183,11 @@ int readDLMSPacket(
       }
       ++resend;
       GXTRACE_INT(PSTR("Data send failed. Try to resend."), resend);
+      if ((ret = Serial.write(data->data, data->size)) != data->size)
+      {
+        //If failed to write all bytes.
+        GXTRACE(PSTR("Failed to write all data to the serial port.\n"), NULL);
+      }
     }
     ret = Client.GetData(&frameData, reply);
     if (ret != 0 && ret != DLMS_ERROR_CODE_FALSE)
@@ -753,7 +756,7 @@ int com_readAllObjects()
   obj_clear(BASE(clock1));
   free(data);
 
-  //Read Profile generic. 
+  //Read Profile generic.
   gxProfileGeneric pg;
   cosem_init(BASE(pg), DLMS_OBJECT_TYPE_PROFILE_GENERIC, "1.0.99.1.0.255");
   com_read(BASE(pg), 3);

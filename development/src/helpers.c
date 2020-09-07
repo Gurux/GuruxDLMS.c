@@ -908,7 +908,8 @@ int hlp_intToString(char* str, int bufsize, int32_t value, unsigned char isSigne
         *str = '-';
         ++str;
         --bufsize;
-        val = -value;
+        value = -value;
+        val = value;
         ++cnt;
     }
     if (digits != 0)

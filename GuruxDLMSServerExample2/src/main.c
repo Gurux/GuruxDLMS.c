@@ -1857,7 +1857,7 @@ void svr_preRead(
         {
             gxtime dt;
             time_now(&dt, 0);
-            e->value.ulVal = time_toUnixTime2(&dt.value);
+            e->value.ulVal = time_toUnixTime2(&dt);
             e->value.vt = DLMS_DATA_TYPE_UINT32;
             e->handled = 1;
         }

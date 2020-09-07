@@ -49,6 +49,17 @@ static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 static const unsigned char EMPTY_LN[6] = { 0, 0, 0, 0, 0, 0 };
 static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
+
+//Get error message directly from EEPROM to save RAM.
+#ifdef ARDUINO_ARCH_AVR
+//If AVR is used.
+#include <avr/pgmspace.h>
+#define GET_STR_FROM_EEPROM(x) PSTR(x)
+#else
+#define GET_STR_FROM_EEPROM(x) x
+#endif//ARDUINO_ARCH_AVR
+
+
 //Get UInt32.
 #define GETU32(pt) (((uint32_t)(pt)[0] << 24) | \
                     ((uint32_t)(pt)[1] << 16) | \

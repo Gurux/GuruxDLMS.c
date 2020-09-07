@@ -37,6 +37,11 @@
 #include <string.h>
 #include "../include/objectarray.h"
 
+#if defined(_WIN64) || defined(_WIN32) || defined(__linux__)
+#include <stdio.h>
+#include "../include/helpers.h"
+#endif //defined(_WIN64) || defined(_WIN32) || defined(__linux__)
+
 //Initialize objectArray.
 void oa_init(objectArray* arr)
 {

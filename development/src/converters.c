@@ -74,183 +74,183 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
     switch (type)
     {
     case DLMS_OBJECT_TYPE_NONE:
-        ret = "";
+        ret = GET_STR_FROM_EEPROM("");
         break;
     case DLMS_OBJECT_TYPE_DATA:
-        ret = "Data";
+        ret = GET_STR_FROM_EEPROM("Data");
         break;
     case DLMS_OBJECT_TYPE_REGISTER:
-        ret = "Register";
+        ret = GET_STR_FROM_EEPROM("Register");
         break;
     case DLMS_OBJECT_TYPE_CLOCK:
-        ret = "Clock";
+        ret = GET_STR_FROM_EEPROM("Clock");
         break;
     case DLMS_OBJECT_TYPE_ACTION_SCHEDULE:
-        ret = "ActionSchedule";
+        ret = GET_STR_FROM_EEPROM("ActionSchedule");
         break;
     case DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR:
-        ret = "Activity Calendar";
+        ret = GET_STR_FROM_EEPROM("ActivityCalendar");
         break;
     case DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME:
-        ret = "Association Logical Name";
+        ret = GET_STR_FROM_EEPROM("AssociationLogicalName");
         break;
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
-        ret = "Association Short Name";
+        ret = GET_STR_FROM_EEPROM("AssociationShortName");
         break;
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
-        ret = "Auto Answer";
+        ret = GET_STR_FROM_EEPROM("AutoAnswer");
         break;
     case DLMS_OBJECT_TYPE_AUTO_CONNECT:
-        ret = "Auto Connect";
+        ret = GET_STR_FROM_EEPROM("AutoConnect");
         break;
     case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
-        ret = "Demand Register";
+        ret = GET_STR_FROM_EEPROM("DemandRegister");
         break;
     case DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP:
-        ret = "MAC Address Setup";
+        ret = GET_STR_FROM_EEPROM("MACAddressSetup");
         break;
     case DLMS_OBJECT_TYPE_EXTENDED_REGISTER:
-        ret = "Extended Register";
+        ret = GET_STR_FROM_EEPROM("ExtendedRegister");
         break;
     case DLMS_OBJECT_TYPE_GPRS_SETUP:
-        ret = "GPRS Setup";
+        ret = GET_STR_FROM_EEPROM("GPRSSetup");
         break;
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
-        ret = "Security Setup";
+        ret = GET_STR_FROM_EEPROM("SecuritySetup");
         break;
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
-        ret = "IEC HDLC Setup";
+        ret = GET_STR_FROM_EEPROM("IECHDLCSetup");
         break;
     case DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP:
-        ret = "IEC Local Port Setup";
+        ret = GET_STR_FROM_EEPROM("IECLocalPortSetup");
         break;
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-        ret = "IEC Twisted Pair Setup";
+        ret = GET_STR_FROM_EEPROM("IECTwistedPairSetup");
         break;
     case DLMS_OBJECT_TYPE_IP4_SETUP:
-        ret = "IP4 Setup";
+        ret = GET_STR_FROM_EEPROM("IP4Setup");
         break;
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
-        ret = "MBUS Slave Port Setup";
+        ret = GET_STR_FROM_EEPROM("MBUSSlavePortSetup");
         break;
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
-        ret = "Image Transfer";
+        ret = GET_STR_FROM_EEPROM("ImageTransfer");
         break;
     case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
-        ret = "Disconnect Control";
+        ret = GET_STR_FROM_EEPROM("DisconnectControl");
         break;
     case DLMS_OBJECT_TYPE_LIMITER:
-        ret = "Limiter";
+        ret = GET_STR_FROM_EEPROM("Limiter");
         break;
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
-        ret = "MBUS Client";
+        ret = GET_STR_FROM_EEPROM("MBUSClient");
         break;
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
-        ret = "Modem Configuration";
+        ret = GET_STR_FROM_EEPROM("ModemConfiguration");
         break;
     case DLMS_OBJECT_TYPE_PPP_SETUP:
-        ret = "PPP Setup";
+        ret = GET_STR_FROM_EEPROM("PPPSetup");
         break;
     case DLMS_OBJECT_TYPE_PROFILE_GENERIC:
-        ret = "Profile Generic";
+        ret = GET_STR_FROM_EEPROM("ProfileGeneric");
         break;
     case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
-        ret = "Register Activation";
+        ret = GET_STR_FROM_EEPROM("RegisterActivation");
         break;
     case DLMS_OBJECT_TYPE_REGISTER_MONITOR:
-        ret = "Register Monitor";
+        ret = GET_STR_FROM_EEPROM("RegisterMonitor");
         break;
     case DLMS_OBJECT_TYPE_REGISTER_TABLE:
-        ret = "Register Table";
+        ret = GET_STR_FROM_EEPROM("RegisterTable");
         break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_STARTUP:
-        ret = "ZigBee SAS Startup";
+        ret = GET_STR_FROM_EEPROM("ZigBeeSASStartup");
         break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN:
-        ret = "ZigBee SAS Join";
+        ret = GET_STR_FROM_EEPROM("ZigBeeSASJoin");
         break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION:
-        ret = "ZigBee SAS APS Fragmentation";
+        ret = GET_STR_FROM_EEPROM("ZigBeeSASAPSFragmentation");
         break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL:
-        ret = "ZigBee Network Control";
+        ret = GET_STR_FROM_EEPROM("ZigBeeNetworkControl");
         break;
     case DLMS_OBJECT_TYPE_SAP_ASSIGNMENT:
-        ret = "SAP Assignment";
+        ret = GET_STR_FROM_EEPROM("SAPAssignment");
         break;
 #ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
-        ret = "Schedule";
+        ret = GET_STR_FROM_EEPROM("Schedule");
         break;
 #endif //DLMS_IGNORE_SCHEDULE
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SCRIPT_TABLE:
-        ret = "Script Table";
+        ret = GET_STR_FROM_EEPROM("ScriptTable");
         break;
 #endif //DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SMTP_SETUP:
-        ret = "SMTP Setup";
+        ret = GET_STR_FROM_EEPROM("SMTPSetup");
         break;
     case DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE:
-        ret = "Special Days Table";
+        ret = GET_STR_FROM_EEPROM("SpecialDaysTable");
         break;
     case DLMS_OBJECT_TYPE_STATUS_MAPPING:
-        ret = "Status Mapping";
+        ret = GET_STR_FROM_EEPROM("StatusMapping");
         break;
     case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
-        ret = "TCP UDP Setup";
+        ret = GET_STR_FROM_EEPROM("TCPUDPSetup");
         break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
-        ret = "Utility Tables";
+        ret = GET_STR_FROM_EEPROM("UtilityTables");
         break;
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
-        ret = "MBUS Master Port Setup";
+        ret = GET_STR_FROM_EEPROM("MBUSMasterPortSetup");
         break;
     case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
-        ret = "Message Handler";
+        ret = GET_STR_FROM_EEPROM("MessageHandler");
         break;
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
-        ret = "Push Setup";
+        ret = GET_STR_FROM_EEPROM("PushSetup");
         break;
     case DLMS_OBJECT_TYPE_DATA_PROTECTION:
-        ret = "Data Protection";
+        ret = GET_STR_FROM_EEPROM("DataProtection");
         break;
     case DLMS_OBJECT_TYPE_ACCOUNT:
-        ret = "Account";
+        ret = GET_STR_FROM_EEPROM("Account");
         break;
     case DLMS_OBJECT_TYPE_CREDIT:
-        ret = "Credit";
+        ret = GET_STR_FROM_EEPROM("Credit");
         break;
     case DLMS_OBJECT_TYPE_CHARGE:
-        ret = "Charge";
+        ret = GET_STR_FROM_EEPROM("Charge");
         break;
     case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
-        ret = "Token Gateway";
+        ret = GET_STR_FROM_EEPROM("TokenGateway");
         break;
     case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
-        ret = "LLC SSCS Setup";
+        ret = GET_STR_FROM_EEPROM("LLCSSCSSetup");
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
-        ret = "Prime Nb Ofdm PLC physical layer counters";
+        ret = GET_STR_FROM_EEPROM("PrimeNbOfdmPLCphysicalLayerCounters");
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
-        ret = "Prime Nb Ofdm PLC Mac Setup";
+        ret = GET_STR_FROM_EEPROM("PrimeNbOfdmPLCMacSetup");
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
-        ret = "Prime Nb Ofdm PLC Mac functional parameters";
+        ret = GET_STR_FROM_EEPROM("PrimeNbOfdmPLCMacFunctionalParameters");
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
-        ret = "Prime Nb Ofdm PLC Mac counters";
+        ret = GET_STR_FROM_EEPROM("PrimeNbOfdmPLCMacCounters");
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
-        ret = "Prime Nb Ofdm PLC Mac network administration data";
+        ret = GET_STR_FROM_EEPROM("PrimeNbOfdmPLCMacNetworkAdministrationData");
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
-        ret = "Prime Nb Ofdm PLC applications identification";
+        ret = GET_STR_FROM_EEPROM("PrimeNbOfdmPLCApplicationsIdentification");
         break;
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
-        ret = "Tariff Plan";
+        ret = GET_STR_FROM_EEPROM("TariffPlan");
         break;
 #endif //DLMS_ITALIAN_STANDARD
     default: //Unknown type.
@@ -265,172 +265,177 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
 
 const char* obj_getUnitAsString(unsigned char unit)
 {
+    const char* ret;
     switch (unit)
     {
     case 0:
-        return "None";
+        ret = GET_STR_FROM_EEPROM("None");
     case 1:
-        return "Year";
+        ret = GET_STR_FROM_EEPROM("Year");
         break;
     case 2:
-        return "Month";
+        ret = GET_STR_FROM_EEPROM("Month");
         break;
     case 3:
-        return "Week";
+        ret = GET_STR_FROM_EEPROM("Week");
         break;
     case 4:
-        return "Day";
+        ret = GET_STR_FROM_EEPROM("Day");
         break;
     case 5:
-        return "Hour";
+        ret = GET_STR_FROM_EEPROM("Hour");
         break;
     case 6:
-        return "Minute";
+        ret = GET_STR_FROM_EEPROM("Minute");
         break;
     case 7:
-        return "Second";
+        ret = GET_STR_FROM_EEPROM("Second");
         break;
     case 8:
-        return "PhaseAngle";
+        ret = GET_STR_FROM_EEPROM("PhaseAngle");
         break;
     case 9:
-        return "Temperature";
+        ret = GET_STR_FROM_EEPROM("Temperature");
         break;
     case 10:
-        return "LocalCurrency";
+        ret = GET_STR_FROM_EEPROM("LocalCurrency");
         break;
     case 11:
-        return "Length";
+        ret = GET_STR_FROM_EEPROM("Length");
         break;
     case 12:
-        return "Speed";
+        ret = GET_STR_FROM_EEPROM("Speed");
         break;
     case 13:
-        return "Volume";
+        ret = GET_STR_FROM_EEPROM("Volume");
         break;
     case 14:
-        return "CorrectedVolume";
+        ret = GET_STR_FROM_EEPROM("CorrectedVolume");
         break;
     case 15:
-        return "VolumeFlux";
+        ret = GET_STR_FROM_EEPROM("VolumeFlux");
         break;
     case 16:
-        return "CorrectedVolumeFlux";
+        ret = GET_STR_FROM_EEPROM("CorrectedVolumeFlux");
         break;
     case 17:
-        return "VolumeFlux";
+        ret = GET_STR_FROM_EEPROM("VolumeFlux");
         break;
     case 18:
-        return "CorrectedVolumeFlux";
+        ret = GET_STR_FROM_EEPROM("CorrectedVolumeFlux");
         break;
     case 19:
-        return "Volume";
+        ret = GET_STR_FROM_EEPROM("Volume");
         break;
     case 20:
-        return "MassKg";
+        ret = GET_STR_FROM_EEPROM("MassKg");
         break;
     case 21:
-        return "Force";
+        ret = GET_STR_FROM_EEPROM("Force");
         break;
     case 22:
-        return "Energy";
+        ret = GET_STR_FROM_EEPROM("Energy");
         break;
     case 23:
-        return "PressurePascal";
+        ret = GET_STR_FROM_EEPROM("PressurePascal");
         break;
     case 24:
-        return "PressureBar";
+        ret = GET_STR_FROM_EEPROM("PressureBar");
         break;
     case 25:
-        return "Energy";
+        ret = GET_STR_FROM_EEPROM("Energy");
         break;
     case 26:
-        return "ThermalPower";
+        ret = GET_STR_FROM_EEPROM("ThermalPower");
         break;
     case 27:
-        return "ActivePower";
+        ret = GET_STR_FROM_EEPROM("ActivePower");
         break;
     case 28:
-        return "ApparentPower";
+        ret = GET_STR_FROM_EEPROM("ApparentPower");
         break;
     case 29:
-        return "ReactivePower";
+        ret = GET_STR_FROM_EEPROM("ReactivePower");
         break;
     case 30:
-        return "ActiveEnergy";
+        ret = GET_STR_FROM_EEPROM("ActiveEnergy");
         break;
     case 31:
-        return "ApparentEnergy";
+        ret = GET_STR_FROM_EEPROM("ApparentEnergy");
         break;
     case 32:
-        return "ReactiveEnergy";
+        ret = GET_STR_FROM_EEPROM("ReactiveEnergy");
         break;
     case 33:
-        return "Current";
+        ret = GET_STR_FROM_EEPROM("Current");
         break;
     case 34:
-        return "ElectricalCharge";
+        ret = GET_STR_FROM_EEPROM("ElectricalCharge");
         break;
     case 35:
-        return "Voltage";
+        ret = GET_STR_FROM_EEPROM("Voltage");
         break;
     case 36:
-        return "Electrical field strength E V/m";
+        ret = GET_STR_FROM_EEPROM("Electrical field strength E V/m");
         break;
     case 37:
-        return "Capacity C farad C/V = As/V";
+        ret = GET_STR_FROM_EEPROM("Capacity C farad C/V = As/V");
         break;
     case 38:
-        return "Resistance";
+        ret = GET_STR_FROM_EEPROM("Resistance");
         break;
     case 39:
-        return "Resistivity";
+        ret = GET_STR_FROM_EEPROM("Resistivity");
         break;
     case 40:
-        return "Magnetic flux F weber Wb = Vs";
+        ret = GET_STR_FROM_EEPROM("Magnetic flux F weber Wb = Vs");
         break;
     case 41:
-        return "Induction T tesla Wb/m2";
+        ret = GET_STR_FROM_EEPROM("Induction T tesla Wb/m2");
         break;
     case 42:
-        return "Magnetic field strength H A/m";
+        ret = GET_STR_FROM_EEPROM("Magnetic field strength H A/m");
         break;
     case 43:
-        return "Inductivity L henry H = Wb/A";
+        ret = GET_STR_FROM_EEPROM("Inductivity L henry H = Wb/A");
         break;
     case 44:
-        return "Frequency";
+        ret = GET_STR_FROM_EEPROM("Frequency");
         break;
     case 45:
-        return "ActiveEnergy";
+        ret = GET_STR_FROM_EEPROM("ActiveEnergy");
         break;
     case 46:
-        return "ReactiveEnergy";
+        ret = GET_STR_FROM_EEPROM("ReactiveEnergy");
         break;
     case 47:
-        return "ApparentEnergy";
+        ret = GET_STR_FROM_EEPROM("ApparentEnergy");
         break;
     case 48:
-        return "V260*60s";
+        ret = GET_STR_FROM_EEPROM("V260*60s");
         break;
     case 49:
-        return "A260*60s";
+        ret = GET_STR_FROM_EEPROM("A260*60s");
         break;
     case 50:
-        return "Mass";
+        ret = GET_STR_FROM_EEPROM("Mass");
         break;
     case 51:
-        return "ConductanceSiemens";
+        ret = GET_STR_FROM_EEPROM("ConductanceSiemens");
         break;
     case 254:
-        return "OtherUnit";
+        ret = GET_STR_FROM_EEPROM("OtherUnit");
         break;
     case 255:
-        return "NoUnit";
+        ret = GET_STR_FROM_EEPROM("NoUnit");
+        break;
+    default:
+        ret = NULL;
         break;
     }
-    return "";
+    return ret;
 }
+
 #ifndef DLMS_IGNORE_DATA
 int obj_DataToString(gxData* object, char** buff)
 {

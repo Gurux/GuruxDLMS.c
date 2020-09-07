@@ -56,15 +56,6 @@ unsigned char hlp_isBigEndian(void)
     return *((unsigned char*)&a) == 0x12;
 }
 
-//Get error message directly from EEPROM to save RAM.
-#ifdef ARDUINO_ARCH_AVR
-//If AVR is used.
-#include <avr/pgmspace.h>
-#define GET_STR_FROM_EEPROM(x) PSTR(x)
-#else
-#define GET_STR_FROM_EEPROM(x) x
-#endif//ARDUINO_ARCH_AVR
-
 const char* hlp_getErrorMessage(int error)
 {
     const char* str;

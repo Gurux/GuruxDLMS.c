@@ -452,7 +452,7 @@ int obj_RegisterToString(gxRegister* object, char** buff)
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 3 Value: Scaler: ");
-    bb_addIntAsString(&ba, object->scaler);
+    bb_addDoubleAsString(&ba, hlp_getScaler(object->scaler));
     bb_addString(&ba, " Unit: ");
     bb_addString(&ba, obj_getUnitAsString(object->unit));
     bb_addString(&ba, "\r\nIndex: 2 Value: ");

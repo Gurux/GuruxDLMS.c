@@ -74,9 +74,8 @@ int com_updateClock(connection* connection)
 {
     int ret;
     gxClock clock;
-    memset(&clock, 0, sizeof(gxClock));
-    clock.base.objectType = DLMS_OBJECT_TYPE_CLOCK;
-    hlp_setLogicalName(clock.base.logicalName, "0.0.1.0.0.255");
+    unsigned char ln[] = { 0,0,1,0,0,255 };
+    INIT_OBJECT(clock, DLMS_OBJECT_TYPE_CLOCK, ln);
     //Initialize connection.
     ret = com_initializeConnection(connection);
     if (ret != DLMS_ERROR_CODE_OK)
@@ -109,9 +108,8 @@ int disconnect(connection* connection)
 {
     int ret;
     gxDisconnectControl dc;
-    memset(&dc, 0, sizeof(gxDisconnectControl));
-    dc.base.objectType = DLMS_OBJECT_TYPE_DISCONNECT_CONTROL;
-    hlp_setLogicalName(dc.base.logicalName, "0.0.96.3.10.255");
+    unsigned char ln[] = { 0,0,96,3,10,255 };
+    INIT_OBJECT(dc, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln);
     //Call Disconnect action.
     ret = com_method(connection, &dc.base, 1, NULL);
     return ret;

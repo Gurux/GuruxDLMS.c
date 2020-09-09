@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../../development/include/client.h"
+#include "../../development/include/cosem.h"
 #include "connection.h"
 
 //Make connection using TCP/IP connection.

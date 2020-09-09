@@ -2151,7 +2151,7 @@ int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
 int dlms_getHDLCAddress(
     gxByteBuffer* buff,
     uint32_t* address,
-    unsigned char isClientAddress)
+    unsigned char checkClientAddress)
 {
     unsigned char ch;
     uint16_t s, pos;
@@ -2170,7 +2170,7 @@ int dlms_getHDLCAddress(
         }
     }
     //DLMS CCT test requires that client size is one byte.
-    if (isClientAddress && size != 1)
+    if (checkClientAddress && size != 1)
     {
         return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
     }
@@ -2230,7 +2230,7 @@ int dlms_checkHdlcAddress(
     int ret;
     uint32_t source, target;
     // Get destination and source addresses.
-    if ((ret = dlms_getHDLCAddress(reply, &target, !server)) != 0)
+    if ((ret = dlms_getHDLCAddress(reply, &target, 0)) != 0)
     {
         return ret;
     }

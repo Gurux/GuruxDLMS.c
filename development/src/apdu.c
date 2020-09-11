@@ -418,6 +418,7 @@ int apdu_generateUserInformation(
 #endif //DLMS_IGNORE_MALLOC
         if (ret == 0)
         {
+            ++settings->cipher.invocationCounter;
             // Length for AARQ user field
             if ((ret = bb_setUInt8(data, (unsigned char)(2 + crypted.size))) != 0 ||
                 // Coding the choice for user-information (Octet string, universal)

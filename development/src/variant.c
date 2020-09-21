@@ -76,7 +76,7 @@ int var_setUInt32(dlmsVARIANT* data, uint32_t value)
 {
     var_clear(data);
     data->vt = DLMS_DATA_TYPE_UINT32;
-    data->lVal = value;
+    data->ulVal = value;
     return DLMS_ERROR_CODE_OK;
 }
 

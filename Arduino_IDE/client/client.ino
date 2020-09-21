@@ -792,12 +792,6 @@ void loop() {
   {
     runTime = millis();
     GXTRACE(PSTR("Start reading"), NULL);
-    //Initialize connection.
-    ret = com_initializeConnection();
-    if (ret != DLMS_ERROR_CODE_OK)
-    {
-      return;
-    }
     ret = com_readAllObjects();
     com_close();
   }

@@ -507,7 +507,7 @@ extern "C" {
 
 #define BB_ATTACH(X, V, S) bb_attach(&X, V, S, sizeof(V))
 
-#define BB_ATTACH_STR(X, V, S) bb_attachString2(&X, V, S, sizeof(V) / sizeof(V[0]))
+#define BB_ATTACH_STR(X, V, S) bb_attachString2(&X, V, S, sizeof(V))
 
 #ifdef  __cplusplus
 }

@@ -6120,7 +6120,7 @@ int cosem_getCommunications(gxValueEventArg* e)
             break;
         }
 #else
-        if ((ret = arr_getByIndex(&object->availableSwitches, pos, (void**)&it, sizeof(gxMacPhyCommunication))) != 0)
+        if ((ret = arr_getByIndex(&object->communications, pos, (void**)&it, sizeof(gxMacPhyCommunication))) != 0)
         {
             break;
         }

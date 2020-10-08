@@ -21,6 +21,7 @@ Arduino_IDE/server/include
 Arduino_IDE/server/src
 Arduino_IDE/client/include
 Arduino_IDE/client/src
+GuruxDLMSSimpleServerExample2/dlms/
 GuruxDLMSServerExample2/dlms/
 
 # External tool builders

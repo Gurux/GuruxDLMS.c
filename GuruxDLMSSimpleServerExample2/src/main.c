@@ -135,6 +135,8 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(frameCounter)
 };
 
+gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE(BASE(associationNone), 0) };
+
 static uint32_t executeTime = 0;
 
 static uint16_t activePowerL1Value = 0;
@@ -227,7 +229,10 @@ int saveSettings()
         unsigned char tmp[2048];
         gxByteBuffer bb;
         BB_ATTACH(bb, tmp, 0);
-        if ((ret = ser_saveObjects(ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb)) == 0)
+        gxSerializerSettings serializerSettings;
+        serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
+        serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
+        if ((ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb)) == 0)
         {
             fwrite(bb.data, bb.size, 1, f);
         }
@@ -1170,7 +1175,10 @@ int loadSettings()
             BB_ATTACH(bb, tmp, 0);
             bb.size += (uint16_t) fread(bb.data, 1, size, f);
             fclose(f);
-            ret = ser_loadObjects(&settings.base, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
+            gxSerializerSettings serializerSettings;
+            serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
+            serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
+            ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
             {
             }
             bb_clear(&bb);

@@ -1563,7 +1563,10 @@ int ser_saveTariffPlan(gxTariffPlan* object, gxByteBuffer* serializer)
 }
 #endif //DLMS_ITALIAN_STANDARD
 
-int ser_saveObject(gxObject* object, gxByteBuffer* serializer)
+int ser_saveObject(
+    gxSerializerSettings* serializeSettings,
+    gxObject* object,
+    gxByteBuffer* serializer)
 {
     int ret = 0;
     switch (object->objectType)
@@ -1899,6 +1902,7 @@ int ser_saveObject(gxObject* object, gxByteBuffer* serializer)
 
 //Serialize objects to bytebuffer.
 int ser_saveObjects(
+    gxSerializerSettings* serializeSettings,
     gxObject** object,
     uint16_t count,
     gxByteBuffer* serializer)
@@ -1909,7 +1913,7 @@ int ser_saveObjects(
     bb_setUInt8(serializer, 1);
     for (pos = 0; pos != count; ++pos)
     {
-        if ((ret = ser_saveObject(object[pos], serializer)) != 0)
+        if ((ret = ser_saveObject(serializeSettings, object[pos], serializer)) != 0)
         {
             break;
         }
@@ -2699,6 +2703,7 @@ int ser_loadRegisterActivation(
         for (pos = 0; pos != count; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
+            object->registerAssignment.size = count;
             if ((ret = arr_getByIndex(&object->registerAssignment, pos, (void**)&od, sizeof(gxObject))) != 0 ||
                 (ret = bb_getUInt16(serializer, &od->objectType)) != 0 ||
                 (ret = bb_get(serializer, od->logicalName, 6)) != 0)
@@ -2719,6 +2724,7 @@ int ser_loadRegisterActivation(
         }
         if (ret == 0 && (ret = hlp_getObjectCount2(serializer, &count)) == 0)
         {
+            object->maskList.size = count;
             for (pos = 0; pos != count; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
@@ -2801,6 +2807,7 @@ int ser_loadRegisterMonitor(
     obj_clear((gxObject*)object);
     if ((ret = hlp_getObjectCount2(serializer, &count)) == 0)
     {
+        object->thresholds.size = count;
         for (pos = 0; pos != count; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
@@ -2848,6 +2855,7 @@ int ser_loadRegisterMonitor(
         {
             if ((ret = hlp_getObjectCount2(serializer, &count)) == 0)
             {
+                object->actions.size = count;
                 for (pos = 0; pos != count; ++pos)
                 {
 #ifdef DLMS_IGNORE_MALLOC
@@ -3805,6 +3813,7 @@ int ser_loadTariffPlan(gxTariffPlan* object, gxByteBuffer* serializer)
 
 int ser_loadObject(
     dlmsSettings* settings,
+    gxSerializerSettings* serializeSettings,
     gxObject* object,
     gxByteBuffer* serializer)
 {
@@ -4141,6 +4150,7 @@ int ser_loadObject(
 //Serialize objects to bytebuffer.
 int ser_loadObjects(
     dlmsSettings* settings,
+    gxSerializerSettings* serializeSettings,
     gxObject** object,
     uint16_t count,
     gxByteBuffer* serializer)
@@ -4158,7 +4168,7 @@ int ser_loadObjects(
             {
                 break;
             }
-            if ((ret = ser_loadObject(settings, object[pos], serializer)) != 0)
+            if ((ret = ser_loadObject(settings, serializeSettings, object[pos], serializer)) != 0)
             {
                 break;
             }

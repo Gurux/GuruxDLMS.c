@@ -2009,11 +2009,11 @@ int invoke_RegisterActivation(
             (ret = arr_getByIndex(&object->maskList, object->maskList.size - 1, (void**)&k, sizeof(gxRegisterActivationMask))) == 0 &&
             (ret = cosem_getOctectString2(e->parameters.byteArr, k->name, sizeof(k->name), &size)) == 0)
         {
-            k->length = size;
+            k->length = (unsigned char) size;
             size = sizeof(k->indexes);
             if ((ret = cosem_checkArray(e->parameters.byteArr, &size)) == 0)
             {
-                k->count = size;
+                k->count = (unsigned char)size;
                 for (pos = 0; pos != k->count; ++pos)
                 {
                     if ((ret = cosem_getUInt8(e->parameters.byteArr, &k->indexes[pos])) != 0)

@@ -37,16 +37,42 @@
 #include "gxobjects.h"
 #include "dlmssettings.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+
+    //Don't serialize this attribute.
+#define IGNORE_ATTRIBUTE(a, x) {a, x}
+
+    typedef struct
+    {
+        /*Target to ignore*/
+        gxObject* target;
+        /*Bit-string attribute list from attributes that are not serialized.*/
+        uint16_t attributes;
+    } gxSerializerIgnore;
+
+    typedef struct
+    {
+        //List of attributes that are not serialized.
+        gxSerializerIgnore* ignoredAttributes;
+        //Count of ignored objects.
+        uint16_t count;
+    } gxSerializerSettings;
+
     //Serialize object to bytebuffer.
     int ser_saveObject(
+        gxSerializerSettings* serializeSettings,
         gxObject* object,
         gxByteBuffer* serializer);
 
     //Serialize objects to bytebuffer.
     int ser_saveObjects(
+        gxSerializerSettings* serializeSettings,
         gxObject** object,
         uint16_t count,
         gxByteBuffer* serializer);
@@ -54,12 +80,14 @@ extern "C" {
     //Serialize object from bytebuffer.
     int ser_loadObject(
         dlmsSettings* settings,
+        gxSerializerSettings* serializeSettings,
         gxObject* object,
         gxByteBuffer* serializer);
 
     //Serialize objects from the bytebuffer.
     int ser_loadObjects(
         dlmsSettings* settings,
+        gxSerializerSettings* serializeSettings,
         gxObject** object,
         uint16_t count,
         gxByteBuffer* serializer);

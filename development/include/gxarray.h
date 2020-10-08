@@ -121,6 +121,10 @@ extern "C" {
         uint16_t index,
         uint16_t itemSize);
 
+    int arr_getByIndexRef(gxArray* arr, uint16_t index, void** value);
+
+    int arr_setByIndexRef(gxArray* arr, void* value);
+
 #endif //DLMS_IGNORE_MALLOC
 
     int arr_getByIndex2(gxArray* arr, uint16_t index, void** value, uint16_t itemSize);

@@ -813,12 +813,7 @@ void obj_clear(gxObject* object)
             obj_clearRegisterActivationAssignment(&((gxRegisterActivation*)object)->registerAssignment);
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
             obj_clearRegisterActivationMaskList(&((gxRegisterActivation*)object)->maskList);
-#ifdef DLMS_IGNORE_MALLOC
-            memset(((gxRegisterActivation*)object)->activeMask, 0, 6);
-#else
             bb_clear(&((gxRegisterActivation*)object)->activeMask);
-#endif //DLMS_IGNORE_MALLOC
-
             break;
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
@@ -1035,6 +1030,12 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
         case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
+#ifndef DLMS_IGNORE_MALLOC
+            gxfree(((gxPrimeNbOfdmPlcApplicationsIdentification*)object)->firmwareVersion);
+            ((gxPrimeNbOfdmPlcApplicationsIdentification*)object)->firmwareVersion = NULL;
+#else
+            ((gxPrimeNbOfdmPlcApplicationsIdentification*)object)->firmwareVersion[0] = 0;
+#endif //DLMS_IGNORE_MALLOC
             break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #ifdef DLMS_ITALIAN_STANDARD
@@ -1098,7 +1099,11 @@ unsigned char obj_attributeCount(gxObject* object)
         {
             return 2;
         }
-        return 4;
+        if (object->version < 3)
+        {
+            return 4;
+        }
+        return 6;
     }
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
     {

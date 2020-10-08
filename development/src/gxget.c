@@ -1935,6 +1935,7 @@ int cosem_getIP4Setup(
         for (pos = 0; pos != object->multicastIPAddress.size; ++pos)
         {
             if ((ret = arr_getByIndex(&object->multicastIPAddress, pos, (void**)&v, sizeof(uint32_t))) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT32)) != 0 ||
                 (ret = bb_setUInt32(data, *v)) != 0)
             {
                 break;
@@ -3319,9 +3320,6 @@ int cosem_getRegisterActivation(
         {
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
             if ((ret = oa_getByIndex(&object->registerAssignment, pos, &od)) != 0 ||
-#else
-            if ((ret = arr_getByIndex2(&object->registerAssignment, pos, (void**)&od, sizeof(gxObject))) != 0 ||
-#endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
                 (ret = bb_setUInt8(data, 2)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
@@ -3332,6 +3330,19 @@ int cosem_getRegisterActivation(
             {
                 break;
             }
+#else
+            if ((ret = arr_getByIndexRef(&object->registerAssignment, pos, (void**)&od)) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+                (ret = bb_setUInt8(data, 2)) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
+                (ret = bb_setUInt16(data, od->objectType)) != 0 ||
+                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                (ret = bb_setUInt8(data, 6)) != 0 ||
+                (ret = bb_set(data, od->logicalName, 6)) != 0)
+            {
+                break;
+            }
+#endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
         }
     }
     else if (e->index == 3)
@@ -3361,30 +3372,15 @@ int cosem_getRegisterActivation(
             {
                 break;
             }
-            unsigned char cnt;
-            switch (a->target->objectType)
-            {
-            case DLMS_OBJECT_TYPE_REGISTER:
-                cnt = 3;
-                break;
-            case DLMS_OBJECT_TYPE_EXTENDED_REGISTER:
-                cnt = 5;
-                break;
-            case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
-                cnt = 9;
-                break;
-            default:
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                 (ret = bb_setUInt8(data, 6)) != 0 ||
-                (ret = bb_set(data, a->target->logicalName, 6)) != 0 ||
+                (ret = bb_set(data, a->name, a->length)) != 0 ||
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
-                (ret = bb_setUInt8(data, cnt)) != 0)
+                (ret = bb_setUInt8(data, a->count)) != 0)
             {
                 break;
             }
-            for (pos2 = 0; pos2 != cnt; ++pos2)
+            for (pos2 = 0; pos2 != a->count; ++pos2)
             {
                 if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
                     (ret = bb_setUInt8(data, a->indexes[pos2])) != 0)
@@ -3424,13 +3420,8 @@ int cosem_getRegisterActivation(
         gxByteBuffer* data = e->value.byteArr;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-#ifdef DLMS_IGNORE_MALLOC
-        (ret = hlp_setObjectCount(6, data)) != 0 ||
-            (ret = bb_set(data, object->activeMask, 6)) != 0)
-#else
             (ret = hlp_setObjectCount(object->activeMask.size, data)) != 0 ||
             (ret = bb_set2(data, &object->activeMask, 0, bb_size(&object->activeMask))) != 0)
-#endif //DLMS_IGNORE_MALLOC
         {
             return ret;
         }
@@ -4757,9 +4748,9 @@ int cosem_getAccount(
                     (ret = bb_set(data, ccc->chargeReference, 6)) != 0 ||
                     //collection configuration
                     (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
-                {
-                    break;
-                }
+            {
+                break;
+            }
     }
     else if (e->index == 12)
     {
@@ -5847,8 +5838,7 @@ int cosem_getPrimeNbOfdmPlcMacFunctionalParameters(
     case 5:
     {
 #ifdef DLMS_IGNORE_MALLOC
-        uint16_t size;
-        ret = cosem_getOctectString2(e->value.byteArr, object->sna.data, (uint16_t)object->sna.size, &size);
+        ret = cosem_setOctectString2(e->value.byteArr, object->sna.data, object->sna.size);
 #else
         ret = var_addBytes(&e->value, object->sna.data, (uint16_t)object->sna.size);
 #endif //DLMS_IGNORE_MALLOC
@@ -5997,7 +5987,7 @@ int cosem_getSwitchTable(gxValueEventArg* e)
             break;
         }
 #endif //DLMS_IGNORE_MALLOC
-        if ((ret = cosem_setUInt16(data, *it)) != 0)
+        if ((ret = cosem_setInt16(data, *it)) != 0)
         {
             break;
         }

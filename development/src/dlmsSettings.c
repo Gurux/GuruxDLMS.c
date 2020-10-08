@@ -158,7 +158,7 @@ void cl_init(
     oa_init(&settings->releasedObjects);
     settings->expectedSecurityPolicy = 0xFF;
     settings->expectedSecuritySuite = 0xFF;
-    settings->expectedInvocationCounter = 0;
+    settings->expectedInvocationCounter = NULL;
     settings->expectedClientSystemTitle = NULL;
 }
 
@@ -198,7 +198,7 @@ void cl_clear(
     settings->userId = -1;
     oa_clear(&settings->releasedObjects, 1);
     resetFrameSequence(settings);
-    settings->expectedInvocationCounter = 0;
+    settings->expectedInvocationCounter = NULL;
 }
 
 void svr_clear(

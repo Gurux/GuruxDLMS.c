@@ -57,56 +57,519 @@
 #include "../../development/include/gxkey.h"
 #include "../../development/include/gxobjects.h"
 #include "../../development/include/gxget.h"
-#include "../../development/include/notify.h"
 #include "../../development/include/gxset.h"
+//Add this if you want to send notify messages.
+#include "../../development/include/notify.h"
+//Add support for serialization.
+#include "../../development/include/gxserializer.h"
 
-//Meter serial number.
-unsigned long SERIAL_NUMBER = 123456;
+GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_OFF;
 
-unsigned char useRingBuffer = 0;
-/*Define all COSEM objects here so they are not use stack.*/
-gxData ldn, id1, id2, fw;
-gxAssociationLogicalName associationNone, highAssociation;
+const static char* FLAG_ID = "GRX";
+//Serialization version is increased every time when structure of serialized data is changed.
+const static uint16_t SERIALIZATION_VERSION = 2;
 
-#ifndef DLMS_ITALIAN_STANDARD
-//Association view for None and Low authentication if Logical name referencing is used.
-gxAssociationLogicalName lowAssociation;
-//Same Authentication view is used if short name referencing is used.
-//This is not needed if logical name referencing is used.
-#ifndef DLMS_INDIAN_STANDARD
-gxAssociationShortName associationShortName;
-#endif//DLMS_INDIAN_STANDARD
-#endif//DLMS_ITALIAN_STANDARD
+//Space for client challenge.
+static unsigned char C2S_CHALLENGE[64];
+//Space for server challenge.
+static unsigned char S2C_CHALLENGE[64];
+//Allocate space for read list.
+static gxValueEventArg events[10];
+
+unsigned char testMode = 1;
+int socket1 = -1;
+uint32_t SERIAL_NUMBER = 123456;
+
+//TODO: Allocate space where profile generic row values are serialized.
+#define PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE 100
+#define HDLC_HEADER_SIZE 17
+#define HDLC_BUFFER_SIZE 128
+#define PDU_BUFFER_SIZE 512
+#define WRAPPER_BUFFER_SIZE 8 + PDU_BUFFER_SIZE
+//Buffer where frames are saved.
+static unsigned char frameBuff[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
+//Buffer where PDUs are saved.
+static unsigned char pduBuff[PDU_BUFFER_SIZE];
+static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
+//Define server system title.
+static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
+time_t imageActionStartTime = 0;
+gxImageActivateInfo IMAGE_ACTIVATE_INFO[1];
+static gxByteBuffer reply;
+
+uint32_t time_current(void)
+{
+    //Get current time somewhere.
+    return (uint32_t)time(NULL);
+}
+
+uint32_t time_elapsed(void)
+{
+    return (uint32_t)clock() / (CLOCKS_PER_SEC / 1000);
+}
+
+//In this example we wait 5 seconds before image is verified or activated.
+time_t imageActionStartTime;
+
+static gxClock clock1;
+static gxIecHdlcSetup hdlc;
+static gxData ldn, id1, id2, fw;
+static gxData eventCode;
+static gxData unixTime;
+static gxData invocationCounter;
+static gxAssociationLogicalName associationNone;
+static gxAssociationLogicalName associationLow;
+static gxAssociationLogicalName associationHigh;
+static gxAssociationLogicalName associationHighGMac;
+static gxRegister activePowerL1;
+static gxScriptTable scriptTableGlobalMeterReset;
+static gxScriptTable scriptTableDisconnectControl;
+static gxScriptTable scriptTableActivateTestMode;
+static gxScriptTable scriptTableActivateNormalMode;
+static gxProfileGeneric eventLog;
+static gxActionSchedule actionScheduleDisconnectOpen;
+static gxActionSchedule actionScheduleDisconnectClose;
+static gxPushSetup pushSetup;
+static gxDisconnectControl disconnectControl;
+static gxProfileGeneric loadProfile;
+static gxSapAssignment sapAssignment;
+//Security Setup High is for High authentication.
+static gxSecuritySetup securitySetupHigh;
+//Security Setup HighGMac is for GMac authentication.
+static gxSecuritySetup securitySetupHighGMac;
 
 gxImageTransfer imageTransfer;
-gxRegister activePowerL1;
-//Don't use clock name. Some compilers are using clock as reserved word.
-gxClock clock1;
-gxTcpUdpSetup udpSetup;
-gxProfileGeneric profileGeneric;
 gxAutoConnect autoConnect;
 gxActivityCalendar activityCalendar;
 gxLocalPortSetup localPortSetup;
 gxDemandRegister demandRegister;
 gxRegisterMonitor registerMonitor;
-gxActionSchedule actionSchedule;
-gxSapAssignment sapAssignment;
 gxAutoAnswer autoAnswer;
 gxModemConfiguration modemConfiguration;
 gxMacAddressSetup macAddressSetup;
-gxDisconnectControl disconnectControl;
+gxTcpUdpSetup udpSetup;
 gxIp4Setup ip4Setup;
-gxPushSetup pushSetup;
-gxScriptTable scriptTable;
-gxIecHdlcSetup iecHdlcSetup;
+gxPppSetup pppSetup;
+gxGPRSSetup gprsSetup;
+gxScriptTable tarifficationScriptTable;
+gxRegisterActivation registerActivation;
 gxCompactData compactData;
 
-int imageSize = 0;
+//static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
-//Returns the approximate processor time in ms.
-uint32_t time_elapsed(void)
+static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
+                                   BASE(ldn), BASE(sapAssignment), BASE(eventCode),
+                                   BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
+                                   BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
+                                   BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
+                                   BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
+                                   BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
+                                   BASE(tarifficationScriptTable), BASE(registerActivation)
+};
+
+
+static uint32_t executeTime = 0;
+
+static uint16_t activePowerL1Value = 0;
+
+typedef enum
 {
-    return (uint32_t)clock() / (CLOCKS_PER_SEC / 1000);
+    //Meter is powered.
+    GURUX_EVENT_CODES_POWER_UP = 0x1,
+    //User has change the time.
+    GURUX_EVENT_CODES_TIME_CHANGE = 0x2,
+    //DST status is changed.
+    GURUX_EVENT_CODES_DST = 0x4,
+    //Push message is sent.
+    GURUX_EVENT_CODES_PUSH = 0x8,
+    //Meter makes auto connect.
+    GURUX_EVENT_CODES_AUTO_CONNECT = 0x10,
+    //User has change the password.
+    GURUX_EVENT_CODES_PASSWORD_CHANGED = 0x20,
+    //Wrong password tried 3 times.
+    GURUX_EVENT_CODES_WRONG_PASSWORD = 0x40,
+    //Disconnect control state is changed.
+    GURUX_EVENT_CODES_OUTPUT_RELAY_STATE = 0x80,
+    //User has reset the meter.
+    GURUX_EVENT_CODES_GLOBAL_METER_RESET = 0x100
+} GURUX_EVENT_CODES;
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Save security settings to the EEPROM.
+//
+// Only updated value is saved. This is done because write to EEPROM is slow
+// and there is a limit how many times value can be written to the EEPROM.
+/////////////////////////////////////////////////////////////////////////////
+int saveSecurity(
+    dlmsSettings* settings)
+{
+    int ret = 0;
+    const char* fileName = "security.raw";
+    //Save keys to own block in EEPROM.
+#if _MSC_VER > 1400
+    FILE* f = NULL;
+    fopen_s(&f, fileName, "wb");
+#else
+    FILE* f = fopen(fileName, "wb");
+#endif
+    gxByteBuffer bb;
+    bb_init(&bb);
+    bb_capacity(&bb, 256);
+    if (f != NULL)
+    {
+        if ((ret = bb_set(&bb, settings->cipher.blockCipherKey.data, 16)) == 0 &&
+            (ret = bb_set(&bb, settings->cipher.authenticationKey.data, 16)) == 0 &&
+            (ret = bb_set(&bb, settings->kek.data, 16)) == 0 &&
+            //Save server IV.
+            (ret = bb_setUInt32(&bb, settings->cipher.invocationCounter)) == 0 &&
+            //Save last client IV.
+            (ret = bb_setUInt32(&bb, securitySetupHighGMac.minimumInvocationCounter)) == 0)
+        {
+            fwrite(bb.data, 1, bb.size, f);
+        }
+        bb_clear(&bb);
+        fclose(f);
+    }
+    else
+    {
+        printf("%s\r\n", "Failed to open keys file.");
+    }
+    return ret;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Save data to the EEPROM.
+//
+// Only updated value is saved. This is done because write to EEPROM is slow
+// and there is a limit how many times value can be written to the EEPROM.
+/////////////////////////////////////////////////////////////////////////////
+int saveSettings()
+{
+    int ret = 0;
+    const char* fileName = "settings.raw";
+    //Save keys to own block in EEPROM.
+#if _MSC_VER > 1400
+    FILE* f = NULL;
+    fopen_s(&f, fileName, "wb");
+#else
+    FILE* f = fopen(fileName, "wb");
+#endif
+    gxByteBuffer bb;
+    bb_init(&bb);
+    bb_capacity(&bb, 256);
+    if (f != NULL)
+    {
+        if ((ret = ser_saveObjects(ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb)) == 0)
+        {
+            fwrite(bb.data, bb.size, 1, f);
+        }
+        bb_clear(&bb);
+        fclose(f);
+    }
+    else
+    {
+        printf("%s\r\n", "Failed to open settings file.");
+    }
+    return ret;
+}
+
+//Allocate profile generic buffer.
+void allocateProfileGenericBuffer(const char* fileName, uint32_t size)
+{
+    uint32_t pos;
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, fileName, "ab");
+#else
+    f = fopen(fileName, "ab");
+#endif
+    if (f != NULL)
+    {
+        fseek(f, 0, SEEK_END);
+        if (ftell(f) == 0)
+        {
+            for (pos = 0; pos != size; ++pos)
+            {
+                if (fputc(0x00, f) != 0)
+                {
+                    printf("Error Writing to %s\n", fileName);
+                    break;
+                }
+            }
+        }
+        fclose(f);
+    }
+}
+
+int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
+{
+    int ret = hlp_getLogicalNameToString(pg->base.logicalName, fileName);
+#if defined(_WIN64)
+    strcat(fileName, "64.raw");
+#else // defined(_WIN32) || defined(__linux__)
+    strcat(fileName, ".raw");
+#endif //defined(_WIN32) || defined(__linux__)
+    return ret;
+}
+
+//Returns profile generic buffer column sizes.
+int getProfileGenericBufferColumnSizes(
+    dlmsSettings* settings,
+    gxProfileGeneric* pg,
+    DLMS_DATA_TYPE* dataTypes,
+    uint8_t* columnSizes,
+    uint16_t* rowSize)
+{
+    int ret = 0;
+    uint8_t pos;
+    gxKey* it;
+    gxByteBuffer pdu;
+    bb_init(&pdu);
+    gxValueEventArg e;
+    ve_init(&e);
+    *rowSize = 0;
+    //Loop capture columns and get values.
+    for (pos = 0; pos != pg->captureObjects.size; ++pos)
+    {
+        if ((ret = arr_getByIndex(&pg->captureObjects, (uint16_t)pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_clear(&pdu);
+        ve_clear(&e);
+        //Date time is saved in EPOCH to save space.
+        if (((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK && ((gxTarget*)it->value)->attributeIndex == 2)
+        {
+            e.value.ulVal = time_current();
+            e.value.vt = DLMS_DATA_TYPE_UINT32;
+        }
+        else
+        {
+            e.target = (gxObject*)it->key;
+            e.index = ((gxTarget*)it->value)->attributeIndex;
+            if ((ret = cosem_getValue(settings, &e)) != 0)
+            {
+                break;
+            }
+        }
+        //If data is returned as byte array.
+        if ((e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray))
+        {
+            e.value.vt = pdu.data[0];
+        }
+        else
+        {
+            if ((ret = dlms_setData(&pdu, e.value.vt, &e.value)) != 0)
+            {
+                break;
+            }
+        }
+        if (dataTypes != NULL)
+        {
+            dataTypes[pos] = e.value.vt;
+        }
+        if (columnSizes != NULL)
+        {
+            columnSizes[pos] = (uint8_t)pdu.size - 1;
+        }
+        *rowSize += (uint16_t)(pdu.size - 1);
+    }
+    bb_clear(&pdu);
+    return ret;
+}
+
+//Get max row count for allocated buffer.
+uint16_t getProfileGenericBufferMaxRowCount(
+    dlmsSettings* settings,
+    gxProfileGeneric* pg)
+{
+    uint16_t count = 0;
+    char fileName[30];
+    //Allocate space for load profile buffer.
+    getProfileGenericFileName(pg, fileName);
+    uint16_t rowSize = 0;
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, fileName, "r+b");
+#else
+    f = fopen(fileName, "r+b");
+#endif
+    if (f == NULL)
+    {
+        //Allocate space for the profile generic buffer.
+        allocateProfileGenericBuffer(fileName, 1024);
+#if _MSC_VER > 1400
+        fopen_s(&f, fileName, "r+b");
+#else
+        f = fopen(fileName, "r+b");
+#endif
+    }
+    if (f != NULL)
+    {
+        getProfileGenericBufferColumnSizes(settings, pg, NULL, NULL, &rowSize);
+        if (rowSize != 0)
+        {
+            fseek(f, 0L, SEEK_END);
+            count = (uint16_t)ftell(f);
+            //Decrease current index and total amount of the entries.
+            count -= 4;
+            count /= rowSize;
+        }
+        fclose(f);
+    }
+    return count;
+}
+
+int captureProfileGeneric(
+    dlmsSettings* settings,
+    gxProfileGeneric* pg)
+{
+    unsigned char pos;
+    gxKey* it;
+    int ret = 0;
+    char fileName[30];
+    getProfileGenericFileName(pg, fileName);
+    unsigned char pduBuff[PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE];
+    gxByteBuffer pdu;
+    bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
+    gxValueEventArg e;
+    ve_init(&e);
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, fileName, "r+b");
+#else
+    f = fopen(fileName, "r+b");
+#endif
+    if (f != NULL)
+    {
+        uint16_t dataSize = 0;
+        uint8_t columnSizes[10];
+        DLMS_DATA_TYPE dataTypes[10];
+        //Load current entry index from the begin of the data.
+        uint16_t index = 0;
+        if (fread(pdu.data, 1, 2, f) == 2)
+        {
+            pdu.size = 2;
+            bb_getUInt16(&pdu, &index);
+            fseek(f, 0, SEEK_SET);
+            bb_empty(&pdu);
+        }
+        //Current index in ring buffer.
+        bb_setUInt16(&pdu, (1 + index) % (pg->profileEntries));
+
+        //Update how many entries is used until buffer is full.
+        if (ret == 0 && pg->entriesInUse != pg->profileEntries)
+        {
+            //Total amount of the entries.
+            ++pg->entriesInUse;
+        }
+        bb_setUInt16(&pdu, (uint16_t)pg->entriesInUse);
+        //Update values to the EEPROM.
+        fwrite(pdu.data, 1, 4, f);
+        getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
+        if (pg->entriesInUse != 0)
+        {
+            fseek(f, 4 + ((index % pg->profileEntries) * dataSize), SEEK_SET);
+        }
+        //Loop capture columns and get values.
+        for (pos = 0; pos != pg->captureObjects.size; ++pos)
+        {
+            if ((ret = arr_getByIndex(&pg->captureObjects, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+            bb_clear(&pdu);
+            //Date time is saved in EPOCH to save space.
+            if ((((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK || ((gxObject*)it->key) == BASE(unixTime)) &&
+                ((gxTarget*)it->value)->attributeIndex == 2)
+            {
+                e.value.ulVal = time_current();
+                e.value.vt = DLMS_DATA_TYPE_UINT32;
+            }
+            else
+            {
+                e.target = (gxObject*)it->key;
+                e.index = ((gxTarget*)it->value)->attributeIndex;
+                e.value.byteArr = &pdu;
+                e.value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+                if ((ret = cosem_getValue(settings, &e)) != 0)
+                {
+                    break;
+                }
+            }
+            //If data is returned as byte array.
+            if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray)
+            {
+                fwrite(&e.value.byteArr->data[1], columnSizes[pos], 1, f);
+            }
+            else
+            {
+                fwrite(&e.value.bVal, columnSizes[pos], 1, f);
+            }
+        }
+        fclose(f);
+        if (ret != 0)
+        {
+            //Total amount of the entries.
+            --pg->entriesInUse;
+        }
+    }
+    //Append data.
+    return ret;
+}
+
+void updateState(
+    dlmsSettings* settings,
+    uint16_t value)
+{
+    GX_UINT16(eventCode.value) = value;
+    captureProfileGeneric(settings, &eventLog);
+}
+///////////////////////////////////////////////////////////////////////
+// Write trace to the serial port.
+//
+// This can be used for debugging.
+///////////////////////////////////////////////////////////////////////
+void GXTRACE(const char* str, const char* data)
+{
+    //Send trace to the serial port in test mode.
+    if (testMode)
+    {
+        if (data == NULL)
+        {
+            printf("%s\r\n", str);
+        }
+        else
+        {
+            printf("%s %s\r\n", str, data);
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////
+// Write trace to the serial port.
+//
+// This can be used for debugging.
+///////////////////////////////////////////////////////////////////////
+void GXTRACE_INT(const char* str, int32_t value)
+{
+    char data[10];
+    sprintf(data, " %ld", value);
+    GXTRACE(str, data);
+}
+
+///////////////////////////////////////////////////////////////////////
+// Write trace to the serial port.
+//
+// This can be used for debugging.
+///////////////////////////////////////////////////////////////////////
+void GXTRACE_LN(const char* str, uint16_t type, unsigned char* ln)
+{
+    char buff[30];
+    sprintf(buff, "%d %d.%d.%d.%d.%d.%d", type, ln[0], ln[1], ln[2], ln[3], ln[4], ln[5]);
+    GXTRACE(str, buff);
 }
 
 //Returns current time.
@@ -133,283 +596,388 @@ void println(char* desc, gxByteBuffer* data)
     }
 }
 
-#ifdef DLMS_INDIAN_STANDARD
-/*Indian Standard examples begin.*/
-gxProfileGeneric instantData;
-gxRegister currentIR, currentIY, currentIB;
-gxRegister voltageVRN, voltageVYN, voltageVBN, voltageVRY, voltageVBY, spfR, spfY, spfB, spfBF;
-gxRegister frequency, apparentPower, signedActivePower, signedReactivePower;
-gxRegister numberOfPowerFailures, cumulativePowerFailureDuration, cumulativeTamperCount, cumulativeBillingCount, cumulativeProgrammingCount;
-gxRegister billingDate, cumulativeEnergy;
-#endif //DLMS_INDIAN_STANDARD
-/*Indian Standard examples end.*/
-
-/*Italian Standard examples begin.*/
-#ifdef DLMS_ITALIAN_STANDARD
-gxData frameCounterThresholds, frameCounterOnLine, frameCounterOffLine, frameCounterGuarantor, frameCounterInstaller, frameCounterGateway, frameCounterBroadcast;
-#endif // DLMS_ITALIAN_STANDARD
-
-gxSecuritySetup securitySetup;
-
-/*Italian Standard examples end.*/
-
-//All objects.
-gxObject* ALL_OBJECTS[] = { &ldn.base, &id1.base, &id2.base, &fw.base, &imageTransfer.base, &activePowerL1.base, &clock1.base, &udpSetup.base, &profileGeneric.base,
-    &autoConnect.base, &activityCalendar.base, &localPortSetup.base, &demandRegister.base, &registerMonitor.base,
-    &actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
-    &disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base, &iecHdlcSetup.base, &compactData.base,
-    &associationNone.base, &highAssociation.base,
-    &securitySetup.base,
-#if !defined(DLMS_ITALIAN_STANDARD)
-    &lowAssociation.base,
-#endif
-
-#ifdef DLMS_INDIAN_STANDARD
-    & instantData.base, &currentIR.base,
-    &currentIY.base, &currentIB.base, &voltageVRN.base, &voltageVYN.base, &voltageVBN.base, &voltageVRY.base, &voltageVBY.base, &spfR.base,
-    &spfY.base, &spfB.base, &spfBF.base, &frequency.base, &apparentPower.base, &signedActivePower.base, &signedReactivePower.base,
-    &numberOfPowerFailures.base, &cumulativePowerFailureDuration.base, &cumulativeTamperCount.base, &cumulativeBillingCount.base,
-    &cumulativeProgrammingCount.base, &billingDate.base, &cumulativeEnergy.base
-#endif //DLMS_INDIAN_STANDARD
-#ifdef DLMS_ITALIAN_STANDARD
-    & frameCounterThresholds.base, &frameCounterOnLine.base, &frameCounterOffLine.base, &frameCounterGuarantor.base, &frameCounterInstaller.base, &frameCounterGateway.base, &frameCounterBroadcast.base,
-#endif // DLMS_ITALIAN_STANDARD
-#if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-    &associationShortName.base,
-#endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-};
-
-//Objects what are shown on association view None.
-gxObject* NONE_OBJECTS[] = {
-    &associationNone.base,
-    &ldn.base, &clock1.base };
-
-#if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-//Objects what are shown on association view None.
-gxObject* SN_OBJECTS[] = { &associationShortName.base, &ldn.base, &id1.base, &id2.base, &fw.base, &imageTransfer.base,
-&activePowerL1.base, &clock1.base, &udpSetup.base, &profileGeneric.base,
-&autoConnect.base, &activityCalendar.base, &localPortSetup.base, &demandRegister.base, &registerMonitor.base,
-&actionSchedule.base, &sapAssignment.base, &autoAnswer.base, &modemConfiguration.base, &macAddressSetup.base,
-&disconnectControl.base, &ip4Setup.base, &pushSetup.base, &scriptTable.base, &iecHdlcSetup.base, &compactData.base };
-#endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-
-#if !defined(DLMS_ITALIAN_STANDARD)
-//Objects what are shown on association view Low.
-gxObject* LOW_OBJECTS[] = { &lowAssociation.base, &ldn.base, &securitySetup.base };
-#endif //!defined(DLMS_ITALIAN_STANDARD)
-
-#if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
 ///////////////////////////////////////////////////////////////////////
-//This method adds example Short Name Association object.
+//This method adds example Logical Name Association object.
 ///////////////////////////////////////////////////////////////////////
-int addAssociation()
+int addAssociationNone()
 {
-    const unsigned char ln[6] = { 0, 0, 40, 0, 0, 255 };
-    cosem_init2((gxObject*)&associationShortName, DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME, ln);
-    associationShortName.base.shortName = 0xFA00;
-    bb_addString(&associationShortName.secret, "Gurux");
-    oa_attach(&associationShortName.objectList, SN_OBJECTS, sizeof(SN_OBJECTS) / sizeof(SN_OBJECTS[0]));
-    //All objects are add for this Association View later.
-    return 0;
-}
-#endif //#if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-
-#ifndef DLMS_ITALIAN_STANDARD
-///////////////////////////////////////////////////////////////////////
-//This method adds example Logical Name Association object for None authentication.
-// PC in Indian standard.
-///////////////////////////////////////////////////////////////////////
-int addNoneAssociation()
-{
+    int ret;
     const unsigned char ln[6] = { 0, 0, 40, 0, 1, 255 };
-    cosem_init2((gxObject*)&associationNone, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
-    //Only Logical Device Name is add to this Association View.
-    //Use this if you  need to save heap.
-    oa_attach(&associationNone.objectList, NONE_OBJECTS, sizeof(NONE_OBJECTS) / sizeof(NONE_OBJECTS[0]));
-    bb_addString(&associationNone.secret, "Gurux");
-    associationNone.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_NONE;
-#ifdef DLMS_IGNORE_OBJECT_POINTERS
-    memcpy(associationNone.securitySetupReference, securitySetup.base.logicalName, 6);
-#else
-    associationNone.securitySetup = &securitySetup;
-#endif //DLMS_IGNORE_OBJECT_POINTERS
-    associationNone.clientSAP = 0x10;
-    associationNone.serverSAP = 0x1;
-    return 0;
+    if ((ret = INIT_OBJECT(associationNone, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+    {
+        //All objects are shown also without authentication.
+        OA_ATTACH(associationNone.objectList, ALL_OBJECTS);
+        //Uncomment this if you want to show only part of the objects without authentication.
+        //OA_ATTACH(associationNone.objectList, NONE_OBJECTS);
+        associationNone.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_NONE;
+        associationNone.clientSAP = 0x10;
+        //Max PDU is half of PDU size. This is for demonstration purposes only.
+        associationNone.xDLMSContextInfo.maxSendPduSize = associationNone.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE / 2;
+        associationNone.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_GET | DLMS_CONFORMANCE_SET);
+    }
+    return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////
-//This method adds example Logical Name Association object for Low authentication.
-// MR in Indian standard.
+//This method adds example Logical Name Association object.
 ///////////////////////////////////////////////////////////////////////
-int addLowAssociation()
+int addAssociationLow()
 {
+    int ret;
     const unsigned char ln[6] = { 0, 0, 40, 0, 2, 255 };
-    cosem_init2((gxObject*)&lowAssociation, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
-    bb_addString(&lowAssociation.secret, "Gurux");
-    lowAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_LOW;
-    //Use this if you  need to save heap.
-    oa_attach(&lowAssociation.objectList, LOW_OBJECTS, sizeof(LOW_OBJECTS) / sizeof(LOW_OBJECTS[0]));
-#ifdef DLMS_IGNORE_OBJECT_POINTERS
-    memcpy(lowAssociation.securitySetupReference, securitySetup.base.logicalName, 6);
-#else
-    lowAssociation.securitySetup = &securitySetup;
-#endif //DLMS_IGNORE_OBJECT_POINTERS
-#ifdef DLMS_INDIAN_STANDARD
-    lowAssociation.clientSAP = 0x20;
-#else
-    lowAssociation.clientSAP = 0x11;
-#endif//DLMS_INDIAN_STANDARD
-    lowAssociation.serverSAP = 0x1;
-    //All objects are add for this Association View later.
-    return 0;
+    if ((ret = INIT_OBJECT(associationLow, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+    {
+        //Only Logical Device Name is add to this Association View.
+        OA_ATTACH(associationLow.objectList, ALL_OBJECTS);
+        associationLow.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_LOW;
+        associationLow.clientSAP = 0x11;
+        associationLow.xDLMSContextInfo.maxSendPduSize = associationLow.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
+        associationLow.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+            DLMS_CONFORMANCE_SET |
+            DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+            DLMS_CONFORMANCE_ACTION |
+            DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+            DLMS_CONFORMANCE_GET);
+        bb_addString(&associationLow.secret, "Gurux");
+        associationLow.securitySetup = NULL;
+    }
+    return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////
 //This method adds example Logical Name Association object for High authentication.
 // UA in Indian standard.
 ///////////////////////////////////////////////////////////////////////
-int addHighAssociation()
+int addAssociationHigh()
 {
+    int ret;
+    //Dedicated key.
+    static unsigned char CYPHERING_INFO[20] = { 0 };
     const unsigned char ln[6] = { 0, 0, 40, 0, 3, 255 };
-    cosem_init2((gxObject*)&highAssociation, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
-    bb_addString(&highAssociation.secret, "Gurux");
-    highAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH;
-    //Use this if you  need to save heap.
-    oa_attach(&highAssociation.objectList, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
-#ifdef DLMS_IGNORE_OBJECT_POINTERS
-    memcpy(highAssociation.securitySetupReference, securitySetup.base.logicalName, 6);
+    if ((ret = INIT_OBJECT(associationHigh, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+    {
+        associationHigh.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH;
+        OA_ATTACH(associationHigh.objectList, ALL_OBJECTS);
+        BB_ATTACH(associationHigh.xDLMSContextInfo.cypheringInfo, CYPHERING_INFO, 0);
+        associationHigh.clientSAP = 0x12;
+        associationHigh.xDLMSContextInfo.maxSendPduSize = associationHigh.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
+        associationHigh.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+            DLMS_CONFORMANCE_SET |
+            DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+            DLMS_CONFORMANCE_ACTION |
+            DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+            DLMS_CONFORMANCE_GET);
+        bb_addString(&associationHigh.secret, "Gurux");
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        associationHigh.securitySetup = &securitySetupHigh;
 #else
-    highAssociation.securitySetup = &securitySetup;
+        memcpy(associationHigh.securitySetupReference, securitySetupHigh.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    //All objects are add for this Association View later.
-#ifdef DLMS_INDIAN_STANDARD
-    highAssociation.clientSAP = 0x30;
-#else
-    highAssociation.clientSAP = 0x12;
-#endif//DLMS_INDIAN_STANDARD
-    highAssociation.serverSAP = 0x1;
-    return 0;
+    }
+    return ret;
 }
-#else
-int addItalianAssociation(objectArray* objects)
-{
-#define PDU_BUFFER_SIZE 229
-    {
-        const unsigned char ln[6] = { 0, 0, 40, 0, 16, 255 };
-        cosem_init2(&associationNone.base, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
-        oa_attach(&associationNone.objectList, NONE_OBJECTS, sizeof(NONE_OBJECTS) / sizeof(NONE_OBJECTS[0]));
-        //Max PDU size on italian standard is 229 bytes.
-        associationNone.xDLMSContextInfo.maxReceivePduSize = associationNone.xDLMSContextInfo.maxReceivePduSize = 229;
-    }
-
-    {
-        const unsigned char ln[6] = { 0, 0, 40, 0, 1, 255 };
-        cosem_init2(&highAssociation.base, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln);
-        oa_attach(&highAssociation.objectList, HIGH_OBJECTS, sizeof(HIGH_OBJECTS) / sizeof(HIGH_OBJECTS[0]));
-        bb_addString(&highAssociation.secret, "Gurux");
-        highAssociation.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH_GMAC;
-        memcpy(highAssociation.securitySetupReference, securitySetup.base.logicalName, 6);
-        //Max PDU size on italian standard is 229 bytes.
-        highAssociation.xDLMSContextInfo.maxReceivePduSize = highAssociation.xDLMSContextInfo.maxReceivePduSize = 229;
-    }
-    return 0;
-}
-
-int addFrameCounters(objectArray* objects)
-{
-    {
-        const unsigned char ln[6] = { 0, 0, 94, 39, 33, 255 };
-        cosem_init2(&frameCounterThresholds.base, DLMS_OBJECT_TYPE_DATA, ln);
-    }
-    {
-        const unsigned char ln[6] = { 0,0,43, 1,  1, 255 };
-        cosem_init2(&frameCounterOnLine.base, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setUInt32(&frameCounterOnLine.value, 1);
-    }
-    {
-        const unsigned char ln[6] = { 0, 1, 43,  1,  1, 255 };
-        cosem_init2(&frameCounterOffLine.base, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setUInt32(&frameCounterOffLine.value, 1);
-    }
-    {
-        const unsigned char ln[6] = { 0,0,43, 1,  48, 255 };
-        cosem_init2(&frameCounterGuarantor.base, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setUInt32(&frameCounterGuarantor.value, 1);
-    }
-    {
-        const unsigned char ln[6] = { 0,0,43, 1,  3, 255 };
-        cosem_init2(&frameCounterInstaller.base, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setUInt32(&frameCounterInstaller.value, 1);
-    }
-    {
-        const unsigned char ln[6] = { 0,0,43, 1,  64, 255 };
-        cosem_init2(&frameCounterGateway.base, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setUInt32(&frameCounterGateway.value, 1);
-    }
-    {
-        const unsigned char ln[6] = { 0,0,43, 1,  32, 255 };
-        cosem_init2(&frameCounterBroadcast.base, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setUInt32(&frameCounterBroadcast.value, 1);
-    }
-    return 0;
-}
-
-#endif //DLMS_ITALIAN_STANDARD
 
 ///////////////////////////////////////////////////////////////////////
-//This method adds example security setup object.
+//This method adds example Logical Name Association object for GMAC High authentication.
+// UA in Indian standard.
 ///////////////////////////////////////////////////////////////////////
-int addSecuritySetup(
-    objectArray* objects)
+int addAssociationHighGMac()
 {
-    const unsigned char ln[6] = { 0,0,43,0,1,255 };
-    cosem_init2(&securitySetup.base, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln);
-    bb_capacity(&securitySetup.serverSystemTitle, 8);
-    bb_addString(&securitySetup.serverSystemTitle, "GRX");
-    bb_setUInt8(&securitySetup.serverSystemTitle, 0);
-    bb_setUInt32(&securitySetup.serverSystemTitle, SERIAL_NUMBER);
-    return 0;
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 40, 0, 4, 255 };
+    if ((ret = INIT_OBJECT(associationHighGMac, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+    {
+        associationHighGMac.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH_GMAC;
+        OA_ATTACH(associationHighGMac.objectList, ALL_OBJECTS);
+        associationHighGMac.clientSAP = 0x1;
+        associationHighGMac.xDLMSContextInfo.maxSendPduSize = associationHighGMac.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
+        associationHighGMac.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+            DLMS_CONFORMANCE_SET |
+            DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+            DLMS_CONFORMANCE_ACTION |
+            DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+            DLMS_CONFORMANCE_GET);
+        //GMAC authentication don't need password.
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        associationHighGMac.securitySetup = &securitySetupHighGMac;
+#else
+        memcpy(associationHighGMac.securitySetupReference, securitySetupHigh.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds security setup object for High authentication.
+///////////////////////////////////////////////////////////////////////
+int addSecuritySetupHigh()
+{
+    int ret;
+    //Define client system title.
+    static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 43, 0, 1, 255 };
+    if ((ret = INIT_OBJECT(securitySetupHigh, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(securitySetupHigh.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+        BB_ATTACH(securitySetupHigh.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
+        securitySetupHigh.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
+        securitySetupHigh.securitySuite = DLMS_SECURITY_SUITE_V0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds security setup object for High GMAC authentication.
+///////////////////////////////////////////////////////////////////////
+int addSecuritySetupHighGMac()
+{
+    int ret;
+    //Define client system title.
+    static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 43, 0, 2, 255 };
+    if ((ret = INIT_OBJECT(securitySetupHighGMac, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(securitySetupHighGMac.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+        BB_ATTACH(securitySetupHighGMac.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
+        //Only Authenticated encrypted connections are allowed.
+        securitySetupHighGMac.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
+        securitySetupHighGMac.securitySuite = DLMS_SECURITY_SUITE_V0;
+    }
+    return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////
 //This method adds example register object.
 ///////////////////////////////////////////////////////////////////////
-int addRegisterObject(
-    objectArray* objects)
+int addRegisterObject()
 {
     const unsigned char ln[6] = { 1,1,21,25,0,255 };
-    cosem_init2((gxObject*)&activePowerL1, DLMS_OBJECT_TYPE_REGISTER, ln);
+    INIT_OBJECT(activePowerL1, DLMS_OBJECT_TYPE_REGISTER, ln);
     //10 ^ 3 =  1000
-    var_setUInt32(&activePowerL1.value, 25400);
+    GX_UINT16_BYREF(activePowerL1.value, activePowerL1Value);
     activePowerL1.scaler = -2;
     activePowerL1.unit = 30;
     return 0;
 }
 
+uint16_t readActivePowerValue()
+{
+    return ++activePowerL1Value;
+}
+
+uint16_t readEventCode()
+{
+    return eventCode.value.uiVal;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////
+//Add tariffication script table object.
+///////////////////////////////////////////////////////////////////////
+int addTarifficationScriptTable()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 10, 0, 100, 255 };
+    if ((ret = INIT_OBJECT(tarifficationScriptTable, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
+    {
+        gxScript* s1 = (gxScript*)malloc(sizeof(gxScript));
+        gxScript* s2 = (gxScript*)malloc(sizeof(gxScript));
+        s1->id = 1;
+        arr_init(&s1->actions);
+        s2->id = 2;
+        arr_init(&s2->actions);
+        arr_push(&tarifficationScriptTable.scripts, s1);
+        arr_push(&tarifficationScriptTable.scripts, s2);
+        gxScriptAction* a = (gxScriptAction*)malloc(sizeof(gxScriptAction));
+        arr_push(&s1->actions, a);
+        a->type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
+        a->target = BASE(registerActivation);
+        a->index = 1;
+        var_init(&a->parameter);
+        //Action data is Int8 zero.
+        GX_INT8(a->parameter) = 0;
+
+        a = (gxScriptAction*)malloc(sizeof(gxScriptAction));
+        arr_push(&s2->actions, a);
+        a->type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
+        a->target = BASE(registerActivation);
+        a->index = 1;
+        var_init(&a->parameter);
+        //Action data is Int8 zero.
+        GX_INT8(a->parameter) = 0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add register activation.
+///////////////////////////////////////////////////////////////////////
+int addRegisterActivation(dlmsServerSettings* settings)
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 14, 0, 1, 255 };
+    if ((ret = INIT_OBJECT(registerActivation, DLMS_OBJECT_TYPE_REGISTER_ACTIVATION, ln)) == 0)
+    {
+        bb_init(&registerActivation.activeMask);
+        bb_addString(&registerActivation.activeMask, "RATE1");
+        oa_init(&registerActivation.registerAssignment);
+        oa_push(&registerActivation.registerAssignment, BASE(activePowerL1));
+
+        arr_init(&registerActivation.maskList);
+        gxByteBuffer* name = malloc(sizeof(gxByteBuffer));
+        bb_init(name);
+        bb_addString(name, "RATE1");
+        gxByteBuffer* indexes = malloc(sizeof(gxByteBuffer));
+        bb_init(indexes);
+        bb_setUInt8(indexes, 1);
+        arr_push(&registerActivation.maskList, key_init(name, indexes));
+        name = malloc(sizeof(gxByteBuffer));
+        bb_init(name);
+        bb_addString(name, "RATE2");
+        indexes = malloc(sizeof(gxByteBuffer));
+        bb_init(indexes);
+        bb_setUInt8(indexes, 1);
+        bb_setUInt8(indexes, 2);
+        arr_push(&registerActivation.maskList, key_init(name, indexes));
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add script table object for meter reset. This will erase the EEPROM.
+///////////////////////////////////////////////////////////////////////
+int addscriptTableGlobalMeterReset()
+{
+    int ret;
+    static gxScript SCRIPTS[1] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 10, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(scriptTableGlobalMeterReset, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
+    {
+        gxScript* s = (gxScript*)malloc(sizeof(gxScript));
+        s->id = 1;
+        arr_init(&s->actions);
+        //Add executed script to script list.
+        arr_push(&scriptTableGlobalMeterReset.scripts, s);
+    }
+    return ret;
+}
+
+/////////////////////////////////////////////////////////////////////
+//Add script table object for disconnect control.
+//Action 1 calls remote_disconnect #1 (close).
+//Action 2 calls remote_connect #2(open).
+///////////////////////////////////////////////////////////////////////
+int addscriptTableDisconnectControl()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 10, 0, 106, 255 };
+    if ((ret = INIT_OBJECT(scriptTableDisconnectControl, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
+    {
+        gxScript* s = (gxScript*)malloc(sizeof(gxScript));
+        s->id = 1;
+        arr_init(&s->actions);
+        gxScriptAction* a = (gxScriptAction*)malloc(sizeof(gxScriptAction));
+
+        a->type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
+        a->target = BASE(disconnectControl);
+        a->index = 1;
+        var_init(&a->parameter);
+        //Action data is Int8 zero.
+        GX_INT8(a->parameter) = 0;
+        arr_push(&s->actions, a);
+        //Add executed script to script list.
+        arr_push(&scriptTableDisconnectControl.scripts, s);
+
+        s = (gxScript*)malloc(sizeof(gxScript));
+        s->id = 2;
+        arr_init(&s->actions);
+        a = (gxScriptAction*)malloc(sizeof(gxScriptAction));
+        a->type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
+        a->target = BASE(disconnectControl);
+        a->index = 2;
+        var_init(&a->parameter);
+        //Action data is Int8 zero.
+        GX_INT8(a->parameter) = 0;
+        arr_push(&s->actions, a);
+        //Add executed script to script list.
+        arr_push(&scriptTableDisconnectControl.scripts, s);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add script table object for test mode. In test mode meter is sending trace to the serial port.
+///////////////////////////////////////////////////////////////////////
+int addscriptTableActivateTestMode()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 10, 0, 101, 255 };
+    if ((ret = INIT_OBJECT(scriptTableActivateTestMode, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
+    {
+        gxScript* s = (gxScript*)malloc(sizeof(gxScript));
+        s->id = 1;
+        arr_init(&s->actions);
+        //Add executed script to script list.
+        arr_push(&scriptTableActivateTestMode.scripts, s);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add script table object for Normal mode. In normal mode meter is NOT sending trace to the serial port.
+///////////////////////////////////////////////////////////////////////
+int addscriptTableActivateNormalMode()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 10, 0, 102, 255 };
+    if ((ret = INIT_OBJECT(scriptTableActivateNormalMode, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
+    {
+        gxScript* s = (gxScript*)malloc(sizeof(gxScript));
+        s->id = 1;
+        arr_init(&s->actions);
+        //Add executed script to script list.
+        arr_push(&scriptTableActivateNormalMode.scripts, s);
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //This method adds example clock object.
 ///////////////////////////////////////////////////////////////////////
-int addClockObject(
-    objectArray* objects)
+int addClockObject()
 {
+    int ret = 0;
     //Add default clock. Clock's Logical Name is 0.0.1.0.0.255.
-    const unsigned char ln[6] = { 0,0,1,0,0,255 };
-    cosem_init2((gxObject*)&clock1, DLMS_OBJECT_TYPE_CLOCK, ln);
-    time_init(&clock1.begin, -1, 9, 1, -1, -1, -1, -1, 0);
-    time_init(&clock1.end, -1, 3, 1, -1, -1, -1, -1, 0);
-    return 0;
+    const unsigned char ln[6] = { 0, 0, 1, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(clock1, DLMS_OBJECT_TYPE_CLOCK, ln)) == 0)
+    {
+        //Set default values.
+        time_init(&clock1.begin, -1, 3, 0, 0, 0, 0, 0, 0);
+        time_init(&clock1.end, -1, 9, 0, 0, 0, 0, 0, 0);
+        //Meter is using UTC time zone.
+        clock1.timeZone = 0;
+        //Deviation is 60 minutes.
+        clock1.deviation = 60;
+        clock1.clockBase = DLMS_CLOCK_BASE_FREQUENCY_50;
+    }
+    return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////
 //This method adds example TCP/UDP setup object.
 ///////////////////////////////////////////////////////////////////////
-int addTcpUdpSetup(
-    objectArray* objects)
+int addTcpUdpSetup()
 {
     //Add Tcp/Udp setup. Default Logical Name is 0.0.25.0.0.255.
     const unsigned char ln[6] = { 0,0,25,0,0,255 };
-    cosem_init2((gxObject*)&udpSetup, DLMS_OBJECT_TYPE_TCP_UDP_SETUP, ln);
+    INIT_OBJECT(udpSetup, DLMS_OBJECT_TYPE_TCP_UDP_SETUP, ln);
     udpSetup.maximumSimultaneousConnections = 1;
     udpSetup.maximumSegmentSize = 40;
     udpSetup.inactivityTimeout = 180;
@@ -419,261 +987,78 @@ int addTcpUdpSetup(
 ///////////////////////////////////////////////////////////////////////
 //Add profile generic (historical data) object.
 ///////////////////////////////////////////////////////////////////////
-int addProfileGeneric(
-    objectArray* objects)
+int addLoadProfileProfileGeneric(dlmsSettings* settings)
 {
-    gxtime tm;
-    gxKey* k;
-    gxTarget* capture;
-    const unsigned char ln[6] = { 1,0,99,1,0,255 };
-    cosem_init2((gxObject*)&profileGeneric, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln);
-    //Set capture period to 60 second.
-    profileGeneric.capturePeriod = 60;
-    //Maximum row count.
-    profileGeneric.profileEntries = 100;
-    profileGeneric.sortMethod = DLMS_SORT_METHOD_FIFO;
-    ///////////////////////////////////////////////////////////////////
-    //Add colums.
-    //Set saved attribute index.
-    capture = (gxTarget*)malloc(sizeof(gxTarget));
-    capture->attributeIndex = 2;
-    capture->dataIndex = 0;
-    k = key_init(&clock1, capture);
-    arr_push(&profileGeneric.captureObjects, k);
-    //Add register object.
-    capture = (gxTarget*)malloc(sizeof(gxTarget));
-    capture->attributeIndex = 2;
-    capture->dataIndex = 0;
-
-    k = key_init(&activePowerL1, capture);
-    arr_push(&profileGeneric.captureObjects, k);
-    // Create 10 000 rows for profile generic file.
-    // In example profile generic we have two columns.
-    // Date time and integer value.
-    int rowCount = 10000;
-    time_now(&tm, 0);
-    time_addMinutes(&tm, -time_getMinutes(&tm));
-    time_addSeconds(&tm, -time_getSeconds(&tm));
-    time_addHours(&tm, -(rowCount - 1));
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-#if _MSC_VER > 1400
-    FILE* f = NULL;
-    fopen_s(&f, DATAFILE, "w");
-#else
-    FILE* f = fopen(DATAFILE, "w");
-#endif
-    for (int pos = 0; pos != rowCount; ++pos)
+    int ret;
+    const unsigned char ln[6] = { 1, 0, 99, 1, 0, 255 };
+    if ((ret = INIT_OBJECT(loadProfile, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln)) == 0)
     {
-        fprintf(f, "%d/%d/%d %d:%d:%d;%d\n", time_getMonths(&tm), time_getDays(&tm), time_getYears(&tm),
-            time_getHours(&tm), time_getMinutes(&tm), time_getSeconds(&tm), pos + 1);
-        time_addHours(&tm, 1);
+        gxTarget* capture;
+        //Set default values if load the first time.
+        loadProfile.sortMethod = DLMS_SORT_METHOD_FIFO;
+        ///////////////////////////////////////////////////////////////////
+        //Add 2 columns.
+        //Add clock obect.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&loadProfile.captureObjects, key_init(&clock1, capture));
+        //Add active power.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&loadProfile.captureObjects, key_init(&activePowerL1, capture));
+        ///////////////////////////////////////////////////////////////////
+        //Update amount of capture objects.
+        //Set clock to sort object.
+        loadProfile.sortObject = BASE(clock1);
+        loadProfile.sortObjectAttributeIndex = 2;
+        loadProfile.profileEntries = getProfileGenericBufferMaxRowCount(settings, &loadProfile);
     }
-    fclose(f);
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    //Maximum row count.
-    profileGeneric.entriesInUse = rowCount;
-    profileGeneric.profileEntries = rowCount;
-    //Default value is 1. Change this for your needs.
-    profileGeneric.maxRowCount = 1;
     return 0;
 }
 
-#ifdef DLMS_INDIAN_STANDARD
 ///////////////////////////////////////////////////////////////////////
-//Add instant data Profile generic object.
-// This is used in Indian standard.
+//Add profile generic (historical data) object.
 ///////////////////////////////////////////////////////////////////////
-int addInstantDataProfileGeneric(
-    objectArray* objects)
+int addEventLogProfileGeneric(dlmsSettings* settings)
 {
+    int ret;
+    const unsigned char ln[6] = { 1, 0, 99, 98, 0, 255 };
+    if ((ret = INIT_OBJECT(eventLog, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln)) == 0)
     {
-        const unsigned char ln[6] = { 1,0,94,91,0,255 };
-        cosem_init2((gxObject*)&instantData, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln);
-    }
-    //Set capture period to 60 second.
-    instantData.capturePeriod = 60;
-    //Maximum row count.
-    instantData.profileEntries = 100;
-    instantData.sortMethod = DLMS_SORT_METHOD_FIFO;
-    ///////////////////////////////////////////////////////////////////
-    //Add colums.
-    //Set saved attribute index.
-    //Add clock object.
-    arr_push(&instantData.captureObjects, key_init(&clock1, co_init(2, 0)));
+        eventLog.sortMethod = DLMS_SORT_METHOD_FIFO;
+        ///////////////////////////////////////////////////////////////////
+        //Add 2 columns as default.
+        gxTarget* capture;
+        //Add clock obect.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&eventLog.captureObjects, key_init(&clock1, capture));
 
-    //Add register objects.
-    //Current, IR
-    {
-        const unsigned char ln[6] = { 1,0,31,7,0,255 };
-        cosem_init2((gxObject*)&currentIR, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&currentIR, co_init(2, 0)));
-    }
-
-    //Current, IY
-    {
-        const unsigned char ln[6] = { 1,0,51,7,0,255 };
-        cosem_init2((gxObject*)&currentIY, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&currentIY, co_init(2, 0)));
-    }
-
-    //Current, IB
-    {
-        const unsigned char ln[6] = { 1,0,71,7,0,255 };
-        cosem_init2((gxObject*)&currentIB, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&currentIB, co_init(2, 0)));
-    }
-
-    //Voltage, VRN
-    {
-        const unsigned char ln[6] = { 1,0,32,7,0,255 };
-        cosem_init2((gxObject*)&voltageVRN, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&voltageVRN, co_init(2, 0)));
-    }
-
-    //Voltage, VYN
-    {
-        const unsigned char ln[6] = { 1,0,52,7,0,255 };
-        cosem_init2((gxObject*)&voltageVYN, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&voltageVYN, co_init(2, 0)));
-    }
-
-    //Voltage, VBN
-    {
-        const unsigned char ln[6] = { 1,0,72,7,0,255 };
-        cosem_init2((gxObject*)&voltageVBN, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&voltageVBN, co_init(2, 0)));
-    }
-
-    //Voltage, VRY
-    {
-        const unsigned char ln[6] = { 1,0,32,7,0,255 };
-        cosem_init2((gxObject*)&voltageVRY, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&voltageVRY, co_init(2, 0)));
-    }
-
-    //Voltage, VBY
-    {
-        const unsigned char ln[6] = { 1,0,52,7,0,255 };
-        cosem_init2((gxObject*)&voltageVBY, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&voltageVBY, co_init(2, 0)));
-    }
-
-    //Signed power factor, R-phase
-    {
-        const unsigned char ln[6] = { 1,0,33,7,0,255 };
-        cosem_init2((gxObject*)&spfR, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&spfR, co_init(2, 0)));
-    }
-
-    //Signed power factor, Y-phase
-    {
-        const unsigned char ln[6] = { 1,0,53,7,0,255 };
-        cosem_init2((gxObject*)&spfY, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&spfY, co_init(2, 0)));
-    }
-
-    //Signed power factor, B-phase
-    {
-        const unsigned char ln[6] = { 1,0,73,7,0,255 };
-        cosem_init2((gxObject*)&spfB, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&spfB, co_init(2, 0)));
-    }
-
-    //Three phase power facto, PF
-    {
-        const unsigned char ln[6] = { 1,0,13,7,0,255 };
-        cosem_init2((gxObject*)&spfBF, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&spfBF, co_init(2, 0)));
-    }
-
-    //Frequency
-    {
-        const unsigned char ln[6] = { 1,0,14,7,0,255 };
-        cosem_init2((gxObject*)&frequency, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&frequency, co_init(2, 0)));
-    }
-    //Apparent power, kVA
-    {
-        const unsigned char ln[6] = { 1,0,9,7,0,255 };
-        cosem_init2((gxObject*)&apparentPower, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&apparentPower, co_init(2, 0)));
-    }
-
-    //Signed active power, kW (+ Forward; – Reverse)
-    {
-        const unsigned char ln[6] = { 1,0,1,7,0,255 };
-        cosem_init2((gxObject*)&signedActivePower, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&signedActivePower, co_init(2, 0)));
-    }
-
-    //Signed reactive power, kvar (+ Lag; – Lead)
-    {
-        const unsigned char ln[6] = { 1,0,37,7,0,255 };
-        cosem_init2((gxObject*)&signedReactivePower, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&signedReactivePower, co_init(2, 0)));
-    }
-
-    //Number of power — failures
-    {
-        const unsigned char ln[6] = { 0,0,96,7,0,255 };
-        cosem_init2((gxObject*)&numberOfPowerFailures, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&numberOfPowerFailures, co_init(2, 0)));
-    }
-    //Cumulative power — failure duration.
-    {
-        const unsigned char ln[6] = { 0,0,94,91,8,255 };
-        cosem_init2((gxObject*)&cumulativePowerFailureDuration, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&cumulativePowerFailureDuration, co_init(2, 0)));
-    }
-
-    //Cumulative tamper count.
-    {
-        const unsigned char ln[6] = { 0,0,94,91,0,255 };
-        cosem_init2((gxObject*)&cumulativeTamperCount, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&cumulativeTamperCount, co_init(2, 0)));
-    }
-
-    //Cumulative billing count.
-    {
-        const unsigned char ln[6] = { 0,0,0,1,0,255 };
-        cosem_init2((gxObject*)&cumulativeBillingCount, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&cumulativeBillingCount, co_init(2, 0)));
-    }
-
-    //Cumulative programming count.
-    {
-        const unsigned char ln[6] = { 0,0,96,2,0,255 };
-        cosem_init2((gxObject*)&cumulativeProgrammingCount, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&cumulativeProgrammingCount, co_init(2, 0)));
-    }
-
-    //Billing date.
-    {
-        const unsigned char ln[6] = { 0,0,0,1,2,255 };
-        cosem_init2((gxObject*)&billingDate, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&billingDate, co_init(2, 0)));
-    }
-
-    //Cumulative energy, kWh.
-    {
-        const unsigned char ln[6] = { 1,0,1,8,0,255 };
-        cosem_init2((gxObject*)&cumulativeEnergy, DLMS_OBJECT_TYPE_REGISTER, ln);
-        arr_push(&instantData.captureObjects, key_init(&cumulativeEnergy, co_init(2, 0)));
+        //Add event code.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&eventLog.captureObjects, key_init(&eventCode, capture));
+        //Set clock to sort object.
+        eventLog.sortObject = BASE(clock1);
+        eventLog.sortObjectAttributeIndex = 2;
+        eventLog.profileEntries = getProfileGenericBufferMaxRowCount(settings, &eventLog);
     }
     return 0;
 }
-#endif //DLMS_INDIAN_STANDARD
 
 ///////////////////////////////////////////////////////////////////////
 //Add Auto connect object.
 ///////////////////////////////////////////////////////////////////////
-int addAutoConnect(
-    objectArray* objects)
+int addAutoConnect()
 {
     gxByteBuffer* str;
     gxtime* start, * end;
     const unsigned char ln[6] = { 0,0,2,1,0,255 };
-    cosem_init2((gxObject*)&autoConnect, DLMS_OBJECT_TYPE_AUTO_CONNECT, ln);
+    INIT_OBJECT(autoConnect, DLMS_OBJECT_TYPE_AUTO_CONNECT, ln);
     autoConnect.mode = DLMS_AUTO_CONNECT_MODE_AUTO_DIALLING_ALLOWED_ANYTIME;
     autoConnect.repetitions = 10;
     autoConnect.repetitionDelay = 60;
@@ -693,8 +1078,7 @@ int addAutoConnect(
 ///////////////////////////////////////////////////////////////////////
 //Add Activity Calendar object.
 ///////////////////////////////////////////////////////////////////////
-int addActivityCalendar(
-    objectArray* objects)
+int addActivityCalendar()
 {
     gxDayProfile* dp;
     gxSeasonProfile* sp;
@@ -702,7 +1086,7 @@ int addActivityCalendar(
     gxDayProfileAction* act;
 
     const unsigned char ln[6] = { 0,0,13,0,0,255 };
-    cosem_init2((gxObject*)&activityCalendar, DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR, ln);
+    INIT_OBJECT(activityCalendar, DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR, ln);
 
     bb_addString(&activityCalendar.calendarNameActive, "Active");
     //Add season profile.
@@ -727,9 +1111,9 @@ int addActivityCalendar(
     act = (gxDayProfileAction*)malloc(sizeof(gxDayProfileAction));
     time_now(&act->startTime, 0);
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    act->script = BASE(actionSchedule);
+    act->script = BASE(tarifficationScriptTable);
 #else
-    memcpy(act->scriptLogicalName, actionSchedule.base.logicalName, 6);
+    memcpy(act->scriptLogicalName, tarifficationScriptTable.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
     act->scriptSelector = 1;
@@ -757,9 +1141,9 @@ int addActivityCalendar(
     act = (gxDayProfileAction*)malloc(sizeof(gxDayProfileAction));
     time_now(&act->startTime, 0);
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    act->script = BASE(actionSchedule);
+    act->script = BASE(tarifficationScriptTable);
 #else
-    memcpy(act->scriptLogicalName, actionSchedule.base.logicalName, 6);
+    memcpy(act->scriptLogicalName, tarifficationScriptTable.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     act->scriptSelector = 1;
     arr_push(&dp->daySchedules, act);
@@ -771,11 +1155,10 @@ int addActivityCalendar(
 ///////////////////////////////////////////////////////////////////////
 //Add Optical Port Setup object.
 ///////////////////////////////////////////////////////////////////////
-int addOpticalPortSetup(
-    objectArray* objects)
+int addOpticalPortSetup()
 {
     const unsigned char ln[6] = { 0,0,20,0,0,255 };
-    cosem_init2((gxObject*)&localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln);
+    INIT_OBJECT(localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln);
     localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_DEFAULT;
     localPortSetup.proposedBaudrate = DLMS_BAUD_RATE_9600;
     localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
@@ -790,11 +1173,10 @@ int addOpticalPortSetup(
 ///////////////////////////////////////////////////////////////////////
 //Add Demand Register object.
 ///////////////////////////////////////////////////////////////////////
-int addDemandRegister(
-    objectArray* objects)
+int addDemandRegister()
 {
     const unsigned char ln[6] = { 1,0,31,4,0,255 };
-    cosem_init2((gxObject*)&demandRegister, DLMS_OBJECT_TYPE_DEMAND_REGISTER, ln);
+    INIT_OBJECT(demandRegister, DLMS_OBJECT_TYPE_DEMAND_REGISTER, ln);
 
     var_setUInt16(&demandRegister.currentAverageValue, 10);
     var_setUInt16(&demandRegister.lastAverageValue, 20);
@@ -809,14 +1191,13 @@ int addDemandRegister(
 ///////////////////////////////////////////////////////////////////////
 //Add Register Monitor object.
 ///////////////////////////////////////////////////////////////////////
-int addRegisterMonitor(
-    objectArray* objects)
+int addRegisterMonitor()
 {
     gxActionSet* action;
     dlmsVARIANT* tmp;
 
     const unsigned char ln[6] = { 0,0,16,1,0,255 };
-    cosem_init2((gxObject*)&registerMonitor, DLMS_OBJECT_TYPE_REGISTER_MONITOR, ln);
+    INIT_OBJECT(registerMonitor, DLMS_OBJECT_TYPE_REGISTER_MONITOR, ln);
 
     //Add low value.
     tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
@@ -841,67 +1222,92 @@ int addRegisterMonitor(
     //Add low action.
     action = (gxActionSet*)malloc(sizeof(gxActionSet));
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    action->actionDown.script = &scriptTable;
+    action->actionDown.script = NULL;
 #else
-    memcpy(action->actionDown.logicalName, scriptTable.base.logicalName, 6);
+    memset(action->actionUp.logicalName, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
     action->actionDown.scriptSelector = 1;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    action->actionUp.script = &scriptTable;
+    action->actionUp.script = NULL;
 #else
-    memcpy(action->actionUp.logicalName, scriptTable.base.logicalName, 6);
+    memset(action->actionUp.logicalName, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     action->actionUp.scriptSelector = 1;
     arr_push(&registerMonitor.actions, action);
     //Add high action.
     action = (gxActionSet*)malloc(sizeof(gxActionSet));
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    action->actionDown.script = &scriptTable;
+    action->actionDown.script = NULL;
 #else
-    memcpy(action->actionDown.logicalName, scriptTable.base.logicalName, 6);
+    memset(action->actionDown.logicalName, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     action->actionDown.scriptSelector = 1;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    action->actionUp.script = &scriptTable;
+    action->actionUp.script = NULL;
 #else
-    memcpy(action->actionUp.logicalName, scriptTable.base.logicalName, 6);
+    memset(action->actionUp.logicalName, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     action->actionUp.scriptSelector = 1;
     arr_push(&registerMonitor.actions, action);
     return 0;
 }
 
+
 ///////////////////////////////////////////////////////////////////////
-//Add action schedule object.
+//Add action schedule object for disconnect control to close the led.
 ///////////////////////////////////////////////////////////////////////
-int addActionSchedule(
-    objectArray* objects)
+int addActionScheduleDisconnectClose()
 {
-    gxtime* tm;
-    const unsigned char ln[6] = { 0,0,15,0,0,255 };
-    cosem_init2((gxObject*)&actionSchedule, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln);
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
-    actionSchedule.executedScript = &scriptTable;
-#else
-    memcpy(actionSchedule.executedScriptLogicalName, scriptTable.base.logicalName, 6);
-#endif //DLMS_IGNORE_OBJECT_POINTERS
-    actionSchedule.executedScriptSelector = 1;
-    actionSchedule.type = DLMS_SINGLE_ACTION_SCHEDULE_TYPE1;
-    tm = (gxtime*)malloc(sizeof(gxtime));
-    time_now(tm, 0);
-    arr_push(&actionSchedule.executionTime, tm);
-    return 0;
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 15, 0, 1, 255 };
+    if ((ret = INIT_OBJECT(actionScheduleDisconnectClose, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln)) == 0)
+    {
+        actionScheduleDisconnectClose.executedScript = &scriptTableDisconnectControl;
+        actionScheduleDisconnectClose.executedScriptSelector = 1;
+        actionScheduleDisconnectClose.type = DLMS_SINGLE_ACTION_SCHEDULE_TYPE1;
+    }
+    return ret;
 }
+
+///////////////////////////////////////////////////////////////////////
+//Add action schedule object for disconnect control to open the led.
+///////////////////////////////////////////////////////////////////////
+int addActionScheduleDisconnectOpen()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 15, 0, 3, 255 };
+    //Action schedule execution times.
+    if ((ret = INIT_OBJECT(actionScheduleDisconnectOpen, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln)) == 0)
+    {
+        actionScheduleDisconnectOpen.executedScript = &scriptTableDisconnectControl;
+        actionScheduleDisconnectOpen.executedScriptSelector = 2;
+        actionScheduleDisconnectOpen.type = DLMS_SINGLE_ACTION_SCHEDULE_TYPE1;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Disconnect control object.
+///////////////////////////////////////////////////////////////////////
+int addDisconnectControl()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 96, 3, 10, 255 };
+    if ((ret = INIT_OBJECT(disconnectControl, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln)) == 0)
+    {
+    }
+    return ret;
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 //Add image transfer object.
 ///////////////////////////////////////////////////////////////////////
-int addImageTransfer(
-    objectArray* objects)
+int addImageTransfer()
 {
     unsigned char ln[6] = { 0,0,44,0,0,255 };
-    cosem_init2((gxObject*)&imageTransfer, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln);
+    INIT_OBJECT(imageTransfer, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln);
     imageTransfer.imageBlockSize = 100;
     imageTransfer.imageFirstNotTransferredBlockNumber = 0;
     //Enable image transfer.
@@ -912,30 +1318,33 @@ int addImageTransfer(
 ///////////////////////////////////////////////////////////////////////
 //Add IEC HDLC Setup object.
 ///////////////////////////////////////////////////////////////////////
-int addIecHdlcSetup(
-    objectArray* objects)
+int addIecHdlcSetup(dlmsServerSettings* settings)
 {
-    unsigned char ln[6] = { 0,0,22,0,0,255 };
-    cosem_init2((gxObject*)&iecHdlcSetup, DLMS_OBJECT_TYPE_IEC_HDLC_SETUP, ln);
-    iecHdlcSetup.communicationSpeed = DLMS_BAUD_RATE_9600;
-    iecHdlcSetup.windowSizeReceive = iecHdlcSetup.windowSizeTransmit = 1;
-    iecHdlcSetup.maximumInfoLengthTransmit = iecHdlcSetup.maximumInfoLengthReceive = 128;
-    iecHdlcSetup.inactivityTimeout = 120;
-    iecHdlcSetup.deviceAddress = 0x10;
-    return 0;
+    int ret = 0;
+    unsigned char ln[6] = { 0, 0, 22, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(hdlc, DLMS_OBJECT_TYPE_IEC_HDLC_SETUP, ln)) == 0)
+    {
+        hdlc.communicationSpeed = DLMS_BAUD_RATE_9600;
+        hdlc.windowSizeReceive = hdlc.windowSizeTransmit = 1;
+        hdlc.maximumInfoLengthTransmit = hdlc.maximumInfoLengthReceive = 128;
+        hdlc.inactivityTimeout = 120;
+        hdlc.deviceAddress = 0x10;
+    }
+    settings->hdlc = &hdlc;
+    return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////
 //Add compact data object.
 ///////////////////////////////////////////////////////////////////////
 int addCompactData(
-    dlmsServerSettings* settings,
+    dlmsSettings* settings,
     objectArray* objects)
 {
     gxTarget* capture;
     gxKey* k;
     unsigned char ln[6] = { 0,0,66,0,1,255 };
-    cosem_init2(&compactData.base, DLMS_OBJECT_TYPE_COMPACT_DATA, ln);
+    INIT_OBJECT(compactData, DLMS_OBJECT_TYPE_COMPACT_DATA, ln);
     compactData.templateId = 66;
 #ifdef DLMS_ITALIAN_STANDARD
     //Some Italy meters require that there is a array count in some compact buffer.
@@ -956,41 +1365,99 @@ int addCompactData(
     capture = (gxTarget*)malloc(sizeof(gxTarget));
     capture->attributeIndex = 4;
     capture->dataIndex = 0;
-    k = key_init(&actionSchedule, capture);
+    k = key_init(&actionScheduleDisconnectOpen, capture);
     arr_push(&compactData.captureObjects, k);
-    return compactData_updateTemplateDescription(&settings->base, &compactData);
+    return compactData_updateTemplateDescription(settings, &compactData);
 }
 
 ///////////////////////////////////////////////////////////////////////
 //Add SAP Assignment object.
 ///////////////////////////////////////////////////////////////////////
-int addSapAssignment(
-    objectArray* objects)
+int addSapAssignment()
 {
-    gxSapItem* it;
-    const unsigned char ln[6] = { 0,0,41,0,0,255 };
-    cosem_init2((gxObject*)&sapAssignment, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, ln);
-
-    it = (gxSapItem*)malloc(sizeof(gxSapItem));
-    it->id = 1;
-    bb_init(&it->name);
-    char buff[17];
-    sprintf(buff, "GRX%.13lu", SERIAL_NUMBER);
-    bb_addString(&it->name, buff);
-    arr_push(&sapAssignment.sapAssignmentList, it);
-    return 0;
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 41, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(sapAssignment, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, ln)) == 0)
+    {
+        char tmp[17];
+        gxSapItem* it = (gxSapItem*)malloc(sizeof(gxSapItem));
+        bb_init(&it->name);
+        ret = sprintf(tmp, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
+        bb_addString(&it->name, tmp);
+        it->id = 1;
+        ret = arr_push(&sapAssignment.sapAssignmentList, it);
+    }
+    return ret;
 }
 
 
 ///////////////////////////////////////////////////////////////////////
+//Add Logical Device Name. 123456 is meter serial number.
+///////////////////////////////////////////////////////////////////////
+// COSEM Logical Device Name is defined as an octet-string of 16 octets.
+// The first three octets uniquely identify the manufacturer of the device and it corresponds
+// to the manufacturer's identification in IEC 62056-21.
+// The following 13 octets are assigned by the manufacturer.
+//The manufacturer is responsible for guaranteeing the uniqueness of these octets.
+int addLogicalDeviceName()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 42, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(ldn, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        char tmp[17];
+        sprintf(tmp, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
+        var_addBytes(&ldn.value, (unsigned char*)tmp, 16);
+    }
+    return ret;
+}
+
+//Add event code object.
+int addEventCode()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 96, 11, 0, 255 };
+    if ((ret = INIT_OBJECT(eventCode, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_UINT16(eventCode.value) = 0;
+    }
+    return ret;
+}
+
+//Add unix time object.
+int addUnixTime()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 1, 1, 0, 255 };
+    if ((ret = INIT_OBJECT(unixTime, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        //Set initial value.
+        GX_UINT32(unixTime.value) = 0;
+    }
+    return ret;
+}
+
+//Add invocation counter object.
+int addInvocationCounter()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,43,1,0,255 };
+    if ((ret = INIT_OBJECT(invocationCounter, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        //Initial invocation counter value.
+        GX_UINT32_BYREF(invocationCounter.value, securitySetupHighGMac.minimumInvocationCounter);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
 //Add Auto Answer object.
 ///////////////////////////////////////////////////////////////////////
-int addAutoAnswer(
-    objectArray* objects)
+int addAutoAnswer()
 {
     gxtime* start, * end;
     const unsigned char ln[6] = { 0,0,2,2,0,255 };
-    cosem_init2((gxObject*)&autoAnswer, DLMS_OBJECT_TYPE_AUTO_ANSWER, ln);
+    INIT_OBJECT(autoAnswer, DLMS_OBJECT_TYPE_AUTO_ANSWER, ln);
 
     start = (gxtime*)malloc(sizeof(gxtime));
     time_init(start, -1, -1, -1, 6, -1, -1, -1, -1);
@@ -1009,12 +1476,11 @@ int addAutoAnswer(
 ///////////////////////////////////////////////////////////////////////
 //Add Modem Configuration object.
 ///////////////////////////////////////////////////////////////////////
-int addModemConfiguration(
-    objectArray* objects)
+int addModemConfiguration()
 {
     gxModemInitialisation* init;
     const unsigned char ln[6] = { 0,0,2,0,0,255 };
-    cosem_init2((gxObject*)&modemConfiguration, DLMS_OBJECT_TYPE_MODEM_CONFIGURATION, ln);
+    INIT_OBJECT(modemConfiguration, DLMS_OBJECT_TYPE_MODEM_CONFIGURATION, ln);
 
     modemConfiguration.communicationSpeed = DLMS_BAUD_RATE_38400;
     init = (gxModemInitialisation*)malloc(sizeof(gxModemInitialisation));
@@ -1031,23 +1497,11 @@ int addModemConfiguration(
 ///////////////////////////////////////////////////////////////////////
 //Add Mac Address Setup object.
 ///////////////////////////////////////////////////////////////////////
-int addMacAddressSetup(
-    objectArray* objects)
+int addMacAddressSetup()
 {
     const unsigned char ln[6] = { 0,0,25,2,0,255 };
-    cosem_init2((gxObject*)&macAddressSetup, DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP, ln);
+    INIT_OBJECT(macAddressSetup, DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP, ln);
     bb_addString(&macAddressSetup.macAddress, "00:11:22:33:44:55:66");
-    return 0;
-}
-
-///////////////////////////////////////////////////////////////////////
-//Add Disconnect control object.
-///////////////////////////////////////////////////////////////////////
-int addDisconnectControl(
-    objectArray* objects)
-{
-    const unsigned char ln[6] = { 0,0,96,3,10,255 };
-    cosem_init2((gxObject*)&disconnectControl, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln);
     return 0;
 }
 
@@ -1063,7 +1517,7 @@ unsigned long getIpAddress()
         if (phe == 0)
         {
             ret = 0;
-        }
+    }
         else
         {
             struct in_addr* addr = (struct in_addr*)phe->h_addr_list[0];
@@ -1072,7 +1526,7 @@ unsigned long getIpAddress()
 #else //or Linux
             return addr->s_addr;
 #endif
-        }
+}
     }
 #else
     //If no OS get IP.
@@ -1083,26 +1537,64 @@ unsigned long getIpAddress()
 ///////////////////////////////////////////////////////////////////////
 //Add IP4 Setup object.
 ///////////////////////////////////////////////////////////////////////
-int addIP4Setup(
-    objectArray* objects)
+int addIP4Setup()
 {
+    int ret;
+    dlmsVARIANT* it;
     const unsigned char ln[6] = { 0,0,25,1,0,255 };
-    cosem_init2((gxObject*)&ip4Setup, DLMS_OBJECT_TYPE_IP4_SETUP, ln);
-    ip4Setup.ipAddress = getIpAddress();
+    if ((ret = INIT_OBJECT(ip4Setup, DLMS_OBJECT_TYPE_IP4_SETUP, ln)) == 0)
+    {
+        ip4Setup.ipAddress = getIpAddress();
+        ip4Setup.dataLinkLayer = BASE(pppSetup);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT32(*it) = 0;
+        va_push(&ip4Setup.multicastIPAddress, it);
+        ip4Setup.subnetMask = 0xFFFFFFFF;
+        ip4Setup.gatewayIPAddress = 0x0A000001;
+        ip4Setup.primaryDNSAddress = 0x0A0B0C0D;
+        ip4Setup.secondaryDNSAddress = 0x0C0D0E0F;
+    }
     return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////
+//Add PPP Setup object.
+///////////////////////////////////////////////////////////////////////
+int addPppSetup()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,25,3,0,255 };
+    if ((ret = INIT_OBJECT(pppSetup, DLMS_OBJECT_TYPE_PPP_SETUP, ln)) == 0)
+    {
+        pppSetup.phy = BASE(gprsSetup);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add GPRS Setup object.
+///////////////////////////////////////////////////////////////////////
+int addGprsSetup()
+{
+    int ret;
+    static unsigned char APN[15];
+    const unsigned char ln[6] = { 0,0,25,4,0,255 };
+    if ((ret = INIT_OBJECT(gprsSetup, DLMS_OBJECT_TYPE_GPRS_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(gprsSetup.apn, APN, 0);
+        ret = bb_addString(&gprsSetup.apn, "vpn.gurux.fi");
+    }
+    return ret;
+}
+///////////////////////////////////////////////////////////////////////
 //Add push setup object. (On Connectivity)
 ///////////////////////////////////////////////////////////////////////
-int addPushSetup(
-    objectArray* objects)
+int addPushSetup()
 {
     const char dest[] = "127.0.0.1:7000";
-
     gxTarget* co;
     const unsigned char ln[6] = { 0,0,25,9,0,255 };
-    cosem_init2((gxObject*)&pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln);
+    INIT_OBJECT(pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln);
     pushSetup.destination = (char*)malloc(strlen(dest) + 1);
     strcpy(pushSetup.destination, dest);
 
@@ -1122,211 +1614,207 @@ int addPushSetup(
     co->attributeIndex = 3;
     co->dataIndex = 0;
     arr_push(&pushSetup.pushObjectList, key_init(&ip4Setup, co));
+    pushSetup.randomisationStartInterval = 0;
     return 0;
 }
 
-///////////////////////////////////////////////////////////////////////
-//Add script table object.
-///////////////////////////////////////////////////////////////////////
-int addScriptTable(
-    objectArray* objects)
+/////////////////////////////////////////////////////////////////////////////
+// Load security settings from the EEPROM.
+/////////////////////////////////////////////////////////////////////////////
+int loadSecurity(dlmsSettings* settings)
 {
-    gxScript* s = (gxScript*)malloc(sizeof(gxScript));
-    gxScriptAction* a = (gxScriptAction*)malloc(sizeof(gxScriptAction));
-    const unsigned char ln[6] = { 0,0,10,0,0,255 };
-    cosem_init2((gxObject*)&scriptTable, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln);
-    s->id = 1;
-    arr_init(&s->actions);
-    a->type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
-    //TODO: Set object type and logical name, attribute index to execute.
-    //In this example it is a clock.
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
-    a->target = BASE(clock1);
+    const char* fileName = "security.raw";
+    int ret = 0;
+    //Update keys.
+#if _MSC_VER > 1400
+    FILE* f = NULL;
+    fopen_s(&f, fileName, "rb");
 #else
-    a->objectType = DLMS_OBJECT_TYPE_CLOCK;
-    memcpy(a->logicalName, clock1.base.logicalName, 6);
-#endif //DLMS_IGNORE_OBJECT_POINTERS
-    a->index = 2;
-    var_init(&a->parameter);
-    //Add executed action to action list.
-    arr_push(&s->actions, a);
-    //Add executed script to script list.
-    arr_push(&scriptTable.scripts, s);
-    return 0;
+    FILE* f = fopen(fileName, "rb");
+#endif
+    if (f != NULL)
+    {
+        //Check that file is not empty.
+        fseek(f, 0L, SEEK_END);
+        long size = ftell(f);
+        if (size != 0)
+        {
+            fseek(f, 0L, SEEK_SET);
+            gxByteBuffer bb;
+            bb_init(&bb);
+            bb_capacity(&bb, size);
+            bb.size += fread(bb.data, 1, size, f);
+            fclose(f);
+            if ((ret = bb_clear(&settings->cipher.blockCipherKey)) != 0 ||
+                (ret = bb_clear(&settings->cipher.authenticationKey)) != 0 ||
+                (ret = bb_clear(&settings->kek)) != 0 ||
+                (ret = bb_set2(&settings->cipher.blockCipherKey, &bb, 0, 16)) != 0 ||
+                (ret = bb_set2(&settings->cipher.authenticationKey, &bb, bb.position, 16)) != 0 ||
+                (ret = bb_set2(&settings->kek, &bb, bb.position, 16)) != 0 ||
+                //load last server IC.
+                (ret = bb_getUInt32(&bb, &settings->cipher.invocationCounter)) != 0 ||
+                //load last client IC.
+                (ret = bb_getUInt32(&bb, &securitySetupHighGMac.minimumInvocationCounter)) != 0)
+            {
+            }
+            bb_clear(&bb);
+            return ret;
+        }
+    }
+    return saveSecurity(settings);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Load data from the EEPROM.
+// Returns serialization version or zero if data is not saved.
+/////////////////////////////////////////////////////////////////////////////
+int loadSettings(dlmsSettings* settings)
+{
+    const char* fileName = "settings.raw";
+    int ret = 0;
+    //Update keys.
+#if _MSC_VER > 1400
+    FILE* f = NULL;
+    fopen_s(&f, fileName, "rb");
+#else
+    FILE* f = fopen(fileName, "rb");
+#endif
+    if (f != NULL)
+    {
+        //Check that file is not empty.
+        fseek(f, 0L, SEEK_END);
+        long size = ftell(f);
+        if (size != 0)
+        {
+            fseek(f, 0L, SEEK_SET);
+            gxByteBuffer bb;
+            bb_init(&bb);
+            bb_capacity(&bb, size);
+            bb.size += fread(bb.data, 1, size, f);
+            fclose(f);
+            ret = ser_loadObjects(settings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
+            {
+            }
+            bb_clear(&bb);
+            return ret;
+        }
+    }
+    return saveSettings();
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Firmware version.
+///////////////////////////////////////////////////////////////////////
+int AddFirmwareversion()
+{
+    int ret;
+    const unsigned char ln[6] = { 1,0,0,2,0,255 };
+    if ((ret = INIT_OBJECT(fw, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        const char FW[] = "Gurux FW 1.0.1";
+        var_setString(&fw.value, FW, (unsigned short)strlen(FW));
+    }
+    return ret;
 }
 
 int svr_InitObjects(
     dlmsServerSettings* settings)
 {
-    int ret;
-    objectArray* objects = &settings->base.objects;
-    char FW[] = "Gurux FW 1.0.1";
     char buff[17];
-    oa_attach(objects, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
-
-    addSecuritySetup(objects);
-#if defined(DLMS_ITALIAN_STANDARD)
-    if ((ret = addItalianAssociation(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addFrameCounters(objects)) != 0)
-    {
-        return ret;
-    }
-#else
-    //Add Logical Name Association for Authentication None.
-    if ((ret = addNoneAssociation()) != 0)
-    {
-        return ret;
-    }
-    //Add Logical Name Association for Authentication Low.
-    if ((ret = addLowAssociation()) != 0)
-    {
-        return ret;
-    }
-    //Add Logical Name Association for Authentication High.
-    if ((ret = addHighAssociation()) != 0)
-    {
-        return ret;
-    }
-#endif //!defined(DLMS_ITALIAN_STANDARD)
-
-#if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-    //Add short name referencing.
-    if ((ret = addAssociation()) != 0)
-    {
-        return ret;
-    }
-#endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-
+    int ret;
+    OA_ATTACH(settings->base.objects, ALL_OBJECTS);
     ///////////////////////////////////////////////////////////////////////
-    //Add Logical Device Name. 123456 is meter serial number.
-    ///////////////////////////////////////////////////////////////////////
-    // COSEM Logical Device Name is defined as an octet-string of 16 octets.
-    // The first three octets uniquely identify the manufacturer of the device and it corresponds
-    // to the manufacturer's identification in IEC 62056-21.
-    // The following 13 octets are assigned by the manufacturer.
-    //The manufacturer is responsible for guaranteeing the uniqueness of these octets.
+   //Add Logical Device Name. 123456 is meter serial number.
+   ///////////////////////////////////////////////////////////////////////
+   // COSEM Logical Device Name is defined as an octet-string of 16 octets.
+   // The first three octets uniquely identify the manufacturer of the device and it corresponds
+   // to the manufacturer's identification in IEC 62056-21.
+   // The following 13 octets are assigned by the manufacturer.
+   //The manufacturer is responsible for guaranteeing the uniqueness of these octets.
     sprintf(buff, "GRX%.13lu", SERIAL_NUMBER);
     {
         const unsigned char ln[6] = { 0,0,42,0,0,255 };
-        cosem_init2((gxObject*)&ldn.base, DLMS_OBJECT_TYPE_DATA, ln);
+        INIT_OBJECT(ldn, DLMS_OBJECT_TYPE_DATA, ln);
         var_addBytes(&ldn.value, (unsigned char*)buff, 16);
     }
     //Electricity ID 1
     {
         const unsigned char ln[6] = { 1,1,0,0,0,255 };
-        cosem_init2((gxObject*)&id1.base, DLMS_OBJECT_TYPE_DATA, ln);
+        INIT_OBJECT(id1, DLMS_OBJECT_TYPE_DATA, ln);
         var_setString(&id1.value, buff, 16);
     }
 
     //Electricity ID 2.
     {
         const unsigned char ln[6] = { 1,1,0,0,1,255 };
-        cosem_init2((gxObject*)&id2.base, DLMS_OBJECT_TYPE_DATA, ln);
+        INIT_OBJECT(id2, DLMS_OBJECT_TYPE_DATA, ln);
         var_setUInt32(&id2.value, SERIAL_NUMBER);
     }
 
-    //Firmware version.
+    if ((ret = AddFirmwareversion()) != 0 ||
+        (ret = addLogicalDeviceName()) != 0 ||
+        (ret = addSapAssignment()) != 0 ||
+        (ret = addEventCode()) != 0 ||
+        (ret = addUnixTime()) != 0 ||
+        (ret = addInvocationCounter()) != 0 ||
+        (ret = addClockObject()) != 0 ||
+        (ret = addRegisterObject()) != 0 ||
+        (ret = addAssociationNone()) != 0 ||
+        (ret = addAssociationLow()) != 0 ||
+        (ret = addAssociationHigh()) != 0 ||
+        (ret = addAssociationHighGMac()) != 0 ||
+        (ret = addSecuritySetupHigh()) != 0 ||
+        (ret = addSecuritySetupHighGMac()) != 0 ||
+        (ret = addPushSetup()) != 0 ||
+        (ret = addscriptTableGlobalMeterReset()) != 0 ||
+        (ret = addscriptTableDisconnectControl()) != 0 ||
+        (ret = addscriptTableActivateTestMode()) != 0 ||
+        (ret = addscriptTableActivateNormalMode()) != 0 ||
+        (ret = addTarifficationScriptTable()) != 0 ||
+        (ret = addRegisterActivation(settings)) != 0 ||
+        (ret = addLoadProfileProfileGeneric(&settings->base)) != 0 ||
+        (ret = addEventLogProfileGeneric(&settings->base)) != 0 ||
+        (ret = addActionScheduleDisconnectOpen()) != 0 ||
+        (ret = addActionScheduleDisconnectClose()) != 0 ||
+        (ret = addDisconnectControl()) != 0 ||
+        (ret = addIecHdlcSetup(settings)) != 0 ||
+        (ret = addTcpUdpSetup()) != 0 ||
+        (ret = addAutoConnect()) != 0 ||
+        (ret = addActivityCalendar()) != 0 ||
+        (ret = addOpticalPortSetup()) != 0 ||
+        (ret = addDemandRegister()) != 0 ||
+        (ret = addRegisterMonitor()) != 0 ||
+        (ret = addAutoAnswer()) != 0 ||
+        (ret = addModemConfiguration()) != 0 ||
+        (ret = addMacAddressSetup()) != 0 ||
+        (ret = addIP4Setup()) != 0 ||
+        (ret = addPppSetup()) != 0 ||
+        (ret = addGprsSetup()) != 0 ||
+        (ret = addImageTransfer()) != 0 ||
+        (ret = addCompactData(&settings->base, &settings->base.objects)) != 0 ||
+        (ret = oa_verify(&settings->base.objects)) != 0 ||
+        (ret = svr_initialize(settings)) != 0)
     {
-        const unsigned char ln[6] = { 1,0,0,2,0,255 };
-        cosem_init2((gxObject*)&fw.base, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setString(&fw.value, FW, (unsigned short)strlen(FW));
-    }
-    if ((ret = addRegisterObject(objects)) != 0)
-    {
+        GXTRACE_INT(("Failed to start the meter!"), ret);
+        executeTime = 0;
         return ret;
     }
-    if ((ret = addClockObject(objects)) != 0)
+    if ((ret = loadSettings(&settings->base)) != 0)
     {
+        GXTRACE_INT(("Failed to load settings!"), ret);
+        executeTime = 0;
         return ret;
     }
-    if ((ret = addTcpUdpSetup(objects)) != 0)
+    if ((ret = loadSecurity(&settings->base)) != 0)
     {
+        GXTRACE_INT(("Failed to load security settings!"), ret);
+        executeTime = 0;
         return ret;
     }
-    if ((ret = addProfileGeneric(objects)) != 0)
-    {
-        return ret;
-    }
-#ifdef DLMS_INDIAN_STANDARD
-    if ((ret = addInstantDataProfileGeneric(objects)) != 0)
-    {
-        return ret;
-    }
-#endif //DLMS_INDIAN_STANDARD
-    if ((ret = addAutoConnect(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addActivityCalendar(objects)) != 0)
-    {
-        return ret;
-    }
-
-    if ((ret = addOpticalPortSetup(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addDemandRegister(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addScriptTable(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addRegisterMonitor(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addActionSchedule(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addSapAssignment(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addAutoAnswer(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addModemConfiguration(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addMacAddressSetup(objects)) != 0)
-    {
-        return ret;
-    }
-
-    if ((ret = addDisconnectControl(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addIP4Setup(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addPushSetup(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addImageTransfer(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addIecHdlcSetup(objects)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = addCompactData(settings, objects)) != 0)
-    {
-        return ret;
-    }
-    return oa_verify(objects);
+    updateState(&settings->base, GURUX_EVENT_CODES_POWER_UP);
+    GXTRACE(("Meter started."), NULL);
+    return 0;
 }
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -1345,7 +1833,7 @@ int svr_start(
     }
     if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
     {
-        con->settings.hdlc = &iecHdlcSetup;
+        con->settings.hdlc = &hdlc;
     }
     else if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
     {
@@ -1376,315 +1864,46 @@ int svr_findObject(
     unsigned char* ln,
     gxValueEventArg* e)
 {
-#ifndef DLMS_ITALIAN_STANDARD
+    GXTRACE_LN(("findObject"), objectType, ln);
     if (objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
     {
-        const unsigned char CURRENT_ASSOCIATION[6] = { 0, 0, 40, 0, 0, 255 };
-        if (settings->authentication == DLMS_AUTHENTICATION_NONE &&
-            (memcmp(CURRENT_ASSOCIATION, ln, 6) == 0 || memcmp(ln, associationNone.base.logicalName, 6) == 0))
+        uint16_t pos;
+        objectArray objects;
+        gxObject* tmp[6];
+        oa_attach(&objects, tmp, sizeof(tmp) / sizeof(tmp[0]));
+        objects.size = 0;
+        if (oa_getObjects(&settings->objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, &objects) == 0)
         {
-            e->target = &associationNone.base;
-        }
-        else if (settings->authentication == DLMS_AUTHENTICATION_LOW &&
-            (memcmp(CURRENT_ASSOCIATION, ln, 6) == 0 || memcmp(ln, lowAssociation.base.logicalName, 6) == 0))
-        {
-            e->target = &lowAssociation.base;
-        }
-        else if (memcmp(CURRENT_ASSOCIATION, ln, 6) == 0 || memcmp(ln, highAssociation.base.logicalName, 6) == 0)
-        {
-            e->target = &highAssociation.base;
-        }
-    }
-    else
-    {
-        if (settings->authentication == DLMS_AUTHENTICATION_NONE)
-        {
-            return oa_findByLN(&associationNone.objectList, objectType, ln, &e->target);
-        }
-        else if (settings->authentication == DLMS_AUTHENTICATION_LOW)
-        {
-            return oa_findByLN(&lowAssociation.objectList, objectType, ln, &e->target);
-        }
-        else
-        {
-            return oa_findByLN(&highAssociation.objectList, objectType, ln, &e->target);
-        }
-    }
-#else
-    if (objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
-    {
-        if (settings->authentication == DLMS_AUTHENTICATION_NONE)
-        {
-            e->target = &associationNone.base;
-        }
-        else if (settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
-        {
-            e->target = &highAssociation.base;
-        }
-
-    }
-#endif //DLMS_ITALIAN_STANDARD
-    return 0;
-}
-
-/**
-*  Get head position where next new item is inserted.
-*
-* This is used with ring buffer.
-*
-* @return Position where next item is inserted.
-*/
-unsigned short getHead() {
-    unsigned short head = 0;
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    gxtime tm, last;
-    int len, month = 0, day = 0, year = 1971, hour = 0, minute = 0, second = 0, value = 0;
-    time_init(&last, year, month, day, hour, minute, second, 0, -1);
-#if _MSC_VER > 1400
-    FILE* f = NULL;
-    fopen_s(&f, DATAFILE, "r");
-#else
-    FILE* f = fopen(DATAFILE, "r");
-#endif
-    if (f != NULL)
-    {
-        while ((len = fscanf(f, "%d/%d/%d %d:%d:%d;%d", &month, &day, &year, &hour, &minute, &second, &value)) != -1)
-        {
-            time_init(&tm, year, month, day, hour, minute, second, 0, -1);
-            if (time_compare(&last, &tm) > 0)
+            gxAssociationLogicalName* a;
+            for (pos = 0; pos != objects.size; ++pos)
             {
-                break;
-            }
-            ++head;
-            last = tm;
-        }
-        fclose(f);
-    }
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    return head;
-}
-
-
-/**
-* Return data using start and end indexes.
-*
-* @param p
-*            ProfileGeneric
-* @param index start index.
-* @param count Amount of the rows.
-*/
-void getProfileGenericDataByEntry(gxProfileGeneric* p, long index, long count)
-{
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    dlmsVARIANT* tmp;
-    variantArray* row;
-    int len, month = 0, day = 0, year = 0, hour = 0, minute = 0, second = 0, value = 0;
-    if (count != 0)
-    {
-
-#if _MSC_VER > 1400
-        FILE* f = NULL;
-        fopen_s(&f, DATAFILE, "r");
-#else
-        FILE* f = fopen(DATAFILE, "r");
-#endif
-        if (f != NULL)
-        {
-            while ((len = fscanf(f, "%d/%d/%d %d:%d:%d;%d", &month, &day, &year, &hour, &minute, &second, &value)) != -1)
-            {
-                // Skip row
-                if (index > 0)
+                if (oa_getByIndex(&objects, pos, (gxObject**)&a) == 0)
                 {
-                    --index;
-                }
-                else if (len == 7)
-                {
-                    if (p->buffer.size == count)
+                    if (a->clientSAP == settings->clientAddress &&
+                        a->authenticationMechanismName.mechanismId == settings->authentication)
                     {
+                        e->target = (gxObject*)a;
                         break;
                     }
-                    row = (variantArray*)malloc(sizeof(variantArray));
-                    va_init(row);
-                    arr_push(&p->buffer, row);
-
-                    //Add date time.
-                    tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
-                    var_init(tmp);
-                    tmp->dateTime = (gxtime*)malloc(sizeof(gxtime));
-                    time_init(tmp->dateTime, year, month, day, hour, minute, second, 0, -1);
-                    tmp->vt = DLMS_DATA_TYPE_DATETIME;
-                    va_push(row, tmp);
-
-                    //Add register value.
-                    tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
-                    var_init(tmp);
-                    var_setInt32(tmp, value);
-                    va_push(row, tmp);
-                }
-                if (p->buffer.size == count)
-                {
-                    break;
                 }
             }
-            fclose(f);
-        }
-        //Read values from the begin if ring buffer is used.
-        if (p->buffer.size != count)
-        {
-            getProfileGenericDataByEntry(p, index, count);
         }
     }
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-}
-
-/**
-* Get row count.
-*
-
-* @return
-*/
-int getProfileGenericDataCount() {
-    int rows = 0;
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    int ch;
-#if _MSC_VER > 1400
-    FILE* f = NULL;
-    fopen_s(&f, DATAFILE, "r");
-#else
-    FILE* f = fopen(DATAFILE, "r");
-#endif
-    if (f != NULL)
+    if (e->target == NULL)
     {
-        while ((ch = fgetc(f)) != EOF)
-        {
-            if (ch == '\n')
-            {
-                ++rows;
-            }
-        }
-        fclose(f);
+        GXTRACE_LN(("Unknown object"), objectType, ln);
     }
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    return rows;
-}
-
-
-/**
-* Find start index and row count using start and end date time.
-*
-* @param start
-*            Start time.
-* @param end
-*            End time
-* @param index
-*            Start index.
-* @param count
-*            Item count.
-*/
-int GetProfileGenericDataByRangeFromRingBuffer(gxValueEventArg* e)
-{
-    int len, month = 0, day = 0, year = 1971, hour = 0, minute = 0, second = 0, value = 0;
-    dlmsVARIANT* it;
-    gxtime tm, start, end, last;
-    int ret;
-    unsigned short pos = 0;
-    dlmsVARIANT tmp;
-    var_init(&tmp);
-    time_init(&last, year, month, day, hour, minute, second, 0, -1);
-    if ((ret = va_getByIndex(e->parameters.Arr, 1, &it)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = dlms_changeType(it->byteArr, DLMS_DATA_TYPE_DATETIME, &tmp)) != 0)
-    {
-        var_clear(&tmp);
-        return ret;
-    }
-    //Start time.
-    start = *tmp.dateTime;
-    var_clear(&tmp);
-    if ((ret = va_getByIndex(e->parameters.Arr, 2, &it)) != 0)
-    {
-        return ret;
-    }
-    if ((ret = dlms_changeType(it->byteArr, DLMS_DATA_TYPE_DATETIME, &tmp)) != 0)
-    {
-        var_clear(&tmp);
-        return ret;
-    }
-    end = *tmp.dateTime;
-    var_clear(&tmp);
-
-#if defined(_DEBUG) && !defined(GX_DLMS_MICROCONTROLLER)
-    gxByteBuffer bb;
-    bb_init(&bb);
-    time_toString(&start, &bb);
-    time_toString(&end, &bb);
-    printf("Reading rows %s\n", bb.data);
-    bb_clear(&bb);
-#endif
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-
-#if _MSC_VER > 1400
-    FILE* f = NULL;
-    fopen_s(&f, DATAFILE, "r");
-#else
-    FILE* f = fopen(DATAFILE, "r");
-#endif
-    if (f != NULL)
-    {
-        while ((len = fscanf(f, "%d/%d/%d %d:%d:%d;%d", &month, &day, &year, &hour, &minute, &second, &value)) != -1)
-        {
-            //Skip emmpty lines.
-            if (len == 7)
-            {
-                time_init(&tm, year, month, day, hour, minute, second, 0, -1);
-                //If value is inside of start and end time.
-                if (time_compare(&tm, &start) >= 0 && time_compare(&tm, &end) <= 0)
-                {
-                    if (time_getYears(&last) == 1971)
-                    {
-                        e->transactionStartIndex = pos;
-                        //Save end position if we have only one row.
-                        e->transactionEndIndex = pos + 1;
-                    }
-                    else
-                    {
-                        if (time_compare(&tm, &last) > 0)
-                        {
-                            e->transactionEndIndex = pos + 1;
-                        }
-                        else
-                        {
-                            gxProfileGeneric* p = (gxProfileGeneric*)e->target;
-                            if (e->transactionEndIndex == 0)
-                            {
-                                ++e->transactionEndIndex;
-                            }
-                            e->transactionEndIndex += getProfileGenericDataCount(p);
-                            e->transactionStartIndex = pos;
-                            break;
-                        }
-                    }
-                    time_copy(&last, &tm);
-                }
-                ++pos;
-            }
-            else
-            {
-                break;
-            }
-        }
-        fclose(f);
-    }
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     return 0;
 }
 
+
 /**
-* Find restricting object.
+  Find restricting object.
 */
-int getRestrictingObject(dlmsSettings* settings, gxValueEventArg* e, gxObject** obj, short* index)
+int getRestrictingObject(dlmsSettings* settings,
+    gxValueEventArg* e,
+    gxObject** obj,
+    short* index)
 {
     int ret;
     dlmsVARIANT* it, * it2;
@@ -1717,29 +1936,41 @@ int getRestrictingObject(dlmsSettings* settings, gxValueEventArg* e, gxObject** 
 }
 
 /**
-* Find start index and row count using start and end date time.
-*
-* @param e
-*            Start and end time are get from the parameters.
+  Find start index and row count using start and end date time.
+
+  settings: DLMS settings->
+             Start time.
+  type: Profile Generic type.
+  e: Parameters
 */
-int getProfileGenericDataByRange(dlmsSettings* settings, gxValueEventArg* e)
+int getProfileGenericDataByRangeFromRingBuffer(
+    dlmsSettings* settings,
+    const char* fileName,
+    gxValueEventArg* e)
 {
-    int len, month = 0, day = 0, year = 0, hour = 0, minute = 0, second = 0, value = 0;
-    dlmsVARIANT* it;
-    gxtime tm, start, end;
-    int ret;
+    //Get all data if there are no sort object.
+    uint32_t s = 0;
+    uint32_t l = 0xFFFFFFFF;
     dlmsVARIANT tmp;
-    var_init(&tmp);
+    int ret = 0;
+    dlmsVARIANT* it;
+    uint32_t pos;
+    uint32_t last = 0;
     gxObject* obj = NULL;
     short index;
-    getRestrictingObject(settings, e, &obj, &index);
+    if ((ret = getRestrictingObject(settings, e, &obj, &index)) != 0)
+    {
+        return ret;
+    }
+    var_init(&tmp);
+    //Check sort object
     if ((ret = va_getByIndex(e->parameters.Arr, 1, &it)) != 0)
     {
         return ret;
     }
     if (it->vt == DLMS_DATA_TYPE_UINT32)
     {
-        time_initUnix(&start, (time_t)it->ulVal);
+        s = it->ulVal;
     }
     else
     {
@@ -1749,7 +1980,7 @@ int getProfileGenericDataByRange(dlmsSettings* settings, gxValueEventArg* e)
             return ret;
         }
         //Start time.
-        start = *tmp.dateTime;
+        s = time_toUnixTime2(tmp.dateTime);
         var_clear(&tmp);
     }
     if ((ret = va_getByIndex(e->parameters.Arr, 2, &it)) != 0)
@@ -1758,7 +1989,7 @@ int getProfileGenericDataByRange(dlmsSettings* settings, gxValueEventArg* e)
     }
     if (it->vt == DLMS_DATA_TYPE_UINT32)
     {
-        time_initUnix(&end, (time_t)it->ulVal);
+        l = it->ulVal;
     }
     else
     {
@@ -1767,54 +1998,268 @@ int getProfileGenericDataByRange(dlmsSettings* settings, gxValueEventArg* e)
             var_clear(&tmp);
             return ret;
         }
-        end = *tmp.dateTime;
+        l = time_toUnixTime2(tmp.dateTime);
         var_clear(&tmp);
     }
-#if defined(_DEBUG) && !defined(GX_DLMS_MICROCONTROLLER)
-    gxByteBuffer bb;
-    bb_init(&bb);
-    time_toString(&start, &bb);
-    time_toString(&end, &bb);
-    printf("Reading rows %s\n", bb.data);
-    bb_clear(&bb);
-#endif
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
-#if _MSC_VER > 1400
-    FILE* f = NULL;
-    fopen_s(&f, DATAFILE, "r");
-#else
-    FILE* f = fopen(DATAFILE, "r");
-#endif
-    if (f != NULL)
+    uint32_t t;
+    gxProfileGeneric* pg = (gxProfileGeneric*)e->target;
+    if (pg->entriesInUse != 0)
     {
-        while ((len = fscanf(f, "%d/%d/%d %d:%d:%d;%d", &month, &day, &year, &hour, &minute, &second, &value)) != -1)
+#if _MSC_VER > 1400
+        FILE* f = NULL;
+        fopen_s(&f, fileName, "rb");
+#else
+        FILE* f = fopen(fileName, "rb");
+#endif
+        uint16_t rowSize = 0;
+        uint8_t columnSizes[10];
+        DLMS_DATA_TYPE dataTypes[10];
+        if (f != NULL)
         {
-            //Skip emmpty lines.
-            if (len == 7)
+            getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &rowSize);
+            //Skip current index and total amount of the entries.
+            fseek(f, 4, SEEK_SET);
+            for (pos = 0; pos != pg->entriesInUse; ++pos)
             {
-                time_init(&tm, year, month, day, hour, minute, second, 0, -1);
-                if (time_compare(&tm, &end) > 0)
+                //Load time from EEPROM.
+                fread(&t, sizeof(uint32_t), 1, f);
+                //seek to begin of next row.
+                fseek(f, 4 + rowSize - sizeof(uint32_t), SEEK_CUR);
+                //If value is inside of start and end time.
+                if (t >= s && t <= l)
                 {
-                    // If all data is read.
-                    break;
+                    if (last == 0)
+                    {
+                        //Save end position if we have only one row.
+                        e->transactionEndIndex = e->transactionStartIndex = 1 + pos;
+                    }
+                    else
+                    {
+                        if (last <= t)
+                        {
+                            e->transactionEndIndex = pos + 1;
+                        }
+                        else
+                        {
+                            //Index is one based, not zero.
+                            if (e->transactionEndIndex == 0)
+                            {
+                                ++e->transactionEndIndex;
+                            }
+                            e->transactionEndIndex += pg->entriesInUse - 1;
+                            e->transactionStartIndex = pos;
+                            break;
+                        }
+                    }
+                    last = t;
                 }
-                if (time_compare(&tm, &start) < 0)
+            }
+            fclose(f);
+        }
+    }
+    return ret;
+    }
+
+int readProfileGeneric(
+    dlmsSettings* settings,
+    gxProfileGeneric* pg,
+    gxValueEventArg* e)
+{
+    unsigned char first = e->transactionEndIndex == 0;
+    int ret = 0;
+    gxArray captureObjects;
+    arr_init(&captureObjects);
+    char fileName[20];
+    getProfileGenericFileName(pg, fileName);
+    if (ret == DLMS_ERROR_CODE_OK)
+    {
+        e->byteArray = 1;
+        e->handled = 1;
+        // If reading first time.
+        if (first)
+        {
+            //Read all.
+            if (e->selector == 0)
+            {
+                e->transactionStartIndex = 1;
+                e->transactionEndIndex = pg->entriesInUse;
+            }
+            else if (e->selector == 1)
+            {
+                //Read by entry. Find start and end index from the ring buffer.
+                if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, fileName, e)) != 0 ||
+                    (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
                 {
-                    // If we have not find first item.
-                    ++e->transactionStartIndex;
+                    e->transactionStartIndex = e->transactionEndIndex = 0;
                 }
-                ++e->transactionEndIndex;
+            }
+            else if (e->selector == 2)
+            {
+                dlmsVARIANT* it;
+                if ((ret = va_getByIndex(e->parameters.Arr, 0, &it)) == 0)
+                {
+                    e->transactionStartIndex = var_toInteger(it);
+                    if ((ret = va_getByIndex(e->parameters.Arr, 1, &it)) == 0)
+                    {
+                        e->transactionEndIndex = var_toInteger(it);
+                    }
+                }
+                if (ret != 0)
+                {
+                    e->transactionStartIndex = e->transactionEndIndex = 0;
+                }
+                else
+                {
+                    //If start index is too high.
+                    if (e->transactionStartIndex > pg->entriesInUse)
+                    {
+                        e->transactionStartIndex = e->transactionEndIndex = 0;
+                    }
+                    //If end index is too high.
+                    if (e->transactionEndIndex > pg->entriesInUse)
+                    {
+                        e->transactionEndIndex = pg->entriesInUse;
+                    }
+                }
+            }
+        }
+        bb_clear(e->value.byteArr);
+        arr_clear(&captureObjects);
+        if (ret == 0 && first)
+        {
+            if (e->transactionEndIndex == 0)
+            {
+                ret = cosem_setArray(e->value.byteArr, 0);
             }
             else
             {
-                break;
+                ret = cosem_setArray(e->value.byteArr, (uint16_t)(e->transactionEndIndex - e->transactionStartIndex + 1));
             }
         }
-        fclose(f);
+        if (ret == 0 && e->transactionEndIndex != 0)
+        {
+            //Loop items.
+            uint32_t pos;
+            gxtime tm;
+            uint16_t pduSize;
+            FILE* f = NULL;
+#if _MSC_VER > 1400
+            if (fopen_s(&f, fileName, "rb") != 0)
+            {
+                printf("Failed to open %s.\r\n", fileName);
+                return -1;
+        }
+#else
+            if ((f = fopen(fileName, "rb")) != 0)
+            {
+                printf("Failed to open %s.\r\n", fileName);
+                return -1;
+            }
+#endif
+            uint16_t dataSize = 0;
+            uint8_t columnSizes[10];
+            DLMS_DATA_TYPE dataTypes[10];
+            if (f != NULL)
+            {
+                getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
+            }
+            //Append data.
+            if (ret == 0 && dataSize != 0)
+            {
+                //Skip current index and total amount of the entries (+4 bytes).
+                if (fseek(f, 4 + ((e->transactionStartIndex - 1) * dataSize), SEEK_SET) != 0)
+                {
+                    printf("Failed to seek %s.\r\n", fileName);
+                    return -1;
+                }
+                for (pos = e->transactionStartIndex - 1; pos != e->transactionEndIndex; ++pos)
+                {
+                    pduSize = (uint16_t)e->value.byteArr->size;
+                    if ((ret = cosem_setStructure(e->value.byteArr, pg->captureObjects.size)) != 0)
+                    {
+                        break;
+                    }
+                    uint8_t colIndex;
+                    gxKey* it;
+                    unsigned char pduBuff[PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE];
+                    gxByteBuffer pdu;
+                    bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
+                    //Loop capture columns and get values.
+                    for (colIndex = 0; colIndex != pg->captureObjects.size; ++colIndex)
+                    {
+                        if ((ret = arr_getByIndex(&pg->captureObjects, colIndex, (void**)&it)) == 0)
+                        {
+                            bb_clear(&pdu);
+                            //Date time is saved in EPOCH to save space.
+                            if ((((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK || (gxObject*)it->key == BASE(unixTime))
+                                && ((gxTarget*)it->value)->attributeIndex == 2)
+                            {
+                                uint32_t time;
+                                fread(&time, 4, 1, f);
+                                time_initUnix(&tm, time);
+                                //Convert to meter time if UNIX time is not used.
+                                if (((gxObject*)it->key) != BASE(unixTime))
+                                {
+                                    clock_utcToMeterTime(&clock1, &tm);
+                                }
+                                if ((ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0)
+                                {
+                                    //Error is handled later.
+                                }
+                            }
+                            else
+                            {
+                                if (dataTypes[colIndex] == DLMS_DATA_TYPE_ARRAY || dataTypes[colIndex] == DLMS_DATA_TYPE_STRUCTURE ||
+                                    dataTypes[colIndex] == DLMS_DATA_TYPE_OCTET_STRING || dataTypes[colIndex] == DLMS_DATA_TYPE_STRING ||
+                                    dataTypes[colIndex] == DLMS_DATA_TYPE_STRING_UTF8)
+                                {
+                                    e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
+                                    ++e->value.byteArr->size;
+                                    fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
+                                    e->value.byteArr->size += columnSizes[colIndex];
+                                }
+                                else
+                                {
+                                    dlmsVARIANT value;
+                                    var_init(&value);
+                                    value.vt = dataTypes[colIndex];
+                                    fread(&value.bVal, columnSizes[colIndex], 1, f);
+                                    if ((ret = cosem_setVariant(e->value.byteArr, &value)) != 0)
+                                    {
+                                        //Error is handled later.
+                                    }
+                                }
+                            }
+                        }
+                        if (ret != 0)
+                        {
+                            //Don't set error if PDU is full,
+                            if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+                            {
+                                --e->transactionStartIndex;
+                                e->value.byteArr->size = pduSize;
+                                ret = 0;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                            break;
+                        }
+                    }
+                    ++e->transactionStartIndex;
+                }
+                fclose(f);
+            }
+            else
+            {
+                printf("Failed to open %s.\r\n", fileName);
+                return -1;
+            }
     }
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    return 0;
+}
+    return ret;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1833,6 +2278,7 @@ void svr_preRead(
         {
             return;
         }
+        GXTRACE_LN(("svr_preRead: "), e->target->objectType, e->target->logicalName);
         //Let framework handle Logical Name read.
         if (e->index == 1)
         {
@@ -1847,106 +2293,37 @@ void svr_preRead(
         {
             continue;
         }
-
-        if (e->target == &profileGeneric.base)
+        //Update value by one every time when user reads register.
+        if (e->target == BASE(activePowerL1) && e->index == 2)
         {
-            gxProfileGeneric* p = (gxProfileGeneric*)e->target;
-            // If buffer is read and we want to save memory.
-            if (e->index == 7)
-            {
-                // If client wants to know EntriesInUse.
-                p->entriesInUse = getProfileGenericDataCount();
-            }
-            else if (e->index == 2)
-            {
-                // Read rows from file.
-                // If reading first time.
-                if (e->transactionEndIndex == 0)
-                {
-                    if (e->selector == 0)
-                    {
-                        e->transactionEndIndex = getProfileGenericDataCount();
-                    }
-                    else if (e->selector == 1)
-                    {
-                        //Read by entry.
-                        if (useRingBuffer)
-                        {
-                            GetProfileGenericDataByRangeFromRingBuffer(e);
-                        }
-                        else
-                        {
-                            getProfileGenericDataByRange(settings, e);
-                        }
-                    }
-                    else if (e->selector == 2)
-                    {
-                        dlmsVARIANT* it;
-                        if ((ret = va_getByIndex(e->parameters.Arr, 0, &it)) != 0)
-                        {
-                            continue;
-                        }
-                        unsigned int begin = var_toInteger(it);
-                        if ((ret = va_getByIndex(e->parameters.Arr, 1, &it)) != 0)
-                        {
-                            continue;
-                        }
-                        e->transactionStartIndex = begin;
-                        e->transactionEndIndex = begin + var_toInteger(it);
-                        // If client wants to read more data what we have.
-                        int cnt = getProfileGenericDataCount();
-                        if (e->transactionEndIndex - e->transactionStartIndex > cnt - e->transactionStartIndex)
-                        {
-                            if (useRingBuffer)
-                            {
-                                e->transactionEndIndex = cnt;
-                            }
-                            else
-                            {
-                                e->transactionEndIndex = cnt - e->transactionStartIndex;
-                            }
-                            if (e->transactionEndIndex < 0)
-                            {
-                                e->transactionEndIndex = 0;
-                            }
-                        }
-                    }
-                }
-                unsigned long count = e->transactionEndIndex - e->transactionStartIndex;
-                // Read only rows that can fit to one PDU.
-                if (e->transactionEndIndex - e->transactionStartIndex > p->maxRowCount)
-                {
-                    /**
-                    * Max row count is used with Profile Generic to tell how many rows are read
-                    * to one PDU. Default value is 1. Change this for your needs.
-                    */
-                    count = p->maxRowCount;
-                }
-                // Clear old data. It's already serialized.
-                obj_clearProfileGenericBuffer(&p->buffer);
-
-                if (e->selector == 1)
-                {
-                    getProfileGenericDataByEntry(p, e->transactionStartIndex, count);
-                }
-                else
-                {
-                    //Index where to start.
-                    unsigned long index = e->transactionStartIndex;
-                    if (useRingBuffer)
-                    {
-                        index += getHead();
-                    }
-                    getProfileGenericDataByEntry(p, index, count);
-                }
-            }
-            continue;
+            readActivePowerValue();
         }
-
-        //Update date and time of clock object.
-        if (e->target == (gxObject*)&clock1 && e->index == 2)
+        //Get time if user want to read date and time.
+        if (e->target == BASE(clock1) && e->index == 2)
         {
-            time_now(&((gxClock*)e->target)->time, 1);
+            gxtime dt;
+            time_now(&dt, 1);
+            if (e->value.byteArr == NULL)
+            {
+                e->value.byteArr = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
+                bb_init(e->value.byteArr);
+            }
+            e->error = cosem_setDateTimeAsOctectString(e->value.byteArr, &dt);
+            e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+            e->handled = 1;
+        }
+        else if (e->target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC && e->index == 2)
+        {
+            e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, (gxProfileGeneric*)e->target, e);
+        }
+        //Update Unix time.
+        if (e->target == BASE(unixTime) && e->index == 2)
+        {
+            gxtime dt;
+            time_now(&dt, 0);
+            e->value.ulVal = time_toUnixTime2(&dt);
+            e->value.vt = DLMS_DATA_TYPE_UINT32;
+            e->handled = 1;
         }
     }
 }
@@ -1993,10 +2370,10 @@ void svr_preWrite(
         {
             return;
         }
-#ifndef GX_DLMS_MICROCONTROLLER
-        hlp_getLogicalNameToString(e->target->logicalName, str);
-        printf("Writing %s\r\n", str);
-#endif //GX_DLMS_MICROCONTROLLER
+        if (e->target == BASE(clock1) && e->index == 2)
+        {
+            updateState(settings, GURUX_EVENT_CODES_TIME_CHANGE);
+        }
         //Loop buffer elements in write.
         if (e->target == &compactData.base && e->index == 2)
         {
@@ -2013,40 +2390,77 @@ void svr_preWrite(
 #endif //GX_DLMS_MICROCONTROLLER
             break;
         }
-#ifndef GX_DLMS_MICROCONTROLLER
-        //Loop excution times in write.
-        if (e->target == &actionSchedule.base && e->index == 4)
-        {
-            int pos;
-            dlmsVARIANT* it;
-            gxByteBuffer bb;
-            bb_init(&bb);
-            for (pos = 0; pos != e->value.Arr->size; ++pos)
-            {
-                if (va_getByIndex(e->value.Arr, pos, &it) != 0 ||
-                    var_toString(it, &bb) != 0)
-                {
-                    e->error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
-                    break;
-                }
-                char* tmp = bb_toString(&bb);
-                printf("Writing %s\r\n", tmp);
-                free(tmp);
-                bb_clear(&bb);
-            }
-            break;
-        }
-#endif //GX_DLMS_MICROCONTROLLER
+        hlp_getLogicalNameToString(e->target->logicalName, str);
+        printf("Writing %s\r\n", str);
     }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
 }
 
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 int sendPush(dlmsSettings* settings, gxPushSetup* push);
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
-//In this example we wait 5 seconds before image is verified or activated.
-time_t imageActionStartTime;
+void handleProfileGenericActions(
+    dlmsSettings* settings,
+    gxValueEventArg* it)
+{
+    if (it->index == 1)
+    {
+        char fileName[30];
+        getProfileGenericFileName((gxProfileGeneric*)it->target, fileName);
+        // Profile generic clear is called. Clear data.
+        ((gxProfileGeneric*)it->target)->entriesInUse = 0;
+        FILE* f = NULL;
+#if _MSC_VER > 1400
+        fopen_s(&f, fileName, "r+b");
+#else
+        f = fopen(fileName, "r+b");
+#endif
+        if (f != NULL)
+        {
+            gxByteBuffer pdu;
+            bb_init(&pdu);
+            //Current index in ring buffer.
+            bb_setUInt16(&pdu, 0);
+            bb_setUInt16(&pdu, 0);
+            //Update values to the EEPROM.
+            fwrite(pdu.data, 1, 4, f);
+            fclose(f);
+        }
+    }
+    else if (it->index == 2)
+    {
+        captureProfileGeneric(settings, ((gxProfileGeneric*)it->target));
+    }
+}
+
+
+//Allocate space for image tranfer.
+void allocateImageTransfer(const char* fileName, uint32_t size)
+{
+    uint32_t pos;
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, fileName, "ab");
+#else
+    f = fopen(fileName, "ab");
+#endif
+    if (f != NULL)
+    {
+        fseek(f, 0, SEEK_END);
+        if ((uint32_t)ftell(f) < size)
+        {
+            for (pos = (uint32_t)ftell(f); pos != size; ++pos)
+            {
+                if (fputc(0x00, f) != 0)
+                {
+                    printf("Error Writing to %s\n", fileName);
+                    break;
+                }
+            }
+        }
+        fclose(f);
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 /////////////////////////////////////////////////////////////////////////////
@@ -2054,9 +2468,6 @@ void svr_preAction(
     dlmsSettings* settings,
     gxValueEventCollection* args)
 {
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-    char str[25];
-#endif
     gxValueEventArg* e;
     int ret, pos;
     for (pos = 0; pos != args->size; ++pos)
@@ -2065,86 +2476,147 @@ void svr_preAction(
         {
             return;
         }
-#ifndef GX_DLMS_MICROCONTROLLER
-        hlp_getLogicalNameToString(e->target->logicalName, str);
-        printf("Action %s:%d\n", str, e->index);
-#endif
-        //If disconnect control is called it must handle here:
-        if (e->target->objectType == DLMS_OBJECT_TYPE_DISCONNECT_CONTROL)
+        GXTRACE_LN(("svr_preAction: "), e->target->objectType, e->target->logicalName);
+        if (e->target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
         {
-            //Mark action as handled because there is nothing what framework can do with this.
+            handleProfileGenericActions(settings, e);
             e->handled = 1;
         }
-        if (e->target->objectType == DLMS_OBJECT_TYPE_PUSH_SETUP && e->index == 1)
+        else if (e->target == BASE(activePowerL1))
         {
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+            //Set default value for active power.
+            activePowerL1Value = 0;
+            e->handled = 1;
+        }
+        else if (e->target == BASE(pushSetup) && e->index == 1)
+        {
+            updateState(settings, GURUX_EVENT_CODES_PUSH);
             sendPush(settings, (gxPushSetup*)e->target);
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             e->handled = 1;
         }
-        if (e->target->objectType == DLMS_OBJECT_TYPE_IMAGE_TRANSFER)
+        //If client wants to clear EEPROM data using Global meter reset script.
+        else if (e->target == BASE(scriptTableGlobalMeterReset) && e->index == 1)
         {
+            //Initialize data size so default values are used on next connection.
+            const char* fileName = "settings.raw";
+#if _MSC_VER > 1400
+            FILE* f = NULL;
+            fopen_s(&f, fileName, "wb");
+#else
+            FILE* f = fopen(fileName, "wb");
+#endif
+            if (f != NULL)
+            {
+                fclose(f);
+            }
+            //Load objects again.
+            if ((ret = loadSettings(settings)) != 0)
+            {
+                GXTRACE_INT(("Failed to load settings!"), ret);
+                executeTime = 0;
+                break;
+            }
+            if ((ret = loadSecurity(settings)) != 0)
+            {
+                GXTRACE_INT(("Failed to load security settings!"), ret);
+                executeTime = 0;
+                break;
+            }
+            updateState(settings, GURUX_EVENT_CODES_GLOBAL_METER_RESET);
+            e->handled = 1;
+        }
+        else if (e->target == BASE(disconnectControl))
+        {
+            updateState(settings, GURUX_EVENT_CODES_OUTPUT_RELAY_STATE);
+            //Disconnect. Turn led OFF.
+            if (e->index == 1)
+            {
+                printf("%s\r\n", "Led is OFF.");
+            }
+            else //Reconnnect. Turn LED ON.
+            {
+                printf("%s\r\n", "Led is ON.");
+            }
+        }
+        else if (e->target == BASE(scriptTableActivateTestMode))
+        {
+            //Activate test mode.
+            testMode = 1;
+            saveSettings();
+        }
+        else if (e->target == BASE(scriptTableActivateNormalMode))
+        {
+            //Activate normal mode.
+            testMode = 0;
+            saveSettings();
+        }
+        if (e->target == BASE(imageTransfer))
+        {
+            e->handled = 1;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             FILE* f;
             gxImageTransfer* i = (gxImageTransfer*)e->target;
+            const char* imageFile = "image.raw";
             //Image name and size to transfer
             if (e->index == 1)
             {
                 i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_NOT_INITIATED;
-                dlmsVARIANT* ImageUpdate, * size;
-                if ((ret = va_getByIndex(e->parameters.Arr, 0, &ImageUpdate)) != 0 ||
-                    (ret = va_getByIndex(e->parameters.Arr, 1, &size)) != 0)
+                //There is only one image.
+                gxImageActivateInfo* info;
+                imageTransfer.imageActivateInfo.size = 1;
+                if ((e->error = arr_getByIndex(&imageTransfer.imageActivateInfo, 0, (void**)&info)) != 0)
                 {
-                    e->error = DLMS_ERROR_CODE_UNMATCH_TYPE;
+                    e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     return;
                 }
-                imageSize = var_toInteger(size);
-                char* p = strrchr(IMAGEFILE, '\\');
-                ++p;
-                *p = '\0';
-                strncat(IMAGEFILE, (char*)ImageUpdate->byteArr->data, (int)ImageUpdate->byteArr->size);
-                strcat(IMAGEFILE, ".bin");
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                printf("Updating image %s Size: %d\n", IMAGEFILE, imageSize);
-#endif
-                f = fopen(IMAGEFILE, "wb");
-                if (!f)
+                uint16_t size;
+                if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
+                    (ret = cosem_getOctectString2(e->parameters.byteArr, info->identification.data, sizeof(info->identification.data), &size)) != 0 ||
+                    (ret = cosem_getUInt32(e->parameters.byteArr, &info->size)) != 0)
                 {
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                    printf("Unable to open file %s\n", IMAGEFILE);
-#endif
-                    e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     return;
                 }
-                fclose(f);
+                info->identification.size = size;
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+                printf("Updating image %s Size: %d\r\n", imageFile, info->size);
+#endif
+                allocateImageTransfer(imageFile, info->size);
                 ba_clear(&i->imageTransferredBlocksStatus);
+                i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
             }
             //Transfers one block of the Image to the server
             else if (e->index == 2)
             {
-                dlmsVARIANT* blockNo, * data;
-                if ((ret = va_getByIndex(e->parameters.Arr, 0, &blockNo)) != 0 ||
-                    (ret = va_getByIndex(e->parameters.Arr, 1, &data)) != 0)
+                uint32_t index;
+                uint16_t blockSize;
+                if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
+                    (ret = cosem_getUInt32(e->parameters.byteArr, &index)) != 0 ||
+                    (ret = hlp_getObjectCount2(e->parameters.byteArr, &blockSize)) != 0)
                 {
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     return;
                 }
-                i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
-                f = fopen(IMAGEFILE, "ab");
+                if ((ret = ba_setByIndex(&i->imageTransferredBlocksStatus, (uint16_t)index, 1)) == 0)
+                {
+                    i->imageFirstNotTransferredBlockNumber = index + 1;
+                }
+                f = fopen(imageFile, "r+b");
                 if (!f)
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                    printf("Unable to open file %s\n", IMAGEFILE);
+                    printf("Unable to open file %s\r\n", imageFile);
 #endif
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     return;
                 }
-                int ret = (int)fwrite(data->byteArr->data, 1, (int)data->byteArr->size, f);
+                int ret = (int)fwrite(e->parameters.byteArr->data + e->parameters.byteArr->position, 1, (int)blockSize, f);
                 fclose(f);
-                if (ret != (int)data->byteArr->size)
+                if (ret != (int)blockSize)
                 {
                     e->error = DLMS_ERROR_CODE_UNMATCH_TYPE;
                 }
+                bb_clear(e->parameters.byteArr);
                 imageActionStartTime = time(NULL);
                 return;
             }
@@ -2152,19 +2624,19 @@ void svr_preAction(
             else if (e->index == 3)
             {
                 i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_INITIATED;
-                f = fopen(IMAGEFILE, "rb");
+                f = fopen(imageFile, "rb");
                 if (!f)
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                    printf("Unable to open file %s\n", IMAGEFILE);
+                    printf("Unable to open file %s\r\n", imageFile);
 #endif
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     return;
                 }
                 fseek(f, 0L, SEEK_END);
-                int size = (int)ftell(f);
+                long size = ftell(f);
                 fclose(f);
-                if (size != imageSize)
+                if (size != IMAGE_ACTIVATE_INFO[0].size)
                 {
                     i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_FAILED;
                     e->error = DLMS_ERROR_CODE_OTHER_REASON;
@@ -2175,14 +2647,14 @@ void svr_preAction(
                     if (time(NULL) - imageActionStartTime < 5)
                     {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                        printf("Image verification is on progress.\n");
+                        printf("Image verification is on progress.\r\n");
 #endif
                         e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
                     }
                     else
                     {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                        printf("Image is verificated");
+                        printf("Image is verificated.\r\n");
 #endif
                         i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_SUCCESSFUL;
                         imageActionStartTime = time(NULL);
@@ -2197,14 +2669,14 @@ void svr_preAction(
                 if (time(NULL) - imageActionStartTime < 5)
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                    printf("Image activation is on progress.\n");
+                    printf("Image activation is on progress.\r\n");
 #endif
                     e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
                 }
                 else
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                    printf("Image is activated.");
+                    printf("Image is activated.\r\n");
 #endif
                     i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_ACTIVATION_SUCCESSFUL;
                     imageActionStartTime = time(NULL);
@@ -2212,8 +2684,8 @@ void svr_preAction(
             }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
+        }
     }
-}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2222,6 +2694,16 @@ void svr_postRead(
     dlmsSettings* settings,
     gxValueEventCollection* args)
 {
+    gxValueEventArg* e;
+    int ret, pos;
+    for (pos = 0; pos != args->size; ++pos)
+    {
+        if ((ret = vec_getByIndex(args, pos, &e)) != 0)
+        {
+            return;
+        }
+        GXTRACE_LN(("svr_postRead: "), e->target->objectType, e->target->logicalName);
+    }
 }
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2230,50 +2712,65 @@ void svr_postWrite(
     dlmsSettings* settings,
     gxValueEventCollection* args)
 {
-    //Show updated values.
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     gxValueEventArg* e;
     int ret, pos;
-    char* buff;
     for (pos = 0; pos != args->size; ++pos)
     {
-        if ((ret = vec_getByIndex(args, pos, &e)) == 0)
+        if ((ret = vec_getByIndex(args, pos, &e)) != 0)
         {
-#ifndef GX_DLMS_MICROCONTROLLER
-            if ((ret = obj_toString(e->target, &buff)) != 0)
+            return;
+        }
+        GXTRACE_LN(("svr_postWrite: "), e->target->objectType, e->target->logicalName);
+        if (e->target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
+        {
+            //Use want to change capture objects.
+            if (e->index == 3)
             {
-                printf("svr_postWrite::obj_toString failed %d.", ret);
-                break;
+                saveSettings();
+                //Clear buffer if user changes captured objects.
+                gxValueEventArg it;
+                ve_init(&it);
+                it.index = 1;
+                handleProfileGenericActions(settings, &it);
+                //Count how many rows fit to the buffer.
+                ((gxProfileGeneric*)e->target)->profileEntries = getProfileGenericBufferMaxRowCount(settings, ((gxProfileGeneric*)e->target));
+                if (((gxProfileGeneric*)e->target)->captureObjects.size != 0)
+                {
+                    gxKey* k = NULL;
+                    arr_getByIndex(&((gxProfileGeneric*)e->target)->captureObjects, 0, (void**)&k);
+                    //Set 1st object to sort object.
+                    ((gxProfileGeneric*)e->target)->sortObject = (gxObject*)k->key;
+                }
+                else
+                {
+                    ((gxProfileGeneric*)e->target)->sortObject = NULL;
+                }
             }
-            printf(buff);
-            free(buff);
-#endif //GX_DLMS_MICROCONTROLLER
+            //Use want to change max amount of profile entries.
+            else if (e->index == 8)
+            {
+                //Count how many rows fit to the buffer.
+                uint16_t maxCount = getProfileGenericBufferMaxRowCount(settings, ((gxProfileGeneric*)e->target));
+                //If use try to set max profileEntries bigger than can fit to allocated memory.
+                if (maxCount < ((gxProfileGeneric*)e->target)->profileEntries)
+                {
+                    ((gxProfileGeneric*)e->target)->profileEntries = maxCount;
+                }
+            }
+        }
+        if (e->error == 0)
+        {
+            //Save settings to EEPROM.
+            saveSettings();
+        }
+        else
+        {
+            //Reject changes loading previous settings if there is an error.
+            loadSettings(settings);
         }
     }
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-}
-
-void handleProfileGenericActions(
-    gxValueEventArg* it)
-{
-    if (it->index == 1)
-    {
-        // Profile generic clear is called. Clear data.
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-#if _MSC_VER > 1400
-        FILE* f = NULL;
-        fopen_s(&f, DATAFILE, "w");
-#else
-        FILE* f = fopen(DATAFILE, "w");
-#endif
-        fclose(f);
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    }
-    else if (it->index == 2)
-    {
-        // Profile generic Capture is called.
-        // In this example data is saved to the file on svr_preGet so we do nothing here.
-    }
+    //Reset execute time to update execute time if user add new execute times or changes the time.
+    executeTime = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2289,22 +2786,37 @@ void svr_postAction(
     {
         if ((ret = vec_getByIndex(args, pos, &e)) != 0)
         {
-            break;
+            return;
         }
-        if (e->target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
+        GXTRACE_LN(("svr_postAction: "), e->target->objectType, e->target->logicalName);
+        if (e->target == BASE(securitySetupHigh) ||
+            e->target == BASE(securitySetupHighGMac))
         {
-            handleProfileGenericActions(e);
+            //Update block cipher key authentication key or broadcast key.
+            //Save settings to EEPROM.
+            if (e->error == 0)
+            {
+                saveSecurity(settings);
+            }
+            else
+            {
+                //Load default settings if there is an error.
+                loadSecurity(settings);
+            }
         }
-        else if (e->target->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP && e->index == 2)
+        //Check is client changing the settings with action.
+        else if (svr_isChangedWithAction(e->target->objectType, e->index))
         {
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            printf("----------------------------------------------------------\n");
-            printf("Updated keys: \r\n");
-            println("System Title", &settings->cipher.systemTitle);
-            println("Authentication key", &settings->cipher.authenticationKey);
-            println("Block cipher key", &settings->cipher.blockCipherKey);
-            println("Master key (KEK)", &settings->kek);
-#endif
+            //Save settings to EEPROM.
+            if (e->error == 0)
+            {
+                saveSettings();
+            }
+            else
+            {
+                //Load default settings if there is an error.
+                loadSettings(settings);
+            }
         }
     }
 }
@@ -2347,9 +2859,9 @@ int connectServer(
             close(*s);
 #endif
             return err;
-        };
-        add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
     };
+        add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
+};
 
     //Connect to the meter.
     ret = connect(*s, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
@@ -2390,19 +2902,19 @@ int sendPush(
                 {
                     mes_clear(&messages);
                     break;
-                }
             }
         }
+    }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         closesocket(s);
 #else
         close(s);
 #endif
-    }
+}
     mes_clear(&messages);
     free(host);
     return 0;
-}
+    }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 unsigned char svr_isTarget(
@@ -2410,35 +2922,7 @@ unsigned char svr_isTarget(
     unsigned long serverAddress,
     unsigned long clientAddress)
 {
-#ifdef DLMS_ITALIAN_STANDARD
-    if (clientAddress == 1 || clientAddress == 16 || clientAddress == 3 || clientAddress == 48)
-    {
-        const unsigned char ss[6] = { 0, 0, 43, 0, (unsigned char)clientAddress, 255 };
-        memcpy(securitySetup.base.logicalName, ss, 6);
-        const unsigned char ln[6] = { 0, 0, 40, 0, (unsigned char)clientAddress, 255 };
-        memcpy(highAssociation.base.logicalName, ln, 6);
-        memcpy(highAssociation.securitySetupReference, securitySetup.base.logicalName, 6);
-    }
-    else
-    {
-        printf("Invalid HDLC address %d.\r\n", clientAddress);
-        return 0;
-    }
-    //Update invocation counter.
-    if (clientAddress == 1)
-    {
-        settings->cipher.invocationCounter = frameCounterOnLine.value.lVal;
-    }
-    else  if (clientAddress == 3)
-    {
-        settings->cipher.invocationCounter = frameCounterInstaller.value.lVal;
-    }
-    else  if (clientAddress == 48)
-    {
-        settings->cipher.invocationCounter = frameCounterGuarantor.value.lVal;
-    }
-#endif //DLMS_ITALIAN_STANDARD
-
+    GXTRACE(("svr_isTarget."), NULL);
     objectArray objects;
     oa_init(&objects);
     unsigned char ret = 0;
@@ -2460,13 +2944,47 @@ unsigned char svr_isTarget(
                     {
                     case DLMS_AUTHENTICATION_NONE:
                         //Client connects without authentication.
+                        GXTRACE(("Connecting without authentication."), NULL);
                         break;
                     case DLMS_AUTHENTICATION_LOW:
                         //Client connects using low authentication.
+                        GXTRACE(("Connecting using Low authentication."), NULL);
                         break;
                     default:
                         //Client connects using High authentication.
+                        GXTRACE(("Connecting using High authentication."), NULL);
                         break;
+                    }
+                    settings->expectedClientSystemTitle = NULL;
+                    //Set Invocation counter value.
+                    settings->expectedInvocationCounter = NULL;
+                    //Client can establish a ciphered connection only with Security Suite 1.
+                    settings->expectedSecuritySuite = 0;
+                    //Security policy is not defined by default. Client can connect using any security policy.
+                    //settings->expectedSecurityPolicy = 0xFF;
+                    //Client can't establish ciphered connection if there is no security setup.
+                    settings->expectedSecurityPolicy = 0;
+                    if (a->securitySetup != NULL)
+                    {
+                        //Set expected client system title. If this is set only client that is using expected client system title can connect to the meter.
+                        if (a->securitySetup->clientSystemTitle.size == 8)
+                        {
+                            settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
+                        }
+                        //GMac authentication uses innocation counter.
+                        if (a->securitySetup == &securitySetupHighGMac)
+                        {
+                            //Set invocation counter value. If this is set client's invocation counter must match with server IC.
+                            settings->expectedInvocationCounter = &securitySetupHighGMac.minimumInvocationCounter;
+                        }
+
+                        //Set security suite that client must use.
+                        settings->expectedSecuritySuite = a->securitySetup->securitySuite;
+                        //Set security policy that client must use if it is set.
+                        if (a->securitySetup->securityPolicy != 0)
+                        {
+                            settings->expectedSecurityPolicy = a->securitySetup->securityPolicy;
+                        }
                     }
                     break;
                 }
@@ -2475,12 +2993,15 @@ unsigned char svr_isTarget(
     }
     if (ret == 0)
     {
+        GXTRACE_INT(("Invalid authentication level."), clientAddress);
         //Authentication is now allowed. Meter is quiet and doesn't return an error.
     }
     else
     {
         // If address is not broadcast or serial number.
-        if (!(serverAddress == 0x3FFF || serverAddress == 0x7F ||
+        //Remove logical address from the server address.
+        unsigned char broadcast = (serverAddress & 0x3FFF) == 0x3FFF || (serverAddress & 0x7F) == 0x7F;
+        if (!(broadcast ||
             (serverAddress & 0x3FFF) == SERIAL_NUMBER % 10000 + 1000))
         {
             ret = 0;
@@ -2514,6 +3035,15 @@ unsigned char svr_isTarget(
             }
             oa_empty(&objects);
         }
+        //Set serial number as meter address if broadcast is used.
+        if (broadcast)
+        {
+            settings->serverAddress = SERIAL_NUMBER % 10000 + 1000;
+        }
+        if (ret == 0)
+        {
+            GXTRACE_INT(("Invalid server address"), serverAddress);
+        }
     }
     return ret;
 }
@@ -2523,48 +3053,174 @@ DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
     DLMS_AUTHENTICATION authentication,
     gxByteBuffer* password)
 {
-#if defined(DLMS_ITALIAN_STANDARD)
-#else
-    //Check used security level.
-#ifndef DLMS_IGNORE_HIGH_GMAC
-    if (settings->base.cipher.security == DLMS_SECURITY_NONE)
-    {
-        //Uncomment this if you want that only Get service is available with authentication level None.
-        //settings->base.negotiatedConformance = DLMS_CONFORMANCE_GET;
-         //Uncomment this if secured (ciphered) connection is always required.
-         //return DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
-    }
-#endif //DLMS_IGNORE_HIGH_GMAC
-
+    GXTRACE(("svr_validateAuthentication"), NULL);
     if (authentication == DLMS_AUTHENTICATION_NONE)
     {
         //Uncomment this if authentication is always required.
         //return DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_MECHANISM_NAME_REQUIRED;
+        return DLMS_SOURCE_DIAGNOSTIC_NONE;
     }
     //Check Low Level security..
     if (authentication == DLMS_AUTHENTICATION_LOW)
     {
-        gxByteBuffer expected;
-        if (settings->base.useLogicalNameReferencing)
+        if (bb_compare(password, associationLow.secret.data, associationLow.secret.size) == 0)
         {
-            expected = lowAssociation.secret;
-        }
-        else
-        {
-#ifdef DLMS_INDIAN_STANDARD
-            return DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
-#else
-            expected = associationShortName.secret;
-#endif
-        }
-        if (bb_compare(&expected, password->data, password->size) == 0)
-        {
+            GXTRACE(("Invalid low level password."), (const char*)associationLow.secret.data);
             return DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE;
         }
     }
-#endif //DLMS_ITALIAN_STANDARD
-    // Other authentication levels are check on phase two.
+    // Hith authentication levels are check on phase two.
     return DLMS_SOURCE_DIAGNOSTIC_NONE;
+}
+
+
+//Get attribute access level for profile generic.
+DLMS_ACCESS_MODE getProfileGenericAttributeAccess(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index)
+{
+    //Only read is allowed for event log.
+    if (obj == BASE(eventLog))
+    {
+        return DLMS_ACCESS_MODE_READ;
+    }
+    //Write is allowed only for High authentication.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    {
+        switch (index)
+        {
+        case 3://captureObjects.
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        case 4://capturePeriod
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        case 8://Profile entries.
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        default:
+            break;
+        }
+    }
+    return DLMS_ACCESS_MODE_READ;
+}
+
+
+//Get attribute access level for Push Setup.
+DLMS_ACCESS_MODE getPushSetupAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    //Write is allowed only for High authentication.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    {
+        switch (index)
+        {
+        case 2://pushObjectList
+        case 4://communicationWindow
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        default:
+            break;
+        }
+    }
+    return DLMS_ACCESS_MODE_READ;
+}
+
+//Get attribute access level for Disconnect Control.
+DLMS_ACCESS_MODE getDisconnectControlAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    return DLMS_ACCESS_MODE_READ;
+}
+
+//Get attribute access level for register schedule.
+DLMS_ACCESS_MODE getActionSchduleAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    //Write is allowed only for High authentication.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    {
+        switch (index)
+        {
+        case 4://Execution time.
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        default:
+            break;
+        }
+    }
+    return DLMS_ACCESS_MODE_READ;
+}
+
+//Get attribute access level for register.
+DLMS_ACCESS_MODE getRegisterAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    return DLMS_ACCESS_MODE_READ;
+}
+
+//Get attribute access level for data objects.
+DLMS_ACCESS_MODE getDataAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    return DLMS_ACCESS_MODE_READ;
+}
+
+//Get attribute access level for script table.
+DLMS_ACCESS_MODE getScriptTableAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    return DLMS_ACCESS_MODE_READ;
+}
+
+//Get attribute access level for IEC HDLS setup.
+DLMS_ACCESS_MODE getHdlcSetupAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    //Write is allowed only for High authentication.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    {
+        switch (index)
+        {
+        case 2: //Communication speed.
+        case 7:
+        case 8:
+            return DLMS_ACCESS_MODE_READ_WRITE;
+        default:
+            break;
+        }
+    }
+    return DLMS_ACCESS_MODE_READ;
+}
+
+
+//Get attribute access level for association LN.
+DLMS_ACCESS_MODE getAssociationAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    //If secret
+    if (settings->authentication == DLMS_AUTHENTICATION_LOW && index == 7)
+    {
+        return DLMS_ACCESS_MODE_READ_WRITE;
+    }
+    return DLMS_ACCESS_MODE_READ;
+}
+
+//Get attribute access level for security setup.
+DLMS_ACCESS_MODE getSecuritySetupAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    //Only client system title is writable.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW && index == 4)
+    {
+        return DLMS_ACCESS_MODE_READ_WRITE;
+    }
+    return DLMS_ACCESS_MODE_READ;
 }
 
 /**
@@ -2575,35 +3231,55 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     gxObject* obj,
     unsigned char index)
 {
-    if (index == 1)
+    GXTRACE("svr_getAttributeAccess", NULL);
+    // Only read is allowed if authentication is not used.
+    if (index == 1 || settings->authentication == DLMS_AUTHENTICATION_NONE)
     {
         return DLMS_ACCESS_MODE_READ;
     }
-    // All writes are allowed.
-    return DLMS_ACCESS_MODE_READ_WRITE;
-
-    //Security Setup client_system_title and server_system_title access is not allowed.
-    if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP && (index == 4 || index == 5))
+    if (obj->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
     {
-        return DLMS_ACCESS_MODE_READ;
+        return getAssociationAttributeAccess(settings, index);
     }
-    //Compact data buffer is read-only.
-    if (obj->objectType == DLMS_OBJECT_TYPE_COMPACT_DATA && index == 2)
+    if (obj->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
     {
-        return DLMS_ACCESS_MODE_READ;
+        return getProfileGenericAttributeAccess(settings, obj, index);
     }
-
-    // Only read is allowed
-    if (settings->authentication == DLMS_AUTHENTICATION_NONE)
+    if (obj->objectType == DLMS_OBJECT_TYPE_PUSH_SETUP)
     {
-        return DLMS_ACCESS_MODE_READ;
+        return getPushSetupAttributeAccess(settings, index);
     }
-    //Only read is allowed for followed tests.
-    if (obj->objectType == DLMS_OBJECT_TYPE_REGISTER ||
-        obj->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME ||
-        obj->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME)
+    if (obj->objectType == DLMS_OBJECT_TYPE_DISCONNECT_CONTROL)
     {
-        return DLMS_ACCESS_MODE_READ;
+        return getDisconnectControlAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_DISCONNECT_CONTROL)
+    {
+        return getDisconnectControlAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_ACTION_SCHEDULE)
+    {
+        return getActionSchduleAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_SCRIPT_TABLE)
+    {
+        return getScriptTableAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_REGISTER)
+    {
+        return getRegisterAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_DATA)
+    {
+        return getDataAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_IEC_HDLC_SETUP)
+    {
+        return getHdlcSetupAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP)
+    {
+        return getSecuritySetupAttributeAccess(settings, index);
     }
     // Only clock write is allowed.
     if (settings->authentication == DLMS_AUTHENTICATION_LOW)
@@ -2631,16 +3307,6 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
     {
         return DLMS_METHOD_ACCESS_MODE_NONE;
     }
-    //Example server allows security setup changes only when high authentication is used.
-    if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP)
-    {
-        if (settings->authentication == DLMS_AUTHENTICATION_LOW)
-        {
-            return DLMS_METHOD_ACCESS_MODE_NONE;
-        }
-        return DLMS_METHOD_ACCESS_MODE_ACCESS;
-    }
-
     // Only clock methods are allowed.
     if (settings->authentication == DLMS_AUTHENTICATION_LOW)
     {
@@ -2688,7 +3354,7 @@ int svr_connected(
 #else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;
-}
+    }
 
 /**
     * Client has try to made invalid connection. Password is incorrect.
@@ -2707,51 +3373,13 @@ int svr_invalidConnection(dlmsServerSettings* settings)
 int svr_disconnected(
     dlmsServerSettings* settings)
 {
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
     printf("Disconnected %d.\r\n", settings->base.connected);
-#endif
+    if (settings->base.cipher.security != 0 && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+    {
+        //Save Invocation counter value when connection is closed.
+        saveSecurity(&settings->base);
+    }
     return 0;
-}
-
-//Capture data to the ring buffer.
-void captureToRingBuffer(gxProfileGeneric* pg)
-{
-    gxtime tm;
-    int cnt = getProfileGenericDataCount() + 1;
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-#if _MSC_VER > 1400
-    FILE* f = NULL;
-    fopen_s(&f, DATAFILE, "a");
-#else
-    FILE* f = fopen(DATAFILE, "a");
-#endif
-    obj_clearProfileGenericBuffer(&pg->buffer);
-    // Update last average value.
-    time_now(&tm, 0);
-    fprintf(f, "%d/%d/%d %d:%d:%d;%d\n", time_getMonths(&tm), time_getDays(&tm), time_getYears(&tm),
-        time_getHours(&tm), time_getMinutes(&tm), time_getSeconds(&tm), cnt);
-    fclose(f);
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-}
-
-void capture2File(gxProfileGeneric* pg)
-{
-    gxtime tm;
-    int cnt = getProfileGenericDataCount() + 1;
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-#if _MSC_VER > 1400
-    FILE* f = NULL;
-    fopen_s(&f, DATAFILE, "a");
-#else
-    FILE* f = fopen(DATAFILE, "a");
-#endif
-    obj_clearProfileGenericBuffer(&pg->buffer);
-    // Update last average value.
-    time_now(&tm, 0);
-    fprintf(f, "%d/%d/%d %d:%d:%d;%d\n", time_getMonths(&tm), time_getDays(&tm), time_getYears(&tm),
-        time_getHours(&tm), time_getMinutes(&tm), time_getSeconds(&tm), cnt);
-    fclose(f);
-#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 }
 
 void svr_preGet(
@@ -2765,20 +3393,6 @@ void svr_preGet(
         if ((ret = vec_getByIndex(args, pos, &e)) != 0)
         {
             return;
-        }
-        //Save data to the file.
-        if (e->target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
-        {
-            gxProfileGeneric* pg = (gxProfileGeneric*)e->target;
-            if (useRingBuffer)
-            {
-                captureToRingBuffer(pg);
-            }
-            else
-            {
-                capture2File(pg);
-            }
-            e->handled = 1;
         }
     }
 }

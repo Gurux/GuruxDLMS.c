@@ -159,7 +159,7 @@ int ba_set(bitArray* arr, unsigned char item)
 }
 
 //Set bit by index.
-int ba_setByIndex(bitArray* arr, int index, unsigned char item)
+int ba_setByIndex(bitArray* arr, uint16_t index, unsigned char item)
 {
     int ret;
     unsigned char newItem = 0;

@@ -64,15 +64,12 @@ unsigned char ln47pduBuff[PDU_BUFFER_SIZE];
 int startServers(int port, int trace)
 {
     int ret;
-#if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
     connection snHdlc, lnHdlc, snWrapper, lnWrapper;
-#else
-    connection lnHdlc;
-#endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-
-#if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
     //Initialize DLMS settings.
     svr_init(&snHdlc.settings, 0, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, snframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, snpduBuff, PDU_BUFFER_SIZE);
+    //Set master key (KEK) to 1111111111111111.
+    unsigned char KEK[16] = { 0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 };
+    BB_ATTACH(snHdlc.settings.base.kek, KEK, sizeof(KEK));
     svr_InitObjects(&snHdlc.settings);
     //Start server
     if ((ret = svr_start(&snHdlc, port)) != 0)
@@ -83,15 +80,10 @@ int startServers(int port, int trace)
     printf("Example connection settings:\n");
     printf("Gurux.DLMS.Client.Example.Net -r sn -h localhost -p %d\n", port);
     printf("----------------------------------------------------------\n");
-#endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
     //Initialize DLMS settings.
     svr_init(&lnHdlc.settings, 1, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, lnframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, lnpduBuff, PDU_BUFFER_SIZE);
     //We have several server that are using same objects. Just copy them.
-#if defined(DLMS_INDIAN_STANDARD) || defined(DLMS_ITALIAN_STANDARD)
-    svr_InitObjects(&lnHdlc.settings);
-#else
     oa_copy(&lnHdlc.settings.base.objects, &snHdlc.settings.base.objects);
-#endif
     //Start server
     if ((ret = svr_start(&lnHdlc, port + 1)) != 0)
     {
@@ -101,7 +93,6 @@ int startServers(int port, int trace)
     printf("Example connection settings:\n");
     printf("GuruxDLMSClientExample -h localhost -p %d\n", port + 1);
     printf("----------------------------------------------------------\n");
-#if !defined(DLMS_INDIAN_STANDARD) && !defined(DLMS_ITALIAN_STANDARD)
     //Initialize DLMS settings.
     svr_init(&snWrapper.settings, 0, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, sn47frameBuff, WRAPPER_BUFFER_SIZE, sn47pduBuff, PDU_BUFFER_SIZE);
     //We have several server that are using same objects. Just copy them.
@@ -142,14 +133,10 @@ int startServers(int port, int trace)
     println("Master key (KEK)", &snHdlc.settings.base.kek);
     printf("----------------------------------------------------------\n");
     printf("Press Enter to close application.\r\n");
-#endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
     getchar();
-#if !defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
     con_close(&snHdlc);
     con_close(&snWrapper);
     con_close(&lnWrapper);
-#endif //!defined(DLMS_INDIAN_STANDARD) &&  !defined(DLMS_ITALIAN_STANDARD)
-    con_close(&lnHdlc);
     return 0;
 }
 

@@ -477,8 +477,11 @@ int getUInt32(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    value->vt = DLMS_DATA_TYPE_UINT32;
-    if ((ret = bb_getUInt32(buff, &value->ulVal)) != 0)
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_UINT32;
+    }
+    if ((ret = bb_getUInt32(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->ulVal : value->pulVal)) != 0)
     {
         return ret;
     }
@@ -503,8 +506,11 @@ int getInt32(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    value->vt = DLMS_DATA_TYPE_INT32;
-    if ((ret = bb_getInt32(buff, &value->lVal)) != 0)
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_INT32;
+    }
+    if ((ret = bb_getInt32(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->lVal : value->plVal)) != 0)
     {
         return ret;
     }
@@ -580,8 +586,15 @@ static int getBool(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_BOOLEAN;
-    value->boolVal = ch != 0;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_BOOLEAN;
+        value->boolVal = ch != 0;
+    }
+    else
+    {
+        *value->pboolVal = ch != 0;
+    }
     return 0;
 }
 
@@ -849,11 +862,14 @@ int getUInt8(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    if ((ret = bb_getUInt8(buff, &value->bVal)) != 0)
+    if ((ret = bb_getUInt8(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->bVal : value->pbVal)) != 0)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_UINT8;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_UINT8;
+    }
     return 0;
 }
 
@@ -875,11 +891,14 @@ int getInt16(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    if ((ret = bb_getInt16(buff, &value->iVal)) != 0)
+    if ((ret = bb_getInt16(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->iVal : value->piVal)) != 0)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_INT16;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_INT16;
+    }
     return 0;
 }
 
@@ -901,11 +920,14 @@ int getInt8(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    if ((ret = bb_getInt8(buff, &value->cVal)) != 0)
+    if ((ret = bb_getInt8(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->cVal : value->pcVal)) != 0)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_INT8;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_INT8;
+    }
     return 0;
 }
 
@@ -928,11 +950,14 @@ int getUInt16(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    if ((ret = bb_getUInt16(buff, &value->uiVal)) != 0)
+    if ((ret = bb_getUInt16(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->uiVal : value->puiVal)) != 0)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_UINT16;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_UINT16;
+    }
     return 0;
 }
 
@@ -955,11 +980,14 @@ int getInt64(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    if ((ret = bb_getInt64(buff, &value->llVal)) != 0)
+    if ((ret = bb_getInt64(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->llVal : value->pllVal)) != 0)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_INT64;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_INT64;
+    }
     return 0;
 }
 
@@ -982,11 +1010,14 @@ int getUInt64(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    if ((ret = bb_getUInt64(buff, &value->ullVal)) != 0)
+    if ((ret = bb_getUInt64(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->ullVal : value->pullVal)) != 0)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_UINT64;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_UINT64;
+    }
     return 0;
 }
 
@@ -1009,11 +1040,14 @@ int getEnum(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    if ((ret = bb_getUInt8(buff, &value->bVal)) != 0)
+    if ((ret = bb_getUInt8(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->bVal : value->pbVal)) != 0)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_ENUM;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_ENUM;
+    }
     return 0;
 }
 
@@ -1036,11 +1070,14 @@ int getDouble(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    if ((ret = bb_getDouble(buff, &value->dblVal)) != 0)
+    if ((ret = bb_getDouble(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->dblVal : value->pdblVal)) != 0)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_FLOAT64;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_FLOAT64;
+    }
     return 0;
 }
 #endif //#endif //DLMS_IGNORE_FLOAT32
@@ -1064,11 +1101,14 @@ int getFloat(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    if ((ret = bb_getFloat(buff, &value->fltVal)) != 0)
+    if ((ret = bb_getFloat(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->fltVal : value->pfltVal)) != 0)
     {
         return ret;
     }
-    value->vt = DLMS_DATA_TYPE_FLOAT32;
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_FLOAT32;
+    }
     return 0;
 }
 
@@ -2115,7 +2155,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
         value->vt = info->type;
     }
 #else
-    if (ret == 0)
+    if (ret == 0 && (value->vt & DLMS_DATA_TYPE_BYREF) == 0)
     {
         value->vt = info->type;
     }
@@ -4138,6 +4178,16 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
                 return ret;
             }
         }
+        //If IC value is wrong.
+        if (settings->expectedInvocationCounter != NULL)
+        {
+            if (invocationCounter < *settings->expectedInvocationCounter)
+            {
+                return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+            }
+            //Update IC.
+            *settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+        }
         // Get command.
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
         {
@@ -4192,7 +4242,7 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
 #else
                 settings->cipher.blockCipherKey,
 #endif //DLMS_IGNORE_MALLOC
-                &bb,
+                & bb,
                 &security,
                 &suite,
                 &invocationCounter)) != 0)
@@ -4206,14 +4256,14 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
         {
             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
-        if (settings->expectedInvocationCounter != 0)
+        if (settings->expectedInvocationCounter != NULL)
         {
             //If data is ciphered using invalid invocation counter value.
-            if (invocationCounter != settings->expectedInvocationCounter)
+            if (invocationCounter != *settings->expectedInvocationCounter)
             {
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
-            settings->expectedInvocationCounter = 1 + invocationCounter;
+            *settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
         }
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
@@ -4648,7 +4698,7 @@ int dlms_getSNPdu(
     gxSNParameters* p,
     gxByteBuffer* reply)
 {
-    int ret, cnt = 0;
+    int ret = 0, cnt = 0;
     unsigned char cipherSize = 0;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     unsigned char ciphering = p->command != DLMS_COMMAND_AARQ && p->command != DLMS_COMMAND_AARE && p->settings->cipher.security != DLMS_SECURITY_NONE;
@@ -4829,6 +4879,12 @@ int dlms_getSNPdu(
         reply->position = reply->size = 0;
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
+#ifndef DLMS_IGNORE_HDLC
+    if (ret == 0 && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    {
+        ret = dlms_addLLCBytes(p->settings, reply);
+    }
+#endif //DLMS_IGNORE_HDLC
     return 0;
 }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -4908,7 +4964,7 @@ int dlms_getLNPdu(
 #else
             h = reply;
 #endif //DLMS_IGNORE_MALLOC
-        }
+    }
         // Add command.
         if (p->command != DLMS_COMMAND_GENERAL_BLOCK_TRANSFER)
         {
@@ -4967,7 +5023,7 @@ int dlms_getLNPdu(
                     bb_move(h, pos + 1, pos, reply->size - pos - 1);
                 }
             }
-        }
+            }
         else if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
             // Get request size can be bigger than PDU size.
@@ -5087,7 +5143,7 @@ int dlms_getLNPdu(
                     {
                         //If this fails PDU buffer size must be bigger.
                         return ret;
-                    }
+            }
 #else
                     if (p->settings->server)
                     {
@@ -5102,9 +5158,9 @@ int dlms_getLNPdu(
                         ret = bb_set2(reply, p->data, p->data->position, len);
                     }
 #endif //DLMS_IGNORE_MALLOC
-                }
-            }
         }
+        }
+}
         // Add data that fits to one block.
         if (ret == 0 && len == 0)
         {
@@ -5152,7 +5208,7 @@ int dlms_getLNPdu(
                     ret = bb_insert(h->data, h->size, reply, 0);
                 }
 #endif //DLMS_IGNORE_MALLOC
-            }
+        }
         }
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (ret == 0 && ciphering && reply->size != 0 && p->command != DLMS_COMMAND_RELEASE_REQUEST)
@@ -5291,18 +5347,18 @@ int dlms_getLnMessages(
 #else
                 ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_HDLC
-            }
+                }
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
-        }
+            }
         bb_clear(pdu);
 #ifndef DLMS_IGNORE_HDLC
         frame = 0;
 #endif //DLMS_IGNORE_HDLC
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
     return ret;
-}
+    }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getSnMessages(
@@ -5359,7 +5415,7 @@ int dlms_getSnMessages(
 #else
                 ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_HDLC
-            }
+                }
             if (ret != 0)
             {
                 break;
@@ -5367,12 +5423,12 @@ int dlms_getSnMessages(
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
-        }
+            }
         bb_clear(&data);
         frame = 0;
-    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-    return 0;
-}
+        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+        return 0;
+    }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_getData2(
@@ -5395,7 +5451,7 @@ int dlms_getData2(
         // Invalid Interface type.
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_HDLC
-    }
+        }
 #ifndef DLMS_IGNORE_WRAPPER
     else if (settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
     {
@@ -5436,7 +5492,7 @@ int dlms_getData2(
         return DLMS_ERROR_CODE_OK;
     }
     return dlms_getPdu(settings, data, first);
-}
+    }
 
 int dlms_generateChallenge(
     gxByteBuffer* challenge)
@@ -5635,7 +5691,7 @@ int dlms_secure(
                 (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
             {
                 return ret;
-            }
+    }
 #else
             if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
                 (ret = bb_set(&challenge, settings->cipher.systemTitle.data, settings->cipher.systemTitle.size)) != 0 ||
@@ -5661,7 +5717,7 @@ int dlms_secure(
                 }
             }
 #endif //DLMS_IGNORE_HIGH_SHA256
-        }
+}
         else
         {
             if ((ret = bb_set(&challenge, data->data, data->size)) != 0 ||
@@ -5670,7 +5726,7 @@ int dlms_secure(
                 return ret;
             }
         }
-    }
+}
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH_MD5)
     {
         //If MD5 is not used.
@@ -5681,7 +5737,7 @@ int dlms_secure(
         bb_clear(&challenge);
         return ret;
 #endif //DLMS_IGNORE_HIGH_MD5
-    }
+}
     else if (settings->authentication == DLMS_AUTHENTICATION_HIGH_SHA1)
     {
         //If SHA1 is not used.
@@ -5692,7 +5748,7 @@ int dlms_secure(
         bb_clear(&challenge);
         return ret;
 #endif //DLMS_IGNORE_HIGH_SHA1
-    }
+}
     else if (settings->authentication == DLMS_AUTHENTICATION_HIGH_SHA256)
     {
         //If SHA256 is not used.

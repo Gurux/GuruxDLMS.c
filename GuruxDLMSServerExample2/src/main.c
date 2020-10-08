@@ -48,6 +48,8 @@
 #include "../dlms/include/server.h"
 //Add this if you want to send notify messages.
 #include "../dlms/include/notify.h"
+//Add support for serialization.
+#include "../dlms/include/gxserializer.h"
 
 //DLMS settings.
 dlmsServerSettings settings;
@@ -67,7 +69,9 @@ static unsigned char S2C_CHALLENGE[64];
 //Allocate space for read list.
 static gxValueEventArg events[10];
 
+unsigned char testMode = 1;
 int socket1 = -1;
+uint32_t SERIAL_NUMBER = 123456;
 
 //TODO: Allocate space where profile generic row values are serialized.
 #define PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE 100
@@ -82,6 +86,8 @@ static unsigned char pduBuff[PDU_BUFFER_SIZE];
 static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Define server system title.
 static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
+time_t imageActionStartTime = 0;
+gxImageActivateInfo IMAGE_ACTIVATE_INFO[1];
 
 uint32_t time_current(void)
 {
@@ -96,132 +102,12 @@ uint32_t time_elapsed(void)
 
 static gxByteBuffer reply;
 
-//Action schedule execution times.
-typedef struct
-{
-    unsigned char count;
-    gxtime values[10];
-} GXExecutionTimes;
-
-//Push communication window.
-typedef struct
-{
-    unsigned char count;
-    gxTimePair values[10];
-} GXPushWindow;
-
-//Push object list.
-typedef struct
-{
-    uint16_t objectType;
-    unsigned char logicalName[6];
-    signed char attributeIndex;
-    uint16_t dataIndex;
-} GXTarget;
-
-//Push object list.
-typedef struct
-{
-    unsigned char count;
-    GXTarget values[5];
-} GXObjectCollection;
-
-//Profile Generic settings.
-typedef struct
-{
-    //How often load profile is captured to the EEPROM.
-    //Load profile period.
-    unsigned long period;
-    //Amount of used rows in profile generic buffer.
-    uint16_t entriesInUse;
-    //Amount of total rows in profile generic buffer.
-    uint16_t profileEntries;
-    //Entry where profile generic row is added in ring buffer.
-    uint16_t rowIndex;
-    //Capture object list.
-    GXObjectCollection objects;
-} GXProfileGeneric;
-
-//Push Setup.
-typedef struct
-{
-    //Push communication window.
-    GXPushWindow communicationWindow;
-    //Push object list.
-    GXObjectCollection objects;
-} GXPushSetup;
-
-//SAP assignment list.
-typedef struct
-{
-    unsigned char count;
-    gxSapItem values[5];
-} GXSapList;
-
-//Association settings (passwords).
-typedef struct
-{
-    //Define low level password.
-    unsigned char llsPasswordSize;
-    char llsPassword[20];
-    //Define high level password.
-    unsigned char hlsPasswordSize;
-    char hlsPassword[20];
-}GXAssociation;
-
-//Security settings
-typedef struct
-{
-    unsigned char authenticationKey[16];
-    unsigned char blockCipherKey[16];
-    unsigned char securityPolicy;
-    uint32_t invacationVector;
-}GXSecuritySettings;
-
-
-//Save serialized meter data here.
-typedef struct {
-    //Meter serial number.
-    uint32_t SERIAL_NUMBER;
-    //Define Logical Device Name.
-    char LDN[17];
-    //Association passwords.
-    GXAssociation association;
-    //Don't use clock as a name. Some compilers are using clock as reserved word.
-    gxClock clock1;
-    //Disconnect open execution times.
-    GXExecutionTimes disconnectOpenExecutions;
-    //Disconnect close execution times.
-    GXExecutionTimes disconnectCloseExecutions;
-    //IEC HDLC Setup.
-    gxIecHdlcSetup hdlc;
-    GXProfileGeneric loadProfile;
-    GXProfileGeneric eventLog;
-    GXPushSetup push;
-    //Is meter in test mode.
-    char testMode;
-    //SAP assigment lists.
-    GXSapList sapAssignmentList;
-    //Master key, A.K.A KEK.
-    unsigned char masterKey[16];
-    GXSecuritySettings securitySettings;
-    uint32_t InvocationCounter;
-} GXSerializedMeterData;
-
-GXSerializedMeterData meterData;
-
-//Push objects are added here.
-static gxTarget PUSH_OBJECTS[6];
-
-//Capture objects for load profile.
-static gxTarget LOAD_PROFILE_CAPTURE_OBJECT[10] = { 0 };
-//Two capture objects for event log.
-static gxTarget EVENT_LOG_CAPTURE_OBJECT[2] = { 0 };
-
+static gxClock clock1;
+static gxIecHdlcSetup hdlc;
 static gxData ldn;
 static gxData eventCode;
 static gxData unixTime;
-static gxData frameCounter;
+static gxData invocationCounter;
 static gxAssociationLogicalName associationNone;
 static gxAssociationLogicalName associationLow;
 static gxAssociationLogicalName associationHigh;
@@ -243,14 +129,39 @@ static gxSecuritySetup securitySetupHigh;
 //Security Setup HighGMac is for GMac authentication.
 static gxSecuritySetup securitySetupHighGMac;
 
-//static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn), BASE(sapAssignment), BASE(meterData.clock1) };
+gxImageTransfer imageTransfer;
+gxAutoConnect autoConnect;
+gxActivityCalendar activityCalendar;
+gxLocalPortSetup localPortSetup;
+gxDemandRegister demandRegister;
+gxRegisterMonitor registerMonitor;
+gxAutoAnswer autoAnswer;
+gxModemConfiguration modemConfiguration;
+gxMacAddressSetup macAddressSetup;
+gxTcpUdpSetup udpSetup;
+gxIp4Setup ip4Setup;
+gxPppSetup pppSetup;
+gxGPRSSetup gprsSetup;
+gxPrimeNbOfdmPlcMacFunctionalParameters primeNbOfdmPlcMacFunctionalParameters;
+gxPrimeNbOfdmPlcMacNetworkAdministrationData primeNbOfdmPlcMacNetworkAdministrationData;
+
+static gxScriptTable tarifficationScriptTable;
+
+gxRegisterActivation registerActivation;
+
+//static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
 static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
                                    BASE(ldn), BASE(sapAssignment), BASE(eventCode),
-                                   BASE(meterData.clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
-                                   BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(meterData.hdlc),
-                                   BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(frameCounter)
+                                   BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
+                                   BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
+                                   BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
+                                   BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
+                                   BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
+                                   BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData)
 };
+
+gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE(BASE(associationNone), 0) };
 
 static uint32_t executeTime = 0;
 
@@ -278,20 +189,61 @@ typedef enum
     GURUX_EVENT_CODES_GLOBAL_METER_RESET = 0x100
 } GURUX_EVENT_CODES;
 
+
+/////////////////////////////////////////////////////////////////////////////
+// Save security settings to the EEPROM.
+//
+// Only updated value is saved. This is done because write to EEPROM is slow
+// and there is a limit how many times value can be written to the EEPROM.
+/////////////////////////////////////////////////////////////////////////////
+int saveSecurity()
+{
+    int ret = 0;
+    const char* fileName = "security.raw";
+    //Save keys to own block in EEPROM.
+#if _MSC_VER > 1400
+    FILE* f = NULL;
+    fopen_s(&f, fileName, "wb");
+#else
+    FILE* f = fopen(fileName, "wb");
+#endif
+    unsigned char tmp[100];
+    gxByteBuffer bb;
+    BB_ATTACH(bb, tmp, 0);
+    if (f != NULL)
+    {
+        if ((ret = bb_set(&bb, settings.base.cipher.blockCipherKey, 16)) == 0 &&
+            (ret = bb_set(&bb, settings.base.cipher.authenticationKey, 16)) == 0 &&
+            (ret = bb_set(&bb, settings.base.kek, 16)) == 0 &&
+            //Save server IV.
+            (ret = bb_setUInt32(&bb, settings.base.cipher.invocationCounter)) == 0 &&
+            //Save last client IV.
+            (ret = bb_setUInt32(&bb, securitySetupHighGMac.minimumInvocationCounter)) == 0)
+        {
+            fwrite(bb.data, 1, bb.size, f);
+        }
+        bb_clear(&bb);
+        fclose(f);
+    }
+    else
+    {
+        printf("%s\r\n", "Failed to open keys file.");
+    }
+    return ret;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // Save data to the EEPROM.
 //
 // Only updated value is saved. This is done because write to EEPROM is slow
 // and there is a limit how many times value can be written to the EEPROM.
 /////////////////////////////////////////////////////////////////////////////
-void save(void* data, uint16_t size)
+int saveSettings()
 {
-#if defined(_WIN64)
-    const char* fileName = "settings64.raw";
-#else // defined(_WIN32) || defined(__linux__)
+    int ret = 0;
     const char* fileName = "settings.raw";
-#endif //defined(_WIN32) || defined(__linux__)
-
+    //Save keys to own block in EEPROM.
 #if _MSC_VER > 1400
     FILE* f = NULL;
     fopen_s(&f, fileName, "wb");
@@ -300,15 +252,24 @@ void save(void* data, uint16_t size)
 #endif
     if (f != NULL)
     {
-        fwrite(&SERIALIZATION_VERSION, sizeof(uint16_t), 1, f);
-        fwrite(&meterData, sizeof(meterData), 1, f);
+        unsigned char tmp[2048];
+        gxByteBuffer bb;
+        BB_ATTACH(bb, tmp, 0);
+        gxSerializerSettings serializerSettings;
+        serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
+        serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
+        if ((ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb)) == 0)
+        {
+            fwrite(bb.data, bb.size, 1, f);
+        }
+        bb_clear(&bb);
         fclose(f);
     }
     else
     {
-        printf("%s\r\n", "Failed to open file.");
-        return;
+        printf("%s\r\n", "Failed to open settings file.");
     }
+    return ret;
 }
 
 //Allocate profile generic buffer.
@@ -339,14 +300,38 @@ void allocateProfileGenericBuffer(const char* fileName, uint32_t size)
     }
 }
 
+//Allocate space for image tranfer.
+void allocateImageTransfer(const char* fileName, uint32_t size)
+{
+    uint32_t pos;
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, fileName, "ab");
+#else
+    f = fopen(fileName, "ab");
+#endif
+    if (f != NULL)
+    {
+        fseek(f, 0, SEEK_END);
+        if ((uint32_t)ftell(f) < size)
+        {
+            for (pos = (uint32_t)ftell(f); pos != size; ++pos)
+            {
+                if (fputc(0x00, f) != 0)
+                {
+                    printf("Error Writing to %s\n", fileName);
+                    break;
+                }
+            }
+        }
+        fclose(f);
+    }
+}
+
 int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
 {
     int ret = hlp_getLogicalNameToString(pg->base.logicalName, fileName);
-#if defined(_WIN64)
-    strcat(fileName, "64.raw");
-#else // defined(_WIN32) || defined(__linux__)
     strcat(fileName, ".raw");
-#endif //defined(_WIN32) || defined(__linux__)
     return ret;
 }
 
@@ -451,7 +436,7 @@ uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
     return count;
 }
 
-int captureProfileGeneric(gxProfileGeneric* pg, GXProfileGeneric* data)
+int captureProfileGeneric(gxProfileGeneric* pg)
 {
     unsigned char pos;
     gxTarget* it;
@@ -474,8 +459,33 @@ int captureProfileGeneric(gxProfileGeneric* pg, GXProfileGeneric* data)
         uint16_t dataSize = 0;
         uint8_t columnSizes[10];
         DLMS_DATA_TYPE dataTypes[10];
+        //Load current entry index from the begin of the data.
+        uint16_t index = 0;
+        if (fread(pdu.data, 1, 2, f) == 2)
+        {
+            pdu.size = 2;
+            bb_getUInt16(&pdu, &index);
+            fseek(f, 0, SEEK_SET);
+            bb_empty(&pdu);
+        }
+        //Current index in ring buffer.
+        bb_setUInt16(&pdu, (1 + index) % (pg->profileEntries));
+
+        //Update how many entries is used until buffer is full.
+        if (ret == 0 && pg->entriesInUse != pg->profileEntries)
+        {
+            //Total amount of the entries.
+            ++pg->entriesInUse;
+        }
+        bb_setUInt16(&pdu, (uint16_t)pg->entriesInUse);
+        //Update values to the EEPROM.
+        fwrite(pdu.data, 1, 4, f);
+
         getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &dataSize);
-        fseek(f, pg->entriesInUse * dataSize, SEEK_SET);
+        if (pg->entriesInUse != 0)
+        {
+            fseek(f, pg->entriesInUse * dataSize, SEEK_SET);
+        }
         //Loop capture columns and get values.
         for (pos = 0; pos != pg->captureObjects.size; ++pos)
         {
@@ -512,14 +522,11 @@ int captureProfileGeneric(gxProfileGeneric* pg, GXProfileGeneric* data)
             }
         }
         fclose(f);
-    }
-    //Append data.
-    //Update how many entries is used until buffer is full.
-    if (ret == 0 && pg->entriesInUse != pg->profileEntries)
-    {
-        ++pg->entriesInUse;
-        data->entriesInUse = (uint16_t)pg->entriesInUse;
-        save(&meterData, sizeof(meterData));
+        if (ret != 0)
+        {
+            //Total amount of the entries.
+            --pg->entriesInUse;
+        }
     }
     return ret;
 }
@@ -527,7 +534,7 @@ int captureProfileGeneric(gxProfileGeneric* pg, GXProfileGeneric* data)
 void updateState(uint16_t value)
 {
     GX_UINT16(eventCode.value) = value;
-    captureProfileGeneric(&eventLog, &meterData.eventLog);
+    captureProfileGeneric(&eventLog);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -538,7 +545,7 @@ void updateState(uint16_t value)
 void GXTRACE(const char* str, const char* data)
 {
     //Send trace to the serial port in test mode.
-    if (meterData.testMode)
+    if (testMode)
     {
         if (data == NULL)
         {
@@ -592,7 +599,7 @@ void time_now(
     //If date time is wanted in meter time, not in utc time.
     if (meterTime)
     {
-        clock_utcToMeterTime(&meterData.clock1, value);
+        clock_utcToMeterTime(&clock1, value);
     }
 }
 
@@ -622,14 +629,11 @@ int addAssociationNone()
 ///////////////////////////////////////////////////////////////////////
 //This method adds example Logical Name Association object.
 ///////////////////////////////////////////////////////////////////////
-int addAssociationLow(uint16_t serializationVersion)
+int addAssociationLow()
 {
     int ret;
-    if (serializationVersion == 0)
-    {
-        memcpy(meterData.association.llsPassword, "Gurux", 5);
-        meterData.association.llsPasswordSize = 5;
-    }
+    static char SECRET[20];
+    strcpy(SECRET, "Gurux");
     const unsigned char ln[6] = { 0, 0, 40, 0, 2, 255 };
     if ((ret = INIT_OBJECT(associationLow, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
     {
@@ -646,7 +650,7 @@ int addAssociationLow(uint16_t serializationVersion)
             DLMS_CONFORMANCE_ACTION |
             DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
             DLMS_CONFORMANCE_GET);
-        BB_ATTACH_STR(associationLow.secret, meterData.association.llsPassword, meterData.association.llsPasswordSize);
+        BB_ATTACH_STR(associationLow.secret, SECRET, (uint16_t)strlen(SECRET));
         associationLow.securitySetup = NULL;
     }
     return ret;
@@ -656,16 +660,13 @@ int addAssociationLow(uint16_t serializationVersion)
 //This method adds example Logical Name Association object for High authentication.
 // UA in Indian standard.
 ///////////////////////////////////////////////////////////////////////
-int addAssociationHigh(uint16_t serializationVersion)
+int addAssociationHigh()
 {
     int ret;
-    if (serializationVersion == 0)
-    {
-        memcpy(meterData.association.hlsPassword, "Gurux", 5);
-        meterData.association.hlsPasswordSize = 5;
-    }
     //User list.
     static gxUser USER_LIST[10] = { 0 };
+    static char SECRET[20];
+    strcpy(SECRET, "Gurux");
     //Dedicated key.
     static unsigned char CYPHERING_INFO[20] = { 0 };
     const unsigned char ln[6] = { 0, 0, 40, 0, 3, 255 };
@@ -686,7 +687,7 @@ int addAssociationHigh(uint16_t serializationVersion)
             DLMS_CONFORMANCE_ACTION |
             DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
             DLMS_CONFORMANCE_GET);
-        BB_ATTACH_STR(associationHigh.secret, meterData.association.hlsPassword, meterData.association.hlsPasswordSize);
+        BB_ATTACH_STR(associationHigh.secret, SECRET, (uint16_t)strlen(SECRET));
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         associationHigh.securitySetup = &securitySetupHigh;
 #else
@@ -701,7 +702,7 @@ int addAssociationHigh(uint16_t serializationVersion)
 //This method adds example Logical Name Association object for GMAC High authentication.
 // UA in Indian standard.
 ///////////////////////////////////////////////////////////////////////
-int addAssociationHighGMac(uint16_t serializationVersion)
+int addAssociationHighGMac()
 {
     int ret;
     //User list.
@@ -778,20 +779,17 @@ int addSecuritySetupHighGMac()
 ///////////////////////////////////////////////////////////////////////
 //Add SAP Assignment object.
 ///////////////////////////////////////////////////////////////////////
-int addSapAssignment(uint16_t serializationVersion)
+int addSapAssignment()
 {
     int ret;
+    static gxSapItem SAP_ITEMS[5];
     const unsigned char ln[6] = { 0, 0, 41, 0, 0, 255 };
     if ((ret = INIT_OBJECT(sapAssignment, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, ln)) == 0)
     {
-        if (serializationVersion == 0)
-        {
-            sprintf((char*)meterData.sapAssignmentList.values[0].name.value, "%s%.13lu", FLAG_ID, meterData.SERIAL_NUMBER);
-            meterData.sapAssignmentList.values[0].name.size = 16;
-            meterData.sapAssignmentList.values[0].id = 1;
-            meterData.sapAssignmentList.count = 1;
-        }
-        ARR_ATTACH(sapAssignment.sapAssignmentList, meterData.sapAssignmentList.values, meterData.sapAssignmentList.count);
+        sprintf(SAP_ITEMS[0].name.value, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
+        SAP_ITEMS[0].name.size = 16;
+        SAP_ITEMS[0].id = 1;
+        ARR_ATTACH(sapAssignment.sapAssignmentList, SAP_ITEMS, 1);
     }
     return ret;
 }
@@ -810,8 +808,10 @@ int addLogicalDeviceName()
     const unsigned char ln[6] = { 0, 0, 42, 0, 0, 255 };
     if ((ret = INIT_OBJECT(ldn, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
     {
-        sprintf(meterData.LDN, "%s%.13lu", FLAG_ID, meterData.SERIAL_NUMBER);
-        GX_OCTECT_STRING(ldn.value, meterData.LDN, sizeof(meterData.LDN));
+        //Define Logical Device Name.
+        static char LDN[17];
+        sprintf(LDN, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
+        GX_OCTECT_STRING(ldn.value, LDN, sizeof(LDN));
     }
     return ret;
 }
@@ -841,94 +841,471 @@ int addUnixTime()
     return ret;
 }
 
-//Add common frame counter object.
-int addFrameCounter()
+//Add invocation counter object.
+int addInvocationCounter()
 {
     int ret;
     const unsigned char ln[6] = { 0,0,43,1,0,255 };
-    if ((ret = INIT_OBJECT(frameCounter, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    if ((ret = INIT_OBJECT(invocationCounter, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
     {
-        //Update invocation counter value from EEPROM.
-        settings.base.cipher.invocationCounter = meterData.InvocationCounter;
-        GX_UINT32_BYREF(frameCounter.value, settings.base.cipher.invocationCounter);
+        //Initial invocation counter value.
+        GX_UINT32_BYREF(invocationCounter.value, securitySetupHighGMac.minimumInvocationCounter);
     }
     return ret;
 }
 
-static int loadTargets(dlmsServerSettings* settings, GXObjectCollection* savedObjects, gxTarget* objects, uint16_t* count)
+///////////////////////////////////////////////////////////////
+//Add image transfer object.
+///////////////////////////////////////////////////////////////////////
+int addImageTransfer()
 {
-    uint16_t pos;
-    int ret = 0;
-    gxObject* it;
-    *count = savedObjects->count;
-    for (pos = 0; pos != savedObjects->count; ++pos)
+    int ret;
+    unsigned char IMAGE_TRANSFERRED_BLOCKS_STATUS[1000];
+    unsigned char ln[6] = { 0,0,44,0,0,255 };
+    if ((ret = INIT_OBJECT(imageTransfer, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln)) == 0)
     {
-        if ((ret = oa_findByLN(&settings->base.objects, savedObjects->values[pos].objectType, savedObjects->values[pos].logicalName, &it)) != 0)
-        {
-            break;
-        }
-        if (it == NULL)
-        {
-            *count = pos;
-            ret = -1;
-            break;
-        }
-        objects[pos].target = it;
-        objects[pos].attributeIndex = savedObjects->values[pos].attributeIndex;
-        objects[pos].dataIndex = savedObjects->values[pos].dataIndex;
+        imageTransfer.imageBlockSize = 100;
+        imageTransfer.imageFirstNotTransferredBlockNumber = 0;
+        //Enable image transfer.
+        imageTransfer.imageTransferEnabled = 1;
+        ARR_ATTACH(imageTransfer.imageActivateInfo, IMAGE_ACTIVATE_INFO, 0);
+        BIT_ATTACH(imageTransfer.imageTransferredBlocksStatus, IMAGE_TRANSFERRED_BLOCKS_STATUS, 0);
     }
     return ret;
 }
 
-static int saveTargets(GXObjectCollection* savedObjects, gxTarget* objects, uint16_t count)
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example TCP/UDP setup object.
+///////////////////////////////////////////////////////////////////////
+int addTcpUdpSetup()
 {
-    uint16_t pos;
-    savedObjects->count = (unsigned char)count;
-    for (pos = 0; pos != count; ++pos)
+    int ret;
+    //Add Tcp/Udp setup. Default Logical Name is 0.0.25.0.0.255.
+    const unsigned char ln[6] = { 0,0,25,0,0,255 };
+    if ((ret = INIT_OBJECT(udpSetup, DLMS_OBJECT_TYPE_TCP_UDP_SETUP, ln)) == 0)
     {
-        memcpy(savedObjects->values[pos].logicalName, objects[pos].target->logicalName, 6);
-        savedObjects->values[pos].objectType = objects[pos].target->objectType;
-        savedObjects->values[pos].attributeIndex = objects[pos].attributeIndex;
-        savedObjects->values[pos].dataIndex = objects[pos].dataIndex;
+        udpSetup.port = 4061;
+        udpSetup.maximumSimultaneousConnections = 1;
+        udpSetup.maximumSegmentSize = 40;
+        udpSetup.inactivityTimeout = 180;
+        udpSetup.ipSetup = BASE(ip4Setup);
     }
-    return 0;
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Auto connect object.
+///////////////////////////////////////////////////////////////////////
+int addAutoConnect()
+{
+    int ret;
+    static gxTimePair CALLING_WINDOW[10] = { 0 };
+    static unsigned char DESTINATIONS[10][20] = { 0 };
+
+    const unsigned char ln[6] = { 0,0,2,1,0,255 };
+    if ((ret = INIT_OBJECT(autoConnect, DLMS_OBJECT_TYPE_AUTO_CONNECT, ln)) == 0)
+    {
+        autoConnect.mode = DLMS_AUTO_CONNECT_MODE_AUTO_DIALLING_ALLOWED_ANYTIME;
+        autoConnect.repetitions = 10;
+        autoConnect.repetitionDelay = 60;
+        //Calling is allowed between 1am to 6am.
+        time_init(&CALLING_WINDOW[0].first, -1, -1, -1, 1, 0, 0, -1, -clock1.timeZone);
+        time_init(&CALLING_WINDOW[0].second, -1, -1, -1, 6, 0, 0, -1, -clock1.timeZone);
+        ARR_ATTACH(autoConnect.callingWindow, CALLING_WINDOW, 1);
+        //Add one destination.
+        strcpy((char*)DESTINATIONS[0], "127.0.0.1:4059");
+        ARR_ATTACH(autoConnect.destinations, DESTINATIONS, 1);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Activity Calendar object.
+///////////////////////////////////////////////////////////////////////
+int addActivityCalendar()
+{
+    int ret;
+    gxWeekProfile* wp;
+    //Define active calendar name.
+    static unsigned char ACTIVE_CALENDAR_NAME[20] = { 0 };
+    //Define passive calendar name.
+    static unsigned char PASSIVE_CALENDAR_NAME[20] = { 0 };
+
+    static gxSeasonProfile ACTIVE_SEASON_PROFILE[10];
+    static gxSeasonProfile PASSIVE_SEASON_PROFILE[10];
+    static gxWeekProfile ACTIVE_WEEK_PROFILE[10];
+    static gxWeekProfile PASSIVE_WEEK_PROFILE[10];
+    static gxDayProfile ACTIVE_DAY_PROFILE[3];
+    static gxDayProfile PASSIVE_DAY_PROFILE[3];
+    //Own day profile action for each day profile.
+    static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS1[10];
+    static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS2[10];
+    static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS3[10];
+    static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS1[10];
+    static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS2[10];
+    static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS3[10];
+
+    const unsigned char ln[6] = { 0,0,13,0,0,255 };
+    if ((ret = INIT_OBJECT(activityCalendar, DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR, ln)) == 0)
+    {
+        const char* activeSeasonName = "Summer time";
+        const char* passiveSeasonName = "Winter time";
+        const char* activeWeekProfileName = "Monday";
+        const char* passiveWeekProfileName = "Tuesday";
+        strcpy((char*)ACTIVE_CALENDAR_NAME, "Active");
+        strcpy((char*)PASSIVE_CALENDAR_NAME, "Passive");
+
+        BB_ATTACH(activityCalendar.calendarNameActive, ACTIVE_CALENDAR_NAME, (unsigned short)strlen((char*)ACTIVE_CALENDAR_NAME));
+
+        /////////////////////////////////////////////////////////////////////////
+        //Add active season profile.
+        ARR_ATTACH(activityCalendar.seasonProfileActive, ACTIVE_SEASON_PROFILE, 1);
+        SET_OCTECT_STRING(ACTIVE_SEASON_PROFILE[0].name, activeSeasonName, (unsigned short)strlen(activeSeasonName));
+        time_init(&ACTIVE_SEASON_PROFILE[0].start, -1, 3, 31, -1, -1, -1, -1, -clock1.timeZone);
+        /////////////////////////////////////////////////////////////////////////
+        //Add week profile.
+        ARR_ATTACH(activityCalendar.weekProfileTableActive, ACTIVE_WEEK_PROFILE, 1);
+        SET_OCTECT_STRING(ACTIVE_WEEK_PROFILE[0].name, activeWeekProfileName, (unsigned short)strlen(activeWeekProfileName));
+        wp = &ACTIVE_WEEK_PROFILE[0];
+        wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
+        /////////////////////////////////////////////////////////////////////////
+        //Add active day profiles. There are max three day profiles where one is in use.
+        ARR_ATTACH(activityCalendar.dayProfileTableActive, ACTIVE_DAY_PROFILE, 1);
+        ACTIVE_DAY_PROFILE[0].dayId = 1;
+        ARR_ATTACH(ACTIVE_DAY_PROFILE[0].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS1, 1);
+        ARR_ATTACH(ACTIVE_DAY_PROFILE[1].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS2, 0);
+        ARR_ATTACH(ACTIVE_DAY_PROFILE[2].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS3, 0);
+
+        time_now(&ACTIVE_DAY_PROFILE_ACTIONS1[0].startTime, 0);
+        ACTIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(tarifficationScriptTable);
+        ACTIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
+
+        /////////////////////////////////////////////////////////////////////////
+        //Add passive season profile.
+        BB_ATTACH(activityCalendar.calendarNamePassive, PASSIVE_CALENDAR_NAME, (unsigned short)strlen((char*)PASSIVE_CALENDAR_NAME));
+        ARR_ATTACH(activityCalendar.seasonProfilePassive, PASSIVE_SEASON_PROFILE, 1);
+        SET_OCTECT_STRING(PASSIVE_SEASON_PROFILE[0].name, passiveSeasonName, (unsigned short)strlen(passiveSeasonName));
+        time_init(&PASSIVE_SEASON_PROFILE[0].start, -1, 10, 30, -1, -1, -1, -1, -clock1.timeZone);
+
+        /////////////////////////////////////////////////////////////////////////
+        //Add week profile.
+        ARR_ATTACH(activityCalendar.weekProfileTablePassive, PASSIVE_WEEK_PROFILE, 1);
+        SET_OCTECT_STRING(PASSIVE_WEEK_PROFILE[0].name, passiveWeekProfileName, (unsigned short)strlen(passiveWeekProfileName));
+        wp = &PASSIVE_WEEK_PROFILE[0];
+        wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
+
+        /////////////////////////////////////////////////////////////////////////
+        //Add passive day profiles. There are max three day profiles where one is in use.
+        ARR_ATTACH(activityCalendar.dayProfileTablePassive, PASSIVE_DAY_PROFILE, 1);
+        PASSIVE_DAY_PROFILE[0].dayId = 1;
+        ARR_ATTACH(PASSIVE_DAY_PROFILE[0].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS1, 1);
+        ARR_ATTACH(PASSIVE_DAY_PROFILE[1].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS2, 0);
+        ARR_ATTACH(PASSIVE_DAY_PROFILE[2].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS3, 0);
+        time_now(&PASSIVE_DAY_PROFILE_ACTIONS1[0].startTime, 0);
+        PASSIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(tarifficationScriptTable);
+        PASSIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
+        time_now(&activityCalendar.time, 0);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Optical Port Setup object.
+///////////////////////////////////////////////////////////////////////
+int addOpticalPortSetup()
+{
+    int ret;
+    static unsigned char DEVICE_ADDRESS[10];
+    static unsigned char PASSWORD1[10];
+    static unsigned char PASSWORD2[10];
+    static unsigned char PASSWORD5[10];
+    const unsigned char ln[6] = { 0,0,20,0,0,255 };
+    if ((ret = INIT_OBJECT(localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln)) == 0)
+    {
+        localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_DEFAULT;
+        localPortSetup.proposedBaudrate = DLMS_BAUD_RATE_9600;
+        localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
+        localPortSetup.responseTime = DLMS_LOCAL_PORT_RESPONSE_TIME_200_MS;
+        BB_ATTACH(localPortSetup.deviceAddress, DEVICE_ADDRESS, 0);
+        bb_addString(&localPortSetup.deviceAddress, "Gurux");
+        BB_ATTACH(localPortSetup.password1, PASSWORD1, 0);
+        bb_addString(&localPortSetup.password1, "Gurux1");
+        BB_ATTACH(localPortSetup.password2, PASSWORD2, 0);
+        bb_addString(&localPortSetup.password2, "Gurux2");
+        BB_ATTACH(localPortSetup.password5, PASSWORD5, 0);
+        ret = bb_addString(&localPortSetup.password5, "Gurux5");
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Demand Register object.
+///////////////////////////////////////////////////////////////////////
+int addDemandRegister()
+{
+    int ret;
+    const unsigned char ln[6] = { 1,0,31,4,0,255 };
+    if ((ret = INIT_OBJECT(demandRegister, DLMS_OBJECT_TYPE_DEMAND_REGISTER, ln)) == 0)
+    {
+        var_setUInt16(&demandRegister.currentAverageValue, 10);
+        var_setUInt16(&demandRegister.lastAverageValue, 20);
+        var_setUInt8(&demandRegister.status, 1);
+        time_now(&demandRegister.startTimeCurrent, 1);
+        time_now(&demandRegister.captureTime, 1);
+        demandRegister.period = 10;
+        demandRegister.numberOfPeriods = 1;
+    }
+    return ret;
+}
+///////////////////////////////////////////////////////////////////////
+//Add Register Monitor object.
+///////////////////////////////////////////////////////////////////////
+int addRegisterMonitor()
+{
+    int ret;
+    //Register Monitor threshold values.
+    static dlmsVARIANT THRESHOLDS[10] = { 0 };
+    static gxActionSet ACTIONS[10] = { 0 };
+    const unsigned char ln[6] = { 0,0,16,1,0,255 };
+    if ((ret = INIT_OBJECT(registerMonitor, DLMS_OBJECT_TYPE_REGISTER_MONITOR, ln)) == 0)
+    {
+        VA_ATTACH(registerMonitor.thresholds, THRESHOLDS, 2);
+        ARR_ATTACH(registerMonitor.actions, ACTIONS, 2);
+
+        //Add low value.
+        GX_UINT32(THRESHOLDS[0]) = 10000;
+        //Add high value.
+        GX_UINT32(THRESHOLDS[1]) = 30000;
+        registerMonitor.monitoredValue.attributeIndex = 2;
+        registerMonitor.monitoredValue.target = BASE(activePowerL1);
+
+        //Add actions. Call disconnect control.
+        ACTIONS[0].actionDown.script = &scriptTableDisconnectControl;
+        ACTIONS[0].actionDown.scriptSelector = 1;
+        ACTIONS[0].actionUp.script = NULL;
+        ACTIONS[0].actionUp.scriptSelector = 0;
+        //Add high action.
+        ACTIONS[1].actionDown.script = NULL;
+        ACTIONS[1].actionDown.scriptSelector = 0;
+        ACTIONS[1].actionUp.script = &scriptTableDisconnectControl;
+        ACTIONS[1].actionUp.scriptSelector = 1;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Auto Answer object.
+///////////////////////////////////////////////////////////////////////
+int addAutoAnswer()
+{
+    int ret;
+    static gxTimePair LISTENING_WINDOW[10] = { 0 };
+    const unsigned char ln[6] = { 0,0,2,2,0,255 };
+    if ((ret = INIT_OBJECT(autoAnswer, DLMS_OBJECT_TYPE_AUTO_ANSWER, ln)) == 0)
+    {
+        ARR_ATTACH(autoAnswer.listeningWindow, LISTENING_WINDOW, 1);
+        //Set start time.
+        time_init(&LISTENING_WINDOW[0].first, -1, -1, -1, 6, -1, -1, -1, -clock1.timeZone);
+        //Set end time.
+        time_init(&LISTENING_WINDOW[0].second, -1, -1, -1, 8, -1, -1, -1, -clock1.timeZone);
+        autoAnswer.mode = DLMS_AUTO_CONNECT_MODE_EMAIL_SENDING;
+        autoAnswer.status = DLMS_AUTO_ANSWER_STATUS_INACTIVE;
+        autoAnswer.numberOfCalls = 0;
+        autoAnswer.numberOfRingsInListeningWindow = 1;
+        autoAnswer.numberOfRingsOutListeningWindow = 2;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Modem Configuration object.
+///////////////////////////////////////////////////////////////////////
+int addModemConfiguration()
+{
+    int ret;
+    static gxModemProfile PROFILES[10] = { 0 };
+    static gxModemInitialisation INITIALISATIONS[20] = { 0 };
+    const unsigned char ln[6] = { 0,0,2,0,0,255 };
+    if ((ret = INIT_OBJECT(modemConfiguration, DLMS_OBJECT_TYPE_MODEM_CONFIGURATION, ln)) == 0)
+    {
+        modemConfiguration.communicationSpeed = DLMS_BAUD_RATE_38400;
+        ARR_ATTACH(modemConfiguration.initialisationStrings, INITIALISATIONS, 1);
+        SET_OCTECT_STRING(INITIALISATIONS[0].request, "AT", 2);
+        SET_OCTECT_STRING(INITIALISATIONS[0].response, "OK", 2);
+        INITIALISATIONS[0].delay = 0;
+        ARR_ATTACH(modemConfiguration.modemProfile, PROFILES, 0);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Mac Address Setup object.
+///////////////////////////////////////////////////////////////////////
+int addMacAddressSetup()
+{
+    int ret;
+    static unsigned char MAC_ADDRESS[6] = { 00, 0x10,0x20,0x30,0x40,0x50 };
+    const unsigned char ln[6] = { 0,0,25,2,0,255 };
+    if ((ret = INIT_OBJECT(macAddressSetup, DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(macAddressSetup.macAddress, MAC_ADDRESS, 6);
+    }
+    return ret;
+}
+
+unsigned long getIpAddress()
+{
+    int ret = -1;
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+    struct hostent* phe;
+    char ac[80];
+    if ((ret = gethostname(ac, sizeof(ac))) != -1)
+    {
+        phe = gethostbyname(ac);
+        if (phe == 0)
+        {
+            ret = 0;
+        }
+        else
+        {
+            struct in_addr* addr = (struct in_addr*)phe->h_addr_list[0];
+#if defined(_WIN32) || defined(_WIN64)//If Windows
+            return addr->S_un.S_addr;
+#else //or Linux
+            return addr->s_addr;
+#endif
+        }
+    }
+#else
+    //If no OS get IP.
+#endif
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add IP4 Setup object.
+///////////////////////////////////////////////////////////////////////
+int addIP4Setup()
+{
+    int ret;
+    static uint32_t MULTICAST_IP_ADDRESSES[10];
+    const unsigned char ln[6] = { 0,0,25,1,0,255 };
+    if ((ret = INIT_OBJECT(ip4Setup, DLMS_OBJECT_TYPE_IP4_SETUP, ln)) == 0)
+    {
+        ip4Setup.ipAddress = getIpAddress();
+        ip4Setup.dataLinkLayer = BASE(pppSetup);
+        MULTICAST_IP_ADDRESSES[0] = 0x0;
+        MULTICAST_IP_ADDRESSES[1] = 0x0;
+        ARR_ATTACH(ip4Setup.multicastIPAddress, MULTICAST_IP_ADDRESSES, 2);
+        ip4Setup.subnetMask = 0xFFFFFFFF;
+        ip4Setup.gatewayIPAddress = 0x0A000001;
+        ip4Setup.primaryDNSAddress = 0x0A0B0C0D;
+        ip4Setup.secondaryDNSAddress = 0x0C0D0E0F;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add PPP Setup object.
+///////////////////////////////////////////////////////////////////////
+int addPppSetup()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,25,3,0,255 };
+    if ((ret = INIT_OBJECT(pppSetup, DLMS_OBJECT_TYPE_PPP_SETUP, ln)) == 0)
+    {
+        pppSetup.phy = BASE(gprsSetup);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add GPRS Setup object.
+///////////////////////////////////////////////////////////////////////
+int addGprsSetup()
+{
+    int ret;
+    static unsigned char APN[15];
+    const unsigned char ln[6] = { 0,0,25,4,0,255 };
+    if ((ret = INIT_OBJECT(gprsSetup, DLMS_OBJECT_TYPE_GPRS_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(gprsSetup.apn, APN, 0);
+        ret = bb_addString(&gprsSetup.apn, "vpn.gurux.fi");
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Prime NbOfdm Plc Mac Functional Parameters object.
+///////////////////////////////////////////////////////////////////////
+int addPrimeNbOfdmPlcMacFunctionalParameters()
+{
+    int ret;
+    static unsigned char MAC_SNA[6] = { 0x10, 0x31, 0x46, 0x03, 0x39, 0x01 };
+    const unsigned char ln[6] = { 0, 0, 28, 3, 0, 255 };
+    if ((ret = INIT_OBJECT(primeNbOfdmPlcMacFunctionalParameters, DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS, ln)) == 0)
+    {
+        BB_ATTACH(primeNbOfdmPlcMacFunctionalParameters.sna, MAC_SNA, 6);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add PrimeNbOfdmPlcMacFunctionalParameters object.
+///////////////////////////////////////////////////////////////////////
+int addPrimeNbOfdmPlcMacNetworkAdministrationData()
+{
+    int ret;
+    static gxMacPhyCommunication PHY_COMMUNICATION[2] = { 0 };
+    static unsigned char EUI[6] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+
+    static int16_t SWITCH_TABLE[3] = { 0 };
+    SWITCH_TABLE[0] = 0x7FFF;
+    SWITCH_TABLE[1] = -32767;
+    const unsigned char ln[6] = { 0, 0, 28, 5, 0, 255 };
+    if ((ret = INIT_OBJECT(primeNbOfdmPlcMacNetworkAdministrationData, DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA, ln)) == 0)
+    {
+        ARR_ATTACH(primeNbOfdmPlcMacNetworkAdministrationData.switchTable, SWITCH_TABLE, 2);
+        ARR_ATTACH(primeNbOfdmPlcMacNetworkAdministrationData.communications, PHY_COMMUNICATION, 1);
+        PHY_COMMUNICATION[0].txPower = 127;
+        PHY_COMMUNICATION[0].txCoding = -128;
+        memcpy(PHY_COMMUNICATION[0].eui, EUI, 6);
+    }
+    return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////
 //Add push setup object. (On Connectivity)
 ///////////////////////////////////////////////////////////////////////
-int addPushSetup(uint16_t serializationVersion)
+int addPushSetup()
 {
     int ret;
+    static gxTimePair COMMUNICATION_WINDOW[10];
+    //Push objects are added here.
+    static gxTarget PUSH_OBJECTS[6];
     const unsigned char ln[6] = { 0, 0, 25, 9, 0, 255 };
     if ((ret = INIT_OBJECT(pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln)) == 0)
     {
         pushSetup.service = DLMS_SERVICE_TYPE_HDLC;
-        if (serializationVersion == 0)
-        {
-            //This push is sent every minute, but max 10 seconds over.
-            time_init(&meterData.push.communicationWindow.values[0].first, -1, -1, -1, -1, -1, 0, 0, 0);
-            time_init(&meterData.push.communicationWindow.values[0].second, -1, -1, -1, -1, -1, 10, 0, 0);
-            //This push is sent every half minute, but max 40 seconds over.
-            time_init(&meterData.push.communicationWindow.values[1].first, -1, -1, -1, -1, -1, 30, 0, 0);
-            time_init(&meterData.push.communicationWindow.values[1].second, -1, -1, -1, -1, -1, 40, 0, 0);
-            meterData.push.communicationWindow.count = 2;
-            // Add logical device name.
-            memcpy(meterData.push.objects.values[0].logicalName, BASE(ldn).logicalName, 6);
-            meterData.push.objects.values[0].objectType = ldn.base.objectType;
-            meterData.push.objects.values[0].attributeIndex = 2;
-            meterData.push.objects.values[0].dataIndex = 0;
-            // Add push object logical name. This is needed to tell structure of data to the Push listener.
-            // Also capture object list can be used here.
-            memcpy(meterData.push.objects.values[1].logicalName, BASE(pushSetup).logicalName, 6);
-            meterData.push.objects.values[1].objectType = pushSetup.base.objectType;
-            meterData.push.objects.values[1].attributeIndex = 1;
-            meterData.push.objects.values[1].dataIndex = 0;
-            //Update amount of push objects.
-            meterData.push.objects.count = 2;
-        }
-        ARR_ATTACH(pushSetup.communicationWindow, meterData.push.communicationWindow.values, meterData.push.communicationWindow.count);
-        ARR_ATTACH(pushSetup.pushObjectList, PUSH_OBJECTS, 0);
+        ARR_ATTACH(pushSetup.communicationWindow, COMMUNICATION_WINDOW, 2);
+        //This push is sent every minute, but max 10 seconds over.
+        time_init(&COMMUNICATION_WINDOW[0].first, -1, -1, -1, -1, -1, 0, 0, 0);
+        time_init(&COMMUNICATION_WINDOW[0].second, -1, -1, -1, -1, -1, 10, 0, 0);
+        //This push is sent every half minute, but max 40 seconds over.
+        time_init(&COMMUNICATION_WINDOW[1].first, -1, -1, -1, -1, -1, 30, 0, 0);
+        time_init(&COMMUNICATION_WINDOW[1].second, -1, -1, -1, -1, -1, 40, 0, 0);
+
+        ARR_ATTACH(pushSetup.pushObjectList, PUSH_OBJECTS, 2);
+        // Add logical device name.
+        PUSH_OBJECTS[0].target = BASE(ldn);
+        PUSH_OBJECTS[0].attributeIndex = 2;
+        PUSH_OBJECTS[0].dataIndex = 0;
+        // Add push object logical name. This is needed to tell structure of data to the Push listener.
+        // Also capture object list can be used here.
+        PUSH_OBJECTS[1].target = BASE(pushSetup);
+        PUSH_OBJECTS[1].attributeIndex = 1;
+        PUSH_OBJECTS[1].dataIndex = 0;
     }
     return ret;
 }
@@ -936,24 +1313,21 @@ int addPushSetup(uint16_t serializationVersion)
 ///////////////////////////////////////////////////////////////////////
 //This method adds example clock object.
 ///////////////////////////////////////////////////////////////////////
-int addClockObject(uint16_t serializationVersion)
+int addClockObject()
 {
     int ret = 0;
     //Add default clock. Clock's Logical Name is 0.0.1.0.0.255.
-    if (serializationVersion == 0)
+    const unsigned char ln[6] = { 0, 0, 1, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(clock1, DLMS_OBJECT_TYPE_CLOCK, ln)) == 0)
     {
-        const unsigned char ln[6] = { 0, 0, 1, 0, 0, 255 };
-        if ((ret = INIT_OBJECT(meterData.clock1, DLMS_OBJECT_TYPE_CLOCK, ln)) == 0)
-        {
-            //Set default values.
-            time_init(&meterData.clock1.begin, -1, 3, 0, 0, 0, 0, 0, 0);
-            time_init(&meterData.clock1.end, -1, 9, 0, 0, 0, 0, 0, 0);
-            //Meter is using UTC time zone.
-            meterData.clock1.timeZone = 0;
-            //Deviation is 60 minutes.
-            meterData.clock1.deviation = 60;
-            meterData.clock1.clockBase = DLMS_CLOCK_BASE_FREQUENCY_50;
-        }
+        //Set default values.
+        time_init(&clock1.begin, -1, 3, 0, 0, 0, 0, 0, 0);
+        time_init(&clock1.end, -1, 9, 0, 0, 0, 0, 0, 0);
+        //Meter is using UTC time zone.
+        clock1.timeZone = 0;
+        //Deviation is 60 minutes.
+        clock1.deviation = 60;
+        clock1.clockBase = DLMS_CLOCK_BASE_FREQUENCY_50;
     }
     return ret;
 }
@@ -985,6 +1359,71 @@ uint16_t readEventCode()
 {
     return eventCode.value.uiVal;
 }
+
+
+///////////////////////////////////////////////////////////////////////
+//Add tariffication script table object.
+///////////////////////////////////////////////////////////////////////
+int addTarifficationScriptTable()
+{
+    int ret;
+    static gxScript SCRIPTS[2] = { 0 };
+    static gxScriptAction ACTIONS1[1] = { 0 };
+    static gxScriptAction ACTIONS2[1] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 10, 0, 100, 255 };
+    if ((ret = INIT_OBJECT(tarifficationScriptTable, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
+    {
+        SCRIPTS[0].id = 1;
+        SCRIPTS[1].id = 2;
+        ARR_ATTACH(tarifficationScriptTable.scripts, SCRIPTS, 2);
+        ARR_ATTACH(SCRIPTS[0].actions, ACTIONS1, 1);
+        ACTIONS1[0].type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
+        ACTIONS1[0].target = BASE(registerActivation);
+        ACTIONS1[0].index = 1;
+        var_init(&ACTIONS1[0].parameter);
+        //Action data is Int8 zero.
+        GX_INT8(ACTIONS1[0].parameter) = 0;
+
+        ARR_ATTACH(SCRIPTS[1].actions, ACTIONS2, 1);
+        ACTIONS2[0].type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
+        ACTIONS2[0].target = BASE(registerActivation);
+        ACTIONS2[0].index = 1;
+        var_init(&ACTIONS2[0].parameter);
+        //Action data is Int8 zero.
+        GX_INT8(ACTIONS2[0].parameter) = 0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add register activation.
+///////////////////////////////////////////////////////////////////////
+int addRegisterActivation()
+{
+    int ret;
+    static gxRegisterActivationMask MASK_LIST[5] = { 0 };
+    static gxObject* REGISTER_ASSIGNMENT[10] = { 0 };
+    static unsigned char ACTIVE_MASK[5] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 14, 0, 1, 255 };
+    if ((ret = INIT_OBJECT(registerActivation, DLMS_OBJECT_TYPE_REGISTER_ACTIVATION, ln)) == 0)
+    {
+        BB_ATTACH(registerActivation.activeMask, ACTIVE_MASK, 0);
+        bb_addString(&registerActivation.activeMask, "RATE1");
+        REGISTER_ASSIGNMENT[0] = &activePowerL1.base;
+        ARR_ATTACH(registerActivation.registerAssignment, REGISTER_ASSIGNMENT, 1);
+        ARR_ATTACH(registerActivation.maskList, MASK_LIST, 2);
+        strcpy((char*)MASK_LIST[0].name, "RATE1");
+        MASK_LIST[0].count = 2;
+        MASK_LIST[0].indexes[0] = 1;
+        MASK_LIST[0].indexes[1] = 2;
+        strcpy((char*)MASK_LIST[1].name, "RATE2");
+        MASK_LIST[1].count = 2;
+        MASK_LIST[1].indexes[0] = 1;
+        MASK_LIST[1].indexes[1] = 2;
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //Add script table object for meter reset. This will erase the EEPROM.
 ///////////////////////////////////////////////////////////////////////
@@ -1074,40 +1513,31 @@ int addscriptTableActivateNormalMode()
 ///////////////////////////////////////////////////////////////////////
 //Add profile generic (historical data) object.
 ///////////////////////////////////////////////////////////////////////
-int addLoadProfileProfileGeneric(uint16_t serializationVersion)
+int addLoadProfileProfileGeneric()
 {
-    //Set default values if load the first time.
-    if (serializationVersion == 0)
-    {
-        meterData.loadProfile.entriesInUse = 0;
-        meterData.loadProfile.period = 0;
-        meterData.loadProfile.rowIndex = 0;
-        meterData.loadProfile.objects.count = 0;
-    }
     int ret;
+    static gxTarget CAPTURE_OBBJECTS[5];
     const unsigned char ln[6] = { 1, 0, 99, 1, 0, 255 };
     if ((ret = INIT_OBJECT(loadProfile, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln)) == 0)
     {
-        loadProfile.capturePeriod = meterData.loadProfile.period;
+        //We are using a ring buffer.
         loadProfile.sortMethod = DLMS_SORT_METHOD_FIFO;
-        //entries in use.
-        loadProfile.entriesInUse = meterData.loadProfile.entriesInUse;
         ///////////////////////////////////////////////////////////////////
-        ARR_ATTACH(loadProfile.captureObjects, LOAD_PROFILE_CAPTURE_OBJECT, 0);
-        //Add 2 columns.
-        if (serializationVersion == 0)
-        {
-            //Add clock obect.
-            SET_CAPTURE_OBJECT(meterData.loadProfile.objects.values[0], meterData.clock1, 2, 0);
-            //Add active power.
-            SET_CAPTURE_OBJECT(meterData.loadProfile.objects.values[1], activePowerL1, 2, 0);
-            //Update amount of capture objects.
-            loadProfile.captureObjects.size = meterData.loadProfile.objects.count = 2;
-        }
-        loadProfile.profileEntries = meterData.loadProfile.profileEntries;
+        //Add 2 capture objects.
+        ARR_ATTACH(loadProfile.captureObjects, CAPTURE_OBBJECTS, 2);
+        //Add clock obect.
+        CAPTURE_OBBJECTS[0].target = BASE(clock1);
+        CAPTURE_OBBJECTS[0].attributeIndex = 2;
+        CAPTURE_OBBJECTS[0].dataIndex = 0;
+        //Add active power.
+        CAPTURE_OBBJECTS[1].target = BASE(activePowerL1);
+        CAPTURE_OBBJECTS[1].attributeIndex = 2;
+        CAPTURE_OBBJECTS[1].dataIndex = 0;
         //Set clock to sort object.
-        loadProfile.sortObject = BASE(meterData.clock1);
+        loadProfile.sortObject = BASE(clock1);
         loadProfile.sortObjectAttributeIndex = 2;
+        //Count how many rows fit to the buffer.
+        loadProfile.profileEntries = getProfileGenericBufferMaxRowCount(&loadProfile);
     }
     return 0;
 }
@@ -1115,57 +1545,51 @@ int addLoadProfileProfileGeneric(uint16_t serializationVersion)
 ///////////////////////////////////////////////////////////////////////
 //Add profile generic (historical data) object.
 ///////////////////////////////////////////////////////////////////////
-int addEventLogProfileGeneric(uint16_t serializationVersion)
+int addEventLogProfileGeneric()
 {
-    //Set default values if load the first time.
-    if (serializationVersion == 0)
-    {
-        meterData.eventLog.entriesInUse = 0;
-        meterData.eventLog.period = 0;
-        meterData.eventLog.rowIndex = 0;
-        meterData.eventLog.objects.count = 0;
-    }
     int ret;
+    static gxTarget CAPTURE_OBBJECTS[5];
     const unsigned char ln[6] = { 1, 0, 99, 98, 0, 255 };
     if ((ret = INIT_OBJECT(eventLog, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln)) == 0)
     {
         //events are not captured.
         eventLog.capturePeriod = 0;
+        //We are using a ring buffer.
         eventLog.sortMethod = DLMS_SORT_METHOD_FIFO;
-        //entries in use.
-        eventLog.entriesInUse = meterData.eventLog.entriesInUse;
-        ARR_ATTACH(eventLog.captureObjects, EVENT_LOG_CAPTURE_OBJECT, 0);
+        ARR_ATTACH(eventLog.captureObjects, CAPTURE_OBBJECTS, 2);
         ///////////////////////////////////////////////////////////////////
         //Add 2 columns as default.
-        if (serializationVersion == 0)
-        {
-            //Add clock obect.
-            SET_CAPTURE_OBJECT(meterData.eventLog.objects.values[0], meterData.clock1, 2, 0);
-            //Add event code.
-            SET_CAPTURE_OBJECT(meterData.eventLog.objects.values[1], eventCode, 2, 0);
-            //Update amount of capture objects.
-            eventLog.captureObjects.size = meterData.eventLog.objects.count = 2;
-        }
-        eventLog.profileEntries = meterData.eventLog.profileEntries;
+        //Add clock obect.
+        CAPTURE_OBBJECTS[0].target = BASE(clock1);
+        CAPTURE_OBBJECTS[0].attributeIndex = 2;
+        CAPTURE_OBBJECTS[0].dataIndex = 0;
+        //Add event code.
+        CAPTURE_OBBJECTS[1].target = BASE(eventCode);
+        CAPTURE_OBBJECTS[1].attributeIndex = 2;
+        CAPTURE_OBBJECTS[1].dataIndex = 0;
         //Set clock to sort object.
-        eventLog.sortObject = BASE(meterData.clock1);
+        eventLog.sortObject = BASE(clock1);
         eventLog.sortObjectAttributeIndex = 2;
+        //Count how many rows fit to the buffer.
+        eventLog.profileEntries = getProfileGenericBufferMaxRowCount(&eventLog);
     }
     return 0;
 }
+
 ///////////////////////////////////////////////////////////////////////
 //Add action schedule object for disconnect control to close the led.
 ///////////////////////////////////////////////////////////////////////
 int addActionScheduleDisconnectClose()
 {
     int ret;
+    static gxtime EXECUTION_TIMES[10];
     const unsigned char ln[6] = { 0, 0, 15, 0, 1, 255 };
     if ((ret = INIT_OBJECT(actionScheduleDisconnectClose, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln)) == 0)
     {
         actionScheduleDisconnectClose.executedScript = &scriptTableDisconnectControl;
         actionScheduleDisconnectClose.executedScriptSelector = 1;
         actionScheduleDisconnectClose.type = DLMS_SINGLE_ACTION_SCHEDULE_TYPE1;
-        ARR_ATTACH(actionScheduleDisconnectClose.executionTime, meterData.disconnectCloseExecutions.values, meterData.disconnectCloseExecutions.count);
+        ARR_ATTACH(actionScheduleDisconnectClose.executionTime, EXECUTION_TIMES, 0);
     }
     return ret;
 }
@@ -1176,6 +1600,7 @@ int addActionScheduleDisconnectClose()
 int addActionScheduleDisconnectOpen()
 {
     int ret;
+    static gxtime EXECUTION_TIMES[10];
     const unsigned char ln[6] = { 0, 0, 15, 0, 3, 255 };
     //Action schedule execution times.
     if ((ret = INIT_OBJECT(actionScheduleDisconnectOpen, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln)) == 0)
@@ -1183,7 +1608,7 @@ int addActionScheduleDisconnectOpen()
         actionScheduleDisconnectOpen.executedScript = &scriptTableDisconnectControl;
         actionScheduleDisconnectOpen.executedScriptSelector = 2;
         actionScheduleDisconnectOpen.type = DLMS_SINGLE_ACTION_SCHEDULE_TYPE1;
-        ARR_ATTACH(actionScheduleDisconnectOpen.executionTime, meterData.disconnectOpenExecutions.values, meterData.disconnectOpenExecutions.count);
+        ARR_ATTACH(actionScheduleDisconnectOpen.executionTime, EXECUTION_TIMES, 0);
     }
     return ret;
 }
@@ -1205,37 +1630,30 @@ int addDisconnectControl()
 ///////////////////////////////////////////////////////////////////////
 //Add IEC HDLC Setup object.
 ///////////////////////////////////////////////////////////////////////
-int addIecHdlcSetup(dlmsServerSettings* settings, uint16_t serializationVersion)
+int addIecHdlcSetup()
 {
     int ret = 0;
-    if (serializationVersion == 0)
+    unsigned char ln[6] = { 0, 0, 22, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(hdlc, DLMS_OBJECT_TYPE_IEC_HDLC_SETUP, ln)) == 0)
     {
-        unsigned char ln[6] = { 0, 0, 22, 0, 0, 255 };
-        if ((ret = INIT_OBJECT(meterData.hdlc, DLMS_OBJECT_TYPE_IEC_HDLC_SETUP, ln)) == 0)
-        {
-            meterData.hdlc.communicationSpeed = DLMS_BAUD_RATE_9600;
-            meterData.hdlc.windowSizeReceive = meterData.hdlc.windowSizeTransmit = 1;
-            meterData.hdlc.maximumInfoLengthTransmit = meterData.hdlc.maximumInfoLengthReceive = 128;
-            meterData.hdlc.inactivityTimeout = 120;
-            meterData.hdlc.deviceAddress = 0x10;
-        }
+        hdlc.communicationSpeed = DLMS_BAUD_RATE_9600;
+        hdlc.windowSizeReceive = hdlc.windowSizeTransmit = 1;
+        hdlc.maximumInfoLengthTransmit = hdlc.maximumInfoLengthReceive = 128;
+        hdlc.inactivityTimeout = 120;
+        hdlc.deviceAddress = 0x10;
     }
-    settings->hdlc = &meterData.hdlc;
+    settings.hdlc = &hdlc;
     return ret;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Load data from the EEPROM.
-// Returns serialization version or zero if data is not saved.
+// Load security settings from the EEPROM.
 /////////////////////////////////////////////////////////////////////////////
-uint16_t load()
+int loadSecurity()
 {
-#if defined(_WIN64)
-    const char* fileName = "settings64.raw";
-#else // defined(_WIN32) || defined(__linux__)
-    const char* fileName = "settings.raw";
-#endif //defined(_WIN32) || defined(__linux__)
-    uint16_t serializationVersion = 0;
+    const char* fileName = "security.raw";
+    int ret = 0;
+    //Update keys.
 #if _MSC_VER > 1400
     FILE* f = NULL;
     fopen_s(&f, fileName, "rb");
@@ -1246,24 +1664,71 @@ uint16_t load()
     {
         //Check that file is not empty.
         fseek(f, 0L, SEEK_END);
-        if (ftell(f) != 0)
+        unsigned short size = (unsigned short)ftell(f);
+        if (size != 0)
         {
+            unsigned char tmp[100];
             fseek(f, 0L, SEEK_SET);
-            fread(&serializationVersion, sizeof(uint16_t), 1, f);
-            if (serializationVersion != 0xFFFF && serializationVersion != 0)
+            gxByteBuffer bb;
+            BB_ATTACH(bb, tmp, 0);
+            bb.size += (unsigned short)fread(bb.data, 1, size, f);
+            fclose(f);
+            if ((ret = bb_get(&bb, settings.base.cipher.blockCipherKey, 16)) != 0 ||
+                (ret = bb_get(&bb, settings.base.cipher.authenticationKey, 16)) != 0 ||
+                (ret = bb_get(&bb, settings.base.kek, 16)) != 0 ||
+                //load last server IC.
+                (ret = bb_getUInt32(&bb, &settings.base.cipher.invocationCounter)) != 0 ||
+                //load last client IC.
+                (ret = bb_getUInt32(&bb, &securitySetupHighGMac.minimumInvocationCounter)) != 0)
             {
-                fread(&meterData, sizeof(meterData), 1, f);
             }
+            bb_clear(&bb);
+            return ret;
         }
-        fclose(f);
-    }
-    if (serializationVersion == 0)
+}
+    return saveSecurity();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Load data from the EEPROM.
+// Returns serialization version or zero if data is not saved.
+/////////////////////////////////////////////////////////////////////////////
+int loadSettings()
+{
+    const char* fileName = "settings.raw";
+    int ret = 0;
+    //Update keys.
+#if _MSC_VER > 1400
+    FILE* f = NULL;
+    fopen_s(&f, fileName, "rb");
+#else
+    FILE* f = fopen(fileName, "rb");
+#endif
+    if (f != NULL)
     {
-        //Set default settings.
-        meterData.SERIAL_NUMBER = 123456;
-        meterData.testMode = 1;
+        //Check that file is not empty.
+        fseek(f, 0L, SEEK_END);
+        uint16_t size = (uint16_t)ftell(f);
+        if (size != 0)
+        {
+            unsigned char tmp[2048];
+            fseek(f, 0L, SEEK_SET);
+            gxByteBuffer bb;
+            BB_ATTACH(bb, tmp, 0);
+            bb.size += (uint16_t)fread(bb.data, 1, size, f);
+            fclose(f);
+            gxSerializerSettings serializerSettings;
+            serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
+            serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
+            ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
+            {
+            }
+            bb_clear(&bb);
+            return ret;
+        }
     }
-    return serializationVersion;
+    return saveSettings();
 }
 
 //Create objects and load values from EEPROM.
@@ -1271,35 +1736,47 @@ int createObjects()
 {
     int ret;
     OA_ATTACH(settings.base.objects, ALL_OBJECTS);
-    uint16_t serializationVersion = load();
-    if (serializationVersion == 1)
-    {
-        serializationVersion = 0;
-    }
     if ((ret = addLogicalDeviceName()) != 0 ||
-        (ret = addSapAssignment(serializationVersion)) != 0 ||
+        (ret = addSapAssignment()) != 0 ||
         (ret = addEventCode()) != 0 ||
         (ret = addUnixTime()) != 0 ||
-        (ret = addFrameCounter()) != 0 ||
-        (ret = addClockObject(serializationVersion)) != 0 ||
+        (ret = addInvocationCounter()) != 0 ||
+        (ret = addClockObject()) != 0 ||
         (ret = addRegisterObject()) != 0 ||
         (ret = addAssociationNone()) != 0 ||
-        (ret = addAssociationLow(serializationVersion)) != 0 ||
-        (ret = addAssociationHigh(serializationVersion)) != 0 ||
-        (ret = addAssociationHighGMac(serializationVersion)) != 0 ||
+        (ret = addAssociationLow()) != 0 ||
+        (ret = addAssociationHigh()) != 0 ||
+        (ret = addAssociationHighGMac()) != 0 ||
         (ret = addSecuritySetupHigh()) != 0 ||
         (ret = addSecuritySetupHighGMac()) != 0 ||
-        (ret = addPushSetup(serializationVersion)) != 0 ||
+        (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
         (ret = addscriptTableActivateTestMode()) != 0 ||
         (ret = addscriptTableActivateNormalMode()) != 0 ||
-        (ret = addLoadProfileProfileGeneric(serializationVersion)) != 0 ||
-        (ret = addEventLogProfileGeneric(serializationVersion)) != 0 ||
+        (ret = addTarifficationScriptTable()) != 0 ||
+        (ret = addRegisterActivation()) != 0 ||
+        (ret = addLoadProfileProfileGeneric()) != 0 ||
+        (ret = addEventLogProfileGeneric()) != 0 ||
         (ret = addActionScheduleDisconnectOpen()) != 0 ||
         (ret = addActionScheduleDisconnectClose()) != 0 ||
         (ret = addDisconnectControl()) != 0 ||
-        (ret = addIecHdlcSetup(&settings, serializationVersion)) != 0 ||
+        (ret = addIecHdlcSetup()) != 0 ||
+        (ret = addImageTransfer()) != 0 ||
+        (ret = addTcpUdpSetup()) != 0 ||
+        (ret = addAutoConnect()) != 0 ||
+        (ret = addActivityCalendar()) != 0 ||
+        (ret = addOpticalPortSetup()) != 0 ||
+        (ret = addDemandRegister()) != 0 ||
+        (ret = addRegisterMonitor()) != 0 ||
+        (ret = addAutoAnswer()) != 0 ||
+        (ret = addModemConfiguration()) != 0 ||
+        (ret = addMacAddressSetup()) != 0 ||
+        (ret = addIP4Setup()) != 0 ||
+        (ret = addPppSetup()) != 0 ||
+        (ret = addGprsSetup()) != 0 ||
+        (ret = addPrimeNbOfdmPlcMacFunctionalParameters()) != 0 ||
+        (ret = addPrimeNbOfdmPlcMacNetworkAdministrationData()) != 0 ||
         (ret = oa_verify(&settings.base.objects)) != 0 ||
         (ret = svr_initialize(&settings)) != 0)
     {
@@ -1307,73 +1784,18 @@ int createObjects()
         executeTime = 0;
         return ret;
     }
-    if (serializationVersion == 0)
+    if ((ret = loadSettings()) != 0)
     {
-        //Set default master key (KEK) to 1111111111111111.
-        unsigned char KEK[16] = { 0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 };
-        memcpy(meterData.masterKey, KEK, sizeof(KEK));
-        //Set default block cipher key.
-        memcpy(meterData.securitySettings.blockCipherKey, settings.base.cipher.blockCipherKey, sizeof(meterData.securitySettings.blockCipherKey));
-        //Set default authentication key.
-        memcpy(meterData.securitySettings.authenticationKey, settings.base.cipher.authenticationKey, sizeof(meterData.securitySettings.authenticationKey));
+        GXTRACE_INT(("Failed to load settings!"), ret);
+        executeTime = 0;
+        return ret;
     }
-    //Update keys.
-    memcpy(settings.base.cipher.blockCipherKey, meterData.securitySettings.blockCipherKey, sizeof(meterData.securitySettings.blockCipherKey));
-    memcpy(settings.base.cipher.authenticationKey, meterData.securitySettings.authenticationKey, sizeof(meterData.securitySettings.authenticationKey));
-    memcpy(settings.base.kek, meterData.masterKey, sizeof(meterData.masterKey));
-
-
-    //Load Push objects from EEPROM. This is done after all the objects are initialized.
-    if ((ret = loadTargets(&settings, &meterData.push.objects, PUSH_OBJECTS, &pushSetup.pushObjectList.size)) != 0)
+    if ((ret = loadSecurity()) != 0)
     {
-        GXTRACE_INT(("Failed to load Push setup objects"), ret);
+        GXTRACE_INT(("Failed to load security settings!"), ret);
+        executeTime = 0;
+        return ret;
     }
-    //Load Event Log objects from EEPROM. This is done after all the objects are initialized.
-    if ((ret = loadTargets(&settings, &meterData.loadProfile.objects, LOAD_PROFILE_CAPTURE_OBJECT, &loadProfile.captureObjects.size)) != 0)
-    {
-        GXTRACE_INT(("Failed to load Push setup objects"), ret);
-    }
-    if (serializationVersion == 0)
-    {
-        //Count how many rows fit to the buffer.
-        loadProfile.profileEntries = meterData.loadProfile.profileEntries = getProfileGenericBufferMaxRowCount(&loadProfile);
-    }
-    else //Update sort object.
-    {
-        if (loadProfile.captureObjects.size != 0 &&
-            (LOAD_PROFILE_CAPTURE_OBJECT[0].target == BASE(meterData.clock1) ||
-                LOAD_PROFILE_CAPTURE_OBJECT[0].target == BASE(unixTime)))
-        {
-            //Set 1st object to sort object.
-            loadProfile.sortObject = LOAD_PROFILE_CAPTURE_OBJECT[0].target;
-        }
-        else
-        {
-            loadProfile.sortObject = NULL;
-        }
-    }
-    //Load Load profile objects from EEPROM. This is done after all the objects are initialized.
-    if ((ret = loadTargets(&settings, &meterData.eventLog.objects, EVENT_LOG_CAPTURE_OBJECT, &eventLog.captureObjects.size)) != 0)
-    {
-        GXTRACE_INT(("Failed to load Push setup objects"), ret);
-    }
-    if (serializationVersion == 0)
-    {
-        //Count how many rows fit to the buffer.
-        eventLog.profileEntries = meterData.eventLog.profileEntries = getProfileGenericBufferMaxRowCount(&eventLog);
-    }
-    if (serializationVersion != SERIALIZATION_VERSION)
-    {
-        //Save default settings to the EEPROM.
-        save(&meterData, sizeof(meterData));
-    }
-    char fileName[30];
-    //Allocate space for load profile buffer.
-    getProfileGenericFileName(&loadProfile, fileName);
-    allocateProfileGenericBuffer(fileName, 1024);
-    //Allocate space for event log buffer.
-    getProfileGenericFileName(&eventLog, fileName);
-    allocateProfileGenericBuffer(fileName, 1024);
     updateState(GURUX_EVENT_CODES_POWER_UP);
     GXTRACE(("Meter started."), NULL);
     return 0;
@@ -1383,7 +1805,7 @@ int createObjects()
 int32_t getCommunicationSpeed()
 {
     int32_t ret = 9600;
-    switch (meterData.hdlc.communicationSpeed)
+    switch (hdlc.communicationSpeed)
     {
     case DLMS_BAUD_RATE_300:
         ret = 300;
@@ -1739,7 +2161,7 @@ int readProfileGeneric(
                                 //Convert to meter time if UNIX time is not used.
                                 if (it->target != BASE(unixTime))
                                 {
-                                    clock_utcToMeterTime(&meterData.clock1, &tm);
+                                    clock_utcToMeterTime(&clock1, &tm);
                                 }
                                 if ((ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0)
                                 {
@@ -1775,6 +2197,7 @@ int readProfileGeneric(
                             //Don't set error if PDU is full,
                             if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
                             {
+                                --e->transactionStartIndex;
                                 e->value.byteArr->size = pduSize;
                                 ret = 0;
                             }
@@ -1836,7 +2259,7 @@ void svr_preRead(
             readActivePowerValue();
         }
         //Get time if user want to read date and time.
-        if (e->target == BASE(meterData.clock1) && e->index == 2)
+        if (e->target == BASE(clock1) && e->index == 2)
         {
             gxtime dt;
             time_now(&dt, 1);
@@ -1881,7 +2304,7 @@ void svr_preWrite(
         {
             return;
         }
-        if (e->target == BASE(meterData.clock1) && e->index == 2)
+        if (e->target == BASE(clock1) && e->index == 2)
         {
             updateState(GURUX_EVENT_CODES_TIME_CHANGE);
         }
@@ -2030,34 +2453,37 @@ int sendEventNotification2(dlmsSettings* settings)
     return ret;
 }
 
-
-void handleLoadProfileActions(
+void handleProfileGenericActions(
     gxValueEventArg* it)
 {
     if (it->index == 1)
     {
+        char fileName[30];
+        getProfileGenericFileName((gxProfileGeneric*)it->target, fileName);
         // Profile generic clear is called. Clear data.
-        meterData.loadProfile.entriesInUse = meterData.loadProfile.rowIndex = 0;
-        loadProfile.entriesInUse = 0;
+        ((gxProfileGeneric*)it->target)->entriesInUse = 0;
+        FILE* f = NULL;
+#if _MSC_VER > 1400
+        fopen_s(&f, fileName, "r+b");
+#else
+        f = fopen(fileName, "r+b");
+#endif
+        if (f != NULL)
+        {
+            unsigned char tmp[4];
+            gxByteBuffer pdu;
+            BB_ATTACH(pdu, tmp, 0);
+            //Current index in ring buffer.
+            bb_setUInt16(&pdu, 0);
+            bb_setUInt16(&pdu, 0);
+            //Update values to the EEPROM.
+            fwrite(pdu.data, 1, 4, f);
+            fclose(f);
+        }
     }
     else if (it->index == 2)
     {
-        captureProfileGeneric(&loadProfile, &meterData.loadProfile);
-    }
-}
-
-void handleEventLogActions(
-    gxValueEventArg* it)
-{
-    if (it->index == 1)
-    {
-        // Profile generic clear is called. Clear data.
-        meterData.eventLog.entriesInUse = meterData.eventLog.rowIndex = 0;
-        eventLog.entriesInUse = 0;
-    }
-    else if (it->index == 2)
-    {
-        captureProfileGeneric(&eventLog, &meterData.eventLog);
+        captureProfileGeneric(((gxProfileGeneric*)it->target));
     }
 }
 
@@ -2084,14 +2510,12 @@ void svr_preAction(
         GXTRACE_LN(("svr_preAction: "), e->target->objectType, e->target->logicalName);
         if (e->target == BASE(loadProfile))
         {
-            handleLoadProfileActions(e);
-            save(&meterData.loadProfile, sizeof(meterData.loadProfile));
+            handleProfileGenericActions(e);
             e->handled = 1;
         }
         else if (e->target == BASE(eventLog))
         {
-            handleEventLogActions(e);
-            save(&meterData.eventLog, sizeof(meterData.eventLog));
+            handleProfileGenericActions(e);
             e->handled = 1;
         }
         else if (e->target == BASE(activePowerL1))
@@ -2121,7 +2545,20 @@ void svr_preAction(
                 fclose(f);
             }
             //Load objects again.
-            createObjects();
+            if ((ret = loadSettings()) != 0)
+            {
+                GXTRACE_INT(("Failed to load settings!"), ret);
+                executeTime = 0;
+                e->error = ret;
+                break;
+            }
+            if ((ret = loadSecurity()) != 0)
+            {
+                GXTRACE_INT(("Failed to load security settings!"), ret);
+                executeTime = 0;
+                e->error = ret;
+                break;
+            }
             updateState(GURUX_EVENT_CODES_GLOBAL_METER_RESET);
             e->handled = 1;
         }
@@ -2141,14 +2578,144 @@ void svr_preAction(
         else if (e->target == BASE(scriptTableActivateTestMode))
         {
             //Activate test mode.
-            meterData.testMode = 1;
-            save(&meterData.testMode, sizeof(meterData.testMode));
+            testMode = 1;
         }
         else if (e->target == BASE(scriptTableActivateNormalMode))
         {
             //Activate normal mode.
-            meterData.testMode = 0;
-            save(&meterData.testMode, sizeof(meterData.testMode));
+            testMode = 0;
+        }
+        if (e->target == BASE(imageTransfer))
+        {
+            e->handled = 1;
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+            FILE* f;
+            gxImageTransfer* i = (gxImageTransfer*)e->target;
+            const char* imageFile = "image.raw";
+            //Image name and size to transfer
+            if (e->index == 1)
+            {
+                i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_NOT_INITIATED;
+                //There is only one image.
+                gxImageActivateInfo* info;
+                imageTransfer.imageActivateInfo.size = 1;
+                if ((e->error = arr_getByIndex(&imageTransfer.imageActivateInfo, 0, (void**)&info, sizeof(gxImageActivateInfo))) != 0)
+                {
+                    e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    return;
+                }
+                if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
+                    (ret = cosem_getOctectString2(e->parameters.byteArr, info->identification.data, sizeof(info->identification.data), &info->identification.size)) != 0 ||
+                    (ret = cosem_getUInt32(e->parameters.byteArr, &info->size)) != 0)
+                {
+                    e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    return;
+                }
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+                printf("Updating image %s Size: %d\r\n", imageFile, info->size);
+#endif
+                allocateImageTransfer(imageFile, info->size);
+                ba_clear(&i->imageTransferredBlocksStatus);
+                i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
+            }
+            //Transfers one block of the Image to the server
+            else if (e->index == 2)
+            {
+                uint32_t index;
+                uint16_t blockSize;
+                if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
+                    (ret = cosem_getUInt32(e->parameters.byteArr, &index)) != 0 ||
+                    (ret = hlp_getObjectCount2(e->parameters.byteArr, &blockSize)) != 0)
+                {
+                    e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    return;
+                }
+                if ((ret = ba_setByIndex(&i->imageTransferredBlocksStatus, (uint16_t)index, 1)) == 0)
+                {
+                    i->imageFirstNotTransferredBlockNumber = index + 1;
+                }
+                f = fopen(imageFile, "r+b");
+                if (!f)
+                {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+                    printf("Unable to open file %s\r\n", imageFile);
+#endif
+                    e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    return;
+                }
+                int ret = (int)fwrite(e->parameters.byteArr->data + e->parameters.byteArr->position, 1, (int)blockSize, f);
+                fclose(f);
+                if (ret != (int)blockSize)
+                {
+                    e->error = DLMS_ERROR_CODE_UNMATCH_TYPE;
+                }
+                bb_clear(e->parameters.byteArr);
+                imageActionStartTime = time(NULL);
+                return;
+            }
+            //Verifies the integrity of the Image before activation.
+            else if (e->index == 3)
+            {
+                i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_INITIATED;
+                f = fopen(imageFile, "rb");
+                if (!f)
+                {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+                    printf("Unable to open file %s\r\n", imageFile);
+#endif
+                    e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    return;
+                }
+                fseek(f, 0L, SEEK_END);
+                long size = ftell(f);
+                fclose(f);
+                if (size != IMAGE_ACTIVATE_INFO[0].size)
+                {
+                    i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_FAILED;
+                    e->error = DLMS_ERROR_CODE_OTHER_REASON;
+                }
+                else
+                {
+                    //Wait 5 seconds before image is verified.  This is for example only.
+                    if (time(NULL) - imageActionStartTime < 5)
+                    {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+                        printf("Image verification is on progress.\r\n");
+#endif
+                        e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
+                    }
+                    else
+                    {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+                        printf("Image is verificated.\r\n");
+#endif
+                        i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_SUCCESSFUL;
+                        imageActionStartTime = time(NULL);
+                    }
+                }
+            }
+            //Activates the Image.
+            else if (e->index == 4)
+            {
+                i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_ACTIVATION_INITIATED;
+                //Wait 5 seconds before image is activated. This is for example only.
+                if (time(NULL) - imageActionStartTime < 5)
+                {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+                    printf("Image activation is on progress.\r\n");
+#endif
+                    e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
+                }
+                else
+                {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+                    printf("Image is activated.\r\n");
+#endif
+                    i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_ACTIVATION_SUCCESSFUL;
+                    imageActionStartTime = time(NULL);
+                }
+            }
+#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
     }
 }
@@ -2187,79 +2754,52 @@ void svr_postWrite(
             return;
         }
         GXTRACE_LN(("svr_postWrite: "), e->target->objectType, e->target->logicalName);
-        if (e->target == BASE(meterData.clock1))
-        {
-            save(&meterData.clock1, sizeof(meterData.clock1));
-        }
-        else if (e->target == BASE(actionScheduleDisconnectOpen))
-        {
-            meterData.disconnectOpenExecutions.count = (unsigned char)actionScheduleDisconnectOpen.executionTime.size;
-            save(&meterData.disconnectOpenExecutions, sizeof(meterData.disconnectOpenExecutions));
-        }
-        else if (e->target == BASE(actionScheduleDisconnectClose))
-        {
-            meterData.disconnectCloseExecutions.count = (unsigned char)actionScheduleDisconnectClose.executionTime.size;
-            save(&meterData.disconnectCloseExecutions, sizeof(meterData.disconnectCloseExecutions));
-        }
-        else if (e->target == BASE(meterData.hdlc))
-        {
-            save(&meterData.hdlc, sizeof(meterData.hdlc));
-        }
-        else if (e->target == BASE(loadProfile))
+        if (e->target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
         {
             //Use want to change capture objects.
             if (e->index == 3)
             {
-                saveTargets(&meterData.loadProfile.objects, LOAD_PROFILE_CAPTURE_OBJECT, loadProfile.captureObjects.size);
+                saveSettings();
                 //Clear buffer if user changes captured objects.
                 gxValueEventArg it;
                 ve_init(&it);
                 it.index = 1;
-                handleLoadProfileActions(&it);
+                handleProfileGenericActions(&it);
                 //Count how many rows fit to the buffer.
-                loadProfile.profileEntries = meterData.loadProfile.profileEntries = getProfileGenericBufferMaxRowCount(&loadProfile);
-                if (loadProfile.captureObjects.size != 0 &&
-                    (LOAD_PROFILE_CAPTURE_OBJECT[0].target == BASE(meterData.clock1) ||
-                        LOAD_PROFILE_CAPTURE_OBJECT[0].target == BASE(unixTime)))
+                ((gxProfileGeneric*)e->target)->profileEntries = getProfileGenericBufferMaxRowCount(((gxProfileGeneric*)e->target));
+                if (((gxProfileGeneric*)e->target)->captureObjects.size != 0)
                 {
+                    gxTarget* k = NULL;
+                    arr_getByIndex(&((gxProfileGeneric*)e->target)->captureObjects, 0, (void**)&k, sizeof(gxTarget));
                     //Set 1st object to sort object.
-                    loadProfile.sortObject = LOAD_PROFILE_CAPTURE_OBJECT[0].target;
+                    ((gxProfileGeneric*)e->target)->sortObject = ((gxTarget*)k)->target;
                 }
                 else
                 {
-                    loadProfile.sortObject = NULL;
+                    ((gxProfileGeneric*)e->target)->sortObject = NULL;
                 }
-            }
-            //User wants to change capture period.
-            if (e->index == 4)
-            {
-                meterData.loadProfile.period = loadProfile.capturePeriod;
             }
             //Use want to change max amount of profile entries.
-            if (e->index == 8)
+            else if (e->index == 8)
             {
                 //Count how many rows fit to the buffer.
-                uint16_t maxCount = getProfileGenericBufferMaxRowCount(&loadProfile);
-                //If use try to set max profileEntries bigger than can fit to EEPROM.
-                if (maxCount < loadProfile.profileEntries)
+                uint16_t maxCount = getProfileGenericBufferMaxRowCount(((gxProfileGeneric*)e->target));
+                //If use try to set max profileEntries bigger than can fit to allocated memory.
+                if (maxCount < ((gxProfileGeneric*)e->target)->profileEntries)
                 {
-                    loadProfile.profileEntries = maxCount;
+                    ((gxProfileGeneric*)e->target)->profileEntries = maxCount;
                 }
-                meterData.loadProfile.profileEntries = (unsigned short)loadProfile.profileEntries;
             }
-            save(&meterData.loadProfile, sizeof(meterData.loadProfile));
         }
-        else if (e->target == BASE(pushSetup))
+        if (e->error == 0)
         {
-            meterData.push.communicationWindow.count = (unsigned char)pushSetup.communicationWindow.size;
-            saveTargets(&meterData.push.objects, PUSH_OBJECTS, pushSetup.pushObjectList.size);
-            save(&meterData.push, sizeof(meterData.push));
+            //Save settings to EEPROM.
+            saveSettings();
         }
-        else if (e->target == BASE(associationLow))
+        else
         {
-            //Save LLS password.
-            meterData.association.llsPasswordSize = (char)associationLow.secret.size;
-            save(&meterData.association, sizeof(GXAssociation));
+            //Reject changes loading previous settings if there is an error.
+            loadSettings();
         }
     }
     //Reset execute time to update execute time if user add new execute times or changes the time.
@@ -2282,26 +2822,34 @@ void svr_postAction(
             return;
         }
         GXTRACE_LN(("svr_postAction: "), e->target->objectType, e->target->logicalName);
-        if (e->target == BASE(associationHigh) && e->index == 2)
-        {
-            //Save HLS passwords.
-            meterData.association.hlsPasswordSize = (char)associationHigh.secret.size;
-            save(&meterData.association, sizeof(GXAssociation));
-        }
-        else if (e->target == BASE(associationHighGMac) && e->index == 2)
-        {
-            //Save HLS passwords.
-            meterData.association.hlsPasswordSize = (char)associationHighGMac.secret.size;
-            save(&meterData.association, sizeof(GXAssociation));
-        }
-        else if (e->target == BASE(securitySetupHigh) ||
+        if (e->target == BASE(securitySetupHigh) ||
             e->target == BASE(securitySetupHighGMac))
         {
-            //Update block cipher key.
-            memcpy(meterData.securitySettings.blockCipherKey, settings->cipher.blockCipherKey, sizeof(meterData.securitySettings.blockCipherKey));
-            //Update authentication key.
-            memcpy(meterData.securitySettings.authenticationKey, settings->cipher.authenticationKey, sizeof(meterData.securitySettings.authenticationKey));
-            save(&meterData.securitySettings, sizeof(GXSecuritySettings));
+            //Update block cipher key authentication key or broadcast key.
+            //Save settings to EEPROM.
+            if (e->error == 0)
+            {
+                saveSecurity();
+            }
+            else
+            {
+                //Load default settings if there is an error.
+                loadSecurity();
+            }
+        }
+        //Check is client changing the settings with action.
+        else if (svr_isChangedWithAction(e->target->objectType, e->index))
+        {
+            //Save settings to EEPROM.
+            if (e->error == 0)
+            {
+                saveSettings();
+            }
+            else
+            {
+                //Load default settings if there is an error.
+                loadSettings();
+            }
         }
     }
 }
@@ -2344,11 +2892,9 @@ unsigned char svr_isTarget(
                         GXTRACE(("Connecting using High authentication."), NULL);
                         break;
                     }
-                    //Update frame counter value.
-                    settings->cipher.invocationCounter = meterData.InvocationCounter;
                     settings->expectedClientSystemTitle = NULL;
                     //Set Invocation counter value.
-                    settings->expectedInvocationCounter = 0;
+                    settings->expectedInvocationCounter = NULL;
                     //Client can establish a ciphered connection only with Security Suite 1.
                     settings->expectedSecuritySuite = 0;
                     //Security policy is not defined by default. Client can connect using any security policy.
@@ -2362,8 +2908,13 @@ unsigned char svr_isTarget(
                         {
                             settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
                         }
-                        //Set invocation counter value. If this is set client's invocation counter must match with server IC.
-                        settings->expectedInvocationCounter = settings->cipher.invocationCounter;
+                        //GMac authentication uses innocation counter.
+                        if (a->securitySetup == &securitySetupHighGMac)
+                        {
+                            //Set invocation counter value. If this is set client's invocation counter must match with server IC.
+                            settings->expectedInvocationCounter = &securitySetupHighGMac.minimumInvocationCounter;
+                        }
+
                         //Set security suite that client must use.
                         settings->expectedSecuritySuite = a->securitySetup->securitySuite;
                         //Set security policy that client must use if it is set.
@@ -2388,7 +2939,7 @@ unsigned char svr_isTarget(
         //Remove logical address from the server address.
         unsigned char broadcast = (serverAddress & 0x3FFF) == 0x3FFF || (serverAddress & 0x7F) == 0x7F;
         if (!(broadcast ||
-            (serverAddress & 0x3FFF) == meterData.SERIAL_NUMBER % 10000 + 1000))
+            (serverAddress & 0x3FFF) == SERIAL_NUMBER % 10000 + 1000))
         {
             ret = 0;
             // Find address from the SAP table.
@@ -2424,7 +2975,7 @@ unsigned char svr_isTarget(
         //Set serial number as meter address if broadcast is used.
         if (broadcast)
         {
-            settings->serverAddress = meterData.SERIAL_NUMBER % 10000 + 1000;
+            settings->serverAddress = SERIAL_NUMBER % 10000 + 1000;
         }
         if (ret == 0)
         {
@@ -2745,8 +3296,7 @@ int svr_disconnected(
     if (settings->base.cipher.security != 0 && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) != 0)
     {
         //Save Invocation counter value when connection is closed.
-        meterData.InvocationCounter = settings->base.cipher.invocationCounter;
-        save(&meterData.InvocationCounter, sizeof(meterData.InvocationCounter));
+        saveSecurity();
     }
     return 0;
 }
@@ -3097,7 +3647,7 @@ int com_initializeSerialPort(
     sprintf(buff, "\\\\.\\%s", serialPort);
 #endif
     //Open serial port for read / write. Port can't share.
-    *comPort = CreateFileA(buff,
+    * comPort = CreateFileA(buff,
         GENERIC_READ | GENERIC_WRITE, 0, NULL,
         OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (*comPort == INVALID_HANDLE_VALUE)
@@ -3300,7 +3850,7 @@ int main(int argc, char* argv[])
     //Add FLAG ID.
     memcpy(SERVER_SYSTEM_TITLE, FLAG_ID, 3);
     //ADD serial number.
-    memcpy(SERVER_SYSTEM_TITLE + 4, &meterData.SERIAL_NUMBER, 4);
+    memcpy(SERVER_SYSTEM_TITLE + 4, &SERIAL_NUMBER, 4);
 
     bb_attach(&reply, replyFrame, 0, sizeof(replyFrame));
     //Start server using logical name referencing and HDLC framing.
@@ -3323,7 +3873,7 @@ int main(int argc, char* argv[])
     }
 
     //Set default clock.
-    settings.defaultClock = &meterData.clock1;
+    settings.defaultClock = &clock1;
     if (serialPort != NULL)
     {
         printf("Serial port server started in port: %s\n", serialPort);

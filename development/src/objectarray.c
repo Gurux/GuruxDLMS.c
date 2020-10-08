@@ -34,8 +34,12 @@
 #if _MSC_VER > 1400
 #include <crtdbg.h>
 #endif
+#if defined(_WIN64) || defined(_WIN32) || defined(__linux__)
+#include <stdio.h>
+#endif //defined(_WIN64) || defined(_WIN32) || defined(__linux__)
 #include <string.h>
 #include "../include/objectarray.h"
+#include "../include/helpers.h"
 
 #if defined(_WIN64) || defined(_WIN32) || defined(__linux__)
 #include <stdio.h>

@@ -42,10 +42,7 @@ extern "C" {
 #include "date.h"
 #include "gxarray.h"
 #include "gxkey.h"
-
-#ifdef DLMS_IGNORE_MALLOC
 #include "gxdefine.h"
-#endif //DLMS_IGNORE_MALLOC
 
     typedef enum
     {
@@ -467,13 +464,22 @@ extern "C" {
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
-#ifdef DLMS_IGNORE_MALLOC
     typedef struct
     {
-        gxObject* target;
+#ifdef DLMS_IGNORE_MALLOC
+        //Name length.
+        unsigned char length;
+        //Name of the mask.
+        unsigned char name[MAX_REGISTER_ACTIVATION_MASK_NAME_LENGTH];
+        //Index count
+        unsigned char count;
+        //Mask index list.
         unsigned char indexes[9];
-    } gxRegisterActivationMask;
+#else
+        gxByteBuffer name;
+        gxByteBuffer indexes;
 #endif //DLMS_IGNORE_MALLOC
+    } gxRegisterActivationMask;
 
     //---------------------------------------------------------------------------
     // Online help:
@@ -484,21 +490,13 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
         objectArray registerAssignment;
 #else
         gxArray registerAssignment;
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-
         gxArray maskList;
-#ifdef DLMS_IGNORE_MALLOC
-        unsigned char activeMask[6];
-#else
         gxByteBuffer activeMask;
-#endif //DLMS_IGNORE_MALLOC
-
-
     } gxRegisterActivation;
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 
@@ -563,14 +561,6 @@ extern "C" {
         uint32_t entriesInUse;
         signed char sortObjectAttributeIndex;
         uint16_t sortObjectDataIndex;
-
-        /*
-        * Max row count is used with Profile Generic to tell how many rows are read
-        * to one PDU. Default value is 1. Change this for your needs.
-        */
-#ifndef DLMS_IGNORE_MALLOC
-        uint16_t maxRowCount;
-#endif //DLMS_IGNORE_MALLOC
         //Executed time. This is for internal use.
         uint32_t executedTime;
     } gxProfileGeneric;
@@ -813,6 +803,8 @@ extern "C" {
         gxByteBuffer serverSystemTitle;
         gxByteBuffer clientSystemTitle;
         gxArray certificates;
+        //Minimum client invocation counter value. Server can use this.
+        uint32_t minimumInvocationCounter;
     } gxSecuritySetup;
 #endif //DLMS_IGNORE_SECURITY_SETUP
 
@@ -940,13 +932,11 @@ extern "C" {
 
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
 
-#ifdef DLMS_IGNORE_MALLOC
     typedef struct
     {
         unsigned char value[MAX_SAP_ITEM_NAME_LENGTH];
         uint16_t size;
     }gxSapItemName;
-#endif //DLMS_IGNORE_MALLOC
 
     /*
     ---------------------------------------------------------------------------
@@ -1546,7 +1536,7 @@ extern "C" {
 #else
         unsigned char dataLinkLayerReference[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        unsigned int ipAddress;
+        uint32_t ipAddress;
 #ifdef DLMS_IGNORE_MALLOC
         gxArray multicastIPAddress;
 #else
@@ -2428,14 +2418,14 @@ extern "C" {
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
-        int availableCredit;
+        int32_t availableCredit;
 
         /*
         * Amount to clear.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
-        int amountToClear;
+        int32_t amountToClear;
 
         /*
         * Conjunction with the amount to clear, and is included in the description
@@ -2443,14 +2433,14 @@ extern "C" {
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
-        int clearanceThreshold;
+        int32_t clearanceThreshold;
 
         /*
         * Aggregated debt.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
-        int aggregatedDebt;
+        int32_t aggregatedDebt;
 
         /*
         * Credit references.<br/>
@@ -2503,13 +2493,13 @@ extern "C" {
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
-        int lowCreditThreshold;
+        int32_t lowCreditThreshold;
         /*
         * Next credit available threshold.<br/>
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
-        int nextCreditAvailableThreshold;
+        int32_t nextCreditAvailableThreshold;
         /*
         * Max Provision.<br/>
         * Online help:<br/>
@@ -2522,7 +2512,7 @@ extern "C" {
         * Online help:<br/>
         * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
         */
-        int maxProvisionPeriod;
+        int32_t maxProvisionPeriod;
     } gxAccount;
 #endif //DLMS_IGNORE_ACCOUNT
 
@@ -2633,7 +2623,7 @@ extern "C" {
         gxUnitCharge unitChargeActive;
         gxUnitCharge unitChargePassive;
         gxtime unitChargeActivationTime;
-        unsigned int period;
+        uint32_t period;
         DLMS_CHARGE_CONFIGURATION chargeConfiguration;
         gxtime lastCollectionTime;
         int32_t lastCollectionAmount;

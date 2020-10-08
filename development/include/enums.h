@@ -103,58 +103,49 @@ extern "C" {
     } DLMS_ADDRESS_STATE;
 
     // Security policy Enforces authentication and/or encryption algorithm provided with security_suite.
-    //Note! This enumeration values are used in Security Setup version 0.
-    typedef enum
-    {
-        //No security is used.
-        DLMS_SECURITY_POLICY_NOTHING = 0,
-        /*
-         All messages to be authenticated.
-        */
-        DLMS_SECURITY_POLICY_AUTHENTICATED = 1,
-        /*
-         All messages to be encrypted.
-        */
-        DLMS_SECURITY_POLICY_ENCRYPTED = 2,
-        /*
-         All messages to be authenticated and encrypted.
-        */
-        DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED = 3
-    } DLMS_SECURITY_POLICY;
-
-    // Security policy Enforces authentication and/or encryption algorithm provided with security_suite.
-    //Note! This enumeration values are used in Security Setup version 1.
     typedef enum
     {
         /*
         * Security is not used.
         */
-        DLMS_SECURITY_POLICY1_NOTHING = 0,
+        DLMS_SECURITY_POLICY_NOTHING = 0,
         /*
-        * Request is authenticated.
+         All messages to be authenticated. This enumeration values are used in Security Setup version 0.
         */
-        DLMS_SECURITY_POLICY1_AUTHENTICATED_REQUEST = 0x4,
+        DLMS_SECURITY_POLICY_AUTHENTICATED = 1,
         /*
-        * Request is encrypted.
+         All messages to be encrypted. This enumeration values are used in Security Setup version 0.
         */
-        DLMS_SECURITY_POLICY1_ENCRYPTED_REQUEST = 0x8,
+        DLMS_SECURITY_POLICY_ENCRYPTED = 2,
         /*
-        * Request is digitally signed.
+         All messages to be authenticated and encrypted. This enumeration values are used in Security Setup version 0.
         */
-        DLMS_SECURITY_POLICY1_DIGITALLY_SIGNED_REQUEST = 0x10,
+        DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED = 3,
         /*
-        * Response is authenticated.
+        * Request is authenticated. This enumeration values are used in Security Setup version 1.
         */
-        DLMS_SECURITY_POLICY1_AUTHENTICATED_RESPONSE = 0x20,
+        DLMS_SECURITY_POLICY_AUTHENTICATED_REQUEST = 0x4,
         /*
-        * Response is encrypted.
+        * Request is encrypted. This enumeration values are used in Security Setup version 1.
         */
-        DLMS_SECURITY_POLICY1_ENCRYPTED_RESPONSE = 0x40,
+        DLMS_SECURITY_POLICY_ENCRYPTED_REQUEST = 0x8,
         /*
-        * Response is digitally signed.
+        * Request is digitally signed. This enumeration values are used in Security Setup version 1.
         */
-        DLMS_SECURITY_POLICY1_DIGITALLY_SIGNED_RESPONSE = 0x80
-    } DLMS_SECURITY_POLICY1;
+        DLMS_SECURITY_POLICY_DIGITALLY_SIGNED_REQUEST = 0x10,
+        /*
+        * Response is authenticated. This enumeration values are used in Security Setup version 1.
+        */
+        DLMS_SECURITY_POLICY_AUTHENTICATED_RESPONSE = 0x20,
+        /*
+        * Response is encrypted. This enumeration values are used in Security Setup version 1.
+        */
+        DLMS_SECURITY_POLICY_ENCRYPTED_RESPONSE = 0x40,
+        /*
+        * Response is digitally signed. This enumeration values are used in Security Setup version 1.
+        */
+        DLMS_SECURITY_POLICY_DIGITALLY_SIGNED_RESPONSE = 0x80
+    } DLMS_SECURITY_POLICY;
 
     //Security suite Specifies authentication, encryption and key wrapping algorithm.
     typedef enum

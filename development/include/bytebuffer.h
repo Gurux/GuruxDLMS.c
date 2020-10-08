@@ -505,7 +505,7 @@ extern "C" {
     void bb_print(gxByteBuffer * bb);
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
-#define BB_ATTACH(X, V, S) bb_attach(&X, V, S, sizeof(V) / sizeof(V[0]))
+#define BB_ATTACH(X, V, S) bb_attach(&X, V, S, sizeof(V))
 
 #define BB_ATTACH_STR(X, V, S) bb_attachString2(&X, V, S, sizeof(V) / sizeof(V[0]))
 

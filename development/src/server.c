@@ -303,7 +303,7 @@ int svr_generateExceptionResponse(
         {
             if ((ret = bb_setUInt8(data, DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR)) == 0)
             {
-                ret = bb_setUInt32(data, (uint32_t)settings->expectedInvocationCounter);
+                ret = bb_setUInt32(data, (uint32_t)*settings->expectedInvocationCounter);
             }
         }
         else if (error == DLMS_ERROR_CODE_INVALID_COMMAND)
@@ -1774,9 +1774,7 @@ int svr_handleRead(
     dlmsServerSettings* settings,
     DLMS_VARIABLE_ACCESS_SPECIFICATION type,
     gxByteBuffer* data,
-    gxValueEventCollection* list,
-    gxValueEventCollection* reads,
-    gxValueEventCollection* actions)
+    gxValueEventCollection* list)
 {
     gxSNInfo info;
     gxValueEventArg* e;
@@ -1822,8 +1820,7 @@ int svr_handleRead(
         }
     }
     // Return error if connection is not established.
-    if (!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0
-        && (!e->action || e->target->shortName != 0xFA00 || e->index != 8))
+    if (!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0)
     {
         return svr_generateConfirmedServiceError(
             settings,
@@ -1834,17 +1831,6 @@ int svr_handleRead(
     {
         e->error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
         e->handled = 1;
-    }
-    else
-    {
-        if (e->action)
-        {
-            vec_push(actions, e);
-        }
-        else
-        {
-            vec_push(reads, e);
-        }
     }
     return ret;
 }
@@ -2168,8 +2154,6 @@ int svr_handleReadRequest(
     uint16_t pos, cnt = 0;
     DLMS_VARIABLE_ACCESS_SPECIFICATION type;
     gxValueEventCollection list;
-    gxValueEventCollection reads;
-    gxValueEventCollection actions;
     if (settings->base.useLogicalNameReferencing)
     {
         return svr_generateConfirmedServiceError(
@@ -2178,8 +2162,6 @@ int svr_handleReadRequest(
             DLMS_SERVICE_ERROR_SERVICE, DLMS_SERVICE_UNSUPPORTED,
             data);
     }
-    vec_init(&reads);
-    vec_init(&actions);
     // If get next frame.
     if (data->size == 0)
     {
@@ -2207,34 +2189,24 @@ int svr_handleReadRequest(
             {
             case DLMS_VARIABLE_ACCESS_SPECIFICATION_VARIABLE_NAME:
             case DLMS_VARIABLE_ACCESS_SPECIFICATION_PARAMETERISED_ACCESS:
-                ret = svr_handleRead(settings, type, data, &list, &reads, &actions);
+                ret = svr_handleRead(settings, type, data, &list);
                 break;
             case DLMS_VARIABLE_ACCESS_SPECIFICATION_BLOCK_NUMBER_ACCESS:
                 vec_clear(&list);
-                vec_clear(&reads);
-                vec_clear(&actions);
                 return svr_handleReadBlockNumberAccess(settings, data);
             case DLMS_VARIABLE_ACCESS_SPECIFICATION_READ_DATA_BLOCK_ACCESS:
                 vec_clear(&list);
-                vec_clear(&reads);
-                vec_clear(&actions);
                 return svr_handleReadDataBlockAccess(settings, DLMS_COMMAND_READ_RESPONSE, data, cnt);
             default:
                 vec_clear(&list);
-                vec_clear(&reads);
-                vec_clear(&actions);
                 return svr_returnSNError(settings, DLMS_COMMAND_READ_RESPONSE, DLMS_ERROR_CODE_READ_WRITE_DENIED, data);
             }
         }
         if (ret == 0)
         {
-            if (reads.size != 0)
+            if (list.size != 0)
             {
-                svr_preRead(&settings->base, &reads);
-            }
-            if (actions.size != 0)
-            {
-                svr_preAction(&settings->base, &actions);
+                svr_preRead(&settings->base, &list);
             }
         }
     }
@@ -2243,15 +2215,10 @@ int svr_handleReadRequest(
         ret = svr_getReadData(settings, &list, data, &requestType, &multipleBlocks);
         if (ret == 0)
         {
-            if (reads.size != 0)
+            if (list.size != 0)
             {
-                svr_postRead(&settings->base, &reads);
+                svr_postRead(&settings->base, &list);
             }
-            if (actions.size != 0)
-            {
-                svr_postAction(&settings->base, &actions);
-            }
-
             params_initSN(&p, &settings->base, DLMS_COMMAND_READ_RESPONSE, cnt,
                 requestType, NULL, data, settings->info.encryptedCommand);
             p.multipleBlocks = multipleBlocks;
@@ -2272,8 +2239,6 @@ int svr_handleReadRequest(
             }
         }
     }
-    vec_empty(&reads);
-    vec_empty(&actions);
     vec_clear(&list);
     return ret;
 }
@@ -2291,7 +2256,9 @@ int svr_handleWriteRequest(
     gxDataInfo di;
     DLMS_ACCESS_MODE am;
     gxSNInfo i;
-    gxValueEventCollection arr;
+    gxValueEventCollection list;
+    gxValueEventCollection writes;
+    gxValueEventCollection actions;
     DLMS_VARIABLE_ACCESS_SPECIFICATION type;
     gxByteBuffer results;
     if (settings->base.useLogicalNameReferencing)
@@ -2302,15 +2269,6 @@ int svr_handleWriteRequest(
             DLMS_SERVICE_ERROR_SERVICE, DLMS_SERVICE_UNSUPPORTED,
             data);
     }
-    // Return error if connection is not established.
-    if (!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0)
-    {
-        return svr_generateConfirmedServiceError(
-            settings,
-            DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
-            DLMS_SERVICE_ERROR_SERVICE,
-            DLMS_SERVICE_UNSUPPORTED, data);
-    }
     // Get object count.
     if (hlp_getObjectCount2(data, &cnt) != 0)
     {
@@ -2318,7 +2276,9 @@ int svr_handleWriteRequest(
     }
     BYTE_BUFFER_INIT(&results);
     bb_capacity(&results, cnt);
-    vec_init(&arr);
+    vec_init(&list);
+    vec_init(&writes);
+    vec_init(&actions);
     for (pos = 0; pos != cnt; ++pos)
     {
         if ((ret = bb_getUInt8(data, &ch)) != 0)
@@ -2341,7 +2301,27 @@ int svr_handleWriteRequest(
             ve_init(e);
             e->target = i.item;
             e->index = i.index;
-            vec_push(&arr, e);
+            e->action = i.action;
+            vec_push(&list, e);
+            if (e->action)
+            {
+                vec_push(&actions, e);
+            }
+            else
+            {
+                vec_push(&writes, e);
+            }
+            // Return error if connection is not established.
+            if (!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0
+                && (!e->action || e->target->shortName != 0xFA00 || e->index != 8))
+            {
+                ret = svr_generateConfirmedServiceError(
+                    settings,
+                    DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
+                    DLMS_SERVICE_ERROR_SERVICE,
+                    DLMS_SERVICE_UNSUPPORTED, data);
+                break;
+            }
             // If target is unknown.
             if (i.item == NULL)
             {
@@ -2354,11 +2334,21 @@ int svr_handleWriteRequest(
             }
             break;
         case DLMS_VARIABLE_ACCESS_SPECIFICATION_WRITE_DATA_BLOCK_ACCESS:
+            // Return error if connection is not established.
+            if (!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0)
+            {
+                ret = svr_generateConfirmedServiceError(
+                    settings,
+                    DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
+                    DLMS_SERVICE_ERROR_SERVICE,
+                    DLMS_SERVICE_UNSUPPORTED, data);
+                break;
+            }
             bb_clear(&results);
             return svr_handleReadDataBlockAccess(settings, DLMS_COMMAND_WRITE_RESPONSE, data, cnt);
         default:
             // Device reports a HW error.
-            bb_setUInt8(&results, DLMS_ERROR_CODE_HARDWARE_FAULT);
+            ret = DLMS_ERROR_CODE_HARDWARE_FAULT;
         }
     }
     // Get data count.
@@ -2377,11 +2367,18 @@ int svr_handleWriteRequest(
         if (ch == 0)
         {
             // If object has found.
-            if ((ret = vec_getByIndex(&arr, pos, &e)) != 0)
+            if ((ret = vec_getByIndex(&list, pos, &e)) != 0)
             {
                 break;
             }
-            if ((ret = dlms_getData(data, &di, &e->value)) != 0)
+            if (e->action)
+            {
+                if ((ret = dlms_getData(data, &di, &e->parameters)) != 0)
+                {
+                    break;
+                }
+            }
+            else if ((ret = dlms_getData(data, &di, &e->value)) != 0)
             {
                 break;
             }
@@ -2394,52 +2391,102 @@ int svr_handleWriteRequest(
             }
             else
             {
-                svr_preWrite(&settings->base, &arr);
-                if (e->error != 0)
+                if (writes.size != 0)
                 {
-                    bb_setUInt8ByIndex(&results, pos, e->error);
-                }
-                else if (!e->handled)
-                {
-                    if ((ret = cosem_setValue(&settings->base, e)) != 0)
+                    if (pos == 0)
                     {
-                        break;
+                        svr_preWrite(&settings->base, &list);
                     }
-                    svr_postWrite(&settings->base, &arr);
                     if (e->error != 0)
                     {
                         bb_setUInt8ByIndex(&results, pos, e->error);
                     }
+                    else if (!e->handled)
+                    {
+                        if ((ret = cosem_setValue(&settings->base, e)) != 0)
+                        {
+                            break;
+                        }
+                        //Call post write after all values are written.
+                        if (pos == cnt - 1)
+                        {
+                            svr_postWrite(&settings->base, &list);
+                            if (e->error != 0)
+                            {
+                                bb_setUInt8ByIndex(&results, pos, e->error);
+                            }
+                        }
+                    }
+                }
+                if (actions.size != 0)
+                {
+                    if (pos == 0)
+                    {
+                        svr_preAction(&settings->base, &actions);
+                    }
+                    ret = cosem_invoke(settings, e);
+                    // If High level authentication fails.
+                    if (e->target != NULL && e->target->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME && e->index == 1)
+                    {
+                        if ((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+                        {
+                            svr_connected(settings);
+                        }
+                        else
+                        {
+                            svr_invalidConnection(settings);
+                        }
+                    }
+                    //Call post action after all values are invoked.
+                    if (pos == cnt - 1)
+                    {
+                        svr_postAction(&settings->base, &actions);
+                    }
+                    if (ret != 0)
+                    {
+                        break;
+                    }
                 }
             }
         }
     }
-    if (ret == 0)
+    if (ret != 0)
     {
-        gxByteBuffer bb;
-        BYTE_BUFFER_INIT(&bb);
-        bb_capacity(&bb, 2 * cnt);
-        for (pos = 0; pos != cnt; ++pos)
+        // Add parameters error code.
+        if (ret > 0 && ret < DLMS_ERROR_CODE_OTHER_REASON + 1)
         {
-            if ((ret = bb_getUInt8(&results, &ch)) != 0)
-            {
-                break;
-            }
-            // If meter returns error.
-            if (ch != 0)
-            {
-                bb_setUInt8(&bb, 1);
-            }
-            bb_setUInt8(&bb, ch);
+            bb_setUInt8ByIndex(&results, pos, ret);
         }
-        params_initSN(&p, &settings->base, DLMS_COMMAND_WRITE_RESPONSE, cnt, 0xFF, NULL, &bb, settings->info.encryptedCommand);
-        p.lastBlock = e->transactionStartIndex == e->transactionEndIndex;
-        ret = dlms_getSNPdu(&p, data);
-        bb_clear(&bb);
+        else
+        {
+            bb_setUInt8ByIndex(&results, pos, DLMS_ERROR_CODE_READ_WRITE_DENIED);
+        }
     }
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    bb_capacity(&bb, 2 * cnt);
+    for (pos = 0; pos != cnt; ++pos)
+    {
+        if ((ret = bb_getUInt8(&results, &ch)) != 0)
+        {
+            break;
+        }
+        // If meter returns error.
+        if (ch != 0)
+        {
+            bb_setUInt8(&bb, 1);
+        }
+        bb_setUInt8(&bb, ch);
+    }
+    params_initSN(&p, &settings->base, DLMS_COMMAND_WRITE_RESPONSE, cnt, 0xFF, &bb, NULL, settings->info.encryptedCommand);
+    p.lastBlock = e->transactionStartIndex == e->transactionEndIndex;
+    ret = dlms_getSNPdu(&p, data);
+    bb_clear(&bb);
     // If all data is transfered.
     bb_clear(&results);
-    vec_clear(&arr);
+    vec_empty(&writes);
+    vec_empty(&actions);
+    vec_clear(&list);
     return ret;
 }
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
@@ -3386,7 +3433,9 @@ int svr_invoke(
             cosem_invoke(settings, e);
             svr_postAction(&settings->base, &args);
         }
-        vec_empty(&args);
+#ifndef DLMS_IGNORE_MALLOC
+        vec_clear(&args);
+#endif //DLMS_IGNORE_MALLOC
         //Increase time by one second so next scheduled date is retreaved.
         ++time;
     }
@@ -3698,5 +3747,25 @@ int svr_run(
     }
 #endif //DLMS_IGNORE_AUTO_CONNECT
     return svr_handleInactivityTimeout(settings, time, next);
+}
+
+unsigned char svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex)
+{
+    if (objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME && methodIndex == 2)
+    {
+        //Save password.
+        return 1;
+    }
+    if (objectType == DLMS_OBJECT_TYPE_SAP_ASSIGNMENT)
+    {
+        //SAP assignment is added or removed.
+        return 1;
+    }
+    if (objectType == DLMS_OBJECT_TYPE_DISCONNECT_CONTROL)
+    {
+        //Connection state is changed.
+        return 1;
+    }
+    return 0;
 }
 #endif //DLMS_IGNORE_SERVER

@@ -2186,10 +2186,17 @@ int cosem_setMacAddressSetup(gxMacAddressSetup* object, unsigned char index, dlm
     if (index == 2)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_getOctectString(value->byteArr, &object->macAddress);
+        ret = cosem_getOctectString3(value->byteArr, &object->macAddress, 1);
 #else
-        bb_clear(&object->macAddress);
-        ret = bb_set2(&object->macAddress, value->byteArr, 0, bb_size(value->byteArr));
+        if (bb_available(value->byteArr) != 6)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        else
+        {
+            bb_clear(&object->macAddress);
+            ret = bb_set2(&object->macAddress, value->byteArr, 0, bb_size(value->byteArr));
+        }
 #endif //DLMS_IGNORE_MALLOC
     }
     else
@@ -2434,13 +2441,13 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
             if (value->byteArr == NULL || bb_available(value->byteArr) != 8)
             {
                 ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
-    }
+            }
             else
             {
                 bb_clear(&object->clientSystemTitle);
                 bb_set2(&object->clientSystemTitle, value->byteArr, 0, bb_size(value->byteArr));
             }
-}
+        }
 #endif //DLMS_IGNORE_MALLOC
         break;
     case 5:
@@ -3784,6 +3791,8 @@ int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* ob
         uint16_t count = oa_getCapacity(&object->registerAssignment);
 #else
         uint16_t count = arr_getCapacity(&object->registerAssignment);
+        uint16_t ot;
+        unsigned char ln[6];
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
@@ -3793,19 +3802,27 @@ int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* ob
                 if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
 #ifdef DLMS_IGNORE_MALLOC
-                (ret = arr_getByIndex(&object->registerAssignment, pos, (void**)&objectDefinition, sizeof(gxObject*))) != 0 ||
+                (ret = arr_getByIndexRef(&object->registerAssignment, pos, (void**)&objectDefinition)) != 0 ||
 #else
                     (ret = oa_getByIndex(&object->registerAssignment, pos, &objectDefinition)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
-                    (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&objectDefinition->objectType)) != 0 ||
+                    (ret = cosem_getUInt16(value->byteArr, &ot)) != 0 ||
+                    (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) != 0)
+                {
+                    break;
+                }
+                if ((ret = oa_findByLN(&settings->objects, (DLMS_OBJECT_TYPE)ot, ln, &objectDefinition)) != 0)
+                {
+                    break;
+                }
 #else
                     (ret = arr_getByIndex(&object->registerAssignment, pos, (void**)&objectDefinition, sizeof(gxObjectDefinition))) != 0 ||
                     (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&objectDefinition->objectType)) != 0 ||
-#endif //DLMS_IGNORE_OBJECT_POINTERS
                     (ret = cosem_getOctectString2(value->byteArr, objectDefinition->logicalName, 6, NULL)) != 0)
                 {
                     break;
                 }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
             }
         }
 #else
@@ -3873,42 +3890,29 @@ int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* ob
         obj_clearRegisterActivationMaskList(&object->maskList);
 #ifdef DLMS_IGNORE_MALLOC
         gxRegisterActivationMask* k;
+        uint16_t size;
         uint16_t count = arr_getCapacity(&object->maskList);
         if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
         {
-            unsigned char ch;
-            unsigned char ln[6];
             object->maskList.capacity = count;
             for (pos = 0; pos != value->Arr->size; ++pos)
             {
                 if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
                     (ret = arr_getByIndex(&object->maskList, pos, (void**)&k, sizeof(gxRegisterActivationMask))) != 0 ||
-                    (ret = cosem_getOctectString2(value->byteArr, ln, 6, NULL)) != 0 ||
-                    (ret = bb_getUInt8(value->byteArr, &ch)) != 0)
+                    (ret = cosem_getOctectString2(value->byteArr, k->name, sizeof(k->name), &size)) != 0)
                 {
                     break;
                 }
-                if (ch != DLMS_DATA_TYPE_ARRAY)
+                k->length = (unsigned char)size;
+                size = sizeof(k->indexes);
+                if ((ret = cosem_checkArray(value->byteArr, &size)) == 0)
                 {
-                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-                }
-                else
-                {
-                    if ((ret = bb_getUInt8(value->byteArr, &ch)) == 0)
+                    k->count = (unsigned char)size;
+                    for (pos = 0; pos != k->count; ++pos)
                     {
-                        if (ch > sizeof(k->indexes))
+                        if ((ret = cosem_getUInt8(value->byteArr, &k->indexes[pos])) != 0)
                         {
-                            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-                        }
-                        else
-                        {
-                            for (pos = 0; pos != ch; ++pos)
-                            {
-                                if ((ret = cosem_getUInt8(value->byteArr, &k->indexes[pos])) != 0)
-                                {
-                                    break;
-                                }
-                            }
+                            break;
                         }
                     }
                 }
@@ -3974,12 +3978,13 @@ int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* ob
     }
     else if (index == 4)
     {
-#ifdef DLMS_IGNORE_MALLOC
-        ret = bb_get(value->byteArr, object->activeMask, 6);
-#else
         bb_clear(&object->activeMask);
-        bb_set2(&object->activeMask, value->byteArr, 0, bb_size(value->byteArr));
+#ifdef DLMS_IGNORE_MALLOC
+        ret = cosem_getOctectString(value->byteArr, &object->activeMask);
+#else
+        ret = bb_set2(&object->activeMask, value->byteArr, 0, bb_size(value->byteArr));
 #endif //DLMS_IGNORE_MALLOC
+
     }
     else
     {
@@ -4469,7 +4474,7 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 GX_DATETIME(&tmp3) = &se->switchTime;
 #endif //DLMS_IGNORE_MALLOC
 
-                ret = dlms_changeType2(it, DLMS_DATA_TYPE_DATE, &tmp3);
+                ret = dlms_changeType2(it, DLMS_DATA_TYPE_TIME, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
                     break;
@@ -7692,7 +7697,11 @@ int cosem_setPrimeNbOfdmPlcMacFunctionalParameters(
         break;
     case 5:
         object->sna.size = 0;
+#ifdef DLMS_IGNORE_MALLOC
+        ret = cosem_getOctectString2(value->byteArr, object->sna.data, object->sna.capacity, &object->sna.size);
+#else
         ret = bb_set2(&object->sna, value->byteArr, 0, bb_size(value->byteArr));
+#endif
         break;
     case 6:
         object->state = (DLMS_MAC_STATE)var_toInteger(value);

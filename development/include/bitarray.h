@@ -90,7 +90,7 @@ extern "C" {
     //Push new data to the bit array.
     int ba_setByIndex(
         bitArray* arr,
-        int index,
+        uint16_t index,
         unsigned char item);
 
     //Copy bit array.

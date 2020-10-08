@@ -40,6 +40,10 @@
 // #define DLMS_IGNORE_MALLOC
 //---------------------------------------------------------------------------
 
+//Ignore time_now warning.
+#pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
+
+
 unsigned char hdlcChanged = 0;
 const static char *FLAG_ID = "GRX";
 const static uint16_t SERIALIZATION_VERSION = 1;

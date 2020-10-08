@@ -523,13 +523,13 @@ int apdu_parseUserInformation(
         {
             return DLMS_ERROR_CODE_INVALID_SECURITY_SUITE;
         }
-        if (settings->expectedInvocationCounter != 0)
+        if (settings->expectedInvocationCounter != NULL)
         {
-            if (invocationCounter != 1 + settings->expectedInvocationCounter)
+            if (invocationCounter < 1 + *settings->expectedInvocationCounter)
             {
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
-            settings->expectedInvocationCounter = 1 + invocationCounter;
+            *settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
         }
         //If client system title doesn't match.
         if (settings->expectedClientSystemTitle != NULL &&
@@ -1814,8 +1814,15 @@ int apdu_parsePDU(
                 {
                     return ret;
                 }
-                //Return confirmed service error.
-                ret = DLMS_ERROR_CODE_INVALID_TAG;
+                if (ciphered)
+                {
+                    ret = DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+                }
+                else
+                {
+                    //Return confirmed service error.
+                    ret = DLMS_ERROR_CODE_INVALID_TAG;
+                }
                 break;
             }
             break;
@@ -1862,6 +1869,8 @@ int apdu_parsePDU(
                 break;
             case DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE:
                 svr_notifyTrace("Calling authentication value is missing.", -1);
+                break;
+            case DLMS_AFU_MISSING_NONE:
                 break;
             }
 #endif //DLMS_DEBUG

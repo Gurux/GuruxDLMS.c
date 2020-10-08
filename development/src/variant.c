@@ -336,6 +336,11 @@ int var_clear(dlmsVARIANT* data)
         data->size = 0;
     }
 #else
+    //Referenced values are not cleared. User must do it.
+    if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
+    {
+        return 0;
+    }
     switch (data->vt)
     {
     case DLMS_DATA_TYPE_OCTET_STRING:
@@ -822,30 +827,10 @@ int var_getBytes3(
     unsigned char addType)
 {
     int ret, pos;
-#ifdef DLMS_IGNORE_MALLOC
     if ((type & DLMS_DATA_TYPE_BYREF) != 0)
     {
-        switch (type & ~DLMS_DATA_TYPE_BYREF)
-        {
-        case DLMS_DATA_TYPE_DATETIME:
-        case DLMS_DATA_TYPE_DATE:
-        case DLMS_DATA_TYPE_TIME:
-            return var_getBytes3(data, type & ~DLMS_DATA_TYPE_BYREF, ba, addType);
-        default:
-            break;
-        }
-        if ((ret = bb_setUInt8(ba, type ^ DLMS_DATA_TYPE_BYREF)) != 0)
-        {
-            return ret;
-        }
-        ret = hlp_setObjectCount(data->size, ba);
-        if (ret == 0 && data->size != 0)
-        {
-            ret = bb_set(ba, data->pVal, data->size);
-        }
-        return ret;
+        return var_getBytes3(data, type & ~DLMS_DATA_TYPE_BYREF, ba, addType);
     }
-#endif //DLMS_IGNORE_MALLOC
     if (type == DLMS_DATA_TYPE_STRUCTURE ||
         type == DLMS_DATA_TYPE_ARRAY)
     {
@@ -898,7 +883,7 @@ int var_getBytes3(
         ret = bb_setUInt32(ba, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->pulVal : data->ulVal);
         break;
     case DLMS_DATA_TYPE_UINT64:
-        ret = bb_setUInt64(ba, data->ullVal);
+        ret = bb_setUInt64(ba, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->pullVal : data->ullVal);
         break;
     case DLMS_DATA_TYPE_INT8:
         ret = bb_setInt8(ba, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->pcVal : data->cVal);
@@ -938,7 +923,7 @@ int var_getBytes3(
             {
                 ret = bb_set(ba, data->strVal->data, data->strVal->size);
             }
-    }
+        }
 #else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_MALLOC
@@ -969,7 +954,7 @@ int var_getBytes3(
         else
         {
             ret = var_setOctetString(ba, data);
-}
+        }
 #else
         if (data->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_DATETIME))
         {
@@ -990,6 +975,14 @@ int var_getBytes3(
             if ((ret = bb_setUInt8(ba, 4)) == 0)
             {
                 ret = var_getTime(data->pVal, ba);
+            }
+        }
+        else if (data->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING))
+        {
+            if ((ret = hlp_setObjectCount(data->size, ba)) != 0 ||
+                (ret = bb_set(ba, data->pbVal, data->size)) != 0)
+            {
+                //Error code is returned at the end of the function.
             }
         }
         else
@@ -1111,98 +1104,100 @@ int var_getSize(DLMS_DATA_TYPE vt)
 //Convert variant value to integer.
 int var_toInteger(dlmsVARIANT* data)
 {
-    if (data->vt == DLMS_DATA_TYPE_NONE)
+    int ret;
+    if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
     {
-        return 0;
+        dlmsVARIANT tmp;
+        if ((ret = var_copy(&tmp, data)) == 0)
+        {
+            ret = var_toInteger(&tmp);
+        }
+        else
+        {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+            assert(0);
+#endif
+            ret = -1;
+        }
+        return ret;
     }
-
-    if (data->vt == DLMS_DATA_TYPE_BOOLEAN)
+    switch (data->vt)
     {
-        return data->boolVal ? 1 : 0;
-    }
-    if (data->vt == DLMS_DATA_TYPE_INT32)
-    {
-        return data->lVal;
-    }
-    if (data->vt == DLMS_DATA_TYPE_UINT32)
-    {
-        return data->ulVal;
-    }
-    if (data->vt == DLMS_DATA_TYPE_BINARY_CODED_DESIMAL)
-    {
+    case DLMS_DATA_TYPE_NONE:
+        ret = 0;
+        break;
+    case DLMS_DATA_TYPE_BOOLEAN:
+        ret = data->boolVal ? 1 : 0;
+        break;
+    case DLMS_DATA_TYPE_INT32:
+        ret = data->lVal;
+        break;
+    case DLMS_DATA_TYPE_UINT32:
+        ret = data->ulVal;
+        break;
+    case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
 #endif
-    }
-    if (data->vt == DLMS_DATA_TYPE_STRING_UTF8)
-    {
+        ret = 0;
+        break;
+    case DLMS_DATA_TYPE_STRING_UTF8:
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
 #endif
-    }
-    if (data->vt == DLMS_DATA_TYPE_INT8)
-    {
-        return data->cVal;
-    }
-
-    if (data->vt == DLMS_DATA_TYPE_INT16)
-    {
-        return data->iVal;
-    }
-    if (data->vt == DLMS_DATA_TYPE_UINT8)
-    {
-        return data->bVal;
-    }
-    if (data->vt == DLMS_DATA_TYPE_UINT16)
-    {
-        return data->uiVal;
-    }
-    if (data->vt == DLMS_DATA_TYPE_INT64)
-    {
-        //TODO:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
-    }
-    if (data->vt == DLMS_DATA_TYPE_UINT64)
-    {
-        //TODO:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
-    }
-    if (data->vt == DLMS_DATA_TYPE_ENUM)
-    {
-        return data->bVal;
-    }
+        ret = 0;
+        break;
+    case DLMS_DATA_TYPE_INT8:
+        ret = data->cVal;
+        break;
+    case DLMS_DATA_TYPE_INT16:
+        ret = data->iVal;
+        break;
+    case DLMS_DATA_TYPE_UINT8:
+        ret = data->bVal;
+        break;
+    case DLMS_DATA_TYPE_UINT16:
+        ret = data->uiVal;
+        break;
+    case DLMS_DATA_TYPE_INT64:
+        ret = (int)data->llVal;
+        break;
+    case DLMS_DATA_TYPE_UINT64:
+        ret = (int)data->ullVal;
+        break;
+    case DLMS_DATA_TYPE_ENUM:
+        ret = data->bVal;
+        break;
 #ifndef DLMS_IGNORE_FLOAT32
-    if (data->vt == DLMS_DATA_TYPE_FLOAT32)
-    {
-        return (int)data->fltVal;
-    }
+    case DLMS_DATA_TYPE_FLOAT32:
+        ret = (int)data->fltVal;
+        break;
 #endif //DLMS_IGNORE_FLOAT32
 #ifndef DLMS_IGNORE_FLOAT64
-    if (data->vt == DLMS_DATA_TYPE_FLOAT64)
-    {
-        return (int)data->dblVal;
-    }
+    case DLMS_DATA_TYPE_FLOAT64:
+        ret = (int)data->dblVal;
+        break;
 #endif //DLMS_IGNORE_FLOAT64
 #ifndef DLMS_IGNORE_MALLOC
-    if (data->vt == DLMS_DATA_TYPE_STRING)
-    {
-        return hlp_stringToInt((const char*)data->strVal);
-    }
-    if (data->vt == DLMS_DATA_TYPE_BIT_STRING)
+    case DLMS_DATA_TYPE_STRING:
+        ret = hlp_stringToInt((const char*)data->strVal);
+        break;
+    case DLMS_DATA_TYPE_BIT_STRING:
     {
         uint32_t value;
         ba_toInteger(data->bitArr, &value);
-        return (int)value;
-}
+        ret = (int)value;
+    }
+    break;
 #endif //DLMS_IGNORE_MALLOC
+    default:
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-    assert(0);
+        assert(0);
 #endif
-    return 0;
+        ret = 0;
+        break;
+    }
+    return ret;
 }
 
 char va_isAttached(variantArray* arr)
@@ -1291,7 +1286,7 @@ int va_push(variantArray* arr, dlmsVARIANT* item)
                 arr->data = tmp;
             }
         }
-}
+    }
 #endif //DLMS_IGNORE_MALLOC
     if (va_getCapacity(arr) <= arr->size)
     {
@@ -2077,7 +2072,6 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
     dlmsVARIANT* item;
 #endif //DLMS_IGNORE_MALLOC
     int ret = DLMS_ERROR_CODE_OK;
-#ifdef DLMS_IGNORE_MALLOC
     if ((source->vt & DLMS_DATA_TYPE_BYREF) != 0)
     {
         if (source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING) ||
@@ -2098,13 +2092,15 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
             {
                 return ret;
             }
+#ifdef DLMS_IGNORE_MALLOC
             if (count > target->capacity)
             {
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
             target->size = count;
+#endif //DLMS_IGNORE_MALLOC
             memcpy(target->pVal, source->byteArr + source->byteArr->position, count);
-        }
+            }
         else
         {
             count = hlp_getDataTypeSize(source->vt);
@@ -2115,9 +2111,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
             memcpy(target->pVal, &source->bVal, count);
         }
         return 0;
-    }
-#else
-#endif //DLMS_IGNORE_MALLOC
+        }
 #ifndef DLMS_IGNORE_MALLOC
     unsigned char attaced = 0;
     if ((target->vt == DLMS_DATA_TYPE_ARRAY || target->vt == DLMS_DATA_TYPE_STRUCTURE) && va_isAttached(target->Arr))
@@ -2142,7 +2136,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
             target->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
             BYTE_BUFFER_INIT(target->strVal);
             bb_set(target->strVal, source->strVal->data, source->strVal->size);
-    }
+        }
 #else
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_MALLOC
@@ -2207,7 +2201,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
 #else
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_MALLOC
-    }
+        }
 #ifndef DLMS_IGNORE_MALLOC
     else if (source->vt == DLMS_DATA_TYPE_DATETIME)
     {
@@ -2242,7 +2236,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
         ret = 0;
     }
     return ret;
-        }
+    }
 
 #ifndef DLMS_IGNORE_MALLOC
 int var_setDateTime(dlmsVARIANT* target, gxtime* value)
@@ -2359,7 +2353,7 @@ int var_byRef(dlmsVARIANT* target, DLMS_DATA_TYPE type, void* value)
     target->pVal = value;
     target->vt = type | DLMS_DATA_TYPE_BYREF;
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_MALLOC
 
 #ifndef DLMS_IGNORE_MALLOC

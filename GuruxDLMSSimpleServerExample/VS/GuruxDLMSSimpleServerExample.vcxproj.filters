@@ -18,5 +18,13 @@
     <ClCompile Include="..\src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\getopt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\getopt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -37,6 +37,7 @@
     <ClCompile Include="..\dlms\src\gxkey.c" />
     <ClCompile Include="..\dlms\src\gxmd5.c" />
     <ClCompile Include="..\dlms\src\gxobjects.c" />
+    <ClCompile Include="..\dlms\src\gxserializer.c" />
     <ClCompile Include="..\dlms\src\gxset.c" />
     <ClCompile Include="..\dlms\src\gxsha1.c" />
     <ClCompile Include="..\dlms\src\gxsha256.c" />
@@ -80,6 +81,7 @@
     <ClInclude Include="..\dlms\include\gxmd5.h" />
     <ClInclude Include="..\dlms\include\gxmem.h" />
     <ClInclude Include="..\dlms\include\gxobjects.h" />
+    <ClInclude Include="..\dlms\include\gxserializer.h" />
     <ClInclude Include="..\dlms\include\gxset.h" />
     <ClInclude Include="..\dlms\include\gxsha1.h" />
     <ClInclude Include="..\dlms\include\gxsha256.h" />

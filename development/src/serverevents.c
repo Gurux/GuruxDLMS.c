@@ -30,6 +30,9 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 #include "../include/serverevents.h"
+#ifdef DLMS_DEBUG
+#include <stdio.h>
+#endif //DLMS_DEBUG
 
 void svr_notifyTrace(const char* str, int err)
 {

@@ -41,7 +41,7 @@
 #include "../include/gxkey.h"
 
 //Initialize gxArray.
-void arr_init(gxArray * arr)
+void arr_init(gxArray* arr)
 {
     arr->capacity = 0;
     arr->data = NULL;
@@ -230,6 +230,27 @@ int arr_getByIndex2(gxArray* arr, uint16_t index, void** value, uint16_t itemSiz
 #else
     return arr_getByIndex(arr, index, value, itemSize);
 #endif //DLMS_IGNORE_MALLOC
+}
+
+int arr_getByIndexRef(gxArray* arr, uint16_t index, void** value)
+{
+    if (index >= arr->size)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    *value = (void*)((gxArray**)arr->data)[index];
+    return 0;
+}
+
+int arr_setByIndexRef(gxArray* arr, void* value)
+{
+    if (!(arr->size < arr_getCapacity(arr)))
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    ((gxArray**)arr->data)[arr->size] = value;
+    ++arr->size;
+    return 0;
 }
 
 

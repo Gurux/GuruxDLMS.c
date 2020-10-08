@@ -51,6 +51,7 @@
 #endif //DLMS_IGNORE_STRING_CONVERTER
 #else
 #include "../include/enums.h"
+#include "../include/helpers.h"
 #endif //DLMS_IGNORE_MALLOC
 #include <string.h>
 
@@ -247,6 +248,15 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
         break;
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
         ret = GET_STR_FROM_EEPROM("PrimeNbOfdmPLCApplicationsIdentification");
+        break;
+    case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
+        ret = GET_STR_FROM_EEPROM("ParameterMonitor");
+        break;
+    case DLMS_OBJECT_TYPE_COMPACT_DATA:
+        ret = GET_STR_FROM_EEPROM("CompactData");
+        break;
+    case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
+        ret = GET_STR_FROM_EEPROM("GsmDiagnostic");
         break;
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
@@ -2221,6 +2231,14 @@ int obj_scheduleToString(gxSchedule* object, char** buff)
 }
 #endif //DLMS_IGNORE_SCHEDULE
 
+#ifndef DLMS_IGNORE_PARAMETER_MONITOR
+
+int obj_ParameterMonitorToString(gxParameterMonitor* object, char** buff)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_PARAMETER_MONITOR
+
 #ifdef DLMS_ITALIAN_STANDARD
 int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
 {
@@ -2558,6 +2576,11 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_PrimeNbOfdmPlcApplicationsIdentificationToString((gxPrimeNbOfdmPlcApplicationsIdentification*)object, buff);
         break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+#ifndef DLMS_IGNORE_PARAMETER_MONITOR
+    case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
+        ret = obj_ParameterMonitorToString((gxParameterMonitor*)object, buff);
+        break;
+#endif //DLMS_IGNORE_PARAMETER_MONITOR
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = obj_TariffPlanToString((gxTariffPlan*)object, buff);

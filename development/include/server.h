@@ -85,6 +85,9 @@ extern "C" {
         unsigned char force);
 #endif  //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
+    //Check is client changing the settings with action.
+    //This can be used to check is meter data changed.
+    unsigned char svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex);
 #ifdef  __cplusplus
 }
 #endif

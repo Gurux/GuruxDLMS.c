@@ -35,7 +35,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\getopt.c" />
     <ClCompile Include="..\src\main.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\getopt.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9BA40B4C-40CB-4FC0-B120-0D4DF7B7F121}</ProjectGuid>

@@ -292,6 +292,7 @@
     <ClCompile Include="..\src\objectarray.c" />
     <ClCompile Include="..\src\parameters.c" />
     <ClCompile Include="..\src\replydata.c" />
+    <ClCompile Include="..\src\gxserializer.c" />
     <ClCompile Include="..\src\server.c" />
     <ClCompile Include="..\src\serverevents.c" />
     <ClCompile Include="..\src\variant.c" />
@@ -334,6 +335,7 @@
     <ClInclude Include="..\include\objectarray.h" />
     <ClInclude Include="..\include\parameters.h" />
     <ClInclude Include="..\include\replydata.h" />
+    <ClInclude Include="..\include\gxserializer.h" />
     <ClInclude Include="..\include\server.h" />
     <ClInclude Include="..\include\serverevents.h" />
     <ClInclude Include="..\include\snparameters.h" />

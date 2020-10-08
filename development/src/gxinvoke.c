@@ -443,14 +443,41 @@ int invoke_ImageTransfer(
         gxImageActivateInfo* it, * item = NULL;
         target->imageFirstNotTransferredBlockNumber = 0;
         ba_clear(&target->imageTransferredBlocksStatus);
-
         dlmsVARIANT* imageIdentifier, * size;
+#ifdef DLMS_IGNORE_MALLOC
+        dlmsVARIANT imageIdentifier2, size2;
+        uint16_t count;
+        unsigned char ch;
+        if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
+            (ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0 ||
+            ch != DLMS_DATA_TYPE_OCTET_STRING ||
+            (ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) != 0)
+        {
+            e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+            return ret;
+        }
+        imageIdentifier2.vt = DLMS_DATA_TYPE_OCTET_STRING;
+        size2.vt = DLMS_DATA_TYPE_UINT32;
+        //Attach image identifier so heap is not used.
+        gxByteBuffer bb;
+        bb_attach(&bb, e->parameters.byteArr->data + e->parameters.byteArr->position, count, count);
+        imageIdentifier2.byteArr = &bb;
+        e->parameters.byteArr->position += count;
+        if ((ret = cosem_getUInt32(e->parameters.byteArr, &size2.ulVal)) != 0)
+        {
+            e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+            return ret;
+        }
+        imageIdentifier = &imageIdentifier2;
+        size = &size2;
+#else
         if ((ret = va_getByIndex(e->parameters.Arr, 0, &imageIdentifier)) != 0 ||
             (ret = va_getByIndex(e->parameters.Arr, 1, &size)) != 0)
         {
             e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
             return ret;
         }
+#endif //DLMS_IGNORE_MALLOC
         target->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
         unsigned char exists = 0;
         for (pos = 0; pos != target->imageActivateInfo.size; ++pos)
@@ -477,11 +504,12 @@ int invoke_ImageTransfer(
         if (!exists)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&target->imageActivateInfo, target->imageActivateInfo.size, (void**)&item, sizeof(gxImageActivateInfo))) != 0)
+            ++target->imageActivateInfo.size;
+            if ((ret = arr_getByIndex(&target->imageActivateInfo, pos, (void**)&item, sizeof(gxImageActivateInfo))) != 0)
             {
+                --target->imageActivateInfo.size;
                 return ret;
             }
-            ++target->imageActivateInfo.size;
 #else
             item = (gxImageActivateInfo*)gxmalloc(sizeof(gxImageActivateInfo));
             BYTE_BUFFER_INIT(&item->identification);
@@ -489,56 +517,99 @@ int invoke_ImageTransfer(
             arr_push(&target->imageActivateInfo, item);
 #endif //DLMS_IGNORE_MALLOC
             item->size = var_toInteger(size);
-            item->identification.size = 0;
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = cosem_getOctectString2(imageIdentifier->byteArr, item->identification.data, sizeof(item->identification.data), (uint16_t*)&item->identification.size)) != 0)
+            item->identification.size = imageIdentifier->byteArr->size;
+            if ((ret = bb_get(imageIdentifier->byteArr, item->identification.data, imageIdentifier->byteArr->size)) != 0)
             {
                 return ret;
             }
 #else
+            item->identification.size = 0;
             if ((ret = bb_set2(&item->identification, imageIdentifier->byteArr, 0, bb_size(imageIdentifier->byteArr))) != 0)
             {
                 return ret;
             }
 #endif //DLMS_IGNORE_MALLOC
-            int cnt = item->size / target->imageBlockSize;
+            uint16_t cnt = (uint16_t) (item->size / target->imageBlockSize);
             if (item->size % target->imageBlockSize != 0)
             {
                 ++cnt;
             }
+            cnt = ba_getByteCount(cnt);
 #ifndef GX_DLMS_MICROCONTROLLER
             target->imageTransferredBlocksStatus.position = 0;
 #endif //GX_DLMS_MICROCONTROLLER
+#ifdef DLMS_IGNORE_MALLOC
+            //Image transferred blocks status must handle in server side when malloc is not used if image size is huge.
+            if (target->imageTransferredBlocksStatus.capacity != 0)
+            {
+                if (cnt > ba_getCapacity(&target->imageTransferredBlocksStatus))
+                {
+                    e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    return ret;
+                }
+                else
+                {
+                    target->imageTransferredBlocksStatus.size = 0;
+                    if ((ret = ba_capacity(&target->imageTransferredBlocksStatus, cnt)) == 0)
+                    {
+                        for (pos = 0; pos != cnt; ++pos)
+                        {
+                            ba_set(&target->imageTransferredBlocksStatus, 0);
+                        }
+                    }
+                }
+            }
+#else
             target->imageTransferredBlocksStatus.size = 0;
-            if ((ret = ba_capacity(&target->imageTransferredBlocksStatus, (uint16_t)cnt)) == 0)
+            if ((ret = ba_capacity(&target->imageTransferredBlocksStatus, cnt)) == 0)
             {
                 for (pos = 0; pos != cnt; ++pos)
                 {
                     ba_set(&target->imageTransferredBlocksStatus, 0);
                 }
             }
+#endif //DLMS_IGNORE_MALLOC
         }
     }
     //Image block transfer
     else if (e->index == 2)
     {
+        uint32_t index;
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
+            (ret = cosem_getUInt32(e->parameters.byteArr, &index)) != 0)
+        {
+            e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+            return ret;
+        }
+#else
         dlmsVARIANT* imageIndex;
         if ((ret = va_getByIndex(e->parameters.Arr, 0, &imageIndex)) != 0)
         {
             e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
             return ret;
         }
-        ret = ba_setByIndex(&target->imageTransferredBlocksStatus, var_toInteger(imageIndex), 1);
-        target->imageFirstNotTransferredBlockNumber = var_toInteger(imageIndex) + 1;
-        target->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
+        index = (uint16_t)var_toInteger(imageIndex);
+#endif //DLMS_IGNORE_MALLOC
+        if ((ret = ba_setByIndex(&target->imageTransferredBlocksStatus, (uint16_t)index, 1)) == 0)
+        {
+            target->imageFirstNotTransferredBlockNumber = index + 1;
+            target->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
+        }
+#ifdef DLMS_IGNORE_MALLOC
+        bb_clear(e->parameters.byteArr);
+#endif //DLMS_IGNORE_MALLOC
     }
     //Image verify
     else if (e->index == 3)
     {
+        ret = 0;
     }
     //Image activate.
     else if (e->index == 4)
     {
+        ret = 0;
     }
     else
     {
@@ -1824,6 +1895,150 @@ int invoke_SpecialDaysTable(
 }
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
 
+#ifndef DLMS_IGNORE_REGISTER_ACTIVATION
+int invoke_RegisterActivation(
+    dlmsServerSettings* settings,
+    gxRegisterActivation* object,
+    gxValueEventArg* e)
+{
+    int ret = 0;
+    uint16_t count;
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
+    gxObjectDefinition* objectDefinition;
+#else
+    gxObject* it;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    //Add Register.
+    if (e->index == 1)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        uint16_t ot;
+        unsigned char ln[6];
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+        uint16_t count = oa_getCapacity(&object->registerAssignment);
+#else
+        count = arr_getCapacity(&object->registerAssignment);
+        if (!(object->registerAssignment.size < count))
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+#endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+        if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        (ret = cosem_getUInt16(e->parameters.byteArr, &ot)) != 0 ||
+            (ret = cosem_getOctectString2(e->parameters.byteArr, ln, 6, NULL)) != 0)
+        {
+            return ret;
+        }
+        if ((ret = oa_findByLN(&settings->base.objects, (DLMS_OBJECT_TYPE)ot, ln, &it)) != 0)
+        {
+            return ret;
+        }
+        if (it == NULL)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        if ((ret = arr_setByIndexRef(&object->registerAssignment, (void**)it)) != 0)
+        {
+            return ret;
+        }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+#else
+        dlmsVARIANT* tmp, * tmp3;
+        if (e->parameters.Arr != NULL)
+        {
+            short type;
+            ret = va_getByIndex(e->parameters.Arr, 0, &tmp);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            ret = va_getByIndex(tmp->Arr, 0, &tmp3);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            type = var_toInteger(tmp3);
+            ret = va_getByIndex(tmp->Arr, 1, &tmp3);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                return ret;
+            }
+            const unsigned char* ln = tmp3->byteArr->data;
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
+            objectDefinition = (gxObjectDefinition*)gxmalloc(sizeof(gxObjectDefinition));
+            objectDefinition->objectType = (DLMS_OBJECT_TYPE)type;
+            memcpy(objectDefinition->logicalName, ln, 6);
+#else
+            if ((ret = oa_findByLN(&settings->base.objects, type, ln, &it)) != 0)
+            {
+                return ret;
+            }
+            if (it == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            oa_push(&object->registerAssignment, it);
+#else
+            arr_push(&object->registerAssignment, objectDefinition);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        }
+#ifdef DLMS_IGNORE_OBJECT_POINTERS
+        if (ret != 0 && objectDefinition != NULL)
+        {
+            gxfree(objectDefinition);
+        }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+#endif //DLMS_IGNORE_MALLOC
+    }
+    else if (e->index == 2)
+    {
+        count = arr_getCapacity(&object->maskList);
+        if (!(object->registerAssignment.size < count))
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        ++object->maskList.size;
+#ifdef DLMS_IGNORE_MALLOC
+        gxRegisterActivationMask* k;
+        unsigned char pos;
+        uint16_t size;
+        if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
+            (ret = arr_getByIndex(&object->maskList, object->maskList.size - 1, (void**)&k, sizeof(gxRegisterActivationMask))) == 0 &&
+            (ret = cosem_getOctectString2(e->parameters.byteArr, k->name, sizeof(k->name), &size)) == 0)
+        {
+            k->length = size;
+            size = sizeof(k->indexes);
+            if ((ret = cosem_checkArray(e->parameters.byteArr, &size)) == 0)
+            {
+                k->count = size;
+                for (pos = 0; pos != k->count; ++pos)
+                {
+                    if ((ret = cosem_getUInt8(e->parameters.byteArr, &k->indexes[pos])) != 0)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+#else
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }
+    //Remove mask.
+    else if (e->index == 3)
+    {
+
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_REGISTER_ACTIVATION
+
 int cosem_invoke(
     dlmsServerSettings* settings,
     gxValueEventArg* e)
@@ -1971,6 +2186,11 @@ int cosem_invoke(
         ret = invoke_SpecialDaysTable((gxSpecialDaysTable*)e->target, e);
         break;
 #endif //DLMS_IGNORE_SPECIAL_DAYS_TABLE
+#ifndef DLMS_IGNORE_REGISTER_ACTIVATION
+    case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
+        ret = invoke_RegisterActivation(settings, (gxRegisterActivation*)e->target, e);
+        break;
+#endif //DLMS_IGNORE_REGISTER_ACTIVATION
     default:
         //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

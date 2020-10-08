@@ -42,6 +42,7 @@
 #include "../include/notify.h"
 #include "../include/cosem.h"
 #include "../include/gxset.h"
+#include "../include/serverevents.h"
 
 int notify_getData(
     dlmsSettings* settings,
@@ -258,13 +259,21 @@ int notify_generatePushSetupMessages(
 {
     int pos, ret = 0;
     gxByteBuffer* pdu;
+    gxValueEventCollection args;
+    gxValueEventArg e;
 #ifdef DLMS_IGNORE_MALLOC
     gxTarget* it;
     pdu = settings->serializedPdu;
+    ve_init(&e);
+    gxValueEventArg p[1];
+    vec_attach(&args, p, 1, 1);
 #else
     gxKey* it;
     pdu = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
     BYTE_BUFFER_INIT(pdu);
+    ve_init(&e);
+    vec_init(&args);
+    vec_push(&args, &e);
 #endif //DLMS_IGNORE_MALLOC
     if (push == NULL || messages == NULL)
     {
@@ -277,20 +286,58 @@ int notify_generatePushSetupMessages(
         for (pos = 0; pos != push->pushObjectList.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)&it, sizeof(gxTarget))) != 0 ||
-                (ret = notify_addData(settings, it->target, it->attributeIndex, pdu)) != 0)
+            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)&it, sizeof(gxTarget))) != 0)
             {
                 break;
             }
 #else
-            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)&it)) != 0 ||
-                (ret = notify_addData(settings, (gxObject*)it->key, ((gxTarget*)it->value)->attributeIndex, pdu)) != 0)
+            if ((ret = arr_getByIndex(&push->pushObjectList, pos, (void**)&it)) != 0)
             {
                 break;
             }
 #endif //DLMS_IGNORE_MALLOC
+#ifdef DLMS_IGNORE_MALLOC
+            p[0].target = it->target;
+            p[0].index = it->attributeIndex;
+            svr_preRead(settings, &args);
+            if (e.error != 0)
+            {
+                break;
+            }
+            if ((ret = notify_addData(settings, it->target, it->attributeIndex, pdu)) != 0)
+            {
+                break;
+            }
+#else
+            e.target = (gxObject*)it->key;
+            e.index = ((gxTarget*)it->value)->attributeIndex;
+            svr_preRead(settings, &args);
+            if (e.error != 0)
+            {
+                break;
+            }
+            if (e.value.vt != DLMS_DATA_TYPE_NONE)
+            {
+                ret = dlms_setData(pdu, e.value.vt, &e.value);
+                var_clear(&e.value);
+            }
+            else
+            {
+                if ((ret = notify_addData(settings, (gxObject*)it->key, ((gxTarget*)it->value)->attributeIndex, pdu)) != 0)
+                {
+                    break;
+                }
+            }
+#endif //DLMS_IGNORE_MALLOC
+            svr_postRead(settings, &args);
+            ve_clear(&e);
+            if (e.error != 0)
+            {
+                break;
+            }
         }
     }
+    vec_empty(&args);
     if (ret == 0)
     {
         ret = notify_generateDataNotificationMessages2(settings, date, pdu, messages);
@@ -346,7 +393,7 @@ int notify_parsePush(
                 if ((ret = cosem_createObject((DLMS_OBJECT_TYPE)classID, &obj)) != 0)
                 {
                     return ret;
-                }
+            }
                 memcpy(obj->logicalName, tmp->byteArr, 6);
                 oa_push(&settings->objects, obj);
                 //Add object to released objects list.

@@ -176,7 +176,7 @@ extern "C" {
         /////////////////////////////////////////////////////////////////////////
         // Expected Invocation(Frame) counter value.
         // Expected Invocation counter is not check if value is zero.
-        uint64_t expectedInvocationCounter;
+        uint32_t* expectedInvocationCounter;
         /////////////////////////////////////////////////////////////////////////
         // Expected client system title.
         unsigned char* expectedClientSystemTitle;

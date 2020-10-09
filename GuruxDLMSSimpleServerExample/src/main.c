@@ -465,7 +465,7 @@ int captureProfileGeneric(gxProfileGeneric* pg)
         //Update values to the EEPROM.
         fwrite(pdu.data, 1, 4, f);
         getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &dataSize);
-        if (pg->entriesInUse != 0)
+        if (index != 0 && pg->profileEntries != 0)
         {
             fseek(f, 4 + ((index % pg->profileEntries) * dataSize), SEEK_SET);
         }
@@ -1978,6 +1978,7 @@ void handleProfileGenericActions(
     {
         captureProfileGeneric(((gxProfileGeneric*)it->target));
     }
+    saveSettings();
 }
 
 /////////////////////////////////////////////////////////////////////////////

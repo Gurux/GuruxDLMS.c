@@ -161,7 +161,8 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData)
 };
 
-gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE(BASE(associationNone), 0) };
+//Profile generic entries in use and Profile entries are not serialized.
+gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE(BASE(loadProfile), 0x60), IGNORE_ATTRIBUTE(BASE(eventLog), 0x60) };
 
 static uint32_t executeTime = 0;
 
@@ -436,6 +437,41 @@ uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
     return count;
 }
 
+//Get current row count for allocated buffer.
+uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
+{
+    unsigned char pos;
+    uint16_t index = 0;
+    int ret = 0;
+    char fileName[30];
+    getProfileGenericFileName(pg, fileName);
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, fileName, "r+b");
+#else
+    f = fopen(fileName, "r+b");
+#endif
+    if (f != NULL)
+    {
+        uint16_t dataSize = 0;
+        uint8_t columnSizes[10];
+        DLMS_DATA_TYPE dataTypes[10];
+        //Load current entry index from the begin of the data.
+        unsigned char pduBuff[2];
+        gxByteBuffer pdu;
+        bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
+        if (fread(pdu.data, 1, 2, f) == 2)
+        {
+            pdu.size = 2;
+            bb_getUInt16(&pdu, &index);
+            fseek(f, 0, SEEK_SET);
+            bb_empty(&pdu);
+        }
+        fclose(f);
+    }
+    return index;
+}
+
 int captureProfileGeneric(gxProfileGeneric* pg)
 {
     unsigned char pos;
@@ -482,9 +518,9 @@ int captureProfileGeneric(gxProfileGeneric* pg)
         fwrite(pdu.data, 1, 4, f);
 
         getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &dataSize);
-        if (pg->entriesInUse != 0)
+        if (index != 0 && pg->profileEntries != 0)
         {
-            fseek(f, pg->entriesInUse * dataSize, SEEK_SET);
+            fseek(f, 4 + ((index % pg->profileEntries) * dataSize), SEEK_SET);
         }
         //Loop capture columns and get values.
         for (pos = 0; pos != pg->captureObjects.size; ++pos)
@@ -2485,6 +2521,7 @@ void handleProfileGenericActions(
     {
         captureProfileGeneric(((gxProfileGeneric*)it->target));
     }
+    saveSettings();
 }
 
 /////////////////////////////////////////////////////////////////////////////

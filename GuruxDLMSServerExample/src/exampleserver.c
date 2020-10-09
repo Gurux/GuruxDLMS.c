@@ -427,6 +427,41 @@ uint16_t getProfileGenericBufferMaxRowCount(
     return count;
 }
 
+//Get current row count for allocated buffer.
+uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
+{
+    unsigned char pos;
+    uint16_t index = 0;
+    int ret = 0;
+    char fileName[30];
+    getProfileGenericFileName(pg, fileName);
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, fileName, "r+b");
+#else
+    f = fopen(fileName, "r+b");
+#endif
+    if (f != NULL)
+    {
+        uint16_t dataSize = 0;
+        uint8_t columnSizes[10];
+        DLMS_DATA_TYPE dataTypes[10];
+        //Load current entry index from the begin of the data.
+        unsigned char pduBuff[2];
+        gxByteBuffer pdu;
+        bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
+        if (fread(pdu.data, 1, 2, f) == 2)
+        {
+            pdu.size = 2;
+            bb_getUInt16(&pdu, &index);
+            fseek(f, 0, SEEK_SET);
+            bb_empty(&pdu);
+        }
+        fclose(f);
+    }
+    return index;
+}
+
 int captureProfileGeneric(
     dlmsSettings* settings,
     gxProfileGeneric* pg)
@@ -474,7 +509,7 @@ int captureProfileGeneric(
         //Update values to the EEPROM.
         fwrite(pdu.data, 1, 4, f);
         getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
-        if (pg->entriesInUse != 0)
+        if (index != 0 && pg->profileEntries != 0)
         {
             fseek(f, 4 + ((index % pg->profileEntries) * dataSize), SEEK_SET);
         }
@@ -2438,6 +2473,7 @@ void handleProfileGenericActions(
     {
         captureProfileGeneric(settings, ((gxProfileGeneric*)it->target));
     }
+    saveSettings();
 }
 
 

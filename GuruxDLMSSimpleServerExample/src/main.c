@@ -1493,7 +1493,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
                 //Load time from EEPROM.
                 fread(&t, sizeof(uint32_t), 1, f);
                 //seek to begin of next row.
-                fseek(f, 4 + rowSize - sizeof(uint32_t), SEEK_CUR);
+                fseek(f, rowSize - sizeof(uint32_t), SEEK_CUR);
                 //If value is inside of start and end time.
                 if (t >= s && t <= l)
                 {

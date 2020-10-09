@@ -1981,7 +1981,7 @@ int getRestrictingObject(dlmsSettings* settings,
 /**
   Find start index and row count using start and end date time.
 
-  settings: DLMS settings->
+  settings: DLMS settings.
              Start time.
   type: Profile Generic type.
   e: Parameters
@@ -2060,7 +2060,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
         DLMS_DATA_TYPE dataTypes[10];
         if (f != NULL)
         {
-            getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &rowSize);
+            getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &rowSize);
             //Skip current index and total amount of the entries.
             fseek(f, 4, SEEK_SET);
             for (pos = 0; pos != pg->entriesInUse; ++pos)
@@ -2068,7 +2068,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
                 //Load time from EEPROM.
                 fread(&t, sizeof(uint32_t), 1, f);
                 //seek to begin of next row.
-                fseek(f, 4 + rowSize - sizeof(uint32_t), SEEK_CUR);
+                fseek(f, rowSize - sizeof(uint32_t), SEEK_CUR);
                 //If value is inside of start and end time.
                 if (t >= s && t <= l)
                 {
@@ -2102,7 +2102,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
         }
     }
     return ret;
-    }
+}
 
 int readProfileGeneric(
     dlmsSettings* settings,

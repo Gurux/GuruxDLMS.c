@@ -1954,7 +1954,6 @@ int getRestrictingObject(dlmsSettings* settings,
     }
     return ret;
 }
-
 /**
   Find start index and row count using start and end date time.
 

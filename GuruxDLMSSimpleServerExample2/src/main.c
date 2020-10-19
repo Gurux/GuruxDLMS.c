@@ -517,6 +517,7 @@ void updateState(uint16_t value)
 {
     GX_UINT16(eventCode.value) = value;
     captureProfileGeneric(&eventLog);
+    saveSettings();
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1604,7 +1605,7 @@ int readProfileGeneric(
             //Append data.
             if (ret == 0 && dataSize != 0)
             {
-                if (fseek(f, (e->transactionStartIndex - 1) * dataSize, SEEK_SET) != 0)
+                if (fseek(f, 4 + ((e->transactionStartIndex - 1) * dataSize), SEEK_SET) != 0)
                 {
                     printf("Failed to seek %s.\r\n", fileName);
                     return -1;

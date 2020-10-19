@@ -571,6 +571,7 @@ void updateState(uint16_t value)
 {
     GX_UINT16(eventCode.value) = value;
     captureProfileGeneric(&eventLog);
+    saveSettings();
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1954,6 +1955,7 @@ int getRestrictingObject(dlmsSettings* settings,
     }
     return ret;
 }
+
 /**
   Find start index and row count using start and end date time.
 
@@ -2020,44 +2022,43 @@ int getProfileGenericDataByRangeFromRingBuffer(
         if (f != NULL)
         {
             getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &rowSize);
-        }
-        for (pos = 0; pos != pg->entriesInUse; ++pos)
-        {
-            //Load time from EEPROM.
-            fread(&t, sizeof(uint32_t), 1, f);
-            //seek to begin of next row.
-            fseek(f, rowSize - sizeof(uint32_t), SEEK_CUR);
-            //If value is inside of start and end time.
-            if (t >= s && t <= l)
+            //Skip current index and total amount of the entries.
+            fseek(f, 4, SEEK_SET);
+            for (pos = 0; pos != pg->entriesInUse; ++pos)
             {
-                if (last == 0)
+                //Load time from EEPROM.
+                fread(&t, sizeof(uint32_t), 1, f);
+                //seek to begin of next row.
+                fseek(f, rowSize - sizeof(uint32_t), SEEK_CUR);
+                //If value is inside of start and end time.
+                if (t >= s && t <= l)
                 {
-                    //Save end position if we have only one row.
-                    e->transactionEndIndex = e->transactionStartIndex = 1 + pos;
-                }
-                else
-                {
-                    if (last <= t)
+                    if (last == 0)
                     {
-                        e->transactionEndIndex = pos + 1;
+                        //Save end position if we have only one row.
+                        e->transactionEndIndex = e->transactionStartIndex = 1 + pos;
                     }
                     else
                     {
-                        //Index is one based, not zero.
-                        if (e->transactionEndIndex == 0)
+                        if (last <= t)
                         {
-                            ++e->transactionEndIndex;
+                            e->transactionEndIndex = pos + 1;
                         }
-                        e->transactionEndIndex += pg->entriesInUse - 1;
-                        e->transactionStartIndex = pos;
-                        break;
+                        else
+                        {
+                            //Index is one based, not zero.
+                            if (e->transactionEndIndex == 0)
+                            {
+                                ++e->transactionEndIndex;
+                            }
+                            e->transactionEndIndex += pg->entriesInUse - 1;
+                            e->transactionStartIndex = pos;
+                            break;
+                        }
                     }
+                    last = t;
                 }
-                last = t;
             }
-        }
-        if (f != NULL)
-        {
             fclose(f);
         }
     }
@@ -2164,7 +2165,7 @@ int readProfileGeneric(
             //Append data.
             if (ret == 0 && dataSize != 0)
             {
-                if (fseek(f, (e->transactionStartIndex - 1) * dataSize, SEEK_SET) != 0)
+                if (fseek(f, 4 + (e->transactionStartIndex - 1) * dataSize, SEEK_SET) != 0)
                 {
                     printf("Failed to seek %s.\r\n", fileName);
                     return -1;

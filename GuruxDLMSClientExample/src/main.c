@@ -134,7 +134,7 @@ int readTcpIpConnection(
 #endif
     if (connection->trace > GX_TRACE_LEVEL_WARNING)
     {
-        printf("Connecting to %s:%d\r\n", address, port);
+        printf("Connecting to %s:%d\n", address, port);
     }
     //Make connection to the meter.
     ret = com_makeConnect(connection, address, port, 5000);
@@ -263,35 +263,35 @@ int readSerialPort(
 
 static void ShowHelp()
 {
-    printf("GuruxDlmsSample reads data from the DLMS/COSEM device.\r\n");
-    printf("GuruxDlmsSample -h [Meter IP Address] -p [Meter Port No] -c 16 -s 1 -r SN\r\n");
-    printf(" -h \t host name or IP address.\r\n");
-    printf(" -p \t port number or name (Example: 1000).\r\n");
-    printf(" -S \t serial port.\r\n");
-    printf(" -i IEC is a start protocol.\r\n");
-    printf(" -a \t Authentication (None, Low, High).\r\n");
-    printf(" -P \t Password for authentication.\r\n");
-    printf(" -c \t Client address. (Default: 16)\r\n");
-    printf(" -s \t Server address. (Default: 1)\r\n");
-    printf(" -n \t Server address as serial number.\r\n");
-    printf(" -r [sn, sn]\t Short name or Logican Name (default) referencing is used.\r\n");
-    printf(" -w WRAPPER profile is used. HDLC is default.\r\n");
-    printf(" -t Trace messages.\r\n");
-    printf(" -g \"0.0.1.0.0.255:1; 0.0.1.0.0.255:2\" Get selected object(s) with given attribute index.\r\n");
-    printf(" -C \t Security Level. (None, Authentication, Encrypted, AuthenticationEncryption)");
-    printf(" -v \t Invocation counter data object Logical Name. Ex. 0.0.43.1.1.255");
-    printf(" -I \t Auto increase invoke ID");
-    printf(" -T \t System title that is used with chiphering. Ex -T 4775727578313233");
-    printf(" -A \t Authentication key that is used with chiphering. Ex -A D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF");
-    printf(" -B \t Block cipher key that is used with chiphering. Ex -B 000102030405060708090A0B0C0D0E0F");
-    printf(" -D \t Dedicated key that is used with chiphering. Ex -D 00112233445566778899AABBCCDDEEFF");
-    printf("Example:\r\n");
-    printf("Read LG device using TCP/IP connection.\r\n");
-    printf("GuruxDlmsSample -r SN -c 16 -s 1 -h [Meter IP Address] -p [Meter Port No]\r\n");
-    printf("Read LG device using serial port connection.\r\n");
-    printf("GuruxDlmsSample -r SN -c 16 -s 1 -sp COM1 -i\r\n");
-    printf("Read Indian device using serial port connection.\r\n");
-    printf("GuruxDlmsSample -S COM1 -c 16 -s 1 -a Low -P [password]\r\n");
+    printf("GuruxDlmsSample reads data from the DLMS/COSEM device.\n");
+    printf("GuruxDlmsSample -h [Meter IP Address] -p [Meter Port No] -c 16 -s 1 -r SN\n");
+    printf(" -h \t host name or IP address.\n");
+    printf(" -p \t port number or name (Example: 1000).\n");
+    printf(" -S \t serial port.\n");
+    printf(" -i \t IEC is a start protocol.\n");
+    printf(" -a \t Authentication (None, Low, High).\n");
+    printf(" -P \t Password for authentication.\n");
+    printf(" -c \t Client address. (Default: 16)\n");
+    printf(" -s \t Server address. (Default: 1)\n");
+    printf(" -n \t Server address as serial number.\n");
+    printf(" -r \t [sn, sn]\t Short name or Logican Name (default) referencing is used.\n");
+    printf(" -w \t WRAPPER profile is used. HDLC is default.\n");
+    printf(" -t \t Trace messages.\n");
+    printf(" -g \t Get selected object(s) with given attribute index. Ex -g \"0.0.1.0.0.255:1; 0.0.1.0.0.255:2\" \n");
+    printf(" -C \t Security Level. (None, Authentication, Encrypted, AuthenticationEncryption)\n");
+    printf(" -v \t Invocation counter data object Logical Name. Ex. 0.0.43.1.1.255\n");
+    printf(" -I \t Auto increase invoke ID\n");
+    printf(" -T \t System title that is used with chiphering. Ex -T 4775727578313233\n");
+    printf(" -A \t Authentication key that is used with chiphering. Ex -A D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF\n");
+    printf(" -B \t Block cipher key that is used with chiphering. Ex -B 000102030405060708090A0B0C0D0E0F\n");
+    printf(" -D \t Dedicated key that is used with chiphering. Ex -D 00112233445566778899AABBCCDDEEFF\n");
+    printf("Example:\n");
+    printf("Read LG device using TCP/IP connection.\n");
+    printf("GuruxDlmsSample -r SN -c 16 -s 1 -h [Meter IP Address] -p [Meter Port No]\n");
+    printf("Read LG device using serial port connection.\n");
+    printf("GuruxDlmsSample -r SN -c 16 -s 1 -sp COM1 -i\n");
+    printf("Read Indian device using serial port connection.\n");
+    printf("GuruxDlmsSample -S COM1 -c 16 -s 1 -a Low -P [password]\n");
 }
 
 int connectMeter(int argc, char* argv[])
@@ -562,13 +562,11 @@ int connectMeter(int argc, char* argv[])
             }
             else
             {
-                ShowHelp();
                 return 1;
             }
         }
         break;
         default:
-            ShowHelp();
             return 1;
         }
     }
@@ -604,7 +602,7 @@ int connectMeter(int argc, char* argv[])
     }
     else
     {
-        printf("All items are read.\r\n");
+        printf("All items are read.\n");
     }
     cl_clear(&con.settings);
     return 0;
@@ -613,6 +611,10 @@ int connectMeter(int argc, char* argv[])
 int main(int argc, char* argv[])
 {
     int ret = connectMeter(argc, argv);
+    if (ret != 0)
+    {
+        ShowHelp();
+    }
 #if defined(_WIN32) || defined(_WIN64)//Windows
     WSACleanup();
 #if _MSC_VER > 1000

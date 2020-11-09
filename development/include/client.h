@@ -315,6 +315,16 @@ extern "C" {
         message* messages);
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
+    /////////////////////////////////////////////////////////////////////////
+    // Convert physical address and logical address to server address.
+    // logicalAddress: Server logical address.
+    // physicalAddress: Server physical address.
+    // addressSize: Address size in bytes.
+    // Returns Server address.
+    uint16_t cl_getServerAddress(
+        uint16_t logicalAddress,
+        uint16_t physicalAddress,
+        unsigned char addressSize);
 #ifdef  __cplusplus
 }
 #endif

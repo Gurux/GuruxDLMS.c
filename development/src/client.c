@@ -1831,5 +1831,23 @@ int cl_methodSN(
     return ret;
 }
 
+uint16_t cl_getServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize)
+{
+    uint16_t value;
+    if (addressSize < 4 && physicalAddress < 0x80 && logicalAddress < 0x80)
+    {
+        value = logicalAddress << 7 | physicalAddress;
+    }
+    else if (physicalAddress < 0x4000 && logicalAddress < 0x4000)
+    {
+        value = logicalAddress << 14 | physicalAddress;
+    }
+    else
+    {
+        value = 0;
+    }
+    return value;
+}
+
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #endif //!defined(DLMS_IGNORE_CLIENT)

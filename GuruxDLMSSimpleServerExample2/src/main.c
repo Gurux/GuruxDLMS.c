@@ -81,8 +81,8 @@ uint32_t SERIAL_NUMBER = 123456;
 #define WRAPPER_BUFFER_SIZE 8 + PDU_BUFFER_SIZE
 //Buffer where frames are saved.
 static unsigned char frameBuff[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
-//Buffer where PDUs are saved.
-static unsigned char pduBuff[PDU_BUFFER_SIZE];
+//Buffer where PDUs are saved. Add 3 bytes for LLC bytes.
+static unsigned char pduBuff[3 + PDU_BUFFER_SIZE];
 static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Define server system title.
 static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
@@ -1670,19 +1670,25 @@ int readProfileGeneric(
                         }
                         if (ret != 0)
                         {
-                            //Don't set error if PDU is full.
-                            if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
-                            {
-                                --e->transactionStartIndex;
-                                e->value.byteArr->size = pduSize;
-                                ret = 0;
-                            }
-                            else
-                            {
-                                break;
-                            }
                             break;
                         }
+                        //If DPU is full.
+                        if (e->value.byteArr->size > settings->maxPduSize)
+                        {
+                            ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                            break;
+                        }
+                    }
+                    if (ret != 0)
+                    {
+                        //Don't set error if PDU is full.
+                        if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+                        {
+                            --e->transactionStartIndex;
+                            e->value.byteArr->size = pduSize;
+                            ret = 0;
+                        }
+                        break;
                     }
                     ++e->transactionStartIndex;
                 }
@@ -3191,7 +3197,7 @@ int main(int argc, char* argv[])
 
     bb_attach(&reply, replyFrame, 0, sizeof(replyFrame));
     //Start server using logical name referencing and HDLC framing.
-    svr_init(&settings, 1, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, frameBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, pduBuff, PDU_BUFFER_SIZE);
+    svr_init(&settings, 1, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, frameBuff, sizeof(frameBuff), pduBuff, sizeof(pduBuff));
     //Allocate space for read list.
     vec_attach(&settings.transaction.targets, events, 0, sizeof(events) / sizeof(events[0]));
     //Allocate space for client password.

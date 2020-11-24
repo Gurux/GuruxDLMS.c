@@ -4251,6 +4251,7 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
             }
         }
         data->data.size = bb.size + index;
+        data->data.position += bb.position;
         //If target is sending data ciphered using different security policy.
         if (settings->cipher.security != security)
         {

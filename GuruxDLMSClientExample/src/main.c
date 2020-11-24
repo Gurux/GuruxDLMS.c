@@ -310,7 +310,7 @@ int connectMeter(int argc, char* argv[])
     char* p, * readObjects = NULL;
     int index, a, b, c, d, e, f;
     char* invocationCounter = NULL;
-    while ((opt = getopt(argc, argv, "h:p:c:s:r:iIt:a:p:wP:g:S:C:v:T:A:B:D:")) != -1)
+    while ((opt = getopt(argc, argv, "h:p:c:s:r:iIt:a:p:wP:g:S:C:v:T:A:B:D:l:F:")) != -1)
     {
         switch (opt)
         {
@@ -413,7 +413,7 @@ int connectMeter(int argc, char* argv[])
             break;
         case 'B':
             bb_clear(&con.settings.cipher.blockCipherKey);
-            bb_addString(&con.settings.cipher.blockCipherKey, optarg);
+            bb_addHexString(&con.settings.cipher.blockCipherKey, optarg);
             if (con.settings.cipher.blockCipherKey.size != 16)
             {
                 printf("Invalid block cipher key '%s'.", optarg);
@@ -423,12 +423,15 @@ int connectMeter(int argc, char* argv[])
         case 'D':
             con.settings.cipher.dedicatedKey = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
             bb_init(con.settings.cipher.dedicatedKey);
-            bb_addString(con.settings.cipher.dedicatedKey, optarg);
+            bb_addHexString(con.settings.cipher.dedicatedKey, optarg);
             if (con.settings.cipher.dedicatedKey->size != 16)
             {
                 printf("Invalid dedicated key '%s'.", optarg);
                 return 1;
             }
+            break;
+        case 'F':
+            con.settings.cipher.invocationCounter = atol(optarg);
             break;
         case 'v':
             invocationCounter = optarg;
@@ -508,6 +511,12 @@ int connectMeter(int argc, char* argv[])
             break;
         case 's':
             con.settings.serverAddress = atoi(optarg);
+            break;
+        case 'l':
+            con.settings.serverAddress = cl_getServerAddress(atoi(optarg), con.settings.serverAddress, 0);
+            break;
+        case 'n':
+            //TODO: Add support for serial number. con.settings.serverAddress = cl_getServerAddress(atoi(optarg));
             break;
         case '?':
         {

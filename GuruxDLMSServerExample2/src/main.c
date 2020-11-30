@@ -375,7 +375,11 @@ int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dat
             }
         }
         //If data is returned as byte array.
-        if ((e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray))
+        if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING
+#ifndef DLMS_IGNORE_MALLOC
+            && e.byteArray
+#endif //DLMS_IGNORE_MALLOC
+            )
         {
             e.value.vt = pdu.data[0];
         }
@@ -548,7 +552,11 @@ int captureProfileGeneric(gxProfileGeneric* pg)
                 }
             }
             //If data is returned as byte array.
-            if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray)
+            if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING
+#ifndef DLMS_IGNORE_MALLOC
+                && e.byteArray
+#endif //DLMS_IGNORE_MALLOC
+                )
             {
                 fwrite(&e.value.byteArr->data[1], columnSizes[pos], 1, f);
             }
@@ -1722,7 +1730,7 @@ int loadSecurity()
             bb_clear(&bb);
             return ret;
         }
-}
+    }
     return saveSecurity();
 }
 

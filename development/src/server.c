@@ -2764,6 +2764,200 @@ int svr_handleReleaseRequest(
     return 0;
 }
 
+#ifndef DLMS_IGNORE_PLC
+int svr_registerRequest(
+    dlmsSettings* settings,
+    gxByteBuffer* initiatorSystemTitle,
+    gxByteBuffer* systemTitle,
+    gxByteBuffer* data)
+{
+    gxByteBuffer bb;
+    bb_init(&bb);
+    bb_setUInt8(&bb, DLMS_COMMAND_REGISTER_REQUEST);
+    bb_set(&bb, initiatorSystemTitle->data, initiatorSystemTitle->size);
+    // LEN
+    bb_setUInt8(&bb, 0x1);
+    bb_set(&bb, systemTitle->data, systemTitle->size);
+    // MAC address.
+    bb_setUInt16(&bb, settings->plcSettings.macSourceAddress);
+    int ret;
+    int val = settings->plcSettings.initialCredit << 5;
+    val |= settings->plcSettings.currentCredit << 2;
+    val |= settings->plcSettings.deltaCredit & 0x3;
+    int clientAddress = settings->clientAddress;
+    int serverAddress = settings->serverAddress;
+    int macSourceAddress = settings->plcSettings.macSourceAddress;
+    int macTargetAddress = settings->plcSettings.macDestinationAddress;
+    // 10.4.6.4 Source and destination APs and addresses of CI-PDUs
+    // Client address is No-station in discoverReport.
+    if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC_HDLC)
+    {
+        settings->plcSettings.initialCredit = 0;
+        settings->plcSettings.currentCredit = 0;
+        settings->plcSettings.macSourceAddress = 0xC01;
+        settings->plcSettings.macDestinationAddress = 0xFFF;
+        settings->clientAddress = 0x66;
+        // All-station
+        settings->serverAddress = 0x33FF;
+    }
+    else
+    {
+        settings->clientAddress = 1;
+        settings->serverAddress = 0;
+        settings->plcSettings.macSourceAddress = 0xC00;
+        settings->plcSettings.macDestinationAddress = 0xFFF;
+    }
+    ret = dlms_getMacFrame(settings, 0x13, val, &bb, data);
+    settings->clientAddress = clientAddress;
+    settings->serverAddress = serverAddress;
+    settings->plcSettings.macSourceAddress = macSourceAddress;
+    settings->plcSettings.macDestinationAddress = macTargetAddress;
+    return ret;
+}
+
+int svr_parseRegisterRequest(
+    dlmsSettings* settings,
+    gxByteBuffer* value)
+{
+    int ret;
+    unsigned char pos, count;
+    // Get System title.
+    bb_get(value, settings->plcSettings.systemTitle.data, settings->plcSettings.systemTitle.size);
+    if ((ret = bb_getUInt8(value, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            // MAC address.
+            if ((ret = bb_get(value, settings->plcSettings.systemTitle.data, settings->plcSettings.systemTitle.size)) != 0 ||
+                (ret = bb_getUInt16(value, &settings->plcSettings.macSourceAddress)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+int svr_parseDiscoverRequest(
+    gxByteBuffer* value,
+    gxPlcRegister* reg)
+{
+    int ret;
+    if ((ret = bb_getUInt8(value, &reg->responseProbability)) != 0 ||
+        (ret = bb_getUInt16(value, &reg->allowedTimeSlots)) != 0 ||
+        (ret = bb_getUInt8(value, &reg->discoverReportInitialCredit)) != 0 ||
+        (ret = bb_getUInt8(value, &reg->icEqualCredit)) != 0)
+    {
+    }
+    return 0;
+}
+
+int dlms_pingRequest(
+    dlmsSettings* settings,
+    gxByteBuffer* systemTitle,
+    gxByteBuffer* data)
+{
+    int ret;
+    gxByteBuffer bb;
+    bb_init(&bb);
+    // Control byte.
+    if ((ret = bb_setUInt8(&bb, DLMS_COMMAND_PING_REQUEST)) != 0 ||
+        (ret = bb_set(&bb, systemTitle->data, systemTitle->size)) != 0 ||
+        (ret = dlms_getMacFrame(settings, 0x13, 0, &bb, data)) != 0)
+    {
+        bb_clear(&bb);
+    }
+    return ret;
+}
+
+int dlm_parsePing(gxByteBuffer* data, gxByteBuffer* value)
+{
+    bb_clear(data);
+    return bb_set(value, data->data + data->position + 1, 6);
+}
+
+int dlms_repeaterCallRequest(
+    dlmsSettings* settings,
+    gxByteBuffer* data)
+{
+    int ret;
+    gxByteBuffer bb;
+    bb_init(&bb);
+    // Control byte.
+    if ((ret = bb_setUInt8(&bb, DLMS_COMMAND_REPEAT_CALL_REQUEST)) != 0 ||
+        // MaxAdrMac.
+        (ret = bb_setUInt16(&bb, 0x63)) != 0 ||
+        // Nb_Tslot_For_New
+        (ret = bb_setUInt8(&bb, 0)) != 0 ||
+        // Reception-Threshold default value
+        (ret = bb_setUInt8(&bb, 0)) != 0 ||
+        (ret = dlms_getMacFrame(settings, 0x13, 0xFC, &bb, data)) != 0)
+    {
+    }
+    bb_clear(&bb);
+    return ret;
+}
+
+int svr_discoverReport(
+    dlmsSettings* settings,
+    gxByteBuffer* systemTitle,
+    unsigned char newMeter,
+    gxByteBuffer* data)
+{
+    if (settings->interfaceType != DLMS_INTERFACE_TYPE_PLC && settings->interfaceType != DLMS_INTERFACE_TYPE_PLC_HDLC)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    gxByteBuffer bb;
+    bb_init(&bb);
+    int ret;
+    unsigned char alarmDescription;
+    if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC)
+    {
+        alarmDescription = (newMeter ? 1 : 0x82);
+    }
+    else
+    {
+        alarmDescription = 0;
+    }
+    if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC_HDLC)
+    {
+        ret = dlms_addLLCBytes(settings, &bb);
+    }
+    bb_setUInt8(&bb, DLMS_COMMAND_DISCOVER_REPORT);
+    bb_setUInt8(&bb, 1);
+    bb_set(&bb, settings->plcSettings.systemTitle.data, settings->plcSettings.systemTitle.size);
+    if (alarmDescription != 0)
+    {
+        bb_setUInt8(&bb, 1);
+    }
+    bb_setUInt8(&bb, alarmDescription);
+    int clientAddress = settings->clientAddress;
+    int serverAddress = settings->serverAddress;
+    int macSourceAddress = settings->plcSettings.macSourceAddress;
+    int macTargetAddress = settings->plcSettings.macDestinationAddress;
+    // 10.4.6.4 Source and destination APs and addresses of CI-PDUs
+    // Client address is No-station in discoverReport.
+    if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC_HDLC)
+    {
+        settings->plcSettings.macDestinationAddress = DLMS_PLC_HDLC_SOURCE_ADDRESS_INITIATOR;
+    }
+    else
+    {
+        settings->clientAddress = 0;
+        settings->serverAddress = 0xFD;
+    }
+    ret = dlms_getMacFrame(settings, 0x13, 0, &bb, data);
+    //Restore original values.
+    settings->clientAddress = clientAddress;
+    settings->serverAddress = serverAddress;
+    settings->plcSettings.macSourceAddress = macSourceAddress;
+    settings->plcSettings.macDestinationAddress = macTargetAddress;
+    return ret;
+}
+
+#endif //DLMS_IGNORE_PLC
+
 int svr_handleCommand(
     dlmsServerSettings* settings,
     DLMS_COMMAND cmd,
@@ -2896,6 +3090,18 @@ int svr_handleCommand(
         }
         frame = DLMS_COMMAND_UA;
         break;
+    case DLMS_COMMAND_DISCOVER_REQUEST:
+    {
+        gxPlcRegister r;
+        svr_parseDiscoverRequest(data, &r);
+        unsigned char newMeter = settings->base.plcSettings.macSourceAddress == 0xFFE && settings->base.plcSettings.macDestinationAddress == 0xFFF;
+        return svr_discoverReport(&settings->base, &settings->base.plcSettings.systemTitle, newMeter, reply);
+    }
+    case DLMS_COMMAND_REGISTER_REQUEST:
+        svr_parseRegisterRequest(&settings->base, data);
+        return svr_discoverReport(&settings->base, &settings->base.plcSettings.systemTitle, 0, reply);
+    case DLMS_COMMAND_PING_REQUEST:
+        break;
     case DLMS_COMMAND_NONE:
         //Get next frame.
         data->position = 0;
@@ -2917,36 +3123,44 @@ int svr_handleCommand(
     {
         return ret;
     }
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    switch (settings->base.interfaceType)
     {
 #ifndef DLMS_IGNORE_HDLC
+    case DLMS_INTERFACE_TYPE_HDLC:
+    case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
         if ((ret = dlms_getHdlcFrame(&settings->base, frame, data, reply)) != 0)
         {
 #ifdef DLMS_DEBUG
             svr_notifyTrace("getHdlcFrame failed. ", ret);
 #endif //DLMS_DEBUG
         }
-#else
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
 #endif //DLMS_IGNORE_HDLC
-    }
 #ifndef DLMS_IGNORE_WRAPPER
-    else if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
-    {
+    case DLMS_INTERFACE_TYPE_WRAPPER:
         if ((ret = dlms_getWrapperFrame(&settings->base, cmd, data, reply)) != 0)
         {
 #ifdef DLMS_DEBUG
             svr_notifyTrace("getHdlcFrame failed. ", ret);
 #endif //DLMS_DEBUG
         }
-    }
+        break;
 #endif //DLMS_IGNORE_WRAPPER
-    else
-    {
+#ifndef DLMS_IGNORE_PLC
+    case DLMS_INTERFACE_TYPE_PLC:
+    case DLMS_INTERFACE_TYPE_PLC_HDLC:
+        ret = dlms_getMacFrame(&settings->base, frame, 0, data, reply);
+        break;
+#endif //DLMS_IGNORE_PLC
+    case DLMS_INTERFACE_TYPE_PDU:
+        ret = bb_set2(reply, data, 0, bb_size(data));
+        break;
+    default:
 #ifdef DLMS_DEBUG
         svr_notifyTrace("Unknown frame type. ", -1);
 #endif //DLMS_DEBUG
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
     }
     if (cmd == DLMS_COMMAND_DISC ||
         (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER && cmd == DLMS_COMMAND_RELEASE_REQUEST))
@@ -3035,7 +3249,7 @@ int svr_handleRequest2(
         else
         {
             ret = 0;
-        }
+    }
 #else
         ret = 0;
 #endif //DLMS_IGNORE_HDLC
@@ -3074,7 +3288,7 @@ int svr_handleRequest2(
 #else
                 ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_HDLC
-            }
+        }
 #ifndef DLMS_IGNORE_WRAPPER
             else if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
@@ -3157,7 +3371,7 @@ int svr_handleRequest2(
             reply_clear2(&settings->info, 1);
             return 0;
         }
-    }
+        }
     // If all data is not received yet.
     if (!settings->info.complete)
     {
@@ -3332,7 +3546,7 @@ int svr_handleRequest2(
     reply_clear2(&settings->info, 0);
     settings->dataReceived = time_elapsed();
     return ret;
-}
+        }
 
 int svr_handleInactivityTimeout(
     dlmsServerSettings* settings,
@@ -3570,13 +3784,13 @@ int svr_handleSingleActionSchedule(
                         {
                             break;
                         }
-                    }
                 }
             }
         }
     }
-    return ret;
 }
+    return ret;
+    }
 #endif //!defined(DLMS_IGNORE_ACTION_SCHEDULE) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
 
 #ifndef DLMS_IGNORE_PUSH_SETUP

@@ -32,6 +32,7 @@
 #endif
 
 #include "../include/communication.h"
+#include "../../development/include/gxserializer.h"
 
 //Client don't need this.
 unsigned char svr_isTarget(
@@ -203,17 +204,16 @@ int readTcpIpConnection(
 int readSerialPort(
     connection* connection,
     const char* port,
-    unsigned char iec,
     char* readObjects,
     char* invocationCounter)
 {
     int ret;
-    ret = com_open(connection, port, iec);
+    ret = com_open(connection, port);
     if (ret == 0 && readObjects != NULL)
     {
-        if ((ret = com_initializeOpticalHead(connection, iec)) == 0 &&
+        if ((ret = com_initializeOpticalHead(connection)) == 0 &&
             (ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 &&
-            (ret = com_initializeOpticalHead(connection, iec)) == 0 &&
+            (ret = com_initializeOpticalHead(connection)) == 0 &&
             (ret = com_initializeConnection(connection)) == 0 &&
             (ret = com_getAssociationView(connection)) == 0)
         {
@@ -245,9 +245,9 @@ int readSerialPort(
     else if (ret == 0)
     {
         //Initialize connection.
-        if ((ret = com_initializeOpticalHead(connection, iec)) != 0 ||
+        if ((ret = com_initializeOpticalHead(connection)) != 0 ||
             (ret = com_updateInvocationCounter(connection, invocationCounter)) != 0 ||
-            (ret = com_initializeOpticalHead(connection, iec)) != 0 ||
+            (ret = com_initializeOpticalHead(connection)) != 0 ||
             (ret = com_initializeConnection(connection)) != 0 ||
             (ret = com_readAllObjects(connection)) != 0)
             //Read all objects from the meter.
@@ -268,8 +268,7 @@ static void ShowHelp()
     printf(" -h \t host name or IP address.\n");
     printf(" -p \t port number or name (Example: 1000).\n");
     printf(" -S \t serial port.\n");
-    printf(" -i \t IEC is a start protocol.\n");
-    printf(" -a \t Authentication (None, Low, High).\n");
+    printf(" -a \t Authentication (None, Low, High, HighMd5, HighSha1, HighGmac, HighSha256).\n");
     printf(" -P \t Password for authentication.\n");
     printf(" -c \t Client address. (Default: 16)\n");
     printf(" -s \t Server address. (Default: 1)\n");
@@ -281,10 +280,13 @@ static void ShowHelp()
     printf(" -C \t Security Level. (None, Authentication, Encrypted, AuthenticationEncryption)\n");
     printf(" -v \t Invocation counter data object Logical Name. Ex. 0.0.43.1.1.255\n");
     printf(" -I \t Auto increase invoke ID\n");
+    printf(" -o \t Cache association view to make reading faster. Ex. -o C:\\device.xml");
     printf(" -T \t System title that is used with chiphering. Ex -T 4775727578313233\n");
     printf(" -A \t Authentication key that is used with chiphering. Ex -A D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF\n");
     printf(" -B \t Block cipher key that is used with chiphering. Ex -B 000102030405060708090A0B0C0D0E0F\n");
     printf(" -D \t Dedicated key that is used with chiphering. Ex -D 00112233445566778899AABBCCDDEEFF\n");
+    printf(" -i \t Used communication interface. Ex. -i WRAPPER.");
+    printf(" -m \t Used PLC MAC address. Ex. -m 1.");
     printf("Example:\n");
     printf("Read LG device using TCP/IP connection.\n");
     printf("GuruxDlmsSample -r SN -c 16 -s 1 -h [Meter IP Address] -p [Meter Port No]\n");
@@ -306,11 +308,10 @@ int connectMeter(int argc, char* argv[])
     int port = 0;
     char* address = NULL;
     char* serialPort = NULL;
-    unsigned char iec = 0;
-    char* p, * readObjects = NULL;
+    char* p, * readObjects = NULL, * outputFile = NULL;
     int index, a, b, c, d, e, f;
     char* invocationCounter = NULL;
-    while ((opt = getopt(argc, argv, "h:p:c:s:r:iIt:a:p:wP:g:S:C:v:T:A:B:D:l:F:")) != -1)
+    while ((opt = getopt(argc, argv, "h:p:c:s:r:i:It:a:p:wP:g:S:C:v:T:A:B:D:l:F:o:")) != -1)
     {
         switch (opt)
         {
@@ -363,8 +364,28 @@ int connectMeter(int argc, char* argv[])
             bb_addString(&con.settings.password, optarg);
             break;
         case 'i':
-            //IEC.
-            iec = 1;
+            //Interface
+            if (strcasecmp("HDLC", optarg) == 0)
+                con.settings.interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+            else  if (strcasecmp("WRAPPER", optarg) == 0)
+                con.settings.interfaceType = DLMS_INTERFACE_TYPE_WRAPPER;
+            else  if (strcasecmp("HdlcModeE", optarg) == 0)
+                con.settings.interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
+            else  if (strcasecmp("Plc", optarg) == 0)
+                con.settings.interfaceType = DLMS_INTERFACE_TYPE_PLC;
+            else if (strcasecmp("PlcHdlc", optarg) == 0)
+                con.settings.interfaceType = DLMS_INTERFACE_TYPE_PLC_HDLC;
+            else if (strcasecmp("PlcPrime", optarg) == 0)
+                con.settings.interfaceType = DLMS_INTERFACE_TYPE_PLC_PRIME;
+            else if (strcasecmp("Pdu", optarg) == 0)
+                con.settings.interfaceType = DLMS_INTERFACE_TYPE_PDU;
+            else
+            {
+                printf("Invalid interface option '%s'. (HDLC, WRAPPER, HdlcModeE, Plc, PlcHdlc)", optarg);
+                return 1;
+            }
+            //Update PLC settings.
+            plc_reset(&con.settings);
             break;
         case 'I':
             // AutoIncreaseInvokeID.
@@ -432,6 +453,9 @@ int connectMeter(int argc, char* argv[])
             break;
         case 'F':
             con.settings.cipher.invocationCounter = atol(optarg);
+            break;
+        case 'o':
+            outputFile = optarg;
             break;
         case 'v':
             invocationCounter = optarg;
@@ -504,8 +528,6 @@ int connectMeter(int argc, char* argv[])
                 return 1;
             }
             break;
-        case 'o':
-            break;
         case 'c':
             con.settings.clientAddress = atoi(optarg);
             break;
@@ -517,6 +539,9 @@ int connectMeter(int argc, char* argv[])
             break;
         case 'n':
             //TODO: Add support for serial number. con.settings.serverAddress = cl_getServerAddress(atoi(optarg));
+            break;
+        case 'm':
+            con.settings.plcSettings.macDestinationAddress = atoi(optarg);
             break;
         case '?':
         {
@@ -596,7 +621,7 @@ int connectMeter(int argc, char* argv[])
     }
     else if (serialPort != NULL)
     {
-        ret = readSerialPort(&con, serialPort, iec, readObjects, invocationCounter);
+        ret = readSerialPort(&con, serialPort, readObjects, invocationCounter);
     }
     else
     {

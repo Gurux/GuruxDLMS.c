@@ -40,6 +40,7 @@ extern "C" {
 
 // #define DLMS_IGNORE_HDLC
 // #define DLMS_IGNORE_WRAPPER
+// #define DLMS_IGNORE_PLC
 // #define DLMS_IGNORE_NOTIFY
 // #define DLMS_IGNORE_SERVER
 // #define DLMS_IGNORE_CLIENT
@@ -110,6 +111,7 @@ extern "C" {
 // #define DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 // #define DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 // #define DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+// #define DLMS_IGNORE_ARBITRATOR
 
 // #define DLMS_IGNORE_MALLOC
 // #define DLMS_USE_CUSTOM_MALLOC
@@ -139,6 +141,11 @@ extern "C" {
 
 //Defined if program memory (flash) is used instead of SRAM.
 // #define USE_PROGMEM
+
+//COSEM objects are using DLMS standard data types.
+//Some meters are using non-DLMS data types.
+//Using exact data types will save memory, but reading failes if data type is wrong.
+// #define DLMS_COSEM_EXACT_DATA_TYPES
 
 #ifdef ARDUINO_ARCH_AVR
 /////////////////////////////////////////////////////////////////////////////

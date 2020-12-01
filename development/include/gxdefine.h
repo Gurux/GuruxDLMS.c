@@ -117,6 +117,8 @@ extern "C" {
 //Define max register activation mask name length.
 #define MAX_REGISTER_ACTIVATION_MASK_NAME_LENGTH 10
 
+//Define max reporting system item name length.
+#define MAX_REPORTING_SYSTEM_ITEM_LENGTH 20
 
 //Define max SAP item count. This is used when data is serialized.
 #define MAX_SAP_ITEM_SERIALIZE_COUNT 5

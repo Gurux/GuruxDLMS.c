@@ -303,6 +303,53 @@ int obj_clearModemConfigurationInitialisationStrings(gxArray* list)
     return ret;
 }
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
+
+#ifndef DLMS_IGNORE_SCHEDULE
+int obj_clearScheduleEntries(gxArray* list)
+{
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxScheduleEntry* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        ba_clear(&it->execSpecDays);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(list);
+    return ret;
+}
+#endif //DLMS_IGNORE_SCHEDULE
+
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+
+int obj_clearSFSKReportingSystemList(gxArray* list)
+{
+#ifdef DLMS_IGNORE_MALLOC
+    list->size = 0;
+    return 0;
+#else
+    int pos, ret = 0;
+    gxByteBuffer* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        ret = arr_getByIndex(list, pos, (void**)&it);
+        if (ret != 0)
+        {
+            return ret;
+        }
+        bb_clear(it);
+    }
+    arr_clear(list);
+    return ret;
+#endif //DLMS_IGNORE_MALLOC
+}
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
 int obj_clearScriptTable(gxArray* list)
 {
@@ -334,9 +381,29 @@ int obj_clearScriptTable(gxArray* list)
     return ret;
 }
 #endif //DLMS_IGNORE_SCRIPT_TABLE
+
+#ifndef DLMS_IGNORE_CHARGE
+int obj_clearChargeTables(gxArray* list)
+{
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    gxChargeTable* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_clear(&it->index);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(list);
+    return ret;
+}
+#endif //DLMS_IGNORE_CHARGE
+
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
-
-
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
 int obj_clearRegisterActivationAssignment(objectArray* list)
 {
@@ -395,6 +462,7 @@ int obj_clearIP4SetupOptions(gxArray* list)
     return ret;
 }
 #endif //DLMS_IGNORE_IP4_SETUP
+
 #ifndef DLMS_IGNORE_PPP_SETUP
 int obj_clearPPPSetupIPCPOptions(gxArray* list)
 {
@@ -458,27 +526,6 @@ int obj_clearActiveDevices(gxArray* list)
     return ret;
 }
 #endif //DLMS_IGNORE_ZIG_BEE_NETWORK_CONTROL
-#ifndef DLMS_IGNORE_CHARGE
-int obj_clearChargeTables(gxArray* list)
-{
-    int ret = 0;
-#ifndef DLMS_IGNORE_MALLOC
-    int pos;
-    gxChargeTable* it;
-    for (pos = 0; pos != list->size; ++pos)
-    {
-        ret = arr_getByIndex(list, pos, (void**)&it);
-        if (ret != 0)
-        {
-            return ret;
-        }
-        bb_clear(&it->index);
-    }
-#endif //DLMS_IGNORE_MALLOC
-    arr_clear(list);
-    return ret;
-}
-#endif //DLMS_IGNORE_CHARGE
 
 int obj_clearUserList(gxArray* list)
 {
@@ -494,6 +541,48 @@ int obj_clearUserList(gxArray* list)
             return ret;
         }
         gxfree(it->value);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(list);
+    return ret;
+}
+
+int obj_clearBitArrayList(
+    gxArray* list)
+{
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    bitArray* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        ret = arr_getByIndex(list, pos, (void**)&it);
+        if (ret != 0)
+        {
+            return ret;
+        }
+        ba_clear(it);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(list);
+    return ret;
+}
+
+int obj_clearVariantList(
+    gxArray* list)
+{
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    dlmsVARIANT* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        ret = arr_getByIndex(list, pos, (void**)&it);
+        if (ret != 0)
+        {
+            return ret;
+        }
+        var_clear(it);
     }
 #endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
@@ -682,6 +771,8 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_GPRS_SETUP
 #ifndef DLMS_IGNORE_SECURITY_SETUP
         case DLMS_OBJECT_TYPE_SECURITY_SETUP:
+            bb_clear(&((gxSecuritySetup*)object)->clientSystemTitle);
+            bb_clear(&((gxSecuritySetup*)object)->serverSystemTitle);
             obj_clearCertificateInfo(&((gxSecuritySetup*)object)->certificates);
             break;
 #endif //DLMS_IGNORE_SECURITY_SETUP
@@ -700,9 +791,8 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 #ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
         case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(0);
-#endif
+            bb_clear(&((gxIecTwistedPairSetup*)object)->primaryAddresses);
+            bb_clear(&((gxIecTwistedPairSetup*)object)->tabis);
             break;
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
@@ -722,6 +812,26 @@ void obj_clear(gxObject* object)
             obj_clearIP4SetupOptions(&((gxIp4Setup*)object)->ipOptions);
             break;
 #endif //DLMS_IGNORE_IP4_SETUP
+#ifndef DLMS_IGNORE_IP6_SETUP
+        case DLMS_OBJECT_TYPE_IP6_SETUP:
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            ((gxIp4Setup*)object)->dataLinkLayer = NULL;
+#else
+            memset(((gxIp6Setup*)object)->dataLinkLayerReference, 0, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+#ifdef DLMS_IGNORE_MALLOC
+            arr_clear(&((gxIp6Setup*)object)->multicastIPAddress);
+            arr_clear(&((gxIp6Setup*)object)->unicastIPAddress);
+            arr_clear(&((gxIp6Setup*)object)->gatewayIPAddress);
+            arr_clear(&((gxIp6Setup*)object)->neighborDiscoverySetup);
+#else
+            arr_clear(&((gxIp6Setup*)object)->multicastIPAddress);
+            arr_clear(&((gxIp6Setup*)object)->unicastIPAddress);
+            arr_clear(&((gxIp6Setup*)object)->gatewayIPAddress);
+            arr_clear(&((gxIp6Setup*)object)->neighborDiscoverySetup);
+#endif //DLMS_IGNORE_MALLOC
+            break;
+#endif //DLMS_IGNORE_IP6_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
         case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
             //Do nothing.
@@ -862,7 +972,7 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_SAP_ASSIGNMENT
 #ifndef DLMS_IGNORE_SCHEDULE
         case DLMS_OBJECT_TYPE_SCHEDULE:
-            arr_clear(&((gxSchedule*)object)->entries);
+            obj_clearScheduleEntries(&((gxSchedule*)object)->entries);
             break;
 #endif //DLMS_IGNORE_SCHEDULE
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
@@ -958,8 +1068,8 @@ void obj_clear(gxObject* object)
 #ifndef DLMS_IGNORE_CHARGE
         case DLMS_OBJECT_TYPE_CHARGE:
             ((gxCharge*)object)->chargeConfiguration = DLMS_CHARGE_CONFIGURATION_NONE;
-            arr_clear(&((gxCharge*)object)->unitChargeActive.chargeTables);
-            arr_clear(&((gxCharge*)object)->unitChargePassive.chargeTables);
+            obj_clearChargeTables(&((gxCharge*)object)->unitChargeActive.chargeTables);
+            obj_clearChargeTables(&((gxCharge*)object)->unitChargePassive.chargeTables);
             break;
 #endif //DLMS_IGNORE_CHARGE
 #ifndef DLMS_IGNORE_TOKEN_GATEWAY
@@ -1013,6 +1123,7 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
         case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
+            bb_clear(&((gxPrimeNbOfdmPlcMacFunctionalParameters*)object)->sna);
             break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
@@ -1022,7 +1133,7 @@ void obj_clear(gxObject* object)
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
         case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
             arr_clear(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->multicastEntries);
-            arr_empty(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->switchTable);
+            arr_clear(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->switchTable);
             arr_clear(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->directTable);
             obj_clearAvailableSwitches(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->availableSwitches);
             arr_clear(&((gxPrimeNbOfdmPlcMacNetworkAdministrationData*)object)->communications);
@@ -1038,6 +1149,51 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_MALLOC
             break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+#ifndef DLMS_IGNORE_ARBITRATOR
+        case DLMS_OBJECT_TYPE_ARBITRATOR:
+            arr_clear(&((gxArbitrator*)object)->actions);
+            obj_clearBitArrayList(&((gxArbitrator*)object)->permissionsTable);
+            obj_clearVariantList(&((gxArbitrator*)object)->weightingsTable);
+            obj_clearBitArrayList(&((gxArbitrator*)object)->mostRecentRequestsTable);
+            break;
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+        case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP:
+            break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+        case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
+            break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+        case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
+            break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+        case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
+            bb_clear(&((gxSFSKActiveInitiator*)object)->systemTitle);
+            break;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+        case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
+            arr_clear(&((gxFSKMacCounters*)object)->synchronizationRegister);
+            arr_clear(&((gxFSKMacCounters*)object)->broadcastFramesCounter);
+            break;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+        case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
+            break;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+        case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
+            arr_clear(&((gxSFSKPhyMacSetUp*)object)->macGroupAddresses);
+            break;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+        case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
+            obj_clearSFSKReportingSystemList(&((gxSFSKReportingSystemList*)object)->reportingSystemList);
+            break;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifdef DLMS_ITALIAN_STANDARD
         case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         {
@@ -1065,264 +1221,297 @@ void obj_clear(gxObject* object)
 
 unsigned char obj_attributeCount(gxObject* object)
 {
+    unsigned char ret;
     switch (object->objectType)
     {
     case DLMS_OBJECT_TYPE_DATA:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_REGISTER:
-    {
-        return 3;
-    }
+        ret = 3;
+        break;
     case DLMS_OBJECT_TYPE_ACTION_SCHEDULE:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR:
-    {
-        return 10;
-    }
+        ret = 10;
+        break;
     case DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME:
-    {
         //user_list and current_user are in version 2.
         if (object->version > 1)
-            return 11;
+        {
+            ret = 11;
+        }
         //Security Setup Reference is from version 1.
-        if (object->version > 0)
-            return 9;
-        return 8;
-    }
+        else if (object->version > 0)
+        {
+            ret = 9;
+        }
+
+        else
+        {
+            ret = 8;
+        }
+        break;
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
-    {
         if (object->version < 2)
         {
-            return 2;
+            ret = 2;
         }
-        if (object->version < 3)
+        else if (object->version < 3)
         {
-            return 4;
+            ret = 4;
         }
-        return 6;
-    }
+        else
+        {
+            ret = 6;
+        }
+        break;
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
-    {
-        return 6;
-    }
+        ret = 6;
+        break;
     case DLMS_OBJECT_TYPE_AUTO_CONNECT:
-    {
-        return 6;
-    }
+        ret = 6;
+        break;
     case DLMS_OBJECT_TYPE_CLOCK:
-    {
-        return 9;
-    }
+        ret = 9;
+        break;
     case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
-    {
-        return 9;
-    }
+        ret = 9;
+        break;
     case DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_EXTENDED_REGISTER:
-    {
-        return 5;
-    }
+        ret = 5;
+        break;
     case DLMS_OBJECT_TYPE_GPRS_SETUP:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
-    {
         if (object->version == 0)
         {
-            return 5;
+            ret = 5;
         }
-        return 6;
-    }
+        else
+        {
+            ret = 6;
+        }
+        break;
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
-    {
-        return 9;
-    }
+        ret = 9;
+        break;
     case DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP:
-    {
-        return 9;
-    }
+        ret = 9;
+        break;
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-    {
-        return 1;
-    }
+        ret = 5;
+        break;
     case DLMS_OBJECT_TYPE_IP4_SETUP:
-    {
-        return 10;
-    }
+        ret = 10;
+        break;
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        ret = 10;
+        break;
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
-    {
-        return 5;
-    }
+        ret = 5;
+        break;
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
-    {
-        return 7;
-    }
+        ret = 7;
+        break;
     case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_LIMITER:
-    {
-        return 11;
-    }
+        ret = 11;
+        break;
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
-    {
-        return 12;
-    }
+        ret = 12;
+        break;
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_PPP_SETUP:
-    {
-        return 5;
-    }
+        ret = 5;
+        break;
     case DLMS_OBJECT_TYPE_PROFILE_GENERIC:
-    {
-        return 8;
-    }
+        ret = 8;
+        break;
     case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_REGISTER_MONITOR:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_REGISTER_TABLE:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_STARTUP:
-    {
-        return 12;
-    }
+        ret = 12;
+        break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN:
-    {
-        return 5;
-    }
+        ret = 5;
+        break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION:
-    {
-        return 3;
-    }
+        ret = 3;
+        break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_SAP_ASSIGNMENT:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
 #ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
 #endif //DLMS_IGNORE_SCHEDULE
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SCRIPT_TABLE:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
 #endif //DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SMTP_SETUP:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_STATUS_MAPPING:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
-    {
-        return 6;
-    }
+        ret = 6;
+        break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
-    {
-        return 7;
-    }
+        ret = 7;
+        break;
     case DLMS_OBJECT_TYPE_DATA_PROTECTION:
-    {
-        return 6;
-    }
+        ret = 6;
+        break;
     case DLMS_OBJECT_TYPE_ACCOUNT:
-        return 19;
+        ret = 19;
+        break;
     case DLMS_OBJECT_TYPE_CREDIT:
-        return 11;
+        ret = 11;
+        break;
     case DLMS_OBJECT_TYPE_CHARGE:
-        return 13;
+        ret = 13;
+        break;
     case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
-        return 6;
+        ret = 6;
+        break;
     case DLMS_OBJECT_TYPE_COMPACT_DATA:
         return 6;
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
-        return 5;
+        ret = 5;
+        break;
 #endif //DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
-        return 8;
+        ret = 8;
+        break;
     case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
-        return 4;
+        ret = 4;
+        break;
 #ifndef DLMS_IGNORE_LLC_SSCS_SETUP
     case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
-        return 3;
+        ret = 3;
+        break;
 #endif //DLMS_IGNORE_LLC_SSCS_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
-        return 5;
+        ret = 5;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
-        return 8;
+        ret = 8;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
-        return 14;
+        ret = 14;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
-        return 7;
+        ret = 7;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
-        return 6;
+        ret = 6;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
-        return 4;
+        ret = 4;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+#ifndef DLMS_IGNORE_ARBITRATOR
+    case DLMS_OBJECT_TYPE_ARBITRATOR:
+        ret = 6;
+        break;
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP:
+        ret = 1;
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
+        ret = 9;
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
+        ret = 6;
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
+        ret = 2;
+        break;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
+        ret = 8;
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
+        ret = 5;
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
+        ret = 14;
+        break;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+    case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
+        ret = 2;
+        break;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
     default:
         //Unknown type.
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
 #endif
+        ret = 1;
         break;
     }
-    return 1;
+    return ret;
 }
 
 //Returns collection of attributes to read.
@@ -1442,247 +1631,272 @@ int obj_getAttributeIndexToRead(gxObject* object, gxByteBuffer* ba)
 
 unsigned char obj_methodCount(gxObject* object)
 {
+    unsigned char ret;
     switch (object->objectType)
     {
     case DLMS_OBJECT_TYPE_DATA:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_REGISTER:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_ACTION_SCHEDULE:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME:
-    {
         if (object->version > 1)
         {
-            return 6;
+            ret = 6;
         }
-        return 4;
-    }
+        else
+        {
+            ret = 4;
+        }
+        break;
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
-    {
-        return 8;
-    }
+        ret = 8;
+        break;
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_AUTO_CONNECT:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_CLOCK:
-    {
-        return 6;
-    }
+        ret = 6;
+        break;
     case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_EXTENDED_REGISTER:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_GPRS_SETUP:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_IP4_SETUP:
-    {
-        return 3;
-    }
+        ret = 3;
+        break;
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
-    {
-        return 4;
-    }
+        ret = 4;
+        break;
     case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_LIMITER:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
-    {
-        return 8;
-    }
+        ret = 8;
+        break;
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_PPP_SETUP:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_PROFILE_GENERIC:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
-    {
-        return 3;
-    }
+        ret = 3;
+        break;
     case DLMS_OBJECT_TYPE_REGISTER_MONITOR:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_REGISTER_TABLE:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_STARTUP:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_SAP_ASSIGNMENT:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
 #ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
-    {
-        return 3;
-    }
+        ret = 3;
+        break;
 #endif //DLMS_IGNORE_SCHEDULE
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SCRIPT_TABLE:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
 #endif //DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SMTP_SETUP:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE:
-    {
-        return 2;
-    }
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_STATUS_MAPPING:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
-    {
-        return 0;
-    }
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
-    {
-        return 1;
-    }
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_DATA_PROTECTION:
-    {
-        return 3;
-    }
+        ret = 3;
+        break;
     case DLMS_OBJECT_TYPE_ACCOUNT:
-        return 3;
+        ret = 3;
+        break;
     case DLMS_OBJECT_TYPE_CREDIT:
-        return 3;
+        ret = 3;
+        break;
     case DLMS_OBJECT_TYPE_CHARGE:
-        return 5;
+        ret = 5;
+        break;
     case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
-        return 1;
+        ret = 1;
+        break;
     case DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL:
-        return 11;
+        ret = 11;
+        break;
     case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
-        return 0;
+        ret = 0;
+        break;
     case DLMS_OBJECT_TYPE_COMPACT_DATA:
-        return 2;
+        ret = 2;
+        break;
     case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
-        return 2;
+        ret = 2;
+        break;
 #ifndef DLMS_IGNORE_LLC_SSCS_SETUP
     case DLMS_OBJECT_TYPE_LLC_SSCS_SETUP:
-        return 1;
+        ret = 1;
+        break;
 #endif //DLMS_IGNORE_LLC_SSCS_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS:
-        return 1;
+        ret = 1;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP:
-        return 0;
+        ret = 0;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS:
-        return 0;
+        ret = 0;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS:
-        return 1;
+        ret = 1;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA:
-        return 1;
+        ret = 1;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
     case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
-        return 0;
+        ret = 0;
+        break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+#ifndef DLMS_IGNORE_ARBITRATOR
+    case DLMS_OBJECT_TYPE_ARBITRATOR:
+        ret = 2;
+        break;
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP:
+        ret = 0;
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
+        ret = 0;
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
+        ret = 0;
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
+        ret = 1;
+        break;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
+        ret = 1;
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
+        ret = 0;
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
+        ret = 0;
+        break;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+    case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
+        ret = 0;
+        break;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
-        return 0;
+        ret = 0;
+        break;
 #endif //DLMS_ITALIAN_STANDARD
     default:
         //Unknown type.
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
 #endif
-        return 1;
+        ret = 0;
     }
+    return ret;
 }
 
 #if !defined(DLMS_IGNORE_MALLOC)

@@ -33,6 +33,15 @@
 #ifndef GXOBJECTS_H
 #define GXOBJECTS_H
 
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+#include <ws2tcpip.h>
+#else //Linux includes.
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#define IN6_ADDR struct in6_addr
+#endif
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -687,7 +696,7 @@ extern "C" {
         /*
         * BitArray days of the week on which the entry is valid.
         */
-        DLMS_WEEKDAYS execWeekdays;
+        DLMS_WEEKDAYS execWeekdays : 7;
 
         /*
         * Perform the link to the IC Special days table, day_id.
@@ -798,8 +807,8 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        unsigned char securityPolicy;
-        DLMS_SECURITY_SUITE securitySuite;
+        DLMS_SECURITY_POLICY securityPolicy : 8;
+        DLMS_SECURITY_SUITE securitySuite : 8;
         gxByteBuffer serverSystemTitle;
         gxByteBuffer clientSystemTitle;
         gxArray certificates;
@@ -1281,19 +1290,6 @@ extern "C" {
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
 
 #ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
-    typedef enum
-    {
-        /*
-         * The interface ignores all received frames.
-        */
-        DLMS_IEC_TWISTED_PAIR_SETUP_MODE_INACTIVE,
-
-        /*
-         * Active.
-        */
-        DLMS_IEC_TWISTED_PAIR_SETUP_MODE_ACTIVE
-    } DLMS_IEC_TWISTED_PAIR_SETUP_MODE;
-
     /*
     ---------------------------------------------------------------------------
     Online help:
@@ -1305,7 +1301,6 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-
 
         /*
          * Working mode.
@@ -1551,6 +1546,65 @@ extern "C" {
         dlmsVARIANT value;
     } gxIp4Setup;
 #endif //DLMS_IGNORE_IP4_SETUP
+
+#ifndef DLMS_IGNORE_IP6_SETUP
+
+    // Enumerated Address config modes.
+    typedef enum {
+        // Auto Configuration.
+        DLMS_IP6_ADDRESS_CONFIG_MODE_AUTO,
+        // DHCP v6.
+        DLMS_IP6_ADDRESS_CONFIG_MODE_DHCP_V6,
+        // Manual
+        DLMS_IP6_ADDRESS_CONFIG_MODE_MANUAL,
+        // Neighbour Discovery.
+        DLMS_IP6_ADDRESS_CONFIG_MODE_NEIGHBOUR_DISCOVERY
+    }DLMS_IP6_ADDRESS_CONFIG_MODE;
+
+    typedef struct
+    {
+        /**
+        * Gives the maximum number of router solicitation retries to be performed
+        * by a node if the expected router advertisement has not been received.
+        */
+        unsigned char maxRetry;
+        /**
+        * Gives the waiting time in milliseconds between two successive router
+        * solicitation retries.
+        */
+        uint16_t retryWaitTime;
+        /**
+        * Gives the router advertisement transmission period in seconds.
+        */
+        uint32_t sendPeriod;
+    }gxNeighborDiscoverySetup;
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSIp6Setup
+    */
+    typedef struct
+    {
+    /*
+    * Base class where class is derived.
+    */
+    gxObject base;
+    #ifndef DLMS_IGNORE_OBJECT_POINTERS
+    gxObject* dataLinkLayer;
+    #else
+    unsigned char dataLinkLayerReference[6];
+    #endif //DLMS_IGNORE_OBJECT_POINTERS
+    DLMS_IP6_ADDRESS_CONFIG_MODE addressConfigMode;
+    gxArray unicastIPAddress; //List<IN6_ADDR>
+    gxArray multicastIPAddress; //List<IN6_ADDR>
+    gxArray gatewayIPAddress; //List<IN6_ADDR>
+    IN6_ADDR primaryDNSAddress;
+    IN6_ADDR secondaryDNSAddress;
+    unsigned char trafficClass;
+    gxArray neighborDiscoverySetup;//List<gxNeighborDiscoverySetup>
+    } gxIp6Setup;
+#endif //DLMS_IGNORE_IP6_SETUP
 
 #ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP
 
@@ -3065,6 +3119,352 @@ extern "C" {
     } gxCompactData;
 #endif //DLMS_IGNORE_COMPACT_DATA
 
+    //---------------------------------------------------------------------------
+    // Online help:
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSArbitrator
+#ifndef DLMS_IGNORE_ARBITRATOR
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+
+        /**
+        * Requested actions.
+        */
+        gxArray actions; //List<gxActionItem>;
+
+        /**
+         * Permissions for each actor to request actions.
+         */
+        gxArray permissionsTable; //List<bitArray>
+        /**
+         * Weight allocated for each actor and to each possible action of that
+         * actor.
+         */
+        gxArray weightingsTable; //List<List<UInt16>>
+        /**
+         * The most recent requests of each actor.
+         */
+        gxArray mostRecentRequestsTable; //List<bitArray>
+        /**
+         * The number identifies a bit in the Actions.
+         */
+        unsigned char lastOutcome;
+    } gxArbitrator;
+#endif //DLMS_IGNORE_ARBITRATOR
+
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    //---------------------------------------------------------------------------
+    // Online help:
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSIec8802LlcType1Setup
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /**
+        * Maximum number of octets in a UI PDU.
+        */
+        uint16_t maximumOctetsUiPdu;
+    } gxIec8802LlcType1Setup;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    //---------------------------------------------------------------------------
+    // Online help:
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSIec8802LlcType2Setup
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /**
+        * Transmit Window Size K.
+        */
+        unsigned char transmitWindowSizeK;
+        /**
+        * Transmit Window Size RW.
+        */
+        unsigned char transmitWindowSizeRW;
+        /**
+        * Maximum octets in I Pdu N1.
+        */
+        uint16_t maximumOctetsPdu;
+        /**
+        * Maximum number of transmissions, N2.
+        */
+        unsigned char maximumNumberTransmissions;
+        /**
+        * Acknowledgement timer in seconds.
+        */
+        uint16_t acknowledgementTimer;
+        /**
+        * P-bit timer in seconds.
+        */
+        uint16_t bitTimer;
+        /**
+        * Reject timer.
+        */
+        uint16_t rejectTimer;
+        /**
+        * Busy state timer.
+        */
+        uint16_t busyStateTimer;
+    } gxIec8802LlcType2Setup;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    //---------------------------------------------------------------------------
+    // Online help:
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSIec8802LlcType3Setup
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /**
+        * Maximum number of octets in an ACn command PDU, N3.
+        */
+        uint16_t maximumOctetsACnPdu;
+        /**
+        * Maximum number of times in transmissions N4.
+        */
+        unsigned char maximumTransmissions;
+        /**
+        * Acknowledgement time, T1.
+        */
+        uint16_t acknowledgementTime;
+        /**
+        * Receive lifetime variable, T2.
+        */
+        uint16_t receiveLifetime;
+        /**
+        * Transmit lifetime variable, T3.
+        */
+        uint16_t transmitLifetime;
+    } gxIec8802LlcType3Setup;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    //---------------------------------------------------------------------------
+    // Online help:
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSFSKActiveInitiator
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /**
+        * System title of active initiator.
+        */
+        gxByteBuffer systemTitle;
+        /**
+        * MAC address of active initiator.
+        */
+        uint16_t macAddress;
+        /**
+        * L SAP selector of active initiator.
+        */
+        unsigned char lSapSelector;
+    } gxSFSKActiveInitiator;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    typedef struct
+    {
+        uint16_t first;
+        uint32_t second;
+    }gxUint16PairUint32;
+
+    //---------------------------------------------------------------------------
+    // Online help:
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSFSKMacCounters
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /**
+        * List of synchronization registers.
+        */
+        gxArray synchronizationRegister; //List<gxUint16PairUint32>
+
+        uint32_t physicalLayerDesynchronization;
+        uint32_t timeOutNotAddressedDesynchronization;
+
+        uint32_t timeOutFrameNotOkDesynchronization;
+
+        uint32_t writeRequestDesynchronization;
+        uint32_t wrongInitiatorDesynchronization;
+        /**
+        * List of broadcast frames counter.
+        */
+        gxArray broadcastFramesCounter; //list<gxUint16PairUint32>
+        /**
+        * Repetitions counter.
+        */
+        uint32_t repetitionsCounter;
+        /**
+        * Transmissions counter.
+        */
+        uint32_t transmissionsCounter;
+        /**
+        * CRC OK frames counter.
+        */
+        uint32_t crcOkFramesCounter;
+        /**
+        * CRC NOK frames counter.
+        */
+        uint32_t crcNOkFramesCounter;
+    } gxFSKMacCounters;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    //---------------------------------------------------------------------------
+    // Online help:
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSFSKMacSynchronizationTimeouts
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /**
+        * Search initiator timeout.
+        */
+        uint16_t searchInitiatorTimeout;
+        /**
+        * Synchronization confirmation timeout.
+        */
+        uint16_t synchronizationConfirmationTimeout;
+        /**
+        * Time out not addressed.
+        */
+        uint16_t timeOutNotAddressed;
+        /**
+        * Time out frame not OK.
+        */
+        uint16_t timeOutFrameNotOK;
+    } gxSFSKMacSynchronizationTimeouts;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    //---------------------------------------------------------------------------
+    // Online help:
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.CGXDLMSSFSKPhyMacSetUp
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /**
+        * Initiator electrical phase.
+        */
+        DLMS_INITIATOR_ELECTRICAL_PHASE initiatorElectricalPhase;
+
+        /**
+        * Delta electrical phase.
+        */
+        DLMS_DELTA_ELECTRICAL_PHASE deltaElectricalPhase;
+
+        /**
+        * Corresponds to the maximum allowed gain bound to be used by the server
+        * system in the receiving mode. The default unit is dB.
+        */
+        unsigned char maxReceivingGain;
+        /**
+        * Corresponds to the maximum attenuation bound to be used by the server
+        * system in the transmitting mode.The default unit is dB.
+        */
+        unsigned char maxTransmittingGain;
+        /**
+        * Intelligent search initiator process. If the value of the initiator
+        * signal is above the value of this attribute, a fast synchronization
+        * process is possible.
+        */
+        unsigned char searchInitiatorThreshold;
+        /**
+        * Mark frequency required for S-FSK modulation.
+        */
+        uint32_t markFrequency;
+        /**
+        * Space frequency required for S-FSK modulation.
+        */
+        uint32_t spaceFrequency;
+        /**
+        * Mac Address.
+        */
+        uint16_t macAddress;
+
+        /**
+        * MAC group addresses.
+        */
+        gxArray macGroupAddresses; //List<uint16_t>
+        /**
+        * Specifies are all frames repeated.
+        */
+        DLMS_REPEATER repeater;
+        /**
+        * Repeater status.
+        */
+        unsigned char repeaterStatus;
+        /**
+        * Min delta credit.
+        */
+        unsigned char minDeltaCredit;
+
+        /**
+        * Initiator MAC address.
+        */
+        int initiatorMacAddress;
+
+        /**
+        * Synchronization locked/unlocked state.
+        */
+        unsigned char synchronizationLocked;
+        /**
+        * Transmission speed supported by the physical device.
+        */
+        DLMS_BAUD_RATE transmissionSpeed;
+    } gxSFSKPhyMacSetUp;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        //Reporting system list
+        unsigned char name[MAX_REPORTING_SYSTEM_ITEM_LENGTH];
+        uint16_t size;
+    }gxReportingSystemItem;
+#endif //DLMS_IGNORE_MALLOC
+
+
+    //---------------------------------------------------------------------------
+    // Online help:
+    //  http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSSFSKReportingSystemList
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /**
+        * Contains the system titles of the server systems which have made a
+        * DiscoverReport request and which have not already been registered.
+        */
+        gxArray reportingSystemList;//List<gxByteBuffer>
+    } gxSFSKReportingSystemList;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+
 #ifdef DLMS_ITALIAN_STANDARD
 
     /*
@@ -3219,6 +3619,7 @@ extern "C" {
 
     int obj_clearModemConfigurationInitialisationStrings(gxArray* list);
 
+    int obj_clearScheduleEntries(gxArray* list);
     int obj_clearScriptTable(gxArray* list);
 
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
@@ -3235,6 +3636,12 @@ extern "C" {
     int obj_clearPPPSetupLCPOptions(gxArray* list);
 
     int obj_clearActiveDevices(gxArray* list);
+
+    //Clear bit array list.
+    int obj_clearBitArrayList(gxArray* list);
+
+    //Clear variant array list.
+    int obj_clearVariantList(gxArray* list);
 
     int obj_clearChargeTables(gxArray* list);
 
@@ -3280,6 +3687,10 @@ extern "C" {
 
     //Clear available switches.
     int obj_clearAvailableSwitches(
+        gxArray* list);
+
+    //Clear S-FSK reporting system list.
+    int obj_clearSFSKReportingSystemList(
         gxArray* list);
 
 #define BASE(X) &X.base

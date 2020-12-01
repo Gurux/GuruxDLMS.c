@@ -45,6 +45,63 @@ extern "C" {
 #include "replydata.h"
 #include "ciphering.h"
 
+#ifndef DLMS_IGNORE_PLC
+
+    typedef struct
+    {
+        unsigned char responseProbability;
+        uint16_t allowedTimeSlots;
+        unsigned char discoverReportInitialCredit;
+        unsigned char icEqualCredit;
+    }gxPlcRegister;
+
+    // PLC communication settings.
+    typedef struct
+    {
+        gxByteBuffer systemTitle;
+
+        /**
+         * Initial credit (IC) tells how many times the frame must be repeated.
+         * Maximum value is 7.
+         */
+        unsigned char initialCredit;
+        /**
+         * The current credit (CC) initial value equal to IC and automatically
+         * decremented by the MAC layer after each repetition. Maximum value is 7.
+         */
+        unsigned char currentCredit;
+
+        /**
+         * Delta credit (DC) is used by the system management application entity
+         * (SMAE) of the Client for credit management, while it has no meaning for a
+         * Server or a REPEATER. It represents the difference(IC-CC) of the last
+         * communication originated by the system identified by the DA address to
+         * the system identified by the SA address. Maximum value is 3.
+         */
+        unsigned char deltaCredit;
+        /**
+         * Source MAC address.
+         */
+        uint16_t macSourceAddress;
+        /**
+         * Destination MAC address.
+         */
+        uint16_t macDestinationAddress;
+        /**
+         * Response probability.
+         */
+        unsigned char responseProbability;
+        /**
+         * Allowed time slots.
+         */
+        uint16_t allowedTimeSlots;
+        /**
+         * Server saves client system title.
+         */
+        gxByteBuffer clientSystemTitle;
+    }gxPlcSettings;
+#endif //DLMS_IGNORE_PLC
+
     typedef struct
     {
         // Is custom challenges used. If custom challenge is used new challenge is
@@ -129,6 +186,13 @@ extern "C" {
         unsigned char windowSizeTX;
         //Used max window size in RX.
         unsigned char windowSizeRX;
+
+#ifndef DLMS_IGNORE_PLC
+        //PLC settings.
+        gxPlcSettings plcSettings;
+#endif //DLMS_IGNORE_PLC
+
+        //List of COSEM objects.
         objectArray objects;
 
         // Block packet index.
@@ -156,7 +220,7 @@ extern "C" {
         unsigned char preEstablishedSystemTitle[8];
 #endif //DLMS_IGNORE_MALLOC
 
-//Client serializes data to this PDU when malloc is not used.
+        //Client serializes data to this PDU when malloc is not used.
 #ifdef DLMS_IGNORE_MALLOC
         gxByteBuffer* serializedPdu;
 #endif //DLMS_IGNORE_MALLOC
@@ -222,10 +286,10 @@ extern "C" {
         */
         unsigned char initialized;
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
-        gxIecHdlcSetup *hdlc;
+        gxIecHdlcSetup* hdlc;
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
-        gxTcpUdpSetup *wrapper;
+        gxTcpUdpSetup* wrapper;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 #ifndef DLMS_IGNORE_CLOCK
         gxClock* defaultClock;
@@ -273,6 +337,10 @@ extern "C" {
 
     void svr_clear(
         dlmsServerSettings* settings);
+
+    // Set default values for PLC.
+    void plc_reset(
+        dlmsSettings* settings);
 
     //Reset block index.
     void resetBlockIndex(

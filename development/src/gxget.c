@@ -1882,6 +1882,68 @@ int cosem_getIecLocalPortSetup(
     return ret;
 }
 #endif // DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
+
+#ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
+int cosem_getIecTwistedPairSetup(
+    gxValueEventArg* e)
+{
+    unsigned char ch;
+    int pos, ret = 0;
+    gxIecTwistedPairSetup* object = (gxIecTwistedPairSetup*)e->target;
+    if (e->index == 2)
+    {
+        ret = var_setEnum(&e->value, object->mode);
+    }
+    else if (e->index == 3)
+    {
+        ret = var_setEnum(&e->value, object->speed);
+    }
+    else if (e->index == 4)
+    {
+        if ((ret = cosem_getByteBuffer(e)) != 0)
+        {
+            return ret;
+        }
+        gxByteBuffer* data = e->value.byteArr;
+        if ((ret = cosem_setArray(data, (unsigned short)object->primaryAddresses.size)) == 0)
+        {
+            for (pos = 0; pos != object->primaryAddresses.size; ++pos)
+            {
+                if ((ret = bb_getUInt8ByIndex(&object->primaryAddresses, pos, &ch)) != 0 ||
+                    (ret = cosem_setUInt8(data, ch)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else if (e->index == 5)
+    {
+        if ((ret = cosem_getByteBuffer(e)) != 0)
+        {
+            return ret;
+        }
+        gxByteBuffer* data = e->value.byteArr;
+        if ((ret = cosem_setArray(data, (unsigned short)object->tabis.size)) == 0)
+        {
+            for (pos = 0; pos != object->tabis.size; ++pos)
+            {
+                if ((ret = bb_getUInt8ByIndex(&object->tabis, pos, &ch)) != 0 ||
+                    (ret = cosem_setInt8(data, (char)ch)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
+
 #ifndef DLMS_IGNORE_IP4_SETUP
 int cosem_getIP4Setup(
     gxValueEventArg* e)
@@ -2030,6 +2092,131 @@ int cosem_getIP4Setup(
     return ret;
 }
 #endif //DLMS_IGNORE_IP4_SETUP
+
+#ifndef DLMS_IGNORE_IP6_SETUP
+
+int getIpv6Address(IN6_ADDR* address, gxValueEventArg* e)
+{
+    unsigned char* tmp;
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+    tmp = address->u.Byte;
+#else //Linux includes.
+    tmp = address->s6_addr;
+#endif
+    return cosem_setOctectString2(e->value.byteArr, tmp, 16);
+}
+
+int getAddressList(gxArray* list, gxValueEventArg* e)
+{
+    IN6_ADDR* it;
+    int pos, ret = 0;
+    if ((ret = cosem_setArray(e->value.byteArr, list->size)) == 0)
+    {
+        for (pos = 0; pos != list->size; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(IN6_ADDR))) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = getIpv6Address(it, e)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+int cosem_getIP6Setup(
+    gxValueEventArg* e)
+{
+    int ret = 0;
+    gxIp6Setup* object = (gxIp6Setup*)e->target;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    switch (e->index)
+    {
+    case 2:
+    {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        if (object->dataLinkLayer == NULL)
+        {
+            ret = cosem_setOctectString2(e->value.byteArr, EMPTY_LN, 6);
+        }
+        else
+        {
+            ret = cosem_setOctectString2(e->value.byteArr, object->dataLinkLayer->logicalName, 6);
+            //Error code is returned at the end of the function.
+        }
+#else
+        ret = cosem_setOctectString2(e->value.byteArr, object->dataLinkLayerReference, 6);
+        {
+            //Error code is returned at the end of the function.
+        }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }
+    break;
+    case 3:
+        ret = cosem_setEnum(e->value.byteArr, object->addressConfigMode);
+        break;
+    case 4:
+        ret = getAddressList(&object->unicastIPAddress, e);
+        break;
+    case 5:
+        ret = getAddressList(&object->multicastIPAddress, e);
+        break;
+    case 6:
+        ret = getAddressList(&object->gatewayIPAddress, e);
+        break;
+    case 7:
+        ret = getIpv6Address(&object->primaryDNSAddress, e);
+        break;
+    case 8:
+        ret = getIpv6Address(&object->secondaryDNSAddress, e);
+        break;
+    case 9:
+        ret = cosem_setUInt8(e->value.byteArr, object->trafficClass);
+        break;
+    case 10:
+    {
+        gxNeighborDiscoverySetup* it;
+        int pos;
+        if ((ret = cosem_setArray(e->value.byteArr, object->neighborDiscoverySetup.size)) == 0)
+        {
+            for (pos = 0; pos != object->neighborDiscoverySetup.size; ++pos)
+            {
+                if ((ret = arr_getByIndex2(&object->neighborDiscoverySetup, pos, (void**)&it, sizeof(gxNeighborDiscoverySetup))) != 0)
+                {
+                    break;
+                }
+                if ((ret = cosem_setStructure(e->value.byteArr, 3)) != 0 ||
+                    (ret = cosem_setUInt8(e->value.byteArr, it->maxRetry)) != 0 ||
+                    (ret = cosem_setUInt16(e->value.byteArr, it->retryWaitTime)) != 0 ||
+                    (ret = cosem_setUInt32(e->value.byteArr, it->sendPeriod)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_IP6_SETUP
+
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 int cosem_getMbusSlavePortSetup(
     gxValueEventArg* e)
@@ -3627,6 +3814,8 @@ int cosem_getSchedule(
         {
             return ret;
         }
+        bitArray ba;
+        ba_init(&ba);
         for (pos = 0; pos != object->entries.size; ++pos)
         {
             if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
@@ -3656,14 +3845,12 @@ int cosem_getSchedule(
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(data, se->scriptSelector)) != 0 ||
                 //Add switch time.
-                (ret = cosem_setDateTimeAsOctectString(data, &se->switchTime)) != 0 ||
+                (ret = cosem_setTimeAsOctectString(data, &se->switchTime)) != 0 ||
                 //Add validity window.
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
                 (ret = bb_setUInt16(data, se->validityWindow)) != 0 ||
                 //Add exec week days.
-                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
-                (ret = hlp_setObjectCount(7, data)) != 0 ||
-                (ret = bb_setUInt8(data, se->execWeekdays)) != 0 ||
+                (ret = cosem_setBitString(data, se->execWeekdays, 7)) != 0 ||
                 //Add exec spec days.
                 (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
                 (ret = hlp_setObjectCount(se->execSpecDays.size, data)) != 0 ||
@@ -3872,12 +4059,10 @@ int cosem_getUtilityTables(
     }
     else if (e->index == 4)
     {
-        bb_clear(&object->buffer);
-#ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_getOctectString(e->value.byteArr, &object->buffer);
-#else
-        ret = var_addBytes(&e->value, object->buffer.data, (uint16_t)object->buffer.size);
-#endif //DLMS_IGNORE_MALLOC
+        if ((ret = cosem_getByteBuffer(e)) == 0)
+        {
+            ret = cosem_setOctectString(e->value.byteArr, &object->buffer);
+        }
     }
     else
     {
@@ -4363,8 +4548,7 @@ int getUnitCharge(gxUnitCharge* target, gxValueEventArg* e)
             (ret = bb_setUInt8(data, (unsigned char)it->index.size)) != 0 ||
             (ret = bb_set(data, it->index.data, it->index.size)) != 0 ||
             //chargePerUnit
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_INT16)) != 0 ||
-            (ret = bb_setInt16(data, it->chargePerUnit)) != 0)
+            (ret = cosem_setInt16(data, it->chargePerUnit)) != 0)
         {
             break;
         }
@@ -4748,9 +4932,9 @@ int cosem_getAccount(
                     (ret = bb_set(data, ccc->chargeReference, 6)) != 0 ||
                     //collection configuration
                     (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
-            {
-                break;
-            }
+                {
+                    break;
+                }
     }
     else if (e->index == 12)
     {
@@ -5081,10 +5265,7 @@ int cosem_getValue(
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 #ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-        //TODO:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
+        ret = cosem_getIecTwistedPairSetup(e);
         break;
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
@@ -5092,6 +5273,11 @@ int cosem_getValue(
         ret = cosem_getIP4Setup(e);
         break;
 #endif //DLMS_IGNORE_IP4_SETUP
+#ifndef DLMS_IGNORE_IP6_SETUP
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        ret = cosem_getIP6Setup(e);
+        break;
+#endif //DLMS_IGNORE_IP6_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         ret = cosem_getMbusSlavePortSetup(e);
@@ -5306,6 +5492,51 @@ int cosem_getValue(
         ret = cosem_getPrimeNbOfdmPlcApplicationsIdentification(e);
         break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+#ifndef DLMS_IGNORE_ARBITRATOR
+    case DLMS_OBJECT_TYPE_ARBITRATOR:
+        ret = cosem_getArbitrator(e);
+        break;
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP:
+        ret = cosem_getIec8802LlcType1Setup(e);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
+        ret = cosem_getIec8802LlcType2Setup(e);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
+        ret = cosem_getIec8802LlcType3Setup(e);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
+        ret = cosem_getSFSKActiveInitiator(e);
+        break;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
+        ret = cosem_getFSKMacCounters(e);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
+        ret = cosem_getSFSKMacSynchronizationTimeouts(e);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
+        ret = cosem_getSFSKPhyMacSetUp(e);
+        break;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+    case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
+        ret = cosem_getSFSKReportingSystemList(e);
+        break;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = cosem_getTariffPlan(e);
@@ -5838,7 +6069,7 @@ int cosem_getPrimeNbOfdmPlcMacFunctionalParameters(
     case 5:
     {
 #ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_setOctectString2(e->value.byteArr, object->sna.data, object->sna.size);
+        ret = cosem_setOctectString2(e->value.byteArr, object->sna.data, (uint16_t)object->sna.size);
 #else
         ret = var_addBytes(&e->value, object->sna.data, (uint16_t)object->sna.size);
 #endif //DLMS_IGNORE_MALLOC
@@ -6207,3 +6438,543 @@ int  cosem_getPrimeNbOfdmPlcApplicationsIdentification(
     return ret;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+#ifndef DLMS_IGNORE_ARBITRATOR
+int cosem_getArbitrator(gxValueEventArg* e)
+{
+    int pos, ret;
+    gxActionItem* it;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    gxArbitrator* object = (gxArbitrator*)e->target;
+    switch (e->index)
+    {
+    case 2:
+    {
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) == 0 &&
+            (ret = hlp_setObjectCount(object->actions.size, data)) == 0)
+        {
+            for (pos = 0; pos != object->actions.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->actions, pos, (void**)&it)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->actions, pos, (void**)&it, sizeof(gxMacAvailableSwitch))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+                    //Count
+                    (ret = bb_setUInt8(data, 2)) != 0 ||
+                    (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                    (ret = bb_setUInt8(data, 6)) != 0 ||
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+                    (ret = bb_set(data, obj_getLogicalName((gxObject*)it->script), 6)) != 0 ||
+#else
+                    (ret = bb_set(data, it->script->executedScriptLogicalName, 6)) != 0 ||
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+                    (ret = cosem_setUInt16(data, it->scriptSelector)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    break;
+    case 3:
+    {
+        bitArray* a;
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) == 0 &&
+            (ret = hlp_setObjectCount(object->permissionsTable.size, data)) == 0)
+        {
+            for (pos = 0; pos != object->permissionsTable.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->permissionsTable, pos, (void**)&a)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->permissionsTable, pos, (void**)&a, sizeof(bitArray))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
+                    (ret = hlp_setObjectCount(a->size, data)) != 0)
+                {
+                    break;
+                }
+                ret = bb_set(e->value.byteArr, a->data, ba_getByteCount(a->size));
+            }
+        }
+    }
+    break;
+    case 4:
+    {
+        dlmsVARIANT* v;
+        if ((ret = cosem_setArray(data, object->weightingsTable.size)) == 0)
+        {
+            for (pos = 0; pos != object->weightingsTable.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->weightingsTable, pos, (void**)&v)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->weightingsTable, pos, (void**)&v, sizeof(dlmsVARIANT))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = cosem_setVariant(data, v)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    break;
+    case 5:
+    {
+        bitArray* a;
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) == 0 &&
+            (ret = hlp_setObjectCount(object->mostRecentRequestsTable.size, data)) == 0)
+        {
+            for (pos = 0; pos != object->mostRecentRequestsTable.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->mostRecentRequestsTable, pos, (void**)&a)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->mostRecentRequestsTable, pos, (void**)&a, sizeof(bitArray))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
+                    (ret = hlp_setObjectCount(a->size, data)) != 0)
+                {
+                    break;
+                }
+                ret = bb_set(e->value.byteArr, a->data, ba_getByteCount(a->size));
+            }
+        }
+    }
+    break;
+    case 6:
+        ret = cosem_setUInt8(data, object->lastOutcome);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_ARBITRATOR
+
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+int cosem_getIec8802LlcType1Setup(
+    gxValueEventArg* e)
+{
+    int ret = 0;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    gxIec8802LlcType1Setup* object = (gxIec8802LlcType1Setup*)e->target;
+    if (e->index == 2)
+    {
+        ret = cosem_setUInt16(data, object->maximumOctetsUiPdu);
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+int cosem_getIec8802LlcType2Setup(
+    gxValueEventArg* e)
+{
+    int ret = 0;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    gxIec8802LlcType2Setup* object = (gxIec8802LlcType2Setup*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = cosem_setUInt8(data, object->transmitWindowSizeK);
+        break;
+    case 3:
+        ret = cosem_setUInt8(data, object->transmitWindowSizeRW);
+        break;
+    case 4:
+        ret = cosem_setUInt16(data, object->maximumOctetsPdu);
+        break;
+    case 5:
+        ret = cosem_setUInt8(data, object->maximumNumberTransmissions);
+        break;
+    case 6:
+        ret = cosem_setUInt16(data, object->acknowledgementTimer);
+        break;
+    case 7:
+        ret = cosem_setUInt16(data, object->bitTimer);
+        break;
+    case 8:
+        ret = cosem_setUInt16(data, object->rejectTimer);
+        break;
+    case 9:
+        ret = cosem_setUInt16(data, object->busyStateTimer);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+int cosem_getIec8802LlcType3Setup(
+    gxValueEventArg* e)
+{
+    int ret = 0;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    gxIec8802LlcType3Setup* object = (gxIec8802LlcType3Setup*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = cosem_setUInt16(data, object->maximumOctetsACnPdu);
+        break;
+    case 3:
+        ret = cosem_setUInt8(data, object->maximumTransmissions);
+        break;
+    case 4:
+        ret = cosem_setUInt16(data, object->acknowledgementTime);
+        break;
+    case 5:
+        ret = cosem_setUInt16(data, object->receiveLifetime);
+        break;
+    case 6:
+        ret = cosem_setUInt16(data, object->transmitLifetime);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+int cosem_getSFSKActiveInitiator(
+    gxValueEventArg* e)
+{
+    int ret;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    gxSFSKActiveInitiator* object = (gxSFSKActiveInitiator*)e->target;
+    if (e->index == 2)
+    {
+        if ((ret = cosem_setStructure(data, 3)) == 0 &&
+            (ret = cosem_setOctectString(data, &object->systemTitle)) == 0 &&
+            (ret = cosem_setUInt16(data, object->macAddress)) == 0 &&
+            (ret = cosem_setUInt8(data, object->lSapSelector)) == 0)
+        {
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+int cosem_getFSKMacCounters(
+    gxValueEventArg* e)
+{
+    int pos, ret = 0;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    gxFSKMacCounters* object = (gxFSKMacCounters*)e->target;
+    switch (e->index)
+    {
+    case 2:
+    {
+        gxUint16PairUint32* it;
+        if ((ret = cosem_setArray(data, object->synchronizationRegister.size)) == 0)
+        {
+            for (pos = 0; pos != object->synchronizationRegister.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->synchronizationRegister, pos, (void**)&it)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->synchronizationRegister, pos, (void**)&it, sizeof(gxFSKMacCounters))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = cosem_setStructure(data, 2)) != 0 ||
+                    (ret = cosem_setUInt16(data, it->first)) != 0 ||
+                    (ret = cosem_setUInt32(data, it->second)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    break;
+    case 3:
+    {
+        if ((ret = cosem_setStructure(data, 5)) == 0 &&
+            (ret = cosem_setUInt32(data, object->physicalLayerDesynchronization)) == 0 &&
+            (ret = cosem_setUInt32(data, object->timeOutNotAddressedDesynchronization)) == 0 &&
+            (ret = cosem_setUInt32(data, object->timeOutFrameNotOkDesynchronization)) == 0 &&
+            (ret = cosem_setUInt32(data, object->writeRequestDesynchronization)) == 0 &&
+            (ret = cosem_setUInt32(data, object->wrongInitiatorDesynchronization)) == 0)
+        {
+        }
+    }
+    break;
+    case 4:
+    {
+        gxUint16PairUint32* it;
+        if ((ret = cosem_setArray(data, object->broadcastFramesCounter.size)) == 0)
+        {
+            for (pos = 0; pos != object->broadcastFramesCounter.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->broadcastFramesCounter, pos, (void**)&it)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->broadcastFramesCounter, pos, (void**)&it, sizeof(gxFSKMacCounters))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = cosem_setStructure(data, 2)) != 0 ||
+                    (ret = cosem_setUInt16(data, it->first)) != 0 ||
+                    (ret = cosem_setUInt32(data, it->second)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    break;
+    case 5:
+        ret = cosem_setUInt32(data, object->repetitionsCounter);
+        break;
+    case 6:
+        ret = cosem_setUInt32(data, object->transmissionsCounter);
+        break;
+    case 7:
+        ret = cosem_setUInt32(data, object->crcOkFramesCounter);
+        break;
+    case 8:
+        ret = cosem_setUInt32(data, object->crcNOkFramesCounter);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+int cosem_getSFSKMacSynchronizationTimeouts(
+    gxValueEventArg* e)
+{
+    int ret = 0;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    gxSFSKMacSynchronizationTimeouts* object = (gxSFSKMacSynchronizationTimeouts*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = cosem_setUInt16(data, object->searchInitiatorTimeout);
+        break;
+    case 3:
+        ret = cosem_setUInt16(data, object->synchronizationConfirmationTimeout);
+        break;
+    case 4:
+        ret = cosem_setUInt16(data, object->timeOutNotAddressed);
+        break;
+    case 5:
+        ret = cosem_setUInt16(data, object->timeOutFrameNotOK);
+        break;
+    default:
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+int cosem_getSFSKPhyMacSetUp(
+    gxValueEventArg* e)
+{
+    int ret = 0;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    gxSFSKPhyMacSetUp* object = (gxSFSKPhyMacSetUp*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = cosem_setEnum(data, object->initiatorElectricalPhase);
+        break;
+    case 3:
+        ret = cosem_setEnum(data, object->deltaElectricalPhase);
+        break;
+    case 4:
+        ret = cosem_setUInt8(data, object->maxReceivingGain);
+        break;
+    case 5:
+        ret = cosem_setUInt8(data, object->maxTransmittingGain);
+        break;
+    case 6:
+        ret = cosem_setUInt8(data, object->searchInitiatorThreshold);
+        break;
+    case 7:
+    {
+        if ((ret = cosem_setStructure(data, 2)) == 0 &&
+            (ret = cosem_setUInt32(data, object->markFrequency)) == 0 &&
+            (ret = cosem_setUInt32(data, object->spaceFrequency)) == 0)
+        {
+        }
+        break;
+    }
+    case 8:
+        ret = cosem_setUInt16(data, object->macAddress);
+        break;
+    case 9:
+    {
+        int pos;
+        uint16_t* it;
+        if ((ret = cosem_setArray(data, object->macGroupAddresses.size)) == 0)
+        {
+            for (pos = 0; pos != object->macGroupAddresses.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->macGroupAddresses, pos, (void**)&it)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->macGroupAddresses, pos, (void**)&it, sizeof(uint16_t))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = cosem_setUInt16(data, *it)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    break;
+    case 10:
+        ret = cosem_setEnum(data, object->repeater);
+        break;
+    case 11:
+        ret = cosem_setBoolean(data, object->repeaterStatus);
+        break;
+    case 12:
+        ret = cosem_setUInt8(data, object->minDeltaCredit);
+        break;
+    case 13:
+        ret = cosem_setUInt16(data, object->initiatorMacAddress);
+        break;
+    case 14:
+        ret = cosem_setBoolean(data, object->synchronizationLocked);
+        break;
+    case 15:
+        ret = cosem_setEnum(data, object->transmissionSpeed);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+int cosem_getSFSKReportingSystemList(
+    gxValueEventArg* e)
+{
+    int ret = DLMS_ERROR_CODE_OK;
+    if ((ret = cosem_getByteBuffer(e)) != 0)
+    {
+        return ret;
+    }
+    gxByteBuffer* data = e->value.byteArr;
+    gxSFSKReportingSystemList* object = (gxSFSKReportingSystemList*)e->target;
+    if (e->index == 2)
+    {
+        int pos;
+        gxByteBuffer* it;
+        if ((ret = cosem_setArray(data, object->reportingSystemList.size)) == 0)
+        {
+            for (pos = 0; pos != object->reportingSystemList.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->reportingSystemList, pos, (void**)&it)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->reportingSystemList, pos, (void**)&it, sizeof(uint16_t))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = cosem_setOctectString(data, it)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST

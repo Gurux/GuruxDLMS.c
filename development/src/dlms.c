@@ -67,6 +67,15 @@ static const unsigned char LLC_SEND_BYTES[3] = { 0xE6, 0xE6, 0x00 };
 static const unsigned char LLC_REPLY_BYTES[3] = { 0xE6, 0xE7, 0x00 };
 static const unsigned char HDLC_FRAME_START_END = 0x7E;
 
+#ifndef DLMS_IGNORE_HDLC
+unsigned char dlms_useHdlc(DLMS_INTERFACE_TYPE type)
+{
+    return type == DLMS_INTERFACE_TYPE_HDLC ||
+        type == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E ||
+        type == DLMS_INTERFACE_TYPE_PLC_HDLC;
+}
+#endif //DLMS_IGNORE_HDLC
+
 //Makes sure that the basic settings are set.
 int dlms_checkInit(dlmsSettings* settings)
 {
@@ -526,8 +535,6 @@ int getInt32(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 */
 static int getBitString(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
-    double t;
-    uint16_t byteCnt;
     uint16_t cnt = 0;
 #ifndef DLMS_IGNORE_MALLOC
     int ret;
@@ -536,13 +543,7 @@ static int getBitString(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    t = cnt;
-    t /= 8;
-    if (cnt % 8 != 0)
-    {
-        ++t;
-    }
-    byteCnt = (uint16_t)t;
+    uint16_t byteCnt = ba_getByteCount(cnt);
     // If there is not enough data available.
     if (buff->size - buff->position < byteCnt)
     {
@@ -556,11 +557,11 @@ static int getBitString(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value
     }
     if (value->capacity < cnt)
     {
-        return DLMS_ERROR_CODE_OUTOFMEMORY;
+        return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
     }
     value->size = cnt;
-    memcpy(value->pVal, buff->data + buff->position, cnt);
-    buff->position += cnt;
+    memcpy(value->pVal, buff->data + buff->position, byteCnt);
+    buff->position += byteCnt;
 #else
     value->bitArr = (bitArray*)gxmalloc(sizeof(bitArray));
     ba_init(value->bitArr);
@@ -1974,9 +1975,37 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
         ret = getArray(data, info, (uint16_t)startIndex, value);
         value->vt = info->type;
 #else
-        value->vt = DLMS_DATA_TYPE_OCTET_STRING;
-        --data->position;
-        value->byteArr = data;
+        if ((value->vt & DLMS_DATA_TYPE_BYREF) != 0)
+        {
+            uint16_t count, pos;
+            if ((ret = hlp_getObjectCount2(data, &count)) != 0)
+            {
+                return ret;
+            }
+            //If user try to write too many items.
+            if (va_getCapacity(value->Arr) < count)
+            {
+                return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+            }
+            value->Arr->size = count;
+            for (pos = 0; pos != count; ++pos)
+            {
+                gxDataInfo info2;
+                di_init(&info2);
+                dlmsVARIANT* value2;
+                if ((ret = va_getByIndex(value->Arr, pos, &value2)) != 0 ||
+                    (ret = dlms_getData(data, &info2, value2)) != 0)
+                {
+                    return ret;
+                }
+            }
+        }
+        else
+        {
+            value->vt = DLMS_DATA_TYPE_OCTET_STRING;
+            --data->position;
+            value->byteArr = data;
+        }
         return 0;
 #endif //DLMS_IGNORE_MALLOC
         break;
@@ -2548,6 +2577,190 @@ int dlms_getHdlcFrame(
 }
 #endif //DLMS_IGNORE_HDLC
 
+#ifndef DLMS_IGNORE_PLC
+int dlms_getPlcFrame(
+    dlmsSettings* settings,
+    unsigned char creditFields,
+    gxByteBuffer* data,
+    gxByteBuffer* reply)
+{
+    int frameSize = bb_available(data);
+    //Max frame size is 124 bytes.
+    if (frameSize > 134)
+    {
+        frameSize = 134;
+    }
+    //PAD Length.
+    int padLen = (36 - ((11 + frameSize) % 36)) % 36;
+    bb_capacity(reply, 15 + frameSize + padLen);
+    //Add STX
+    bb_setUInt8(reply, 2);
+    //Length.
+    bb_setUInt8(reply, 11 + frameSize);
+    //Length.
+    bb_setUInt8(reply, 0x50);
+    //Add  Credit fields.
+    bb_setUInt8(reply, creditFields);
+    //Add source and target MAC addresses.
+    bb_setUInt8(reply, settings->plcSettings.macSourceAddress >> 4);
+    int val = settings->plcSettings.macSourceAddress << 12;
+    val |= settings->plcSettings.macDestinationAddress & 0xFFF;
+    bb_setUInt16(reply, val);
+    bb_setUInt8(reply, padLen);
+    //Control byte.
+    bb_setUInt8(reply, DLMS_PLC_DATA_LINK_DATA_REQUEST);
+    bb_setUInt8(reply, (unsigned char)settings->serverAddress);
+    bb_setUInt8(reply, (unsigned char)settings->clientAddress);
+    bb_set(reply, data->data + data->position, frameSize);
+    data->position += frameSize;
+    //Add padding.
+    while (padLen != 0)
+    {
+        bb_setUInt8(reply, 0);
+        --padLen;
+    }
+    //Checksum.
+    uint16_t crc = countCRC(reply, 0, reply->size);
+    bb_setUInt16(reply, crc);
+    //Remove sent data in server side.
+    if (settings->server)
+    {
+        if (data->size == data->position)
+        {
+            bb_clear(data);
+        }
+        else
+        {
+            bb_move(data, data->position, 0, data->size - data->position);
+            data->position = 0;
+        }
+    }
+    return 0;
+}
+
+// Reserved for internal use.
+const uint32_t CRCPOLY = 0xD3B6BA00;
+uint32_t dlms_countFCS24(unsigned char* buff, int index, int count)
+{
+    unsigned char i, j;
+    uint32_t crcreg = 0;
+    for (j = 0; j < count; ++j)
+    {
+        unsigned char b = buff[index + j];
+        for (i = 0; i < 8; ++i)
+        {
+            crcreg >>= 1;
+            if ((b & 0x80) != 0)
+            {
+                crcreg |= 0x80000000;
+            }
+            if ((crcreg & 0x80) != 0)
+            {
+                crcreg = crcreg ^ CRCPOLY;
+            }
+            b <<= 1;
+        }
+    }
+    return crcreg >> 8;
+}
+
+int dlms_getMacHdlcFrame(
+    dlmsSettings* settings,
+    unsigned char frame,
+    unsigned char creditFields,
+    gxByteBuffer* data,
+    gxByteBuffer* reply)
+{
+    if (settings->maxInfoTX > 126)
+    {
+        settings->maxInfoTX = 86;
+    };
+    int ret;
+    gxByteBuffer tmp;
+    bb_init(&tmp);
+    //Lenght is updated last.
+    bb_setUInt16(reply, 0);
+    //Add  Credit fields.
+    bb_setUInt8(reply, creditFields);
+    //Add source and target MAC addresses.
+    bb_setUInt8(reply, settings->plcSettings.macSourceAddress >> 4);
+    int val = settings->plcSettings.macSourceAddress << 12;
+    val |= settings->plcSettings.macDestinationAddress & 0xFFF;
+    bb_setUInt16(reply, val);
+    if ((ret = dlms_getHdlcFrame(settings, frame, data, &tmp)) == 0)
+    {
+        unsigned char padLen = (unsigned char)((36 - ((10 + tmp.size) % 36)) % 36);
+        bb_setUInt8(reply, padLen);
+        bb_set(reply, tmp.data, tmp.size);
+        //Add padding.
+        while (padLen != 0)
+        {
+            bb_setUInt8(reply, 0);
+            --padLen;
+        }
+        //Checksum.
+        uint32_t crc = dlms_countFCS24(reply->data, 2, reply->size - 2 - padLen);
+        bb_setUInt8(reply, (unsigned char)(crc >> 16));
+        bb_setUInt16(reply, (uint16_t)crc);
+        //Add NC
+        val = reply->size / 36;
+        if (reply->size % 36 != 0)
+        {
+            ++val;
+        }
+        if (val == 1)
+        {
+            val = DLMS_PLC_MAC_SUB_FRAMES_ONE;
+        }
+        else if (val == 2)
+        {
+            val = DLMS_PLC_MAC_SUB_FRAMES_TWO;
+        }
+        else if (val == 3)
+        {
+            val = DLMS_PLC_MAC_SUB_FRAMES_THREE;
+        }
+        else if (val == 4)
+        {
+            val = DLMS_PLC_MAC_SUB_FRAMES_FOUR;
+        }
+        else if (val == 5)
+        {
+            val = DLMS_PLC_MAC_SUB_FRAMES_FIVE;
+        }
+        else if (val == 6)
+        {
+            val = DLMS_PLC_MAC_SUB_FRAMES_SIX;
+        }
+        else if (val == 7)
+        {
+            val = DLMS_PLC_MAC_SUB_FRAMES_SEVEN;
+        }
+        else
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        ret = bb_setUInt16ByIndex(reply, 0, val);
+    }
+    return ret;
+}
+
+int dlms_getMacFrame(
+    dlmsSettings* settings,
+    unsigned char frame,
+    unsigned char creditFields,
+    gxByteBuffer* data,
+    gxByteBuffer* reply)
+{
+    if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC)
+    {
+        return dlms_getPlcFrame(settings, creditFields, data, reply);
+    }
+    return dlms_getMacHdlcFrame(settings, frame, creditFields, data, reply);
+}
+
+#endif //DLMS_IGNORE_PLC
+
 int dlms_getDataFromFrame(
     gxByteBuffer* reply,
     gxReplyData* data,
@@ -2989,6 +3202,390 @@ int dlms_getTcpData(
 }
 #endif //DLMS_IGNORE_WRAPPER
 
+#ifndef DLMS_IGNORE_WIRELESS_MBUS
+int dlms_getMBusData(
+    dlmsSettings* settings,
+    gxByteBuffer* buff,
+    gxReplyData* data)
+{
+    int ret;
+    unsigned char len, ch;
+    //L-field.
+    if ((ret = bb_getUInt8(buff, &len)) != 0)
+    {
+        return ret;
+    }
+    //Some meters are counting length to frame size.
+    if (buff->size < (unsigned char)(len - 1))
+    {
+        data->complete = 0;
+        buff->position = buff->position - 1;
+    }
+    else
+    {
+        //Some meters are counting length to frame size.
+        if (buff->size < len)
+        {
+            --len;
+        }
+        data->packetLength = len;
+        data->complete = 1;
+        //C-field.
+        if ((ret = bb_getUInt8(buff, &ch)) != 0)
+        {
+            return ret;
+        }
+        // DLMS_MBUS_COMMAND cmd = (DLMS_MBUS_COMMAND)ch;
+        //M-Field.
+        uint16_t manufacturerID;
+        if ((ret = bb_getUInt16(buff, &manufacturerID)) != 0)
+        {
+            return ret;
+        }
+        //A-Field.
+        unsigned long id;
+        if ((ret = bb_getUInt32(buff, &id)) != 0)
+        {
+            return ret;
+        }
+        unsigned char meterVersion;
+        if ((ret = bb_getUInt8(buff, &meterVersion)) != 0 ||
+            (ret = bb_getUInt8(buff, &ch)) != 0)
+        {
+            return ret;
+        }
+        // DLMS_MBUS_METER_TYPE type = (DLMS_MBUS_METER_TYPE)ch;
+        // CI-Field
+        if ((ret = bb_getUInt8(buff, &ch)) != 0)
+        {
+            return ret;
+        }
+        // DLMS_MBUS_CONTROL_INFO ci = (DLMS_MBUS_CONTROL_INFO)ch;
+        //Access number.
+        unsigned char frameId;
+        if ((ret = bb_getUInt8(buff, &frameId)) != 0)
+        {
+            return ret;
+        }
+        //State of the meter
+        unsigned char state;
+        if ((ret = bb_getUInt8(buff, &state)) != 0)
+        {
+            return ret;
+        }
+        //Configuration word.
+        uint16_t configurationWord;
+        if ((ret = bb_getUInt16(buff, &configurationWord)) != 0)
+        {
+            return ret;
+        }
+        //unsigned char encryptedBlocks = (unsigned char)(configurationWord >> 12);
+        // DLMS_MBUS_ENCRYPTION_MODE encryption = (DLMS_MBUS_ENCRYPTION_MODE)(configurationWord & 7);
+        if ((ret = bb_getUInt8(buff, &ch)) != 0)
+        {
+            return ret;
+        }
+        settings->clientAddress = ch;
+        if ((ret = bb_getUInt8(buff, &ch)) != 0)
+        {
+            return ret;
+        }
+        settings->serverAddress = ch;
+    }
+    return ret;
+}
+
+#endif //DLMS_IGNORE_WIRELESS_MBUS
+
+#ifndef DLMS_IGNORE_PLC
+
+int dlms_getPlcData(
+    dlmsSettings* settings,
+    gxByteBuffer* buff,
+    gxReplyData* data)
+{
+    if (bb_available(buff) < 9)
+    {
+        data->complete = 0;
+        return 0;
+    }
+    unsigned char ch;
+    int ret;
+    unsigned short pos;
+    int packetStartID = buff->position;
+    // Find STX.
+    unsigned char stx;
+    for (pos = (unsigned short)buff->position; pos < buff->size; ++pos)
+    {
+        if ((ret = bb_getUInt8(buff, &stx)) != 0)
+        {
+            return ret;
+        }
+        if (stx == 2)
+        {
+            packetStartID = pos;
+            break;
+        }
+    }
+    // Not a PLC frame.
+    if (buff->position == buff->size)
+    {
+        // Not enough data to parse;
+        data->complete = 0;
+        buff->position = packetStartID;
+        return 0;
+    }
+    unsigned char len;
+    if ((ret = bb_getUInt8(buff, &len)) != 0)
+    {
+        return ret;
+    }
+    int index = buff->position;
+    if (bb_available(buff) < len)
+    {
+        data->complete = 0;
+        buff->position = buff->position - 2;
+    }
+    else
+    {
+        if ((ret = bb_getUInt8(buff, &ch)) != 0)
+        {
+            return ret;
+        }
+        //Credit fields.  IC, CC, DC
+        unsigned char credit;
+        if ((ret = bb_getUInt8(buff, &credit)) != 0)
+        {
+            return ret;
+        }
+        //MAC Addresses.
+        uint32_t mac;
+        if ((ret = bb_getUInt24(buff, &mac)) != 0)
+        {
+            return ret;
+        }
+        //SA.
+        short macSa = (short)(mac >> 12);
+        //DA.
+        short macDa = (short)(mac & 0xFFF);
+        //PAD length.
+        unsigned char padLen;
+        if ((ret = bb_getUInt8(buff, &padLen)) != 0)
+        {
+            return ret;
+        }
+
+        if (buff->size < (unsigned short)(len + padLen + 2))
+        {
+            data->complete = 0;
+            buff->position = buff->position - index - 6;
+        }
+        else
+        {
+            //DL.Data.request
+            if ((ret = bb_getUInt8(buff, &ch)) != 0)
+            {
+                return ret;
+            }
+            if (ch != DLMS_PLC_DATA_LINK_DATA_REQUEST)
+            {
+                //Parsing MAC LLC data failed. Invalid DataLink data request.
+                return DLMS_ERROR_CODE_INVALID_COMMAND;
+            }
+            unsigned char da, sa;
+            if ((ret = bb_getUInt8(buff, &da)) != 0 ||
+                (ret = bb_getUInt8(buff, &sa)) != 0)
+            {
+                return ret;
+            }
+            if (settings->server)
+            {
+                data->complete =
+                    (macDa == DLMS_PLC_DESTINATION_ADDRESS_ALL_PHYSICAL || macDa == settings->plcSettings.macSourceAddress) &&
+                    (macSa == DLMS_PLC_SOURCE_ADDRESS_INITIATOR || macSa == settings->plcSettings.macDestinationAddress);
+                data->serverAddress = macDa;
+                data->clientAddress = macSa;
+            }
+            else
+            {
+                data->complete =
+                    macDa == DLMS_PLC_DESTINATION_ADDRESS_ALL_PHYSICAL ||
+                    macDa == DLMS_PLC_SOURCE_ADDRESS_INITIATOR ||
+                    macDa == settings->plcSettings.macDestinationAddress;
+                data->clientAddress = macDa;
+                data->serverAddress = macSa;
+            }
+            //Skip padding.
+            if (data->complete)
+            {
+                uint16_t crcCount, crc;
+                crcCount = countCRC(buff, 0, len + padLen);
+                if ((ret = bb_getUInt16ByIndex(buff, len + padLen, &crc)) != 0)
+                {
+                    return ret;
+                }
+                //Check CRC.
+                if (crc != crcCount)
+                {
+                    //Invalid data checksum.
+                    return DLMS_ERROR_CODE_WRONG_CRC;
+                }
+                data->packetLength = len;
+            }
+        }
+    }
+    return ret;
+}
+
+int dlms_getPlcHdlcData(
+    dlmsSettings* settings,
+    gxByteBuffer* buff,
+    gxReplyData* data,
+    unsigned char* frame)
+{
+    if (bb_available(buff) < 2)
+    {
+        data->complete = 0;
+        return 0;
+    }
+    int ret;
+    *frame = 0;
+    unsigned char frameLen;
+    //SN field.
+    uint16_t ns;
+    if ((ret = bb_getUInt16(buff, &ns)) != 0)
+    {
+        return ret;
+    }
+    switch (ns)
+    {
+    case DLMS_PLC_MAC_SUB_FRAMES_ONE:
+        frameLen = 36;
+        break;
+    case DLMS_PLC_MAC_SUB_FRAMES_TWO:
+        frameLen = 2 * 36;
+        break;
+    case DLMS_PLC_MAC_SUB_FRAMES_THREE:
+        frameLen = 3 * 36;
+        break;
+    case DLMS_PLC_MAC_SUB_FRAMES_FOUR:
+        frameLen = 4 * 36;
+        break;
+    case DLMS_PLC_MAC_SUB_FRAMES_FIVE:
+        frameLen = 5 * 36;
+        break;
+    case DLMS_PLC_MAC_SUB_FRAMES_SIX:
+        frameLen = 6 * 36;
+        break;
+    case DLMS_PLC_MAC_SUB_FRAMES_SEVEN:
+        frameLen = 7 * 36;
+        break;
+    default:
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (bb_available(buff) < (unsigned char)(frameLen - 2))
+    {
+        data->complete = 0;
+    }
+    else
+    {
+        unsigned long index = buff->position;
+        //Credit fields.  IC, CC, DC
+        unsigned char credit;
+        if ((ret = bb_getUInt8(buff, &credit)) != 0)
+        {
+            return ret;
+        }
+        //MAC Addresses.
+        uint32_t mac;
+        if ((ret = bb_getUInt24(buff, &mac)) != 0)
+        {
+            return ret;
+        }
+        //SA.
+        unsigned short sa = (unsigned short)(mac >> 12);
+        //DA.
+        unsigned short da = (unsigned short)(mac & 0xFFF);
+        if (settings->server)
+        {
+            data->complete = (da == DLMS_PLC_DESTINATION_ADDRESS_ALL_PHYSICAL || da == settings->plcSettings.macSourceAddress) &&
+                (sa == DLMS_PLC_HDLC_SOURCE_ADDRESS_INITIATOR || sa == settings->plcSettings.macDestinationAddress);
+            data->serverAddress = da;
+            data->clientAddress = sa;
+        }
+        else
+        {
+            data->complete = da == DLMS_PLC_HDLC_SOURCE_ADDRESS_INITIATOR || da == settings->plcSettings.macDestinationAddress;
+            data->serverAddress = da;
+            data->clientAddress = sa;
+        }
+        if (data->complete)
+        {
+            //PAD length.
+            unsigned char padLen;
+            if ((ret = bb_getUInt8(buff, &padLen)) != 0)
+            {
+                return ret;
+            }
+            if ((ret = dlms_getHdlcData(settings->server, settings, buff, data, frame, 0, 1)) != 0)
+            {
+                return ret;
+            }
+            dlms_getDataFromFrame(buff, data, dlms_useHdlc(settings->interfaceType));
+            buff->position = buff->position + padLen;
+            uint32_t crcCount = dlms_countFCS24(buff->data, index, buff->position - index);
+            uint32_t crc;
+            if ((ret = bb_getUInt24ByIndex(buff, buff->position, &crc)) != 0)
+            {
+                return ret;
+            }
+            //Check CRC.
+            if (crc != crcCount)
+            {
+                //Invalid data checksum.
+                return DLMS_ERROR_CODE_WRONG_CRC;
+            }
+            data->packetLength = 2 + buff->position - index;
+        }
+        else
+        {
+            buff->position = buff->position + frameLen - index - 4;
+        }
+    }
+    return ret;
+}
+
+// Check is this PLC S-FSK message.
+// buff: Received data.
+// Returns True, if this is PLC message.
+unsigned char dlms_isPlcSfskData(gxByteBuffer* buff)
+{
+    if (bb_available(buff) < 2)
+    {
+        return 0;
+    }
+    int ret;
+    uint16_t len;
+    if ((ret = bb_getUInt16ByIndex(buff, buff->position, &len)) != 0)
+    {
+        return ret;
+    }
+    switch (len)
+    {
+    case DLMS_PLC_MAC_SUB_FRAMES_ONE:
+    case DLMS_PLC_MAC_SUB_FRAMES_TWO:
+    case DLMS_PLC_MAC_SUB_FRAMES_THREE:
+    case DLMS_PLC_MAC_SUB_FRAMES_FOUR:
+    case DLMS_PLC_MAC_SUB_FRAMES_FIVE:
+    case DLMS_PLC_MAC_SUB_FRAMES_SIX:
+    case DLMS_PLC_MAC_SUB_FRAMES_SEVEN:
+        return 1;
+    default:
+        return 0;
+    }
+}
+#endif //DLMS_IGNORE_PLC
+
 int dlms_getDataFromBlock(gxByteBuffer* data, uint16_t index)
 {
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
@@ -3025,9 +3622,14 @@ int dlms_receiverReady(
     // Get next frame.
     if ((type & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
     {
-        if ((ret = dlms_getHdlcFrame(settings, getReceiverReady(settings), NULL, reply)) != 0)
+        unsigned char id = getReceiverReady(settings);
+        if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC_HDLC)
         {
-            return ret;
+            return dlms_getMacHdlcFrame(settings, id, 0, NULL, reply);
+        }
+        else
+        {
+            ret = dlms_getHdlcFrame(settings, id, NULL, reply);
         }
         return ret;
     }
@@ -4661,7 +5263,7 @@ int dlms_appendMultipleSNBlocks(
     if (ciphering)
     {
         maxSize -= CIPHERING_HEADER_SIZE;
-        if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+        if (dlms_useHdlc(p->settings->interfaceType))
         {
             maxSize -= 3;
         }
@@ -4881,7 +5483,7 @@ int dlms_getSNPdu(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
 #ifndef DLMS_IGNORE_HDLC
-    if (ret == 0 && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    if (ret == 0 && dlms_useHdlc(p->settings->interfaceType))
     {
         ret = dlms_addLLCBytes(p->settings, reply);
     }
@@ -4965,7 +5567,7 @@ int dlms_getLNPdu(
 #else
             h = reply;
 #endif //DLMS_IGNORE_MALLOC
-    }
+        }
         // Add command.
         if (p->command != DLMS_COMMAND_GENERAL_BLOCK_TRANSFER)
         {
@@ -5024,7 +5626,7 @@ int dlms_getLNPdu(
                     bb_move(h, pos + 1, pos, reply->size - pos - 1);
                 }
             }
-            }
+        }
         else if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
             // Get request size can be bigger than PDU size.
@@ -5144,7 +5746,7 @@ int dlms_getLNPdu(
                     {
                         //If this fails PDU buffer size must be bigger.
                         return ret;
-            }
+                    }
 #else
                     if (p->settings->server)
                     {
@@ -5159,9 +5761,9 @@ int dlms_getLNPdu(
                         ret = bb_set2(reply, p->data, p->data->position, len);
                     }
 #endif //DLMS_IGNORE_MALLOC
+                }
+            }
         }
-        }
-}
         // Add data that fits to one block.
         if (ret == 0 && len == 0)
         {
@@ -5209,7 +5811,7 @@ int dlms_getLNPdu(
                     ret = bb_insert(h->data, h->size, reply, 0);
                 }
 #endif //DLMS_IGNORE_MALLOC
-        }
+            }
         }
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (ret == 0 && ciphering && reply->size != 0 && p->command != DLMS_COMMAND_RELEASE_REQUEST)
@@ -5274,7 +5876,7 @@ int dlms_getLNPdu(
         }
     }
 #ifndef DLMS_IGNORE_HDLC
-    if (ret == 0 && p->settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    if (ret == 0 && dlms_useHdlc(p->settings->interfaceType))
     {
         ret = dlms_addLLCBytes(p->settings, reply);
     }
@@ -5313,8 +5915,7 @@ int dlms_getLnMessages(
             {
                 ++p->settings->blockIndex;
             }
-        }
-        while (ret == 0 && pdu->position != pdu->size)
+        } while (ret == 0 && pdu->position != pdu->size)
         {
 #ifdef DLMS_IGNORE_MALLOC
             if (!(messages->size < messages->capacity))
@@ -5329,37 +5930,50 @@ int dlms_getLnMessages(
             it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
             BYTE_BUFFER_INIT(it);
 #endif //DLMS_IGNORE_MALLOC
-            if (p->settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
+            switch (p->settings->interfaceType)
             {
 #ifndef DLMS_IGNORE_WRAPPER
+            case DLMS_INTERFACE_TYPE_WRAPPER:
                 ret = dlms_getWrapperFrame(p->settings, p->command, pdu, it);
-#else
-                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                break;
 #endif //DLMS_IGNORE_WRAPPER
-            }
-            else
-            {
 #ifndef DLMS_IGNORE_HDLC
+            case DLMS_INTERFACE_TYPE_HDLC:
+            case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
                 ret = dlms_getHdlcFrame(p->settings, frame, pdu, it);
                 if (ret == 0 && pdu->position != pdu->size)
                 {
                     frame = getNextSend(p->settings, 0);
                 }
-#else
-                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                break;
 #endif //DLMS_IGNORE_HDLC
-                }
+            case DLMS_INTERFACE_TYPE_PDU:
+                ret = bb_set2(it, pdu, 0, pdu->size);
+                break;
+            case DLMS_INTERFACE_TYPE_PLC:
+                ret = dlms_getPlcFrame(p->settings, 0x90, pdu, it);
+                break;
+            case DLMS_INTERFACE_TYPE_PLC_HDLC:
+                ret = dlms_getMacHdlcFrame(p->settings, frame, 0, pdu, it);
+                break;
+            default:
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            if (ret != 0)
+            {
+                break;
+            }
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
-            }
+        }
         bb_clear(pdu);
 #ifndef DLMS_IGNORE_HDLC
         frame = 0;
 #endif //DLMS_IGNORE_HDLC
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
     return ret;
-    }
+}
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_getSnMessages(
@@ -5416,7 +6030,7 @@ int dlms_getSnMessages(
 #else
                 ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_HDLC
-                }
+            }
             if (ret != 0)
             {
                 break;
@@ -5424,12 +6038,12 @@ int dlms_getSnMessages(
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
-            }
+        }
         bb_clear(&data);
         frame = 0;
-        } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-        return 0;
-    }
+    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    return 0;
+}
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 int dlms_getData2(
@@ -5440,46 +6054,62 @@ int dlms_getData2(
 {
     int ret;
     unsigned char frame = 0;
-    // If DLMS frame is generated.
-    if (settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    switch (settings->interfaceType)
     {
 #ifndef DLMS_IGNORE_HDLC
-        if ((ret = dlms_getHdlcData(settings->server, settings, reply, data, &frame, data->preEstablished, first)) != 0)
-        {
-            return ret;
-        }
-#else
-        // Invalid Interface type.
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    case DLMS_INTERFACE_TYPE_HDLC:
+    case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
+        ret = dlms_getHdlcData(settings->server, settings, reply, data, &frame, data->preEstablished, first);
+        break;
 #endif //DLMS_IGNORE_HDLC
-        }
 #ifndef DLMS_IGNORE_WRAPPER
-    else if (settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
-    {
-        if ((ret = dlms_getTcpData(settings, reply, data)) != 0)
-        {
-            return ret;
-        }
-    }
+    case DLMS_INTERFACE_TYPE_WRAPPER:
+        ret = dlms_getTcpData(settings, reply, data);
+        break;
 #endif //DLMS_IGNORE_WRAPPER
-    else
-    {
+#ifndef DLMS_IGNORE_WIRELESS_MBUS
+    case DLMS_INTERFACE_TYPE_WIRELESS_MBUS:
+        ret = dlms_getMBusData(settings, reply, data);
+        break;
+#endif //DLMS_IGNORE_WIRELESS_MBUS
+    case DLMS_INTERFACE_TYPE_PDU:
+        data->packetLength = reply->size;
+        data->complete = reply->size != 0;
+        ret = 0;
+    break;
+#ifndef DLMS_IGNORE_PLC
+    case DLMS_INTERFACE_TYPE_PLC:
+        ret = dlms_getPlcData(settings, reply, data);
+        break;
+    case DLMS_INTERFACE_TYPE_PLC_HDLC:
+        ret = dlms_getPlcHdlcData(settings, reply, data, &frame);
+#endif //DLMS_IGNORE_PLC
+        break;
+    default:
         // Invalid Interface type.
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    if (ret != 0)
+    {
+        return ret;
     }
     // If all data is not read yet.
     if (!data->complete)
     {
         return 0;
     }
-    if ((ret = dlms_getDataFromFrame(reply, data, settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)) != 0)
+    if (settings->interfaceType != DLMS_INTERFACE_TYPE_PLC_HDLC)
     {
-        return ret;
+        if ((ret = dlms_getDataFromFrame(reply, data, dlms_useHdlc(settings->interfaceType))) != 0)
+        {
+            return ret;
+        }
     }
     // If keepalive or get next frame request.
     if (frame != 0x13 && (frame & 0x1) != 0)
     {
-        if (settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC && data->data.size != 0)
+        if (dlms_useHdlc(settings->interfaceType) && data->data.size != 0)
         {
             if (reply->position != reply->size)
             {
@@ -5493,7 +6123,7 @@ int dlms_getData2(
         return DLMS_ERROR_CODE_OK;
     }
     return dlms_getPdu(settings, data, first);
-    }
+}
 
 int dlms_generateChallenge(
     gxByteBuffer* challenge)
@@ -5692,7 +6322,7 @@ int dlms_secure(
                 (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
             {
                 return ret;
-    }
+        }
 #else
             if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
                 (ret = bb_set(&challenge, settings->cipher.systemTitle.data, settings->cipher.systemTitle.size)) != 0 ||
@@ -5718,7 +6348,7 @@ int dlms_secure(
                 }
             }
 #endif //DLMS_IGNORE_HIGH_SHA256
-}
+    }
         else
         {
             if ((ret = bb_set(&challenge, data->data, data->size)) != 0 ||
@@ -5738,7 +6368,7 @@ int dlms_secure(
         bb_clear(&challenge);
         return ret;
 #endif //DLMS_IGNORE_HIGH_MD5
-}
+    }
     else if (settings->authentication == DLMS_AUTHENTICATION_HIGH_SHA1)
     {
         //If SHA1 is not used.
@@ -5749,7 +6379,7 @@ int dlms_secure(
         bb_clear(&challenge);
         return ret;
 #endif //DLMS_IGNORE_HIGH_SHA1
-}
+    }
     else if (settings->authentication == DLMS_AUTHENTICATION_HIGH_SHA256)
     {
         //If SHA256 is not used.
@@ -5796,7 +6426,7 @@ int dlms_secure(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-}
+    }
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,

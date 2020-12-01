@@ -224,6 +224,42 @@ extern "C" {
     int  cosem_getPrimeNbOfdmPlcApplicationsIdentification(
         gxValueEventArg* e);
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+#ifndef DLMS_IGNORE_ARBITRATOR
+    int cosem_getArbitrator(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    int cosem_getIec8802LlcType1Setup(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    int cosem_getIec8802LlcType2Setup(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    int cosem_getIec8802LlcType3Setup(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    int cosem_getSFSKActiveInitiator(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    int cosem_getFSKMacCounters(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    int cosem_getSFSKMacSynchronizationTimeouts(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    int cosem_getSFSKPhyMacSetUp(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+    int cosem_getSFSKReportingSystemList(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 
 #ifdef DLMS_ITALIAN_STANDARD
     //Convert compact data buffer to array of values.

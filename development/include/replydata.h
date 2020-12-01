@@ -134,6 +134,10 @@ extern "C" {
         unsigned streaming;
         //GBT window size
         unsigned windowSize;
+        //Server address.
+        uint16_t serverAddress;
+        //Client address.
+        uint16_t clientAddress;
     } gxReplyData;
 
     unsigned char reply_isMoreData(gxReplyData* reply);

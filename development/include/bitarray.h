@@ -125,6 +125,11 @@ extern "C" {
         bitArray* arr);
 #endif //DLMS_IGNORE_MALLOC
 
+    //Add bit array as a string.
+    int ba_toString2(
+        gxByteBuffer* bb,
+        bitArray* ba);
+
 #define BIT_ATTACH(X, V, S) ba_attach(&X, V, S, 8 * sizeof(V)/sizeof(V[0]))
 
 #ifdef  __cplusplus

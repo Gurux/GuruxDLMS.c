@@ -270,6 +270,7 @@ extern "C" {
         DLMS_OBJECT_TYPE_GPRS_SETUP = 45,
         DLMS_OBJECT_TYPE_SMTP_SETUP = 46,
         DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC = 47,
+        DLMS_OBJECT_TYPE_IP6_SETUP = 48,
         DLMS_OBJECT_TYPE_REGISTER_TABLE = 61,
         DLMS_OBJECT_TYPE_COMPACT_DATA = 62,
         DLMS_OBJECT_TYPE_STATUS_MAPPING = 63,
@@ -278,76 +279,137 @@ extern "C" {
         DLMS_OBJECT_TYPE_LIMITER = 71,
         DLMS_OBJECT_TYPE_MBUS_CLIENT = 72,
         DLMS_OBJECT_TYPE_PUSH_SETUP = 40,
-        DLMS_OBJECT_TYPE_MESSAGE_HANDLER = 60,
-        DLMS_OBJECT_TYPE_PARAMETER_MONITOR = 65,
-        DLMS_OBJECT_TYPE_WIRELESS_MODE_Q_CHANNEL = 73,
-        DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP = 74,
+        /**
+        * S-FSK Phy MAC Setup
+        */
+        DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP = 50,
 
         /*
-    * Addresses that are provided by the base node during the opening of the
-    * convergence layer.
-    */
-    DLMS_OBJECT_TYPE_LLC_SSCS_SETUP = 80,
+        * S-FSK Active initiator.
+        */
+        DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR = 51,
+        /*
+        * S-FSK MAC synchronization timeouts
+        */
+        DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS = 52,
 
-    /*
-    * Counters related to the physical layers exchanges.
-    */
-    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS = 81,
+        /*
+        * S-FSK MAC Counters.
+        */
+        DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS = 53,
 
-    /*
-    * A necessary parameters to set up and manage the PRIME NB OFDM PLC MAC
-    * layer.
-    */
-    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP = 82,
+        /*
+        * IEC 61334-4-32 LLC setup.
+        */
+        DLMS_OBJECT_TYPE_IEC_61334_4_32_LLC_SETUP = 55,
 
-    /*
-    * Functional behaviour of MAC.
-    */
-    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS = 83,
+        /*
+        * S-FSK Reporting system list.
+        */
+        DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST = 56,
 
-    /*
-    * Statistical information on the operation of the MAC layer for management
-    * purposes.
-    */
-    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS = 84,
+        /*
+        * ISO/IEC 8802-2 LLC Type 1 setup.
+        */
+        DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP = 57,
 
-    /*
-    * Parameters related to the management of the devices connected to the
-    * network.
-    */
-    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA = 85,
+        /*
+        * ISO/IEC 8802-2 LLC Type 2 setup.
+        */
+        DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP = 58,
+        /*
+        * ISO/IEC 8802-2 LLC Type 3 setup.
+        */
+        DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP = 59,
 
-    /*
-    * Identification information related to administration and maintenance of
-    * PRIME NB OFDM PLC devices.
-    */
-    DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION = 86,
+        DLMS_OBJECT_TYPE_WIRELESS_MODE_Q_CHANNEL = 73,
+        DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP = 74,
+        DLMS_OBJECT_TYPE_MESSAGE_HANDLER = 60,
+        DLMS_OBJECT_TYPE_PARAMETER_MONITOR = 65,
+        /*
+        * Arbitrator
+        */
+        DLMS_OBJECT_TYPE_ARBITRATOR = 68,
+        /*
+        * Addresses that are provided by the base node during the opening of the
+        * convergence layer.
+        */
+        DLMS_OBJECT_TYPE_LLC_SSCS_SETUP = 80,
 
-    /*
-    * Configure a ZigBee PRO device with information necessary to create or
-    * join the network.
-    */
-    DLMS_OBJECT_TYPE_ZIG_BEE_SAS_STARTUP = 101,
-    /*
-    * Configure the behavior of a ZigBee PRO device on joining or loss of
-    * connection to the network.
-    */
-    DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN = 102,
-    /*
-    * Configure the fragmentation feature of ZigBee PRO transport layer.
-    */
-    DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION = 103,
+        /*
+        * Counters related to the physical layers exchanges.
+        */
+        DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS = 81,
 
-    DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL = 104,
+        /*
+        * A necessary parameters to set up and manage the PRIME NB OFDM PLC MAC
+        * layer.
+        */
+        DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_SETUP = 82,
 
-    DLMS_OBJECT_TYPE_DATA_PROTECTION = 30,
-    DLMS_OBJECT_TYPE_ACCOUNT = 111,
-    DLMS_OBJECT_TYPE_CREDIT = 112,
-    DLMS_OBJECT_TYPE_CHARGE = 113,
-    DLMS_OBJECT_TYPE_TOKEN_GATEWAY = 115,
+        /*
+        * Functional behaviour of MAC.
+        */
+        DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS = 83,
 
-    // Tariff Plan (Piano Tariffario) is used in Italian standard UNI/TS 11291-11.
-    DLMS_OBJECT_TYPE_TARIFF_PLAN = 8192,
+        /*
+        * Statistical information on the operation of the MAC layer for management
+        * purposes.
+        */
+        DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS = 84,
+
+        /*
+        * Parameters related to the management of the devices connected to the
+        * network.
+        */
+        DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA = 85,
+
+        /*
+        * Identification information related to administration and maintenance of
+        * PRIME NB OFDM PLC devices.
+        */
+        DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION = 86,
+
+        /*
+        * G3-PLC MAC layer counters
+        */
+        DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS = 90,
+
+        /*
+        * G3-PLC MAC setup.
+        */
+        DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP = 91,
+
+        /*
+        * G3-PLC 6LoWPAN.
+        */
+        DLMS_OBJECT_TYPE_G3_PLC6_LO_WPAN = 92,
+
+        /*
+        * Configure a ZigBee PRO device with information necessary to create or
+        * join the network.
+        */
+        DLMS_OBJECT_TYPE_ZIG_BEE_SAS_STARTUP = 101,
+        /*
+        * Configure the behavior of a ZigBee PRO device on joining or loss of
+        * connection to the network.
+        */
+        DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN = 102,
+        /*
+        * Configure the fragmentation feature of ZigBee PRO transport layer.
+        */
+        DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION = 103,
+
+        DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL = 104,
+
+        DLMS_OBJECT_TYPE_DATA_PROTECTION = 30,
+        DLMS_OBJECT_TYPE_ACCOUNT = 111,
+        DLMS_OBJECT_TYPE_CREDIT = 112,
+        DLMS_OBJECT_TYPE_CHARGE = 113,
+        DLMS_OBJECT_TYPE_TOKEN_GATEWAY = 115,
+
+        // Tariff Plan (Piano Tariffario) is used in Italian standard UNI/TS 11291-11.
+        DLMS_OBJECT_TYPE_TARIFF_PLAN = 8192,
     } DLMS_OBJECT_TYPE;
 
     typedef enum
@@ -890,7 +952,45 @@ extern "C" {
         //General
         DLMS_INTERFACE_TYPE_HDLC = 0,
         // IEC 62056-47 COSEM transport layers for IPv4 networks
-        DLMS_INTERFACE_TYPE_WRAPPER = 0x1
+        DLMS_INTERFACE_TYPE_WRAPPER = 0x1,
+        /**
+        * Plain PDU is returned.
+        */
+        DLMS_INTERFACE_TYPE_PDU,
+        /**
+        * Wireless M-Bus frame.
+        */
+        DLMS_INTERFACE_TYPE_WIRELESS_MBUS,
+        /**
+        * IEC 62056-21 E-Mode is used to initialize communication before moving to
+        * HDLC protocol.
+        */
+        DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E,
+        /**
+        * PLC Logical link control (LLC) profile is used with IEC 61334-4-32
+        * connectionless LLC sublayer.
+        *
+        * Blue Book: 10.4.4.3.3 The connectionless LLC sublayer.
+        */
+        DLMS_INTERFACE_TYPE_PLC,
+        /**
+        * PLC Logical link control (LLC) profile is used with HDLC.
+        *
+        * Blue Book: 10.4.4.3.4 The HDLC based LLC sublayer.
+        */
+        DLMS_INTERFACE_TYPE_PLC_HDLC,
+        /**
+        * LowPower Wide Area Networks (LPWAN) profile is used.
+        */
+        DLMS_INTERFACE_TYPE_LPWAN,
+        /**
+        * Wi-SUN FAN mesh network is used.
+        */
+        DLMS_INTERFACE_TYPE_WI_SUN,
+        /**
+        * OFDM PLC PRIME is defined in IEC 62056-8-4.
+        */
+        DLMS_INTERFACE_TYPE_PLC_PRIME
     } DLMS_INTERFACE_TYPE;
 
     typedef enum
@@ -1207,7 +1307,20 @@ extern "C" {
         /*
         * Response message from gateway to client.
         */
-        DLMS_COMMAND_GATEWAY_RESPONSE = 0xE7
+        DLMS_COMMAND_GATEWAY_RESPONSE = 0xE7,
+
+        // PLC discover request.
+        DLMS_COMMAND_DISCOVER_REQUEST = 0x1D,
+        // PLC discover report.
+        DLMS_COMMAND_DISCOVER_REPORT = 0x1E,
+        // PLC register request.
+        DLMS_COMMAND_REGISTER_REQUEST = 0x1C,
+        // PLC ping request.
+        DLMS_COMMAND_PING_REQUEST = 0x19,
+        // PLC ping response.
+        DLMS_COMMAND_PING_RESPONSE = 0x1A,
+        // PLC repeat call request.
+        DLMS_COMMAND_REPEAT_CALL_REQUEST = 0x1F
     } DLMS_COMMAND;
 
     /*
@@ -2609,39 +2722,39 @@ extern "C" {
     DLMS_MAC_CAPABILITIES;
 
     /*
- * Enumerates credit types.<br>
- * Online help:<br>
- * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCredit
- */
+    * Enumerates credit types.
+    * Online help:
+    * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCredit
+    */
     typedef enum
     {
         /*
-         * Token credit.
-         */
+        * Token credit.
+        */
         DLMS_CREDIT_TYPE_TOKEN,
         /*
-         * Reserved credit.
-         */
-         DLMS_CREDIT_TYPE_RESERVED,
-         /*
-          * Emergency credit.
-          */
-          DLMS_CREDIT_TYPE_EMERGENCY,
-          /*
-           * TimeBased credit.
-           */
-           DLMS_CREDIT_TYPE_TIME_BASED,
-           /*
-            * Consumption based credit.
-            */
-            DLMS_CREDIT_TYPE_CONSUMPTION_BASED
+        * Reserved credit.
+        */
+        DLMS_CREDIT_TYPE_RESERVED,
+        /*
+        * Emergency credit.
+        */
+        DLMS_CREDIT_TYPE_EMERGENCY,
+        /*
+        * TimeBased credit.
+        */
+        DLMS_CREDIT_TYPE_TIME_BASED,
+        /*
+        * Consumption based credit.
+        */
+        DLMS_CREDIT_TYPE_CONSUMPTION_BASED
     }DLMS_CREDIT_TYPE;
 
     /*
-     * Enumerates credit status values.<br>
-     * Online help:<br>
-     * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCredit
-     */
+    * Enumerates credit status values.
+    * Online help:
+    * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCredit
+    */
     typedef enum
     {
         /*
@@ -2649,26 +2762,26 @@ extern "C" {
         */
         DLMS_CREDIT_STATUS_ENABLED,
         /*
-         * Selectable state.
-         */
-         DLMS_CREDIT_STATUS_SELECTABLE,
-         /*
-          * Selected/Invoked state.
-          */
-          DLMS_CREDIT_STATUS_INVOKED,
-          /*
-           * In use state.
-           */
-           DLMS_CREDIT_STATUS_IN_USE,
-           /*
-            * Consumed state.
-            */
-            DLMS_CREDIT_STATUS_CONSUMED
+        * Selectable state.
+        */
+        DLMS_CREDIT_STATUS_SELECTABLE,
+        /*
+        * Selected/Invoked state.
+        */
+        DLMS_CREDIT_STATUS_INVOKED,
+        /*
+        * In use state.
+        */
+        DLMS_CREDIT_STATUS_IN_USE,
+        /*
+        * Consumed state.
+        */
+        DLMS_CREDIT_STATUS_CONSUMED
     }DLMS_CREDIT_STATUS;
 
     /*
-     * Enumerated Credit configuration values.<br>
-     * Online help:<br>
+     * Enumerated Credit configuration values.
+     * Online help:
      * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSAccount
      */
     typedef enum
@@ -2699,11 +2812,11 @@ extern "C" {
         DLMS_CREDIT_CONFIGURATION_TOKENS = 0x10
     }DLMS_CREDIT_CONFIGURATION;
 
-    /*
-     * Enumerates account credit status modes.<br>
-     * Online help:<br>
-     * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
-     */
+        /*
+        * Enumerates account credit status modes.
+        * Online help:
+        * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
+        */
     typedef enum
     {
         /*
@@ -2753,7 +2866,8 @@ extern "C" {
     }DLMS_CHARGE_CONFIGURATION;
 
     // DLMS state errors.
-    typedef enum {
+    typedef enum
+    {
         //Invalid value.
         DLMS_EXCEPTION_STATE_ERROR_SERVICE_INVALID = 0,
         //Service is not allowed.
@@ -2762,6 +2876,192 @@ extern "C" {
         DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN = 2
 }DLMS_EXCEPTION_STATE_ERROR;
 
+
+//MIB variable initiator electrical phase.
+typedef enum
+{
+    /**
+    * Not defined.
+    */
+    DLMS_INITIATOR_ELECTRICAL_PHASE_NOT_DEFINED,
+    /**
+    * Phase 1.
+    */
+    DLMS_INITIATOR_ELECTRICAL_PHASE_1,
+    /**
+    * Phase 2.
+    */
+    DLMS_INITIATOR_ELECTRICAL_PHASE_2,
+    /**
+    * Phase 3.
+    */
+    DLMS_INITIATOR_ELECTRICAL_PHASE_3
+}DLMS_INITIATOR_ELECTRICAL_PHASE;
+
+    /**
+    * MIB variable initiator electrical phase.
+    */
+typedef enum
+{
+    /**
+    * Not defined.
+    */
+    DLMS_DELTA_ELECTRICAL_PHASE_NOT_DEFINED,
+    /**
+    * The server system is connected to the same phase as the client system.
+    */
+    DLMS_DELTA_ELECTRICAL_PHASE_SAME,
+
+    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_60,
+
+    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_120,
+
+    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_180,
+
+    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_MINUS_120,
+
+    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_MINUS_60
+}DLMS_DELTA_ELECTRICAL_PHASE;
+
+
+    /**
+    * Repeater enumerator values.
+    */
+typedef enum
+{
+    /**
+    * Newer repeater.
+    */
+    DLMS_REPEATER_NEVER,
+    /**
+    * Always repeater.
+    */
+    DLMS_REPEATER_ALWAYS,
+    /**
+    * Dynamic repeater.
+    */
+    DLMS_REPEATER_DYNAMIC
+}DLMS_REPEATER;
+
+
+/**
+* IEC Twisted pair setup working mode.
+*/
+typedef enum
+{
+    /**
+    * The interface ignores all received frames.
+    */
+    DLMS_IEC_TWISTED_PAIR_SETUP_MODE_INACTIVE,
+
+    /**
+    * Always active.
+    */
+    DLMS_IEC_TWISTED_PAIR_SETUP_MODE_ACTIVE
+}DLMS_IEC_TWISTED_PAIR_SETUP_MODE;
+
+/**
+* PLC Source address enumerations.
+*/
+typedef enum
+{
+    DLMS_PLC_SOURCE_ADDRESS_INITIATOR = 0xC00,
+    DLMS_PLC_SOURCE_ADDRESS_NEW = 0xFFE
+}DLMS_PLC_SOURCE_ADDRESS;
+
+// PLC Destination address enumerations.
+typedef enum
+{
+    DLMS_PLC_DESTINATION_ADDRESS_ALL_PHYSICAL = 0xFFF
+}DLMS_PLC_DESTINATION_ADDRESS;
+
+/**
+* PLC HDLC Source address enumerations.
+*/
+typedef enum
+{
+    // Initiator.
+    DLMS_PLC_HDLC_SOURCE_ADDRESS_INITIATOR = 0xC01,
+}DLMS_PLC_HDLC_SOURCE_ADDRESS;
+
+/**
+* PLC data link data commands.
+* */
+typedef enum
+{
+    DLMS_PLC_DATA_LINK_DATA_REQUEST = 0x90
+}DLMS_PLC_DATA_LINK_DATA;
+
+//  Sequence number of MAC sub frame.
+typedef enum
+{
+    DLMS_PLC_MAC_SUB_FRAMES_ONE = 0x6C6C,
+    DLMS_PLC_MAC_SUB_FRAMES_TWO = 0x3A3A,
+    DLMS_PLC_MAC_SUB_FRAMES_THREE = 0x5656,
+    DLMS_PLC_MAC_SUB_FRAMES_FOUR = 0x7171,
+    DLMS_PLC_MAC_SUB_FRAMES_FIVE = 0x1D1D,
+    DLMS_PLC_MAC_SUB_FRAMES_SIX = 0x4B4B,
+    DLMS_PLC_MAC_SUB_FRAMES_SEVEN = 0x2727,
+}DLMS_PLC_MAC_SUB_FRAMES;
+
+// M-Bus command.
+typedef enum
+{
+    DLMS_MBUS_COMMAND_SND_NR = 0x44,
+    DLMS_MBUS_COMMAND_SND_UD2 = 0x43,
+    DLMS_MBUS_COMMAND_RSP_UD = 0x08
+} DLMS_MBUS_COMMAND;
+
+// M-Bus meter type.
+typedef enum
+{
+    // Oil meter.
+    DLMS_MBUS_METER_TYPE_OIL = 1,
+    // Energy meter.
+    DLMS_MBUS_METER_TYPE_ENERGY = 2,
+    // Gas meter.
+    DLMS_MBUS_METER_TYPE_GAS = 3,
+    // Water meter.
+    DLMS_MBUS_METER_TYPE_WATER = 7,
+    // Unknown meter type.
+    DLMS_MBUS_METER_TYPE_UNKNOWN = 0x0F
+}DLMS_MBUS_METER_TYPE;
+
+// M-Bus control info.
+typedef enum
+{
+    // Long M-Bus data header present, direction master to slave
+    DLMS_MBUS_CONTROL_INFO_LONG_HEADER_MASTER = 0x60,
+    // Short M-Bus data header present, direction master to slave
+    DLMS_MBUS_CONTROL_INFO_SHORT_HEADER_MASTER = 0x61,
+    // Long M-Bus data header present, direction slave to master
+    DLMS_MBUS_CONTROL_INFO_LONG_HEADER_SLAVE = 0x7C,
+    // Short M-Bus data header present, direction slave to master
+    DLMS_MBUS_CONTROL_INFO_SHORT_HEADER_SLAVE = 0x7D,
+    // M-Bus short Header.
+    DLMS_MBUS_CONTROL_INFO_SHORT_HEADER = 0x7A,
+    // M-Bus long Header.
+    DLMS_MBUS_CONTROL_INFO_LONG_HEADER = 0x72
+}DLMS_MBUS_CONTROL_INFO;
+
+// Encryption modes.
+typedef enum
+{
+    // Encryption is not used.
+    DLMS_MBUS_ENCRYPTION_MODE_NONE,
+    //  AES with Counter Mode (CTR) noPadding and IV.
+    DLMS_MBUS_ENCRYPTION_MODE_AES_128,
+    //  DES with Cipher Block Chaining Mode (CBC).
+    DLMS_MBUS_ENCRYPTION_MODE_DES_CBC,
+    //  DES with Cipher Block Chaining Mode (CBC) and Initial Vector.
+    DLMS_MBUS_ENCRYPTION_MODE_DES_CBC_IV,
+    // AES with Cipher Block Chaining Mode (CBC) and Initial Vector.
+    DLMS_MBUS_ENCRYPTION_MODE_AES_CBC_IV = 5,
+    // AES 128 with Cipher Block Chaining Mode (CBC) and dynamic key and Initial Vector with 0.
+    DLMS_MBUS_ENCRYPTION_MODE_AES_CBC_IV_0 = 7,
+    // TLS
+    DLMS_MBUS_ENCRYPTION_MODE_TLS = 13
+}DLMS_MBUS_ENCRYPTION_MODE;
 #ifdef  __cplusplus
 }
 #endif

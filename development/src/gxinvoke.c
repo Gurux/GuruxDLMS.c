@@ -289,7 +289,7 @@ int invoke_AssociationLogicalName(
     else if (e->index == 2)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_getOctectString(e->parameters.byteArr, &object->secret);
+        ret = cosem_getOctetString(e->parameters.byteArr, &object->secret);
 #else
         unsigned short size = bb_available(e->parameters.byteArr);
         if (size == 0)
@@ -518,7 +518,7 @@ int invoke_ImageTransfer(
 #endif //DLMS_IGNORE_MALLOC
             item->size = var_toInteger(size);
 #ifdef DLMS_IGNORE_MALLOC
-            item->identification.size = imageIdentifier->byteArr->size;
+            item->identification.size = (uint16_t)imageIdentifier->byteArr->size;
             if ((ret = bb_get(imageIdentifier->byteArr, item->identification.data, imageIdentifier->byteArr->size)) != 0)
             {
                 return ret;
@@ -642,7 +642,7 @@ int invoke_SapAssigment(
             {
                 uint16_t size;
                 unsigned char name[MAX_SAP_ITEM_NAME_LENGTH];
-                if ((ret = cosem_getOctectString2(e->parameters.byteArr, name, sizeof(name), &size)) == 0)
+                if ((ret = cosem_getOctetString2(e->parameters.byteArr, name, sizeof(name), &size)) == 0)
                 {
                     name[size] = 0;
                     for (pos = 0; pos != target->sapAssignmentList.size; ++pos)
@@ -673,7 +673,7 @@ int invoke_SapAssigment(
                 {
                     ++target->sapAssignmentList.size;
                     if ((ret = arr_getByIndex(&target->sapAssignmentList, target->sapAssignmentList.size - 1, (void**)&it, sizeof(gxSapItem))) == 0 &&
-                        (ret = cosem_getOctectString2(e->parameters.byteArr, it->name.value, sizeof(it->name.value), &it->name.size)) == 0)
+                        (ret = cosem_getOctetString2(e->parameters.byteArr, it->name.value, sizeof(it->name.value), &it->name.size)) == 0)
                     {
                         it->id = id;
                     }
@@ -780,7 +780,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                 {
                     if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
                         (ret = cosem_getEnum(e->parameters.byteArr, &type)) != 0 ||
-                        (ret = cosem_getOctectString(e->parameters.byteArr, &tmp)) != 0 ||
+                        (ret = cosem_getOctetString(e->parameters.byteArr, &tmp)) != 0 ||
                         (ret = cip_decryptKey(settings->base.kek, sizeof(settings->base.kek), &tmp, &bb)) != 0)
                     {
                         break;
@@ -1079,7 +1079,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
             ++object->activeDevices.size;
             BYTE_BUFFER_INIT(&ad->macAddress);
             ba_init(&ad->status);
-            ret = cosem_getOctectString(value->byteArr, &ad->macAddress);
+            ret = cosem_getOctetString(value->byteArr, &ad->macAddress);
         }
 #else
         if ((ret = va_getByIndex(value->Arr, 0, &it)) == 0)
@@ -1926,7 +1926,7 @@ int invoke_RegisterActivation(
         if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         (ret = cosem_getUInt16(e->parameters.byteArr, &ot)) != 0 ||
-            (ret = cosem_getOctectString2(e->parameters.byteArr, ln, 6, NULL)) != 0)
+            (ret = cosem_getOctetString2(e->parameters.byteArr, ln, 6, NULL)) != 0)
         {
             return ret;
         }
@@ -2007,7 +2007,7 @@ int invoke_RegisterActivation(
         uint16_t size;
         if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
             (ret = arr_getByIndex(&object->maskList, object->maskList.size - 1, (void**)&k, sizeof(gxRegisterActivationMask))) == 0 &&
-            (ret = cosem_getOctectString2(e->parameters.byteArr, k->name, sizeof(k->name), &size)) == 0)
+            (ret = cosem_getOctetString2(e->parameters.byteArr, k->name, sizeof(k->name), &size)) == 0)
         {
             k->length = (unsigned char) size;
             size = sizeof(k->indexes);

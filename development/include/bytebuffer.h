@@ -162,6 +162,11 @@ extern "C" {
         gxByteBuffer* bb,
         uint16_t item);
 
+    int bb_setUInt16ByIndex(
+        gxByteBuffer* arr,
+        uint16_t index,
+        uint16_t item);
+
     int bb_setUInt32(
         gxByteBuffer* bb,
         uint32_t item);
@@ -419,12 +424,12 @@ extern "C" {
 #endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 
     //Add integer value to byte array as a string.
-    void bb_addIntAsString(
+    int bb_addIntAsString(
         gxByteBuffer* ba,
         int value);
 
     //Add integer value to byte array as a string.
-    void bb_addIntAsString2(
+    int bb_addIntAsString2(
         gxByteBuffer* ba,
         int value,
         unsigned char digits);

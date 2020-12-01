@@ -58,7 +58,22 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     mes_clear(messages);
     settings->connected = DLMS_CONNECTION_STATE_NONE;
     settings->isAuthenticationRequired = 0;
-    //SNRM request is not used in network connections.
+    // SNRM request is not used for all communication channels.
+    if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC_HDLC)
+    {
+        reply = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        bb_init(reply);
+        ret = dlms_getMacHdlcFrame(settings, DLMS_COMMAND_SNRM, 0, NULL, reply);
+        if (ret == 0)
+        {
+            mes_push(messages, reply);
+        }
+        return ret;
+    }
+    if (settings->interfaceType != DLMS_INTERFACE_TYPE_HDLC && settings->interfaceType != DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
+    {
+        return 0;
+    }
     if (settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
     {
         return DLMS_ERROR_CODE_OK;
@@ -384,7 +399,7 @@ int cl_parseApplicationAssociationResponse(
     unsigned char tmp2[MAX_CHALLENGE_SIZE];
     bb_attach(&value, tmp, 0, sizeof(tmp));
     bb_attach(&challenge, tmp2, 0, sizeof(tmp2));
-    if ((ret = cosem_getOctectString(reply, &value)) != 0)
+    if ((ret = cosem_getOctetString(reply, &value)) != 0)
     {
         settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
         //ParseApplicationAssociationResponse failed. Server to Client do not match.
@@ -723,7 +738,7 @@ int cl_parseNextObject(
     if ((ret = cosem_checkStructure(data, 4)) == 0 &&
         (ret = cosem_getUInt16(data, &object->objectType)) == 0 &&
         (ret = cosem_getUInt8(data, &object->version)) == 0 &&
-        (ret = cosem_getOctectString2(data, object->logicalName, capacity, &size)) == 0 &&
+        (ret = cosem_getOctetString2(data, object->logicalName, capacity, &size)) == 0 &&
         (ret = cosem_checkStructure(data, 2)) == 0)
     {
         size = 0xFFFF;
@@ -1451,13 +1466,13 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
     reply = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
     BYTE_BUFFER_INIT(reply);
 #endif //DLMS_IGNORE_MALLOC
-    if (settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    switch (settings->interfaceType)
     {
 #ifndef DLMS_IGNORE_HDLC
+    case DLMS_INTERFACE_TYPE_HDLC:
+    case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
+    {
         ret = dlms_getHdlcFrame(settings, DLMS_COMMAND_DISC, NULL, reply);
-#else
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //DLMS_IGNORE_WRAPPER
 #ifndef DLMS_IGNORE_MALLOC
         if (ret == 0)
         {
@@ -1468,25 +1483,56 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
             gxfree(reply);
         }
 #endif //DLMS_IGNORE_MALLOC
-        return ret;
     }
-#ifndef DLMS_IGNORE_WRAPPER
-    BYTE_BUFFER_INIT(&bb);
-    bb_setUInt8(&bb, DLMS_COMMAND_RELEASE_REQUEST);
-    bb_setUInt8(&bb, 0x0);
-    ret = dlms_getWrapperFrame(settings, DLMS_COMMAND_NONE, &bb, reply);
+    break;
+#endif //DLMS_IGNORE_HDLC
+#ifndef DLMS_IGNORE_PLC
+    case DLMS_INTERFACE_TYPE_PLC:
 #ifndef DLMS_IGNORE_MALLOC
-    if (ret == 0)
-    {
-        mes_push(packets, reply);
-    }
-    else
-    {
         gxfree(reply);
-    }
 #endif //DLMS_IGNORE_MALLOC
-    bb_clear(&bb);
+        break;
+    case DLMS_INTERFACE_TYPE_PLC_HDLC:
+    {
+        ret = dlms_getMacHdlcFrame(settings, DLMS_COMMAND_DISC, 0, NULL, reply);
+#ifndef DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            mes_push(packets, reply);
+        }
+        else
+        {
+            gxfree(reply);
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    break;
+#endif //DLMS_IGNORE_PLC
+#ifndef DLMS_IGNORE_WRAPPER
+    case DLMS_INTERFACE_TYPE_WRAPPER:
+    {
+        BYTE_BUFFER_INIT(&bb);
+        bb_setUInt8(&bb, DLMS_COMMAND_RELEASE_REQUEST);
+        bb_setUInt8(&bb, 0x0);
+        ret = dlms_getWrapperFrame(settings, DLMS_COMMAND_NONE, &bb, reply);
+#ifndef DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            mes_push(packets, reply);
+        }
+        else
+        {
+            gxfree(reply);
+        }
+#endif //DLMS_IGNORE_MALLOC
+        bb_clear(&bb);
+    }
+    break;
 #endif //DLMS_IGNORE_WRAPPER
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
     return ret;
 }
 

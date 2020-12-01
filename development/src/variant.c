@@ -1027,9 +1027,9 @@ int var_getBytes3(
     case DLMS_DATA_TYPE_BIT_STRING:
     {
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = hlp_setObjectCount(((bitArray*)data->pVal)->size, ba)) == 0)
+        if ((ret = hlp_setObjectCount(data->size, ba)) == 0)
         {
-            ret = bb_set(ba, ((bitArray*)data->pVal)->data, ba_getByteCount(data->size));
+            ret = bb_set(ba, data->pVal, ba_getByteCount(data->size));
         }
 #else
         if ((ret = hlp_setObjectCount(data->bitArr->size, ba)) == 0)
@@ -2074,8 +2074,19 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
     int ret = DLMS_ERROR_CODE_OK;
     if ((source->vt & DLMS_DATA_TYPE_BYREF) != 0)
     {
+        if (source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_ARRAY) ||
+            source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRUCTURE))
+        {
+            target->vt = source->vt & ~DLMS_DATA_TYPE_BYREF;
+            target->pVal = source->pVal;
+            return 0;
+        }
         if (source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING) ||
-            source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRING))
+            source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRING) ||
+            source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_BIT_STRING) ||
+            source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_DATETIME) ||
+            source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_DATE) ||
+            source->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_TIME))
         {
             return var_getBytes2(source, source->vt, target->byteArr);
         }

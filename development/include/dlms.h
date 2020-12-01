@@ -54,6 +54,9 @@ extern "C" {
         dlmsSettings* settings);
 
 #ifndef DLMS_IGNORE_HDLC
+    //Is HDLC framing used.
+    unsigned char dlms_UseHdlc(DLMS_INTERFACE_TYPE type);
+
     /**
     * Get PDU as HDLC frame.
     */
@@ -63,6 +66,15 @@ extern "C" {
         gxByteBuffer* data,
         gxByteBuffer* reply);
 
+#endif //DLMS_IGNORE_HDLC
+
+#ifndef DLMS_IGNORE_PLC
+    int dlms_getMacHdlcFrame(
+        dlmsSettings* settings,
+        unsigned char frame,
+        unsigned char creditFields,
+        gxByteBuffer* data,
+        gxByteBuffer* reply);
 #endif //DLMS_IGNORE_HDLC
 
 #ifndef DLMS_IGNORE_WRAPPER
@@ -271,6 +283,13 @@ extern "C" {
         dlmsSettings* settings,
         gxByteBuffer* data,
         uint16_t* size);
+
+    int dlms_getMacFrame(
+        dlmsSettings* settings,
+        unsigned char frame,
+        unsigned char creditFields,
+        gxByteBuffer* data,
+        gxByteBuffer* reply);
 
 #ifdef  __cplusplus
 }

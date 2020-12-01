@@ -300,8 +300,7 @@ int com_readSerialPort(
 }
 
 int com_initializeOpticalHead(
-    connection* connection,
-    unsigned char iec)
+    connection* connection)
 {
     unsigned short baudRate;
     int ret = 0, len, pos;
@@ -325,7 +324,7 @@ int com_initializeOpticalHead(
     dcb.fOutX = dcb.fInX = 0;
     //Abort all reads and writes on Error.
     dcb.fAbortOnError = 1;
-    if (iec)
+    if (connection->settings.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
     {
         dcb.BaudRate = 300;
         dcb.ByteSize = 7;
@@ -348,7 +347,7 @@ int com_initializeOpticalHead(
     memset(&options, 0, sizeof(options));
     options.c_iflag = 0;
     options.c_oflag = 0;
-    if (iec)
+    if (connection->settings.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
     {
         options.c_cflag |= PARENB;
         options.c_cflag &= ~PARODD;
@@ -386,7 +385,7 @@ int com_initializeOpticalHead(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
 #endif
-    if (iec)
+    if (connection->settings.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
     {
 #if _MSC_VER > 1000
         strcpy_s(buff, 50, "/?!\r\n");
@@ -580,8 +579,7 @@ int com_initializeOpticalHead(
 
 int com_open(
     connection* connection,
-    const char* port,
-    unsigned char iec)
+    const char* port)
 {
     int ret;
     //In Linux serial port name might be very long.
@@ -618,7 +616,7 @@ int com_open(
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
 #endif
-    return com_initializeOpticalHead(connection, iec);
+    return com_initializeOpticalHead(connection);
 }
 
 int sendData(connection* connection, gxByteBuffer* data)
@@ -1637,7 +1635,7 @@ int com_readValues(connection* connection)
         }
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
-            printf("-------- Reading Object %s %s\r\n", obj_typeToString2(object->objectType), ln);
+            printf("-------- Reading Object %s %s\n", obj_typeToString2(object->objectType), ln);
         }
         ret = obj_getAttributeIndexToRead(object, &attributes);
         if (ret != DLMS_ERROR_CODE_OK)

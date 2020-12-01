@@ -46,7 +46,7 @@
 #include "../include/bytebuffer.h"
 #include "../include/helpers.h"
 
-char bb_isAttached(gxByteBuffer * arr)
+char bb_isAttached(gxByteBuffer* arr)
 {
     if (arr == NULL)
     {
@@ -66,7 +66,7 @@ uint16_t bb_available(gxByteBuffer* arr)
     {
         return 0;
     }
-    return (uint16_t) (arr->size - arr->position);
+    return (uint16_t)(arr->size - arr->position);
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
@@ -300,12 +300,28 @@ int bb_setUInt16(
     gxByteBuffer* arr,
     uint16_t item)
 {
-    int ret = bb_allocate(arr, arr->size, 2);
+    int ret = bb_setUInt16ByIndex(arr, arr->size, item);
     if (ret == 0)
     {
-        arr->data[arr->size] = (item >> 8) & 0xFF;
-        arr->data[arr->size + 1] = item & 0xFF;
         arr->size += 2;
+    }
+    return ret;
+}
+
+int bb_setUInt16ByIndex(
+    gxByteBuffer* arr,
+    uint16_t index,
+    uint16_t item)
+{
+    int ret = 0;
+    if (index + 2 > arr->size)
+    {
+        bb_allocate(arr, arr->size, 2);
+    }
+    if (ret == 0)
+    {
+        arr->data[index] = (item >> 8) & 0xFF;
+        arr->data[index + 1] = item & 0xFF;
     }
     return ret;
 }
@@ -450,7 +466,7 @@ int bb_setInt64(
     gxByteBuffer* arr,
     int64_t item)
 {
-    return bb_setUInt64(arr, (uint64_t) item);
+    return bb_setUInt64(arr, (uint64_t)item);
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
@@ -574,7 +590,7 @@ int bb_attachString2(
     uint16_t capacity)
 #endif
 {
-    return bb_attach(arr, (unsigned char*) value, count, capacity);
+    return bb_attach(arr, (unsigned char*)value, count, capacity);
 }
 
 #ifndef DLMS_IGNORE_MALLOC
@@ -753,7 +769,7 @@ int bb_getInt64(
     gxByteBuffer* arr,
     int64_t* value)
 {
-    int ret = bb_getUInt64ByIndex(arr, arr->position, (uint64_t*) value);
+    int ret = bb_getUInt64ByIndex(arr, arr->position, (uint64_t*)value);
     if (ret == 0)
     {
         arr->position += 8;
@@ -962,7 +978,7 @@ int bb_toHexString2(
     char* buffer,
     uint16_t size)
 {
-    return hlp_bytesToHex2(arr->data, (uint16_t) arr->size, buffer, size);
+    return hlp_bytesToHex2(arr->data, (uint16_t)arr->size, buffer, size);
 }
 
 #if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
@@ -1007,16 +1023,21 @@ void bb_addDoubleAsString(
 }
 #endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 
-void bb_addIntAsString(gxByteBuffer* bb, int value)
+int bb_addIntAsString(gxByteBuffer* bb, int value)
 {
-    bb_addIntAsString2(bb, value, 0);
+    return bb_addIntAsString2(bb, value, 0);
 }
 
-void bb_addIntAsString2(gxByteBuffer* bb, int value, unsigned char digits)
+int bb_addIntAsString2(gxByteBuffer* bb, int value, unsigned char digits)
 {
+    int ret;
     char str[20];
     hlp_intToString(str, 20, value, 1, digits);
-    bb_addString(bb, str);
+    if ((ret = bb_addString(bb, str)) != 0)
+    {
+
+    }
+    return ret;
 }
 
 #if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))

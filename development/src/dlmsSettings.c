@@ -160,6 +160,7 @@ void cl_init(
     settings->expectedSecuritySuite = 0xFF;
     settings->expectedInvocationCounter = NULL;
     settings->expectedClientSystemTitle = NULL;
+    plc_reset(settings);
 }
 
 void cl_clear(
@@ -205,6 +206,45 @@ void svr_clear(
     dlmsServerSettings* settings)
 {
     cl_clear(&settings->base);
+}
+
+// Set default values for PLC.
+void plc_reset(
+    dlmsSettings* settings)
+{
+    settings->plcSettings.initialCredit = 7;
+    settings->plcSettings.currentCredit = 7;
+    settings->plcSettings.deltaCredit = 0;
+    //New device addresses are used.
+    if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC)
+    {
+        if (settings->server)
+        {
+            settings->plcSettings.macSourceAddress = DLMS_PLC_SOURCE_ADDRESS_NEW;
+            settings->plcSettings.macDestinationAddress = DLMS_PLC_SOURCE_ADDRESS_INITIATOR;
+        }
+        else
+        {
+            settings->plcSettings.macSourceAddress = DLMS_PLC_SOURCE_ADDRESS_INITIATOR;
+            settings->plcSettings.macDestinationAddress = DLMS_PLC_DESTINATION_ADDRESS_ALL_PHYSICAL;
+        }
+        settings->plcSettings.allowedTimeSlots = 10;
+    }
+    else
+    {
+        if (settings->server)
+        {
+            settings->plcSettings.macSourceAddress = DLMS_PLC_SOURCE_ADDRESS_NEW;
+            settings->plcSettings.macDestinationAddress = DLMS_PLC_HDLC_SOURCE_ADDRESS_INITIATOR;
+        }
+        else
+        {
+            settings->plcSettings.macSourceAddress = DLMS_PLC_HDLC_SOURCE_ADDRESS_INITIATOR;
+            settings->plcSettings.macDestinationAddress = DLMS_PLC_DESTINATION_ADDRESS_ALL_PHYSICAL;
+        }
+        settings->plcSettings.allowedTimeSlots = 0x14;
+    }
+    settings->plcSettings.responseProbability = 100;
 }
 
 void resetBlockIndex(

@@ -74,6 +74,8 @@ void reply_init(gxReplyData* reply)
     reply->blockNumberAck = 0;
     reply->streaming = 0;
     reply->windowSize = 0;
+    reply->serverAddress = 0;
+    reply->clientAddress = 0;
 }
 
 void reply_clear2(gxReplyData* reply, unsigned char clearData)
@@ -104,6 +106,8 @@ void reply_clear2(gxReplyData* reply, unsigned char clearData)
     reply->blockNumberAck = 0;
     reply->streaming = 0;
     reply->windowSize = 0;
+    reply->serverAddress = 0;
+    reply->clientAddress = 0;
 }
 
 void reply_clear(gxReplyData* reply)

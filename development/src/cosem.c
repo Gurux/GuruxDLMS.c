@@ -145,6 +145,11 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxIp4Setup);
         break;
 #endif //DLMS_IGNORE_IP4_SETUP
+#ifndef DLMS_IGNORE_IP6_SETUP
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        size = sizeof(gxIp6Setup);
+        break;
+#endif //DLMS_IGNORE_IP6_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         size = sizeof(gxMbusSlavePortSetup);
@@ -350,6 +355,51 @@ int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxPrimeNbOfdmPlcApplicationsIdentification);
         break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
+#ifndef DLMS_IGNORE_ARBITRATOR
+    case DLMS_OBJECT_TYPE_ARBITRATOR:
+        size = sizeof(gxArbitrator);
+        break;
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP:
+        size = sizeof(gxIec8802LlcType1Setup);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
+        size = sizeof(gxIec8802LlcType2Setup);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
+        size = sizeof(gxIec8802LlcType3Setup);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
+        size = sizeof(gxSFSKActiveInitiator);
+        break;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
+        size = sizeof(gxFSKMacCounters);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
+        size = sizeof(gxSFSKMacSynchronizationTimeouts);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
+        size = sizeof(gxSFSKPhyMacSetUp);
+        break;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+    case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
+        size = sizeof(gxSFSKReportingSystemList);
+        break;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         size = sizeof(gxTariffPlan);
@@ -425,7 +475,7 @@ int cosem_createObject2(
 
 int cosem_setLogicalName(
     gxObject* object,
-    unsigned char* value)
+    const unsigned char* value)
 {
     memcpy(object->logicalName, value, 6);
     return 0;
@@ -550,8 +600,11 @@ int cosem_init3(
         object->version = 1;
         break;
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
+        object->version = 1;
         break;
     case DLMS_OBJECT_TYPE_IP4_SETUP:
+        break;
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
         break;
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         break;
@@ -813,7 +866,7 @@ int cosem_getInt32(gxByteBuffer* bb, int32_t* value)
     return 0;
 }
 
-int cosem_getOctectStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned char type, unsigned char exact)
+int cosem_getOctetStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned char type, unsigned char exact)
 {
     int ret;
     unsigned char tmp;
@@ -846,7 +899,7 @@ int cosem_getOctectStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned ch
     return 0;
 }
 
-int cosem_getOctectStringBase2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size, unsigned char type)
+int cosem_getOctetStringBase2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size, unsigned char type)
 {
     int ret;
     unsigned char tmp;
@@ -875,30 +928,30 @@ int cosem_getOctectStringBase2(gxByteBuffer* bb, unsigned char* value, uint16_t 
     return bb_get(bb, value, count);
 }
 
-int cosem_getOctectString(gxByteBuffer* bb, gxByteBuffer* value)
+int cosem_getOctetString(gxByteBuffer* bb, gxByteBuffer* value)
 {
-    return cosem_getOctectStringBase(bb, value, DLMS_DATA_TYPE_OCTET_STRING, 0);
+    return cosem_getOctetStringBase(bb, value, DLMS_DATA_TYPE_OCTET_STRING, 0);
 }
 
 int cosem_getString(gxByteBuffer* bb, gxByteBuffer* value)
 {
-    return cosem_getOctectStringBase(bb, value, DLMS_DATA_TYPE_STRING, 0);
+    return cosem_getOctetStringBase(bb, value, DLMS_DATA_TYPE_STRING, 0);
 }
 
-int cosem_getOctectString2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size)
+int cosem_getOctetString2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size)
 {
-    return cosem_getOctectStringBase2(bb, value, capacity, size, DLMS_DATA_TYPE_OCTET_STRING);
+    return cosem_getOctetStringBase2(bb, value, capacity, size, DLMS_DATA_TYPE_OCTET_STRING);
 }
 
-int cosem_getOctectString3(gxByteBuffer* bb, gxByteBuffer* value, unsigned char exact)
+int cosem_getOctetString3(gxByteBuffer* bb, gxByteBuffer* value, unsigned char exact)
 {
-    return cosem_getOctectStringBase(bb, value, DLMS_DATA_TYPE_OCTET_STRING, exact);
+    return cosem_getOctetStringBase(bb, value, DLMS_DATA_TYPE_OCTET_STRING, exact);
 }
 
 int cosem_getString2(gxByteBuffer* bb, char* value, uint16_t capacity)
 {
     uint16_t size;
-    int ret = cosem_getOctectStringBase2(bb, (unsigned char*)value, capacity - 1, &size, DLMS_DATA_TYPE_STRING);
+    int ret = cosem_getOctetStringBase2(bb, (unsigned char*)value, capacity - 1, &size, DLMS_DATA_TYPE_STRING);
     if (ret == 0)
     {
         value[size] = 0;
@@ -1100,12 +1153,12 @@ int cosem_getBoolean(gxByteBuffer* bb, unsigned char* value)
 
 int cosem_getUtf8String(gxByteBuffer* bb, gxByteBuffer* value)
 {
-    return cosem_getOctectStringBase(bb, value, DLMS_DATA_TYPE_STRING_UTF8, 0);
+    return cosem_getOctetStringBase(bb, value, DLMS_DATA_TYPE_STRING_UTF8, 0);
 }
 
 int cosem_getUtf8String2(gxByteBuffer* bb, char* value, uint16_t capacity, uint16_t* size)
 {
-    return cosem_getOctectStringBase2(bb, (unsigned char*)value, capacity, size, DLMS_DATA_TYPE_STRING_UTF8);
+    return cosem_getOctetStringBase2(bb, (unsigned char*)value, capacity, size, DLMS_DATA_TYPE_STRING_UTF8);
 }
 
 int cosem_setDateTimeAsOctectString(gxByteBuffer* bb, gxtime* value)
@@ -1386,6 +1439,28 @@ int cosem_setArray(gxByteBuffer* bb, uint16_t count)
     return ret;
 }
 
+int cosem_setEnum(gxByteBuffer* bb, unsigned char value)
+{
+    int ret;
+    if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_ENUM)) != 0 ||
+        (ret = bb_setInt8(bb, value)) != 0)
+    {
+        //Error code is returned at the end of the function.
+    }
+    return ret;
+}
+
+int cosem_setBoolean(gxByteBuffer* bb, unsigned char value)
+{
+    int ret;
+    if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_BOOLEAN)) != 0 ||
+        (ret = bb_setInt8(bb, value)) != 0)
+    {
+        //Error code is returned at the end of the function.
+    }
+    return ret;
+}
+
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 
 /**
@@ -1506,7 +1581,7 @@ int cosem_getColumns(
             {
                 if ((ret = cosem_checkStructure(parameters->byteArr, 4)) != 0 ||
                     (ret = cosem_getUInt16(parameters->byteArr, &ot)) != 0 ||
-                    (ret = cosem_getOctectString2(parameters->byteArr, ln, 6, NULL)) != 0 ||
+                    (ret = cosem_getOctetString2(parameters->byteArr, ln, 6, NULL)) != 0 ||
                     (ret = cosem_getInt8(parameters->byteArr, &aIndex)) != 0 ||
                     (ret = cosem_getInt16(parameters->byteArr, &dIndex)) != 0)
                 {
@@ -1537,10 +1612,10 @@ int cosem_getColumns(
                         ++index;
                         break;
                     }
-                    }
                 }
             }
         }
+    }
     else if (selector == 2) //Read by entry.
     {
         if ((ret = cosem_getUInt16(parameters->byteArr, &start)) != 0 ||
@@ -1567,7 +1642,7 @@ int cosem_getColumns(
             memcpy(k2, k, sizeof(gxTarget));
             ++index;
         }
-}
+    }
 #else
     uint16_t addAllColumns = 1;
     gxKey* k;
@@ -1639,5 +1714,5 @@ int cosem_getColumns(
     }
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_PROFILE_GENERIC

@@ -425,13 +425,13 @@ int ser_saveAutoConnect(gxAutoConnect* object, gxByteBuffer* serializer)
             {
 #ifdef DLMS_IGNORE_MALLOC
                 if ((ret = arr_getByIndex(&object->destinations, pos, (void**)&dest, sizeof(gxDestination))) != 0 ||
-                    (ret = ser_saveOctetString3(serializer, (char*) dest->value, dest->size)) != 0)
+                    (ret = ser_saveOctetString3(serializer, (char*)dest->value, dest->size)) != 0)
                 {
                     break;
                 }
 #else
                 if ((ret = arr_getByIndex(&object->destinations, pos, (void**)&dest)) != 0 ||
-                    (ret = ser_saveOctetString3(serializer, (char*) dest->data, (unsigned short) dest->size)) != 0)
+                    (ret = ser_saveOctetString3(serializer, (char*)dest->data, (unsigned short)dest->size)) != 0)
                 {
                     break;
                 }
@@ -632,6 +632,21 @@ int ser_saveLocalPortSetup(gxLocalPortSetup* object, gxByteBuffer* serializer)
     return ret;
 }
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
+
+#ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
+int ser_IecTwistedPairSetup(gxIecTwistedPairSetup* object, gxByteBuffer* serializer)
+{
+    int ret;
+    if ((ret = bb_setUInt8(serializer, object->mode)) == 0 &&
+        (ret = bb_setUInt8(serializer, object->speed)) == 0 &&
+        (ret = ser_saveOctetString(serializer, &object->primaryAddresses)) == 0 &&
+        (ret = ser_saveOctetString(serializer, &object->tabis)) == 0)
+    {
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
+
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
 int ser_saveDemandRegister(gxDemandRegister* object, gxByteBuffer* serializer)
 {
@@ -952,6 +967,87 @@ int ser_saveIp4Setup(gxIp4Setup* object, gxByteBuffer* serializer)
     return ret;
 }
 #endif //DLMS_IGNORE_IP4_SETUP
+
+#ifndef DLMS_IGNORE_IP6_SETUP
+
+int saveIpv6Address(IN6_ADDR* address, gxByteBuffer* serializer)
+{
+    unsigned char* tmp;
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+    tmp = address->u.Byte;
+#else //Linux includes.
+    tmp = address->s6_addr;
+#endif
+    return ser_saveOctetString3(serializer, (char*)tmp, 16);
+}
+
+int saveAddressList(gxArray* list, gxByteBuffer* serializer)
+{
+    IN6_ADDR* it;
+    int pos, ret = 0;
+    if ((ret = hlp_setObjectCount(list->size, serializer)) == 0)
+    {
+        for (pos = 0; pos != list->size; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(IN6_ADDR))) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = saveIpv6Address(it, serializer)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+int ser_saveIp6Setup(gxIp6Setup* object, gxByteBuffer* serializer)
+{
+    int ret;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    if ((ret = bb_set(serializer, obj_getLogicalName(object->dataLinkLayer), 6)) == 0 &&
+#else
+    if ((ret = bb_set(serializer, object->dataLinkLayerReference, 6)) == 0 &&
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        (ret = bb_setUInt8(serializer, object->addressConfigMode)) == 0 &&
+        (ret = saveAddressList(&object->unicastIPAddress, serializer)) == 0 &&
+        (ret = saveAddressList(&object->multicastIPAddress, serializer)) == 0 &&
+        (ret = saveAddressList(&object->gatewayIPAddress, serializer)) == 0 &&
+        (ret = saveIpv6Address(&object->primaryDNSAddress, serializer)) == 0 &&
+        (ret = saveIpv6Address(&object->secondaryDNSAddress, serializer)) == 0 &&
+        (ret = bb_setUInt8(serializer, object->trafficClass)) == 0)
+    {
+        gxNeighborDiscoverySetup* it;
+        int pos;
+        if ((ret = hlp_setObjectCount(object->neighborDiscoverySetup.size, serializer)) == 0)
+        {
+            for (pos = 0; pos != object->neighborDiscoverySetup.size; ++pos)
+            {
+                if ((ret = arr_getByIndex2(&object->neighborDiscoverySetup, pos, (void**)&it, sizeof(gxNeighborDiscoverySetup))) != 0)
+                {
+                    break;
+                }
+                if ((ret = bb_setUInt8(serializer, it->maxRetry)) != 0 ||
+                    (ret = bb_setUInt16(serializer, it->retryWaitTime)) != 0 ||
+                    (ret = bb_setUInt32(serializer, it->sendPeriod)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_IP6_SETUP
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int ser_saveUtilityTables(gxUtilityTables* object, gxByteBuffer* serializer)
 {
@@ -1531,18 +1627,71 @@ int  ser_savePrimeNbOfdmPlcMacCounters(gxPrimeNbOfdmPlcMacCounters* object, gxBy
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
-int  ser_savePrimeNbOfdmPlcMacNetworkAdministrationData(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, gxByteBuffer* serializer)
+int ser_savePrimeNbOfdmPlcMacNetworkAdministrationData(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, gxByteBuffer* serializer)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
-int  ser_savePrimeNbOfdmPlcApplicationsIdentification(gxPrimeNbOfdmPlcApplicationsIdentification* object, gxByteBuffer* serializer)
+int ser_savePrimeNbOfdmPlcApplicationsIdentification(gxPrimeNbOfdmPlcApplicationsIdentification* object, gxByteBuffer* serializer)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
-
+#ifndef DLMS_IGNORE_ARBITRATOR
+int ser_saveArbitrator(gxArbitrator* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+int ser_saveIec8802LlcType1Setup(gxIec8802LlcType1Setup* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+int ser_saveIec8802LlcType2Setup(gxIec8802LlcType2Setup* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+int ser_saveIec8802LlcType3Setup(gxIec8802LlcType3Setup* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+int ser_saveSFSKActiveInitiator(gxSFSKActiveInitiator* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+int ser_saveFSKMacCounters(gxFSKMacCounters* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+int ser_saveSFSKMacSynchronizationTimeouts(gxSFSKMacSynchronizationTimeouts* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+int ser_saveSFSKPhyMacSetUp(gxSFSKPhyMacSetUp* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+int ser_saveSFSKReportingSystemList(gxSFSKReportingSystemList* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifndef DLMS_IGNORE_SCHEDULE
 int ser_saveSchedule(gxSchedule* object, gxByteBuffer* serializer)
 {
@@ -1659,9 +1808,7 @@ int ser_saveObject(
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 #ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
+        ret = ser_IecTwistedPairSetup((gxIecTwistedPairSetup*)object, serializer);
         break;
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
@@ -1669,6 +1816,11 @@ int ser_saveObject(
         ret = ser_saveIp4Setup((gxIp4Setup*)object, serializer);
         break;
 #endif //DLMS_IGNORE_IP4_SETUP
+#ifndef DLMS_IGNORE_IP6_SETUP
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        ret = ser_saveIp6Setup((gxIp6Setup*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_IP6_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         ret = ser_saveMbusSlavePortSetup((gxMbusSlavePortSetup*)object, serializer);
@@ -1889,6 +2041,51 @@ int ser_saveObject(
     case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
         break;
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
+#ifndef DLMS_IGNORE_ARBITRATOR
+    case DLMS_OBJECT_TYPE_ARBITRATOR:
+        ret = ser_saveArbitrator((gxArbitrator*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP:
+        ret = ser_saveIec8802LlcType1Setup((gxIec8802LlcType1Setup*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
+        ser_saveIec8802LlcType2Setup((gxIec8802LlcType2Setup*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
+        ser_saveIec8802LlcType3Setup((gxIec8802LlcType3Setup*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
+        ser_saveSFSKActiveInitiator((gxSFSKActiveInitiator*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
+        ser_saveFSKMacCounters((gxFSKMacCounters*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
+        ser_saveSFSKMacSynchronizationTimeouts((gxSFSKMacSynchronizationTimeouts*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
+        ser_saveSFSKPhyMacSetUp((gxSFSKPhyMacSetUp*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+    case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
+        ser_saveSFSKReportingSystemList((gxSFSKReportingSystemList*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = ser_saveTariffPlan((gxTariffPlan*)object, serializer);
@@ -2609,16 +2806,19 @@ int ser_loadActivityCalendar(
 #ifndef DLMS_IGNORE_SECURITY_SETUP
 int ser_loadSecuritySetup(gxSecuritySetup* object, gxByteBuffer* serializer)
 {
+    unsigned char v;
     int ret;
-    object->securitySuite = 0;
-    if ((ret = bb_getUInt8(serializer, (unsigned char*)&object->securityPolicy)) != 0 ||
-        (ret = bb_getUInt8(serializer, (unsigned char*)&object->securitySuite)) != 0 ||
-        (ret = bb_clear(&object->serverSystemTitle)) != 0 ||
-        (ret = bb_clear(&object->clientSystemTitle)) != 0 ||
-        (ret = bb_set2(&object->serverSystemTitle, serializer, serializer->position, 8)) != 0 ||
-        (ret = bb_set2(&object->clientSystemTitle, serializer, serializer->position, 8)) != 0)
+    if ((ret = bb_getUInt8(serializer, &v)) == 0)
     {
-
+        object->securityPolicy = (DLMS_SECURITY_POLICY)v;
+        if ((ret = bb_getUInt8(serializer, &v)) == 0 &&
+            (ret = bb_clear(&object->serverSystemTitle)) == 0 &&
+            (ret = bb_clear(&object->clientSystemTitle)) == 0 &&
+            (ret = bb_set2(&object->serverSystemTitle, serializer, serializer->position, 8)) == 0 &&
+            (ret = bb_set2(&object->clientSystemTitle, serializer, serializer->position, 8)) == 0)
+        {
+            object->securitySuite = (DLMS_SECURITY_SUITE)v;
+        }
     }
     return ret;
 }
@@ -2659,6 +2859,22 @@ int ser_loadLocalPortSetup(gxLocalPortSetup* object, gxByteBuffer* serializer)
     return ret;
 }
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
+
+#ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
+int ser_loadIecTwistedPairSetup(gxIecTwistedPairSetup* object, gxByteBuffer* serializer)
+{
+    int ret;
+    if ((ret = bb_getUInt8(serializer, (unsigned char*)&object->mode)) != 0 ||
+        (ret = bb_getUInt8(serializer, (unsigned char*)&object->speed)) != 0 ||
+        (ret = ser_loadOctetString(serializer, &object->primaryAddresses)) != 0 ||
+        (ret = ser_loadOctetString(serializer, &object->tabis)) != 0)
+    {
+
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
+
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
 int ser_loadDemandRegister(gxDemandRegister* object, gxByteBuffer* serializer)
 {
@@ -3098,6 +3314,157 @@ int ser_loadIp4Setup(
     return ret;
 }
 #endif //DLMS_IGNORE_IP4_SETUP
+
+#ifndef DLMS_IGNORE_IP6_SETUP
+int ser_loadIp6Setup(
+    dlmsSettings* settings,
+    gxIp6Setup* object,
+    gxByteBuffer* serializer)
+{
+    int ret;
+    IN6_ADDR* ip;
+    uint16_t pos, count;
+    unsigned char ch;
+    //unsigned char tmp[6];
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    unsigned char ln[6];
+    obj_clear((gxObject*)object);
+    if ((ret = bb_get(serializer, ln, 6)) != 0 ||
+        (ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, ln, &object->dataLinkLayer)) != 0)
+    {
+        return ret;
+    }
+#else
+    if ((ret = bb_get(serializer, object->dataLinkLayerReference, 6)) != 0)
+    {
+        return ret;
+    }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    bb_getUInt8(serializer, &ch);
+    object->addressConfigMode = (DLMS_IP6_ADDRESS_CONFIG_MODE)ch;
+    arr_clear(&object->unicastIPAddress);
+    if (ret == 0 && (ret = hlp_getObjectCount2(serializer, &count)) == 0)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        object->unicastIPAddress.size = count;
+#endif //DLMS_IGNORE_MALLOC
+        for (pos = 0; pos != count; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->unicastIPAddress, pos, (void**)&ip, sizeof(IN6_ADDR))) != 0 ||
+                (ret = bb_get(serializer, (unsigned char*)ip, 16)) != 0)
+            {
+                break;
+            }
+#else
+            ip = (IN6_ADDR*)gxmalloc(sizeof(IN6_ADDR));
+            if ((ret = bb_get(serializer, (unsigned char*)ip, 16)) != 0 ||
+                (ret = arr_push(&object->unicastIPAddress, ip)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+        }
+    }
+
+    arr_clear(&object->multicastIPAddress);
+    if (ret == 0 && (ret = hlp_getObjectCount2(serializer, &count)) == 0)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        object->multicastIPAddress.size = count;
+#endif //DLMS_IGNORE_MALLOC
+        for (pos = 0; pos != count; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->multicastIPAddress, pos, (void**)&ip, sizeof(IN6_ADDR))) != 0 ||
+                (ret = bb_get(serializer, (unsigned char*) ip, 16)) != 0)
+            {
+                break;
+            }
+#else
+            ip = (IN6_ADDR*)gxmalloc(sizeof(IN6_ADDR));
+            if ((ret = bb_get(serializer, (unsigned char*)ip, 16)) != 0 ||
+                (ret = arr_push(&object->multicastIPAddress, ip)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+        }
+    }
+
+    arr_clear(&object->gatewayIPAddress);
+    if (ret == 0 && (ret = hlp_getObjectCount2(serializer, &count)) == 0)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        object->gatewayIPAddress.size = count;
+#endif //DLMS_IGNORE_MALLOC
+        for (pos = 0; pos != count; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->gatewayIPAddress, pos, (void**)&ip, sizeof(IN6_ADDR))) != 0 ||
+                (ret = bb_get(serializer, (unsigned char*)ip, 16)) != 0)
+            {
+                break;
+            }
+#else
+            ip = (IN6_ADDR*)gxmalloc(sizeof(IN6_ADDR));
+            if ((ret = bb_get(serializer, (unsigned char*)ip, 16)) != 0 ||
+                (ret = arr_push(&object->gatewayIPAddress, ip)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+        }
+    }
+
+    if ((ret = bb_get(serializer, (unsigned char*)&object->primaryDNSAddress, 16)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = bb_get(serializer, (unsigned char*)&object->secondaryDNSAddress, 16)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = bb_getUInt8(serializer, &ch)) != 0)
+    {
+        return ret;
+    }
+    object->trafficClass = (DLMS_IP6_ADDRESS_CONFIG_MODE)ch;
+    arr_clear(&object->neighborDiscoverySetup);
+    gxNeighborDiscoverySetup* it2;
+    if ((ret = hlp_getObjectCount2(serializer, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->neighborDiscoverySetup, pos, (void**)&it2, sizeof(gxNeighborDiscoverySetup))) != 0)
+            {
+                break;
+            }
+#else
+            it2 = (gxNeighborDiscoverySetup*)gxmalloc(sizeof(gxNeighborDiscoverySetup));
+            if (it2 == NULL)
+            {
+                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                break;
+            }
+            if ((ret = arr_push(&object->neighborDiscoverySetup, it2)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = bb_getUInt8(serializer, &it2->maxRetry)) != 0 ||
+                (ret = bb_getUInt16(serializer, &it2->retryWaitTime)) != 0 ||
+                (ret = bb_getUInt32(serializer, &it2->sendPeriod)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_IP6_SETUP
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int ser_loadUtilityTables(gxUtilityTables* object, gxByteBuffer* serializer)
 {
@@ -3791,6 +4158,61 @@ int  ser_loadPrimeNbOfdmPlcApplicationsIdentification(gxPrimeNbOfdmPlcApplicatio
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 
+#ifndef DLMS_IGNORE_ARBITRATOR
+int ser_loadArbitrator(gxArbitrator* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+int ser_loadIec8802LlcType1Setup(gxIec8802LlcType1Setup* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+int ser_loadIec8802LlcType2Setup(gxIec8802LlcType2Setup* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+int ser_loadIec8802LlcType3Setup(gxIec8802LlcType3Setup* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+int ser_loadSFSKActiveInitiator(gxSFSKActiveInitiator* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+int ser_loadFSKMacCounters(gxFSKMacCounters* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+int ser_loadSFSKMacSynchronizationTimeouts(gxSFSKMacSynchronizationTimeouts* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+int ser_loadSFSKPhyMacSetUp(gxSFSKPhyMacSetUp* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+int ser_loadSFSKReportingSystemList(gxSFSKReportingSystemList* object, gxByteBuffer* serializer)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+
 #ifndef DLMS_IGNORE_SCHEDULE
 int ser_loadSchedule(gxSchedule* object, gxByteBuffer* serializer)
 {
@@ -3908,9 +4330,7 @@ int ser_loadObject(
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 #ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
+        ret = ser_loadIecTwistedPairSetup((gxIecTwistedPairSetup*)object, serializer);
         break;
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
@@ -3918,6 +4338,11 @@ int ser_loadObject(
         ret = ser_loadIp4Setup(settings, (gxIp4Setup*)object, serializer);
         break;
 #endif //DLMS_IGNORE_IP4_SETUP
+#ifndef DLMS_IGNORE_IP6_SETUP
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        ret = ser_loadIp6Setup(settings, (gxIp6Setup*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_IP6_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         ret = ser_loadMbusSlavePortSetup((gxMbusSlavePortSetup*)object, serializer);
@@ -4136,6 +4561,51 @@ int ser_loadObject(
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
     case DLMS_OBJECT_TYPE_PARAMETER_MONITOR:
         break;
+#ifndef DLMS_IGNORE_ARBITRATOR
+    case DLMS_OBJECT_TYPE_ARBITRATOR:
+        ret = ser_loadArbitrator((gxArbitrator*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP:
+        ret = ser_loadIec8802LlcType1Setup((gxIec8802LlcType1Setup*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
+        ser_loadIec8802LlcType2Setup((gxIec8802LlcType2Setup*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
+        ser_loadIec8802LlcType3Setup((gxIec8802LlcType3Setup*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
+        ser_loadSFSKActiveInitiator((gxSFSKActiveInitiator*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
+        ser_loadFSKMacCounters((gxFSKMacCounters*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
+        ser_loadSFSKMacSynchronizationTimeouts((gxSFSKMacSynchronizationTimeouts*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
+        ser_loadSFSKPhyMacSetUp((gxSFSKPhyMacSetUp*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+    case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
+        ser_loadSFSKReportingSystemList((gxSFSKReportingSystemList*)object, serializer);
+        break;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = ser_loadTariffPlan((gxTariffPlan*)object, serializer);

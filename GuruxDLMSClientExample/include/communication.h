@@ -33,8 +33,7 @@ int com_makeConnect(
 //Make connection serial port connection.
 int com_open(
     connection *connection,
-    const char* port,
-    unsigned char iec);
+    const char* port);
 
 //Start server.
 int com_startServer(
@@ -63,8 +62,7 @@ int com_close(
 
 //Initialize optical head.
 int com_initializeOpticalHead(
-    connection* connection,
-    unsigned char iec);
+    connection* connection);
 
 
 //Read Invocation counter (frame counter) from the meter and update it.

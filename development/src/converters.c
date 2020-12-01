@@ -131,6 +131,9 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
     case DLMS_OBJECT_TYPE_IP4_SETUP:
         ret = GET_STR_FROM_EEPROM("IP4Setup");
         break;
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        ret = GET_STR_FROM_EEPROM("IP6Setup");
+        break;
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         ret = GET_STR_FROM_EEPROM("MBUSSlavePortSetup");
         break;
@@ -258,6 +261,51 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
     case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
         ret = GET_STR_FROM_EEPROM("GsmDiagnostic");
         break;
+#ifndef DLMS_IGNORE_ARBITRATOR
+    case DLMS_OBJECT_TYPE_ARBITRATOR:
+        ret = GET_STR_FROM_EEPROM("Arbitrator");
+        break;
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP:
+        ret = GET_STR_FROM_EEPROM("Iec8802LlcType1Setup");
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
+        ret = GET_STR_FROM_EEPROM("Iec8802LlcType2Setup");
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
+        ret = GET_STR_FROM_EEPROM("Iec8802LlcType3Setup");
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
+        ret = GET_STR_FROM_EEPROM("SFSKActiveInitiator");
+        break;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
+        ret = GET_STR_FROM_EEPROM("FSKMacCounters");
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
+        ret = GET_STR_FROM_EEPROM("SFSKMacSynchronizationTimeouts");
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
+        ret = GET_STR_FROM_EEPROM("SFSKPhyMacSetUp");
+        break;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+    case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
+        ret = GET_STR_FROM_EEPROM("SFSKReportingSystemList");
+        break;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = GET_STR_FROM_EEPROM("TariffPlan");
@@ -993,6 +1041,60 @@ int obj_localPortSetupToString(gxLocalPortSetup* object, char** buff)
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
+
+#ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
+int obj_IecTwistedPairSetupToString(gxIecTwistedPairSetup* object, char** buff)
+{
+    int pos, ret;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    if ((ret = bb_addString(&ba, "Index: 2 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->mode)) == 0 &&
+        (ret = bb_addString(&ba, "Index: 3 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, (int)object->speed)) == 0)
+    {
+        bb_addString(&ba, "Index: 4 Value: [");
+        for (pos = 0; pos != object->primaryAddresses.size; ++pos)
+        {
+            if (pos != 0)
+            {
+                bb_addString(&ba, ", ");
+            }
+            if ((ret = bb_addIntAsString(&ba, object->primaryAddresses.data[pos])) != 0)
+            {
+                break;
+            }
+        }
+        if (ret == 0 &&
+            (ret = bb_addString(&ba, "]\n")) == 0 &&
+            (ret = bb_addString(&ba, "Index: 5 Value: [")) == 0)
+        {
+            for (pos = 0; pos != object->tabis.size; ++pos)
+            {
+                if (pos != 0)
+                {
+                    bb_addString(&ba, ", ");
+                }
+                if ((ret = bb_addIntAsString(&ba, object->tabis.data[pos])) != 0)
+                {
+                    break;
+                }
+            }
+            if (ret == 0)
+            {
+                ret = bb_addString(&ba, "]\n");
+            }
+        }
+    }
+    if (ret == 0)
+    {
+        *buff = bb_toString(&ba);
+    }
+    bb_clear(&ba);
+    return ret;
+}
+#endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
+
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
 int obj_demandRegisterToString(gxDemandRegister* object, char** buff)
 {
@@ -1372,6 +1474,116 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
     return 0;
 }
 #endif //DLMS_IGNORE_IP4_SETUP
+
+#ifndef DLMS_IGNORE_IP6_SETUP
+
+int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
+{
+    char tmp[64];
+    int pos, ret;
+    IN6_ADDR* ip;
+    if ((ret = bb_addString(ba, "{")) == 0)
+    {
+        for (pos = 0; pos != arr->size; ++pos)
+        {
+            if ((ret = arr_getByIndex(arr, pos, (void**)&ip)) != 0)
+            {
+                break;
+            }
+            if (pos != 0)
+            {
+                bb_addString(ba, ", ");
+            }
+            inet_ntop(AF_INET6, &ip, tmp, sizeof(tmp));
+            bb_addString(ba, tmp);
+        }
+        if (ret == 0)
+        {
+            ret = bb_addString(ba, "}");
+        }
+    }
+    return ret;
+}
+
+int obj_getNeighborDiscoverySetupAsString(gxByteBuffer* ba, gxArray* arr)
+{
+    int ret, pos;
+    gxNeighborDiscoverySetup* it;
+    if ((ret = bb_addString(ba, "{")) == 0)
+    {
+        for (pos = 0; pos != arr->size; ++pos)
+        {
+            if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+            if (pos != 0)
+            {
+                bb_addString(ba, ", ");
+            }
+            if ((ret = bb_addString(ba, "[")) != 0 ||
+                (ret = bb_addIntAsString(ba, it->maxRetry)) != 0 ||
+                (ret = bb_addString(ba, ", ")) != 0 ||
+                (ret = bb_addIntAsString(ba, it->retryWaitTime)) != 0 ||
+                (ret = bb_addString(ba, ", ")) != 0 ||
+                (ret = bb_addIntAsString(ba, it->sendPeriod)) != 0 ||
+                (ret = bb_addString(ba, "]")) != 0)
+            {
+                break;
+            }
+        }
+        if (ret == 0)
+        {
+            ret = bb_addString(ba, "}");
+        }
+    }
+    return ret;
+}
+
+int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
+{
+    char tmp[64];
+    int ret;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    bb_addString(&ba, "Index: 2 Value: ");
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    if (object->dataLinkLayer != NULL)
+    {
+        bb_addLogicalName(&ba, object->dataLinkLayer->logicalName);
+    }
+#else
+    bb_addLogicalName(&ba, object->dataLinkLayerReference);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    if ((ret = bb_addString(&ba, "\r\nIndex: 3 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->addressConfigMode)) == 0 &&
+        (ret = bb_addString(&ba, "\r\nIndex: 4 Value: [")) == 0 &&
+        (ret = obj_getIPAddress(&ba, &object->unicastIPAddress)) == 0 &&
+        (ret = bb_addString(&ba, "]\r\nIndex: 5 Value: [")) == 0 &&
+        (ret = obj_getIPAddress(&ba, &object->multicastIPAddress)) == 0 &&
+        (ret = bb_addString(&ba, "]\r\nIndex: 6 Value: [")) == 0 &&
+        (ret = obj_getIPAddress(&ba, &object->gatewayIPAddress)) == 0 &&
+        (ret = bb_addString(&ba, "]\r\nIndex: 7 Value:")) == 0)
+    {
+        inet_ntop(AF_INET6, &object->primaryDNSAddress, tmp, sizeof(tmp));
+        bb_addString(&ba, tmp);
+        inet_ntop(AF_INET6, &object->secondaryDNSAddress, tmp, sizeof(tmp));
+        bb_addString(&ba, tmp);
+        if ((ret = bb_addIntAsString(&ba, object->trafficClass)) == 0 &&
+            (ret = obj_getNeighborDiscoverySetupAsString(&ba, &object->neighborDiscoverySetup)) == 0 &&
+            (ret = bb_addString(&ba, "\n")) == 0)
+        {
+        }
+    }
+    if (ret == 0)
+    {
+        *buff = bb_toString(&ba);
+    }
+    bb_clear(&ba);
+    return 0;
+}
+#endif //DLMS_IGNORE_IP6_SETUP
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int obj_UtilityTablesToString(gxUtilityTables* object, char** buff)
 {
@@ -2239,6 +2451,314 @@ int obj_ParameterMonitorToString(gxParameterMonitor* object, char** buff)
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
 
+#ifndef DLMS_IGNORE_ARBITRATOR
+int obj_ArbitratorToString(gxArbitrator* object, char** buff)
+{
+    int pos, ret = 0;
+    gxByteBuffer bb;
+    gxActionItem* it;
+    bitArray* ba;
+    BYTE_BUFFER_INIT(&bb);
+    bb_addString(&bb, "Index: 2 Value:{");
+    for (pos = 0; pos != object->actions.size; ++pos)
+    {
+        if (pos != 0)
+        {
+            bb_addString(&bb, ", ");
+        }
+        if ((ret = arr_getByIndex(&object->actions, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_addString(&bb, "[");
+        hlp_appendLogicalName(&bb, it->script->base.logicalName);
+        bb_addString(&bb, ", ");
+        bb_addIntAsString(&bb, it->scriptSelector);
+        bb_addString(&bb, "]");
+    }
+    bb_addString(&bb, "}");
+    bb_addString(&bb, "\nIndex: 3 Value:{");
+    for (pos = 0; pos != object->permissionsTable.size; ++pos)
+    {
+        if (pos != 0)
+        {
+            bb_addString(&bb, ", ");
+        }
+        if ((ret = arr_getByIndex(&object->permissionsTable, pos, (void**)&ba)) != 0 ||
+            (ret = ba_toString2(&bb, ba)) != 0)
+        {
+            break;
+        }
+    }
+    ret = bb_addString(&bb, "}");
+    *buff = bb_toString(&bb);
+    bb_clear(&bb);
+    return 0;
+}
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+int obj_Iec8802LlcType1SetupToString(gxIec8802LlcType1Setup* object, char** buff)
+{
+    int ret;
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = bb_addString(&bb, "Index: 2 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->maximumOctetsUiPdu)) == 0)
+    {
+        *buff = bb_toString(&bb);
+    }
+    bb_clear(&bb);
+    return ret;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+int obj_Iec8802LlcType2SetupToString(gxIec8802LlcType2Setup* object, char** buff)
+{
+    int ret;
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = bb_addString(&bb, "Index: 2 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->transmitWindowSizeK)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->transmitWindowSizeRW)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->maximumOctetsPdu)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->maximumNumberTransmissions)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 6 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->acknowledgementTimer)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 7 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->bitTimer)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 8 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->rejectTimer)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 9 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->busyStateTimer)) == 0)
+    {
+        *buff = bb_toString(&bb);
+    }
+    bb_clear(&bb);
+    return ret;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+int obj_Iec8802LlcType3SetupToString(gxIec8802LlcType3Setup* object, char** buff)
+{
+    int ret;
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->maximumOctetsACnPdu)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->maximumTransmissions)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->acknowledgementTime)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->receiveLifetime)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 6 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->transmitLifetime)) == 0)
+    {
+        *buff = bb_toString(&bb);
+    }
+    bb_clear(&bb);
+    return ret;
+}
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+int obj_SFSKActiveInitiatorToString(gxSFSKActiveInitiator* object, char** buff)
+{
+    int ret;
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:")) == 0 &&
+        (ret = bb_attachString(&bb, bb_toString(&object->systemTitle))) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->macAddress)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->lSapSelector)) == 0)
+    {
+        *buff = bb_toString(&bb);
+    }
+    bb_clear(&bb);
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+
+
+int obj_getArrayAsString(gxByteBuffer* bb, gxArray* arr)
+{
+    int ret = 0, pos;
+    gxUint16PairUint32* it;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+        if (pos != 0)
+        {
+            bb_addString(bb, ", ");
+        }
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0 ||
+            (ret = bb_addIntAsString(bb, it->first)) != 0 ||
+            (ret = bb_addString(bb, ": ")) != 0 ||
+            (ret = bb_addIntAsString(bb, it->second)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
+int obj_FSKMacCountersToString(gxFSKMacCounters* object, char** buff)
+{
+    int ret;
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:{")) == 0 &&
+        (ret = obj_getArrayAsString(&bb, &object->synchronizationRegister)) == 0 &&
+        (ret = bb_addString(&bb, "}\nIndex: 3 Value:[")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->physicalLayerDesynchronization)) == 0 &&
+        (ret = bb_addString(&bb, ", ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->timeOutNotAddressedDesynchronization)) == 0 &&
+        (ret = bb_addString(&bb, ", ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->timeOutFrameNotOkDesynchronization)) == 0 &&
+        (ret = bb_addString(&bb, ", ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->writeRequestDesynchronization)) == 0 &&
+        (ret = bb_addString(&bb, ", ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->wrongInitiatorDesynchronization)) == 0 &&
+        (ret = bb_addString(&bb, "]\nIndex: 3 Value:{")) == 0 &&
+        (ret = obj_getArrayAsString(&bb, &object->broadcastFramesCounter)) == 0 &&
+        (ret = bb_addString(&bb, "}\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->repetitionsCounter)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->transmissionsCounter)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 6 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->crcOkFramesCounter)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 7 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->crcNOkFramesCounter)) == 0)
+    {
+        *buff = bb_toString(&bb);
+    }
+    bb_clear(&bb);
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+int obj_SFSKMacSynchronizationTimeoutsToString(gxSFSKMacSynchronizationTimeouts* object, char** buff)
+{
+    int ret;
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->searchInitiatorTimeout)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->synchronizationConfirmationTimeout)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->timeOutNotAddressed)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->timeOutFrameNotOK)) == 0)
+    {
+        *buff = bb_toString(&bb);
+    }
+    bb_clear(&bb);
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+
+
+int obj_getMacGroupAddressesAsString(gxByteBuffer* bb, gxArray* arr)
+{
+    int ret = 0, pos;
+    uint16_t* it;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+        if (pos != 0)
+        {
+            bb_addString(bb, ", ");
+        }
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0 ||
+            (ret = bb_addIntAsString(bb, *it)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
+int obj_SFSKPhyMacSetUpToString(gxSFSKPhyMacSetUp* object, char** buff)
+{
+    int ret = 0;
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->initiatorElectricalPhase)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->deltaElectricalPhase)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->maxReceivingGain)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->maxTransmittingGain)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 6 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->searchInitiatorThreshold)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 7 Value:[")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->markFrequency)) == 0 &&
+        (ret = bb_addString(&bb, ", ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->spaceFrequency)) == 0 &&
+        (ret = bb_addString(&bb, "]\nIndex: 8 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->macAddress)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 9 Value:{")) == 0 &&
+        (ret = obj_getMacGroupAddressesAsString(&bb, &object->macGroupAddresses)) == 0 &&
+        (ret = bb_addString(&bb, "}\nIndex: 10 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->repeater)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 11 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->repeaterStatus)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 12 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->minDeltaCredit)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 13 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->initiatorMacAddress)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 14 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->synchronizationLocked)) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 15 Value:")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->transmissionSpeed)) == 0)
+    {
+        *buff = bb_toString(&bb);
+    }
+    bb_clear(&bb);
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+int obj_SFSKReportingSystemListToString(gxSFSKReportingSystemList* object, char** buff)
+{
+    int pos, ret = 0;
+    gxByteBuffer* it;
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:{")) == 0)
+    {
+        for (pos = 0; pos != object->reportingSystemList.size; ++pos)
+        {
+            if (pos != 0)
+            {
+                bb_addString(&bb, ", ");
+            }
+            if ((ret = arr_getByIndex(&object->reportingSystemList, pos, (void**)&it)) != 0 ||
+                (ret = bb_attachString(&bb, bb_toHexString(it))) != 0)
+            {
+                break;
+            }
+        }
+        if (ret == 0)
+        {
+            if ((ret = bb_addString(&bb, "\n}")) == 0)
+            {
+                *buff = bb_toString(&bb);
+            }
+        }
+    }
+    bb_clear(&bb);
+    return ret;
+}
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+
 #ifdef DLMS_ITALIAN_STANDARD
 int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
 {
@@ -2350,14 +2870,17 @@ int obj_toString(gxObject* object, char** buff)
 #endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 #ifndef DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
+        ret = obj_IecTwistedPairSetupToString((gxIecTwistedPairSetup*)object, buff);
         break;
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 #ifndef DLMS_IGNORE_IP4_SETUP
     case DLMS_OBJECT_TYPE_IP4_SETUP:
         ret = obj_ip4SetupToString((gxIp4Setup*)object, buff);
+        break;
+#endif //DLMS_IGNORE_IP4_SETUP
+#ifndef DLMS_IGNORE_IP6_SETUP
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        ret = obj_ip6SetupToString((gxIp6Setup*)object, buff);
         break;
 #endif //DLMS_IGNORE_IP4_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
@@ -2581,6 +3104,51 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_ParameterMonitorToString((gxParameterMonitor*)object, buff);
         break;
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
+#ifndef DLMS_IGNORE_ARBITRATOR
+    case DLMS_OBJECT_TYPE_ARBITRATOR:
+        ret = obj_ArbitratorToString((gxArbitrator*)object, buff);
+        break;
+#endif //DLMS_IGNORE_ARBITRATOR
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE1_SETUP:
+        ret = obj_Iec8802LlcType1SetupToString((gxIec8802LlcType1Setup*)object, buff);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
+        ret = obj_Iec8802LlcType2SetupToString((gxIec8802LlcType2Setup*)object, buff);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
+#ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+    case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
+        ret = obj_Iec8802LlcType3SetupToString((gxIec8802LlcType3Setup*)object, buff);
+        break;
+#endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
+#ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+    case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
+        ret = obj_SFSKActiveInitiatorToString((gxSFSKActiveInitiator*)object, buff);
+        break;
+#endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
+#ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
+        ret = obj_FSKMacCountersToString((gxFSKMacCounters*)object, buff);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
+#ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+    case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
+        ret = obj_SFSKMacSynchronizationTimeoutsToString((gxSFSKMacSynchronizationTimeouts*)object, buff);
+        break;
+#endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
+#ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+    case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
+        ret = obj_SFSKPhyMacSetUpToString((gxSFSKPhyMacSetUp*)object, buff);
+        break;
+#endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
+#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+    case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
+        ret = obj_SFSKReportingSystemListToString((gxSFSKReportingSystemList*)object, buff);
+        break;
+#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = obj_TariffPlanToString((gxTariffPlan*)object, buff);

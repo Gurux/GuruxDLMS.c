@@ -52,7 +52,7 @@ extern "C" {
 
   int cosem_setLogicalName(
       gxObject* object,
-      unsigned char* value);
+      const unsigned char* value);
 
 #ifndef DLMS_IGNORE_MALLOC
   int cosem_init(
@@ -91,14 +91,14 @@ extern "C" {
 
   int cosem_getInt32(gxByteBuffer* bb, int32_t* value);
 
-  int cosem_getOctectString(gxByteBuffer* bb, gxByteBuffer* value);
+  int cosem_getOctetString(gxByteBuffer* bb, gxByteBuffer* value);
 
 
   int cosem_getString(gxByteBuffer* bb, gxByteBuffer* value);
 
-  int cosem_getOctectString2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size);
+  int cosem_getOctetString2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size);
 
-  int cosem_getOctectString3(gxByteBuffer* bb, gxByteBuffer* value, unsigned char exact);
+  int cosem_getOctetString3(gxByteBuffer* bb, gxByteBuffer* value, unsigned char exact);
 
   int cosem_getString2(gxByteBuffer* bb, char* value, uint16_t capacity);
 
@@ -163,6 +163,8 @@ extern "C" {
 
   int cosem_setStructure(gxByteBuffer* bb, uint16_t count);
   int cosem_setArray(gxByteBuffer* bb, uint16_t count);
+  int cosem_setEnum(gxByteBuffer* bb, unsigned char value);
+  int cosem_setBoolean(gxByteBuffer* bb, unsigned char value);
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
   int cosem_getColumns(

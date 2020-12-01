@@ -298,3 +298,24 @@ char* ba_toString(bitArray* arr)
     return buff;
 }
 #endif //DLMS_IGNORE_MALLOC
+
+int ba_toString2(
+    gxByteBuffer* bb,
+    bitArray* ba)
+{
+    unsigned char ch;
+    int pos, ret = 0;
+    if ((ret = bb_capacity(bb, bb->size + ba->size)) == 0)
+    {
+        for (pos = 0; pos != ba->size; ++pos)
+        {
+            if ((ret = ba_getByIndex(ba, pos, &ch)) != 0 ||
+                (ret = bb_setInt8(bb, ch == 0 ? '0' : '1')) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+

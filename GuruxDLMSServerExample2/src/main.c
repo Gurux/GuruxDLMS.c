@@ -21,7 +21,7 @@
 #endif
 #include <tchar.h>
 #include <conio.h>
-#include <Winsock.h> //Add support for sockets
+#include <Winsock2.h> //Add support for sockets
 #include <time.h>
 #include <process.h>//Add support for threads
 #include "../include/getopt.h"
@@ -444,7 +444,6 @@ uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
 //Get current row count for allocated buffer.
 uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
 {
-    unsigned char pos;
     uint16_t index = 0;
     int ret = 0;
     char fileName[30];
@@ -458,8 +457,6 @@ uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
     if (f != NULL)
     {
         uint16_t dataSize = 0;
-        uint8_t columnSizes[10];
-        DLMS_DATA_TYPE dataTypes[10];
         //Load current entry index from the begin of the data.
         unsigned char pduBuff[2];
         gxByteBuffer pdu;
@@ -1942,7 +1939,7 @@ int getRestrictingObject(dlmsSettings* settings,
     if ((ret = cosem_checkStructure(e->parameters.byteArr, 4)) == 0 &&
         (ret = cosem_checkStructure(e->parameters.byteArr, 4)) == 0 &&
         (ret = cosem_getUInt16(e->parameters.byteArr, &ot)) == 0 &&
-        (ret = cosem_getOctectString2(e->parameters.byteArr, ln, 6, NULL)) == 0 &&
+        (ret = cosem_getOctetString2(e->parameters.byteArr, ln, 6, NULL)) == 0 &&
         (ret = cosem_getInt8(e->parameters.byteArr, &aIndex)) == 0 &&
         (ret = cosem_getUInt16(e->parameters.byteArr, &dIndex)) == 0)
     {
@@ -2314,7 +2311,7 @@ void svr_preRead(
             gxtime dt;
             time_now(&dt, 1);
             e->error = cosem_setDateTimeAsOctectString(e->value.byteArr, &dt);
-            e->value.vt = DLMS_DATA_TYPE_DATETIME;
+            e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
             e->handled = 1;
         }
         else if (e->target == BASE(loadProfile) && e->index == 2)
@@ -2656,7 +2653,7 @@ void svr_preAction(
                     return;
                 }
                 if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
-                    (ret = cosem_getOctectString2(e->parameters.byteArr, info->identification.data, sizeof(info->identification.data), &info->identification.size)) != 0 ||
+                    (ret = cosem_getOctetString2(e->parameters.byteArr, info->identification.data, sizeof(info->identification.data), &info->identification.size)) != 0 ||
                     (ret = cosem_getUInt32(e->parameters.byteArr, &info->size)) != 0)
                 {
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;

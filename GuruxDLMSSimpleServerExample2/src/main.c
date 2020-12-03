@@ -21,7 +21,7 @@
 #endif
 #include <tchar.h>
 #include <conio.h>
-#include <Winsock.h> //Add support for sockets
+#include <Winsock2.h> //Add support for sockets
 #include <time.h>
 #include <process.h>//Add support for threads
 #include "../include/getopt.h"
@@ -386,7 +386,6 @@ uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
 //Get current row count for allocated buffer.
 uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
 {
-    unsigned char pos;
     uint16_t index = 0;
     int ret = 0;
     char fileName[30];
@@ -400,8 +399,6 @@ uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
     if (f != NULL)
     {
         uint16_t dataSize = 0;
-        uint8_t columnSizes[10];
-        DLMS_DATA_TYPE dataTypes[10];
         //Load current entry index from the begin of the data.
         unsigned char pduBuff[2];
         gxByteBuffer pdu;
@@ -1374,7 +1371,7 @@ int getRestrictingObject(dlmsSettings* settings,
     if ((ret = cosem_checkStructure(e->parameters.byteArr, 4)) == 0 &&
         (ret = cosem_checkStructure(e->parameters.byteArr, 4)) == 0 &&
         (ret = cosem_getUInt16(e->parameters.byteArr, &ot)) == 0 &&
-        (ret = cosem_getOctectString2(e->parameters.byteArr, ln, 6, NULL)) == 0 &&
+        (ret = cosem_getOctetString2(e->parameters.byteArr, ln, 6, NULL)) == 0 &&
         (ret = cosem_getInt8(e->parameters.byteArr, &aIndex)) == 0 &&
         (ret = cosem_getUInt16(e->parameters.byteArr, &dIndex)) == 0)
     {

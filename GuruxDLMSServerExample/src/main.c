@@ -22,7 +22,7 @@
 #include "../include/getopt.h"
 #include <tchar.h>
 #include <conio.h>
-#include <Winsock.h> //Add support for sockets
+#include <Winsock2.h> //Add support for sockets
 #include <time.h>
 #include <process.h>//Add support for threads
 #else //Linux includes.

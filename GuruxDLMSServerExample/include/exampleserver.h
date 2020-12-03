@@ -17,7 +17,7 @@
 #pragma once
 
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
-#include <Winsock.h> //Add support for sockets
+#include <Winsock2.h> //Add support for sockets
 #endif
 
 #include "../../development/include/server.h"

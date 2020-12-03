@@ -22,7 +22,7 @@
 #if _MSC_VER > 1400
 #include <crtdbg.h>
 #endif
-#include <Winsock.h> //Add support for sockets
+#include <Winsock2.h> //Add support for sockets
 #include <process.h>//Add support for threads
 #else
 #if defined(__linux__) //Linux

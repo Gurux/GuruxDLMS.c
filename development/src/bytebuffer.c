@@ -300,7 +300,7 @@ int bb_setUInt16(
     gxByteBuffer* arr,
     uint16_t item)
 {
-    int ret = bb_setUInt16ByIndex(arr, arr->size, item);
+    int ret = bb_setUInt16ByIndex(arr, (unsigned short) arr->size, item);
     if (ret == 0)
     {
         arr->size += 2;
@@ -314,7 +314,7 @@ int bb_setUInt16ByIndex(
     uint16_t item)
 {
     int ret = 0;
-    if (index + 2 > arr->size)
+    if ((uint16_t)(index + 2) > arr->size)
     {
         bb_allocate(arr, arr->size, 2);
     }

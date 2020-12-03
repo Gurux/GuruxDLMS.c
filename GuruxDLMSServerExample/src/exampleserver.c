@@ -24,10 +24,9 @@
 #endif
 #include <tchar.h>
 #include <conio.h>
-#include <Winsock.h> //Add support for sockets
 #include <time.h>
 #include <process.h>//Add support for threads
-#include <Winsock.h> //Add support for sockets
+#include <Winsock2.h> //Add support for sockets
 #include "../include/connection.h"
 #include "../../development/include/converters.h"
 #include "../../development/include/helpers.h"
@@ -2060,7 +2059,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
         DLMS_DATA_TYPE dataTypes[10];
         if (f != NULL)
         {
-            getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &rowSize);
+            getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &rowSize);
             //Skip current index and total amount of the entries.
             fseek(f, 4, SEEK_SET);
             for (pos = 0; pos != pg->entriesInUse; ++pos)
@@ -2615,7 +2614,7 @@ void svr_preAction(
                 }
                 uint16_t size;
                 if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
-                    (ret = cosem_getOctectString2(e->parameters.byteArr, info->identification.data, sizeof(info->identification.data), &size)) != 0 ||
+                    (ret = cosem_getOctetString2(e->parameters.byteArr, info->identification.data, sizeof(info->identification.data), &size)) != 0 ||
                     (ret = cosem_getUInt32(e->parameters.byteArr, &info->size)) != 0)
                 {
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;

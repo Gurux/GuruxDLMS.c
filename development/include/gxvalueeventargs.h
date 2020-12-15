@@ -46,6 +46,12 @@ extern "C" {
         * CGXDLMSVariant value.
         */
         dlmsVARIANT value;
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        /**
+        * Data type of the value.
+        */
+        DLMS_DATA_TYPE dataType;
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
         /**
         * Is request handled.
         */
@@ -59,10 +65,6 @@ extern "C" {
         * Attribute index.
         */
         unsigned char index;
-        /**
-        * Data type of the value.
-        */
-        DLMS_DATA_TYPE dataType;
         /**
         * Optional selector.
         */

@@ -93,22 +93,23 @@ int obj_clearProfileGenericBuffer(gxArray* buffer)
 #if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA) && defined(DLMS_IGNORE_PUSH_SETUP))
 int obj_clearPushObjectList(gxArray* buffer)
 {
-#ifndef DLMS_IGNORE_MALLOC
-    gxKey* it;
-    int pos, ret;
-    //Clear push objects.
+    int ret = 0;
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    int pos;
+    gxKey* kv;
+    //Objects are not cleared because client owns them and clears them later.
     for (pos = 0; pos != buffer->size; ++pos)
     {
-        ret = arr_getByIndex(buffer, pos, (void**)&it);
+        ret = arr_getByIndex(buffer, pos, (void**)&kv);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
-        gxfree((gxTarget*)it->value);
+        gxfree(kv->value);
     }
-#endif //DLMS_IGNORE_MALLOC
+#endif // !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     arr_clear(buffer);
-    return 0;
+    return ret;
 }
 #endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_OBJECT_TYPE_PUSH_SETUP) && defined(DLMS_IGNORE_PUSH_SETUP))
 
@@ -184,7 +185,7 @@ int obj_clearSapList(gxArray* buffer)
 int obj_clearProfileGenericCaptureObjects(gxArray* captureObjects)
 {
     int ret = DLMS_ERROR_CODE_OK;
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     int pos;
     gxKey* kv;
     //Objects are not cleared because client owns them and clears them later.
@@ -197,7 +198,7 @@ int obj_clearProfileGenericCaptureObjects(gxArray* captureObjects)
         }
         gxfree(kv->value);
     }
-#endif //DLMS_IGNORE_MALLOC
+#endif // !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     arr_clear(captureObjects);
     return ret;
 }
@@ -254,17 +255,19 @@ int obj_clearDayProfileTable(gxArray* list)
     gxDayProfileAction* dp;
     for (pos = 0; pos != list->size; ++pos)
     {
-        ret = arr_getByIndex(list, pos, (void**)&it);
-        if (ret != DLMS_ERROR_CODE_OK)
+        if ((ret = arr_getByIndex(list, pos, (void**)&it)) != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
         for (pos2 = 0; pos2 != it->daySchedules.size; ++pos2)
         {
-            ret = arr_getByIndex(&it->daySchedules, pos2, (void**)&dp);
-            if (ret != DLMS_ERROR_CODE_OK)
+            if ((ret = arr_getByIndex(&it->daySchedules, pos2, (void**)&dp)) != DLMS_ERROR_CODE_OK)
             {
-                return ret;
+                break;
+            }
+            if (ret != 0)
+            {
+                break;
             }
         }
         arr_clear(&it->daySchedules);
@@ -325,9 +328,7 @@ int obj_clearScheduleEntries(gxArray* list)
 }
 #endif //DLMS_IGNORE_SCHEDULE
 
-#ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
-
-int obj_clearSFSKReportingSystemList(gxArray* list)
+int obj_clearByteBufferList(gxArray* list)
 {
 #ifdef DLMS_IGNORE_MALLOC
     list->size = 0;
@@ -348,7 +349,6 @@ int obj_clearSFSKReportingSystemList(gxArray* list)
     return ret;
 #endif //DLMS_IGNORE_MALLOC
 }
-#endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
 int obj_clearScriptTable(gxArray* list)
@@ -404,7 +404,7 @@ int obj_clearChargeTables(gxArray* list)
 #endif //DLMS_IGNORE_CHARGE
 
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
-#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES))
 int obj_clearRegisterActivationAssignment(objectArray* list)
 {
     oa_empty(list);
@@ -413,7 +413,7 @@ int obj_clearRegisterActivationAssignment(objectArray* list)
 #else
 int obj_clearRegisterActivationAssignment(gxArray* list)
 {
-    arr_clear(list);
+    arr_empty(list);
     return 0;
 }
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
@@ -424,20 +424,37 @@ int obj_clearRegisterActivationMaskList(gxArray* list)
     list->size = 0;
     return 0;
 #else
-    int pos, ret = 0;
+#ifdef DLMS_COSEM_EXACT_DATA_TYPES
+    int ret = 0, pos;
+    gxRegisterActivationMask* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        ret = arr_getByIndex(list, pos, (void**)&it);
+        if (ret != 0)
+        {
+            break;
+        }
+        bb_clear(&it->name);
+        bb_clear(&it->indexes);
+    }
+    arr_clear(list);
+    return ret;
+#else
+    int ret = 0, pos;
     gxKey* it;
     for (pos = 0; pos != list->size; ++pos)
     {
         ret = arr_getByIndex(list, pos, (void**)&it);
         if (ret != 0)
         {
-            return ret;
+            break;
         }
         bb_clear((gxByteBuffer*)it->key);
         bb_clear((gxByteBuffer*)it->value);
     }
     arr_clearKeyValuePair(list);
     return ret;
+#endif //DLMS_COSEM_EXACT_DATA_TYPES
 #endif //DLMS_IGNORE_MALLOC
 }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
@@ -519,7 +536,6 @@ int obj_clearActiveDevices(gxArray* list)
             return ret;
         }
         bb_clear(&it->macAddress);
-        ba_clear(&it->status);
     }
 #endif //DLMS_IGNORE_MALLOC
     arr_clear(list);
@@ -680,34 +696,14 @@ void obj_clear(gxObject* object)
         case DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR:
             bb_clear(&((gxActivityCalendar*)object)->calendarNameActive);
             bb_clear(&((gxActivityCalendar*)object)->calendarNamePassive);
-            ret = obj_clearSeasonProfile(&((gxActivityCalendar*)object)->seasonProfileActive);
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(ret == 0);
-#endif
-            ret = obj_clearWeekProfileTable(&((gxActivityCalendar*)object)->weekProfileTableActive);
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(ret == 0);
-#endif
-
-            ret = obj_clearDayProfileTable(&((gxActivityCalendar*)object)->dayProfileTableActive);
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(ret == 0);
-#endif
-
-            ret = obj_clearSeasonProfile(&((gxActivityCalendar*)object)->seasonProfilePassive);
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(ret == 0);
-#endif
-
-            ret = obj_clearWeekProfileTable(&((gxActivityCalendar*)object)->weekProfileTablePassive);
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(ret == 0);
-#endif
-
-            ret = obj_clearDayProfileTable(&((gxActivityCalendar*)object)->dayProfileTablePassive);
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(ret == 0);
-#endif
+            if ((ret = obj_clearSeasonProfile(&((gxActivityCalendar*)object)->seasonProfileActive)) != 0 ||
+                (ret = obj_clearWeekProfileTable(&((gxActivityCalendar*)object)->weekProfileTableActive)) != 0 ||
+                (ret = obj_clearDayProfileTable(&((gxActivityCalendar*)object)->dayProfileTableActive)) != 0 ||
+                (ret = obj_clearSeasonProfile(&((gxActivityCalendar*)object)->seasonProfilePassive)) != 0 ||
+                (ret = obj_clearWeekProfileTable(&((gxActivityCalendar*)object)->weekProfileTablePassive)) != 0 ||
+                (ret = obj_clearDayProfileTable(&((gxActivityCalendar*)object)->dayProfileTablePassive)) != 0)
+            {
+            }
             break;
 #endif //DLMS_IGNORE_ACTIVITY_CALENDAR
 #ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
@@ -724,6 +720,7 @@ void obj_clear(gxObject* object)
             if (((gxAssociationLogicalName*)object)->currentUser.value != NULL)
             {
                 gxfree(((gxAssociationLogicalName*)object)->currentUser.value);
+                ((gxAssociationLogicalName*)object)->currentUser.value = NULL;
             }
 #endif //DLMS_IGNORE_MALLOC
             break;
@@ -803,7 +800,7 @@ void obj_clear(gxObject* object)
             memset(((gxIp4Setup*)object)->dataLinkLayerReference, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
             var_clear(&((gxIp4Setup*)object)->value);
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             arr_clear(&((gxIp4Setup*)object)->multicastIPAddress);
 #else
             va_clear(&((gxIp4Setup*)object)->multicastIPAddress);
@@ -868,7 +865,7 @@ void obj_clear(gxObject* object)
             var_clear(&((gxLimiter*)object)->thresholdActive);
             var_clear(&((gxLimiter*)object)->thresholdNormal);
             var_clear(&((gxLimiter*)object)->thresholdEmergency);
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             arr_clear(&((gxLimiter*)object)->emergencyProfileGroupIDs);
 #else
             va_clear(&((gxLimiter*)object)->emergencyProfileGroupIDs);
@@ -917,7 +914,7 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
         case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
-#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES))
             oa_empty(&((gxRegisterActivation*)object)->registerAssignment);
 #else
             obj_clearRegisterActivationAssignment(&((gxRegisterActivation*)object)->registerAssignment);
@@ -1019,24 +1016,13 @@ void obj_clear(gxObject* object)
             //Do nothing.
             break;
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
-#ifndef DLMS_IGNORE_MESSAGE_HANDLER
-        case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
-            arr_clearKeyValuePair(&((gxMessageHandler*)object)->listeningWindow);
-            va_clear(&((gxMessageHandler*)object)->allowedSenders);
-            arr_clear(&((gxMessageHandler*)object)->sendersAndActions);
-            break;
-#endif //DLMS_IGNORE_MESSAGE_HANDLER
 #ifndef DLMS_IGNORE_PUSH_SETUP
         case DLMS_OBJECT_TYPE_PUSH_SETUP:
             obj_clearPushObjectList(&((gxPushSetup*)object)->pushObjectList);
 #ifdef DLMS_IGNORE_MALLOC
             ((gxPushSetup*)object)->destination.size = 0;
 #else
-            if (((gxPushSetup*)object)->destination != NULL)
-            {
-                gxfree(((gxPushSetup*)object)->destination);
-                ((gxPushSetup*)object)->destination = NULL;
-            }
+            bb_clear(&((gxPushSetup*)object)->destination);
 #endif //DLMS_IGNORE_MALLOC
             arr_clearKeyValuePair(&((gxPushSetup*)object)->communicationWindow);
             break;
@@ -1055,8 +1041,7 @@ void obj_clear(gxObject* object)
 #ifdef DLMS_IGNORE_MALLOC
             ((gxAccount*)object)->currency.name.size = 0;
 #else
-            gxfree(((gxAccount*)object)->currency.name);
-            ((gxAccount*)object)->currency.name = NULL;
+            bb_clear(&((gxAccount*)object)->currency.name);
 #endif //DLMS_IGNORE_MALLOC
             break;
 #endif //DLMS_IGNORE_ACCOUNT
@@ -1075,18 +1060,18 @@ void obj_clear(gxObject* object)
 #ifndef DLMS_IGNORE_TOKEN_GATEWAY
         case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
             bb_clear(&((gxTokenGateway*)object)->token);
-            arr_clear(&((gxTokenGateway*)object)->descriptions);
+            obj_clearByteBufferList(&((gxTokenGateway*)object)->descriptions);
             ba_clear(&((gxTokenGateway*)object)->dataValue);
             break;
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
         case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
             gxfree(((gxGsmDiagnostic*)object)->operatorName);
             ((gxGsmDiagnostic*)object)->operatorName = NULL;
 #else
             bb_clear(&((gxGsmDiagnostic*)object)->operatorName);
-#endif //DLMS_IGNORE_MALLOC
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
             arr_clear(&((gxGsmDiagnostic*)object)->adjacentCells);
             break;
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
@@ -1141,12 +1126,7 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
         case DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION:
-#ifndef DLMS_IGNORE_MALLOC
-            gxfree(((gxPrimeNbOfdmPlcApplicationsIdentification*)object)->firmwareVersion);
-            ((gxPrimeNbOfdmPlcApplicationsIdentification*)object)->firmwareVersion = NULL;
-#else
-            ((gxPrimeNbOfdmPlcApplicationsIdentification*)object)->firmwareVersion[0] = 0;
-#endif //DLMS_IGNORE_MALLOC
+            bb_clear(&((gxPrimeNbOfdmPlcApplicationsIdentification*)object)->firmwareVersion);
             break;
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #ifndef DLMS_IGNORE_ARBITRATOR
@@ -1191,7 +1171,7 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
 #ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
         case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
-            obj_clearSFSKReportingSystemList(&((gxSFSKReportingSystemList*)object)->reportingSystemList);
+            obj_clearByteBufferList(&((gxSFSKReportingSystemList*)object)->reportingSystemList);
             break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifdef DLMS_ITALIAN_STANDARD
@@ -1388,9 +1368,6 @@ unsigned char obj_attributeCount(gxObject* object)
         break;
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
         ret = 2;
-        break;
-    case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
-        ret = 4;
         break;
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
         ret = 7;
@@ -1771,9 +1748,6 @@ unsigned char obj_methodCount(gxObject* object)
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
         ret = 0;
         break;
-    case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
-        ret = 0;
-        break;
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
         ret = 1;
         break;
@@ -1899,113 +1873,6 @@ unsigned char obj_methodCount(gxObject* object)
     return ret;
 }
 
-#if !defined(DLMS_IGNORE_MALLOC)
-int obj_updateAttributeAccessModes(gxObject* object, variantArray* arr)
-{
-    unsigned char id;
-    int ret;
-    uint16_t pos, cnt;
-    dlmsVARIANT* tmp, * it, * value;
-    //If accessmodes are not returned. Some meters do not return them.
-    if (arr->size != 2)
-    {
-        return 0;
-    }
-    ret = va_getByIndex(arr, 0, &tmp);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    //If access modes are not retrieved yet.
-    if (object->access == NULL || object->access->attributeAccessModes.size == 0)
-    {
-        if (object->access == NULL)
-        {
-            object->access = (gxAccess*)gxcalloc(1, sizeof(gxAccess));
-        }
-        cnt = obj_attributeCount(object);
-        bb_capacity(&object->access->attributeAccessModes, cnt);
-        object->access->attributeAccessModes.size = object->access->attributeAccessModes.capacity;
-
-        cnt = obj_methodCount(object);
-        bb_capacity(&object->access->methodAccessModes, cnt);
-        object->access->methodAccessModes.size = object->access->methodAccessModes.capacity;
-    }
-    for (pos = 0; pos != tmp->Arr->size; ++pos)
-    {
-        ret = va_getByIndex(tmp->Arr, pos, &it);
-        if (ret != 0)
-        {
-            return ret;
-        }
-        if (it->vt != DLMS_DATA_TYPE_STRUCTURE ||
-            it->Arr->size != 3)
-        {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-
-        //Get ID.
-        ret = va_getByIndex(it->Arr, 0, &value);
-        if (ret != 0)
-        {
-            return ret;
-        }
-
-        id = (unsigned char)var_toInteger(value);
-        if (!(id > object->access->attributeAccessModes.size))
-        {
-            ret = va_getByIndex(it->Arr, 1, &value);
-            if (ret != 0)
-            {
-                return ret;
-            }
-            //DLMS_ACCESS_MODE
-            object->access->attributeAccessModes.data[id - 1] = (unsigned char)var_toInteger(value);
-        }
-    }
-
-    //Get method access modes.
-    ret = va_getByIndex(arr, 1, &tmp);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    for (pos = 0; pos != tmp->Arr->size; ++pos)
-    {
-        ret = va_getByIndex(tmp->Arr, pos, &it);
-        if (ret != 0)
-        {
-            return ret;
-        }
-        if (it->vt != DLMS_DATA_TYPE_STRUCTURE ||
-            it->Arr->size != 2)
-        {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-
-        //Get ID.
-        ret = va_getByIndex(it->Arr, 0, &value);
-        if (ret != 0)
-        {
-            return ret;
-        }
-
-        id = (unsigned char)var_toInteger(value);
-        if (!(id > object->access->methodAccessModes.size))
-        {
-            ret = va_getByIndex(it->Arr, 1, &value);
-            if (ret != 0)
-            {
-                return ret;
-            }
-            //DLMS_METHOD_ACCESS_MODE
-            object->access->methodAccessModes.data[id - 1] = (unsigned char)var_toInteger(value);
-        }
-    }
-    return ret;
-}
-#endif //!defined(DLMS_IGNORE_MALLOC)
-
 #ifndef DLMS_IGNORE_DATA_PROTECTION
 void init_ProtectionParameter(gxProtectionParameter* target)
 {
@@ -2040,22 +1907,23 @@ void clear_ProtectionParameter(gxProtectionParameter* target)
 #ifndef DLMS_IGNORE_PARAMETER_MONITOR
 int obj_clearParametersList(gxArray* buffer)
 {
-#ifndef DLMS_IGNORE_MALLOC
-    gxKey* it;
-    int pos, ret;
-    //Clear push objects.
+    int ret = 0;
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    int pos;
+    gxKey* kv;
+    //Objects are not cleared because client owns them and clears them later.
     for (pos = 0; pos != buffer->size; ++pos)
     {
-        ret = arr_getByIndex(buffer, pos, (void**)&it);
+        ret = arr_getByIndex(buffer, pos, (void**)&kv);
         if (ret != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
-        gxfree((gxTarget*)it->value);
+        gxfree(kv->value);
     }
-#endif //DLMS_IGNORE_MALLOC
+#endif // !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     arr_clear(buffer);
-    return 0;
+    return ret;
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
 

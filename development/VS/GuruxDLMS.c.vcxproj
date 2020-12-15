@@ -283,6 +283,8 @@
     <ClCompile Include="..\src\gxmd5.c" />
     <ClCompile Include="..\src\gxobjects.c" />
     <ClCompile Include="..\src\gxset.c" />
+    <ClCompile Include="..\src\gxsetignoremalloc.c" />
+    <ClCompile Include="..\src\gxsetmalloc.c" />
     <ClCompile Include="..\src\gxsha1.c" />
     <ClCompile Include="..\src\gxsha256.c" />
     <ClCompile Include="..\src\gxvalueeventargs.c" />
@@ -325,6 +327,8 @@
     <ClInclude Include="..\include\gxmem.h" />
     <ClInclude Include="..\include\gxobjects.h" />
     <ClInclude Include="..\include\gxset.h" />
+    <ClInclude Include="..\include\gxsetignoremalloc.h" />
+    <ClInclude Include="..\include\gxsetmalloc.h" />
     <ClInclude Include="..\include\gxsha1.h" />
     <ClInclude Include="..\include\gxsha256.h" />
     <ClInclude Include="..\include\gxvalueeventargs.h" />

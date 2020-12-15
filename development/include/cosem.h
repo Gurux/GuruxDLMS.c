@@ -38,6 +38,7 @@ extern "C" {
 #endif
 
 #include "gxobjects.h"
+#include "dlmsSettings.h"
 
 #ifndef DLMS_IGNORE_MALLOC
   int cosem_createObject(
@@ -79,6 +80,8 @@ extern "C" {
 
   int cosem_checkArray(gxByteBuffer* bb, uint16_t* count);
 
+  int cosem_checkArray2(gxByteBuffer* bb, uint16_t* count, unsigned char checkDataType);
+
   int cosem_getUInt8(gxByteBuffer* bb, unsigned char* value);
 
   int cosem_getUInt16(gxByteBuffer* bb, uint16_t* value);
@@ -102,17 +105,41 @@ extern "C" {
 
   int cosem_getString2(gxByteBuffer* bb, char* value, uint16_t capacity);
 
-  int cosem_getDateTimeFromOctectString(gxByteBuffer* bb, gxtime* value);
+  //Get date-time value from the octet-string.
+  int cosem_getDateTimeFromOctetString(gxByteBuffer* bb, gxtime* value);
 
-  int cosem_getDateFromOctectString(gxByteBuffer* bb, gxtime* value);
+  //Get date-time value from the octet-string.
+  int cosem_getDateFromOctetString(gxByteBuffer* bb, gxtime* value);
 
-  int cosem_getTimeFromOctectString(gxByteBuffer* bb, gxtime* value);
+  //Get date-time value from the octet-string.
+  int cosem_getTimeFromOctetString(gxByteBuffer* bb, gxtime* value);
 
+  //Get date-time value from the octet-string.
+  int cosem_getDateTimeFromOctetString2(gxByteBuffer* bb, gxtime* value, unsigned char checkDataType);
+
+  //Get date-time value from the octet-string.
+  int cosem_getDateFromOctetString2(gxByteBuffer* bb, gxtime* value, unsigned char checkDataType);
+
+  //Get date-time value from the octet-string.
+  int cosem_getTimeFromOctetString2(gxByteBuffer* bb, gxtime* value, unsigned char checkDataType);
+
+  //Get date-time value from the byte array.
   int cosem_getDateTime(gxByteBuffer* bb, gxtime* value);
 
+  //Get date value from the byte array.
   int cosem_getDate(gxByteBuffer* bb, gxtime* value);
 
+  //Get time value from the byte array.
   int cosem_getTime(gxByteBuffer* bb, gxtime* value);
+
+  //Get date-time value from the byte array.
+  int cosem_getDateTime2(gxByteBuffer* bb, gxtime* value, unsigned char checkDataType);
+
+  //Get date value from the byte array.
+  int cosem_getDate2(gxByteBuffer* bb, gxtime* value, unsigned char checkDataType);
+
+  //Get time value from the byte array.
+  int cosem_getTime2(gxByteBuffer* bb, gxtime* value, unsigned char checkDataType);
 
   int cosem_getBitString(gxByteBuffer* bb, bitArray* value);
 
@@ -129,13 +156,13 @@ extern "C" {
 
   int cosem_getUtf8String2(gxByteBuffer* bb, char* value, uint16_t capacity, uint16_t* size);
 
-  int cosem_setDateTimeAsOctectString(gxByteBuffer* bb, gxtime* value);
+  int cosem_setDateTimeAsOctetString(gxByteBuffer* bb, gxtime* value);
 
-  int cosem_setDateAsOctectString(gxByteBuffer* bb, gxtime* value);
+  int cosem_setDateAsOctetString(gxByteBuffer* bb, gxtime* value);
 
   int cosem_setBitString(gxByteBuffer* bb, uint32_t value, uint16_t count);
 
-  int cosem_setTimeAsOctectString(gxByteBuffer* bb, gxtime* value);
+  int cosem_setTimeAsOctetString(gxByteBuffer* bb, gxtime* value);
 
   int cosem_setDateTime(gxByteBuffer* bb, gxtime* value);
 
@@ -143,9 +170,13 @@ extern "C" {
 
   int cosem_setTime(gxByteBuffer* bb, gxtime* value);
 
-  int cosem_setOctectString(gxByteBuffer* bb, gxByteBuffer* value);
+  int cosem_setOctetString(gxByteBuffer* bb, gxByteBuffer* value);
 
-  int cosem_setOctectString2(
+  int cosem_setString(gxByteBuffer* bb, const char* value);
+
+  int cosem_setString2(gxByteBuffer* bb, gxByteBuffer* value);
+
+  int cosem_setOctetString2(
       gxByteBuffer* bb,
       const unsigned char* value,
       uint16_t size);
@@ -173,6 +204,13 @@ extern "C" {
       dlmsVARIANT* parameters,
       gxArray* columns);
 #endif //DLMS_IGNORE_PROFILE_GENERIC
+
+  //Find object from settings object and create if not found.
+  int cosem_findObjectByLN(
+      dlmsSettings* settings,
+      DLMS_OBJECT_TYPE ot,
+      const unsigned char* ln,
+      gxObject** object);
 
 #ifdef  __cplusplus
 }

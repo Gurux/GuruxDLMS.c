@@ -69,6 +69,33 @@ int obj_typeToString(DLMS_OBJECT_TYPE type, char* buff)
     return 0;
 }
 
+int obj_UInt16ArrayToString(gxByteBuffer* bb, gxArray* arr)
+{
+    int ret = 0, pos;
+    uint16_t* it;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+        if (pos != 0)
+        {
+            bb_addString(bb, ", ");
+        }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        if ((ret = arr_getByIndex2(arr, pos, (void**)&it, sizeof(uint16_t))) != 0 ||
+            (ret = bb_addIntAsString(bb, *it)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0 ||
+            (ret = bb_addIntAsString(bb, *it)) != 0)
+        {
+            break;
+        }
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    }
+    return ret;
+}
+
 const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
 {
     const char* ret;
@@ -209,9 +236,6 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
         break;
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
         ret = GET_STR_FROM_EEPROM("MBUSMasterPortSetup");
-        break;
-    case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
-        ret = GET_STR_FROM_EEPROM("MessageHandler");
         break;
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
         ret = GET_STR_FROM_EEPROM("PushSetup");
@@ -502,7 +526,7 @@ int obj_DataToString(gxData* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     ret = var_toString(&object->value, &ba);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
@@ -518,9 +542,9 @@ int obj_RegisterToString(gxRegister* object, char** buff)
     bb_addDoubleAsString(&ba, hlp_getScaler(object->scaler));
     bb_addString(&ba, " Unit: ");
     bb_addString(&ba, obj_getUnitAsString(object->unit));
-    bb_addString(&ba, "\r\nIndex: 2 Value: ");
+    bb_addString(&ba, "\nIndex: 2 Value: ");
     ret = var_toString(&object->value, &ba);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
@@ -538,29 +562,29 @@ int obj_clockToString(gxClock* object, char** buff)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->timeZone);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->status);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     ret = time_toString(&object->begin, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     ret = time_toString(&object->end, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_addIntAsString(&ba, object->deviation);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->enabled);
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
     bb_addIntAsString(&ba, object->clockBase);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
@@ -587,7 +611,7 @@ int obj_ScriptTableToString(gxScriptTable* object, char** buff)
             return ret;
         }
         bb_addIntAsString(&ba, s->id);
-        bb_addString(&ba, "\r\n");
+        bb_addString(&ba, "\n");
         for (pos2 = 0; pos2 != s->actions.size; ++pos2)
         {
             ret = arr_getByIndex(&s->actions, pos2, (void**)&sa);
@@ -630,7 +654,7 @@ int obj_ScriptTableToString(gxScriptTable* object, char** buff)
             }
         }
     }
-    bb_addString(&ba, "]\r\n");
+    bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -665,7 +689,7 @@ int obj_specialDaysTableToString(gxSpecialDaysTable* object, char** buff)
         bb_addString(&ba, " ");
         bb_addIntAsString(&ba, sd->dayId);
     }
-    bb_addString(&ba, "]\r\n");
+    bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -678,20 +702,20 @@ int obj_TcpUdpSetupToString(gxTcpUdpSetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->port);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     bb_addLogicalName(&ba, obj_getLogicalName((gxObject*)object->ipSetup));
 #else
     bb_addLogicalName(&ba, object->ipReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->maximumSegmentSize);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->maximumSimultaneousConnections);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->inactivityTimeout);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -704,31 +728,12 @@ int obj_mBusMasterPortSetupToString(gxMBusMasterPortSetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->commSpeed);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
 }
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
-#ifndef DLMS_IGNORE_MESSAGE_HANDLER
-int obj_messageHandlerToString(
-    gxMessageHandler* object,
-    char** buff)
-{
-    gxByteBuffer ba;
-    BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value: ");
-    //TODO: bb_addIntAsString(&ba, object->listeningWindow);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
-    //TODO: bb_addIntAsString(&ba, object->allowedSenders);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
-    //TODO: bb_addIntAsString(&ba, object->sendersAndActions);
-    bb_addString(&ba, "\r\n");
-    *buff = bb_toString(&ba);
-    bb_clear(&ba);
-    return 0;
-}
-#endif //DLMS_IGNORE_MESSAGE_HANDLER
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int obj_pushSetupToString(gxPushSetup* object, char** buff)
 {
@@ -736,17 +741,17 @@ int obj_pushSetupToString(gxPushSetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     //TODO: bb_addIntAsString(&ba, object->pushObjectList);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     //TODO: bb_addIntAsString(&ba, object->sendDestinationAndMethod);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     //TODO: bb_addIntAsString(&ba, object->communicationWindow);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->randomisationStartInterval);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->numberOfRetries);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_addIntAsString(&ba, object->repetitionDelay);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -761,11 +766,11 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->mode);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->repetitions);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->repetitionDelay);
-    bb_addString(&ba, "\r\nIndex: 5 Value: [");
+    bb_addString(&ba, "\nIndex: 5 Value: [");
     for (pos = 0; pos != object->callingWindow.size; ++pos)
     {
         if (pos != 0)
@@ -782,7 +787,7 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
         time_toString((gxtime*)k->value, &ba);
     }
     bb_addString(&ba, "]");
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     for (pos = 0; pos != object->destinations.size; ++pos)
     {
         if (pos != 0)
@@ -796,7 +801,7 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
         }
         bb_set2(&ba, dest, 0, bb_size(dest));
     }
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -819,11 +824,13 @@ int obj_seasonProfileToString(gxArray* arr, gxByteBuffer* ba)
         {
             return ret;
         }
-        bb_attachString(ba, bb_toString(&it->name));
-        bb_addString(ba, " ");
+        bb_addString(ba, "{");
+        bb_attachString(ba, bb_toHexString(&it->name));
+        bb_addString(ba, ", ");
         time_toString(&it->start, ba);
-        bb_addString(ba, " ");
-        bb_attachString(ba, bb_toString(&it->weekName));
+        bb_addString(ba, ", ");
+        bb_attachString(ba, bb_toHexString(&it->weekName));
+        bb_addString(ba, "}");
     }
     bb_addString(ba, "]");
     return 0;
@@ -924,45 +931,45 @@ int obj_activityCalendarToString(gxActivityCalendar* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_attachString(&ba, bb_toString(&object->calendarNameActive));
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     ret = obj_seasonProfileToString(&object->seasonProfileActive, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     ret = obj_weekProfileToString(&object->weekProfileTableActive, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     ret = obj_dayProfileToString(&object->dayProfileTableActive, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_attachString(&ba, bb_toString(&object->calendarNamePassive));
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     ret = obj_seasonProfileToString(&object->seasonProfilePassive, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     ret = obj_weekProfileToString(&object->weekProfileTablePassive, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
     ret = obj_dayProfileToString(&object->dayProfileTablePassive, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
@@ -975,13 +982,13 @@ int obj_securitySetupToString(gxSecuritySetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->securityPolicy);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->securitySuite);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
-    bb_attachString(&ba, bb_toString(&object->serverSystemTitle));
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
-    bb_attachString(&ba, bb_toString(&object->clientSystemTitle));
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
+    bb_attachString(&ba, bb_toHexString(&object->serverSystemTitle));
+    bb_addString(&ba, "\nIndex: 5 Value: ");
+    bb_attachString(&ba, bb_toHexString(&object->clientSystemTitle));
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -994,21 +1001,21 @@ int obj_hdlcSetupToString(gxIecHdlcSetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->communicationSpeed);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->windowSizeTransmit);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->windowSizeReceive);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->maximumInfoLengthTransmit);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->maximumInfoLengthReceive);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_addIntAsString(&ba, object->interCharachterTimeout);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->inactivityTimeout);
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
     bb_addIntAsString(&ba, object->deviceAddress);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1021,21 +1028,21 @@ int obj_localPortSetupToString(gxLocalPortSetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->defaultMode);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->defaultBaudrate);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->proposedBaudrate);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->responseTime);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_attachString(&ba, bb_toString(&object->deviceAddress));
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_attachString(&ba, bb_toString(&object->password1));
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_attachString(&ba, bb_toString(&object->password2));
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
     bb_attachString(&ba, bb_toString(&object->password5));
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1101,99 +1108,107 @@ int obj_demandRegisterToString(gxDemandRegister* object, char** buff)
     int ret;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value: ");
-    ret = var_toString(&object->currentAverageValue, &ba);
-    if (ret != 0)
+    if ((ret = bb_addString(&ba, "Index: 2 Value: ")) == 0 &&
+        (ret = var_toString(&object->currentAverageValue, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 3 Value: ")) == 0 &&
+        (ret = var_toString(&object->lastAverageValue, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 4 Value: Scaler: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->scaler)) == 0 &&
+        (ret = bb_addString(&ba, " Unit: ")) == 0 &&
+        (ret = bb_addString(&ba, obj_getUnitAsString(object->unit))) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 5 Value: ")) == 0 &&
+        (ret = var_toString(&object->status, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 6 Value: ")) == 0 &&
+        (ret = time_toString(&object->captureTime, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 7 Value: ")) == 0 &&
+        (ret = time_toString(&object->startTimeCurrent, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 8 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->period)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 9 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->numberOfPeriods)) == 0 &&
+        (ret = bb_addString(&ba, "\n")) == 0)
     {
-        return ret;
+        *buff = bb_toString(&ba);
     }
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
-    ret = var_toString(&object->lastAverageValue, &ba);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    bb_addString(&ba, "\r\nIndex: 4 Value: Scaler: ");
-    bb_addDoubleAsString(&ba, hlp_getScaler(object->scaler));
-    bb_addString(&ba, " Unit: ");
-    bb_addString(&ba, obj_getUnitAsString(object->unit));
-
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
-    ret = var_toString(&object->status, &ba);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
-    time_toString(&object->captureTime, &ba);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
-    time_toString(&object->startTimeCurrent, &ba);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
-    bb_addIntAsString(&ba, object->period);
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
-    bb_addIntAsString(&ba, object->numberOfPeriods);
-    bb_addString(&ba, "\r\n");
-    *buff = bb_toString(&ba);
     bb_clear(&ba);
-    return 0;
+    return ret;
 }
 #endif //DLMS_IGNORE_DEMAND_REGISTER
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
 int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
 {
-    int pos, ret;
+    int pos, ret = 0;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
     gxObjectDefinition* od;
+    gxKey* it;
 #else
     gxObject* od;
-#endif //DLMS_IGNORE_OBJECT_POINTERS
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    gxRegisterActivationMask* it;
+#else
     gxKey* it;
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+#endif //DLMS_IGNORE_OBJECT_POINTERS
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     for (pos = 0; pos != object->registerAssignment.size; ++pos)
     {
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
+#if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
         ret = oa_getByIndex(&object->registerAssignment, pos, &od);
 #else
         ret = arr_getByIndex(&object->registerAssignment, pos, (void**)&od);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         if (ret != 0)
         {
-            return ret;
+            break;
         }
         if (pos != 0)
         {
             bb_addString(&ba, ", ");
         }
-        bb_addIntAsString(&ba, od->objectType);
-        bb_addString(&ba, " ");
-        hlp_appendLogicalName(&ba, od->logicalName);
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(ret == 0);
-#endif
+        if ((ret = bb_addIntAsString(&ba, od->objectType)) != 0 ||
+            (ret = bb_addString(&ba, " ")) != 0 ||
+            (ret = hlp_appendLogicalName(&ba, od->logicalName)) != 0)
+        {
+            break;
+        }
     }
-    bb_addString(&ba, "]\r\n");
-    bb_addString(&ba, "Index: 3 Value: [");
-    for (pos = 0; pos != object->maskList.size; ++pos)
+    if (ret == 0)
     {
-        ret = arr_getByIndex(&object->maskList, pos, (void**)&it);
-        if (ret != 0)
+        if ((ret = bb_addString(&ba, "]\n")) == 0 &&
+            (ret = bb_addString(&ba, "Index: 3 Value: [")) == 0)
         {
-            return ret;
+            for (pos = 0; pos != object->maskList.size; ++pos)
+            {
+                ret = arr_getByIndex(&object->maskList, pos, (void**)&it);
+                if (ret != 0)
+                {
+                    break;
+                }
+                if (pos != 0)
+                {
+                    bb_addString(&ba, ", ");
+                }
+#if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+                bb_attachString(&ba, bb_toString((gxByteBuffer*)it->key));
+                bb_addString(&ba, " ");
+                bb_attachString(&ba, bb_toString((gxByteBuffer*)it->value));
+#else
+                if ((ret = bb_attachString(&ba, bb_toHexString(&it->name))) != 0 ||
+                    (ret = bb_addString(&ba, ": ")) != 0 ||
+                    (ret = bb_attachString(&ba, bb_toHexString(&it->indexes))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+            }
+            bb_addString(&ba, "]\n");
+            *buff = bb_toString(&ba);
         }
-        if (pos != 0)
-        {
-            bb_addString(&ba, ", ");
-        }
-        bb_attachString(&ba, bb_toString((gxByteBuffer*)it->key));
-        bb_addString(&ba, " ");
-        bb_attachString(&ba, bb_toString((gxByteBuffer*)it->value));
     }
-    bb_addString(&ba, "]\r\n");
-    *buff = bb_toString(&ba);
     bb_clear(&ba);
-    return 0;
+    return ret;
 }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
@@ -1238,7 +1253,7 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
         assert(ret == 0);
 #endif
     }
-    bb_addString(&ba, "]\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "]\nIndex: 3 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     if (object->monitoredValue.target == NULL)
     {
@@ -1260,7 +1275,7 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
     bb_addString(&ba, " ");
     bb_addIntAsString(&ba, object->monitoredValue.attributeIndex);
 
-    bb_addString(&ba, "\r\nIndex: 4 Value: [");
+    bb_addString(&ba, "\nIndex: 4 Value: [");
     for (pos = 0; pos != object->actions.size; ++pos)
     {
         ret = arr_getByIndex(&object->actions, pos, (void**)&as);
@@ -1276,7 +1291,7 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
         bb_addString(&ba, " ");
         actionItemToString(&as->actionDown, &ba);
     }
-    bb_addString(&ba, "]\r\n");
+    bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1305,10 +1320,10 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
 
     bb_addString(&ba, " ");
     bb_addIntAsString(&ba, object->executedScriptSelector);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->type);
 
-    bb_addString(&ba, "\r\nIndex: 4 Value: [");
+    bb_addString(&ba, "\nIndex: 4 Value: [");
     for (pos = 0; pos != object->executionTime.size; ++pos)
     {
         ret = arr_getByIndex(&object->executionTime, pos, (void**)&tm);
@@ -1329,7 +1344,7 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
             }
         }
     }
-    bb_addString(&ba, "]\r\n");
+    bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return DLMS_ERROR_CODE_OK;
@@ -1355,10 +1370,10 @@ int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
             bb_addString(&ba, ", ");
         }
         bb_addIntAsString(&ba, it->id);
-        bb_addString(&ba, " ");
+        bb_addString(&ba, ": ");
         bb_set2(&ba, &it->name, 0, bb_size(&it->name));
     }
-    bb_addString(&ba, "]\r\n");
+    bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1373,7 +1388,7 @@ int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->mode);
-    bb_addString(&ba, "\r\nIndex: 3 Value: [");
+    bb_addString(&ba, "\nIndex: 3 Value: [");
     for (pos = 0; pos != object->listeningWindow.size; ++pos)
     {
         ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&it);
@@ -1389,15 +1404,15 @@ int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
         bb_addString(&ba, " ");
         time_toString((gxtime*)it->value, &ba);
     }
-    bb_addString(&ba, "]\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "]\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->status);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->numberOfCalls);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->numberOfRingsInListeningWindow);
     bb_addString(&ba, " ");
     bb_addIntAsString(&ba, object->numberOfRingsOutListeningWindow);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
@@ -1407,7 +1422,11 @@ int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
 int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
 {
     int ret, pos;
+#if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     dlmsVARIANT* tmp;
+#else
+    uint32_t* tmp;
+#endif
     gxip4SetupIpOption* ip;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -1420,12 +1439,16 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
 #else
     bb_addLogicalName(&ba, object->dataLinkLayerReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->ipAddress);
-    bb_addString(&ba, "\r\nIndex: 4 Value: [");
+    bb_addString(&ba, "\nIndex: 4 Value: [");
     for (pos = 0; pos != object->multicastIPAddress.size; ++pos)
     {
+#if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
         ret = va_getByIndex(&object->multicastIPAddress, pos, &tmp);
+#else
+        ret = arr_getByIndex2(&object->multicastIPAddress, pos, (void**)&tmp, sizeof(uint32_t));
+#endif
         if (ret != 0)
         {
             return ret;
@@ -1434,13 +1457,17 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
         {
             bb_addString(&ba, ", ");
         }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        ret = bb_addIntAsString(&ba, *tmp);
+#else
         ret = var_toString(tmp, &ba);
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         if (ret != 0)
         {
             return ret;
         }
     }
-    bb_addString(&ba, "]\r\nIndex: 5 Value: [");
+    bb_addString(&ba, "]\nIndex: 5 Value: [");
     for (pos = 0; pos != object->ipOptions.size; ++pos)
     {
         ret = arr_getByIndex(&object->ipOptions, pos, (void**)&ip);
@@ -1456,19 +1483,19 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
         bb_addString(&ba, " ");
         bb_attachString(&ba, bb_toString(&ip->data));
     }
-    bb_addString(&ba, "]\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "]\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->subnetMask);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_addIntAsString(&ba, object->gatewayIPAddress);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->useDHCP);
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
     bb_addIntAsString(&ba, object->primaryDNSAddress);
-    bb_addString(&ba, "\r\nIndex: 10 Value: ");
+    bb_addString(&ba, "\nIndex: 10 Value: ");
     bb_addIntAsString(&ba, object->secondaryDNSAddress);
-    bb_addString(&ba, "\r\nIndex: 11 Value: ");
+    bb_addString(&ba, "\nIndex: 11 Value: ");
     var_toString(&object->value, &ba);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1555,15 +1582,15 @@ int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
 #else
     bb_addLogicalName(&ba, object->dataLinkLayerReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    if ((ret = bb_addString(&ba, "\r\nIndex: 3 Value: ")) == 0 &&
+    if ((ret = bb_addString(&ba, "\nIndex: 3 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&ba, object->addressConfigMode)) == 0 &&
-        (ret = bb_addString(&ba, "\r\nIndex: 4 Value: [")) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 4 Value: [")) == 0 &&
         (ret = obj_getIPAddress(&ba, &object->unicastIPAddress)) == 0 &&
-        (ret = bb_addString(&ba, "]\r\nIndex: 5 Value: [")) == 0 &&
+        (ret = bb_addString(&ba, "]\nIndex: 5 Value: [")) == 0 &&
         (ret = obj_getIPAddress(&ba, &object->multicastIPAddress)) == 0 &&
-        (ret = bb_addString(&ba, "]\r\nIndex: 6 Value: [")) == 0 &&
+        (ret = bb_addString(&ba, "]\nIndex: 6 Value: [")) == 0 &&
         (ret = obj_getIPAddress(&ba, &object->gatewayIPAddress)) == 0 &&
-        (ret = bb_addString(&ba, "]\r\nIndex: 7 Value:")) == 0)
+        (ret = bb_addString(&ba, "]\nIndex: 7 Value: ")) == 0)
     {
         inet_ntop(AF_INET6, &object->primaryDNSAddress, tmp, sizeof(tmp));
         bb_addString(&ba, tmp);
@@ -1591,11 +1618,11 @@ int obj_UtilityTablesToString(gxUtilityTables* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->tableId);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, bb_size(&object->buffer));
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_attachString(&ba, bb_toHexString(&object->buffer));
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1609,13 +1636,13 @@ int obj_mbusSlavePortSetupToString(gxMbusSlavePortSetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->defaultBaud);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->availableBaud);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->addressState);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->busAddress);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1630,15 +1657,15 @@ int obj_imageTransferToString(gxImageTransfer* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->imageBlockSize);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_attachString(&ba, ba_toString(&object->imageTransferredBlocksStatus));
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->imageFirstNotTransferredBlockNumber);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->imageTransferEnabled);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->imageTransferStatus);
-    bb_addString(&ba, "\r\nIndex: 7 Value: [");
+    bb_addString(&ba, "\nIndex: 7 Value: [");
     for (pos = 0; pos != object->imageActivateInfo.size; ++pos)
     {
         ret = arr_getByIndex(&object->imageActivateInfo, pos, (void**)&it);
@@ -1656,7 +1683,7 @@ int obj_imageTransferToString(gxImageTransfer* object, char** buff)
         bb_addString(&ba, " ");
         bb_attachString(&ba, bb_toHexString(&it->signature));
     }
-    bb_addString(&ba, "]\r\n");
+    bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1669,11 +1696,11 @@ int obj_disconnectControlToString(gxDisconnectControl* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->outputState);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->controlState);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->controlMode);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1693,47 +1720,54 @@ int obj_limiterToString(gxLimiter* object, char** buff)
         bb_addString(&ba, ": ");
         bb_addIntAsString(&ba, object->selectedAttributeIndex);
     }
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     ret = var_toString(&object->thresholdActive, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     ret = var_toString(&object->thresholdNormal, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     ret = var_toString(&object->thresholdEmergency, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->minOverThresholdDuration);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_addIntAsString(&ba, object->minUnderThresholdDuration);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->emergencyProfile.id);
     bb_addString(&ba, " ");
     time_toString(&object->emergencyProfile.activationTime, &ba);
     bb_addString(&ba, " ");
     bb_addIntAsString(&ba, object->emergencyProfile.duration);
 
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    if ((ret = obj_UInt16ArrayToString(&ba, &object->emergencyProfileGroupIDs)) != 0)
+    {
+        return ret;
+    }
+#else
     if ((ret = va_toString(&object->emergencyProfileGroupIDs, &ba)) != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 10 Value: ");
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    bb_addString(&ba, "\nIndex: 10 Value: ");
     bb_addIntAsString(&ba, object->emergencyProfileActive);
-    bb_addString(&ba, "\r\nIndex: 11 Value: ");
+    bb_addString(&ba, "\nIndex: 11 Value: ");
     actionItemToString(&object->actionOverThreshold, &ba);
-    bb_addString(&ba, "\r\nIndex: 12 Value: ");
+    bb_addString(&ba, "\nIndex: 12 Value: ");
     actionItemToString(&object->actionUnderThreshold, &ba);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1746,9 +1780,9 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->capturePeriod);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->primaryAddress);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     if (object->mBusPort != NULL)
     {
@@ -1757,27 +1791,27 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
 #else
     bb_addLogicalName(&ba, object->mBusPortReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     //TODO: bb_addIntAsString(&ba, object->captureDefinition);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->identificationNumber);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_addIntAsString(&ba, object->manufacturerID);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->dataHeaderVersion);
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
     bb_addIntAsString(&ba, object->deviceType);
-    bb_addString(&ba, "\r\nIndex: 10 Value: ");
+    bb_addString(&ba, "\nIndex: 10 Value: ");
     bb_addIntAsString(&ba, object->accessNumber);
-    bb_addString(&ba, "\r\nIndex: 11 Value: ");
+    bb_addString(&ba, "\nIndex: 11 Value: ");
     bb_addIntAsString(&ba, object->status);
-    bb_addString(&ba, "\r\nIndex: 12 Value: ");
+    bb_addString(&ba, "\nIndex: 12 Value: ");
     bb_addIntAsString(&ba, object->alarm);
-    bb_addString(&ba, "\r\nIndex: 13 Value: ");
+    bb_addString(&ba, "\nIndex: 13 Value: ");
     bb_addIntAsString(&ba, object->configuration);
-    bb_addString(&ba, "\r\nIndex: 14 Value: ");
+    bb_addString(&ba, "\nIndex: 14 Value: ");
     bb_addIntAsString(&ba, object->encryptionKeyStatus);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1792,7 +1826,7 @@ int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->communicationSpeed);
-    bb_addString(&ba, "\r\nIndex: 3 Value: [");
+    bb_addString(&ba, "\nIndex: 3 Value: [");
     for (pos = 0; pos != object->initialisationStrings.size; ++pos)
     {
         ret = arr_getByIndex(&object->initialisationStrings, pos, (void**)&mi);
@@ -1810,7 +1844,7 @@ int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
         bb_addString(&ba, " ");
         bb_addIntAsString(&ba, mi->delay);
     }
-    bb_addString(&ba, "]\r\nIndex: 4 Value: [");
+    bb_addString(&ba, "]\nIndex: 4 Value: [");
     for (pos = 0; pos != object->modemProfile.size; ++pos)
     {
         ret = arr_getByIndex(&object->modemProfile, pos, (void**)&it);
@@ -1824,7 +1858,7 @@ int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
         }
         bb_attachString(&ba, bb_toString(it));
     }
-    bb_addString(&ba, "]\r\n");
+    bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1837,7 +1871,7 @@ int obj_macAddressSetupToString(gxMacAddressSetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_attachString(&ba, bb_toString(&object->macAddress));
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1865,13 +1899,13 @@ int obj_GPRSSetupToString(gxGPRSSetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_attachString(&ba, bb_toString(&object->apn));
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->pinCode);
-    bb_addString(&ba, "\r\nIndex: 4 Value: [");
+    bb_addString(&ba, "\nIndex: 4 Value: [");
     qualityOfServiceToString(&object->defaultQualityOfService, &ba);
-    bb_addString(&ba, "]\r\nIndex: 5 Value: [");
+    bb_addString(&ba, "]\nIndex: 5 Value: [");
     qualityOfServiceToString(&object->requestedQualityOfService, &ba);
-    bb_addString(&ba, "]\r\n");
+    bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1889,19 +1923,19 @@ int obj_extendedRegisterToString(gxExtendedRegister* object, char** buff)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 3 Value: Scaler: ");
+    bb_addString(&ba, "\nIndex: 3 Value: Scaler: ");
     bb_addIntAsString(&ba, object->scaler);
     bb_addString(&ba, " Unit: ");
     bb_addString(&ba, obj_getUnitAsString(object->unit));
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     ret = var_toString(&object->status, &ba);
     if (ret != 0)
     {
         return ret;
     }
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     time_toString(&object->captureTime, &ba);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -1963,7 +1997,7 @@ int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
                 return ret;
             }
         }
-        bb_addString(ba, "\r\n");
+        bb_addString(ba, "\n");
     }
     return 0;
 }
@@ -2024,24 +2058,24 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** 
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     obj_objectsToString(&ba, &object->objectList);
-    bb_addString(&ba, "]\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "]\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->clientSAP);
     bb_addString(&ba, "/");
     bb_addIntAsString(&ba, object->serverSAP);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     obj_applicationContextNameToString(&ba, &object->applicationContextName);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     obj_xDLMSContextTypeToString(&ba, &object->xDLMSContextInfo);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     obj_authenticationMechanismNameToString(&ba, &object->authenticationMechanismName);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_attachString(&ba, bb_toString(&object->secret));
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->associationStatus);
     //Security Setup Reference is from version 1.
     if (object->base.version > 0)
     {
-        bb_addString(&ba, "\r\nIndex: 9 Value: ");
+        bb_addString(&ba, "\nIndex: 9 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         bb_addLogicalName(&ba, obj_getLogicalName((gxObject*)object->securitySetup));
 #else
@@ -2050,7 +2084,7 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** 
     }
     if (object->base.version > 1)
     {
-        bb_addString(&ba, "\r\nIndex: 10 Value: [\r\n");
+        bb_addString(&ba, "\nIndex: 10 Value: [\n");
         for (pos = 0; pos != object->userList.size; ++pos)
         {
             if ((ret = arr_getByIndex(&object->userList, pos, (void**)&it)) != 0)
@@ -2062,9 +2096,9 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** 
             bb_addString(&ba, " Name: ");
             bb_addString(&ba, (char*)it->value);
         }
-        bb_addString(&ba, "]\r\n");
+        bb_addString(&ba, "]\n");
     }
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -2077,15 +2111,15 @@ int obj_associationShortNameToString(gxAssociationShortName* object, char** buff
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     obj_objectsToString(&ba, &object->objectList);
-    bb_addString(&ba, "]\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "]\nIndex: 3 Value: ");
     //TODO: Show access rights.
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     bb_addLogicalName(&ba, obj_getLogicalName((gxObject*)object->securitySetup));
 #else
     hlp_appendLogicalName(&ba, object->securitySetupReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -2099,7 +2133,7 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: [");
     //TODO: ipcpOptions
-    bb_addString(&ba, "]\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "]\nIndex: 3 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     if (object->phy != NULL)
     {
@@ -2108,15 +2142,15 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
 #else
     bb_addLogicalName(&ba, object->PHYReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    bb_addString(&ba, "\r\nIndex: 4 Value: [");
+    bb_addString(&ba, "\nIndex: 4 Value: [");
     //TODO: lcpOptions
-    bb_addString(&ba, "]\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "]\nIndex: 5 Value: ");
     bb_attachString(&ba, bb_toString(&object->userName));
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_attachString(&ba, bb_toString(&object->password));
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_addIntAsString(&ba, object->authentication);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -2125,27 +2159,40 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
 
 int obj_CaptureObjectsToString(gxByteBuffer* ba, gxArray* objects)
 {
-    gxKey* kv;
-    int ret, pos;
-    objectArray tmp;
-    oa_init(&tmp);
-    oa_capacity(&tmp, objects->size);
+    uint16_t pos;
+    int ret = DLMS_ERROR_CODE_OK;
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    gxTarget* it;
+#else
+    gxKey* it;
+#endif //#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     for (pos = 0; pos != objects->size; ++pos)
     {
-        ret = arr_getByIndex(objects, pos, (void**)&kv);
-        if (ret != 0)
+        if ((ret = arr_getByIndex(objects, pos, (void**)&it)) != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
-        oa_push(&tmp, (gxObject*)kv->key);
+        if (pos != 0)
+        {
+            bb_addString(ba, ", ");
+        }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        if ((ret = bb_addString(ba, obj_typeToString2((DLMS_OBJECT_TYPE)it->target->objectType))) != 0 ||
+            (ret = bb_addString(ba, " ")) != 0 ||
+            (ret = hlp_appendLogicalName(ba, it->target->logicalName)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = bb_addString(ba, obj_typeToString2(((gxObject*)it->key)->objectType))) != 0 ||
+            (ret = bb_addString(ba, " ")) != 0 ||
+            (ret = hlp_appendLogicalName(ba, ((gxObject*)it->key)->logicalName)) != 0)
+        {
+            break;
+        }
+#endif //#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     }
-    ret = obj_objectsToString(ba, &tmp);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    oa_empty(&tmp);
-    return 0;
+    return ret;
 }
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
@@ -2155,15 +2202,15 @@ int obj_ProfileGenericToString(gxProfileGeneric* object, char** buff)
     int ret;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value: [\r\n");
+    bb_addString(&ba, "Index: 2 Value: [\n");
     obj_rowsToString(&ba, &object->buffer);
-    bb_addString(&ba, "]\r\nIndex: 3 Value: [");
+    bb_addString(&ba, "]\nIndex: 3 Value: [");
     obj_CaptureObjectsToString(&ba, &object->captureObjects);
-    bb_addString(&ba, "]\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "]\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->capturePeriod);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->sortMethod);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     if (object->sortObject != NULL)
     {
         ret = hlp_appendLogicalName(&ba, object->sortObject->logicalName);
@@ -2172,66 +2219,87 @@ int obj_ProfileGenericToString(gxProfileGeneric* object, char** buff)
             return ret;
         }
     }
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     bb_addIntAsString(&ba, object->entriesInUse);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->profileEntries);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
 }
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_ACCOUNT
+int obj_appendReferences(gxByteBuffer* ba, gxArray* list)
+{
+    int ret = 0, pos;
+    unsigned char* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(list, pos, (void**)&it, 6)) != 0 ||
+#else
+        if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
+            (ret = hlp_appendLogicalName(ba, it)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
 int obj_accountToString(gxAccount* object, char** buff)
 {
+    int ret;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value: [\r\n");
-    bb_addIntAsString(&ba, object->paymentMode);
-    bb_addString(&ba, "\r\n");
-    bb_addIntAsString(&ba, object->accountStatus);
-    bb_addString(&ba, "]");
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
-    bb_addIntAsString(&ba, object->currentCreditInUse);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
-    bb_addIntAsString(&ba, object->currentCreditStatus);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
-    bb_addIntAsString(&ba, object->availableCredit);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
-    bb_addIntAsString(&ba, object->amountToClear);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
-    bb_addIntAsString(&ba, object->clearanceThreshold);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
-    bb_addIntAsString(&ba, object->aggregatedDebt);
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
-    //TODO:
-//    bb_addIntAsString(&ba, object->creditReferences);
-    bb_addString(&ba, "\r\nIndex: 10 Value: ");
-    //  bb_addIntAsString(&ba, object->chargeReferences);
-    bb_addString(&ba, "\r\nIndex: 11 Value: ");
-    //bb_addIntAsString(&ba, &object->creditChargeConfigurations);
-
-    bb_addString(&ba, "\r\nIndex: 12 Value: ");
-    //  bb_addIntAsString(&ba, object->tokenGatewayConfigurations);
-    bb_addString(&ba, "\r\nIndex: 13 Value: ");
-    time_toString(&object->accountActivationTime, &ba);
-    bb_addString(&ba, "\r\nIndex: 14 Value: ");
-    time_toString(&object->accountClosureTime, &ba);
-    bb_addString(&ba, "\r\nIndex: 15 Value: ");
-    // bb_addIntAsString(&ba, object->currency);
-    bb_addString(&ba, "\r\nIndex: 16 Value: ");
-    bb_addIntAsString(&ba, object->lowCreditThreshold);
-    bb_addString(&ba, "\r\nIndex: 17 Value: ");
-    bb_addIntAsString(&ba, object->nextCreditAvailableThreshold);
-    bb_addString(&ba, "\r\nIndex: 18 Value: ");
-    bb_addIntAsString(&ba, object->maxProvision);
-    bb_addString(&ba, "\r\nIndex: 19 Value: ");
-    bb_addIntAsString(&ba, object->maxProvisionPeriod);
-    bb_addString(&ba, "\r\n");
-    *buff = bb_toString(&ba);
+    if ((ret = bb_addString(&ba, "Index: 2 Value: [\n")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->paymentMode)) == 0 &&
+        (ret = bb_addString(&ba, "\n")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->accountStatus)) == 0 &&
+        (ret = bb_addString(&ba, "]")) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 3 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->currentCreditInUse)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 4 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->currentCreditStatus)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 5 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->availableCredit)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 6 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->amountToClear)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 7 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->clearanceThreshold)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 8 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->aggregatedDebt)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 9 Value: ")) == 0 &&
+        (ret = obj_appendReferences(&ba, &object->creditReferences)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 10 Value: ")) == 0 &&
+        (ret = obj_appendReferences(&ba, &object->chargeReferences)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 11 Value: ")) == 0 &&
+        //bb_addIntAsString(&ba, &object->creditChargeConfigurations)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 12 Value: ")) == 0 &&
+        //  bb_addIntAsString(&ba, object->tokenGatewayConfigurations)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 13 Value: ")) == 0 &&
+        (ret = time_toString(&object->accountActivationTime, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 14 Value: ")) == 0 &&
+        (ret = time_toString(&object->accountClosureTime, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 15 Value: ")) == 0 &&
+        (ret = bb_set(&ba, object->currency.name.data, object->currency.name.size)) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->currency.scale)) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->currency.unit)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 16 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->lowCreditThreshold)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 17 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->nextCreditAvailableThreshold)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 18 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->maxProvision)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 19 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->maxProvisionPeriod)) == 0 &&
+        (ret = bb_addString(&ba, "\n")) == 0)
+    {
+        *buff = bb_toString(&ba);
+    }
     bb_clear(&ba);
-    return 0;
+    return ret;
 }
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_CREDIT
@@ -2241,25 +2309,25 @@ int obj_creditToString(gxCredit* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->currentCreditAmount);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->type);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->priority);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->warningThreshold);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->limit);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     //    bb_addIntAsString(&ba, object->creditConfiguration);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->status);
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
     bb_addIntAsString(&ba, object->presetCreditAmount);
-    bb_addString(&ba, "\r\nIndex: 10 Value: ");
+    bb_addString(&ba, "\nIndex: 10 Value: ");
     bb_addIntAsString(&ba, object->creditAvailableThreshold);
-    bb_addString(&ba, "\r\nIndex: 11 Value: ");
+    bb_addString(&ba, "\nIndex: 11 Value: ");
     time_toString(&object->period, &ba);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -2272,30 +2340,30 @@ int obj_chargeToString(gxCharge* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     bb_addIntAsString(&ba, object->totalAmountPaid);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->chargeType);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->priority);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     //TODO:
 //    bb_addIntAsString(&ba, object->unitChargeActive);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     //  bb_addIntAsString(&ba, object->unitChargePassive);
-    bb_addString(&ba, "\r\nIndex: 7 Value: ");
+    bb_addString(&ba, "\nIndex: 7 Value: ");
     time_toString(&object->unitChargeActivationTime, &ba);
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->period);
-    bb_addString(&ba, "\r\nIndex: 9 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
     //  bb_addIntAsString(&ba, object->chargeConfiguration);
-    bb_addString(&ba, "\r\nIndex: 10 Value: ");
+    bb_addString(&ba, "\nIndex: 10 Value: ");
     time_toString(&object->lastCollectionTime, &ba);
-    bb_addString(&ba, "\r\nIndex: 11 Value: ");
+    bb_addString(&ba, "\nIndex: 11 Value: ");
     bb_addIntAsString(&ba, object->lastCollectionAmount);
-    bb_addString(&ba, "\r\nIndex: 12 Value: ");
+    bb_addString(&ba, "\nIndex: 12 Value: ");
     bb_addIntAsString(&ba, object->totalAmountRemaining);
-    bb_addString(&ba, "\r\nIndex: 13 Value: ");
+    bb_addString(&ba, "\nIndex: 13 Value: ");
     bb_addIntAsString(&ba, object->proportion);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -2309,7 +2377,7 @@ int obj_tokenGatewayToString(
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -2322,15 +2390,19 @@ int obj_GsmDiagnosticToString(gxGsmDiagnostic* object, char** buff)
     gxAdjacentCell* it;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value:");
+    bb_addString(&ba, "Index: 2 Value: ");
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    bb_set(&ba, object->operatorName.data, object->operatorName.size);
+#else
     bb_addString(&ba, object->operatorName);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->status);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->circuitSwitchStatus);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     bb_addIntAsString(&ba, object->packetSwitchStatus);
-    bb_addString(&ba, "\r\nIndex: 6 Value: [");
+    bb_addString(&ba, "\nIndex: 6 Value: [");
     bb_addString(&ba, "Cell ID: ");
     bb_addIntAsString(&ba, object->cellInfo.cellId);
     bb_addString(&ba, "Location ID: ");
@@ -2341,7 +2413,7 @@ int obj_GsmDiagnosticToString(gxGsmDiagnostic* object, char** buff)
     bb_addIntAsString(&ba, object->cellInfo.ber);
     bb_addString(&ba, "]");
 
-    bb_addString(&ba, "\r\nIndex: 7 Value:[\r\n");
+    bb_addString(&ba, "\nIndex: 7 Value:[\n");
     for (pos = 0; pos != object->adjacentCells.size; ++pos)
     {
         ret = arr_getByIndex(&object->adjacentCells, pos, (void**)&it);
@@ -2357,10 +2429,10 @@ int obj_GsmDiagnosticToString(gxGsmDiagnostic* object, char** buff)
         bb_addString(&ba, ":");
         bb_addIntAsString(&ba, it->signalQuality);
     }
-    bb_addString(&ba, "]\r\n");
-    bb_addString(&ba, "\r\nIndex: 8 Value: ");
+    bb_addString(&ba, "]\n");
+    bb_addString(&ba, "\nIndex: 8 Value: ");
     time_toString(&object->captureTime, &ba);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
@@ -2373,19 +2445,19 @@ int obj_CompactDataToString(gxCompactData* object, char** buff)
     gxByteBuffer ba;
     char* tmp;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value:");
+    bb_addString(&ba, "Index: 2 Value: ");
     tmp = bb_toHexString(&object->buffer);
     bb_addString(&ba, tmp);
     gxfree(tmp);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     obj_CaptureObjectsToString(&ba, &object->captureObjects);
-    bb_addString(&ba, "\r\nIndex: 4 Value: ");
+    bb_addString(&ba, "\nIndex: 4 Value: ");
     bb_addIntAsString(&ba, object->templateId);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     tmp = bb_toHexString(&object->templateDescription);
     bb_addString(&ba, tmp);
     gxfree(tmp);
-    bb_addString(&ba, "\r\nIndex: 6 Value: ");
+    bb_addString(&ba, "\nIndex: 6 Value: ");
     bb_addIntAsString(&ba, object->captureMethod);
     *buff = bb_toString(&ba);
     bb_clear(&ba);
@@ -2396,7 +2468,18 @@ int obj_CompactDataToString(gxCompactData* object, char** buff)
 #ifndef DLMS_IGNORE_LLC_SSCS_SETUP
 int obj_LlcSscsSetupToString(gxLlcSscsSetup* object, char** buff)
 {
-    return 0;
+    int ret;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    if ((ret = bb_addString(&ba, "Index: 2 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->serviceNodeAddress)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 3 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->baseNodeAddress)) == 0)
+    {
+        *buff = bb_toString(&ba);
+    }
+    bb_clear(&ba);
+    return ret;
 }
 #endif //DLMS_IGNORE_LLC_SSCS_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
@@ -2502,7 +2585,7 @@ int obj_Iec8802LlcType1SetupToString(gxIec8802LlcType1Setup* object, char** buff
     int ret;
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);
-    if ((ret = bb_addString(&bb, "Index: 2 Value:")) == 0 &&
+    if ((ret = bb_addString(&bb, "Index: 2 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->maximumOctetsUiPdu)) == 0)
     {
         *buff = bb_toString(&bb);
@@ -2517,21 +2600,21 @@ int obj_Iec8802LlcType2SetupToString(gxIec8802LlcType2Setup* object, char** buff
     int ret;
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);
-    if ((ret = bb_addString(&bb, "Index: 2 Value:")) == 0 &&
+    if ((ret = bb_addString(&bb, "Index: 2 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->transmitWindowSizeK)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->transmitWindowSizeRW)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->maximumOctetsPdu)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->maximumNumberTransmissions)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 6 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 6 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->acknowledgementTimer)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 7 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 7 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->bitTimer)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 8 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 8 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->rejectTimer)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 9 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 9 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->busyStateTimer)) == 0)
     {
         *buff = bb_toString(&bb);
@@ -2546,15 +2629,15 @@ int obj_Iec8802LlcType3SetupToString(gxIec8802LlcType3Setup* object, char** buff
     int ret;
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);
-    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:")) == 0 &&
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->maximumOctetsACnPdu)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->maximumTransmissions)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->acknowledgementTime)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->receiveLifetime)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 6 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 6 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->transmitLifetime)) == 0)
     {
         *buff = bb_toString(&bb);
@@ -2569,11 +2652,11 @@ int obj_SFSKActiveInitiatorToString(gxSFSKActiveInitiator* object, char** buff)
     int ret;
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);
-    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:")) == 0 &&
-        (ret = bb_attachString(&bb, bb_toString(&object->systemTitle))) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value: ")) == 0 &&
+        (ret = bb_attachString(&bb, bb_toHexString(&object->systemTitle))) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->macAddress)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->lSapSelector)) == 0)
     {
         *buff = bb_toString(&bb);
@@ -2625,13 +2708,13 @@ int obj_FSKMacCountersToString(gxFSKMacCounters* object, char** buff)
         (ret = bb_addIntAsString(&bb, object->wrongInitiatorDesynchronization)) == 0 &&
         (ret = bb_addString(&bb, "]\nIndex: 3 Value:{")) == 0 &&
         (ret = obj_getArrayAsString(&bb, &object->broadcastFramesCounter)) == 0 &&
-        (ret = bb_addString(&bb, "}\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "}\nIndex: 4 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->repetitionsCounter)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->transmissionsCounter)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 6 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 6 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->crcOkFramesCounter)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 7 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 7 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->crcNOkFramesCounter)) == 0)
     {
         *buff = bb_toString(&bb);
@@ -2646,13 +2729,13 @@ int obj_SFSKMacSynchronizationTimeoutsToString(gxSFSKMacSynchronizationTimeouts*
     int ret;
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);
-    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:")) == 0 &&
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->searchInitiatorTimeout)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->synchronizationConfirmationTimeout)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->timeOutNotAddressed)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->timeOutFrameNotOK)) == 0)
     {
         *buff = bb_toString(&bb);
@@ -2663,60 +2746,40 @@ int obj_SFSKMacSynchronizationTimeoutsToString(gxSFSKMacSynchronizationTimeouts*
 #endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
 #ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
 
-
-int obj_getMacGroupAddressesAsString(gxByteBuffer* bb, gxArray* arr)
-{
-    int ret = 0, pos;
-    uint16_t* it;
-    for (pos = 0; pos != arr->size; ++pos)
-    {
-        if (pos != 0)
-        {
-            bb_addString(bb, ", ");
-        }
-        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0 ||
-            (ret = bb_addIntAsString(bb, *it)) != 0)
-        {
-            break;
-        }
-    }
-    return ret;
-}
-
 int obj_SFSKPhyMacSetUpToString(gxSFSKPhyMacSetUp* object, char** buff)
 {
     int ret = 0;
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);
-    if ((ret = bb_addString(&bb, "\nIndex: 2 Value:")) == 0 &&
+    if ((ret = bb_addString(&bb, "\nIndex: 2 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->initiatorElectricalPhase)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 3 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 3 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->deltaElectricalPhase)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 4 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 4 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->maxReceivingGain)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 5 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 5 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->maxTransmittingGain)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 6 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 6 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->searchInitiatorThreshold)) == 0 &&
         (ret = bb_addString(&bb, "\nIndex: 7 Value:[")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->markFrequency)) == 0 &&
         (ret = bb_addString(&bb, ", ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->spaceFrequency)) == 0 &&
-        (ret = bb_addString(&bb, "]\nIndex: 8 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "]\nIndex: 8 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->macAddress)) == 0 &&
         (ret = bb_addString(&bb, "\nIndex: 9 Value:{")) == 0 &&
-        (ret = obj_getMacGroupAddressesAsString(&bb, &object->macGroupAddresses)) == 0 &&
-        (ret = bb_addString(&bb, "}\nIndex: 10 Value:")) == 0 &&
+        (ret = obj_UInt16ArrayToString(&bb, &object->macGroupAddresses)) == 0 &&
+        (ret = bb_addString(&bb, "}\nIndex: 10 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->repeater)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 11 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 11 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->repeaterStatus)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 12 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 12 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->minDeltaCredit)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 13 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 13 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->initiatorMacAddress)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 14 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 14 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->synchronizationLocked)) == 0 &&
-        (ret = bb_addString(&bb, "\nIndex: 15 Value:")) == 0 &&
+        (ret = bb_addString(&bb, "\nIndex: 15 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->transmissionSpeed)) == 0)
     {
         *buff = bb_toString(&bb);
@@ -2764,13 +2827,13 @@ int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
 {
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value:");
+    bb_addString(&ba, "Index: 2 Value: ");
     bb_addString(&ba, object->calendarName);
-    bb_addString(&ba, "\r\nIndex: 3 Value: ");
+    bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->enabled);
-    bb_addString(&ba, "\r\nIndex: 5 Value: ");
+    bb_addString(&ba, "\nIndex: 5 Value: ");
     time_toString(&object->activationTime, &ba);
-    bb_addString(&ba, "\r\n");
+    bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return DLMS_ERROR_CODE_OK;
@@ -3017,11 +3080,6 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_mBusMasterPortSetupToString((gxMBusMasterPortSetup*)object, buff);
         break;
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
-#ifndef DLMS_IGNORE_MESSAGE_HANDLER
-    case DLMS_OBJECT_TYPE_MESSAGE_HANDLER:
-        ret = obj_messageHandlerToString((gxMessageHandler*)object, buff);
-        break;
-#endif //DLMS_IGNORE_MESSAGE_HANDLER
 #ifndef DLMS_IGNORE_PUSH_SETUP
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
         ret = obj_pushSetupToString((gxPushSetup*)object, buff);

@@ -128,14 +128,24 @@ static gxSecuritySetup securitySetupHighGMac;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn), BASE(sapAssignment), BASE(clock1) };
 
-static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
-                                   BASE(ldn), BASE(sapAssignment), BASE(eventCode),
-                                   BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
-                                   BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
-                                   BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(frameCounter)
+static gxObject* ALL_OBJECTS[] = {
+    BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh),
+    BASE(securitySetupHighGMac), BASE(ldn), BASE(sapAssignment), BASE(eventCode),
+    BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
+    BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
+    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(frameCounter)
 };
 
-gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE(BASE(associationNone), 0) };
+////////////////////////////////////////////////////
+//Define what is serialized to decrease EEPROM usage.
+gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
+    //Nothing is saved when authentication is not used.
+    IGNORE_ATTRIBUTE(BASE(associationNone), GET_ATTRIBUTE_ALL()),
+    //Only password is saved for low and high authentication.
+    IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
+    IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
+    //Only scaler and unit are saved for all register objects.
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2))};
 
 static uint32_t executeTime = 0;
 
@@ -277,12 +287,20 @@ void allocateProfileGenericBuffer(const char* fileName, uint32_t size)
 int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
 {
     int ret = hlp_getLogicalNameToString(pg->base.logicalName, fileName);
+#if defined(_WIN64)
+    strcat(fileName, "64.raw");
+#else // defined(_WIN32) || defined(__linux__)
     strcat(fileName, ".raw");
+#endif //defined(_WIN32) || defined(__linux__)
     return ret;
 }
 
 //Returns profile generic buffer column sizes.
-int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dataTypes, uint8_t* columnSizes, uint16_t* rowSize)
+int getProfileGenericBufferColumnSizes(
+    gxProfileGeneric* pg,
+    DLMS_DATA_TYPE* dataTypes,
+    uint8_t* columnSizes,
+    uint16_t* rowSize)
 {
     int ret = 0;
     uint8_t pos;
@@ -307,6 +325,7 @@ int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dat
         {
             e.value.ulVal = time_current();
             e.value.vt = DLMS_DATA_TYPE_UINT32;
+            pdu.size = 5;
         }
         else
         {
@@ -318,18 +337,8 @@ int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dat
             {
                 break;
             }
-        }
-        //If data is returned as byte array.
-        if ((e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray))
-        {
+            //Get data type.
             e.value.vt = pdu.data[0];
-        }
-        else
-        {
-            if ((ret = dlms_setData(&pdu, e.value.vt, &e.value)) != 0)
-            {
-                break;
-            }
         }
         if (dataTypes != NULL)
         {
@@ -381,7 +390,6 @@ uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
     }
     return count;
 }
-
 
 //Get current row count for allocated buffer.
 uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
@@ -478,6 +486,7 @@ int captureProfileGeneric(gxProfileGeneric* pg)
             {
                 e.value.ulVal = time_current();
                 e.value.vt = DLMS_DATA_TYPE_UINT32;
+                fwrite(&e.value.bVal, 4, 1, f);
             }
             else
             {
@@ -489,15 +498,8 @@ int captureProfileGeneric(gxProfileGeneric* pg)
                 {
                     break;
                 }
-            }
-            //If data is returned as byte array.
-            if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray)
-            {
-                fwrite(&e.value.byteArr->data[1], columnSizes[pos], 1, f);
-            }
-            else
-            {
-                fwrite(&e.value.bVal, columnSizes[pos], 1, f);
+                //Data type is not serialized. For that reason first byte is ignored.
+                fwrite(&e.value.byteArr->data[1], e.value.byteArr->size - 1, 1, f);
             }
         }
         fclose(f);
@@ -630,7 +632,7 @@ int addAssociationLow()
             DLMS_CONFORMANCE_ACTION |
             DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
             DLMS_CONFORMANCE_GET);
-        BB_ATTACH_STR(associationLow.secret, SECRET, strlen(SECRET));
+        BB_ATTACH_STR(associationLow.secret, SECRET, (uint16_t)strlen(SECRET));
         associationLow.securitySetup = NULL;
     }
     return ret;
@@ -667,7 +669,7 @@ int addAssociationHigh()
             DLMS_CONFORMANCE_ACTION |
             DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
             DLMS_CONFORMANCE_GET);
-        BB_ATTACH_STR(associationHigh.secret, SECRET, strlen(SECRET));
+        BB_ATTACH_STR(associationHigh.secret, SECRET, (uint16_t)strlen(SECRET));
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         associationHigh.securitySetup = &securitySetupHigh;
 #else
@@ -791,7 +793,7 @@ int addLogicalDeviceName()
         //Define Logical Device Name.
         static char LDN[17];
         sprintf(LDN, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
-        GX_OCTECT_STRING(ldn.value, LDN, sizeof(LDN));
+        GX_OCTET_STRING(ldn.value, LDN, sizeof(LDN));
     }
     return ret;
 }
@@ -1162,7 +1164,7 @@ int loadSecurity()
             fseek(f, 0L, SEEK_SET);
             gxByteBuffer bb;
             BB_ATTACH(bb, tmp, 0);
-            bb.size += (unsigned short) fread(bb.data, 1, size, f);
+            bb.size += (unsigned short)fread(bb.data, 1, size, f);
             fclose(f);
             if ((ret = bb_get(&bb, settings.base.cipher.blockCipherKey, 16)) != 0 ||
                 (ret = bb_get(&bb, settings.base.cipher.authenticationKey, 16)) != 0 ||
@@ -1200,21 +1202,19 @@ int loadSettings()
     {
         //Check that file is not empty.
         fseek(f, 0L, SEEK_END);
-        uint16_t size = (uint16_t) ftell(f);
+        uint16_t size = (uint16_t)ftell(f);
         if (size != 0)
         {
             unsigned char tmp[2048];
             fseek(f, 0L, SEEK_SET);
             gxByteBuffer bb;
             BB_ATTACH(bb, tmp, 0);
-            bb.size += (uint16_t) fread(bb.data, 1, size, f);
+            bb.size += (uint16_t)fread(bb.data, 1, size, f);
             fclose(f);
             gxSerializerSettings serializerSettings;
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
             ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
-            {
-            }
             bb_clear(&bb);
             return ret;
         }
@@ -1425,8 +1425,8 @@ int getProfileGenericDataByRangeFromRingBuffer(
     {
         if (e->parameters.byteArr->data[e->parameters.byteArr->position] == DLMS_DATA_TYPE_OCTET_STRING)
         {
-            if ((ret = cosem_getDateTimeFromOctectString(e->parameters.byteArr, &start)) != 0 ||
-                (ret = cosem_getDateTimeFromOctectString(e->parameters.byteArr, &end)) != 0)
+            if ((ret = cosem_getDateTimeFromOctetString(e->parameters.byteArr, &start)) != 0 ||
+                (ret = cosem_getDateTimeFromOctetString(e->parameters.byteArr, &end)) != 0)
             {
                 return ret;
             }
@@ -1521,6 +1521,7 @@ int readProfileGeneric(
         // If reading first time.
         if (first)
         {
+            uint16_t offset = getProfileGenericBufferEntriesInUse(pg);
             //Read all.
             if (e->selector == 0)
             {
@@ -1557,6 +1558,7 @@ int readProfileGeneric(
                     {
                         e->transactionEndIndex = pg->entriesInUse;
                     }
+                    //Get index in ring buffer.
                 }
             }
         }
@@ -1616,15 +1618,11 @@ int readProfileGeneric(
                     }
                     uint8_t colIndex;
                     gxTarget* it;
-                    unsigned char pduBuff[PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE];
-                    gxByteBuffer pdu;
-                    bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
                     //Loop capture columns and get values.
                     for (colIndex = 0; colIndex != pg->captureObjects.size; ++colIndex)
                     {
                         if ((ret = arr_getByIndex(&pg->captureObjects, colIndex, (void**)&it, sizeof(gxTarget))) == 0)
                         {
-                            bb_clear(&pdu);
                             //Date time is saved in EPOCH to save space.
                             if ((it->target->objectType == DLMS_OBJECT_TYPE_CLOCK || it->target == BASE(unixTime)) && it->attributeIndex == 2)
                             {
@@ -1636,33 +1634,19 @@ int readProfileGeneric(
                                 {
                                     clock_utcToMeterTime(&clock1, &tm);
                                 }
-                                if ((ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0)
+                                if ((ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm)) != 0)
                                 {
                                     //Error is handled later.
                                 }
                             }
                             else
                             {
-                                if (dataTypes[colIndex] == DLMS_DATA_TYPE_ARRAY || dataTypes[colIndex] == DLMS_DATA_TYPE_STRUCTURE ||
-                                    dataTypes[colIndex] == DLMS_DATA_TYPE_OCTET_STRING || dataTypes[colIndex] == DLMS_DATA_TYPE_STRING ||
-                                    dataTypes[colIndex] == DLMS_DATA_TYPE_STRING_UTF8)
-                                {
-                                    e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
-                                    ++e->value.byteArr->size;
-                                    fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
-                                    e->value.byteArr->size += columnSizes[colIndex];
-                                }
-                                else
-                                {
-                                    dlmsVARIANT value;
-                                    var_init(&value);
-                                    value.vt = dataTypes[colIndex];
-                                    fread(&value.bVal, columnSizes[colIndex], 1, f);
-                                    if ((ret = cosem_setVariant(e->value.byteArr, &value)) != 0)
-                                    {
-                                        //Error is handled later.
-                                    }
-                                }
+                                //Append data type.
+                                e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
+                                ++e->value.byteArr->size;
+                                //Read data.
+                                fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
+                                e->value.byteArr->size += columnSizes[colIndex];
                             }
                         }
                         if (ret != 0)
@@ -1747,7 +1731,7 @@ void svr_preRead(
                 e->value.byteArr = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
                 bb_init(e->value.byteArr);
             }
-            e->error = cosem_setDateTimeAsOctectString(e->value.byteArr, &dt);
+            e->error = cosem_setDateTimeAsOctetString(e->value.byteArr, &dt);
             e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
             e->handled = 1;
         }
@@ -1911,7 +1895,7 @@ int sendEventNotification2(dlmsSettings* settings)
         time_now(&dt, 1);
         //Data is send in structure. Amount of the items in structure is 2.
         cosem_setStructure(&data, 2);
-        cosem_setDateAsOctectString(&data, &dt);
+        cosem_setDateAsOctetString(&data, &dt);
         cosem_setUInt16(&data, activePowerL1Value);
         if ((ret = notify_generateEventNotificationMessages2(settings, 0, &item, &data, &pdu, &messages)) == 0)
         {
@@ -1963,6 +1947,12 @@ void handleProfileGenericActions(
     }
     else if (it->index == 2)
     {
+        //Increase power value before each load profile read to increase the value.
+        //This is needed for demo purpose only.
+        if (it->target == BASE(loadProfile))
+        {
+            readActivePowerValue();
+        }
         captureProfileGeneric(((gxProfileGeneric*)it->target));
     }
     saveSettings();
@@ -3334,5 +3324,5 @@ int main(int argc, char* argv[])
 #endif
 
     return 0;
-    }
+}
 

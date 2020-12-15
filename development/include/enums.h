@@ -324,7 +324,6 @@ extern "C" {
 
         DLMS_OBJECT_TYPE_WIRELESS_MODE_Q_CHANNEL = 73,
         DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP = 74,
-        DLMS_OBJECT_TYPE_MESSAGE_HANDLER = 60,
         DLMS_OBJECT_TYPE_PARAMETER_MONITOR = 65,
         /*
         * Arbitrator
@@ -480,20 +479,27 @@ extern "C" {
         DLMS_ACCESS_MODE_AUTHENTICATED_READ_WRITE = 6
     } DLMS_ACCESS_MODE;
 
+    /*The DLMS_METHOD_ACCESS_MODE enumerates the method access modes.*/
     typedef enum
     {
-        // <summary>
         // No access.
-        // </summary>
-        DLMS_METHOD_ACCESS_MODE_NONE = 0,
-        // <summary>
+        DLMS_METHOD_ACCESS_MODE_NONE = 0x0,
         // Access.
-        // </summary>
-        DLMS_METHOD_ACCESS_MODE_ACCESS = 1,
-        // <summary>
+        DLMS_METHOD_ACCESS_MODE_ACCESS = 0x1,
         // Authenticated Access.
-        // </summary>
-        DLMS_METHOD_ACCESS_MODE_AUTHENTICATED_ACCESS = 2
+        DLMS_METHOD_ACCESS_MODE_AUTHENTICATED_ACCESS = 0x2,
+        // Authenticated request is allowed.
+        DLMS_METHOD_ACCESS_MODE_AUTHENTICATED_REQUEST = 0x4,
+        // Encrypted request is allowed.
+        DLMS_METHOD_ACCESS_MODE_ENCRYPTED_REQUEST = 0x8,
+        // Digitally signed request is allowed.
+        DLMS_METHOD_ACCESS_MODE_DIGITALLY_SIGNED_REQUEST = 0x10,
+        // Authenticated response is allowed.
+        DLMS_METHOD_ACCESS_MODE_AUTHENTICATED_RESPONSE = 0x20,
+        // Encrypted response is allowed.
+        DLMS_METHOD_ACCESS_MODE_ENCRYPTED_RESPONSE = 0x40,
+        // Digitally signed response is allowed.
+        DLMS_METHOD_ACCESS_MODE_DIGITALLY_SIGNED_RESPONSE = 0x80
     } DLMS_METHOD_ACCESS_MODE;
 
     typedef enum
@@ -2731,7 +2737,7 @@ extern "C" {
         /*
         * Token credit.
         */
-        DLMS_CREDIT_TYPE_TOKEN,
+        DLMS_CREDIT_TYPE_TOKEN = 0,
         /*
         * Reserved credit.
         */
@@ -2793,7 +2799,7 @@ extern "C" {
         /*
         * Requires visual indication
         */
-        DLMS_CREDIT_CONFIGURATION_VISUAL = 0x10,
+        DLMS_CREDIT_CONFIGURATION_VISUAL = 0x1,
         /*
         * Requires confirmation before it can be selected/invoked
         */
@@ -2812,17 +2818,17 @@ extern "C" {
         DLMS_CREDIT_CONFIGURATION_TOKENS = 0x10
     }DLMS_CREDIT_CONFIGURATION;
 
-        /*
-        * Enumerates account credit status modes.
-        * Online help:
-        * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
-        */
+    /*
+    * Enumerates account credit status modes.
+    * Online help:
+    * http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSCharge
+    */
     typedef enum
     {
         /*
         * Consumption based collection.
         */
-        DLMS_CHARGE_TYPE_CONSUMPTION_BASED_COLLECTION,
+        DLMS_CHARGE_TYPE_CONSUMPTION_BASED_COLLECTION = 0,
         /*
         * Time based collection.
         */
@@ -2874,194 +2880,219 @@ extern "C" {
         DLMS_EXCEPTION_STATE_ERROR_SERVICE_NOT_ALLOWED = 1,
         //Unknown service.
         DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN = 2
-}DLMS_EXCEPTION_STATE_ERROR;
+    }DLMS_EXCEPTION_STATE_ERROR;
 
 
-//MIB variable initiator electrical phase.
-typedef enum
-{
-    /**
-    * Not defined.
-    */
-    DLMS_INITIATOR_ELECTRICAL_PHASE_NOT_DEFINED,
-    /**
-    * Phase 1.
-    */
-    DLMS_INITIATOR_ELECTRICAL_PHASE_1,
-    /**
-    * Phase 2.
-    */
-    DLMS_INITIATOR_ELECTRICAL_PHASE_2,
-    /**
-    * Phase 3.
-    */
-    DLMS_INITIATOR_ELECTRICAL_PHASE_3
-}DLMS_INITIATOR_ELECTRICAL_PHASE;
+    //MIB variable initiator electrical phase.
+    typedef enum
+    {
+        /**
+        * Not defined.
+        */
+        DLMS_INITIATOR_ELECTRICAL_PHASE_NOT_DEFINED,
+        /**
+        * Phase 1.
+        */
+        DLMS_INITIATOR_ELECTRICAL_PHASE_1,
+        /**
+        * Phase 2.
+        */
+        DLMS_INITIATOR_ELECTRICAL_PHASE_2,
+        /**
+        * Phase 3.
+        */
+        DLMS_INITIATOR_ELECTRICAL_PHASE_3
+    }DLMS_INITIATOR_ELECTRICAL_PHASE;
 
     /**
     * MIB variable initiator electrical phase.
     */
-typedef enum
-{
-    /**
-    * Not defined.
-    */
-    DLMS_DELTA_ELECTRICAL_PHASE_NOT_DEFINED,
-    /**
-    * The server system is connected to the same phase as the client system.
-    */
-    DLMS_DELTA_ELECTRICAL_PHASE_SAME,
+    typedef enum
+    {
+        /**
+        * Not defined.
+        */
+        DLMS_DELTA_ELECTRICAL_PHASE_NOT_DEFINED,
+        /**
+        * The server system is connected to the same phase as the client system.
+        */
+        DLMS_DELTA_ELECTRICAL_PHASE_SAME,
 
-    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_60,
+        DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_60,
 
-    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_120,
+        DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_120,
 
-    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_180,
+        DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_180,
 
-    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_MINUS_120,
+        DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_MINUS_120,
 
-    DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_MINUS_60
-}DLMS_DELTA_ELECTRICAL_PHASE;
+        DLMS_DELTA_ELECTRICAL_PHASE_DEGREES_MINUS_60
+    }DLMS_DELTA_ELECTRICAL_PHASE;
 
 
     /**
     * Repeater enumerator values.
     */
-typedef enum
-{
-    /**
-    * Newer repeater.
-    */
-    DLMS_REPEATER_NEVER,
-    /**
-    * Always repeater.
-    */
-    DLMS_REPEATER_ALWAYS,
-    /**
-    * Dynamic repeater.
-    */
-    DLMS_REPEATER_DYNAMIC
-}DLMS_REPEATER;
+    typedef enum
+    {
+        /**
+        * Newer repeater.
+        */
+        DLMS_REPEATER_NEVER,
+        /**
+        * Always repeater.
+        */
+        DLMS_REPEATER_ALWAYS,
+        /**
+        * Dynamic repeater.
+        */
+        DLMS_REPEATER_DYNAMIC
+    }DLMS_REPEATER;
 
-
-/**
-* IEC Twisted pair setup working mode.
-*/
-typedef enum
-{
-    /**
-    * The interface ignores all received frames.
-    */
-    DLMS_IEC_TWISTED_PAIR_SETUP_MODE_INACTIVE,
 
     /**
-    * Always active.
+    * IEC Twisted pair setup working mode.
     */
-    DLMS_IEC_TWISTED_PAIR_SETUP_MODE_ACTIVE
-}DLMS_IEC_TWISTED_PAIR_SETUP_MODE;
+    typedef enum
+    {
+        /**
+        * The interface ignores all received frames.
+        */
+        DLMS_IEC_TWISTED_PAIR_SETUP_MODE_INACTIVE,
 
-/**
-* PLC Source address enumerations.
-*/
-typedef enum
-{
-    DLMS_PLC_SOURCE_ADDRESS_INITIATOR = 0xC00,
-    DLMS_PLC_SOURCE_ADDRESS_NEW = 0xFFE
-}DLMS_PLC_SOURCE_ADDRESS;
+        /**
+        * Always active.
+        */
+        DLMS_IEC_TWISTED_PAIR_SETUP_MODE_ACTIVE
+    }DLMS_IEC_TWISTED_PAIR_SETUP_MODE;
 
-// PLC Destination address enumerations.
-typedef enum
-{
-    DLMS_PLC_DESTINATION_ADDRESS_ALL_PHYSICAL = 0xFFF
-}DLMS_PLC_DESTINATION_ADDRESS;
+    /**
+    * PLC Source address enumerations.
+    */
+    typedef enum
+    {
+        DLMS_PLC_SOURCE_ADDRESS_INITIATOR = 0xC00,
+        DLMS_PLC_SOURCE_ADDRESS_NEW = 0xFFE
+    }DLMS_PLC_SOURCE_ADDRESS;
 
-/**
-* PLC HDLC Source address enumerations.
-*/
-typedef enum
-{
-    // Initiator.
-    DLMS_PLC_HDLC_SOURCE_ADDRESS_INITIATOR = 0xC01,
-}DLMS_PLC_HDLC_SOURCE_ADDRESS;
+    // PLC Destination address enumerations.
+    typedef enum
+    {
+        DLMS_PLC_DESTINATION_ADDRESS_ALL_PHYSICAL = 0xFFF
+    }DLMS_PLC_DESTINATION_ADDRESS;
 
-/**
-* PLC data link data commands.
-* */
-typedef enum
-{
-    DLMS_PLC_DATA_LINK_DATA_REQUEST = 0x90
-}DLMS_PLC_DATA_LINK_DATA;
+    /**
+    * PLC HDLC Source address enumerations.
+    */
+    typedef enum
+    {
+        // Initiator.
+        DLMS_PLC_HDLC_SOURCE_ADDRESS_INITIATOR = 0xC01,
+    }DLMS_PLC_HDLC_SOURCE_ADDRESS;
 
-//  Sequence number of MAC sub frame.
-typedef enum
-{
-    DLMS_PLC_MAC_SUB_FRAMES_ONE = 0x6C6C,
-    DLMS_PLC_MAC_SUB_FRAMES_TWO = 0x3A3A,
-    DLMS_PLC_MAC_SUB_FRAMES_THREE = 0x5656,
-    DLMS_PLC_MAC_SUB_FRAMES_FOUR = 0x7171,
-    DLMS_PLC_MAC_SUB_FRAMES_FIVE = 0x1D1D,
-    DLMS_PLC_MAC_SUB_FRAMES_SIX = 0x4B4B,
-    DLMS_PLC_MAC_SUB_FRAMES_SEVEN = 0x2727,
-}DLMS_PLC_MAC_SUB_FRAMES;
+    /**
+    * PLC data link data commands.
+    * */
+    typedef enum
+    {
+        DLMS_PLC_DATA_LINK_DATA_REQUEST = 0x90
+    }DLMS_PLC_DATA_LINK_DATA;
 
-// M-Bus command.
-typedef enum
-{
-    DLMS_MBUS_COMMAND_SND_NR = 0x44,
-    DLMS_MBUS_COMMAND_SND_UD2 = 0x43,
-    DLMS_MBUS_COMMAND_RSP_UD = 0x08
-} DLMS_MBUS_COMMAND;
+    //  Sequence number of MAC sub frame.
+    typedef enum
+    {
+        DLMS_PLC_MAC_SUB_FRAMES_ONE = 0x6C6C,
+        DLMS_PLC_MAC_SUB_FRAMES_TWO = 0x3A3A,
+        DLMS_PLC_MAC_SUB_FRAMES_THREE = 0x5656,
+        DLMS_PLC_MAC_SUB_FRAMES_FOUR = 0x7171,
+        DLMS_PLC_MAC_SUB_FRAMES_FIVE = 0x1D1D,
+        DLMS_PLC_MAC_SUB_FRAMES_SIX = 0x4B4B,
+        DLMS_PLC_MAC_SUB_FRAMES_SEVEN = 0x2727,
+    }DLMS_PLC_MAC_SUB_FRAMES;
 
-// M-Bus meter type.
-typedef enum
-{
-    // Oil meter.
-    DLMS_MBUS_METER_TYPE_OIL = 1,
-    // Energy meter.
-    DLMS_MBUS_METER_TYPE_ENERGY = 2,
-    // Gas meter.
-    DLMS_MBUS_METER_TYPE_GAS = 3,
-    // Water meter.
-    DLMS_MBUS_METER_TYPE_WATER = 7,
-    // Unknown meter type.
-    DLMS_MBUS_METER_TYPE_UNKNOWN = 0x0F
-}DLMS_MBUS_METER_TYPE;
+    // M-Bus command.
+    typedef enum
+    {
+        DLMS_MBUS_COMMAND_SND_NR = 0x44,
+        DLMS_MBUS_COMMAND_SND_UD2 = 0x43,
+        DLMS_MBUS_COMMAND_RSP_UD = 0x08
+    } DLMS_MBUS_COMMAND;
 
-// M-Bus control info.
-typedef enum
-{
-    // Long M-Bus data header present, direction master to slave
-    DLMS_MBUS_CONTROL_INFO_LONG_HEADER_MASTER = 0x60,
-    // Short M-Bus data header present, direction master to slave
-    DLMS_MBUS_CONTROL_INFO_SHORT_HEADER_MASTER = 0x61,
-    // Long M-Bus data header present, direction slave to master
-    DLMS_MBUS_CONTROL_INFO_LONG_HEADER_SLAVE = 0x7C,
-    // Short M-Bus data header present, direction slave to master
-    DLMS_MBUS_CONTROL_INFO_SHORT_HEADER_SLAVE = 0x7D,
-    // M-Bus short Header.
-    DLMS_MBUS_CONTROL_INFO_SHORT_HEADER = 0x7A,
-    // M-Bus long Header.
-    DLMS_MBUS_CONTROL_INFO_LONG_HEADER = 0x72
-}DLMS_MBUS_CONTROL_INFO;
+    // M-Bus meter type.
+    typedef enum
+    {
+        // Oil meter.
+        DLMS_MBUS_METER_TYPE_OIL = 1,
+        // Energy meter.
+        DLMS_MBUS_METER_TYPE_ENERGY = 2,
+        // Gas meter.
+        DLMS_MBUS_METER_TYPE_GAS = 3,
+        // Water meter.
+        DLMS_MBUS_METER_TYPE_WATER = 7,
+        // Unknown meter type.
+        DLMS_MBUS_METER_TYPE_UNKNOWN = 0x0F
+    }DLMS_MBUS_METER_TYPE;
 
-// Encryption modes.
-typedef enum
-{
-    // Encryption is not used.
-    DLMS_MBUS_ENCRYPTION_MODE_NONE,
-    //  AES with Counter Mode (CTR) noPadding and IV.
-    DLMS_MBUS_ENCRYPTION_MODE_AES_128,
-    //  DES with Cipher Block Chaining Mode (CBC).
-    DLMS_MBUS_ENCRYPTION_MODE_DES_CBC,
-    //  DES with Cipher Block Chaining Mode (CBC) and Initial Vector.
-    DLMS_MBUS_ENCRYPTION_MODE_DES_CBC_IV,
-    // AES with Cipher Block Chaining Mode (CBC) and Initial Vector.
-    DLMS_MBUS_ENCRYPTION_MODE_AES_CBC_IV = 5,
-    // AES 128 with Cipher Block Chaining Mode (CBC) and dynamic key and Initial Vector with 0.
-    DLMS_MBUS_ENCRYPTION_MODE_AES_CBC_IV_0 = 7,
-    // TLS
-    DLMS_MBUS_ENCRYPTION_MODE_TLS = 13
-}DLMS_MBUS_ENCRYPTION_MODE;
+    // M-Bus control info.
+    typedef enum
+    {
+        // Long M-Bus data header present, direction master to slave
+        DLMS_MBUS_CONTROL_INFO_LONG_HEADER_MASTER = 0x60,
+        // Short M-Bus data header present, direction master to slave
+        DLMS_MBUS_CONTROL_INFO_SHORT_HEADER_MASTER = 0x61,
+        // Long M-Bus data header present, direction slave to master
+        DLMS_MBUS_CONTROL_INFO_LONG_HEADER_SLAVE = 0x7C,
+        // Short M-Bus data header present, direction slave to master
+        DLMS_MBUS_CONTROL_INFO_SHORT_HEADER_SLAVE = 0x7D,
+        // M-Bus short Header.
+        DLMS_MBUS_CONTROL_INFO_SHORT_HEADER = 0x7A,
+        // M-Bus long Header.
+        DLMS_MBUS_CONTROL_INFO_LONG_HEADER = 0x72
+    }DLMS_MBUS_CONTROL_INFO;
+
+    // Encryption modes.
+    typedef enum
+    {
+        // Encryption is not used.
+        DLMS_MBUS_ENCRYPTION_MODE_NONE,
+        //  AES with Counter Mode (CTR) noPadding and IV.
+        DLMS_MBUS_ENCRYPTION_MODE_AES_128,
+        //  DES with Cipher Block Chaining Mode (CBC).
+        DLMS_MBUS_ENCRYPTION_MODE_DES_CBC,
+        //  DES with Cipher Block Chaining Mode (CBC) and Initial Vector.
+        DLMS_MBUS_ENCRYPTION_MODE_DES_CBC_IV,
+        // AES with Cipher Block Chaining Mode (CBC) and Initial Vector.
+        DLMS_MBUS_ENCRYPTION_MODE_AES_CBC_IV = 5,
+        // AES 128 with Cipher Block Chaining Mode (CBC) and dynamic key and Initial Vector with 0.
+        DLMS_MBUS_ENCRYPTION_MODE_AES_CBC_IV_0 = 7,
+        // TLS
+        DLMS_MBUS_ENCRYPTION_MODE_TLS = 13
+    }DLMS_MBUS_ENCRYPTION_MODE;
+
+    // Defines the ZigBee status enumeration values.
+    typedef enum
+    {
+        /// <summary>
+        /// Authorised on PAN.
+        /// </summary>
+        DLMS_ZIG_BEE_STATUS_AUTHORISED = 0x1,
+        /// <summary>
+        /// Actively reporting on PAN.
+        /// </summary>
+        DLMS_ZIG_BEE_STATUS_REPORTING = 0x2,
+        /// <summary>
+        /// Unauthorised on PAN but has reported
+        /// </summary>
+        DLMS_ZIG_BEE_STATUS_UNAUTHORISED = 0x4,
+        /// <summary>
+        /// Authorised after swap-out.
+        /// </summary>
+        DLMS_ZIG_BEE_STATUS_AUTHORISED_SWAP_OUT = 0x8,
+        /// <summary>
+        /// SEP Transmitting.
+        /// </summary>
+        DLMS_ZIG_BEE_STATUS_SEP_TRANSMITTING = 0x10
+    }DLMS_ZIG_BEE_STATUS;
 #ifdef  __cplusplus
 }
 #endif

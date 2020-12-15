@@ -106,6 +106,12 @@
     <ClCompile Include="..\src\gxserializer.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\gxsetmalloc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxsetignoremalloc.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\apdu.h">
@@ -232,6 +238,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\gxserializer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxsetignoremalloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxsetmalloc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

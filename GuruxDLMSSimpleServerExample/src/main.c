@@ -72,6 +72,7 @@ uint32_t SERIAL_NUMBER = 123456;
 
 //TODO: Allocate space where profile generic row values are serialized.
 #define PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE 100
+
 #define HDLC_HEADER_SIZE 17
 #define HDLC_BUFFER_SIZE 128
 #define PDU_BUFFER_SIZE 512
@@ -133,7 +134,16 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter)
 };
 
-gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE(BASE(associationNone), 0) };
+////////////////////////////////////////////////////
+//Define what is serialized to decrease EEPROM usage.
+gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
+    //Nothing is saved when authentication is not used.
+    IGNORE_ATTRIBUTE(BASE(associationNone), GET_ATTRIBUTE_ALL()),
+    //Only password is saved for low and high authentication.
+    IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
+    IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
+    //Only scaler and unit are saved for all register objects.
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)) };
 
 static uint32_t executeTime = 0;
 
@@ -281,18 +291,21 @@ int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
 #endif //defined(_WIN32) || defined(__linux__)
     return ret;
 }
-
 //Returns profile generic buffer column sizes.
-int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dataTypes, uint8_t* columnSizes, uint16_t* rowSize)
+int getProfileGenericBufferColumnSizes(
+    gxProfileGeneric* pg,
+    DLMS_DATA_TYPE* dataTypes,
+    uint8_t* columnSizes,
+    uint16_t* rowSize)
 {
     int ret = 0;
     uint8_t pos;
     gxKey* it;
-    gxByteBuffer pdu;
-    bb_init(&pdu);
     gxValueEventArg e;
     ve_init(&e);
     *rowSize = 0;
+    uint16_t size;
+    unsigned char type;
     //Loop capture columns and get values.
     for (pos = 0; pos != pg->captureObjects.size; ++pos)
     {
@@ -300,13 +313,11 @@ int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dat
         {
             break;
         }
-        bb_clear(&pdu);
-        ve_clear(&e);
         //Date time is saved in EPOCH to save space.
         if (((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK && ((gxTarget*)it->value)->attributeIndex == 2)
         {
-            e.value.ulVal = time_current();
-            e.value.vt = DLMS_DATA_TYPE_UINT32;
+            type = DLMS_DATA_TYPE_UINT32;
+            size = 4;
         }
         else
         {
@@ -316,35 +327,38 @@ int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dat
             {
                 break;
             }
-        }
-        //If data is returned as byte array.
-        if ((e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray))
-        {
-            e.value.vt = pdu.data[0];
-        }
-        else
-        {
-            if ((ret = dlms_setData(&pdu, e.value.vt, &e.value)) != 0)
+            if (bb_size(e.value.byteArr) != 0)
             {
-                break;
+                if ((ret = bb_getUInt8(e.value.byteArr, &type)) != 0)
+                {
+                    break;
+                }
+                size = bb_available(e.value.byteArr);
+            }
+            else
+            {
+                type = DLMS_DATA_TYPE_NONE;
+                size = 0;
             }
         }
         if (dataTypes != NULL)
         {
-            dataTypes[pos] = e.value.vt;
+            dataTypes[pos] = type;
         }
         if (columnSizes != NULL)
         {
-            columnSizes[pos] = (uint8_t)pdu.size - 1;
+            columnSizes[pos] = (uint8_t)size;
         }
-        *rowSize += (uint16_t)(pdu.size - 1);
+        *rowSize += (uint16_t)size;
+        ve_clear(&e);
     }
-    bb_clear(&pdu);
+    ve_clear(&e);
     return ret;
 }
 
 //Get max row count for allocated buffer.
-uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
+uint16_t getProfileGenericBufferMaxRowCount(
+    gxProfileGeneric* pg)
 {
     uint16_t count = 0;
     char fileName[30];
@@ -386,7 +400,6 @@ uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
 //Get current row count for allocated buffer.
 uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
 {
-    unsigned char pos;
     uint16_t index = 0;
     int ret = 0;
     char fileName[30];
@@ -400,8 +413,6 @@ uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
     if (f != NULL)
     {
         uint16_t dataSize = 0;
-        uint8_t columnSizes[10];
-        DLMS_DATA_TYPE dataTypes[10];
         //Load current entry index from the begin of the data.
         unsigned char pduBuff[2];
         gxByteBuffer pdu;
@@ -483,6 +494,7 @@ int captureProfileGeneric(gxProfileGeneric* pg)
             {
                 e.value.ulVal = time_current();
                 e.value.vt = DLMS_DATA_TYPE_UINT32;
+                fwrite(&e.value.bVal, 4, 1, f);
             }
             else
             {
@@ -494,15 +506,8 @@ int captureProfileGeneric(gxProfileGeneric* pg)
                 {
                     break;
                 }
-            }
-            //If data is returned as byte array.
-            if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray)
-            {
-                fwrite(&e.value.byteArr->data[1], columnSizes[pos], 1, f);
-            }
-            else
-            {
-                fwrite(&e.value.bVal, columnSizes[pos], 1, f);
+                //Data type is not serialized. For that reason first byte is ignored.
+                fwrite(&e.value.byteArr->data[1], e.value.byteArr->size - 1, 1, f);
             }
         }
         fclose(f);
@@ -1223,8 +1228,6 @@ int loadSettings()
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
             ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
-            {
-            }
             bb_clear(&bb);
             return ret;
         }
@@ -1412,7 +1415,6 @@ int getRestrictingObject(dlmsSettings* settings,
   e: Parameters
 */
 int getProfileGenericDataByRangeFromRingBuffer(
-    dlmsSettings* settings,
     const char* fileName,
     gxValueEventArg* e)
 {
@@ -1426,7 +1428,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
     uint32_t last = 0;
     gxObject* obj = NULL;
     short index;
-    if ((ret = getRestrictingObject(settings, e, &obj, &index)) != 0)
+    if ((ret = getRestrictingObject(&settings.base, e, &obj, &index)) != 0)
     {
         return ret;
     }
@@ -1556,7 +1558,7 @@ int readProfileGeneric(
             else if (e->selector == 1)
             {
                 //Read by entry. Find start and end index from the ring buffer.
-                if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, fileName, e)) != 0 ||
+                if ((ret = getProfileGenericDataByRangeFromRingBuffer(fileName, e)) != 0 ||
                     (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
                 {
                     e->transactionStartIndex = e->transactionEndIndex = 0;
@@ -1650,15 +1652,11 @@ int readProfileGeneric(
                     }
                     uint8_t colIndex;
                     gxKey* it;
-                    unsigned char pduBuff[PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE];
-                    gxByteBuffer pdu;
-                    bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
                     //Loop capture columns and get values.
                     for (colIndex = 0; colIndex != pg->captureObjects.size; ++colIndex)
                     {
                         if ((ret = arr_getByIndex(&pg->captureObjects, colIndex, (void**)&it)) == 0)
                         {
-                            bb_clear(&pdu);
                             //Date time is saved in EPOCH to save space.
                             if ((((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK || (gxObject*)it->key == BASE(unixTime))
                                 && ((gxTarget*)it->value)->attributeIndex == 2)
@@ -1671,33 +1669,19 @@ int readProfileGeneric(
                                 {
                                     clock_utcToMeterTime(&clock1, &tm);
                                 }
-                                if ((ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0)
+                                if ((ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm)) != 0)
                                 {
                                     //Error is handled later.
                                 }
                             }
                             else
                             {
-                                if (dataTypes[colIndex] == DLMS_DATA_TYPE_ARRAY || dataTypes[colIndex] == DLMS_DATA_TYPE_STRUCTURE ||
-                                    dataTypes[colIndex] == DLMS_DATA_TYPE_OCTET_STRING || dataTypes[colIndex] == DLMS_DATA_TYPE_STRING ||
-                                    dataTypes[colIndex] == DLMS_DATA_TYPE_STRING_UTF8)
-                                {
-                                    e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
-                                    ++e->value.byteArr->size;
-                                    fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
-                                    e->value.byteArr->size += columnSizes[colIndex];
-                                }
-                                else
-                                {
-                                    dlmsVARIANT value;
-                                    var_init(&value);
-                                    value.vt = dataTypes[colIndex];
-                                    fread(&value.bVal, columnSizes[colIndex], 1, f);
-                                    if ((ret = cosem_setVariant(e->value.byteArr, &value)) != 0)
-                                    {
-                                        //Error is handled later.
-                                    }
-                                }
+                                //Append data type.
+                                e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
+                                ++e->value.byteArr->size;
+                                //Read data.
+                                fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
+                                e->value.byteArr->size += columnSizes[colIndex];
                             }
                         }
                         if (ret != 0)
@@ -1776,7 +1760,7 @@ void svr_preRead(
                 e->value.byteArr = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
                 bb_init(e->value.byteArr);
             }
-            e->error = cosem_setDateTimeAsOctectString(e->value.byteArr, &dt);
+            e->error = cosem_setDateTimeAsOctetString(e->value.byteArr, &dt);
             e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
             e->handled = 1;
         }
@@ -1874,7 +1858,7 @@ int sendEventNotification(dlmsSettings* settings)
         va_init(&values);
         gxtime dt;
         time_now(&dt, 1);
-        dlmsVARIANT* tmp = (dlmsVARIANT*) malloc(sizeof(dlmsVARIANT));
+        dlmsVARIANT* tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_DATETIME(*tmp) = &dt;
         va_push(&values, tmp);
         tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
@@ -1923,7 +1907,7 @@ int sendEventNotification2(dlmsSettings* settings)
         time_now(&dt, 1);
         //Data is send in structure. Amount of the items in structure is 2.
         cosem_setStructure(&data, 2);
-        cosem_setDateAsOctectString(&data, &dt);
+        cosem_setDateAsOctetString(&data, &dt);
         cosem_setUInt16(&data, activePowerL1Value);
         if ((ret = notify_generateEventNotificationMessages2(settings, 0, &item, &data, &pdu, &messages)) == 0)
         {
@@ -1976,6 +1960,12 @@ void handleProfileGenericActions(
     }
     else if (it->index == 2)
     {
+        //Increase power value before each load profile read to increase the value.
+        //This is needed for demo purpose only.
+        if (it->target == BASE(loadProfile))
+        {
+            readActivePowerValue();
+        }
         captureProfileGeneric(((gxProfileGeneric*)it->target));
     }
     saveSettings();
@@ -2046,7 +2036,7 @@ void svr_preAction(
             }
             updateState(GURUX_EVENT_CODES_GLOBAL_METER_RESET);
             e->handled = 1;
-        }
+    }
         else if (e->target == BASE(disconnectControl))
         {
             updateState(GURUX_EVENT_CODES_OUTPUT_RELAY_STATE);
@@ -2072,7 +2062,7 @@ void svr_preAction(
             testMode = 0;
             saveSettings();
         }
-    }
+}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2792,7 +2782,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-            }
+        }
             //If client closes the connection.
             if (ret == 0)
             {
@@ -2804,7 +2794,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-            }
+    }
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             if (trace > GX_TRACE_LEVEL_WARNING)
             {
@@ -2826,7 +2816,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-            }
+}
             if (reply.size != 0)
             {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -2851,7 +2841,7 @@ void ListenerThread(void* pVoid)
                     socket1 = -1;
 #endif
                     break;
-                }
+            }
                 bb_clear(&reply);
             }
         }
@@ -3234,7 +3224,7 @@ int main(int argc, char* argv[])
             0)) != 0)
         {
             return ret;
-        }
+    }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         receiverThread = (HANDLE)_beginthread(serialPortThread, 0, &comPort);
 #else
@@ -3333,12 +3323,12 @@ int main(int argc, char* argv[])
                 void* res;
                 pthread_join(receiverThread, (void**)&res);
                 free(res);
-            }
+                }
             break;
-        }
+            }
         usleep(1000000);
 #endif
-    }
+        }
     oa_clear(&settings.base.objects, 0);
     svr_clear(&settings);
 #if defined(_WIN32) || defined(_WIN64)//Windows
@@ -3348,4 +3338,4 @@ int main(int argc, char* argv[])
 #endif
 #endif
     return 0;
-}
+    }

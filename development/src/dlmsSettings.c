@@ -160,7 +160,9 @@ void cl_init(
     settings->expectedSecuritySuite = 0xFF;
     settings->expectedInvocationCounter = NULL;
     settings->expectedClientSystemTitle = NULL;
+#ifndef DLMS_IGNORE_PLC
     plc_reset(settings);
+#endif //DLMS_IGNORE_PLC
 }
 
 void cl_clear(
@@ -184,7 +186,7 @@ void cl_clear(
 #else
     bb_clear(&settings->kek);
 #endif //DLMS_IGNORE_MALLOC
-    oa_empty(&settings->objects);
+    oa_clear(&settings->objects, 0);
     settings->connected = DLMS_CONNECTION_STATE_NONE;
     settings->customChallenges = 0;
     settings->invokeID = 1;
@@ -208,7 +210,7 @@ void svr_clear(
     cl_clear(&settings->base);
 }
 
-// Set default values for PLC.
+#ifndef DLMS_IGNORE_PLC
 void plc_reset(
     dlmsSettings* settings)
 {
@@ -246,6 +248,7 @@ void plc_reset(
     }
     settings->plcSettings.responseProbability = 100;
 }
+#endif //DLMS_IGNORE_PLC
 
 void resetBlockIndex(
     dlmsSettings* settings)

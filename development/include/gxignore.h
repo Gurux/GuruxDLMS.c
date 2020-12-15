@@ -89,7 +89,6 @@ extern "C" {
 // #define DLMS_IGNORE_LIMITER
 // #define DLMS_IGNORE_MBUS_CLIENT
 // #define DLMS_IGNORE_PUSH_SETUP
-// #define DLMS_IGNORE_MESSAGE_HANDLER
 // #define DLMS_IGNORE_PARAMETER_MONITOR
 // #define DLMS_IGNORE_WIRELESS_MODE_Q_CHANNEL
 // #define DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
@@ -142,9 +141,9 @@ extern "C" {
 //Defined if program memory (flash) is used instead of SRAM.
 // #define USE_PROGMEM
 
-//COSEM objects are using DLMS standard data types.
-//Some meters are using non-DLMS data types.
-//Using exact data types will save memory, but reading failes if data type is wrong.
+// COSEM objects are using DLMS standard data types.
+// Using exact data types will save memory, but reading failes if meter returns wrong data type,
+// ex. Int8 when data type should be UInt8.
 // #define DLMS_COSEM_EXACT_DATA_TYPES
 
 #ifdef ARDUINO_ARCH_AVR

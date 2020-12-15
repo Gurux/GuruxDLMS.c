@@ -385,7 +385,9 @@ int connectMeter(int argc, char* argv[])
                 return 1;
             }
             //Update PLC settings.
+#ifndef DLMS_IGNORE_PLC
             plc_reset(&con.settings);
+#endif //DLMS_IGNORE_PLC
             break;
         case 'I':
             // AutoIncreaseInvokeID.

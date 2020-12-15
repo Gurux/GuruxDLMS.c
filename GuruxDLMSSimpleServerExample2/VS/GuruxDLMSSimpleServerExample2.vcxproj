@@ -39,6 +39,8 @@
     <ClCompile Include="..\dlms\src\gxobjects.c" />
     <ClCompile Include="..\dlms\src\gxserializer.c" />
     <ClCompile Include="..\dlms\src\gxset.c" />
+    <ClCompile Include="..\dlms\src\gxsetignoremalloc.c" />
+    <ClCompile Include="..\dlms\src\gxsetmalloc.c" />
     <ClCompile Include="..\dlms\src\gxsha1.c" />
     <ClCompile Include="..\dlms\src\gxsha256.c" />
     <ClCompile Include="..\dlms\src\gxvalueeventargs.c" />

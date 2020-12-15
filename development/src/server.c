@@ -903,6 +903,10 @@ int svr_handleSetRequest2(
             return DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE;
         }
     }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    e->value.byteArr = data;
+    e->value.vt = DLMS_DATA_TYPE_OCTET_STRING | DLMS_DATA_TYPE_BYREF;
+#else
     if (!p->multipleBlocks)
     {
         gxDataInfo di;
@@ -910,6 +914,7 @@ int svr_handleSetRequest2(
         resetBlockIndex(&settings->base);
         ret = dlms_getData(data, &di, &e->value);
     }
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     if (ret == 0)
     {
         if ((ret = oa_findByLN(&settings->base.objects, ci, ln, &e->target)) == 0)
@@ -3090,6 +3095,7 @@ int svr_handleCommand(
         }
         frame = DLMS_COMMAND_UA;
         break;
+#ifndef DLMS_IGNORE_PLC
     case DLMS_COMMAND_DISCOVER_REQUEST:
     {
         gxPlcRegister r;
@@ -3102,6 +3108,7 @@ int svr_handleCommand(
         return svr_discoverReport(&settings->base, &settings->base.plcSettings.systemTitle, 0, reply);
     case DLMS_COMMAND_PING_REQUEST:
         break;
+#endif //DLMS_IGNORE_PLC
     case DLMS_COMMAND_NONE:
         //Get next frame.
         data->position = 0;

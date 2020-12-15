@@ -530,7 +530,7 @@ int invoke_ImageTransfer(
                 return ret;
             }
 #endif //DLMS_IGNORE_MALLOC
-            uint16_t cnt = (uint16_t) (item->size / target->imageBlockSize);
+            uint16_t cnt = (uint16_t)(item->size / target->imageBlockSize);
             if (item->size % target->imageBlockSize != 0)
             {
                 ++cnt;
@@ -1070,6 +1070,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
     dlmsVARIANT* it;
 #endif //DLMS_IGNORE_MALLOC
     gxActiveDevice* ad;
+    uint32_t v;
     //Register device.
     if (index == 1)
     {
@@ -1078,17 +1079,27 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
         {
             ++object->activeDevices.size;
             BYTE_BUFFER_INIT(&ad->macAddress);
-            ba_init(&ad->status);
-            ret = cosem_getOctetString(value->byteArr, &ad->macAddress);
+            if ((ret = cosem_getOctetString(value->byteArr, &ad->macAddress)) == 0 ||
+                (ret = cosem_getIntegerFromBitString(value->byteArr, &v)) == 0)
+            {
+                ad->status = (DLMS_ZIG_BEE_STATUS)v;
+            }
         }
 #else
         if ((ret = va_getByIndex(value->Arr, 0, &it)) == 0)
         {
             ad = (gxActiveDevice*)gxcalloc(1, sizeof(gxActiveDevice));
             BYTE_BUFFER_INIT(&ad->macAddress);
-            ba_init(&ad->status);
-            bb_set(&ad->macAddress, it->byteArr->data, it->byteArr->size);
-            arr_push(&object->activeDevices, ad);
+            if ((ret = bb_set(&ad->macAddress, it->byteArr->data, it->byteArr->size)) == 0 &&
+                (ret = cosem_getIntegerFromBitString(it->byteArr, &v)) == 0)
+            {
+                ad->status = (DLMS_ZIG_BEE_STATUS)v;
+                arr_push(&object->activeDevices, ad);
+            }
+            else
+            {
+                gxfree(ad);
+            }
         }
 #endif //DLMS_IGNORE_MALLOC
     }
@@ -1311,7 +1322,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
     else if (index == 5)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        ret = cosem_getDateFromOctectString(value->byteArr, &object->presetTime);
+        ret = cosem_getDateFromOctetString(value->byteArr, &object->presetTime);
 #else
         ret = var_init(&tmp);
         if (ret != 0)
@@ -1330,7 +1341,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
         }
         object->presetTime = *tmp.dateTime;
 #endif //DLMS_IGNORE_MALLOC
-    }
+}
     // Shifts the time.
     else if (index == 6)
     {
@@ -1341,7 +1352,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_CLOCK
 #ifndef DLMS_IGNORE_REGISTER
 int invoke_Register(
@@ -1429,12 +1440,12 @@ int capture(dlmsSettings* settings,
         }
         arr_push(&object->buffer, row);
         object->entriesInUse = object->buffer.size;
-    }
+}
     svr_postGet(settings, &args);
     vec_empty(&args);
 #endif //DLMS_IGNORE_MALLOC
     return 0;
-}
+    }
 
 int invoke_ProfileGeneric(
     dlmsServerSettings* settings,
@@ -1807,7 +1818,7 @@ int invoke_SpecialDaysTable(
             if ((ret = arr_getByIndex(&object->entries, object->entries.size - 1, (void**)&specialDay, sizeof(gxSpecialDay))) != 0 ||
                 (ret = cosem_checkStructure(e->parameters.byteArr, 3)) != 0 ||
                 (ret = cosem_getUInt16(e->parameters.byteArr, &specialDay->index)) != 0 ||
-                (ret = cosem_getDateFromOctectString(e->parameters.byteArr, &specialDay->date)) != 0 ||
+                (ret = cosem_getDateFromOctetString(e->parameters.byteArr, &specialDay->date)) != 0 ||
                 (ret = cosem_getUInt8(e->parameters.byteArr, &specialDay->dayId)) != 0)
             {
                 --object->entries.size;
@@ -1884,9 +1895,9 @@ int invoke_SpecialDaysTable(
                 ret = arr_removeByIndex(&object->entries, pos, NULL);
 #endif //DLMS_IGNORE_MALLOC
                 break;
-            }
         }
     }
+}
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -1904,7 +1915,7 @@ int invoke_RegisterActivation(
     int ret = 0;
     uint16_t count;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
-    gxObjectDefinition* objectDefinition;
+    gxObjectDefinition* it;
 #else
     gxObject* it;
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -1966,9 +1977,9 @@ int invoke_RegisterActivation(
             }
             const unsigned char* ln = tmp3->byteArr->data;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
-            objectDefinition = (gxObjectDefinition*)gxmalloc(sizeof(gxObjectDefinition));
-            objectDefinition->objectType = (DLMS_OBJECT_TYPE)type;
-            memcpy(objectDefinition->logicalName, ln, 6);
+            it = (gxObjectDefinition*)gxmalloc(sizeof(gxObjectDefinition));
+            it->objectType = (DLMS_OBJECT_TYPE)type;
+            memcpy(it->logicalName, ln, 6);
 #else
             if ((ret = oa_findByLN(&settings->base.objects, type, ln, &it)) != 0)
             {
@@ -1979,10 +1990,10 @@ int invoke_RegisterActivation(
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
+#if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
             oa_push(&object->registerAssignment, it);
 #else
-            arr_push(&object->registerAssignment, objectDefinition);
+            arr_push(&object->registerAssignment, it);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         }
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
@@ -1992,7 +2003,7 @@ int invoke_RegisterActivation(
         }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
-    }
+}
     else if (e->index == 2)
     {
         count = arr_getCapacity(&object->maskList);
@@ -2009,7 +2020,7 @@ int invoke_RegisterActivation(
             (ret = arr_getByIndex(&object->maskList, object->maskList.size - 1, (void**)&k, sizeof(gxRegisterActivationMask))) == 0 &&
             (ret = cosem_getOctetString2(e->parameters.byteArr, k->name, sizeof(k->name), &size)) == 0)
         {
-            k->length = (unsigned char) size;
+            k->length = (unsigned char)size;
             size = sizeof(k->indexes);
             if ((ret = cosem_checkArray(e->parameters.byteArr, &size)) == 0)
             {

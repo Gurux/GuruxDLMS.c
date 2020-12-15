@@ -48,6 +48,11 @@
 #include "../include/gxget.h"
 #include "../include/dlms.h"
 #include "../include/cosem.h"
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+#include "../include/gxsetignoremalloc.h"
+#else
+#include "../include/gxsetmalloc.h"
+#endif //DLMS_IGNORE_MALLOC
 
 #ifndef DLMS_IGNORE_HDLC
 int cl_snrmRequest(dlmsSettings* settings, message* messages)
@@ -492,93 +497,6 @@ int cl_parseApplicationAssociationResponse(
     return 0;
 }
 
-#ifndef DLMS_IGNORE_MALLOC
-// LN referencing
-int cl_parseLNObjects(dlmsSettings* settings, gxByteBuffer* data)
-{
-    gxObject* object;
-    int ret;
-    uint16_t pos, count;
-    unsigned char size;
-    oa_clear(&settings->objects, 1);
-    unsigned char version;
-    gxDataInfo info;
-    DLMS_OBJECT_TYPE class_id;
-    dlmsVARIANT value;
-    dlmsVARIANT* it1 = NULL, * it2 = NULL, * it3 = NULL, * ln = NULL;
-    var_init(&value);
-    //Get array tag.
-    ret = bb_getUInt8(data, &size);
-    if (ret != DLMS_ERROR_CODE_OK)
-    {
-        return ret;
-    }
-    //Check that data is in the array
-    if (size != DLMS_DATA_TYPE_ARRAY)
-    {
-        return DLMS_ERROR_CODE_INVALID_RESPONSE;
-    }
-    //get object count
-    if (hlp_getObjectCount2(data, &count) != 0)
-    {
-        return DLMS_ERROR_CODE_OUTOFMEMORY;
-    }
-    oa_capacity(&settings->objects, (uint16_t)count);
-    for (pos = 0; pos != count; ++pos)
-    {
-        var_clear(&value);
-        object = NULL;
-        di_init(&info);
-        if ((ret = dlms_getData(data, &info, &value)) != 0)
-        {
-            //This fix Iskraemeco (MT-880) bug.
-            if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
-            {
-                break;
-            }
-            return ret;
-        }
-        if (value.vt != DLMS_DATA_TYPE_STRUCTURE || value.Arr->size != 4)
-        {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-        if ((ret = va_getByIndex(value.Arr, 0, &it1)) != 0 ||
-            (ret = va_getByIndex(value.Arr, 1, &it2)) != 0 ||
-            (ret = va_getByIndex(value.Arr, 2, &ln)) != 0 ||
-            (ret = va_getByIndex(value.Arr, 3, &it3)) != 0)
-        {
-            return ret;
-        }
-        if (it1->vt != DLMS_DATA_TYPE_UINT16 ||
-            it2->vt != DLMS_DATA_TYPE_UINT8 ||
-            ln->vt != DLMS_DATA_TYPE_OCTET_STRING ||
-            it3->vt != DLMS_DATA_TYPE_STRUCTURE ||
-            it3->Arr->size != 2)
-        {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-        class_id = (DLMS_OBJECT_TYPE)var_toInteger(it1);
-        version = (unsigned char)var_toInteger(it2);
-        ret = cosem_createObject(class_id, &object);
-        //If known object.
-        if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
-        {
-            object->version = version;
-            ret = obj_updateAttributeAccessModes(object, it3->Arr);
-            if (ret != 0)
-            {
-                return ret;
-            }
-            cosem_setLogicalName(object, ln->byteArr->data);
-            oa_push(&settings->objects, object);
-            oa_push(&settings->releasedObjects, object);
-        }
-    }
-    var_clear(&value);
-    return 0;
-}
-#endif //DLMS_IGNORE_MALLOC
-
 int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
 {
     int ret;
@@ -598,101 +516,20 @@ int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
     return ret;
 }
 
-#if !(defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) || defined(DLMS_IGNORE_MALLOC))
-// SN referencing
-int cl_parseSNObjects(dlmsSettings* settings, gxByteBuffer* data)
-{
-    gxDataInfo info;
-    short sn;
-    DLMS_OBJECT_TYPE class_id;
-    dlmsVARIANT value;
-    dlmsVARIANT* it1 = NULL, * it2 = NULL, * it3 = NULL, * ln = NULL;
-    gxObject* object;
-    int ret;
-    uint16_t count, pos;
-    unsigned char size, version;
-    oa_clear(&settings->objects, 1);
-    var_init(&value);
-    //Get array tag.
-    ret = bb_getUInt8(data, &size);
-    if (ret != DLMS_ERROR_CODE_OK)
-    {
-        return 0;
-    }
-    //Check that data is in the array
-    if (size != 0x01)
-    {
-        return DLMS_ERROR_CODE_INVALID_RESPONSE;
-    }
-    //get object count
-    if ((hlp_getObjectCount2(data, &count)) != 0)
-    {
-        return DLMS_ERROR_CODE_OUTOFMEMORY;
-    }
-    oa_capacity(&settings->objects, (uint16_t)count);
-    for (pos = 0; pos != count; ++pos)
-    {
-        var_clear(&value);
-        object = NULL;
-        di_init(&info);
-        if ((ret = dlms_getData(data, &info, &value)) != 0)
-        {
-            var_clear(&value);
-            return ret;
-        }
-        if (value.vt != DLMS_DATA_TYPE_STRUCTURE || value.Arr->size != 4)
-        {
-            var_clear(&value);
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-        if ((ret = va_getByIndex(value.Arr, 0, &it1)) != 0 ||
-            (ret = va_getByIndex(value.Arr, 1, &it2)) != 0 ||
-            (ret = va_getByIndex(value.Arr, 2, &it3)) != 0 ||
-            (ret = va_getByIndex(value.Arr, 3, &ln)) != 0)
-        {
-            var_clear(&value);
-            return ret;
-        }
-        if (it1->vt != DLMS_DATA_TYPE_INT16 ||
-            it2->vt != DLMS_DATA_TYPE_UINT16 ||
-            it3->vt != DLMS_DATA_TYPE_UINT8 ||
-            ln->vt != DLMS_DATA_TYPE_OCTET_STRING)
-        {
-            var_clear(&value);
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-        sn = (short)var_toInteger(it1);
-        class_id = (DLMS_OBJECT_TYPE)var_toInteger(it2);
-        version = (unsigned char)var_toInteger(it3);
-        ret = cosem_createObject(class_id, &object);
-        //If known object.
-        if (ret != DLMS_ERROR_CODE_INVALID_PARAMETER)
-        {
-            object->shortName = sn;
-            object->version = version;
-            cosem_setLogicalName(object, ln->byteArr->data);
-            oa_push(&settings->objects, object);
-            oa_push(&settings->releasedObjects, object);
-        }
-    }
-    var_clear(&value);
-    return 0;
-}
-
-#endif //!(defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) || defined(DLMS_IGNORE_MALLOC))
-
 #ifndef DLMS_IGNORE_MALLOC
 int cl_parseObjects(dlmsSettings* settings, gxByteBuffer* data)
 {
     int ret;
+    oa_clear(&settings->objects, 0);
+    oa_clear(&settings->releasedObjects, 1);
     if (settings->useLogicalNameReferencing)
     {
-        ret = cl_parseLNObjects(settings, data);
+        ret = cosem_parseLNObjects(settings, data, &settings->objects);
     }
     else
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-        ret = cl_parseSNObjects(settings, data);
+        ret = cosem_parseSNObjects(settings, data, &settings->objects);
 #else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1134,9 +971,9 @@ int cl_readRowsByRange2(
     }
     if (object->captureObjects.size != 0)
     {
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         gxTarget* kv;
-        ret = arr_getByIndex(&object->captureObjects, 0, (void**)&kv, sizeof(gxTarget));
+        ret = arr_getByIndex2(&object->captureObjects, 0, (void**)&kv, sizeof(gxTarget));
         if (ret != 0)
         {
             return ret;
@@ -1181,10 +1018,10 @@ int cl_readRowsByRange2(
         // Add class_id
         (ret = cosem_setUInt16(&data, type)) == 0 &&
         // Add parameter Logical name
-        (ret = cosem_setOctectString2(&data, ln, 6)) == 0 &&
+        (ret = cosem_setOctetString2(&data, ln, 6)) == 0 &&
         //Add attribute index.
         (ret = cosem_setInt8(&data, 2)) == 0 &&
-        //Add version.
+        //Add data index.
         (ret = cosem_setUInt16(&data, 0)) == 0)
     {
         //Add start time
@@ -1194,7 +1031,7 @@ int cl_readRowsByRange2(
         }
         else
         {
-            if ((ret = cosem_setDateTimeAsOctectString(&data, start)) != 0)
+            if ((ret = cosem_setDateTimeAsOctetString(&data, start)) != 0)
             {
                 bb_clear(&data);
                 return ret;
@@ -1207,7 +1044,7 @@ int cl_readRowsByRange2(
         }
         else
         {
-            if ((ret = cosem_setDateTimeAsOctectString(&data, end)) != 0)
+            if ((ret = cosem_setDateTimeAsOctetString(&data, end)) != 0)
             {
                 bb_clear(&data);
                 return ret;
@@ -1332,10 +1169,15 @@ int cl_updateValues(
         }
         if (ch == 0)
         {
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+            e.value.vt = DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING;
+            e.value.byteArr = data;
+#else
             if ((ret = dlms_getData(data, &info, &e.value)) != 0)
             {
                 break;
             }
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             e.target = (gxObject*)it->key;
             e.index = it->value;
             ret = cosem_setValue(settings, &e);

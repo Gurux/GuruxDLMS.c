@@ -166,8 +166,16 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(tarifficationScriptTable), BASE(registerActivation)
 };
 
-gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE(BASE(associationNone), 0) };
-
+////////////////////////////////////////////////////
+//Define what is serialized to decrease EEPROM usage.
+gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
+    //Nothing is saved when authentication is not used.
+    IGNORE_ATTRIBUTE(BASE(associationNone), GET_ATTRIBUTE_ALL()),
+    //Only password is saved for low and high authentication.
+    IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
+    IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
+    //Only scaler and unit are saved for all register objects.
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)) };
 
 static uint32_t executeTime = 0;
 
@@ -329,11 +337,11 @@ int getProfileGenericBufferColumnSizes(
     int ret = 0;
     uint8_t pos;
     gxKey* it;
-    gxByteBuffer pdu;
-    bb_init(&pdu);
     gxValueEventArg e;
     ve_init(&e);
     *rowSize = 0;
+    uint16_t size;
+    unsigned char type;
     //Loop capture columns and get values.
     for (pos = 0; pos != pg->captureObjects.size; ++pos)
     {
@@ -341,13 +349,11 @@ int getProfileGenericBufferColumnSizes(
         {
             break;
         }
-        bb_clear(&pdu);
-        ve_clear(&e);
         //Date time is saved in EPOCH to save space.
         if (((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK && ((gxTarget*)it->value)->attributeIndex == 2)
         {
-            e.value.ulVal = time_current();
-            e.value.vt = DLMS_DATA_TYPE_UINT32;
+            type = DLMS_DATA_TYPE_UINT32;
+            size = 4;
         }
         else
         {
@@ -357,30 +363,32 @@ int getProfileGenericBufferColumnSizes(
             {
                 break;
             }
-        }
-        //If data is returned as byte array.
-        if ((e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray))
-        {
-            e.value.vt = pdu.data[0];
-        }
-        else
-        {
-            if ((ret = dlms_setData(&pdu, e.value.vt, &e.value)) != 0)
+            if (bb_size(e.value.byteArr) != 0)
             {
-                break;
+                if ((ret = bb_getUInt8(e.value.byteArr, &type)) != 0)
+                {
+                    break;
+                }
+                size = bb_available(e.value.byteArr);
+            }
+            else
+            {
+                type = DLMS_DATA_TYPE_NONE;
+                size = 0;
             }
         }
         if (dataTypes != NULL)
         {
-            dataTypes[pos] = e.value.vt;
+            dataTypes[pos] = type;
         }
         if (columnSizes != NULL)
         {
-            columnSizes[pos] = (uint8_t)pdu.size - 1;
+            columnSizes[pos] = (uint8_t)size;
         }
-        *rowSize += (uint16_t)(pdu.size - 1);
+        *rowSize += (uint16_t)size;
+        ve_clear(&e);
     }
-    bb_clear(&pdu);
+    ve_clear(&e);
     return ret;
 }
 
@@ -429,7 +437,6 @@ uint16_t getProfileGenericBufferMaxRowCount(
 //Get current row count for allocated buffer.
 uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
 {
-    unsigned char pos;
     uint16_t index = 0;
     int ret = 0;
     char fileName[30];
@@ -443,8 +450,6 @@ uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
     if (f != NULL)
     {
         uint16_t dataSize = 0;
-        uint8_t columnSizes[10];
-        DLMS_DATA_TYPE dataTypes[10];
         //Load current entry index from the begin of the data.
         unsigned char pduBuff[2];
         gxByteBuffer pdu;
@@ -496,7 +501,10 @@ int captureProfileGeneric(
             bb_empty(&pdu);
         }
         //Current index in ring buffer.
-        bb_setUInt16(&pdu, (1 + index) % (pg->profileEntries));
+        if (pg->profileEntries != 0)
+        {
+            bb_setUInt16(&pdu, (1 + index) % (pg->profileEntries));
+        }
 
         //Update how many entries is used until buffer is full.
         if (ret == 0 && pg->entriesInUse != pg->profileEntries)
@@ -526,6 +534,7 @@ int captureProfileGeneric(
             {
                 e.value.ulVal = time_current();
                 e.value.vt = DLMS_DATA_TYPE_UINT32;
+                fwrite(&e.value.bVal, 4, 1, f);
             }
             else
             {
@@ -537,15 +546,8 @@ int captureProfileGeneric(
                 {
                     break;
                 }
-            }
-            //If data is returned as byte array.
-            if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING && e.byteArray)
-            {
-                fwrite(&e.value.byteArr->data[1], columnSizes[pos], 1, f);
-            }
-            else
-            {
-                fwrite(&e.value.bVal, columnSizes[pos], 1, f);
+                //Data type is not serialized. For that reason first byte is ignored.
+                fwrite(&e.value.byteArr->data[1], e.value.byteArr->size - 1, 1, f);
             }
         }
         fclose(f);
@@ -1429,7 +1431,6 @@ int addSapAssignment()
     return ret;
 }
 
-
 ///////////////////////////////////////////////////////////////////////
 //Add Logical Device Name. 123456 is meter serial number.
 ///////////////////////////////////////////////////////////////////////
@@ -1539,8 +1540,9 @@ int addModemConfiguration()
 int addMacAddressSetup()
 {
     const unsigned char ln[6] = { 0,0,25,2,0,255 };
+    unsigned char address[] = { 00, 11, 22, 33, 44, 55, 66, 77 };
     INIT_OBJECT(macAddressSetup, DLMS_OBJECT_TYPE_MAC_ADDRESS_SETUP, ln);
-    bb_addString(&macAddressSetup.macAddress, "00:11:22:33:44:55:66");
+    bb_set(&macAddressSetup.macAddress, address, sizeof(address));
     return 0;
 }
 
@@ -1556,7 +1558,7 @@ unsigned long getIpAddress()
         if (phe == 0)
         {
             ret = 0;
-    }
+        }
         else
         {
             struct in_addr* addr = (struct in_addr*)phe->h_addr_list[0];
@@ -1565,7 +1567,7 @@ unsigned long getIpAddress()
 #else //or Linux
             return addr->s_addr;
 #endif
-}
+        }
     }
 #else
     //If no OS get IP.
@@ -1630,13 +1632,13 @@ int addGprsSetup()
 ///////////////////////////////////////////////////////////////////////
 int addPushSetup()
 {
+    static unsigned char DESTINATION[20] = { 0 };
+
     const char dest[] = "127.0.0.1:7000";
     gxTarget* co;
     const unsigned char ln[6] = { 0,0,25,9,0,255 };
     INIT_OBJECT(pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln);
-    pushSetup.destination = (char*)malloc(strlen(dest) + 1);
-    strcpy(pushSetup.destination, dest);
-
+    bb_addString(&pushSetup.destination, "127.0.0.1:7000");
     // Add push object itself. This is needed to tell structure of data to
     // the Push listener.
     co = (gxTarget*)malloc(sizeof(gxTarget));
@@ -1736,8 +1738,6 @@ int loadSettings(dlmsSettings* settings)
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
             ret = ser_loadObjects(settings, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
-            {
-            }
             bb_clear(&bb);
             return ret;
         }
@@ -2103,6 +2103,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
     return ret;
 }
 
+
 int readProfileGeneric(
     dlmsSettings* settings,
     gxProfileGeneric* pg,
@@ -2191,7 +2192,7 @@ int readProfileGeneric(
             {
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
-        }
+            }
 #else
             if ((f = fopen(fileName, "rb")) != 0)
             {
@@ -2224,15 +2225,11 @@ int readProfileGeneric(
                     }
                     uint8_t colIndex;
                     gxKey* it;
-                    unsigned char pduBuff[PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE];
-                    gxByteBuffer pdu;
-                    bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
                     //Loop capture columns and get values.
                     for (colIndex = 0; colIndex != pg->captureObjects.size; ++colIndex)
                     {
                         if ((ret = arr_getByIndex(&pg->captureObjects, colIndex, (void**)&it)) == 0)
                         {
-                            bb_clear(&pdu);
                             //Date time is saved in EPOCH to save space.
                             if ((((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK || (gxObject*)it->key == BASE(unixTime))
                                 && ((gxTarget*)it->value)->attributeIndex == 2)
@@ -2245,38 +2242,24 @@ int readProfileGeneric(
                                 {
                                     clock_utcToMeterTime(&clock1, &tm);
                                 }
-                                if ((ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0)
+                                if ((ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm)) != 0)
                                 {
                                     //Error is handled later.
                                 }
                             }
                             else
                             {
-                                if (dataTypes[colIndex] == DLMS_DATA_TYPE_ARRAY || dataTypes[colIndex] == DLMS_DATA_TYPE_STRUCTURE ||
-                                    dataTypes[colIndex] == DLMS_DATA_TYPE_OCTET_STRING || dataTypes[colIndex] == DLMS_DATA_TYPE_STRING ||
-                                    dataTypes[colIndex] == DLMS_DATA_TYPE_STRING_UTF8)
-                                {
-                                    e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
-                                    ++e->value.byteArr->size;
-                                    fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
-                                    e->value.byteArr->size += columnSizes[colIndex];
-                                }
-                                else
-                                {
-                                    dlmsVARIANT value;
-                                    var_init(&value);
-                                    value.vt = dataTypes[colIndex];
-                                    fread(&value.bVal, columnSizes[colIndex], 1, f);
-                                    if ((ret = cosem_setVariant(e->value.byteArr, &value)) != 0)
-                                    {
-                                        //Error is handled later.
-                                    }
-                                }
+                                //Append data type.
+                                e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
+                                ++e->value.byteArr->size;
+                                //Read data.
+                                fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
+                                e->value.byteArr->size += columnSizes[colIndex];
                             }
                         }
                         if (ret != 0)
                         {
-                            //Don't set error if PDU is full,
+                            //Don't set error if PDU is full.
                             if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
                             {
                                 --e->transactionStartIndex;
@@ -2299,8 +2282,8 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
+        }
     }
-}
     return ret;
 }
 
@@ -2350,7 +2333,7 @@ void svr_preRead(
                 e->value.byteArr = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
                 bb_init(e->value.byteArr);
             }
-            e->error = cosem_setDateTimeAsOctectString(e->value.byteArr, &dt);
+            e->error = cosem_setDateTimeAsOctetString(e->value.byteArr, &dt);
             e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
             e->handled = 1;
         }
@@ -2470,6 +2453,12 @@ void handleProfileGenericActions(
     }
     else if (it->index == 2)
     {
+        //Increase power value before each load profile read to increase the value.
+        //This is needed for demo purpose only.
+        if (it->target == BASE(loadProfile))
+        {
+            readActivePowerValue();
+        }
         captureProfileGeneric(settings, ((gxProfileGeneric*)it->target));
     }
     saveSettings();
@@ -2727,8 +2716,8 @@ void svr_preAction(
             }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
-        }
     }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2923,14 +2912,14 @@ int sendPush(
     int ret, pos, port, s;
     message messages;
     gxByteBuffer* bb;
-    p = strchr(push->destination, ':');
+    p = strchr((char*)push->destination.data, ':');
     if (p == NULL)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    pos = (int)(p - push->destination);
+    pos = (int)(p - push->destination.data);
     host = (char*)malloc(pos + 1);
-    memcpy(host, push->destination, pos);
+    memcpy(host, push->destination.data, pos);
     host[pos] = '\0';
     sscanf(++p, "%d", &port);
     mes_init(&messages);
@@ -2945,19 +2934,19 @@ int sendPush(
                 {
                     mes_clear(&messages);
                     break;
+                }
             }
         }
-    }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         closesocket(s);
 #else
         close(s);
 #endif
-}
+            }
     mes_clear(&messages);
     free(host);
     return 0;
-    }
+        }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 unsigned char svr_isTarget(
@@ -3392,8 +3381,8 @@ int svr_connected(
         {
             //Return error if client can connect only using pre-established connnection.
             return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-        }
     }
+}
 #else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;

@@ -338,9 +338,11 @@ extern "C" {
     void svr_clear(
         dlmsServerSettings* settings);
 
+#ifndef DLMS_IGNORE_PLC
     // Set default values for PLC.
     void plc_reset(
         dlmsSettings* settings);
+#endif //DLMS_IGNORE_PLC
 
     //Reset block index.
     void resetBlockIndex(

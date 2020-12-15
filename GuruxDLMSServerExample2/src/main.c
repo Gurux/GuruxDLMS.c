@@ -88,6 +88,7 @@ static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
 time_t imageActionStartTime = 0;
 gxImageActivateInfo IMAGE_ACTIVATE_INFO[1];
+static gxIecTwistedPairSetup twistedPairSetup;
 
 uint32_t time_current(void)
 {
@@ -158,11 +159,21 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
                                    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
                                    BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
-                                   BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData)
+                                   BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData),
+                                   BASE(twistedPairSetup)
 };
 
-//Profile generic entries in use and Profile entries are not serialized.
-gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE(BASE(loadProfile), 0x60), IGNORE_ATTRIBUTE(BASE(eventLog), 0x60) };
+
+////////////////////////////////////////////////////
+//Define what is serialized to decrease EEPROM usage.
+gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
+    //Nothing is saved when authentication is not used.
+    IGNORE_ATTRIBUTE(BASE(associationNone), GET_ATTRIBUTE_ALL()),
+    //Only password is saved for low and high authentication.
+    IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
+    IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
+    //Only scaler and unit are saved for all register objects.
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)) };
 
 static uint32_t executeTime = 0;
 
@@ -332,12 +343,20 @@ void allocateImageTransfer(const char* fileName, uint32_t size)
 int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
 {
     int ret = hlp_getLogicalNameToString(pg->base.logicalName, fileName);
+#if defined(_WIN64)
+    strcat(fileName, "64.raw");
+#else // defined(_WIN32) || defined(__linux__)
     strcat(fileName, ".raw");
+#endif //defined(_WIN32) || defined(__linux__)
     return ret;
 }
 
 //Returns profile generic buffer column sizes.
-int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dataTypes, uint8_t* columnSizes, uint16_t* rowSize)
+int getProfileGenericBufferColumnSizes(
+    gxProfileGeneric* pg,
+    DLMS_DATA_TYPE* dataTypes,
+    uint8_t* columnSizes,
+    uint16_t* rowSize)
 {
     int ret = 0;
     uint8_t pos;
@@ -362,6 +381,7 @@ int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dat
         {
             e.value.ulVal = time_current();
             e.value.vt = DLMS_DATA_TYPE_UINT32;
+            pdu.size = 5;
         }
         else
         {
@@ -373,22 +393,8 @@ int getProfileGenericBufferColumnSizes(gxProfileGeneric* pg, DLMS_DATA_TYPE* dat
             {
                 break;
             }
-        }
-        //If data is returned as byte array.
-        if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING
-#ifndef DLMS_IGNORE_MALLOC
-            && e.byteArray
-#endif //DLMS_IGNORE_MALLOC
-            )
-        {
+            //Get data type.
             e.value.vt = pdu.data[0];
-        }
-        else
-        {
-            if ((ret = dlms_setData(&pdu, e.value.vt, &e.value)) != 0)
-            {
-                break;
-            }
         }
         if (dataTypes != NULL)
         {
@@ -536,6 +542,7 @@ int captureProfileGeneric(gxProfileGeneric* pg)
             {
                 e.value.ulVal = time_current();
                 e.value.vt = DLMS_DATA_TYPE_UINT32;
+                fwrite(&e.value.bVal, 4, 1, f);
             }
             else
             {
@@ -547,19 +554,8 @@ int captureProfileGeneric(gxProfileGeneric* pg)
                 {
                     break;
                 }
-            }
-            //If data is returned as byte array.
-            if (e.value.vt == DLMS_DATA_TYPE_OCTET_STRING
-#ifndef DLMS_IGNORE_MALLOC
-                && e.byteArray
-#endif //DLMS_IGNORE_MALLOC
-                )
-            {
-                fwrite(&e.value.byteArr->data[1], columnSizes[pos], 1, f);
-            }
-            else
-            {
-                fwrite(&e.value.bVal, columnSizes[pos], 1, f);
+                //Data type is not serialized. For that reason first byte is ignored.
+                fwrite(&e.value.byteArr->data[1], e.value.byteArr->size - 1, 1, f);
             }
         }
         fclose(f);
@@ -853,7 +849,7 @@ int addLogicalDeviceName()
         //Define Logical Device Name.
         static char LDN[17];
         sprintf(LDN, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
-        GX_OCTECT_STRING(ldn.value, LDN, sizeof(LDN));
+        GX_OCTET_STRING(ldn.value, LDN, sizeof(LDN));
     }
     return ret;
 }
@@ -1003,12 +999,12 @@ int addActivityCalendar()
         /////////////////////////////////////////////////////////////////////////
         //Add active season profile.
         ARR_ATTACH(activityCalendar.seasonProfileActive, ACTIVE_SEASON_PROFILE, 1);
-        SET_OCTECT_STRING(ACTIVE_SEASON_PROFILE[0].name, activeSeasonName, (unsigned short)strlen(activeSeasonName));
+        SET_OCTET_STRING(ACTIVE_SEASON_PROFILE[0].name, activeSeasonName, (unsigned short)strlen(activeSeasonName));
         time_init(&ACTIVE_SEASON_PROFILE[0].start, -1, 3, 31, -1, -1, -1, -1, -clock1.timeZone);
         /////////////////////////////////////////////////////////////////////////
         //Add week profile.
         ARR_ATTACH(activityCalendar.weekProfileTableActive, ACTIVE_WEEK_PROFILE, 1);
-        SET_OCTECT_STRING(ACTIVE_WEEK_PROFILE[0].name, activeWeekProfileName, (unsigned short)strlen(activeWeekProfileName));
+        SET_OCTET_STRING(ACTIVE_WEEK_PROFILE[0].name, activeWeekProfileName, (unsigned short)strlen(activeWeekProfileName));
         wp = &ACTIVE_WEEK_PROFILE[0];
         wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
         /////////////////////////////////////////////////////////////////////////
@@ -1027,13 +1023,13 @@ int addActivityCalendar()
         //Add passive season profile.
         BB_ATTACH(activityCalendar.calendarNamePassive, PASSIVE_CALENDAR_NAME, (unsigned short)strlen((char*)PASSIVE_CALENDAR_NAME));
         ARR_ATTACH(activityCalendar.seasonProfilePassive, PASSIVE_SEASON_PROFILE, 1);
-        SET_OCTECT_STRING(PASSIVE_SEASON_PROFILE[0].name, passiveSeasonName, (unsigned short)strlen(passiveSeasonName));
+        SET_OCTET_STRING(PASSIVE_SEASON_PROFILE[0].name, passiveSeasonName, (unsigned short)strlen(passiveSeasonName));
         time_init(&PASSIVE_SEASON_PROFILE[0].start, -1, 10, 30, -1, -1, -1, -1, -clock1.timeZone);
 
         /////////////////////////////////////////////////////////////////////////
         //Add week profile.
         ARR_ATTACH(activityCalendar.weekProfileTablePassive, PASSIVE_WEEK_PROFILE, 1);
-        SET_OCTECT_STRING(PASSIVE_WEEK_PROFILE[0].name, passiveWeekProfileName, (unsigned short)strlen(passiveWeekProfileName));
+        SET_OCTET_STRING(PASSIVE_WEEK_PROFILE[0].name, passiveWeekProfileName, (unsigned short)strlen(passiveWeekProfileName));
         wp = &PASSIVE_WEEK_PROFILE[0];
         wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
 
@@ -1173,8 +1169,8 @@ int addModemConfiguration()
     {
         modemConfiguration.communicationSpeed = DLMS_BAUD_RATE_38400;
         ARR_ATTACH(modemConfiguration.initialisationStrings, INITIALISATIONS, 1);
-        SET_OCTECT_STRING(INITIALISATIONS[0].request, "AT", 2);
-        SET_OCTECT_STRING(INITIALISATIONS[0].response, "OK", 2);
+        SET_OCTET_STRING(INITIALISATIONS[0].request, "AT", 2);
+        SET_OCTET_STRING(INITIALISATIONS[0].response, "OK", 2);
         INITIALISATIONS[0].delay = 0;
         ARR_ATTACH(modemConfiguration.modemProfile, PROFILES, 0);
     }
@@ -1313,6 +1309,27 @@ int addPrimeNbOfdmPlcMacNetworkAdministrationData()
         PHY_COMMUNICATION[0].txPower = 127;
         PHY_COMMUNICATION[0].txCoding = -128;
         memcpy(PHY_COMMUNICATION[0].eui, EUI, 6);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add twisted pair setup object.
+///////////////////////////////////////////////////////////////////////
+int addTwistedPairSetup()
+{
+    int ret;
+    static unsigned char PRIMARY_ADDRESSES[5] = { 0 };
+    static char TABIS[5] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 23, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(twistedPairSetup, DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP, ln)) == 0)
+    {
+        twistedPairSetup.mode = DLMS_IEC_TWISTED_PAIR_SETUP_MODE_ACTIVE;
+        twistedPairSetup.speed = DLMS_BAUD_RATE_9600;
+        PRIMARY_ADDRESSES[0] = 1;
+        BB_ATTACH(twistedPairSetup.primaryAddresses, PRIMARY_ADDRESSES, 1);
+        TABIS[0] = 1;
+        BB_ATTACH(twistedPairSetup.tabis, TABIS, 1);
     }
     return ret;
 }
@@ -1769,6 +1786,7 @@ int loadSettings()
             bb_clear(&bb);
             return ret;
         }
+        fclose(f);
     }
     return saveSettings();
 }
@@ -1819,6 +1837,7 @@ int createObjects()
         (ret = addGprsSetup()) != 0 ||
         (ret = addPrimeNbOfdmPlcMacFunctionalParameters()) != 0 ||
         (ret = addPrimeNbOfdmPlcMacNetworkAdministrationData()) != 0 ||
+        (ret = addTwistedPairSetup()) != 0 ||
         (ret = oa_verify(&settings.base.objects)) != 0 ||
         (ret = svr_initialize(&settings)) != 0)
     {
@@ -1993,8 +2012,8 @@ int getProfileGenericDataByRangeFromRingBuffer(
     {
         if (e->parameters.byteArr->data[e->parameters.byteArr->position] == DLMS_DATA_TYPE_OCTET_STRING)
         {
-            if ((ret = cosem_getDateTimeFromOctectString(e->parameters.byteArr, &start)) != 0 ||
-                (ret = cosem_getDateTimeFromOctectString(e->parameters.byteArr, &end)) != 0)
+            if ((ret = cosem_getDateTimeFromOctetString(e->parameters.byteArr, &start)) != 0 ||
+                (ret = cosem_getDateTimeFromOctetString(e->parameters.byteArr, &end)) != 0)
             {
                 return ret;
             }
@@ -2089,6 +2108,7 @@ int readProfileGeneric(
         // If reading first time.
         if (first)
         {
+            uint16_t offset = getProfileGenericBufferEntriesInUse(pg);
             //Read all.
             if (e->selector == 0)
             {
@@ -2125,6 +2145,7 @@ int readProfileGeneric(
                     {
                         e->transactionEndIndex = pg->entriesInUse;
                     }
+                    //Get index in ring buffer.
                 }
             }
         }
@@ -2170,7 +2191,7 @@ int readProfileGeneric(
             //Append data.
             if (ret == 0 && dataSize != 0)
             {
-                if (fseek(f, 4 + (e->transactionStartIndex - 1) * dataSize, SEEK_SET) != 0)
+                if (fseek(f, 4 + ((e->transactionStartIndex - 1) * dataSize), SEEK_SET) != 0)
                 {
                     printf("Failed to seek %s.\r\n", fileName);
                     return -1;
@@ -2184,15 +2205,11 @@ int readProfileGeneric(
                     }
                     uint8_t colIndex;
                     gxTarget* it;
-                    unsigned char pduBuff[PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE];
-                    gxByteBuffer pdu;
-                    bb_attach(&pdu, pduBuff, 0, sizeof(pduBuff));
                     //Loop capture columns and get values.
                     for (colIndex = 0; colIndex != pg->captureObjects.size; ++colIndex)
                     {
                         if ((ret = arr_getByIndex(&pg->captureObjects, colIndex, (void**)&it, sizeof(gxTarget))) == 0)
                         {
-                            bb_clear(&pdu);
                             //Date time is saved in EPOCH to save space.
                             if ((it->target->objectType == DLMS_OBJECT_TYPE_CLOCK || it->target == BASE(unixTime)) && it->attributeIndex == 2)
                             {
@@ -2204,33 +2221,19 @@ int readProfileGeneric(
                                 {
                                     clock_utcToMeterTime(&clock1, &tm);
                                 }
-                                if ((ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0)
+                                if ((ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm)) != 0)
                                 {
                                     //Error is handled later.
                                 }
                             }
                             else
                             {
-                                if (dataTypes[colIndex] == DLMS_DATA_TYPE_ARRAY || dataTypes[colIndex] == DLMS_DATA_TYPE_STRUCTURE ||
-                                    dataTypes[colIndex] == DLMS_DATA_TYPE_OCTET_STRING || dataTypes[colIndex] == DLMS_DATA_TYPE_STRING ||
-                                    dataTypes[colIndex] == DLMS_DATA_TYPE_STRING_UTF8)
-                                {
-                                    e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
-                                    ++e->value.byteArr->size;
-                                    fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
-                                    e->value.byteArr->size += columnSizes[colIndex];
-                                }
-                                else
-                                {
-                                    dlmsVARIANT value;
-                                    var_init(&value);
-                                    value.vt = dataTypes[colIndex];
-                                    fread(&value.bVal, columnSizes[colIndex], 1, f);
-                                    if ((ret = cosem_setVariant(e->value.byteArr, &value)) != 0)
-                                    {
-                                        //Error is handled later.
-                                    }
-                                }
+                                //Append data type.
+                                e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
+                                ++e->value.byteArr->size;
+                                //Read data.
+                                fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
+                                e->value.byteArr->size += columnSizes[colIndex];
                             }
                         }
                         if (ret != 0)
@@ -2310,7 +2313,7 @@ void svr_preRead(
         {
             gxtime dt;
             time_now(&dt, 1);
-            e->error = cosem_setDateTimeAsOctectString(e->value.byteArr, &dt);
+            e->error = cosem_setDateTimeAsOctetString(e->value.byteArr, &dt);
             e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
             e->handled = 1;
         }
@@ -2478,7 +2481,7 @@ int sendEventNotification2(dlmsSettings* settings)
         time_now(&dt, 1);
         //Data is send in structure. Amount of the items in structure is 2.
         cosem_setStructure(&data, 2);
-        cosem_setDateAsOctectString(&data, &dt);
+        cosem_setDateAsOctetString(&data, &dt);
         cosem_setUInt16(&data, activePowerL1Value);
         if ((ret = notify_generateEventNotificationMessages2(settings, 0, &item, &data, &pdu, &messages)) == 0)
         {
@@ -2530,6 +2533,12 @@ void handleProfileGenericActions(
     }
     else if (it->index == 2)
     {
+        //Increase power value before each load profile read to increase the value.
+        //This is needed for demo purpose only.
+        if (it->target == BASE(loadProfile))
+        {
+            readActivePowerValue();
+        }
         captureProfileGeneric(((gxProfileGeneric*)it->target));
     }
     saveSettings();

@@ -275,7 +275,7 @@ extern "C" {
         /*
          * The output_state is set to false and the consumer is disconnected.
          */
-        DLMS_CONTROL_STATE_DISCONNECTED,
+        DLMS_CONTROL_STATE_DISCONNECTED = 0,
         /*
          * The output_state is set to 1 and the consumer is connected.
         */
@@ -295,7 +295,7 @@ extern "C" {
         /*
          * The disconnect control object is always in 'connected' state,
         */
-        DLMS_CONTROL_MODE_NONE,
+        DLMS_CONTROL_MODE_NONE = 0,
         /*
          * Disconnection: Remote (b, c), manual (f), local (g)
          * Reconnection: Remote (d), manual (e).
@@ -499,7 +499,7 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+#if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
         objectArray registerAssignment;
 #else
         gxArray registerAssignment;
@@ -523,9 +523,9 @@ extern "C" {
         unsigned char logicalName[6];
         uint16_t objectType;
 #else
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         gxObject* target;
-#endif //DLMS_IGNORE_MALLOC
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     } gxTarget;
 
@@ -807,8 +807,8 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        DLMS_SECURITY_POLICY securityPolicy : 8;
-        DLMS_SECURITY_SUITE securitySuite : 8;
+        DLMS_SECURITY_POLICY securityPolicy;
+        DLMS_SECURITY_SUITE securitySuite;
         gxByteBuffer serverSystemTitle;
         gxByteBuffer clientSystemTitle;
         gxArray certificates;
@@ -1532,7 +1532,7 @@ extern "C" {
         unsigned char dataLinkLayerReference[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         uint32_t ipAddress;
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         gxArray multicastIPAddress;
 #else
         variantArray multicastIPAddress;
@@ -1815,7 +1815,7 @@ extern "C" {
         /*
         * Name of network operator.
         */
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         gxByteBuffer operatorName;
 #else
         char* operatorName;
@@ -1940,10 +1940,10 @@ extern "C" {
         dlmsVARIANT thresholdActive;
         dlmsVARIANT thresholdNormal;
         dlmsVARIANT thresholdEmergency;
-        int32_t minOverThresholdDuration;
-        int32_t minUnderThresholdDuration;
+        uint32_t minOverThresholdDuration;
+        uint32_t minUnderThresholdDuration;
         gxEmergencyProfile emergencyProfile;
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         gxArray emergencyProfileGroupIDs;
 #else
         variantArray emergencyProfileGroupIDs;
@@ -2011,15 +2011,6 @@ extern "C" {
 #endif //DLMS_IGNORE_MBUS_CLIENT
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
-
-#ifdef DLMS_IGNORE_MALLOC
-    typedef struct
-    {
-        unsigned char value[MAX_PUSH_SETUP_TARGET_LENGTH];
-        uint16_t size;
-    }gxPushSetupDestination;
-#endif //DLMS_IGNORE_MALLOC
-
     /*
     ---------------------------------------------------------------------------
     Online help:
@@ -2035,11 +2026,8 @@ extern "C" {
 
         DLMS_SERVICE_TYPE service;
 
-#ifdef DLMS_IGNORE_MALLOC
-        gxPushSetupDestination destination;
-#else
-        char* destination;
-#endif //DLMS_IGNORE_MALLOC
+        //Destination.
+        gxByteBuffer destination;
 
         DLMS_MESSAGE_TYPE message;
 
@@ -2051,24 +2039,6 @@ extern "C" {
         uint32_t executedTime;
     } gxPushSetup;
 #endif //DLMS_IGNORE_PUSH_SETUP
-
-#ifndef DLMS_IGNORE_MESSAGE_HANDLER
-    /*
-    ---------------------------------------------------------------------------
-    Online help:
-    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSMessageHandler
-    */
-    typedef struct
-    {
-        /*
-        * Base class where class is derived.
-        */
-        gxObject base;
-        gxArray listeningWindow;
-        variantArray allowedSenders;
-        gxArray sendersAndActions;
-    } gxMessageHandler;
-#endif //DLMS_IGNORE_MESSAGE_HANDLER
 
 #ifndef DLMS_IGNORE_PARAMETER_MONITOR
 
@@ -2419,7 +2389,7 @@ extern "C" {
 #ifdef DLMS_IGNORE_MALLOC
         gxCurrencyName name;
 #else
-        char* name;
+        gxByteBuffer name;
 #endif //DLMS_IGNORE_MALLOC
         // Currency scale.
         signed char scale;
@@ -2584,7 +2554,7 @@ extern "C" {
         gxObject base;
 
         int32_t currentCreditAmount;
-        unsigned char type;
+        DLMS_CREDIT_TYPE type;
         unsigned char priority;
         int32_t warningThreshold;
         int32_t limit;
@@ -2669,10 +2639,9 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        int16_t totalAmountPaid;
+        int32_t totalAmountPaid;
 
-        //CONSUMPTION_BASED_COLLECTION, TIME_BASED_COLLECTION, PAYMENT_EVENT_BASED_COLLECTION
-        unsigned char chargeType;
+        DLMS_CHARGE_TYPE chargeType;
         unsigned char priority;
         gxUnitCharge unitChargeActive;
         gxUnitCharge unitChargePassive;
@@ -2745,7 +2714,7 @@ extern "C" {
     typedef struct
     {
         gxByteBuffer macAddress;
-        bitArray status;
+        DLMS_ZIG_BEE_STATUS status;
         char maxRSSI;
         char averageRSSI;
         char minRSSI;
@@ -2879,7 +2848,7 @@ extern "C" {
         gxObject base;
 
         /*LNID allocated to this node at time of its registration.*/
-        uint16_t lnId;
+        int16_t lnId;
 
         /*LSID allocated to this node at the time of its promotion.*/
         unsigned char lsId;
@@ -3077,12 +3046,7 @@ extern "C" {
         gxObject base;
 
         /*Textual description of the firmware version running on the device.*/
-#ifdef DLMS_IGNORE_MALLOC
-        char firmwareVersion[MAX_PRIME_FIRMWARE_VERSION_LENGTH];
-#else
-        // Certificate serial number.
-        char* firmwareVersion;
-#endif //DLMS_IGNORE_MALLOC
+        gxByteBuffer firmwareVersion;
 
         /*Unique vendor identifier assigned by PRIME Alliance.*/
         uint16_t vendorId;
@@ -3423,7 +3387,7 @@ extern "C" {
         /**
         * Initiator MAC address.
         */
-        int initiatorMacAddress;
+        uint16_t initiatorMacAddress;
 
         /**
         * Synchronization locked/unlocked state.
@@ -3622,7 +3586,7 @@ extern "C" {
     int obj_clearScheduleEntries(gxArray* list);
     int obj_clearScriptTable(gxArray* list);
 
-#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+#if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES))
     int obj_clearRegisterActivationAssignment(objectArray* list);
 #else
     int obj_clearRegisterActivationAssignment(gxArray* list);
@@ -3661,10 +3625,6 @@ extern "C" {
         gxObject* object,
         gxByteBuffer* ba);
 
-#if !defined(DLMS_IGNORE_MALLOC)
-    int obj_updateAttributeAccessModes(gxObject* object, variantArray* arr);
-#endif //!defined(DLMS_IGNORE_MALLOC)
-
     //Returns collection of attributes to read.
     int obj_getAttributeIndexToRead(
         gxObject* object,
@@ -3689,14 +3649,14 @@ extern "C" {
     int obj_clearAvailableSwitches(
         gxArray* list);
 
-    //Clear S-FSK reporting system list.
-    int obj_clearSFSKReportingSystemList(
+    //Clear byte buffer list.
+    int obj_clearByteBufferList(
         gxArray* list);
 
 #define BASE(X) &X.base
 
 #define INIT_OBJECT(X, Y, Z) cosem_init2(&X.base, Y, Z)
-#define SET_OCTECT_STRING(X, V, S) memcpy(X.value, V, S);X.size=S
+#define SET_OCTET_STRING(X, V, S) memcpy(X.value, V, S);X.size=S
 
 #ifdef  __cplusplus
 }

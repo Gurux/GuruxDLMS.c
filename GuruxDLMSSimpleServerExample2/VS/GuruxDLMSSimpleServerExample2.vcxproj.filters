@@ -126,6 +126,12 @@
     <ClCompile Include="..\dlms\src\gxserializer.c">
       <Filter>dlms\src</Filter>
     </ClCompile>
+    <ClCompile Include="..\dlms\src\gxsetignoremalloc.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gxsetmalloc.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\dlms\include\apdu.h">

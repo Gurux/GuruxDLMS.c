@@ -45,15 +45,48 @@ extern "C" {
 #endif
 
 
-    //Don't serialize this attribute.
-#define IGNORE_ATTRIBUTE(a, x) {a, x}
+//This attribute is not serialized.
+#define IGNORE_ATTRIBUTE(OBJECT, INDEX) {OBJECT, INDEX, 0}
+
+//This attribute is not serialized by object type.
+#define IGNORE_ATTRIBUTE_BY_TYPE(TYPE, INDEX) {0, INDEX, TYPE}
+
+#define ___COSEM_ATTRIBUTES(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16,...) _16
+//Visual Studio reguires this.
+#define ___EXPAND(x) x
+#define ___COUNT_ATTRIBUTES(...) ___EXPAND(___COSEM_ATTRIBUTES(__VA_ARGS__,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0))
+
+#define GET_ALL_ATTRIBUTES() -1
+#define GET_ATTRIBUTE1(A) 1 << (A - 1)
+#define GET_ATTRIBUTE2(A, B) GET_ATTRIBUTE1(A) | GET_ATTRIBUTE1(B)
+#define GET_ATTRIBUTE3(A, B, C) GET_ATTRIBUTE2(A, B) | GET_ATTRIBUTE1(C)
+#define GET_ATTRIBUTE4(A, B, C, D) GET_ATTRIBUTE3(A, B, C) | GET_ATTRIBUTE1(D)
+#define GET_ATTRIBUTE5(A, B, C, D, E) GET_ATTRIBUTE4(A, B, C, D) | GET_ATTRIBUTE1(E)
+#define GET_ATTRIBUTE6(A, B, C, D, E, F) GET_ATTRIBUTE5(A, B, C, D, E) | GET_ATTRIBUTE1(F)
+#define GET_ATTRIBUTE7(A, B, C, D, E, F, G) GET_ATTRIBUTE6(A, B, C, D, E, F) | GET_ATTRIBUTE1(G)
+#define GET_ATTRIBUTE8(A, B, C, D, E, F, G, H) GET_ATTRIBUTE7(A, B, C, D, E, F, G) | GET_ATTRIBUTE1(H)
+#define GET_ATTRIBUTE9(A, B, C, D, E, F, G, H, I) GET_ATTRIBUTE8(A, B, C, D, E, F, G, H) | GET_ATTRIBUTE1(I)
+#define GET_ATTRIBUTE10(A, B, C, D, E, F, G, H, I, J)GET_ATTRIBUTE9(A, B, C, D, E, F, G, H, I) | GET_ATTRIBUTE1(J)
+#define GET_ATTRIBUTE11(A, B, C, D, E, F, G, H, I, J, K) GET_ATTRIBUTE10(A, B, C, D, E, F, G, H, I, J) | GET_ATTRIBUTE1(K)
+#define GET_ATTRIBUTE12(A, B, C, D, E, F, G, H, I, J, K, L) GET_ATTRIBUTE11(A, B, C, D, E, F, G, H, I, J, K) | GET_ATTRIBUTE1(L)
+#define GET_ATTRIBUTE13(A, B, C, D, E, F, G, H, I, J, K, L, M) GET_ATTRIBUTE12(A, B, C, D, E, F, G, H, I, J, K, L) | GET_ATTRIBUTE1(M)
+#define GET_ATTRIBUTE14(A, B, C, D, E, F, G, H, I, J, K, L, M, N) GET_ATTRIBUTE13(A, B, C, D, E, F, G, H, I, J, K, L, M) | GET_ATTRIBUTE1(N)
+#define GET_ATTRIBUTE15(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) GET_ATTRIBUTE14(A, B, C, D, E, F, G, H, I, J, K, L, M, N) | GET_ATTRIBUTE1(O)
+#define GET_ATTRIBUTE16(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) GET_ATTRIBUTE15(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) | GET_ATTRIBUTE1(P)
+#define CONC(A, B) CONC_(A, B)
+#define CONC_(A, B) A##B
+#define GET_ATTRIBUTE(...) CONC(GET_ATTRIBUTE, ___COUNT_ATTRIBUTES(__VA_ARGS__))(__VA_ARGS__)
+#define GET_ATTRIBUTE_EXCEPT(...) ~(GET_ATTRIBUTE(__VA_ARGS__))
+#define GET_ATTRIBUTE_ALL() -1
 
     typedef struct
     {
         /*Target to ignore*/
         gxObject* target;
-        /*Bit-string attribute list from attributes that are not serialized.*/
+        /*Bit enumerated attribute list from attributes that are not serialized.*/
         uint16_t attributes;
+        /*Object type to ignore*/
+        uint16_t objectType;
     } gxSerializerIgnore;
 
     typedef struct

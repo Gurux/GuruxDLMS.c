@@ -81,9 +81,6 @@
     <ClCompile Include="..\dlms\src\gxobjects.c">
       <Filter>dlms\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\dlms\src\gxset.c">
-      <Filter>dlms\src</Filter>
-    </ClCompile>
     <ClCompile Include="..\dlms\src\gxsha1.c">
       <Filter>dlms\src</Filter>
     </ClCompile>
@@ -124,6 +121,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\dlms\src\gxserializer.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gxsetmalloc.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gxset.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gxsetignoremalloc.c">
       <Filter>dlms\src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -255,6 +261,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\dlms\include\gxserializer.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\gxsetignoremalloc.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\gxsetmalloc.h">
       <Filter>dlms\include</Filter>
     </ClInclude>
   </ItemGroup>

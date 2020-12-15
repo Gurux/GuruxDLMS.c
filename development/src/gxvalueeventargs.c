@@ -183,7 +183,9 @@ void ve_init(gxValueEventArg * ve)
     ve->handled = 0;
     ve->target = NULL;
     ve->index = 0;
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     ve->dataType = DLMS_DATA_TYPE_NONE;
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     ve->selector = 0;
     var_init(&ve->parameters);
     ve->error = DLMS_ERROR_CODE_OK;
@@ -201,7 +203,9 @@ void ve_clear(gxValueEventArg * ve)
     ve->handled = 0;
     ve->target = NULL;
     ve->index = 0;
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     ve->dataType = DLMS_DATA_TYPE_NONE;
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     ve->selector = 0;
     var_clear(&ve->parameters);
     ve->error = DLMS_ERROR_CODE_OK;

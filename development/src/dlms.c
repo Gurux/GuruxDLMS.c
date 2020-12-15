@@ -705,13 +705,13 @@ int getUtfString(
 #endif //DLMS_IGNORE_MALLOC
 
 /**
-* Get octect std::string value from DLMS data.
+* Get octet string value from DLMS data.
 *
 * buff
 *            Received DLMS data.
 * info
 *            Data info.
-* Returns  parsed octet std::string value.
+* Returns  parsed octet string value.
 */
 int getOctetString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVARIANT* value)
 {
@@ -1159,7 +1159,7 @@ int getTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     {
         ms = ch * 10;
     }
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
     time_init(value->dateTime, (uint16_t)-1, 0xFF, 0xFF, hour, minute, second, ms, 0x8000);
     value->vt = DLMS_DATA_TYPE_TIME;
@@ -1211,7 +1211,8 @@ int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     {
         return ret;
     }
-#ifndef DLMS_IGNORE_MALLOC
+
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
     time_init(value->dateTime, year, month, day, 0xFF, 0xFF, 0xFF, 0xFF, 0x8000);
     if (ch > 7)
@@ -1259,10 +1260,19 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         return ret;
     }
     gxtime* t;
-#ifndef DLMS_IGNORE_MALLOC
-    t = value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
-#endif //DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC)
     t = value->pVal;
+#else
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) != 0)
+    {
+        t = value->pVal;
+    }
+    else
+    {
+        t = value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
+        value->vt = DLMS_DATA_TYPE_DATETIME;
+    }
+#endif //DLMS_IGNORE_MALLOC
 #ifdef DLMS_USE_EPOCH_TIME
     short deviation;
     unsigned char mon = 0, day = 0, hour = 0, min = 0, sec = 0, wday = 0, skip = 0;
@@ -1971,7 +1981,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
     case DLMS_DATA_TYPE_ARRAY:
     case DLMS_DATA_TYPE_STRUCTURE:
     {
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC)
         ret = getArray(data, info, (uint16_t)startIndex, value);
         value->vt = info->type;
 #else
@@ -2007,7 +2017,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
             value->byteArr = data;
         }
         return 0;
-#endif //DLMS_IGNORE_MALLOC
+#endif //#!defined(DLMS_IGNORE_MALLOC)
         break;
     }
     case DLMS_DATA_TYPE_BOOLEAN:
@@ -2016,7 +2026,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
         break;
     }
     case DLMS_DATA_TYPE_BIT_STRING:
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC)
         ret = getBitString(data, info, value);
 #else
         if ((value->vt & DLMS_DATA_TYPE_BYREF) != 0)
@@ -2025,12 +2035,12 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
         }
         else
         {
-            value->vt = DLMS_DATA_TYPE_BIT_STRING;
+            value->vt = DLMS_DATA_TYPE_OCTET_STRING;
             --data->position;
             value->byteArr = data;
             return 0;
         }
-#endif //DLMS_IGNORE_MALLOC
+#endif //!defined(DLMS_IGNORE_MALLOC)
         break;
     case DLMS_DATA_TYPE_INT32:
         ret = getInt32(data, info, value);
@@ -2039,7 +2049,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
         ret = getUInt32(data, info, value);
         break;
     case DLMS_DATA_TYPE_STRING:
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC)
         ret = getString(data, info, knownType, value);
 #else
         if ((value->vt & DLMS_DATA_TYPE_BYREF) != 0)
@@ -2053,20 +2063,22 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
             value->byteArr = data;
             ret = 0;
         }
-#endif //DLMS_IGNORE_MALLOC
+#endif //!defined(DLMS_IGNORE_MALLOC)
         break;
     case DLMS_DATA_TYPE_STRING_UTF8:
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC)
         ret = getUtfString(data, info, knownType, value);
 #else
         value->vt = DLMS_DATA_TYPE_OCTET_STRING;
         --data->position;
         value->byteArr = data;
         return 0;
-#endif //DLMS_IGNORE_MALLOC
+#endif //!defined(DLMS_IGNORE_MALLOC)
         break;
     case DLMS_DATA_TYPE_OCTET_STRING:
-#ifdef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC)
+        ret = getOctetString(data, info, knownType, value);
+#else
         if ((value->vt & DLMS_DATA_TYPE_BYREF) != 0)
         {
             ret = getOctetString(data, info, 0, value);
@@ -2078,8 +2090,6 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
             value->byteArr = data;
             ret = 0;
         }
-#else
-        ret = getOctetString(data, info, knownType, value);
 #endif // DLMS_IGNORE_MALLOC
         break;
     case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
@@ -2122,14 +2132,15 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
         break;
 #endif //DLMS_IGNORE_FLOAT64
     case DLMS_DATA_TYPE_DATETIME:
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC)
         if ((value->vt & DLMS_DATA_TYPE_BYREF) != 0)
         {
             ret = getDateTime(data, info, value);
         }
         else
         {
-            value->vt = DLMS_DATA_TYPE_DATETIME;
+            value->vt = DLMS_DATA_TYPE_OCTET_STRING;
+            --data->position;
             value->byteArr = data;
             ret = 0;
         }
@@ -2138,14 +2149,15 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
 #endif //DLMS_IGNORE_MALLOC
         break;
     case DLMS_DATA_TYPE_DATE:
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC)
         if ((value->vt & DLMS_DATA_TYPE_BYREF) != 0)
         {
             ret = getDate(data, info, value);
         }
         else
         {
-            value->vt = DLMS_DATA_TYPE_DATE;
+            value->vt = DLMS_DATA_TYPE_OCTET_STRING;
+            --data->position;
             value->byteArr = data;
             ret = 0;
         }
@@ -2154,14 +2166,15 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
 #endif //DLMS_IGNORE_MALLOC
         break;
     case DLMS_DATA_TYPE_TIME:
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC)
         if ((value->vt & DLMS_DATA_TYPE_BYREF) != 0)
         {
             ret = getTime(data, info, value);
         }
         else
         {
-            value->vt = DLMS_DATA_TYPE_TIME;
+            value->vt = DLMS_DATA_TYPE_OCTET_STRING;
+            --data->position;
             value->byteArr = data;
             ret = 0;
         }
@@ -3545,11 +3558,11 @@ int dlms_getPlcHdlcData(
                 //Invalid data checksum.
                 return DLMS_ERROR_CODE_WRONG_CRC;
             }
-            data->packetLength = 2 + buff->position - index;
+            data->packetLength = (uint16_t)(2 + buff->position - index);
         }
         else
         {
-            buff->position = buff->position + frameLen - index - 4;
+            buff->position = (uint16_t)(buff->position + frameLen - index - 4);
         }
     }
     return ret;
@@ -3623,13 +3636,20 @@ int dlms_receiverReady(
     if ((type & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
     {
         unsigned char id = getReceiverReady(settings);
-        if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC_HDLC)
+        switch (settings->interfaceType)
         {
-            return dlms_getMacHdlcFrame(settings, id, 0, NULL, reply);
-        }
-        else
-        {
+#ifndef DLMS_IGNORE_PLC
+        case DLMS_INTERFACE_TYPE_PLC_HDLC:
+            ret = dlms_getMacHdlcFrame(settings, id, 0, NULL, reply);
+            break;
+#endif //DLMS_IGNORE_PLC
+#ifndef DLMS_IGNORE_HDLC
+        case DLMS_INTERFACE_TYPE_HDLC:
             ret = dlms_getHdlcFrame(settings, id, NULL, reply);
+            break;
+#endif //DLMS_IGNORE_HDLC
+        default:
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
         return ret;
     }
@@ -3982,10 +4002,10 @@ int dlms_getValueFromData(dlmsSettings* settings,
 {
     uint16_t index;
     int ret;
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     int pos;
     dlmsVARIANT_PTR tmp;
-#endif //DLMS_IGNORE_MALLOC
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     dlmsVARIANT value;
     gxDataInfo info;
     di_init(&info);
@@ -4024,7 +4044,7 @@ int dlms_getValueFromData(dlmsSettings* settings,
             }
             else
             {
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
                 for (pos = 0; pos != value.Arr->size; ++pos)
                 {
                     if ((ret = va_getByIndex(value.Arr, pos, &tmp)) != 0)
@@ -4033,7 +4053,7 @@ int dlms_getValueFromData(dlmsSettings* settings,
                     }
                     va_push(reply->dataValue.Arr, tmp);
                 }
-#endif //DLMS_IGNORE_MALLOC
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
             }
         }
         reply->readPosition = reply->data.position;
@@ -5124,6 +5144,7 @@ int dlms_getPdu(
         // peek.
         if (!data->peek && data->moreData == DLMS_DATA_REQUEST_TYPES_NONE)
         {
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
             if (data->command == DLMS_COMMAND_AARE
                 || data->command == DLMS_COMMAND_AARQ)
             {
@@ -5133,6 +5154,9 @@ int dlms_getPdu(
             {
                 data->data.position = 1;
             }
+#else
+            data->data.position = 0;
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
         }
         if (cmd == DLMS_COMMAND_GENERAL_BLOCK_TRANSFER)
         {
@@ -5190,7 +5214,8 @@ int dlms_getPdu(
         }
     }
 
-#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
     // Get data only blocks if SN is used. This is faster.
     if (ret == 0 && cmd == DLMS_COMMAND_READ_RESPONSE
         && data->commandType == DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT
@@ -5198,20 +5223,23 @@ int dlms_getPdu(
     {
         return 0;
     }
-#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
     // Get data if all data is read or we want to peek data.
     if (ret == 0 && !data->ignoreValue && data->data.position != data->data.size
         && (
-#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
             cmd == DLMS_COMMAND_READ_RESPONSE ||
-#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
             cmd == DLMS_COMMAND_GET_RESPONSE)
         && (data->moreData == DLMS_DATA_REQUEST_TYPES_NONE
             || data->peek))
     {
         ret = dlms_getValueFromData(settings, data);
     }
+#else
+    data->dataValue.byteArr = &data->data;
+    data->dataValue.vt = DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING;
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     return ret;
 }
 
@@ -5950,12 +5978,14 @@ int dlms_getLnMessages(
             case DLMS_INTERFACE_TYPE_PDU:
                 ret = bb_set2(it, pdu, 0, pdu->size);
                 break;
+#ifndef DLMS_IGNORE_PLC
             case DLMS_INTERFACE_TYPE_PLC:
                 ret = dlms_getPlcFrame(p->settings, 0x90, pdu, it);
                 break;
             case DLMS_INTERFACE_TYPE_PLC_HDLC:
                 ret = dlms_getMacHdlcFrame(p->settings, frame, 0, pdu, it);
                 break;
+#endif //DLMS_IGNORE_PLC
             default:
                 ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
@@ -6076,7 +6106,7 @@ int dlms_getData2(
         data->packetLength = reply->size;
         data->complete = reply->size != 0;
         ret = 0;
-    break;
+        break;
 #ifndef DLMS_IGNORE_PLC
     case DLMS_INTERFACE_TYPE_PLC:
         ret = dlms_getPlcData(settings, reply, data);
@@ -6322,7 +6352,7 @@ int dlms_secure(
                 (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
             {
                 return ret;
-        }
+            }
 #else
             if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
                 (ret = bb_set(&challenge, settings->cipher.systemTitle.data, settings->cipher.systemTitle.size)) != 0 ||
@@ -6348,7 +6378,7 @@ int dlms_secure(
                 }
             }
 #endif //DLMS_IGNORE_HIGH_SHA256
-    }
+        }
         else
         {
             if ((ret = bb_set(&challenge, data->data, data->size)) != 0 ||
@@ -6357,7 +6387,7 @@ int dlms_secure(
                 return ret;
             }
         }
-}
+    }
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH_MD5)
     {
         //If MD5 is not used.
@@ -6426,7 +6456,7 @@ int dlms_secure(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
-    }
+}
 
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,

@@ -84,9 +84,9 @@ extern "C" {
         struct tm value;
 #endif
         int16_t deviation;
-        uint16_t skip; //DATETIME_SKIPS
-        unsigned char extraInfo;// DLMS_DATE_TIME_EXTRA_INFO
-        unsigned char status;//DLMS_CLOCK_STATUS
+        DATETIME_SKIPS skip : 16;
+        DLMS_DATE_TIME_EXTRA_INFO extraInfo : 8;
+        DLMS_CLOCK_STATUS status : 8;
     } gxtime;
 
     // Constructor.

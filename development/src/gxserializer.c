@@ -675,7 +675,7 @@ int ser_saveActivityCalendar(
         (!IS_ATTRIBUTE_SET(ignored, 3) && (ret = ser_saveSeasonProfile(&object->seasonProfileActive, serializer)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 4) && (ret = ser_saveweekProfile(&object->weekProfileTableActive, serializer)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 5) && (ret = ser_saveDayProfile(&object->dayProfileTableActive, serializer)) != 0) ||
-        (!IS_ATTRIBUTE_SET(ignored, 6) && (ret = ser_saveOctetString(serializer, &object->calendarNameActive)) != 0) ||
+        (!IS_ATTRIBUTE_SET(ignored, 6) && (ret = ser_saveOctetString(serializer, &object->calendarNamePassive)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 7) && (ret = ser_saveSeasonProfile(&object->seasonProfilePassive, serializer)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 8) && (ret = ser_saveweekProfile(&object->weekProfileTablePassive, serializer)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 9) && (ret = ser_saveDayProfile(&object->dayProfileTablePassive, serializer)) != 0) ||
@@ -3337,7 +3337,7 @@ int ser_loadActivityCalendar(
         (!IS_ATTRIBUTE_SET(ignored, 3) && (ret = ser_loadSeasonProfile(&object->seasonProfileActive, serializer)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 4) && (ret = ser_loadweekProfile(&object->weekProfileTableActive, serializer)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 5) && (ret = ser_loadDayProfile(settings, &object->dayProfileTableActive, serializer)) != 0) ||
-        (!IS_ATTRIBUTE_SET(ignored, 6) && (ret = ser_loadOctetString(serializer, &object->calendarNameActive)) != 0) ||
+        (!IS_ATTRIBUTE_SET(ignored, 6) && (ret = ser_loadOctetString(serializer, &object->calendarNamePassive)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 7) && (ret = ser_loadSeasonProfile(&object->seasonProfilePassive, serializer)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 8) && (ret = ser_loadweekProfile(&object->weekProfileTablePassive, serializer)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 9) && (ret = ser_loadDayProfile(settings, &object->dayProfileTablePassive, serializer)) != 0) ||

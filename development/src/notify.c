@@ -263,7 +263,7 @@ int notify_generatePushSetupMessages(
     gxValueEventArg e;
 #ifdef DLMS_IGNORE_MALLOC
     gxTarget* it;
-    pdu = settings->serializedPdu;
+    pdu = *settings->serializedPdu;
     ve_init(&e);
     gxValueEventArg p[1];
     vec_attach(&args, p, 1, 1);
@@ -303,7 +303,7 @@ int notify_generatePushSetupMessages(
             {
                 break;
             }
-            if ((ret = notify_addData(settings, it->target, it->attributeIndex, pdu)) != 0)
+            if ((ret = notify_addData(settings, it->target, it->attributeIndex, &pdu)) != 0)
             {
                 break;
             }

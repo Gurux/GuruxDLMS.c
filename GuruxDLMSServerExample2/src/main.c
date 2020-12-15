@@ -1015,7 +1015,7 @@ int addActivityCalendar()
         ARR_ATTACH(ACTIVE_DAY_PROFILE[1].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS2, 0);
         ARR_ATTACH(ACTIVE_DAY_PROFILE[2].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS3, 0);
 
-        time_now(&ACTIVE_DAY_PROFILE_ACTIONS1[0].startTime, 0);
+        time_init(&ACTIVE_DAY_PROFILE_ACTIONS1[0].startTime, -1, -1, -1, 0, 0, 0, 0, 0);
         ACTIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(tarifficationScriptTable);
         ACTIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
 
@@ -1040,10 +1040,11 @@ int addActivityCalendar()
         ARR_ATTACH(PASSIVE_DAY_PROFILE[0].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS1, 1);
         ARR_ATTACH(PASSIVE_DAY_PROFILE[1].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS2, 0);
         ARR_ATTACH(PASSIVE_DAY_PROFILE[2].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS3, 0);
-        time_now(&PASSIVE_DAY_PROFILE_ACTIONS1[0].startTime, 0);
+        time_init(&PASSIVE_DAY_PROFILE_ACTIONS1[0].startTime, -1, -1, -1, 0, 0, 0, 0, 0);
         PASSIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(tarifficationScriptTable);
         PASSIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
-        time_now(&activityCalendar.time, 0);
+        //Activate passive calendar is not called.
+        time_init(&activityCalendar.time, -1, -1, -1, -1, -1, -1, -1, 0x8000);
     }
     return ret;
 }
@@ -1380,8 +1381,10 @@ int addClockObject()
     if ((ret = INIT_OBJECT(clock1, DLMS_OBJECT_TYPE_CLOCK, ln)) == 0)
     {
         //Set default values.
-        time_init(&clock1.begin, -1, 3, 0, 0, 0, 0, 0, 0);
-        time_init(&clock1.end, -1, 9, 0, 0, 0, 0, 0, 0);
+        time_init(&clock1.begin, -1, 3, -1, 2, 0, 0, 0, 0);
+        clock1.begin.extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY;
+        time_init(&clock1.end, -1, 10, -1, 3, 0, 0, 0, 0);
+        clock1.end.extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY;
         //Meter is using UTC time zone.
         clock1.timeZone = 0;
         //Deviation is 60 minutes.
@@ -3217,6 +3220,20 @@ DLMS_ACCESS_MODE getSecuritySetupAttributeAccess(
     return DLMS_ACCESS_MODE_READ;
 }
 
+
+//Get attribute access level for security setup.
+DLMS_ACCESS_MODE getActivityCalendarAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    //Only Activate passive calendar date-time and passive calendar settings are writeble.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW && index > 5)
+    {
+        return DLMS_ACCESS_MODE_READ_WRITE;
+    }
+    return DLMS_ACCESS_MODE_READ;
+}
+
 /**
 * Get attribute access level.
 */
@@ -3274,6 +3291,10 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     if (obj->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP)
     {
         return getSecuritySetupAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR)
+    {
+        return getActivityCalendarAttributeAccess(settings, index);
     }
     // Only clock write is allowed.
     if (settings->authentication == DLMS_AUTHENTICATION_LOW)

@@ -1170,6 +1170,8 @@ extern "C" {
         gxArray dayProfileTablePassive;// gxDayProfile
         gxArray weekProfileTablePassive;// gxWeekProfile
         gxtime time;
+        //Executed time. This is for internal use.
+        uint32_t executedTime;
     } gxActivityCalendar;
 
 #endif // DLMS_IGNORE_ACTIVITY_CALENDAR

@@ -880,8 +880,10 @@ int addClockObject()
     if ((ret = INIT_OBJECT(clock1, DLMS_OBJECT_TYPE_CLOCK, ln)) == 0)
     {
         //Set default values.
-        time_init(&clock1.begin, -1, 3, 0, 0, 0, 0, 0, 0);
-        time_init(&clock1.end, -1, 9, 0, 0, 0, 0, 0, 0);
+        time_init(&clock1.begin, -1, 3, -1, 2, 0, 0, 0, 0);
+        clock1.begin.extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY;
+        time_init(&clock1.end, -1, 10, -1, 3, 0, 0, 0, 0);
+        clock1.end.extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY;
         //Meter is using UTC time zone.
         clock1.timeZone = 0;
         //Deviation is 60 minutes.

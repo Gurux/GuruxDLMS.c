@@ -1341,7 +1341,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
         }
         object->presetTime = *tmp.dateTime;
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     // Shifts the time.
     else if (index == 6)
     {
@@ -1352,7 +1352,7 @@ int invoke_Clock(gxClock* object, unsigned char index, dlmsVARIANT* value)
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_CLOCK
 #ifndef DLMS_IGNORE_REGISTER
 int invoke_Register(
@@ -1440,12 +1440,12 @@ int capture(dlmsSettings* settings,
         }
         arr_push(&object->buffer, row);
         object->entriesInUse = object->buffer.size;
-}
+    }
     svr_postGet(settings, &args);
     vec_empty(&args);
 #endif //DLMS_IGNORE_MALLOC
     return 0;
-    }
+}
 
 int invoke_ProfileGeneric(
     dlmsServerSettings* settings,
@@ -1895,9 +1895,9 @@ int invoke_SpecialDaysTable(
                 ret = arr_removeByIndex(&object->entries, pos, NULL);
 #endif //DLMS_IGNORE_MALLOC
                 break;
+            }
         }
     }
-}
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -2003,7 +2003,7 @@ int invoke_RegisterActivation(
         }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     else if (e->index == 2)
     {
         count = arr_getCapacity(&object->maskList);
@@ -2049,6 +2049,176 @@ int invoke_RegisterActivation(
     return ret;
 }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
+
+
+#ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
+
+int invoke_copySeasonProfile(gxArray* target, gxArray* source)
+{
+    int ret = obj_clearSeasonProfile(target);
+    if (ret == 0)
+    {
+        int pos;
+        gxSeasonProfile* sp, * it;
+#if defined(DLMS_IGNORE_MALLOC)
+        target->size = source->size;
+#endif //
+        for (pos = 0; pos != source->size; ++pos)
+        {
+            if (ret == 0)
+            {
+                if ((ret = arr_getByIndex2(source, pos, (void**)&sp, sizeof(gxSeasonProfile))) != 0)
+                {
+                    break;
+                }
+#if defined(DLMS_IGNORE_MALLOC)
+                if ((ret = arr_getByIndex2(target, pos, (void**)&it, sizeof(gxSeasonProfile))) != 0)
+                {
+                    break;
+                }
+                memcpy(&it->name, &sp->name, sizeof(gxSeasonProfileName));
+                it->start = sp->start;
+                memcpy(&it->weekName, &sp->weekName, sizeof(gxSeasonProfileWeekName));
+#else
+                it = gxmalloc(sizeof(gxSeasonProfile));
+                arr_push(target, it);
+                bb_init(&it->name);
+                bb_init(&it->weekName);
+                bb_set(&it->name, sp->name.data, sp->name.size);
+                it->start = sp->start;
+                bb_set(&it->weekName, sp->weekName.data, sp->weekName.size);
+#endif //#if defined(DLMS_IGNORE_MALLOC)
+            }
+        }
+    }
+    return ret;
+}
+
+int invoke_copyWeekProfileTable(gxArray* target, gxArray* source)
+{
+    int ret = obj_clearWeekProfileTable(target);
+    if (ret == 0)
+    {
+        int pos;
+        gxWeekProfile* wp, * it;
+#if defined(DLMS_IGNORE_MALLOC)
+        target->size = source->size;
+#endif //
+        for (pos = 0; pos != source->size; ++pos)
+        {
+            if (ret == 0)
+            {
+                if ((ret = arr_getByIndex2(source, pos, (void**)&wp, sizeof(gxWeekProfile))) != 0)
+                {
+                    break;
+                }
+#if defined(DLMS_IGNORE_MALLOC)
+                if ((ret = arr_getByIndex2(target, pos, (void**)&it, sizeof(gxWeekProfile))) != 0)
+                {
+                    break;
+                }
+                memcpy(&it->name, &wp->name, sizeof(gxWeekProfileName));
+#else
+                it = gxmalloc(sizeof(gxWeekProfile));
+                arr_push(target, it);
+                bb_init(&it->name);
+                bb_set(&it->name, wp->name.data, wp->name.size);
+#endif //#if defined(DLMS_IGNORE_MALLOC)
+                it->monday = wp->monday;
+                it->tuesday = wp->tuesday;
+                it->wednesday = wp->wednesday;
+                it->thursday = wp->thursday;
+                it->friday = wp->friday;
+                it->saturday = wp->saturday;
+                it->sunday = wp->sunday;
+            }
+        }
+    }
+    return ret;
+}
+
+int invoke_copyDayProfileTable(gxArray* target, gxArray* source)
+{
+    int ret = obj_clearDayProfileTable(target);
+    if (ret == 0)
+    {
+        int pos, pos2;
+        gxDayProfile* it, * it2;
+        gxDayProfileAction* dp, * dp2;
+#if defined(DLMS_IGNORE_MALLOC)
+        target->size = source->size;
+#endif //
+        for (pos = 0; pos != source->size; ++pos)
+        {
+            if (ret == 0)
+            {
+                if ((ret = arr_getByIndex2(source, pos, (void**)&it, sizeof(gxDayProfile))) != 0)
+                {
+                    break;
+                }
+#if defined(DLMS_IGNORE_MALLOC)
+                if ((ret = arr_getByIndex2(target, pos, (void**)&it2, sizeof(gxDayProfile))) != 0)
+                {
+                    break;
+                }
+                it2->daySchedules.size = it->daySchedules.size;
+#else
+                it2 = gxmalloc(sizeof(gxDayProfile));
+                arr_push(target, it);
+#endif //#if defined(DLMS_IGNORE_MALLOC)
+                it2->dayId = it->dayId;
+                for (pos2 = 0; pos2 != it->daySchedules.size; ++pos2)
+                {
+                    if ((ret = arr_getByIndex2(&it->daySchedules, pos2, (void**)&dp, sizeof(gxDayProfileAction))) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+#if defined(DLMS_IGNORE_MALLOC)
+                    if ((ret = arr_getByIndex2(&it2->daySchedules, pos2, (void**)&dp2, sizeof(gxDayProfileAction))) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+#else
+                    dp2 = gxmalloc(sizeof(gxDayProfileAction));
+                    arr_push(&it2->daySchedules, dp2);
+#endif //#if defined(DLMS_IGNORE_MALLOC)
+                    dp2->startTime = dp->startTime;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+                    dp2->script = dp->script;
+#else
+                    memcpy(dp2->scriptLogicalName, dp->scriptLogicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+                    dp2->scriptSelector = dp->scriptSelector;
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+int invoke_ActivityCalendar(gxValueEventArg* e)
+{
+    int ret;
+    if (e->index == 1)
+    {
+        //Copy all passive items to active.
+        gxActivityCalendar* object = (gxActivityCalendar*)e->target;
+        bb_clear(&object->calendarNameActive);
+        if ((ret = bb_set(&object->calendarNameActive, object->calendarNamePassive.data, object->calendarNamePassive.size)) != 0 ||
+            (ret = invoke_copyDayProfileTable(&object->dayProfileTableActive, &object->dayProfileTablePassive)) != 0 ||
+            (ret = invoke_copyWeekProfileTable(&object->weekProfileTableActive, &object->weekProfileTablePassive)) != 0 ||
+            (ret = invoke_copySeasonProfile(&object->seasonProfileActive, &object->seasonProfilePassive)) != 0)
+        {
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif ////DLMS_IGNORE_ACTIVITY_CALENDAR
+
 
 int cosem_invoke(
     dlmsServerSettings* settings,
@@ -2202,6 +2372,11 @@ int cosem_invoke(
         ret = invoke_RegisterActivation(settings, (gxRegisterActivation*)e->target, e);
         break;
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
+#ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
+    case DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR:
+        ret = invoke_ActivityCalendar(e);
+        break;
+#endif //DLMS_IGNORE_ACTIVITY_CALENDAR
     default:
         //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

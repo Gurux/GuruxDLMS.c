@@ -145,7 +145,7 @@ gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
     IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
     //Only scaler and unit are saved for all register objects.
-    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2))};
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)) };
 
 static uint32_t executeTime = 0;
 
@@ -882,8 +882,10 @@ int addClockObject()
     if ((ret = INIT_OBJECT(clock1, DLMS_OBJECT_TYPE_CLOCK, ln)) == 0)
     {
         //Set default values.
-        time_init(&clock1.begin, -1, 3, 0, 0, 0, 0, 0, 0);
-        time_init(&clock1.end, -1, 9, 0, 0, 0, 0, 0, 0);
+        time_init(&clock1.begin, -1, 3, -1, 2, 0, 0, 0, 0);
+        clock1.begin.extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY;
+        time_init(&clock1.end, -1, 10, -1, 3, 0, 0, 0, 0);
+        clock1.end.extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY;
         //Meter is using UTC time zone.
         clock1.timeZone = 0;
         //Deviation is 60 minutes.

@@ -2671,7 +2671,7 @@ int svr_handleMethodRequest(
             }
             else
             {
-                error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
             }
             bb_clear(data);
             bb_setUInt8(data, 0);
@@ -3256,7 +3256,7 @@ int svr_handleRequest2(
         else
         {
             ret = 0;
-    }
+        }
 #else
         ret = 0;
 #endif //DLMS_IGNORE_HDLC
@@ -3295,7 +3295,7 @@ int svr_handleRequest2(
 #else
                 ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_HDLC
-        }
+            }
 #ifndef DLMS_IGNORE_WRAPPER
             else if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
             {
@@ -3378,7 +3378,7 @@ int svr_handleRequest2(
             reply_clear2(&settings->info, 1);
             return 0;
         }
-        }
+    }
     // If all data is not received yet.
     if (!settings->info.complete)
     {
@@ -3553,7 +3553,7 @@ int svr_handleRequest2(
     reply_clear2(&settings->info, 0);
     settings->dataReceived = time_elapsed();
     return ret;
-        }
+}
 
 int svr_handleInactivityTimeout(
     dlmsServerSettings* settings,
@@ -3791,14 +3791,150 @@ int svr_handleSingleActionSchedule(
                         {
                             break;
                         }
+                    }
                 }
             }
         }
     }
-}
     return ret;
-    }
+}
 #endif //!defined(DLMS_IGNORE_ACTION_SCHEDULE) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
+
+#if !defined(DLMS_IGNORE_ACTIVITY_CALENDAR) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
+
+unsigned char equal(gxByteBuffer* a, gxByteBuffer* b)
+{
+    if (a->size == b->size)
+    {
+        return memcmp(a->data, b->data, a->size) == 0;
+    }
+    return 0;
+}
+
+int svr_handleActivityCalendar(
+    dlmsServerSettings* settings,
+    gxActivityCalendar* object,
+    uint32_t time,
+    uint32_t* next)
+{
+    gxSeasonProfile* sp;
+    gxWeekProfile* wp;
+    gxDayProfile* dp;
+    gxDayProfileAction* da;
+    int ret = 0;
+    uint16_t pos, pos2, pos3, pos4;
+    gxtime tm;
+    for (pos = 0; pos != object->seasonProfileActive.size; ++pos)
+    {
+        if ((ret = arr_getByIndex2(&object->seasonProfileActive, pos, (void**)&sp, sizeof(gxSeasonProfile))) != 0)
+        {
+            break;
+        }
+        //If script is executed today.
+        tm = sp->start;
+        tm.deviation = 0x8000;
+        if (time_compare2(&tm, time) == 0)
+        {
+            for (pos2 = 0; pos2 != object->weekProfileTableActive.size; ++pos2)
+            {
+                if ((ret = arr_getByIndex2(&object->weekProfileTableActive, pos2, (void**)&wp, sizeof(gxWeekProfile))) != 0)
+                {
+                    break;
+                }
+                //If week name matches.
+#ifdef DLMS_IGNORE_MALLOC
+                if (memcmp(&wp->name, &sp->weekName, sizeof(gxWeekProfileName)) == 0)
+#else
+                if (equal(&wp->name, &sp->weekName))
+#endif //DLMS_IGNORE_MALLOC
+                {
+                    unsigned char dayId;
+                    switch (time_dayOfWeek(time_getYears(&sp->start), time_getMonths(&sp->start), time_getDays(&sp->start)))
+                    {
+                    case 0:
+                        dayId = wp->sunday;
+                        break;
+                    case 1:
+                        dayId = wp->monday;
+                        break;
+                    case 2:
+                        dayId = wp->tuesday;
+                        break;
+                    case 3:
+                        dayId = wp->wednesday;
+                        break;
+                    case 4:
+                        dayId = wp->thursday;
+                        break;
+                    case 5:
+                        dayId = wp->friday;
+                        break;
+                    case 6:
+                        dayId = wp->saturday;
+                        break;
+                    default:
+                        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                        break;
+                    }
+                    if (ret != 0)
+                    {
+                        break;
+                    }
+                    for (pos3 = 0; pos3 != object->dayProfileTableActive.size; ++pos3)
+                    {
+                        if ((ret = arr_getByIndex2(&object->dayProfileTableActive, pos3, (void**)&dp, sizeof(gxDayProfile))) != 0)
+                        {
+                            break;
+                        }
+                        //If weekday matches.
+                        if (dp->dayId == dayId)
+                        {
+                            for (pos4 = 0; pos4 != dp->daySchedules.size; ++pos4)
+                            {
+                                if ((ret = arr_getByIndex2(&dp->daySchedules, pos4, (void**)&da, sizeof(gxDayProfileAction))) != 0)
+                                {
+                                    break;
+                                }
+                                if (da->scriptSelector != 0)
+                                {
+                                    tm = sp->start;
+                                    time_clearTime(&tm);
+                                    time_addTime(&tm, time_getHours(&da->startTime), time_getMinutes(&da->startTime), time_getSeconds(&da->startTime));
+                                    if ((ret = svr_invoke(
+                                        settings,
+                                        (gxObject*)da->script,
+                                        (unsigned char)da->scriptSelector,
+                                        time,
+                                        &tm,
+                                        NULL,
+                                        &object->executedTime,
+                                        next)) != 0)
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (ret != 0)
+                {
+                    break;
+                }
+            }
+            if (ret != 0)
+            {
+                break;
+            }
+        }
+        if (ret != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+#endif //!defined(DLMS_IGNORE_ACTIVITY_CALENDAR) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
 
@@ -3845,7 +3981,7 @@ int svr_handlePushSetup(
         {
             //Save infor that invoke failed.
         }
-    }
+}
     return ret;
 }
 #endif //DLMS_IGNORE_PUSH_SETUP
@@ -3894,7 +4030,7 @@ int svr_handleAutoConnect(
         {
             break;
         }
-    }
+}
     return ret;
 }
 #endif //DLMS_IGNORE_AUTO_CONNECT
@@ -3937,6 +4073,21 @@ int svr_run(
         }
     }
 #endif //!defined(DLMS_IGNORE_ACTION_SCHEDULE) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
+
+#if !defined(DLMS_IGNORE_ACTIVITY_CALENDAR) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
+    //Single activity calendars.
+    for (pos = 0; pos != settings->base.objects.size; ++pos)
+    {
+        if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        if (obj->objectType == DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR)
+        {
+            svr_handleActivityCalendar(settings, (gxActivityCalendar*)obj, time, next);
+        }
+    }
+#endif //!defined(DLMS_IGNORE_ACTIVITY_CALENDAR) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
     //Push objects.

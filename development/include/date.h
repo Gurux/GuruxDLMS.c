@@ -168,6 +168,40 @@ extern "C" {
         const gxtime* value);
 
     /*
+Get years from time.
+*/
+    uint16_t time_getYears2(
+        uint32_t value);
+    /*
+    Get months from time.
+    */
+    unsigned char time_getMonths2(
+        uint32_t value);
+    /*
+    Get days from time.
+    */
+    unsigned char time_getDays2(
+        uint32_t value);
+
+    /*
+    Get hours from time.
+    */
+    unsigned char time_getHours2(
+        uint32_t value);
+
+    /*
+    Get minutes from time.
+    */
+    unsigned char time_getMinutes2(
+        uint32_t value);
+
+    /*
+    Get seconds from time.
+    */
+    unsigned char time_getSeconds2(
+        uint32_t value);
+
+    /*
     Adds amount of days to current time.
     */
     void time_addDays(

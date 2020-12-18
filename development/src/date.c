@@ -359,8 +359,8 @@ void time_clearTime(
     {
         //Remove hours, minutes and seconds
         value->value -= value->value % 60;
-        value->value -= (value->value / 60) % 60;
-        value->value -= (value->value / 3600) % 24;
+        value->value -= value->value % 3600;
+        value->value -= value->value % 86400;
     }
 #else
     value->value.tm_sec = value->value.tm_min = value->value.tm_hour = 0;

@@ -3821,115 +3821,136 @@ int svr_handleActivityCalendar(
     gxWeekProfile* wp;
     gxDayProfile* dp;
     gxDayProfileAction* da;
-    int ret = 0;
-    uint16_t pos, pos2, pos3, pos4;
+    int pos, ret = 0;
+    uint16_t pos2, pos3, pos4;
     gxtime tm;
+    uint16_t activeSeason = object->seasonProfileActive.size - 1;
+    gxtime* start = NULL;
+    gxtime* end = NULL;
+    //Find active season.
     for (pos = 0; pos != object->seasonProfileActive.size; ++pos)
     {
         if ((ret = arr_getByIndex2(&object->seasonProfileActive, pos, (void**)&sp, sizeof(gxSeasonProfile))) != 0)
         {
             break;
         }
-        //If script is executed today.
+        //The season is never start if all the values are ignored.
+        if ((sp->start.skip & (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND)) ==
+            (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND))
+        {
+            continue;
+        }
+        //In season_start, wildcards are allowed. If all fields are wildcards, the season will never start.W
         tm = sp->start;
         tm.deviation = 0x8000;
-        if (time_compare2(&tm, time) == 0)
+        tm.skip |= DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MS;
+        if (time_compare2(&tm, time) != 1)
         {
-            for (pos2 = 0; pos2 != object->weekProfileTableActive.size; ++pos2)
+            start = &sp->start;
+            //Reset end time.
+            end = NULL;
+            activeSeason = pos;
+        }
+        else if (start != NULL && end == NULL)
+        {
+            end = &sp->start;
+        }
+    }
+    if ((ret = arr_getByIndex2(&object->seasonProfileActive, activeSeason, (void**)&sp, sizeof(gxSeasonProfile))) == 0)
+    {
+        for (pos2 = 0; pos2 != object->weekProfileTableActive.size; ++pos2)
+        {
+            if ((ret = arr_getByIndex2(&object->weekProfileTableActive, pos2, (void**)&wp, sizeof(gxWeekProfile))) != 0)
             {
-                if ((ret = arr_getByIndex2(&object->weekProfileTableActive, pos2, (void**)&wp, sizeof(gxWeekProfile))) != 0)
-                {
-                    break;
-                }
-                //If week name matches.
+                break;
+            }
+            //If week name matches.
 #ifdef DLMS_IGNORE_MALLOC
-                if (memcmp(&wp->name, &sp->weekName, sizeof(gxWeekProfileName)) == 0)
+            if (memcmp(&wp->name, &sp->weekName, sizeof(gxWeekProfileName)) == 0)
 #else
-                if (equal(&wp->name, &sp->weekName))
+            if (equal(&wp->name, &sp->weekName))
 #endif //DLMS_IGNORE_MALLOC
+            {
+                unsigned char dayId;
+                switch (time_dayOfWeek(time_getYears2(time), time_getMonths2(time), time_getDays2(time)))
                 {
-                    unsigned char dayId;
-                    switch (time_dayOfWeek(time_getYears(&sp->start), time_getMonths(&sp->start), time_getDays(&sp->start)))
-                    {
-                    case 0:
-                        dayId = wp->sunday;
-                        break;
-                    case 1:
-                        dayId = wp->monday;
-                        break;
-                    case 2:
-                        dayId = wp->tuesday;
-                        break;
-                    case 3:
-                        dayId = wp->wednesday;
-                        break;
-                    case 4:
-                        dayId = wp->thursday;
-                        break;
-                    case 5:
-                        dayId = wp->friday;
-                        break;
-                    case 6:
-                        dayId = wp->saturday;
-                        break;
-                    default:
-                        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-                        break;
-                    }
-                    if (ret != 0)
-                    {
-                        break;
-                    }
-                    for (pos3 = 0; pos3 != object->dayProfileTableActive.size; ++pos3)
-                    {
-                        if ((ret = arr_getByIndex2(&object->dayProfileTableActive, pos3, (void**)&dp, sizeof(gxDayProfile))) != 0)
-                        {
-                            break;
-                        }
-                        //If weekday matches.
-                        if (dp->dayId == dayId)
-                        {
-                            for (pos4 = 0; pos4 != dp->daySchedules.size; ++pos4)
-                            {
-                                if ((ret = arr_getByIndex2(&dp->daySchedules, pos4, (void**)&da, sizeof(gxDayProfileAction))) != 0)
-                                {
-                                    break;
-                                }
-                                if (da->scriptSelector != 0)
-                                {
-                                    tm = sp->start;
-                                    time_clearTime(&tm);
-                                    time_addTime(&tm, time_getHours(&da->startTime), time_getMinutes(&da->startTime), time_getSeconds(&da->startTime));
-                                    if ((ret = svr_invoke(
-                                        settings,
-                                        (gxObject*)da->script,
-                                        (unsigned char)da->scriptSelector,
-                                        time,
-                                        &tm,
-                                        NULL,
-                                        &object->executedTime,
-                                        next)) != 0)
-                                    {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                case 7:
+                    dayId = wp->sunday;
+                    break;
+                case 1:
+                    dayId = wp->monday;
+                    break;
+                case 2:
+                    dayId = wp->tuesday;
+                    break;
+                case 3:
+                    dayId = wp->wednesday;
+                    break;
+                case 4:
+                    dayId = wp->thursday;
+                    break;
+                case 5:
+                    dayId = wp->friday;
+                    break;
+                case 6:
+                    dayId = wp->saturday;
+                    break;
+                default:
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
                 }
                 if (ret != 0)
                 {
                     break;
                 }
+                for (pos3 = 0; pos3 != object->dayProfileTableActive.size; ++pos3)
+                {
+                    if ((ret = arr_getByIndex2(&object->dayProfileTableActive, pos3, (void**)&dp, sizeof(gxDayProfile))) != 0)
+                    {
+                        break;
+                    }
+                    //If weekday matches.
+                    if (dp->dayId == dayId)
+                    {
+                        for (pos4 = 0; pos4 != dp->daySchedules.size; ++pos4)
+                        {
+                            if ((ret = arr_getByIndex2(&dp->daySchedules, pos4, (void**)&da, sizeof(gxDayProfileAction))) != 0)
+                            {
+                                break;
+                            }
+                            tm = da->startTime;
+                            //tm.deviation = 0x8000;
+                            if (settings->defaultClock != NULL)
+                            {
+                                tm.deviation = settings->defaultClock->timeZone;
+                                tm.status = settings->defaultClock->status;
+                            }
+                            if (da->scriptSelector != 0)
+                            {
+                                if ((ret = svr_invoke(
+                                    settings,
+                                    (gxObject*)da->script,
+                                    (unsigned char)da->scriptSelector,
+                                    time,
+                                    &tm,
+                                    NULL,
+                                    &object->executedTime,
+                                    next)) != 0)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+                //If week name matches.
+                break;
             }
             if (ret != 0)
             {
                 break;
             }
-        }
-        if (ret != 0)
-        {
-            break;
         }
     }
     return ret;
@@ -3981,7 +4002,7 @@ int svr_handlePushSetup(
         {
             //Save infor that invoke failed.
         }
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_PUSH_SETUP
@@ -4030,7 +4051,7 @@ int svr_handleAutoConnect(
         {
             break;
         }
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_AUTO_CONNECT

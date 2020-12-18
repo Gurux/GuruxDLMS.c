@@ -5144,9 +5144,7 @@ int dlms_getPdu(
         // peek.
         if (!data->peek && data->moreData == DLMS_DATA_REQUEST_TYPES_NONE)
         {
-#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
-            if (data->command == DLMS_COMMAND_AARE
-                || data->command == DLMS_COMMAND_AARQ)
+            if (!settings->server || data->command == DLMS_COMMAND_AARE || data->command == DLMS_COMMAND_AARQ)
             {
                 data->data.position = 0;
             }
@@ -5154,9 +5152,6 @@ int dlms_getPdu(
             {
                 data->data.position = 1;
             }
-#else
-            data->data.position = 0;
-#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
         }
         if (cmd == DLMS_COMMAND_GENERAL_BLOCK_TRANSFER)
         {

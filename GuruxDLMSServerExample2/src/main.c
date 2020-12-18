@@ -987,62 +987,80 @@ int addActivityCalendar()
     const unsigned char ln[6] = { 0,0,13,0,0,255 };
     if ((ret = INIT_OBJECT(activityCalendar, DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR, ln)) == 0)
     {
-        const char* activeSeasonName = "Summer time";
-        const char* passiveSeasonName = "Winter time";
-        const char* activeWeekProfileName = "Monday";
-        const char* passiveWeekProfileName = "Tuesday";
-        strcpy((char*)ACTIVE_CALENDAR_NAME, "Active");
+        const char* activeSeasonName = "DST";
+        const char* passiveSeasonName = "Normal";
+        const char* WeekProfileName01 = "01";
+        const char* WeekProfileName02 = "02";
+        strcpy((char*)ACTIVE_CALENDAR_NAME, "DST");
         strcpy((char*)PASSIVE_CALENDAR_NAME, "Passive");
 
         BB_ATTACH(activityCalendar.calendarNameActive, ACTIVE_CALENDAR_NAME, (unsigned short)strlen((char*)ACTIVE_CALENDAR_NAME));
 
-        /////////////////////////////////////////////////////////////////////////
-        //Add active season profile.
-        ARR_ATTACH(activityCalendar.seasonProfileActive, ACTIVE_SEASON_PROFILE, 1);
-        SET_OCTET_STRING(ACTIVE_SEASON_PROFILE[0].name, activeSeasonName, (unsigned short)strlen(activeSeasonName));
-        time_init(&ACTIVE_SEASON_PROFILE[0].start, -1, 3, 31, -1, -1, -1, -1, 0x8000);
-        /////////////////////////////////////////////////////////////////////////
-        //Add week profile.
-        ARR_ATTACH(activityCalendar.weekProfileTableActive, ACTIVE_WEEK_PROFILE, 1);
-        SET_OCTET_STRING(ACTIVE_WEEK_PROFILE[0].name, activeWeekProfileName, (unsigned short)strlen(activeWeekProfileName));
-        wp = &ACTIVE_WEEK_PROFILE[0];
-        wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
-        /////////////////////////////////////////////////////////////////////////
-        //Add active day profiles. There are max three day profiles where one is in use.
-        ARR_ATTACH(activityCalendar.dayProfileTableActive, ACTIVE_DAY_PROFILE, 1);
-        ACTIVE_DAY_PROFILE[0].dayId = 1;
-        ARR_ATTACH(ACTIVE_DAY_PROFILE[0].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS1, 1);
-        ARR_ATTACH(ACTIVE_DAY_PROFILE[1].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS2, 0);
-        ARR_ATTACH(ACTIVE_DAY_PROFILE[2].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS3, 0);
+        ARR_ATTACH(activityCalendar.seasonProfileActive, ACTIVE_SEASON_PROFILE, 2);
+        ARR_ATTACH(ACTIVE_DAY_PROFILE[0].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS1, 3);
+        ARR_ATTACH(ACTIVE_DAY_PROFILE[1].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS2, 3);
 
         time_init(&ACTIVE_DAY_PROFILE_ACTIONS1[0].startTime, -1, -1, -1, 0, 0, 0, 0, 0x8000);
+        time_init(&ACTIVE_DAY_PROFILE_ACTIONS1[1].startTime, -1, -1, -1, 7, 0, 0, 0, 0x8000);
+        time_init(&ACTIVE_DAY_PROFILE_ACTIONS1[2].startTime, -1, -1, -1, 22, 0, 0, 0, 0x8000);
+
+        time_init(&ACTIVE_DAY_PROFILE_ACTIONS2[0].startTime, -1, -1, -1, 0, 0, 0, 0, 0x8000);
+        time_init(&ACTIVE_DAY_PROFILE_ACTIONS2[1].startTime, -1, -1, -1, 7, 0, 0, 0, 0x8000);
+        time_init(&ACTIVE_DAY_PROFILE_ACTIONS2[2].startTime, -1, -1, -1, 22, 0, 0, 0, 0x8000);
+        /////////////////////////////////////////////////////////////////////////
+        //Add active season profile when DST began.
+        SET_OCTET_STRING(ACTIVE_SEASON_PROFILE[0].name, activeSeasonName, (unsigned short)strlen(activeSeasonName));
+        SET_OCTET_STRING(ACTIVE_SEASON_PROFILE[0].weekName, WeekProfileName01, (unsigned short)strlen(WeekProfileName01));
+        time_init(&ACTIVE_SEASON_PROFILE[0].start, -1, 4, 1, 0, 0, 0, -1, 0x8000);
+        //Add week profile.
+        ARR_ATTACH(activityCalendar.weekProfileTableActive, ACTIVE_WEEK_PROFILE, 2);
+        SET_OCTET_STRING(ACTIVE_WEEK_PROFILE[0].name, WeekProfileName01, (unsigned short)strlen(WeekProfileName01));
+        wp = &ACTIVE_WEEK_PROFILE[0];
+        wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
+        //Add active day profiles. There are max three day profiles where one is in use.
+        ARR_ATTACH(activityCalendar.dayProfileTableActive, ACTIVE_DAY_PROFILE, 2);
+        ACTIVE_DAY_PROFILE[0].dayId = 1;
+
         ACTIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(tarifficationScriptTable);
-        ACTIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
+        ACTIVE_DAY_PROFILE_ACTIONS1[0].scriptSelector = 1;
+        ACTIVE_DAY_PROFILE_ACTIONS1[1].script = BASE(tarifficationScriptTable);
+        ACTIVE_DAY_PROFILE_ACTIONS1[1].scriptSelector = 1;
+        ACTIVE_DAY_PROFILE_ACTIONS1[2].script = BASE(tarifficationScriptTable);
+        ACTIVE_DAY_PROFILE_ACTIONS1[2].scriptSelector = 1;
+
+        ACTIVE_DAY_PROFILE_ACTIONS2[0].script = BASE(tarifficationScriptTable);
+        ACTIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 2;
+        ACTIVE_DAY_PROFILE_ACTIONS2[1].script = BASE(tarifficationScriptTable);
+        ACTIVE_DAY_PROFILE_ACTIONS2[1].scriptSelector = 2;
+        ACTIVE_DAY_PROFILE_ACTIONS2[2].script = BASE(tarifficationScriptTable);
+        ACTIVE_DAY_PROFILE_ACTIONS2[2].scriptSelector = 2;
 
         /////////////////////////////////////////////////////////////////////////
-        //Add passive season profile.
-        BB_ATTACH(activityCalendar.calendarNamePassive, PASSIVE_CALENDAR_NAME, (unsigned short)strlen((char*)PASSIVE_CALENDAR_NAME));
-        ARR_ATTACH(activityCalendar.seasonProfilePassive, PASSIVE_SEASON_PROFILE, 1);
-        SET_OCTET_STRING(PASSIVE_SEASON_PROFILE[0].name, passiveSeasonName, (unsigned short)strlen(passiveSeasonName));
-        time_init(&PASSIVE_SEASON_PROFILE[0].start, -1, 10, 30, -1, -1, -1, -1, 0x8000);
+        //Add active season profile when normal times began.
+        SET_OCTET_STRING(ACTIVE_SEASON_PROFILE[1].name, passiveSeasonName, (unsigned short)strlen(passiveSeasonName));
+        SET_OCTET_STRING(ACTIVE_SEASON_PROFILE[1].weekName, WeekProfileName02, (unsigned short)strlen(WeekProfileName02));
+        time_init(&ACTIVE_SEASON_PROFILE[1].start, -1, 11, 1, 0, 0, 0, -1, 0x8000);
 
         /////////////////////////////////////////////////////////////////////////
         //Add week profile.
-        ARR_ATTACH(activityCalendar.weekProfileTablePassive, PASSIVE_WEEK_PROFILE, 1);
-        SET_OCTET_STRING(PASSIVE_WEEK_PROFILE[0].name, passiveWeekProfileName, (unsigned short)strlen(passiveWeekProfileName));
-        wp = &PASSIVE_WEEK_PROFILE[0];
-        wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
+        SET_OCTET_STRING(ACTIVE_WEEK_PROFILE[1].name, WeekProfileName02, (unsigned short)strlen(WeekProfileName02));
+        wp = &ACTIVE_WEEK_PROFILE[1];
+        wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 2;
 
         /////////////////////////////////////////////////////////////////////////
         //Add passive day profiles. There are max three day profiles where one is in use.
-        ARR_ATTACH(activityCalendar.dayProfileTablePassive, PASSIVE_DAY_PROFILE, 1);
-        PASSIVE_DAY_PROFILE[0].dayId = 1;
-        ARR_ATTACH(PASSIVE_DAY_PROFILE[0].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS1, 1);
+        ACTIVE_DAY_PROFILE[1].dayId = 2;
+        /////////////////////////////////////////////////////////////////////////
+        //Add passive calendar.
+        BB_ATTACH(activityCalendar.calendarNamePassive, PASSIVE_CALENDAR_NAME, (unsigned short)strlen((char*)PASSIVE_CALENDAR_NAME));
+        ARR_ATTACH(activityCalendar.seasonProfilePassive, PASSIVE_SEASON_PROFILE, 0);
+        ARR_ATTACH(activityCalendar.weekProfileTablePassive, PASSIVE_WEEK_PROFILE, 0);
+        ARR_ATTACH(activityCalendar.dayProfileTablePassive, PASSIVE_DAY_PROFILE, 0);
+        ARR_ATTACH(PASSIVE_DAY_PROFILE[0].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS1, 0);
         ARR_ATTACH(PASSIVE_DAY_PROFILE[1].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS2, 0);
         ARR_ATTACH(PASSIVE_DAY_PROFILE[2].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS3, 0);
         time_init(&PASSIVE_DAY_PROFILE_ACTIONS1[0].startTime, -1, -1, -1, 0, 0, 0, 0, 0x8000);
-        PASSIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(tarifficationScriptTable);
-        PASSIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
+
         //Activate passive calendar is not called.
         time_init(&activityCalendar.time, -1, -1, -1, -1, -1, -1, -1, 0x8000);
     }
@@ -2646,6 +2664,10 @@ void svr_preAction(
         {
             //Activate normal mode.
             testMode = 0;
+        }
+        else if (e->target == BASE(tarifficationScriptTable))
+        {
+            printf("Tariffication script table invoked with selector %d\n.", e->index);
         }
         if (e->target == BASE(imageTransfer))
         {

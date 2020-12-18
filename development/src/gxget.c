@@ -3004,7 +3004,7 @@ int cosem_getRegisterActivation(
                     break;
                 }
                 if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-                    (ret = bb_setUInt8(data, 6)) != 0 ||
+                    (ret = bb_setUInt8(data, a->length)) != 0 ||
                     (ret = bb_set(data, a->name, a->length)) != 0 ||
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
                     (ret = bb_setUInt8(data, a->count)) != 0)

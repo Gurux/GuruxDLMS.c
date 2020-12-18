@@ -1220,6 +1220,7 @@ int loadSettings()
             bb_clear(&bb);
             return ret;
         }
+        fclose(f);
     }
     return saveSettings();
 }

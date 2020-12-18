@@ -1465,7 +1465,7 @@ int addRegisterActivation()
     int ret;
     static gxRegisterActivationMask MASK_LIST[5] = { 0 };
     static gxObject* REGISTER_ASSIGNMENT[10] = { 0 };
-    static unsigned char ACTIVE_MASK[5] = { 0 };
+    static unsigned char ACTIVE_MASK[MAX_REGISTER_ACTIVATION_MASK_NAME_LENGTH] = { 0 };
     const unsigned char ln[6] = { 0, 0, 14, 0, 1, 255 };
     if ((ret = INIT_OBJECT(registerActivation, DLMS_OBJECT_TYPE_REGISTER_ACTIVATION, ln)) == 0)
     {
@@ -1475,10 +1475,12 @@ int addRegisterActivation()
         ARR_ATTACH(registerActivation.registerAssignment, REGISTER_ASSIGNMENT, 1);
         ARR_ATTACH(registerActivation.maskList, MASK_LIST, 2);
         strcpy((char*)MASK_LIST[0].name, "RATE1");
+        MASK_LIST[0].length = (unsigned char)strlen(MASK_LIST[0].name);
         MASK_LIST[0].count = 2;
         MASK_LIST[0].indexes[0] = 1;
         MASK_LIST[0].indexes[1] = 2;
         strcpy((char*)MASK_LIST[1].name, "RATE2");
+        MASK_LIST[1].length = (unsigned char)strlen(MASK_LIST[1].name);
         MASK_LIST[1].count = 2;
         MASK_LIST[1].indexes[0] = 1;
         MASK_LIST[1].indexes[1] = 2;

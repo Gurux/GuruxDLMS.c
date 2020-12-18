@@ -414,7 +414,7 @@ int invoke_AssociationLogicalName(
                 }
                 if (it->key == id && memcmp(it->value, name, len) == 0)
                 {
-                    arr_removeByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)&it);
+                    ret = arr_removeByIndex(&((gxAssociationLogicalName*)e->target)->userList, pos, (void**)&it);
                     gxfree(it->value);
                     gxfree(it);
                     break;
@@ -1914,6 +1914,8 @@ int invoke_RegisterActivation(
 {
     int ret = 0;
     uint16_t count;
+    gxRegisterActivationMask* k;
+    uint16_t pos;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
     gxObjectDefinition* it;
 #else
@@ -2013,8 +2015,6 @@ int invoke_RegisterActivation(
         }
         ++object->maskList.size;
 #ifdef DLMS_IGNORE_MALLOC
-        gxRegisterActivationMask* k;
-        unsigned char pos;
         uint16_t size;
         if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
             (ret = arr_getByIndex(&object->maskList, object->maskList.size - 1, (void**)&k, sizeof(gxRegisterActivationMask))) == 0 &&
@@ -2040,7 +2040,52 @@ int invoke_RegisterActivation(
     //Remove mask.
     else if (e->index == 3)
     {
-
+        unsigned char ch;
+        if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) == 0)
+        {
+            if (ch != DLMS_DATA_TYPE_OCTET_STRING)
+            {
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            else
+            {
+                uint16_t count;
+                if ((ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) == 0)
+                {
+                    for (pos = 0; pos != object->maskList.size; ++pos)
+                    {
+                        if ((ret = arr_getByIndex2(&object->maskList, pos, (void**)&k, sizeof(gxRegisterActivationMask))) != 0)
+                        {
+                            break;
+                        }
+#if defined(DLMS_IGNORE_MALLOC)
+                        if (bb_available(e->parameters.byteArr) == k->length &&
+                            memcmp(k->name, e->parameters.byteArr->data + e->parameters.byteArr->position, count) == 0)
+                        {
+                            //arr_removeByIndex is decreasing amount already.
+                            ret = arr_removeByIndex(&object->maskList, pos, sizeof(gxRegisterActivationMask));
+                            break;
+                        }
+#else
+                        if (bb_available(e->parameters.byteArr) == k->name.size &&
+                            memcmp(k->name.data, e->parameters.byteArr->data + e->parameters.byteArr->position, count) == 0)
+                        {
+                            //arr_removeByIndex is decreasing amount already.
+                            if ((ret = arr_removeByIndex(&object->maskList, pos, (void**)&k)) == 0)
+                            {
+                                bb_clear(&k->name);
+                                bb_clear(&k->indexes);
+                                gxfree(k);
+                            }
+                            break;
+                        }
+#endif //defined(DLMS_IGNORE_MALLOC)
+                        e->parameters.byteArr->position += count;
+                    }
+                }
+            }
+        }
+        bb_clear(e->parameters.byteArr);
     }
     else
     {

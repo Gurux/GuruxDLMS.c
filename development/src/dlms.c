@@ -1976,7 +1976,7 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
         info->complete = 0;
         return 0;
     }
-    switch (info->type)
+    switch (info->type & ~DLMS_DATA_TYPE_BYREF)
     {
     case DLMS_DATA_TYPE_ARRAY:
     case DLMS_DATA_TYPE_STRUCTURE:

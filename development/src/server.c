@@ -4138,6 +4138,11 @@ unsigned char svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char
         //Connection state is changed.
         return 1;
     }
+    if (objectType == DLMS_OBJECT_TYPE_REGISTER_ACTIVATION)
+    {
+        //Register activation is changed.
+        return 1;
+    }
     return 0;
 }
 #endif //DLMS_IGNORE_SERVER

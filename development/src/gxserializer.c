@@ -252,7 +252,7 @@ int ser_saveScriptTable(
             for (pos = 0; pos != object->scripts.size; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
-                if ((ret = arr_getByIndex(&object->scripts, pos, (void**)&s, sizeof(gxScriptAction))) != 0)
+                if ((ret = arr_getByIndex(&object->scripts, pos, (void**)&s, sizeof(gxScript))) != 0)
                 {
                     break;
                 }
@@ -2786,7 +2786,7 @@ int ser_loadRegister(gxSerializerSettings* serializeSettings, gxRegister* object
 #ifndef DLMS_IGNORE_CLOCK
 int ser_loadClock(gxSerializerSettings* serializeSettings, gxClock* object, gxByteBuffer* serializer)
 {
-    int ret;
+    int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
     if ((!IS_ATTRIBUTE_SET(ignored, 2) && (ret = ser_loadDateTime(&object->time, serializer)) != 0) ||
         (!IS_ATTRIBUTE_SET(ignored, 3) && (ret = bb_getInt16(serializer, &object->timeZone)) != 0) ||

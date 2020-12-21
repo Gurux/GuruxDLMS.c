@@ -1005,7 +1005,31 @@ int invoke_ScriptTable(
                     {
                         break;
                     }
-                    e1->parameters = sa->parameter;
+                    if (sa->type == DLMS_SCRIPT_ACTION_TYPE_WRITE)
+                    {
+#ifdef DLMS_IGNORE_MALLOC
+                        if (sa->parameter.vt == DLMS_DATA_TYPE_OCTET_STRING)
+                        {
+                            e1->value.byteArr = e->value.byteArr;
+                            e1->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+                            bb_clear(e1->value.byteArr);
+                            if ((ret = cosem_setOctetString2(e1->value.byteArr, sa->parameter.pVal, sa->parameter.size)) != 0)
+                            {
+                                break;
+                            }
+                        }
+#else
+                        e1->value = sa->parameter;
+#endif //DLMS_IGNORE_MALLOC
+                    }
+                    else
+                    {
+#ifdef DLMS_IGNORE_MALLOC
+                        e1->parameters = sa->parameter;
+#else
+                        e1->parameters = sa->parameter;
+#endif //DLMS_IGNORE_MALLOC
+                    }
                     e1->index = sa->index;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
                     e1->target = sa->target;
@@ -1058,6 +1082,7 @@ int invoke_ScriptTable(
     {
         ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
     }
+    var_clear(&e->value);
     return ret;
 }
 #endif //DLMS_IGNORE_SCRIPT_TABLE

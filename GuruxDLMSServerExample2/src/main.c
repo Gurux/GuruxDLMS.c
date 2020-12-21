@@ -114,6 +114,7 @@ static gxAssociationLogicalName associationLow;
 static gxAssociationLogicalName associationHigh;
 static gxAssociationLogicalName associationHighGMac;
 static gxRegister activePowerL1;
+static gxRegister activePowerL1;
 static gxScriptTable scriptTableGlobalMeterReset;
 static gxScriptTable scriptTableDisconnectControl;
 static gxScriptTable scriptTableActivateTestMode;
@@ -133,6 +134,7 @@ static gxSecuritySetup securitySetupHighGMac;
 gxImageTransfer imageTransfer;
 gxAutoConnect autoConnect;
 gxActivityCalendar activityCalendar;
+gxSpecialDaysTable specialDaysTable;
 gxLocalPortSetup localPortSetup;
 gxDemandRegister demandRegister;
 gxRegisterMonitor registerMonitor;
@@ -147,11 +149,12 @@ gxPrimeNbOfdmPlcMacFunctionalParameters primeNbOfdmPlcMacFunctionalParameters;
 gxPrimeNbOfdmPlcMacNetworkAdministrationData primeNbOfdmPlcMacNetworkAdministrationData;
 
 static gxScriptTable tarifficationScriptTable;
-
 gxRegisterActivation registerActivation;
+gxData currentlyActiveTariff;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
+//Append new COSEM object to the end so serialization will work correctly.
 static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
                                    BASE(ldn), BASE(sapAssignment), BASE(eventCode),
                                    BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
@@ -160,7 +163,7 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
                                    BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
                                    BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData),
-                                   BASE(twistedPairSetup)
+                                   BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff)
 };
 
 
@@ -1067,6 +1070,43 @@ int addActivityCalendar()
     return ret;
 }
 
+
+///////////////////////////////////////////////////////////////////////
+//Add Optical Port Setup object.
+///////////////////////////////////////////////////////////////////////
+int addSpecialDaysTable()
+{
+    int ret;
+    static gxSpecialDay DAYS[10];
+    const unsigned char ln[6] = { 0, 0, 11, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(specialDaysTable, DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE, ln)) == 0)
+    {
+        //Add new year using Gregorian (Julian) calendar.
+        DAYS[0].index = 0;
+        time_init(&DAYS[0].date, -1, 1, 1, -1, -1, -1, -1, 0x8000);
+        DAYS[0].dayId = 3;
+        //Add special exact day.
+        DAYS[1].index = 1;
+        time_init(&DAYS[1].date, 2021, 6, 3, -1, -1, -1, -1, 0x8000);
+        DAYS[1].dayId = 3;
+        ARR_ATTACH(specialDaysTable.entries, DAYS, 2);
+    }
+    return ret;
+}
+
+//Add Currently active tariff object.
+int addCurrentlyActiveTariff()
+{
+    int ret;
+    static unsigned char TARIFF[10];
+    const unsigned char ln[6] = { 0, 0, 96, 14, 0, 255 };
+    if ((ret = INIT_OBJECT(currentlyActiveTariff, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_OCTET_STRING(currentlyActiveTariff.value, TARIFF, 0);
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //Add Optical Port Setup object.
 ///////////////////////////////////////////////////////////////////////
@@ -1448,29 +1488,43 @@ int addTarifficationScriptTable()
 {
     int ret;
     static gxScript SCRIPTS[2] = { 0 };
-    static gxScriptAction ACTIONS1[1] = { 0 };
-    static gxScriptAction ACTIONS2[1] = { 0 };
+    static gxScriptAction ACTIONS1[2] = { 0 };
+    static gxScriptAction ACTIONS2[2] = { 0 };
     const unsigned char ln[6] = { 0, 0, 10, 0, 100, 255 };
+    static unsigned char MASK1[MAX_REGISTER_ACTIVATION_MASK_NAME_LENGTH];
+    static unsigned char MASK2[MAX_REGISTER_ACTIVATION_MASK_NAME_LENGTH];
     if ((ret = INIT_OBJECT(tarifficationScriptTable, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
     {
         SCRIPTS[0].id = 1;
         SCRIPTS[1].id = 2;
         ARR_ATTACH(tarifficationScriptTable.scripts, SCRIPTS, 2);
-        ARR_ATTACH(SCRIPTS[0].actions, ACTIONS1, 1);
-        ACTIONS1[0].type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
+        ARR_ATTACH(SCRIPTS[0].actions, ACTIONS1, 2);
+        ACTIONS1[0].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
         ACTIONS1[0].target = BASE(registerActivation);
-        ACTIONS1[0].index = 1;
-        var_init(&ACTIONS1[0].parameter);
-        //Action data is Int8 zero.
-        GX_INT8(ACTIONS1[0].parameter) = 0;
+        ACTIONS1[0].index = 4;
+        //Action data is register activation mask name (RATE1).
+        strcat(MASK1, "RATE1");
+        GX_OCTET_STRING(ACTIONS1[0].parameter, MASK1, 5);
 
-        ARR_ATTACH(SCRIPTS[1].actions, ACTIONS2, 1);
-        ACTIONS2[0].type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
+        ACTIONS1[1].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
+        ACTIONS1[1].target = BASE(currentlyActiveTariff);
+        ACTIONS1[1].index = 2;
+        //Action data is register activation mask name (RATE1).
+        GX_OCTET_STRING(ACTIONS1[1].parameter, MASK1, strlen(MASK1));
+
+        ARR_ATTACH(SCRIPTS[1].actions, ACTIONS2, 2);
+        ACTIONS2[0].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
         ACTIONS2[0].target = BASE(registerActivation);
-        ACTIONS2[0].index = 1;
-        var_init(&ACTIONS2[0].parameter);
-        //Action data is Int8 zero.
-        GX_INT8(ACTIONS2[0].parameter) = 0;
+        ACTIONS2[0].index = 4;
+        //Action data is register activation mask name (RATE2).
+        strcat(MASK2, "RATE2");
+        GX_OCTET_STRING(ACTIONS2[0].parameter, MASK2, 5);
+
+        ACTIONS2[1].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
+        ACTIONS2[1].target = BASE(currentlyActiveTariff);
+        ACTIONS2[1].index = 2;
+        //Action data is register activation mask name (RATE2).
+        GX_OCTET_STRING(ACTIONS2[1].parameter, MASK2, strlen(MASK2));
     }
     return ret;
 }
@@ -1484,7 +1538,7 @@ int addRegisterActivation()
     static gxRegisterActivationMask MASK_LIST[5] = { 0 };
     static gxObject* REGISTER_ASSIGNMENT[10] = { 0 };
     static unsigned char ACTIVE_MASK[MAX_REGISTER_ACTIVATION_MASK_NAME_LENGTH] = { 0 };
-    const unsigned char ln[6] = { 0, 0, 14, 0, 1, 255 };
+    const unsigned char ln[6] = { 0, 0, 14, 0, 0, 255 };
     if ((ret = INIT_OBJECT(registerActivation, DLMS_OBJECT_TYPE_REGISTER_ACTIVATION, ln)) == 0)
     {
         BB_ATTACH(registerActivation.activeMask, ACTIVE_MASK, 0);
@@ -1837,8 +1891,9 @@ int createObjects()
         (ret = addscriptTableDisconnectControl()) != 0 ||
         (ret = addscriptTableActivateTestMode()) != 0 ||
         (ret = addscriptTableActivateNormalMode()) != 0 ||
-        (ret = addTarifficationScriptTable()) != 0 ||
+        //Register activation must add before tariffication script table because TarifficationScriptTable is using Register activation.
         (ret = addRegisterActivation()) != 0 ||
+        (ret = addTarifficationScriptTable()) != 0 ||
         (ret = addLoadProfileProfileGeneric()) != 0 ||
         (ret = addEventLogProfileGeneric()) != 0 ||
         (ret = addActionScheduleDisconnectOpen()) != 0 ||
@@ -1849,6 +1904,8 @@ int createObjects()
         (ret = addTcpUdpSetup()) != 0 ||
         (ret = addAutoConnect()) != 0 ||
         (ret = addActivityCalendar()) != 0 ||
+        (ret = addSpecialDaysTable()) != 0 ||
+        (ret = addCurrentlyActiveTariff()) != 0 ||
         (ret = addOpticalPortSetup()) != 0 ||
         (ret = addDemandRegister()) != 0 ||
         (ret = addRegisterMonitor()) != 0 ||
@@ -3258,6 +3315,16 @@ DLMS_ACCESS_MODE getActivityCalendarAttributeAccess(
     return DLMS_ACCESS_MODE_READ;
 }
 
+//Get attribute access level for register activation.
+DLMS_ACCESS_MODE getRegisterActivationAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    //Register activation assigments and mask lit items are added with actions.
+    return DLMS_ACCESS_MODE_READ;
+}
+
+
 /**
 * Get attribute access level.
 */
@@ -3319,6 +3386,10 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     if (obj->objectType == DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR)
     {
         return getActivityCalendarAttributeAccess(settings, index);
+    }
+    if (obj->objectType == DLMS_OBJECT_TYPE_REGISTER_ACTIVATION)
+    {
+        return getRegisterActivationAttributeAccess(settings, index);
     }
     // Only clock write is allowed.
     if (settings->authentication == DLMS_AUTHENTICATION_LOW)
@@ -4096,5 +4167,5 @@ int main(int argc, char* argv[])
 #endif
 
     return 0;
-}
+    }
 

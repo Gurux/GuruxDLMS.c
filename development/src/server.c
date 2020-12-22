@@ -2566,8 +2566,6 @@ int svr_handleMethodRequest(
     if (ch != 0)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        e->value.byteArr = data;
-        e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         e->parameters.byteArr = data;
         e->parameters.vt = DLMS_DATA_TYPE_OCTET_STRING;
 #endif //DLMS_IGNORE_MALLOC

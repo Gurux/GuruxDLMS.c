@@ -44,7 +44,7 @@ extern "C" {
 
     int cosem_invoke(
         dlmsServerSettings* settings,
-        gxValueEventArg *e);
+        gxValueEventArg* e);
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
     /*
@@ -55,6 +55,12 @@ extern "C" {
         dlmsSettings* settings,
         gxCompactData* object);
 #endif //DLMS_IGNORE_COMPACT_DATA
+
+#ifndef DLMS_IGNORE_SCRIPT_TABLE
+    int invoke_ScriptTable(
+        dlmsServerSettings* settings,
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_SCRIPT_TABLE
 
 #ifdef  __cplusplus
 }

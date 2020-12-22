@@ -1877,8 +1877,6 @@ int svr_getReadData(
         {
             break;
         }
-        e->value.byteArr = data;
-        e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         statusindex = data->size;
         if (!e->handled)
         {
@@ -3813,6 +3811,66 @@ unsigned char equal(gxByteBuffer* a, gxByteBuffer* b)
     return 0;
 }
 
+int svr_invokeScript(
+    dlmsServerSettings* settings,
+    gxArray* dayProfiles,
+    uint16_t id,
+    uint32_t time)
+{
+    uint16_t pos, pos2;
+    int ret = 0;
+    gxDayProfile* dp;
+    gxDayProfileAction* da;
+    gxValueEventCollection args;
+    gxValueEventArg* e;
+#ifdef DLMS_IGNORE_MALLOC
+    gxValueEventArg tmp[1];
+    ve_init(&tmp[0]);
+    vec_attach(&args, tmp, 1, 1);
+    e = &tmp[0];
+#else
+    e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+    ve_init(e);
+    vec_init(&args);
+    vec_push(&args, e);
+#endif //DLMS_IGNORE_MALLOC
+    for (pos = 0; pos != dayProfiles->size; ++pos)
+    {
+        if ((ret = arr_getByIndex2(dayProfiles, pos, (void**)&dp, sizeof(gxDayProfile))) != 0)
+        {
+            break;
+        }
+        if (dp->dayId == id)
+        {
+            for (pos2 = 0; pos2 != dp->daySchedules.size; ++pos2)
+            {
+                if ((ret = arr_getByIndex2(&dp->daySchedules, pos2, (void**)&da, sizeof(gxDayProfileAction))) != 0)
+                {
+                    break;
+                }
+                if (time_compare2(&da->startTime, time) == 0)
+                {
+                    e->target = da->script;
+                    e->index = 1;
+                    if ((ret = var_setInt8(&e->parameters, da->scriptSelector)) != 0 ||
+                        (ret = invoke_ScriptTable(settings, e)) != 0)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        if (ret != 0)
+        {
+            break;
+        }
+    }
+#ifndef DLMS_IGNORE_MALLOC
+    vec_clear(&args);
+#endif //DLMS_IGNORE_MALLOC
+    return ret;
+}
+
 int svr_handleActivityCalendar(
     dlmsServerSettings* settings,
     gxActivityCalendar* object,
@@ -3845,34 +3903,10 @@ int svr_handleActivityCalendar(
                 }
                 if (time_compare2(&sd->date, time) == 0)
                 {
-                    //Invok day profile
-                    for (pos3 = 0; pos3 != ((gxSpecialDaysTable*)obj)->entries.size; ++pos3)
+                    //Invoke day profile
+                    if ((ret = svr_invokeScript(settings, &object->dayProfileTableActive, sd->index, time)) != 0)
                     {
-                        if ((ret = arr_getByIndex2(&((gxSpecialDaysTable*)obj)->entries, pos3, (void**)&da, sizeof(gxDayProfileAction))) != 0)
-                        {
-                            break;
-                        }
-                        tm = da->startTime;
-                        if (settings->defaultClock != NULL)
-                        {
-                            tm.deviation = settings->defaultClock->timeZone;
-                            tm.status = settings->defaultClock->status;
-                        }
-                        if (da->scriptSelector != 0)
-                        {
-                            if ((ret = svr_invoke(
-                                settings,
-                                (gxObject*)da->script,
-                                (unsigned char)da->scriptSelector,
-                                time,
-                                &tm,
-                                NULL,
-                                &object->executedTime,
-                                next)) != 0)
-                            {
-                                break;
-                            }
-                        }
+                        break;
                     }
                     return ret;
                 }
@@ -3981,19 +4015,14 @@ int svr_handleActivityCalendar(
                                     tm.deviation = settings->defaultClock->timeZone;
                                     tm.status = settings->defaultClock->status;
                                 }
-                                if (da->scriptSelector != 0)
+                                if (time_compare2(&tm, time) == 0)
                                 {
-                                    if ((ret = svr_invoke(
-                                        settings,
-                                        (gxObject*)da->script,
-                                        (unsigned char)da->scriptSelector,
-                                        time,
-                                        &tm,
-                                        NULL,
-                                        &object->executedTime,
-                                        next)) != 0)
+                                    if (da->scriptSelector != 0)
                                     {
-                                        break;
+                                        if ((ret = svr_invokeScript(settings, &object->dayProfileTableActive, da->scriptSelector, time)) != 0)
+                                        {
+                                            break;
+                                        }
                                     }
                                 }
                             }

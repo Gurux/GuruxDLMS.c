@@ -1007,28 +1007,11 @@ int invoke_ScriptTable(
                     }
                     if (sa->type == DLMS_SCRIPT_ACTION_TYPE_WRITE)
                     {
-#ifdef DLMS_IGNORE_MALLOC
-                        if (sa->parameter.vt == DLMS_DATA_TYPE_OCTET_STRING)
-                        {
-                            e1->value.byteArr = e->value.byteArr;
-                            e1->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
-                            bb_clear(e1->value.byteArr);
-                            if ((ret = cosem_setOctetString2(e1->value.byteArr, sa->parameter.pVal, sa->parameter.size)) != 0)
-                            {
-                                break;
-                            }
-                        }
-#else
                         e1->value = sa->parameter;
-#endif //DLMS_IGNORE_MALLOC
                     }
                     else
                     {
-#ifdef DLMS_IGNORE_MALLOC
                         e1->parameters = sa->parameter;
-#else
-                        e1->parameters = sa->parameter;
-#endif //DLMS_IGNORE_MALLOC
                     }
                     e1->index = sa->index;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -1831,45 +1814,85 @@ int invoke_SpecialDaysTable(
     gxValueEventArg* e)
 {
     int ret = 0;
+    uint16_t pos, index;
     gxSpecialDay* specialDay;
     //Insert.
     if (e->index == 1)
     {
+        unsigned char append = 1;
 #ifdef DLMS_IGNORE_MALLOC
         uint16_t count = arr_getCapacity(&object->entries);
-        if (object->entries.size < count)
+        if ((ret = cosem_checkStructure(e->parameters.byteArr, 3)) == 0 &&
+            (ret = cosem_getUInt16(e->parameters.byteArr, &index)) == 0)
         {
-            ++object->entries.size;
-            if ((ret = arr_getByIndex(&object->entries, object->entries.size - 1, (void**)&specialDay, sizeof(gxSpecialDay))) != 0 ||
-                (ret = cosem_checkStructure(e->parameters.byteArr, 3)) != 0 ||
-                (ret = cosem_getUInt16(e->parameters.byteArr, &specialDay->index)) != 0 ||
-                (ret = cosem_getDateFromOctetString(e->parameters.byteArr, &specialDay->date)) != 0 ||
-                (ret = cosem_getUInt8(e->parameters.byteArr, &specialDay->dayId)) != 0)
+            for (pos = 0; pos != object->entries.size; ++pos)
             {
-                --object->entries.size;
+                if ((ret = arr_getByIndex(&object->entries, object->entries.size - 1, (void**)&specialDay, sizeof(gxSpecialDay))) != 0)
+                {
+                    break;
+                }
+                //Overwrite existing item.
+                if (specialDay->index == index)
+                {
+                    if ((ret = cosem_getDateFromOctetString(e->parameters.byteArr, &specialDay->date)) != 0 ||
+                        (ret = cosem_getUInt8(e->parameters.byteArr, &specialDay->dayId)) != 0)
+                    {
+                    }
+                    append = 0;
+                    break;
+                }
             }
-        }
-        else
-        {
-            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+            if (ret == 0 && append)
+            {
+                ++object->entries.size;
+                if ((ret = arr_getByIndex(&object->entries, object->entries.size - 1, (void**)&specialDay, sizeof(gxSpecialDay))) != 0)
+                {
+                    --object->entries.size;
+                }
+                else
+                {
+                    specialDay->index = index;
+                    if ((ret = cosem_getDateFromOctetString(e->parameters.byteArr, &specialDay->date)) != 0 ||
+                        (ret = cosem_getUInt8(e->parameters.byteArr, &specialDay->dayId)) != 0)
+                    {
+                    }
+                }
+            }
         }
 #else
         dlmsVARIANT* tmp3;
         dlmsVARIANT tmp2;
         if (e->parameters.Arr != NULL)
         {
-            specialDay = NULL;
-            specialDay = (gxSpecialDay*)gxmalloc(sizeof(gxSpecialDay));
-            if (specialDay == NULL)
-            {
-                return DLMS_ERROR_CODE_OUTOFMEMORY;
-            }
             ret = va_getByIndex(e->parameters.Arr, 0, &tmp3);
             if (ret != DLMS_ERROR_CODE_OK)
             {
                 return ret;
             }
-            specialDay->index = (uint16_t)var_toInteger(tmp3);
+            index = (uint16_t)var_toInteger(tmp3);
+            for (pos = 0; pos != object->entries.size; ++pos)
+            {
+                if ((ret = arr_getByIndex(&object->entries, object->entries.size - 1, (void**)&specialDay)) != 0)
+                {
+                    break;
+                }
+                //Overwrite existing item.
+                if (specialDay->index == index)
+                {
+                    append = 0;
+                    break;
+                }
+            }
+            if (append)
+            {
+                specialDay = (gxSpecialDay*)gxmalloc(sizeof(gxSpecialDay));
+                if (specialDay == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                arr_push(&object->entries, specialDay);
+            }
+            specialDay->index = index;
             ret = va_getByIndex(e->parameters.Arr, 1, &tmp3);
             if (ret != DLMS_ERROR_CODE_OK)
             {
@@ -1889,11 +1912,6 @@ int invoke_SpecialDaysTable(
                 return ret;
             }
             specialDay->dayId = (unsigned char)var_toInteger(tmp3);
-            arr_push(&object->entries, specialDay);
-            if (ret != 0 && specialDay != NULL)
-            {
-                gxfree(specialDay);
-            }
         }
 #endif //DLMS_IGNORE_MALLOC
     }

@@ -1142,17 +1142,16 @@ int cosem_getVariant(gxByteBuffer* bb, dlmsVARIANT* value)
     unsigned char ch;
     gxDataInfo info;
     var_clear(value);
-    if ((ret = bb_getUInt8(bb, &ch)) != 0)
+    if ((ret = bb_getUInt8(bb, &ch)) == 0)
     {
-        return ret;
+        if (ch != DLMS_DATA_TYPE_NONE)
+        {
+            di_init(&info);
+            --bb->position;
+            ret = dlms_getData(bb, &info, value);
+        }
     }
-    if (ch == DLMS_DATA_TYPE_NONE)
-    {
-        return 0;
-    }
-    di_init(&info);
-    --bb->position;
-    return dlms_getData(bb, &info, value);
+    return ret;
 }
 
 int cosem_getEnum(gxByteBuffer* bb, unsigned char* value)

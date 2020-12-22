@@ -140,23 +140,40 @@ int cosem_verifyObjectArray(gxByteBuffer* bb, objectArray* arr, uint16_t* count)
 #endif //DLMS_COSEM_EXACT_DATA_TYPES
 }
 
+int cosem_updateVariant(dlmsVARIANT* target, dlmsVARIANT* value)
+{
+    int ret;
+    if (value->vt == (DLMS_DATA_TYPE_OCTET_STRING | DLMS_DATA_TYPE_BYREF))
+    {
+        if ((target->vt & DLMS_DATA_TYPE_OCTET_STRING) == 0)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        else
+        {
+            gxByteBuffer tmp;
+            bb_attach(&tmp, target->pVal, target->size, target->capacity);
+            bb_clear(&tmp);
+            if ((ret = bb_set(&tmp, value->pVal, value->size)) == 0)
+            {
+                target->size = value->size;
+            }
+        }
+    }
+    else
+    {
+        ret = cosem_getVariant(value->byteArr, target);
+    }
+    return ret;
+}
+
 #ifndef DLMS_IGNORE_DATA
 int cosem_setData(gxData* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret;
     if (index == 2)
     {
-        if (value->vt == DLMS_DATA_TYPE_OCTET_STRING ||
-            value->vt == DLMS_DATA_TYPE_STRING ||
-            value->vt == DLMS_DATA_TYPE_STRING_UTF8 ||
-            value->vt == DLMS_DATA_TYPE_BIT_STRING)
-        {
-            ret = cosem_getVariant(value->byteArr, &object->value);
-        }
-        else
-        {
-            ret = cosem_getVariant(value->byteArr, &object->value);
-        }
+        ret = cosem_updateVariant(&object->value, value);
     }
     else
     {
@@ -2446,8 +2463,15 @@ int cosem_setRegisterActivation(
     }
     else if (index == 4)
     {
-        bb_clear(&object->activeMask);
-        ret = cosem_getOctetString(value->byteArr, &object->activeMask);
+        if (value->vt == (DLMS_DATA_TYPE_OCTET_STRING | DLMS_DATA_TYPE_BYREF))
+        {
+            bb_clear(&object->activeMask);
+            ret = bb_set(&object->activeMask, value->pVal, value->size);
+        }
+        else
+        {
+            ret = cosem_getOctetString(value->byteArr, &object->activeMask);
+        }
     }
     else
     {

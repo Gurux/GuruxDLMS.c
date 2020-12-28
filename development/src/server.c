@@ -3902,7 +3902,7 @@ int svr_handleActivityCalendar(
                 if (time_compare2(&sd->date, time) == 0)
                 {
                     //Invoke day profile
-                    if ((ret = svr_invokeScript(settings, &object->dayProfileTableActive, sd->index, time)) != 0)
+                    if ((ret = svr_invokeScript(settings, &object->dayProfileTableActive, sd->dayId, time)) != 0)
                     {
                         break;
                     }
@@ -3992,41 +3992,7 @@ int svr_handleActivityCalendar(
                     {
                         break;
                     }
-                    for (pos3 = 0; pos3 != object->dayProfileTableActive.size; ++pos3)
-                    {
-                        if ((ret = arr_getByIndex2(&object->dayProfileTableActive, pos3, (void**)&dp, sizeof(gxDayProfile))) != 0)
-                        {
-                            break;
-                        }
-                        //If weekday matches.
-                        if (dp->dayId == dayId)
-                        {
-                            for (pos4 = 0; pos4 != dp->daySchedules.size; ++pos4)
-                            {
-                                if ((ret = arr_getByIndex2(&dp->daySchedules, pos4, (void**)&da, sizeof(gxDayProfileAction))) != 0)
-                                {
-                                    break;
-                                }
-                                tm = da->startTime;
-                                if (settings->defaultClock != NULL)
-                                {
-                                    tm.deviation = settings->defaultClock->timeZone;
-                                    tm.status = settings->defaultClock->status;
-                                }
-                                if (time_compare2(&tm, time) == 0)
-                                {
-                                    if (da->scriptSelector != 0)
-                                    {
-                                        if ((ret = svr_invokeScript(settings, &object->dayProfileTableActive, da->scriptSelector, time)) != 0)
-                                        {
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                    }
+                    ret = svr_invokeScript(settings, &object->dayProfileTableActive, dayId, time);
                     //If week name matches.
                     break;
                 }

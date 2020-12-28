@@ -3877,10 +3877,8 @@ int svr_handleActivityCalendar(
 {
     gxSeasonProfile* sp;
     gxWeekProfile* wp;
-    gxDayProfile* dp;
-    gxDayProfileAction* da;
     int pos, ret = 0;
-    uint16_t pos2, pos3, pos4;
+    uint16_t pos2;
     gxtime tm;
     gxObject* obj;
     gxSpecialDay* sd;

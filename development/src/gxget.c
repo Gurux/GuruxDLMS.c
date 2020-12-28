@@ -2948,10 +2948,22 @@ int cosem_getRegisterActivation(
     gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
     {
-        if ((ret = cosem_setArray(data, object->registerAssignment.size)) == 0)
+        //Add count only for first time.
+        uint16_t pduSize = 0;
+        if (!e->transaction)
         {
-            for (pos = 0; pos != object->registerAssignment.size; ++pos)
+            e->transactionEndIndex = object->registerAssignment.size;
+            ret = cosem_setArray(data, object->registerAssignment.size);
+        }
+        else
+        {
+            ret = 0;
+        }
+        if (ret == 0)
+        {
+            for (pos = (uint16_t)e->transactionStartIndex; pos != object->registerAssignment.size; ++pos)
             {
+                pduSize = (uint16_t)data->size;
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES))
                 if ((ret = oa_getByIndex(&object->registerAssignment, pos, &od)) != 0 ||
                     (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
@@ -2981,6 +2993,12 @@ int cosem_getRegisterActivation(
                     break;
                 }
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+                ++e->transactionStartIndex;
+            }
+            if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+            {
+                data->size = pduSize;
+                ret = 0;
             }
         }
     }

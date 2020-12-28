@@ -44,7 +44,7 @@ extern "C" {
 #include "dlmssettings.h"
 
 #ifndef DLMS_IGNORE_DATA
-    int cosem_setData(gxData* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setData(gxValueEventArg* e);
 #endif //DLMS_IGNORE_DATA
 
 #ifndef DLMS_IGNORE_REGISTER
@@ -146,7 +146,7 @@ extern "C" {
 #endif //DLMS_IGNORE_PPP_SETUP
 
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
-    int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setRegisterActivation(dlmsSettings* settings, gxValueEventArg* e);
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 
 #ifndef DLMS_IGNORE_REGISTER_MONITOR

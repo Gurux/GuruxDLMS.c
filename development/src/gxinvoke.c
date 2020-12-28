@@ -1032,6 +1032,8 @@ int invoke_ScriptTable(
                         svr_preWrite(&settings->base, &args);
                         if (!e->handled)
                         {
+                            //Set action to true to indicate that this is called from the action method.
+                            e1->action = 1;
                             if ((ret = cosem_setValue(&settings->base, e1)) != 0)
                             {
                                 break;

@@ -52,12 +52,12 @@
 #include "../include/server.h"
 
 #ifndef DLMS_IGNORE_DATA
-int cosem_setData(gxData* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setData(gxValueEventArg* e)
 {
     int ret;
-    if (index == 2)
+    if (e->index == 2)
     {
-        ret = var_copy(&object->value, value);
+        ret = var_copy(&((gxData*)e->target)->value, &e->value);
     }
     else
     {
@@ -3362,9 +3362,13 @@ int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char 
 }
 #endif //DLMS_IGNORE_PPP_SETUP
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
-int cosem_setRegisterActivation(dlmsSettings* settings, gxRegisterActivation* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setRegisterActivation(dlmsSettings* settings,
+    gxValueEventArg* e)
 {
     int ret = 0, pos;
+    gxRegisterActivation* object = (gxRegisterActivation*)e->target;
+    unsigned char index = e->index;
+    dlmsVARIANT* value = &e->value;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
     gxObjectDefinition* objectDefinition;
 #else

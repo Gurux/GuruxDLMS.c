@@ -66,7 +66,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
     {
 #ifndef DLMS_IGNORE_DATA
     case DLMS_OBJECT_TYPE_DATA:
-        ret = cosem_setData((gxData*)e->target, e->index, &e->value);
+        ret = cosem_setData(e);
         break;
 #endif //DLMS_IGNORE_DATA
 #ifndef DLMS_IGNORE_REGISTER
@@ -201,7 +201,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
     case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
-        ret = cosem_setRegisterActivation(settings, (gxRegisterActivation*)e->target, e->index, &e->value);
+        ret = cosem_setRegisterActivation(settings, e);
         break;
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR

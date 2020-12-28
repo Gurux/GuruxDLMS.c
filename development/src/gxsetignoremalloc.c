@@ -140,10 +140,11 @@ int cosem_verifyObjectArray(gxByteBuffer* bb, objectArray* arr, uint16_t* count)
 #endif //DLMS_COSEM_EXACT_DATA_TYPES
 }
 
-int cosem_updateVariant(dlmsVARIANT* target, dlmsVARIANT* value)
+int cosem_updateVariant(dlmsVARIANT* target, gxValueEventArg* e)
 {
     int ret;
-    if (value->vt == (DLMS_DATA_TYPE_OCTET_STRING | DLMS_DATA_TYPE_BYREF))
+    //If data is coming in action it's plain value.
+    if (e->action && e->value.vt == (DLMS_DATA_TYPE_OCTET_STRING | DLMS_DATA_TYPE_BYREF))
     {
         if ((target->vt & DLMS_DATA_TYPE_OCTET_STRING) == 0)
         {
@@ -154,26 +155,26 @@ int cosem_updateVariant(dlmsVARIANT* target, dlmsVARIANT* value)
             gxByteBuffer tmp;
             bb_attach(&tmp, target->pVal, target->size, target->capacity);
             bb_clear(&tmp);
-            if ((ret = bb_set(&tmp, value->pVal, value->size)) == 0)
+            if ((ret = bb_set(&tmp, e->value.pVal, e->value.size)) == 0)
             {
-                target->size = value->size;
+                target->size = e->value.size;
             }
         }
     }
     else
     {
-        ret = cosem_getVariant(value->byteArr, target);
+        ret = cosem_getVariant(e->value.byteArr, target);
     }
     return ret;
 }
 
 #ifndef DLMS_IGNORE_DATA
-int cosem_setData(gxData* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setData(gxValueEventArg* e)
 {
     int ret;
-    if (index == 2)
+    if (e->index == 2)
     {
-        ret = cosem_updateVariant(&object->value, value);
+        ret = cosem_updateVariant(&((gxData*)e->target)->value, e);
     }
     else
     {
@@ -2353,11 +2354,12 @@ int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char 
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
 int cosem_setRegisterActivation(
     dlmsSettings* settings,
-    gxRegisterActivation* object,
-    unsigned char index,
-    dlmsVARIANT* value)
+    gxValueEventArg* e)
 {
     int ret, pos, pos2;
+    gxRegisterActivation* object = (gxRegisterActivation*)e->target;
+    unsigned char index = e->index;
+    dlmsVARIANT* value = &e->value;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
     gxObjectDefinition* objectDefinition;
 #else
@@ -2463,7 +2465,8 @@ int cosem_setRegisterActivation(
     }
     else if (index == 4)
     {
-        if (value->vt == (DLMS_DATA_TYPE_OCTET_STRING | DLMS_DATA_TYPE_BYREF))
+        //If data is coming in action it's plain value.
+        if (e->action && value->vt == (DLMS_DATA_TYPE_OCTET_STRING | DLMS_DATA_TYPE_BYREF))
         {
             bb_clear(&object->activeMask);
             ret = bb_set(&object->activeMask, value->pVal, value->size);

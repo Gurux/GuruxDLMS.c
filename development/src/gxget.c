@@ -2932,6 +2932,7 @@ int cosem_getPppSetup(
 #endif //DLMS_IGNORE_PPP_SETUP
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
 int cosem_getRegisterActivation(
+    dlmsSettings* settings,
     gxValueEventArg* e)
 {
     int ret, pos;
@@ -2993,6 +2994,15 @@ int cosem_getRegisterActivation(
                     break;
                 }
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC))
+                if (settings->server)
+                {
+                    //If PDU is full.
+                    if (!e->skipMaxPduSize && dlms_isPduFull(settings, data, NULL))
+                    {
+                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                        break;
+                    }
+                }
                 ++e->transactionStartIndex;
             }
             if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
@@ -4345,7 +4355,7 @@ int cosem_getValue(
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
     case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
-        ret = cosem_getRegisterActivation(e);
+        ret = cosem_getRegisterActivation(settings, e);
         break;
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR

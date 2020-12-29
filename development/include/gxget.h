@@ -132,6 +132,7 @@ extern "C" {
         gxValueEventArg* e);
 
     int cosem_getRegisterActivation(
+        dlmsSettings* settings,
         gxValueEventArg* e);
 
     int cosem_getRegisterMonitor(

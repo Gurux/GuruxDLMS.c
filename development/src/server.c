@@ -3850,7 +3850,7 @@ int svr_invokeScript(
                 {
                     e->target = da->script;
                     e->index = 1;
-                    if ((ret = var_setInt8(&e->parameters, da->scriptSelector)) != 0 ||
+                    if ((ret = var_setInt8(&e->parameters, (unsigned char)da->scriptSelector)) != 0 ||
                         (ret = invoke_ScriptTable(settings, e)) != 0)
                     {
                         break;
@@ -3882,6 +3882,30 @@ int svr_handleActivityCalendar(
     gxtime tm;
     gxObject* obj;
     gxSpecialDay* sd;
+    //Check activate passive calendar time.
+    //The activate passive calendar time is never execute if all the values are ignored.
+    if ((object->time.skip & (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND)) !=
+        (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND))
+    {
+        if (time_compareWithDiff(&object->time, time, 0) == 0)
+        {
+            //Executed time is not needed.
+            uint32_t executed;
+            if ((ret = svr_invoke(
+                settings,
+                (gxObject*)object,
+                1,
+                time,
+                NULL,
+                NULL,
+                &executed,
+                next)) != 0)
+            {
+                //Save inforation that invoke failed.
+            }
+        }
+    }
+
     //Check that today is not a special day.
     for (pos = 0; pos != settings->base.objects.size; ++pos)
     {
@@ -3999,8 +4023,8 @@ int svr_handleActivityCalendar(
                     break;
                 }
             }
-        }
     }
+}
     return ret;
 }
 #endif //!defined(DLMS_IGNORE_ACTIVITY_CALENDAR) && !defined(DLMS_IGNORE_OBJECT_POINTERS)

@@ -1169,6 +1169,7 @@ extern "C" {
         gxArray seasonProfilePassive;// gxSeasonProfile
         gxArray dayProfileTablePassive;// gxDayProfile
         gxArray weekProfileTablePassive;// gxWeekProfile
+        //Activate passive calendar time.
         gxtime time;
         //Executed time. This is for internal use.
         uint32_t executedTime;

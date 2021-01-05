@@ -109,6 +109,9 @@ extern "C" {
         gxArray* arr,
         uint16_t index,
         void** value);
+
+    //Swap two array items.
+    int arr_swap(gxArray* arr, uint16_t index1, uint16_t index2);
 #else
     int arr_getByIndex(
         gxArray* arr,
@@ -120,6 +123,14 @@ extern "C" {
         gxArray* arr,
         uint16_t index,
         uint16_t itemSize);
+
+    //Swap two array items.
+    int arr_swap(
+        gxArray* arr,
+        uint16_t index1,
+        uint16_t index2,
+        uint16_t itemSize,
+        void* tmp);
 
     int arr_getByIndexRef(gxArray* arr, uint16_t index, void** value);
 

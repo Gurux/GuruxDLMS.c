@@ -1823,7 +1823,6 @@ int invoke_SpecialDaysTable(
     {
         unsigned char append = 1;
 #ifdef DLMS_IGNORE_MALLOC
-        uint16_t count = arr_getCapacity(&object->entries);
         if ((ret = cosem_checkStructure(e->parameters.byteArr, 3)) == 0 &&
             (ret = cosem_getUInt16(e->parameters.byteArr, &index)) == 0)
         {

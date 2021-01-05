@@ -1067,6 +1067,8 @@ int addActivityCalendar()
 
         //Activate passive calendar is not called.
         time_init(&activityCalendar.time, -1, -1, -1, -1, -1, -1, -1, 0x8000);
+        //The season profile is sorted according to start date (in increasing order).
+        ret = cosem_orderSeasonProfile(&activityCalendar.seasonProfileActive);
     }
     return ret;
 }

@@ -274,6 +274,50 @@ int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index,
 
 #ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
 
+
+// The season profiles list is sorted according to season_start (in increasing order).
+int cosem_orderSeasonProfile(gxArray* profile)
+{
+    int ret = 0;
+    uint16_t pos, pos2, minPos;
+    gxSeasonProfile* sp, * sp2;
+    uint32_t tmp, next1, next2;
+    for (pos = 0; pos < profile->size - 1; ++pos)
+    {
+        if ((ret = arr_getByIndex(profile, pos, (void**)&sp)) != 0)
+        {
+            break;
+        }
+        next1 = time_toUnixTime2(&sp->start);
+        next2 = 0xFFFFFFFF;
+        for (pos2 = pos + 1; pos2 < profile->size; ++pos2)
+        {
+            if ((ret = arr_getByIndex(profile, pos2, (void**)&sp2)) != 0)
+            {
+                break;
+            }
+            tmp = time_toUnixTime2(&sp2->start);
+            if (tmp < next2)
+            {
+                next2 = tmp;
+                minPos = pos2;
+            }
+        }
+        if (ret != 0)
+        {
+            break;
+        }
+        if (next2 < next1)
+        {
+            if ((ret = arr_swap(profile, pos, minPos)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
 int updateSeasonProfile(gxArray* profile, dlmsVARIANT* data)
 {
     int ret = DLMS_ERROR_CODE_OK, pos;
@@ -3570,7 +3614,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
             }
             //Add object to released objects list.
             ret = oa_push(&settings->releasedObjects, object->monitoredValue.target);
-            }
+        }
 #else
         memcpy(object->monitoredValue.logicalName, tmp->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -3580,7 +3624,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
             return ret;
         }
         object->monitoredValue.attributeIndex = (unsigned char)var_toInteger(tmp);
-        }
+    }
     else if (index == 4)
     {
         obj_clearRegisterMonitorActions(&object->actions);
@@ -3626,7 +3670,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
                     }
                     //Add object to released objects list.
                     ret = oa_push(&settings->releasedObjects, (gxObject*)actionSet->actionUp.script);
-                    }
+                }
 #else
                 memcpy(actionSet->actionUp.logicalName, tmp->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -3667,7 +3711,7 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
                     }
                     //Add object to released objects list.
                     ret = oa_push(&settings->releasedObjects, (gxObject*)actionSet->actionDown.script);
-                    }
+                }
 #else
                 memcpy(actionSet->actionDown.logicalName, tmp->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -3678,19 +3722,19 @@ int cosem_setRegisterMonitor(dlmsSettings* settings, gxRegisterMonitor* object, 
                 }
                 actionSet->actionDown.scriptSelector = (uint16_t)var_toInteger(tmp);
                 arr_push(&object->actions, actionSet);
-                }
+            }
             if (ret != 0 && actionSet != NULL)
             {
                 gxfree(actionSet);
             }
-                }
-            }
+        }
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-        }
+}
 
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
@@ -3813,7 +3857,7 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                     }
                     //Add object to released objects list.
                     ret = oa_push(&settings->releasedObjects, (gxObject*)se->scriptTable);
-                    }
+                }
 #else
                 memcpy(se->logicalName, it->byteArr->data, bb_size(it->byteArr));
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -3888,19 +3932,19 @@ int cosem_setSchedule(dlmsSettings* settings, gxSchedule* object, unsigned char 
                 time_copy(&se->endDate, tmp3.dateTime);
                 arr_push(&object->entries, se);
                 var_clear(&tmp3);
-                }
+            }
             if (ret != 0 && se != NULL)
             {
                 gxfree(se);
             }
-            }
         }
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_SCHEDULE
 
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
@@ -3981,7 +4025,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                         if (ret != DLMS_ERROR_CODE_OK)
                         {
                             break;
-                    }
+                        }
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
                         scriptAction->objectType = (DLMS_OBJECT_TYPE)var_toInteger(tmp);
 #else
@@ -4016,7 +4060,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                         }
                         var_copy(&scriptAction->parameter, tmp);
                         arr_push(&script->actions, scriptAction);
-                }
+                    }
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
                         if (scriptAction != NULL)
@@ -4025,12 +4069,12 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                         }
                         break;
                     }
-            }
+                }
                 if (ret != 0 && script != NULL)
                 {
                     gxfree(script);
                 }
-        }
+            }
             else //Read Xemex meter here.
             {
                 ret = va_getByIndex(value->Arr, 0, &tmp);
@@ -4072,7 +4116,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
                     return ret;
-            }
+                }
 
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
                 scriptAction->objectType = (DLMS_OBJECT_TYPE)var_toInteger(tmp3);
@@ -4083,7 +4127,7 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
                     return ret;
-    }
+                }
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
                 memcpy(scriptAction->logicalName, tmp3->byteArr->data, 6);
 #else
@@ -4105,15 +4149,15 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                 }
                 var_copy(&scriptAction->parameter, tmp);
                 arr_push(&script->actions, scriptAction);
-}
-}
+            }
+        }
     }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-        }
+}
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
 int cosem_setSpecialDaysTable(gxSpecialDaysTable* object, unsigned char index, dlmsVARIANT* value)
@@ -4199,7 +4243,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
 #else
             memset(object->ipReference, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    }
+        }
         else
         {
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -4208,11 +4252,11 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
                 (ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_IP4_SETUP, ln, &object->ipSetup)) != 0)
             {
 
-        }
+            }
 #else
             ret = bb_get(value->byteArr, object->ipReference, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-}
+        }
     }
     else if (index == 4)
     {
@@ -4516,7 +4560,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
         ct->chargePerUnit = (short)var_toInteger(tmp);
     }
     return ret;
-    }
+}
 
 int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -5942,7 +5986,7 @@ int cosem_setParameterMonitor(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
@@ -6496,8 +6540,8 @@ int cosem_setArbitrator(
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
                         return ret;
+                    }
                 }
-            }
 #else
                 memcpy(it->scriptLogicalName, tmp2->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -6507,8 +6551,8 @@ int cosem_setArbitrator(
                 }
                 it->scriptSelector = var_toInteger(tmp2);
                 arr_push(&object->actions, it);
+            }
         }
-    }
     }
     break;
     case 3:
@@ -6588,9 +6632,9 @@ int cosem_setArbitrator(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
-    return ret;
     }
+    return ret;
+}
 #endif //DLMS_IGNORE_ARBITRATOR
 #ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
 int cosem_setIec8802LlcType1Setup(
@@ -7220,7 +7264,7 @@ int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT* 
     break;
     default:
         return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-}
+    }
     return DLMS_ERROR_CODE_OK;
 }
 #endif //DLMS_ITALIAN_STANDARD

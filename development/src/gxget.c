@@ -1891,16 +1891,16 @@ int getColumns(
     gxValueEventArg* e)
 {
     uint16_t pduSize;
-    int pos, ret;
+    int pos, ret = 0;
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     gxTarget* it;
 #else
     gxKey* it;
-#endif //DLMS_IGNORE_MALLOC
     if ((ret = bb_capacity(ba, (list->size * 19) + 2)) != 0)
     {
         return ret;
     }
+#endif //DLMS_IGNORE_MALLOC
     //Add count only for first time.
     if (!e->transaction)
     {

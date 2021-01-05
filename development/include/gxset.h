@@ -46,6 +46,10 @@ extern "C" {
 #include "dlmssettings.h"
     int cosem_setValue(dlmsSettings* settings, gxValueEventArg *e);
 
+    /////////////////////////////////////////////////////////////////////////
+    // The season profile is sorted according to start date
+    // (in increasing order).
+    int cosem_orderSeasonProfile(gxArray* profile);
 #ifdef  __cplusplus
 }
 #endif

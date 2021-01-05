@@ -348,3 +348,38 @@ int arr_removeByIndex(
 }
 
 #endif //DLMS_IGNORE_MALLOC
+
+#ifndef DLMS_IGNORE_MALLOC
+int arr_swap(gxArray* arr, uint16_t index1, uint16_t index2)
+{
+    void* tmp;
+    if (!(index1 < arr->size || index2 < arr->size))
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    tmp = arr->data[index1];
+    arr->data[index1] = arr->data[index2];
+    arr->data[index2] = tmp;
+    return 0;
+}
+#else
+int arr_swap(
+    gxArray* arr,
+    uint16_t index1,
+    uint16_t index2,
+    uint16_t itemSize,
+    void* tmp)
+{
+    int ret;
+    void* prev = NULL;
+    void* item = NULL;
+    if ((ret = arr_getByIndex(arr, index1, &prev, itemSize)) == 0 &&
+        (ret = arr_getByIndex(arr, index2, &item, itemSize)) == 0)
+    {
+        memcpy(tmp, prev, itemSize);
+        memcpy(prev, item, itemSize);
+        memcpy(item, tmp, itemSize);
+    }
+    return 0;
+}
+#endif //DLMS_IGNORE_MALLOC

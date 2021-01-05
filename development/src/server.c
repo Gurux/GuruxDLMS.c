@@ -3951,7 +3951,7 @@ int svr_handleActivityCalendar(
             {
                 continue;
             }
-            //In season_start, wildcards are allowed. If all fields are wildcards, the season will never start.W
+            //In season_start, wildcards are allowed. If all fields are wildcards, the season will never start.
             tm = sp->start;
             tm.deviation = 0x8000;
             tm.skip |= DATETIME_SKIPS_SECOND | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MS;

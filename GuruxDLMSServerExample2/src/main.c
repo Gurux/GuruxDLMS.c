@@ -147,6 +147,7 @@ gxPppSetup pppSetup;
 gxGPRSSetup gprsSetup;
 gxPrimeNbOfdmPlcMacFunctionalParameters primeNbOfdmPlcMacFunctionalParameters;
 gxPrimeNbOfdmPlcMacNetworkAdministrationData primeNbOfdmPlcMacNetworkAdministrationData;
+gxPrimeNbOfdmPlcMacCounters primeNbOfdmPlcMacCounters;
 
 static gxScriptTable tarifficationScriptTable;
 gxRegisterActivation registerActivation;
@@ -163,7 +164,8 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
                                    BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
                                    BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData),
-                                   BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff)
+                                   BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff),
+                                   BASE(primeNbOfdmPlcMacCounters)
 };
 
 
@@ -1110,6 +1112,24 @@ int addCurrentlyActiveTariff()
     return ret;
 }
 
+//Add prime Nb OFDM PLC MAC counters object.
+int addPrimeNbOfdmPlcMacCounters()
+{
+    int ret;
+    static unsigned char TARIFF[10];
+    const unsigned char ln[6] = { 0,0,28,4,0,255 };
+    if ((ret = INIT_OBJECT(primeNbOfdmPlcMacCounters, DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS, ln)) == 0)
+    {
+        primeNbOfdmPlcMacCounters.txDataPktCount = 1;
+        primeNbOfdmPlcMacCounters.rxDataPktCount = 2;
+        primeNbOfdmPlcMacCounters.txCtrlPktCount = 3;
+        primeNbOfdmPlcMacCounters.rxCtrlPktCount = 4;
+        primeNbOfdmPlcMacCounters.csmaFailCount = 5;
+        primeNbOfdmPlcMacCounters.csmaChBusyCount = 6;
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //Add Optical Port Setup object.
 ///////////////////////////////////////////////////////////////////////
@@ -1337,7 +1357,7 @@ int addGprsSetup()
 }
 
 ///////////////////////////////////////////////////////////////////////
-//Add Prime NbOfdm Plc Mac Functional Parameters object.
+//Add Prime Nb OFDM PLC MAC Functional Parameters object.
 ///////////////////////////////////////////////////////////////////////
 int addPrimeNbOfdmPlcMacFunctionalParameters()
 {
@@ -1352,7 +1372,7 @@ int addPrimeNbOfdmPlcMacFunctionalParameters()
 }
 
 ///////////////////////////////////////////////////////////////////////
-//Add PrimeNbOfdmPlcMacFunctionalParameters object.
+//Add prime Nb OFDM PLC MAC network administration data object.
 ///////////////////////////////////////////////////////////////////////
 int addPrimeNbOfdmPlcMacNetworkAdministrationData()
 {
@@ -1909,6 +1929,7 @@ int createObjects()
         (ret = addActivityCalendar()) != 0 ||
         (ret = addSpecialDaysTable()) != 0 ||
         (ret = addCurrentlyActiveTariff()) != 0 ||
+        (ret = addPrimeNbOfdmPlcMacCounters()) != 0 ||
         (ret = addOpticalPortSetup()) != 0 ||
         (ret = addDemandRegister()) != 0 ||
         (ret = addRegisterMonitor()) != 0 ||

@@ -157,11 +157,14 @@ void arr_clear(
         arr->data = NULL;
     }
     arr->capacity = 0;
-#endif //DLMS_IGNORE_MALLOC
     if (!arr_isAttached(arr))
     {
         arr->size = 0;
     }
+#else
+    arr->size = 0;
+#endif //DLMS_IGNORE_MALLOC
+
 #ifndef DLMS_IGNORE_MALLOC
     arr->position = 0;
 #endif //DLMS_IGNORE_MALLOC
@@ -177,11 +180,13 @@ void arr_empty(
         arr->data = NULL;
     }
     arr->capacity = 0;
-#endif //DLMS_IGNORE_MALLOC
     if (!arr_isAttached(arr))
     {
         arr->size = 0;
     }
+#else
+    arr->size = 0;
+#endif //DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_MALLOC
     arr->position = 0;
 #endif //DLMS_IGNORE_MALLOC

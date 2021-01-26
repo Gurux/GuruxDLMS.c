@@ -36,15 +36,12 @@
 #endif
 #include <string.h>
 #include <math.h>
+#include <stdio.h> //printf needs this or error is generated.
 #include "../include/gxmem.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif //defined(_WIN32) || defined(_WIN64)
-
-#ifndef GX_DLMS_MICROCONTROLLER
-#include <stdio.h> //printf needs this or error is generated.
-#endif //GX_DLMS_MICROCONTROLLER
 
 #include "../include/helpers.h"
 #include "../include/errorcodes.h"

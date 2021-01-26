@@ -33,12 +33,12 @@
 #ifndef COSEM_H
 #define COSEM_H
 
+#include "gxobjects.h"
+#include "dlmsSettings.h"
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#include "gxobjects.h"
-#include "dlmsSettings.h"
 
 #ifndef DLMS_IGNORE_MALLOC
   int cosem_createObject(

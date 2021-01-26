@@ -33,17 +33,18 @@
 #ifndef DLMS_SETTINGS_H
 #define DLMS_SETTINGS_H
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
 #include "enums.h"
 #include "variant.h"
+#include "bytebuffer.h"
 #include "objectarray.h"
 #include "message.h"
 #include "gxvalueeventargs.h"
 #include "replydata.h"
 #include "ciphering.h"
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 #ifndef DLMS_IGNORE_PLC
 

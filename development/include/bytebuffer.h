@@ -33,12 +33,12 @@
 #ifndef BYTE_BUFFER_H
 #define BYTE_BUFFER_H
 
+#include "gxint.h"
+#include "gxignore.h"
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#include "gxint.h"
-#include "gxignore.h"
 
 //Arduino DOIT ESP32 uses bb_init. bb_Init is used instead.
 #ifndef ESP_PLATFORM

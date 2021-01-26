@@ -33,9 +33,6 @@
 #ifndef VARIANT_H
 #define VARIANT_H
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
 #include "gxignore.h"
 #include "date.h"
 #include "enums.h"
@@ -84,6 +81,10 @@ extern "C" {
 #define GX_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRING), SIZE_, sizeof(VALUE_))
 #define GX_ARRAY(X, VALUE_) GX_UNION2(&X, pVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_ARRAY), 0, 0)
 #define GX_STRUCT(X, VALUE_) GX_UNION2(&X, pVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRUCTURE), 0, 0)
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
     typedef struct
     {

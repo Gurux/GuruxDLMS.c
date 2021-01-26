@@ -55,7 +55,7 @@ unsigned char hlp_isBigEndian(void)
 
 const char* hlp_getErrorMessage(int error)
 {
-    const char* str;
+    const char* str = NULL;
     if ((error & DLMS_ERROR_TYPE_EXCEPTION_RESPONSE) != 0)
     {
         switch (error & 0xFF)

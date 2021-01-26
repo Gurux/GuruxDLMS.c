@@ -103,7 +103,7 @@ int cosem_getRegister(
     gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
     {
-        ret = cosem_setVariant(e->value.byteArr, &((gxRegister*)e->target)->value);
+        ret = cosem_setVariant(data, &((gxRegister*)e->target)->value);
     }
     else if (e->index == 3)
     {
@@ -129,6 +129,8 @@ int cosem_getRegisterTable(
     if (e->index == 2)
     {
         //TODO:  ret = cosem_setVariant(e->value.byteArr, &((gxRegisterTable*)e->target)->value);
+        //      look at cosem_getScriptTable
+        ret = DLMS_ERROR_CODE_NOT_IMPLEMENTED;
     }
     else if (e->index == 4)
     {

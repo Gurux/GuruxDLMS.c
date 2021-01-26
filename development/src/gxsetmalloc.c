@@ -290,6 +290,7 @@ int cosem_orderSeasonProfile(gxArray* profile)
         }
         next1 = time_toUnixTime2(&sp->start);
         next2 = 0xFFFFFFFF;
+        minPos = pos;
         for (pos2 = pos + 1; pos2 < profile->size; ++pos2)
         {
             if ((ret = arr_getByIndex(profile, pos2, (void**)&sp2)) != 0)
@@ -3473,7 +3474,8 @@ int cosem_setRegisterActivation(dlmsSettings* settings,
     {
         obj_clearRegisterActivationMaskList(&object->maskList);
         int pos2;
-        gxByteBuffer* start, * end;
+        gxByteBuffer* start = NULL;
+        gxByteBuffer* end   = NULL;
         dlmsVARIANT* tmp, * tmp3;
         if (value->Arr != NULL)
         {
@@ -4151,6 +4153,8 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                 arr_push(&script->actions, scriptAction);
             }
         }
+        else //if (value->Arr->size != 0)
+            ret = DLMS_ERROR_CODE_OK;
     }
     else
     {

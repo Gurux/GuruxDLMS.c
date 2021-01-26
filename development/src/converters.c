@@ -347,175 +347,64 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
 
 const char* obj_getUnitAsString(unsigned char unit)
 {
-    const char* ret;
     switch (unit)
     {
-    case 0:
-        ret = GET_STR_FROM_EEPROM("None");
-    case 1:
-        ret = GET_STR_FROM_EEPROM("Year");
-        break;
-    case 2:
-        ret = GET_STR_FROM_EEPROM("Month");
-        break;
-    case 3:
-        ret = GET_STR_FROM_EEPROM("Week");
-        break;
-    case 4:
-        ret = GET_STR_FROM_EEPROM("Day");
-        break;
-    case 5:
-        ret = GET_STR_FROM_EEPROM("Hour");
-        break;
-    case 6:
-        ret = GET_STR_FROM_EEPROM("Minute");
-        break;
-    case 7:
-        ret = GET_STR_FROM_EEPROM("Second");
-        break;
-    case 8:
-        ret = GET_STR_FROM_EEPROM("PhaseAngle");
-        break;
-    case 9:
-        ret = GET_STR_FROM_EEPROM("Temperature");
-        break;
-    case 10:
-        ret = GET_STR_FROM_EEPROM("LocalCurrency");
-        break;
-    case 11:
-        ret = GET_STR_FROM_EEPROM("Length");
-        break;
-    case 12:
-        ret = GET_STR_FROM_EEPROM("Speed");
-        break;
-    case 13:
-        ret = GET_STR_FROM_EEPROM("Volume");
-        break;
-    case 14:
-        ret = GET_STR_FROM_EEPROM("CorrectedVolume");
-        break;
-    case 15:
-        ret = GET_STR_FROM_EEPROM("VolumeFlux");
-        break;
-    case 16:
-        ret = GET_STR_FROM_EEPROM("CorrectedVolumeFlux");
-        break;
-    case 17:
-        ret = GET_STR_FROM_EEPROM("VolumeFlux");
-        break;
-    case 18:
-        ret = GET_STR_FROM_EEPROM("CorrectedVolumeFlux");
-        break;
-    case 19:
-        ret = GET_STR_FROM_EEPROM("Volume");
-        break;
-    case 20:
-        ret = GET_STR_FROM_EEPROM("MassKg");
-        break;
-    case 21:
-        ret = GET_STR_FROM_EEPROM("Force");
-        break;
-    case 22:
-        ret = GET_STR_FROM_EEPROM("Energy");
-        break;
-    case 23:
-        ret = GET_STR_FROM_EEPROM("PressurePascal");
-        break;
-    case 24:
-        ret = GET_STR_FROM_EEPROM("PressureBar");
-        break;
-    case 25:
-        ret = GET_STR_FROM_EEPROM("Energy");
-        break;
-    case 26:
-        ret = GET_STR_FROM_EEPROM("ThermalPower");
-        break;
-    case 27:
-        ret = GET_STR_FROM_EEPROM("ActivePower");
-        break;
-    case 28:
-        ret = GET_STR_FROM_EEPROM("ApparentPower");
-        break;
-    case 29:
-        ret = GET_STR_FROM_EEPROM("ReactivePower");
-        break;
-    case 30:
-        ret = GET_STR_FROM_EEPROM("ActiveEnergy");
-        break;
-    case 31:
-        ret = GET_STR_FROM_EEPROM("ApparentEnergy");
-        break;
-    case 32:
-        ret = GET_STR_FROM_EEPROM("ReactiveEnergy");
-        break;
-    case 33:
-        ret = GET_STR_FROM_EEPROM("Current");
-        break;
-    case 34:
-        ret = GET_STR_FROM_EEPROM("ElectricalCharge");
-        break;
-    case 35:
-        ret = GET_STR_FROM_EEPROM("Voltage");
-        break;
-    case 36:
-        ret = GET_STR_FROM_EEPROM("Electrical field strength E V/m");
-        break;
-    case 37:
-        ret = GET_STR_FROM_EEPROM("Capacity C farad C/V = As/V");
-        break;
-    case 38:
-        ret = GET_STR_FROM_EEPROM("Resistance");
-        break;
-    case 39:
-        ret = GET_STR_FROM_EEPROM("Resistivity");
-        break;
-    case 40:
-        ret = GET_STR_FROM_EEPROM("Magnetic flux F weber Wb = Vs");
-        break;
-    case 41:
-        ret = GET_STR_FROM_EEPROM("Induction T tesla Wb/m2");
-        break;
-    case 42:
-        ret = GET_STR_FROM_EEPROM("Magnetic field strength H A/m");
-        break;
-    case 43:
-        ret = GET_STR_FROM_EEPROM("Inductivity L henry H = Wb/A");
-        break;
-    case 44:
-        ret = GET_STR_FROM_EEPROM("Frequency");
-        break;
-    case 45:
-        ret = GET_STR_FROM_EEPROM("ActiveEnergy");
-        break;
-    case 46:
-        ret = GET_STR_FROM_EEPROM("ReactiveEnergy");
-        break;
-    case 47:
-        ret = GET_STR_FROM_EEPROM("ApparentEnergy");
-        break;
-    case 48:
-        ret = GET_STR_FROM_EEPROM("V260*60s");
-        break;
-    case 49:
-        ret = GET_STR_FROM_EEPROM("A260*60s");
-        break;
-    case 50:
-        ret = GET_STR_FROM_EEPROM("Mass");
-        break;
-    case 51:
-        ret = GET_STR_FROM_EEPROM("ConductanceSiemens");
-        break;
-    case 254:
-        ret = GET_STR_FROM_EEPROM("OtherUnit");
-        break;
-    case 255:
-        ret = GET_STR_FROM_EEPROM("NoUnit");
-        break;
-    default:
-        ret = NULL;
-        break;
+    case 0: return GET_STR_FROM_EEPROM("None");
+    case 1: return GET_STR_FROM_EEPROM("Year");
+    case 2: return GET_STR_FROM_EEPROM("Month");
+    case 3: return GET_STR_FROM_EEPROM("Week");
+    case 4: return GET_STR_FROM_EEPROM("Day");
+    case 5: return GET_STR_FROM_EEPROM("Hour");
+    case 6: return GET_STR_FROM_EEPROM("Minute");
+    case 7: return GET_STR_FROM_EEPROM("Second");
+    case 8: return GET_STR_FROM_EEPROM("PhaseAngle");
+    case 9: return GET_STR_FROM_EEPROM("Temperature");
+    case 10: return GET_STR_FROM_EEPROM("LocalCurrency");
+    case 11: return GET_STR_FROM_EEPROM("Length");
+    case 12: return GET_STR_FROM_EEPROM("Speed");
+    case 13: return GET_STR_FROM_EEPROM("Volume");
+    case 14: return GET_STR_FROM_EEPROM("CorrectedVolume");
+    case 15: return GET_STR_FROM_EEPROM("VolumeFlux");
+    case 16: return GET_STR_FROM_EEPROM("CorrectedVolumeFlux");
+    case 17: return GET_STR_FROM_EEPROM("VolumeFlux");
+    case 18: return GET_STR_FROM_EEPROM("CorrectedVolumeFlux");
+    case 19: return GET_STR_FROM_EEPROM("Volume");
+    case 20: return GET_STR_FROM_EEPROM("MassKg");
+    case 21: return GET_STR_FROM_EEPROM("Force");
+    case 22: return GET_STR_FROM_EEPROM("Energy");
+    case 23: return GET_STR_FROM_EEPROM("PressurePascal");
+    case 24: return GET_STR_FROM_EEPROM("PressureBar");
+    case 25: return GET_STR_FROM_EEPROM("Energy");
+    case 26: return GET_STR_FROM_EEPROM("ThermalPower");
+    case 27: return GET_STR_FROM_EEPROM("ActivePower");
+    case 28: return GET_STR_FROM_EEPROM("ApparentPower");
+    case 29: return GET_STR_FROM_EEPROM("ReactivePower");
+    case 30: return GET_STR_FROM_EEPROM("ActiveEnergy");
+    case 31: return GET_STR_FROM_EEPROM("ApparentEnergy");
+    case 32: return GET_STR_FROM_EEPROM("ReactiveEnergy");
+    case 33: return GET_STR_FROM_EEPROM("Current");
+    case 34: return GET_STR_FROM_EEPROM("ElectricalCharge");
+    case 35: return GET_STR_FROM_EEPROM("Voltage");
+    case 36: return GET_STR_FROM_EEPROM("Electrical field strength E V/m");
+    case 37: return GET_STR_FROM_EEPROM("Capacity C farad C/V = As/V");
+    case 38: return GET_STR_FROM_EEPROM("Resistance");
+    case 39: return GET_STR_FROM_EEPROM("Resistivity");
+    case 40: return GET_STR_FROM_EEPROM("Magnetic flux F weber Wb = Vs");
+    case 41: return GET_STR_FROM_EEPROM("Induction T tesla Wb/m2");
+    case 42: return GET_STR_FROM_EEPROM("Magnetic field strength H A/m");
+    case 43: return GET_STR_FROM_EEPROM("Inductivity L henry H = Wb/A");
+    case 44: return GET_STR_FROM_EEPROM("Frequency");
+    case 45: return GET_STR_FROM_EEPROM("ActiveEnergy");
+    case 46: return GET_STR_FROM_EEPROM("ReactiveEnergy");
+    case 47: return GET_STR_FROM_EEPROM("ApparentEnergy");
+    case 48: return GET_STR_FROM_EEPROM("V260*60s");
+    case 49: return GET_STR_FROM_EEPROM("A260*60s");
+    case 50: return GET_STR_FROM_EEPROM("Mass");
+    case 51: return GET_STR_FROM_EEPROM("ConductanceSiemens");
+    case 254: return GET_STR_FROM_EEPROM("OtherUnit");
+    case 255: return GET_STR_FROM_EEPROM("NoUnit");
+    default : return  NULL;
     }
-    return ret;
 }
 
 #ifndef DLMS_IGNORE_DATA

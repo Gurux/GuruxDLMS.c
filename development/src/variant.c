@@ -464,7 +464,7 @@ int var_getDateTime2(
         }
     }
     //Add week day
-    if ((dateTime->value.tm_wday != -1 && dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
+    if ((dateTime->value.tm_wday != -1) && ((dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0) )
     {
         dayOfWeek = dateTime->value.tm_wday;
     }
@@ -626,7 +626,7 @@ int var_getDate(
         day = (unsigned char)dateTime->value.tm_mday;
     }
     //Add week day
-    if ((dateTime->value.tm_wday != -1 && dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
+    if ((dateTime->value.tm_wday != -1) && ((dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0) )
     {
         dayOfWeek = dateTime->value.tm_wday;
     }

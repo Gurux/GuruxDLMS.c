@@ -3687,7 +3687,7 @@ int svr_handleProfileGeneric(
         tm = time % object->capturePeriod;
         if (tm == 0)
         {
-            if (*next == -1 || *next > time + object->capturePeriod)
+            if ( ((long)(*next) == -1) || (*next > time + object->capturePeriod) )
             {
                 *next = time + object->capturePeriod;
             }

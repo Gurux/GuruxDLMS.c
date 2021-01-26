@@ -407,7 +407,7 @@ int notify_parsePush(
                 return ret;
             }
             index = (unsigned char)var_toInteger(tmp);
-            arr_push(items, key_init(obj, (void*)(uint64_t)index));
+            arr_push(items, key_init(obj, (void*)(uintptr_t)index));
 #endif //DLMS_IGNORE_MALLOC
         }
     }

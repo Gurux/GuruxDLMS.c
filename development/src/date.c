@@ -794,12 +794,12 @@ int time_toString(
     time_fromUnixTime2(time->value, &year, &mon, &day, &hour, &min, &sec, NULL);
 #else
     year = time->value.tm_year;
-    if (year != -1)
+    if (time->value.tm_year != -1)
     {
         year += 1900;
     }
     mon = time->value.tm_mon;
-    if (year != -1)
+    if (time->value.tm_mon != -1)
     {
         mon += 1;
     }

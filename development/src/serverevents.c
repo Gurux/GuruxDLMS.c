@@ -47,6 +47,8 @@ void svr_notifyTrace(const char* str, int err)
     {
         svr_trace(str, " succeeded.");
     }
+#else
+    (void)str; (void)err;
 #endif// DLMS_DEBUG
 }
 
@@ -63,5 +65,7 @@ void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, 
     {
         svr_trace(str, " succeeded.");
     }
+#else
+    (void)str; (void)ot; (void)ln; (void)err;
 #endif// DLMS_DEBUG
 }

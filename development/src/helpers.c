@@ -814,6 +814,7 @@ double hlp_getScaler(int scaler)
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     return pow((float)10, scaler);
 #else
+    (void)scaler;
     return 1;
     //TODO:
 #endif

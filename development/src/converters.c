@@ -2243,6 +2243,7 @@ int obj_tokenGatewayToString(
     gxTokenGateway* object,
     char** buff)
 {
+    (void)object;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
@@ -2354,36 +2355,42 @@ int obj_LlcSscsSetupToString(gxLlcSscsSetup* object, char** buff)
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
 int obj_PrimeNbOfdmPlcPhysicalLayerCountersToString(gxPrimeNbOfdmPlcPhysicalLayerCounters* object, char** buff)
 {
+    (void)object; (void)buff;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
 int  obj_PrimeNbOfdmPlcMacSetupToString(gxPrimeNbOfdmPlcMacSetup* object, char** buff)
 {
+    (void)object; (void)buff;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
 int  obj_PrimeNbOfdmPlcMacFunctionalParametersToString(gxPrimeNbOfdmPlcMacFunctionalParameters* object, char** buff)
 {
+    (void)object; (void)buff;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 int  obj_PrimeNbOfdmPlcMacCountersToString(gxPrimeNbOfdmPlcMacCounters* object, char** buff)
 {
+    (void)object; (void)buff;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 int  obj_PrimeNbOfdmPlcMacNetworkAdministrationDataToString(gxPrimeNbOfdmPlcMacNetworkAdministrationData* object, char** buff)
 {
+    (void)object; (void)buff;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 int  obj_PrimeNbOfdmPlcApplicationsIdentificationToString(gxPrimeNbOfdmPlcApplicationsIdentification* object, char** buff)
 {
+    (void)object; (void)buff;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
@@ -2391,6 +2398,7 @@ int  obj_PrimeNbOfdmPlcApplicationsIdentificationToString(gxPrimeNbOfdmPlcApplic
 #ifndef DLMS_IGNORE_SCHEDULE
 int obj_scheduleToString(gxSchedule* object, char** buff)
 {
+    (void)object; (void)buff;
     return 0;
 }
 #endif //DLMS_IGNORE_SCHEDULE
@@ -2399,6 +2407,7 @@ int obj_scheduleToString(gxSchedule* object, char** buff)
 
 int obj_ParameterMonitorToString(gxParameterMonitor* object, char** buff)
 {
+    (void)object; (void)buff;
     return 0;
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR

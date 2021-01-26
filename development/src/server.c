@@ -2907,6 +2907,7 @@ int svr_discoverReport(
     unsigned char newMeter,
     gxByteBuffer* data)
 {
+    (void)systemTitle;
     if (settings->interfaceType != DLMS_INTERFACE_TYPE_PLC && settings->interfaceType != DLMS_INTERFACE_TYPE_PLC_HDLC)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;

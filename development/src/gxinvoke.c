@@ -1708,6 +1708,7 @@ int invoke_DisconnectControl(
     gxDisconnectControl* object,
     unsigned char index)
 {
+    (void)settings;
     int ret = 0;
     //Reset.
     if (index == 1)

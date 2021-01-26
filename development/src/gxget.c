@@ -651,6 +651,7 @@ int getUserList(
     gxValueEventArg* e,
     gxByteBuffer* data)
 {
+    (void)settings;
     unsigned char len;
     uint16_t pos = 0;
     int ret;
@@ -4127,6 +4128,7 @@ int compactData_getValues2(
     variantArray* values,
     unsigned char appendAA)
 {
+    (void)settings;(void)appendAA;
     int ret;
     gxDataInfo info;
     dlmsVARIANT tmp;

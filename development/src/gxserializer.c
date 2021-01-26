@@ -1741,6 +1741,7 @@ int ser_saveAssociationShortName(
     gxAssociationShortName* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 
@@ -1939,6 +1940,7 @@ int ser_saveTokenGateway(
     gxTokenGateway* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
@@ -2048,6 +2050,7 @@ int ser_savePrimeNbOfdmPlcPhysicalLayerCounters(
     gxPrimeNbOfdmPlcPhysicalLayerCounters* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
@@ -2057,6 +2060,7 @@ int ser_savePrimeNbOfdmPlcMacSetup(
     gxPrimeNbOfdmPlcMacSetup* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
@@ -2066,6 +2070,7 @@ int ser_savePrimeNbOfdmPlcMacFunctionalParameters(
     gxPrimeNbOfdmPlcMacFunctionalParameters* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
@@ -2075,6 +2080,7 @@ int ser_savePrimeNbOfdmPlcMacCounters(
     gxPrimeNbOfdmPlcMacCounters* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
@@ -2084,6 +2090,7 @@ int ser_savePrimeNbOfdmPlcMacNetworkAdministrationData(
     gxPrimeNbOfdmPlcMacNetworkAdministrationData* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
@@ -2093,6 +2100,7 @@ int ser_savePrimeNbOfdmPlcApplicationsIdentification(
     gxPrimeNbOfdmPlcApplicationsIdentification* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
@@ -2102,6 +2110,7 @@ int ser_saveArbitrator(
     gxArbitrator* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_ARBITRATOR
@@ -2111,6 +2120,7 @@ int ser_saveIec8802LlcType1Setup(
     gxIec8802LlcType1Setup* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
@@ -2120,6 +2130,7 @@ int ser_saveIec8802LlcType2Setup(
     gxIec8802LlcType2Setup* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
@@ -2129,6 +2140,7 @@ int ser_saveIec8802LlcType3Setup(
     gxIec8802LlcType3Setup* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
@@ -2138,6 +2150,7 @@ int ser_saveSFSKActiveInitiator(
     gxSFSKActiveInitiator* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
@@ -2147,6 +2160,7 @@ int ser_saveFSKMacCounters(
     gxFSKMacCounters* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
@@ -2156,6 +2170,7 @@ int ser_saveSFSKMacSynchronizationTimeouts(
     gxSFSKMacSynchronizationTimeouts* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
@@ -2165,6 +2180,7 @@ int ser_saveSFSKPhyMacSetUp(
     gxSFSKPhyMacSetUp* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
@@ -2174,6 +2190,7 @@ int ser_saveSFSKReportingSystemList(
     gxSFSKReportingSystemList* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
@@ -2183,6 +2200,7 @@ int ser_saveSchedule(
     gxSchedule* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SCHEDULE
@@ -2614,6 +2632,7 @@ int ser_getArrayItem(gxArray* arr, uint16_t index, void** value, uint16_t itemSi
 #ifdef DLMS_IGNORE_MALLOC
     return arr_getByIndex2(arr, index, value, itemSize);
 #else
+    (void)index;
     unsigned char* it = gxcalloc(1, itemSize);
     *value = it;
     return arr_push(arr, it);
@@ -4671,6 +4690,7 @@ int ser_loadAssociationShortName(
     gxAssociationShortName* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 
@@ -4974,6 +4994,7 @@ int ser_loadTokenGateway(
     gxTokenGateway* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
@@ -5077,6 +5098,7 @@ int ser_loadPrimeNbOfdmPlcPhysicalLayerCounters(
     gxPrimeNbOfdmPlcPhysicalLayerCounters* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
@@ -5086,6 +5108,7 @@ int ser_loadPrimeNbOfdmPlcMacSetup(
     gxPrimeNbOfdmPlcMacSetup* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
@@ -5095,6 +5118,7 @@ int ser_loadPrimeNbOfdmPlcMacFunctionalParameters(
     gxPrimeNbOfdmPlcMacFunctionalParameters* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
@@ -5104,6 +5128,7 @@ int ser_loadPrimeNbOfdmPlcMacCounters(
     gxPrimeNbOfdmPlcMacCounters* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
@@ -5113,6 +5138,7 @@ int  ser_loadPrimeNbOfdmPlcMacNetworkAdministrationData(
     gxPrimeNbOfdmPlcMacNetworkAdministrationData* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
@@ -5122,6 +5148,7 @@ int  ser_loadPrimeNbOfdmPlcApplicationsIdentification(
     gxPrimeNbOfdmPlcApplicationsIdentification* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
@@ -5132,6 +5159,7 @@ int ser_loadArbitrator(
     gxArbitrator* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_ARBITRATOR
@@ -5141,6 +5169,7 @@ int ser_loadIec8802LlcType1Setup(
     gxIec8802LlcType1Setup* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
@@ -5150,6 +5179,7 @@ int ser_loadIec8802LlcType2Setup(
     gxIec8802LlcType2Setup* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
@@ -5159,6 +5189,7 @@ int ser_loadIec8802LlcType3Setup(
     gxIec8802LlcType3Setup* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
@@ -5168,6 +5199,7 @@ int ser_loadSFSKActiveInitiator(
     gxSFSKActiveInitiator* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
@@ -5177,6 +5209,7 @@ int ser_loadFSKMacCounters(
     gxFSKMacCounters* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
@@ -5186,6 +5219,7 @@ int ser_loadSFSKMacSynchronizationTimeouts(
     gxSFSKMacSynchronizationTimeouts* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
@@ -5195,6 +5229,7 @@ int ser_loadSFSKPhyMacSetUp(
     gxSFSKPhyMacSetUp* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
@@ -5204,6 +5239,7 @@ int ser_loadSFSKReportingSystemList(
     gxSFSKReportingSystemList* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
@@ -5214,6 +5250,7 @@ int ser_loadSchedule(
     gxSchedule* object,
     gxByteBuffer* serializer)
 {
+    (void)serializeSettings; (void)object; (void)serializer;
     return 0;
 }
 #endif //DLMS_IGNORE_SCHEDULE

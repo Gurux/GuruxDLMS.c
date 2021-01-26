@@ -1583,6 +1583,7 @@ int getCompactArrayItem2(
     variantArray* list,
     int len)
 {
+    (void)len;
     int ret, pos;
     dlmsVARIANT* tmp = gxmalloc(sizeof(dlmsVARIANT));
     if (tmp == NULL)
@@ -1761,6 +1762,7 @@ int getCompactArray(
     dlmsVARIANT* value,
     unsigned char onlyDataTypes)
 {
+    (void)settings;
     int ret, pos;
     uint16_t len;
     unsigned char ch;
@@ -4994,6 +4996,7 @@ int dlms_getPdu(
     gxReplyData* data,
     unsigned char first)
 {
+    (void)first;
     int ret = DLMS_ERROR_CODE_OK;
     uint16_t index;
     unsigned char ch;

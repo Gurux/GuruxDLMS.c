@@ -396,10 +396,12 @@ int var_clear(dlmsVARIANT* data)
             gxfree(data->dateTime);
             data->dateTime = NULL;
         }
+        // no break
+        // fallthrough
     default:
         data->llVal = 0;
         break;
-    }
+    }//switch (data->vt)
     data->vt = DLMS_DATA_TYPE_NONE;
 #endif //DLMS_IGNORE_MALLOC
     return DLMS_ERROR_CODE_OK;

@@ -33,7 +33,7 @@
 #ifndef GX_MEM
 #define GX_MEM
 
-#include <gxignore.h>
+#include "gxignore.h"
 
 #if !defined(DLMS_USE_CUSTOM_MALLOC) && !defined(DLMS_IGNORE_MALLOC)
 

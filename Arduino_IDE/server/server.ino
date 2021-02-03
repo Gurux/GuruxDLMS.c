@@ -142,7 +142,7 @@ typedef struct
 } GXSapList;
 
 //Association settings (passwords).
-typedef struct 
+typedef struct
 {
   //Define low level password.
   char llsPasswordSize;
@@ -150,7 +150,7 @@ typedef struct
   //Define high level password.
   char hlsPasswordSize;
   char hlsPassword[20];
-}GXAssociation;
+} GXAssociation;
 
 //Save serialized meter data here.
 typedef struct {
@@ -495,7 +495,7 @@ int addAssociationHighGMac(uint16_t serializationVersion)
         DLMS_CONFORMANCE_ACTION |
         DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
         DLMS_CONFORMANCE_GET);
-       //GMAC authentication don't need password.
+    //GMAC authentication don't need password.
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     associationHighGMac.securitySetup = &securitySetupHigh;
 #else
@@ -579,7 +579,7 @@ int addLogicalDeviceName()
   if ((ret = INIT_OBJECT(ldn, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
   {
     sprintf(meterData.LDN, "%s%.13lu", FLAG_ID, meterData.SERIAL_NUMBER);
-    GX_OCTECT_STRING(ldn.value, meterData.LDN, sizeof(meterData.LDN));
+    GX_OCTET_STRING(ldn.value, meterData.LDN, sizeof(meterData.LDN));
   }
   return ret;
 }
@@ -1140,7 +1140,7 @@ void setup() {
   int ret;
   //Serial 1 is used to send trace.
   Serial1.begin(9600);
-  createObjects();  
+  createObjects();
   //Set default clock.
   Server.setDefaultClock(&meterData.clock1);
   char testMode = meterData.testMode;
@@ -1248,7 +1248,7 @@ int getRestrictingObject(dlmsSettings* settings, gxValueEventArg* e, gxObject** 
   if ((ret = cosem_checkStructure(e->parameters.byteArr, 4)) == 0 &&
       (ret = cosem_checkStructure(e->parameters.byteArr, 4)) == 0 &&
       (ret = cosem_getUInt16(e->parameters.byteArr, &ot)) == 0 &&
-      (ret = cosem_getOctectString2(e->parameters.byteArr, ln, 6, NULL)) == 0 &&
+      (ret = cosem_getOctetString2(e->parameters.byteArr, ln, 6, NULL)) == 0 &&
       (ret = cosem_getInt8(e->parameters.byteArr, &aIndex)) == 0 &&
       (ret = cosem_getUInt16(e->parameters.byteArr, &dIndex)) == 0)
   {
@@ -1277,8 +1277,8 @@ int getProfileGenericDataByRangeFromRingBuffer(
   gxObject* obj = NULL;
   short index;
   if ((ret = getRestrictingObject(settings, e, &obj, &index)) != 0 ||
-      (ret = cosem_getDateTimeFromOctectString(e->parameters.byteArr, &start)) != 0 ||
-      (ret = cosem_getDateTimeFromOctectString(e->parameters.byteArr, &end)) != 0)
+      (ret = cosem_getDateTimeFromOctetString(e->parameters.byteArr, &start)) != 0 ||
+      (ret = cosem_getDateTimeFromOctetString(e->parameters.byteArr, &end)) != 0)
   {
     return ret;
   }
@@ -1418,7 +1418,7 @@ int readProfileGeneric(
         EEPROM.get(1024 + (pos * sizeof(gxLoadProfileData)), lp);
         time_initUnix(&tm, lp.time);
         if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
-            (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
+            (ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm)) != 0 ||
             (ret = cosem_setUInt16(e->value.byteArr, lp.activePowerL1)) != 0)
         {
           //Error is handled later.
@@ -1429,7 +1429,7 @@ int readProfileGeneric(
         EEPROM.get(2048 + (pos * sizeof(gxEventLogData)), event1);
         time_initUnix(&tm, event1.time);
         if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
-            (ret = cosem_setDateTimeAsOctectString(e->value.byteArr, &tm)) != 0 ||
+            (ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm)) != 0 ||
             (ret = cosem_setUInt16(e->value.byteArr, event1.event)) != 0)
         {
           //Error is handled later.
@@ -1497,7 +1497,7 @@ void svr_preRead(
 #ifndef USE_TIME_INTERRUPT
       gxtime dt;
       time_now(&dt, 1);
-      e->error = cosem_setDateTimeAsOctectString(e->value.byteArr, &dt);
+      e->error = cosem_setDateTimeAsOctetString(e->value.byteArr, &dt);
       e->value.vt = DLMS_DATA_TYPE_DATETIME;
       e->handled = 1;
 #endif //USE_TIME_INTERRUPT
@@ -1648,9 +1648,9 @@ void svr_preAction(
     }
     else if (e->target == BASE(activePowerL1))
     {
-        //Set default value for active power.
-        activePowerL1Value = 0;
-        e->handled = 1;
+      //Set default value for active power.
+      activePowerL1Value = 0;
+      e->handled = 1;
     }
     else if (e->target == BASE(pushSetup) && e->index == 1)
     {
@@ -1767,7 +1767,7 @@ void svr_postWrite(
     else if (e->target == BASE(pushSetup))
     {
       meterData.push.communicationWindow.count = pushSetup.communicationWindow.size;
-      saveTargets(&meterData.push.objects, PUSH_OBJECTS, pushSetup.pushObjectList.size);      
+      saveTargets(&meterData.push.objects, PUSH_OBJECTS, pushSetup.pushObjectList.size);
       save(&meterData.push, sizeof(meterData.push));
     }
     else if (e->target == BASE(associationLow))
@@ -1811,7 +1811,7 @@ void svr_postAction(
       meterData.association.hlsPasswordSize = associationHighGMac.secret.size;
       save(&meterData.association, sizeof(GXAssociation));
       GXTRACE(PSTR("High level password: "), associationHighGMac.secret.data);
-    }    
+    }
   }
 }
 
@@ -1936,133 +1936,133 @@ DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
 
 //Get attribute access level for profile generic.
 DLMS_ACCESS_MODE getProfileGenericAttributeAccess(
-    dlmsSettings* settings,
-    gxObject* obj,
-    unsigned char index)
+  dlmsSettings* settings,
+  gxObject* obj,
+  unsigned char index)
 {
-    //Only read is allowed for event log.
-    if (obj == BASE(eventLog))
-    {
-        return DLMS_ACCESS_MODE_READ;
-    }
-    //Write is allowed only for High authentication.
-    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
-    {
-        switch (index)
-        {
-        case 4://capturePeriod
-            return DLMS_ACCESS_MODE_READ_WRITE;
-        default:
-            break;
-        }
-    }
+  //Only read is allowed for event log.
+  if (obj == BASE(eventLog))
+  {
     return DLMS_ACCESS_MODE_READ;
+  }
+  //Write is allowed only for High authentication.
+  if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+  {
+    switch (index)
+    {
+      case 4://capturePeriod
+        return DLMS_ACCESS_MODE_READ_WRITE;
+      default:
+        break;
+    }
+  }
+  return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for Push Setup.
 DLMS_ACCESS_MODE getPushSetupAttributeAccess(
-    dlmsSettings* settings,
-    unsigned char index)
+  dlmsSettings* settings,
+  unsigned char index)
 {
-    //Write is allowed only for High authentication.
-    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+  //Write is allowed only for High authentication.
+  if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+  {
+    switch (index)
     {
-        switch (index)
-        {
-        case 2://pushObjectList
-        case 4://communicationWindow
-            return DLMS_ACCESS_MODE_READ_WRITE;
-        default:
-            break;
-        }
+      case 2://pushObjectList
+      case 4://communicationWindow
+        return DLMS_ACCESS_MODE_READ_WRITE;
+      default:
+        break;
     }
-    return DLMS_ACCESS_MODE_READ;
+  }
+  return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for Disconnect Control.
 DLMS_ACCESS_MODE getDisconnectControlAttributeAccess(
-    dlmsSettings* settings,
-    unsigned char index)
+  dlmsSettings* settings,
+  unsigned char index)
 {
-    return DLMS_ACCESS_MODE_READ;
+  return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for register schedule.
 DLMS_ACCESS_MODE getActionSchduleAttributeAccess(
-    dlmsSettings* settings,
-    unsigned char index)
+  dlmsSettings* settings,
+  unsigned char index)
 {
-    //Write is allowed only for High authentication.
-    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+  //Write is allowed only for High authentication.
+  if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+  {
+    switch (index)
     {
-        switch (index)
-        {
-        case 4://Execution time.
-            return DLMS_ACCESS_MODE_READ_WRITE;
-        default:
-            break;
-        }
+      case 4://Execution time.
+        return DLMS_ACCESS_MODE_READ_WRITE;
+      default:
+        break;
     }
-    return DLMS_ACCESS_MODE_READ;
+  }
+  return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for register.
 DLMS_ACCESS_MODE getRegisterAttributeAccess(
-    dlmsSettings* settings,
-    unsigned char index)
+  dlmsSettings* settings,
+  unsigned char index)
 {
-    return DLMS_ACCESS_MODE_READ;
+  return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for data objects.
 DLMS_ACCESS_MODE getDataAttributeAccess(
-    dlmsSettings* settings,
-    unsigned char index)
+  dlmsSettings* settings,
+  unsigned char index)
 {
-    return DLMS_ACCESS_MODE_READ;
+  return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for script table.
 DLMS_ACCESS_MODE getScriptTableAttributeAccess(
-    dlmsSettings* settings,
-    unsigned char index)
+  dlmsSettings* settings,
+  unsigned char index)
 {
-    return DLMS_ACCESS_MODE_READ;
+  return DLMS_ACCESS_MODE_READ;
 }
 
 //Get attribute access level for IEC HDLS setup.
 DLMS_ACCESS_MODE getHdlcSetupAttributeAccess(
-    dlmsSettings* settings,
-    unsigned char index)
+  dlmsSettings* settings,
+  unsigned char index)
 {
-    //Write is allowed only for High authentication.
-    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+  //Write is allowed only for High authentication.
+  if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+  {
+    switch (index)
     {
-        switch (index)
-        {
-        case 2: //Communication speed.
-        case 7:
-        case 8:
-            return DLMS_ACCESS_MODE_READ_WRITE;
-        default:
-            break;
-        }
+      case 2: //Communication speed.
+      case 7:
+      case 8:
+        return DLMS_ACCESS_MODE_READ_WRITE;
+      default:
+        break;
     }
-    return DLMS_ACCESS_MODE_READ;
+  }
+  return DLMS_ACCESS_MODE_READ;
 }
 
 
 //Get attribute access level for association LN.
 DLMS_ACCESS_MODE getAssociationAttributeAccess(
-    dlmsSettings* settings,
-    unsigned char index)
+  dlmsSettings* settings,
+  unsigned char index)
 {
-    //If secret
-    if (settings->authentication == DLMS_AUTHENTICATION_LOW && index == 7)
-    {
-        return DLMS_ACCESS_MODE_READ_WRITE;
-    }
-    return DLMS_ACCESS_MODE_READ;
+  //If secret
+  if (settings->authentication == DLMS_AUTHENTICATION_LOW && index == 7)
+  {
+    return DLMS_ACCESS_MODE_READ_WRITE;
+  }
+  return DLMS_ACCESS_MODE_READ;
 }
 
 /**

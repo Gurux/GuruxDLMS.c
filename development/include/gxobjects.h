@@ -36,10 +36,12 @@
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
 #include <ws2tcpip.h>
 #else //Linux includes.
+#ifndef DLMS_IGNORE_IP6_SETUP
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #define IN6_ADDR struct in6_addr
+#endif //DLMS_IGNORE_IP6_SETUP
 #endif
 
 #ifdef  __cplusplus

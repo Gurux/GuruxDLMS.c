@@ -2825,7 +2825,7 @@ int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index,
 #ifndef DLMS_IGNORE_LIMITER
 int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char index, dlmsVARIANT* value)
 {
-    DLMS_OBJECT_TYPE ot = DLMS_OBJECT_TYPE_NONE;
+    DLMS_OBJECT_TYPE ot;
     int ret = DLMS_ERROR_CODE_OK, pos;
     dlmsVARIANT* tmp, * tmp3;
     dlmsVARIANT tmp2;
@@ -2978,7 +2978,7 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
         }
         if (object->actionOverThreshold.script == NULL)
         {
-            if ((ret = cosem_createObject(ot, (gxObject**)&object->actionOverThreshold.script)) != 0)
+            if ((ret = cosem_createObject(DLMS_OBJECT_TYPE_SCRIPT_TABLE, (gxObject**)&object->actionOverThreshold.script)) != 0)
             {
                 return ret;
             }
@@ -3017,7 +3017,7 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
         }
         if (object->actionUnderThreshold.script == NULL)
         {
-            if ((ret = cosem_createObject(ot, (gxObject**)&object->actionUnderThreshold.script)) != 0)
+            if ((ret = cosem_createObject(DLMS_OBJECT_TYPE_SCRIPT_TABLE, (gxObject**)&object->actionUnderThreshold.script)) != 0)
             {
                 return ret;
             }

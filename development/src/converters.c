@@ -929,48 +929,28 @@ int obj_activityCalendarToString(gxActivityCalendar* object, char** buff)
     int ret;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value: ");
-    bb_attachString(&ba, bb_toString(&object->calendarNameActive));
-    bb_addString(&ba, "\nIndex: 3 Value: ");
-    ret = obj_seasonProfileToString(&object->seasonProfileActive, &ba);
-    if (ret != 0)
+    if ((ret = bb_addString(&ba, "Index: 2 Value: ")) == 0 &&
+        (ret = bb_attachString(&ba, bb_toString(&object->calendarNameActive))) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 3 Value: ")) == 0 &&
+        (ret = obj_seasonProfileToString(&object->seasonProfileActive, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 4 Value: ")) == 0 &&
+        (ret = obj_weekProfileToString(&object->weekProfileTableActive, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 5 Value: ")) == 0 &&
+        (ret = obj_dayProfileToString(&object->dayProfileTableActive, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 6 Value: ")) == 0 &&
+        (ret = bb_attachString(&ba, bb_toString(&object->calendarNamePassive))) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 7 Value: ")) == 0 &&
+        (ret = obj_seasonProfileToString(&object->seasonProfilePassive, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 8 Value: ")) == 0 &&
+        (ret = obj_weekProfileToString(&object->weekProfileTablePassive, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 9 Value: ")) == 0 &&
+        (ret = obj_dayProfileToString(&object->dayProfileTablePassive, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 10 Value: ")) == 0 &&
+        (ret = time_toString(&object->time, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\n")) == 0)
     {
-        return ret;
+        *buff = bb_toString(&ba);
     }
-    bb_addString(&ba, "\nIndex: 4 Value: ");
-    ret = obj_weekProfileToString(&object->weekProfileTableActive, &ba);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    bb_addString(&ba, "\nIndex: 5 Value: ");
-    ret = obj_dayProfileToString(&object->dayProfileTableActive, &ba);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    bb_addString(&ba, "\nIndex: 6 Value: ");
-    bb_attachString(&ba, bb_toString(&object->calendarNamePassive));
-    bb_addString(&ba, "\nIndex: 7 Value: ");
-    ret = obj_seasonProfileToString(&object->seasonProfilePassive, &ba);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    bb_addString(&ba, "\nIndex: 8 Value: ");
-    ret = obj_weekProfileToString(&object->weekProfileTablePassive, &ba);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    bb_addString(&ba, "\nIndex: 9 Value: ");
-    ret = obj_dayProfileToString(&object->dayProfileTablePassive, &ba);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    bb_addString(&ba, "\n");
-    *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
 }

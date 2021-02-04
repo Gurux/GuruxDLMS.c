@@ -48,7 +48,11 @@
 #define GET_DLMS_TYPE()
 #define V_VT(X)         ((X)->vt)
 #define GX_UNION(X, Y, Z) V_VT(X)=Z;(X)->Y
-#define GX_UNION2(X, Y, Z, S, C)  (X)->size=S;(X)->capacity=C;V_VT(X)=Z;(X)->Y
+#ifdef DLMS_IGNORE_MALLOC    
+    #define GX_UNION2(X, Y, Z, S, C)  (X)->size=S;(X)->capacity=C;GX_UNION(X, Y, Z)
+#else
+    #define GX_UNION2(X, Y, Z, S, C)  GX_UNION(X, Y, Z)
+#endif
 #define GX_UINT8(X) GX_UNION(&X, bVal, DLMS_DATA_TYPE_UINT8)
 #define GX_UINT16(X) GX_UNION(&X, uiVal, DLMS_DATA_TYPE_UINT16)
 #define GX_UINT32(X) GX_UNION(&X, ulVal, DLMS_DATA_TYPE_UINT32)

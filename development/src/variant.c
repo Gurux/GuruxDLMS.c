@@ -396,8 +396,8 @@ int var_clear(dlmsVARIANT* data)
             gxfree(data->dateTime);
             data->dateTime = NULL;
         }
-        // no break
         // fallthrough
+        // no break
     default:
         data->llVal = 0;
         break;

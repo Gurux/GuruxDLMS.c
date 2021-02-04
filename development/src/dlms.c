@@ -5941,7 +5941,8 @@ int dlms_getLnMessages(
             {
                 ++p->settings->blockIndex;
             }
-        } while (ret == 0 && pdu->position != pdu->size)
+        }
+        while (ret == 0 && pdu->position != pdu->size)
         {
 #ifdef DLMS_IGNORE_MALLOC
             if (!(messages->size < messages->capacity))
@@ -5994,12 +5995,13 @@ int dlms_getLnMessages(
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
-        }
+        } //while (ret == 0 && pdu->position != pdu->size)
         bb_clear(pdu);
 #ifndef DLMS_IGNORE_HDLC
         frame = 0;
 #endif //DLMS_IGNORE_HDLC
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    bb_clear(it);  //memory leak fixed
     return ret;
 }
 

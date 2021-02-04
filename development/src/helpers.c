@@ -489,9 +489,13 @@ int hlp_hexToBytes(
     uint16_t* count)
 {
     *count = 0;
-    if (buffer != NULL && *buffer != NULL)
+    if (buffer != NULL) 
     {
-        gxfree(*buffer);
+        if (*buffer != NULL)
+        {
+            gxfree(*buffer);
+        }
+        
     }
     if (str == NULL)
     {

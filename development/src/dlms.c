@@ -1583,6 +1583,7 @@ int getCompactArrayItem2(
     variantArray* list,
     int len)
 {
+    (void)len;
     int ret, pos;
     dlmsVARIANT* tmp = gxmalloc(sizeof(dlmsVARIANT));
     if (tmp == NULL)
@@ -1761,6 +1762,7 @@ int getCompactArray(
     dlmsVARIANT* value,
     unsigned char onlyDataTypes)
 {
+    (void)settings;
     int ret, pos;
     uint16_t len;
     unsigned char ch;
@@ -4994,6 +4996,7 @@ int dlms_getPdu(
     gxReplyData* data,
     unsigned char first)
 {
+    (void)first;
     int ret = DLMS_ERROR_CODE_OK;
     uint16_t index;
     unsigned char ch;
@@ -5938,7 +5941,8 @@ int dlms_getLnMessages(
             {
                 ++p->settings->blockIndex;
             }
-        } while (ret == 0 && pdu->position != pdu->size)
+        }
+        while (ret == 0 && pdu->position != pdu->size)
         {
 #ifdef DLMS_IGNORE_MALLOC
             if (!(messages->size < messages->capacity))
@@ -5990,13 +5994,16 @@ int dlms_getLnMessages(
             }
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
+            it = NULL;
 #endif //DLMS_IGNORE_MALLOC
-        }
+        } //while (ret == 0 && pdu->position != pdu->size)
         bb_clear(pdu);
 #ifndef DLMS_IGNORE_HDLC
         frame = 0;
 #endif //DLMS_IGNORE_HDLC
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    if (it != NULL)
+        bb_clear(it);  //memory leak fixed
     return ret;
 }
 

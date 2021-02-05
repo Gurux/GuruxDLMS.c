@@ -36,15 +36,12 @@
 #endif
 #include <string.h>
 #include <math.h>
+#include <stdio.h> //printf needs this or error is generated.
 #include "../include/gxmem.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif //defined(_WIN32) || defined(_WIN64)
-
-#ifndef GX_DLMS_MICROCONTROLLER
-#include <stdio.h> //printf needs this or error is generated.
-#endif //GX_DLMS_MICROCONTROLLER
 
 #include "../include/helpers.h"
 #include "../include/errorcodes.h"
@@ -58,7 +55,7 @@ unsigned char hlp_isBigEndian(void)
 
 const char* hlp_getErrorMessage(int error)
 {
-    const char* str;
+    const char* str = NULL;
     if ((error & DLMS_ERROR_TYPE_EXCEPTION_RESPONSE) != 0)
     {
         switch (error & 0xFF)
@@ -492,9 +489,13 @@ int hlp_hexToBytes(
     uint16_t* count)
 {
     *count = 0;
-    if (buffer != NULL && *buffer != NULL)
+    if (buffer != NULL) 
     {
-        gxfree(*buffer);
+        if (*buffer != NULL)
+        {
+            gxfree(*buffer);
+        }
+        
     }
     if (str == NULL)
     {
@@ -817,6 +818,7 @@ double hlp_getScaler(int scaler)
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     return pow((float)10, scaler);
 #else
+    (void)scaler;
     return 1;
     //TODO:
 #endif

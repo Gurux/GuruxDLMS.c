@@ -32,16 +32,15 @@
 #ifndef DATE_H
 #define DATE_H
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
 #include "enums.h"
-
 #include "bytebuffer.h"
 
 #ifndef DLMS_USE_EPOCH_TIME
 #include <time.h>
+#endif
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
 #ifndef DLMS_USE_EPOCH_TIME

@@ -33,6 +33,16 @@
 #ifndef GXOBJECTS_H
 #define GXOBJECTS_H
 
+#include "gxignore.h"
+#include "enums.h"
+#include "variant.h"
+#include "date.h"
+#include "gxarray.h"
+#include "gxkey.h"
+#include "gxdefine.h"
+
+#ifndef DLMS_IGNORE_IP6_SETUP
+
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
 #include <ws2tcpip.h>
 #else //Linux includes.
@@ -44,16 +54,12 @@
 #endif //DLMS_IGNORE_IP6_SETUP
 #endif
 
+#endif //DLMS_IGNORE_IP6_SETUP
+
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
-#include "gxignore.h"
-#include "enums.h"
-#include "variant.h"
-#include "date.h"
-#include "gxarray.h"
-#include "gxkey.h"
-#include "gxdefine.h"
 
     typedef enum
     {

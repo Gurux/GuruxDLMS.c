@@ -33,17 +33,18 @@
 #ifndef GXHELPERS_H
 #define GXHELPERS_H
 
+#include "gxignore.h"
+#include "bytebuffer.h"
+#include "variant.h"
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
-#include "gxignore.h"
+
 #ifdef USE_AVR
     //If AVR is used.
 #include <avr/pgmspace.h>
 #endif //USE_AVR
-
-#include "bytebuffer.h"
-#include "variant.h"
 
 static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 static const unsigned char EMPTY_LN[6] = { 0, 0, 0, 0, 0, 0 };

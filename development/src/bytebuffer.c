@@ -1007,7 +1007,8 @@ void bb_addDoubleAsString(
 {
     char buff[20];
     //Show as integer value if there is no fractal part.
-    if (value - (int32_t)value == 0)
+    int asint = (int)value;
+    if (value == (double)asint)
     {
         bb_addIntAsString(bb, (int)value);
     }

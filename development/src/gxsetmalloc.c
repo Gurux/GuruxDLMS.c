@@ -290,6 +290,7 @@ int cosem_orderSeasonProfile(gxArray* profile)
         }
         next1 = time_toUnixTime2(&sp->start);
         next2 = 0xFFFFFFFF;
+        minPos = pos;
         for (pos2 = pos + 1; pos2 < profile->size; ++pos2)
         {
             if ((ret = arr_getByIndex(profile, pos2, (void**)&sp2)) != 0)
@@ -3473,7 +3474,8 @@ int cosem_setRegisterActivation(dlmsSettings* settings,
     {
         obj_clearRegisterActivationMaskList(&object->maskList);
         int pos2;
-        gxByteBuffer* start, * end;
+        gxByteBuffer* start = NULL;
+        gxByteBuffer* end   = NULL;
         dlmsVARIANT* tmp, * tmp3;
         if (value->Arr != NULL)
         {
@@ -4151,6 +4153,8 @@ int cosem_setScriptTable(dlmsSettings* settings, gxScriptTable* object, unsigned
                 arr_push(&script->actions, scriptAction);
             }
         }
+        else //if (value->Arr->size != 0)
+            ret = DLMS_ERROR_CODE_OK;
     }
     else
     {
@@ -5998,6 +6002,7 @@ int cosem_setLlcSscsSetup(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = 0;
     switch (index)
     {
@@ -6022,6 +6027,7 @@ int cosem_setPrimeNbOfdmPlcPhysicalLayerCounters(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = 0;
     switch (index)
     {
@@ -6053,6 +6059,7 @@ int cosem_setPrimeNbOfdmPlcMacSetup(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = 0;
     switch (index)
     {
@@ -6092,6 +6099,7 @@ int cosem_setPrimeNbOfdmPlcMacFunctionalParameters(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = 0;
     switch (index)
     {
@@ -6149,6 +6157,7 @@ int cosem_setPrimeNbOfdmPlcMacCounters(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = 0;
     switch (index)
     {
@@ -6436,6 +6445,7 @@ int cosem_setPrimeNbOfdmPlcMacNetworkAdministrationData(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = 0;
     switch (index)
     {
@@ -6470,6 +6480,7 @@ int cosem_setPrimeNbOfdmPlcApplicationsIdentification(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = 0;
     switch (index)
     {
@@ -6643,6 +6654,7 @@ int cosem_setIec8802LlcType1Setup(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = DLMS_ERROR_CODE_OK;
     switch (index)
     {
@@ -6663,6 +6675,7 @@ int cosem_setIec8802LlcType2Setup(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = DLMS_ERROR_CODE_OK;
     switch (index)
     {
@@ -6704,6 +6717,7 @@ int cosem_setIec8802LlcType3Setup(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = DLMS_ERROR_CODE_OK;
     switch (index)
     {
@@ -6736,6 +6750,7 @@ int cosem_setSFSKActiveInitiator(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = 0;
     dlmsVARIANT* tmp;
     switch (index)
@@ -6780,6 +6795,7 @@ int cosem_setFSKMacCounters(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int pos, ret = DLMS_ERROR_CODE_OK;
     gxUint16PairUint32* it;
     dlmsVARIANT* tmp, * tmp2;
@@ -6910,6 +6926,7 @@ int cosem_setSFSKMacSynchronizationTimeouts(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int ret = 0;
     switch (index)
     {
@@ -6938,6 +6955,7 @@ int cosem_setSFSKPhyMacSetUp(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int pos, ret = 0;
     dlmsVARIANT* it;
     switch (index)
@@ -7031,6 +7049,7 @@ int cosem_setSFSKReportingSystemList(
     unsigned char index,
     dlmsVARIANT* value)
 {
+    (void)settings;
     int pos, ret = 0;
     dlmsVARIANT* tmp;
     gxByteBuffer* it;

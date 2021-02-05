@@ -396,10 +396,12 @@ int var_clear(dlmsVARIANT* data)
             gxfree(data->dateTime);
             data->dateTime = NULL;
         }
+        // fallthrough
+        // no break
     default:
         data->llVal = 0;
         break;
-    }
+    }//switch (data->vt)
     data->vt = DLMS_DATA_TYPE_NONE;
 #endif //DLMS_IGNORE_MALLOC
     return DLMS_ERROR_CODE_OK;
@@ -464,7 +466,7 @@ int var_getDateTime2(
         }
     }
     //Add week day
-    if ((dateTime->value.tm_wday != -1 && dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
+    if ((dateTime->value.tm_wday != -1) && ((dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0) )
     {
         dayOfWeek = dateTime->value.tm_wday;
     }
@@ -626,7 +628,7 @@ int var_getDate(
         day = (unsigned char)dateTime->value.tm_mday;
     }
     //Add week day
-    if ((dateTime->value.tm_wday != -1 && dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
+    if ((dateTime->value.tm_wday != -1) && ((dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0) )
     {
         dayOfWeek = dateTime->value.tm_wday;
     }

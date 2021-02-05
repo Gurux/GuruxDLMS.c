@@ -231,6 +231,7 @@ int arr_getByIndex(gxArray* arr, uint16_t index, void** value, uint16_t itemSize
 int arr_getByIndex2(gxArray* arr, uint16_t index, void** value, uint16_t itemSize)
 {
 #ifndef DLMS_IGNORE_MALLOC
+    (void)itemSize;
     return arr_getByIndex(arr, index, value);
 #else
     return arr_getByIndex(arr, index, value, itemSize);

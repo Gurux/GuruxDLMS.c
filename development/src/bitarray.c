@@ -277,7 +277,7 @@ int ba_toInteger(bitArray* arr, uint32_t* value)
 #ifndef DLMS_IGNORE_MALLOC
 char* ba_toString(bitArray* arr)
 {
-    unsigned char ch;
+    unsigned char ch = 0;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     int pos, ret;
 #else
@@ -292,7 +292,7 @@ char* ba_toString(bitArray* arr)
 #else
         ba_getByIndex(arr, pos, &ch);
 #endif
-        buff[pos] = ch == 0 ? '0' : '1';
+        buff[pos] = (ch == 0) ? '0' : '1';
     }
     *(buff + arr->size) = 0;
     return buff;

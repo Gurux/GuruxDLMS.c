@@ -32,6 +32,8 @@
 #ifndef GXIGNORE_H
 #define GXIGNORE_H
 
+#include <gx-conf.h>
+
 #ifdef  __cplusplus
 extern "C" {
 #endif

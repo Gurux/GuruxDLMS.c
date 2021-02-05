@@ -32,16 +32,18 @@
 
 #ifndef GX_MEM
 #define GX_MEM
-#include "gxignore.h"
-#if !defined(DLMS_USE_CUSTOM_MALLOC) && !defined(DLMS_IGNORE_MALLOC)
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
+#include "gxignore.h"
+
+#if !defined(DLMS_USE_CUSTOM_MALLOC) && !defined(DLMS_IGNORE_MALLOC)
 
 #include <stdlib.h> // malloc and free needs this or error is generated.
 #if _MSC_VER > 1400
 #include <crtdbg.h>
+#endif
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
 #ifndef gxfree
@@ -65,4 +67,5 @@ extern "C" {
 }
 #endif
 #endif //!defined(DLMS_USE_CUSTOM_MALLOC) && !defined(DLMS_IGNORE_MALLOC)
+
 #endif //GX_MEM

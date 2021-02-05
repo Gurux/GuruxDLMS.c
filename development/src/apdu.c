@@ -38,6 +38,7 @@
 #include "../include/errorcodes.h"
 #include "../include/ciphering.h"
 #include "../include/serverevents.h"
+#include "../include/dlmssettings.h"
 
 #ifndef DLMS_IGNORE_CLIENT
 /**

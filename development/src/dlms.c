@@ -5994,6 +5994,7 @@ int dlms_getLnMessages(
             }
 #ifndef DLMS_IGNORE_MALLOC
             mes_push(messages, it);
+            it = NULL;
 #endif //DLMS_IGNORE_MALLOC
         } //while (ret == 0 && pdu->position != pdu->size)
         bb_clear(pdu);
@@ -6001,7 +6002,8 @@ int dlms_getLnMessages(
         frame = 0;
 #endif //DLMS_IGNORE_HDLC
     } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
-    bb_clear(it);  //memory leak fixed
+    if (it != NULL)
+        bb_clear(it);  //memory leak fixed
     return ret;
 }
 

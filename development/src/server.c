@@ -303,7 +303,11 @@ int svr_generateExceptionResponse(
         {
             if ((ret = bb_setUInt8(data, DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR)) == 0)
             {
+#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+                ret = bb_setUInt64(data, *settings->expectedInvocationCounter);
+#else
                 ret = bb_setUInt32(data, (uint32_t)*settings->expectedInvocationCounter);
+#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
             }
         }
         else if (error == DLMS_ERROR_CODE_INVALID_COMMAND)
@@ -1278,7 +1282,6 @@ int svr_getRequestNormal(
         else
         {
             //Handle default Association LN read as a special case.
-            static const unsigned char DEFAULT_ASSOCIATION[6] = { 0, 0, 40, 0, 0, 255 };
             if (ci == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME && index == 1 && memcmp(DEFAULT_ASSOCIATION, ln, 6) == 0)
             {
                 e->byteArray = 1;
@@ -4023,8 +4026,8 @@ int svr_handleActivityCalendar(
                     break;
                 }
             }
+        }
     }
-}
     return ret;
 }
 #endif //!defined(DLMS_IGNORE_ACTIVITY_CALENDAR) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
@@ -4238,4 +4241,129 @@ unsigned char svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char
     }
     return 0;
 }
+
+#ifndef DLMS_IGNORE_REGISTER_MONITOR
+int svr_monitor(dlmsServerSettings* settings, gxRegisterMonitor* object)
+{
+    int ret;
+    unsigned char pos;
+    gxValueEventCollection args;
+    gxValueEventArg* e;
+#ifdef DLMS_IGNORE_MALLOC
+    gxValueEventArg tmp[1];
+    ve_init(&tmp[0]);
+    vec_attach(&args, tmp, 1, 1);
+    e = &tmp[0];
+#else
+    e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+    ve_init(e);
+    vec_init(&args);
+    vec_push(&args, e);
+#endif //DLMS_IGNORE_MALLOC
+    e->target = object->monitoredValue.target;
+    e->index = object->monitoredValue.attributeIndex;
+    e->action = 1;
+    svr_preRead(&settings->base, &args);
+    ret = e->error;
+    if (!e->handled && ret == 0)
+    {
+        if ((ret = cosem_getValue(&settings->base, e)) == 0)
+        {
+            svr_postRead(&settings->base, &args);
+            ret = e->error;
+        }
+    }
+    if (ret == 0)
+    {
+        //Save value.
+        dlmsVARIANT value = e->value;
+        dlmsVARIANT* threshold;
+        dlmsVARIANT* lastValue;
+        unsigned char buff[1];
+        gxByteBuffer bb;
+        bb_attach(&bb, buff, 0, 1);
+        e->parameters.vt = DLMS_DATA_TYPE_OCTET_STRING;
+        e->parameters.byteArr = &bb;
+        gxActionSet* act;
+        e->index = 1;
+        unsigned char index = 0, cnt = (unsigned char)object->thresholds.size;
+        if (object->actions.size < cnt)
+        {
+            cnt = (unsigned char)object->actions.size;
+        }
+        double currentValue = var_toDouble(&e->value);
+        for (pos = 0; pos != cnt; ++pos)
+        {
+            e->target = NULL;
+            if ((ret = va_getByIndex(&object->thresholds, pos, &threshold)) != 0 ||
+                (ret = va_getByIndex(&object->lastValues, pos, &lastValue)) != 0)
+            {
+                break;
+            }
+            double thresholdsValue = var_toDouble(threshold);
+            //If value is down.
+            if (currentValue < thresholdsValue)
+            {
+                if (lastValue->vt == DLMS_DATA_TYPE_NONE || var_toDouble(lastValue) > thresholdsValue)
+                {
+                    if ((ret = arr_getByIndex2(&object->actions, pos, (void**)&act, sizeof(gxActionSet))) != 0)
+                    {
+                        break;
+                    }
+                    e->target = &act->actionDown.script->base;
+                    index = (unsigned char)act->actionDown.scriptSelector;
+                    ret = var_copy(lastValue, &value);
+                }
+            }
+            //If value is up.
+            else if (currentValue > thresholdsValue)
+            {
+                if (lastValue->vt == DLMS_DATA_TYPE_NONE || var_toDouble(lastValue) < thresholdsValue)
+                {
+                    if ((ret = arr_getByIndex2(&object->actions, pos, (void**)&act, sizeof(gxActionSet))) != 0)
+                    {
+                        break;
+                    }
+                    e->target = &act->actionUp.script->base;
+                    index = (unsigned char)act->actionUp.scriptSelector;
+                    ret = var_copy(lastValue, &value);
+                }
+            }
+            if (e->target != NULL)
+            {
+                bb_clear(&bb);
+                if ((ret = var_setInt8(&e->parameters, index)) != 0 ||
+                    (ret = invoke_ScriptTable(settings, e)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+int svr_monitorAll(dlmsServerSettings* settings)
+{
+    int ret = 0, pos;
+    gxObject* obj;
+    //Single activity calendars.
+    for (pos = 0; pos != settings->base.objects.size; ++pos)
+    {
+        if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
+        {
+            break;
+        }
+        if (obj->objectType == DLMS_OBJECT_TYPE_REGISTER_MONITOR)
+        {
+            if ((ret = svr_monitor(settings, (gxRegisterMonitor*)obj)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_REGISTER_MONITOR
+
 #endif //DLMS_IGNORE_SERVER

@@ -815,7 +815,11 @@ extern "C" {
         gxByteBuffer clientSystemTitle;
         gxArray certificates;
         //Minimum client invocation counter value. Server can use this.
+#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+        uint64_t minimumInvocationCounter;
+#else
         uint32_t minimumInvocationCounter;
+#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
     } gxSecuritySetup;
 #endif //DLMS_IGNORE_SECURITY_SETUP
 
@@ -1238,7 +1242,10 @@ extern "C" {
         gxObject base;
         gxArray actions; //gxActionSet
         gxMonitoredValue monitoredValue;
+        //List of threshold values.
         variantArray thresholds; //dlmsVARIANT
+        //List of last values. This is needed so script is not invoked several times.
+        variantArray lastValues;
     } gxRegisterMonitor;
 
 #endif //DLMS_IGNORE_REGISTER_MONITOR

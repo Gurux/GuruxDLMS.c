@@ -307,15 +307,14 @@ int oa_findByLN(
     }
     for (pos = 0; pos != objects->size; ++pos)
     {
-        ret = oa_getByIndex(objects, pos, &obj);
-        if (ret != DLMS_ERROR_CODE_OK)
+        if ((ret = oa_getByIndex(objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
         {
-            return ret;
+            break;
         }
         if ((obj->objectType == type || DLMS_OBJECT_TYPE_NONE == type) && memcmp(obj->logicalName, ln, 6) == 0)
         {
             *object = obj;
-            return 0;
+            break;
         }
     }
     return ret;

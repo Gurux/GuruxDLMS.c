@@ -418,6 +418,12 @@ extern "C" {
     int va_copyArray(
         variantArray* target,
         variantArray* source);
+
+    //Add given value to the array N times.
+    int va_addValue(
+        variantArray* target,
+        dlmsVARIANT* value,
+        uint16_t count);
 #endif //DLMS_IGNORE_MALLOC
 
 #ifndef DLMS_IGNORE_MALLOC

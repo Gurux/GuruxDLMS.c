@@ -240,7 +240,11 @@ extern "C" {
         /////////////////////////////////////////////////////////////////////////
         // Expected Invocation(Frame) counter value.
         // Expected Invocation counter is not check if value is zero.
+#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+        uint64_t* expectedInvocationCounter;
+#else
         uint32_t* expectedInvocationCounter;
+#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
         /////////////////////////////////////////////////////////////////////////
         // Expected client system title.
         unsigned char* expectedClientSystemTitle;

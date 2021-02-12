@@ -76,6 +76,20 @@ extern "C" {
         //Next EPOCH execution time.
         uint32_t* next);
 
+#ifndef DLMS_IGNORE_REGISTER_MONITOR
+    /*
+   The server verifies that value of monitored object don't cross the thresholds.
+   Selected script is invoked if value is passed.
+   */
+    int svr_monitor(dlmsServerSettings* settings, gxRegisterMonitor* object);
+    /*
+   The server verifies that values of monitored objects don't cross the thresholds.
+   Selected script is invoked if value is passed.
+   */
+    int svr_monitorAll(dlmsServerSettings* settings);
+#endif //DLMS_IGNORE_REGISTER_MONITOR
+
+
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     /**
     * Update short names.

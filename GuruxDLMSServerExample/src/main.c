@@ -133,7 +133,48 @@ int startServers(int port, int trace)
     println("Master key (KEK)", &snHdlc.settings.base.kek);
     printf("----------------------------------------------------------\n");
     printf("Press Enter to close application.\r\n");
-    getchar();
+    uint32_t lastMonitor = 0;
+    while (1)
+    {
+        //Monitor values only once/second.
+        if (time_current() - lastMonitor > 1)
+        {
+            lastMonitor = time_current();
+            if ((ret = svr_monitorAll(&snHdlc.settings)) != 0)
+            {
+                printf("snHdlc monitor failed.\r\n");
+            }
+            if ((ret = svr_monitorAll(&lnHdlc.settings)) != 0)
+            {
+                printf("lnHdlc monitor failed.\r\n");
+            }
+            if ((ret = svr_monitorAll(&snWrapper.settings)) != 0)
+            {
+                printf("snWrapper monitor failed.\r\n");
+            }
+            if ((ret = svr_monitorAll(&lnWrapper.settings)) != 0)
+            {
+                printf("lnWrapper monitor failed.\r\n");
+            }
+        }
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+        if (_kbhit()) {
+            char c = _getch();
+            if (c == '\r')
+            {
+                printf("Closing the server.\n");
+                break;
+            }
+        }
+#else
+        char ch = _getch();
+        if (ch == '\n')
+        {
+            printf("Closing the server.\n");
+            break;
+        }
+#endif
+    }
     con_close(&snHdlc);
     con_close(&snWrapper);
     con_close(&lnWrapper);

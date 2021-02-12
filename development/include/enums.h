@@ -1834,9 +1834,9 @@ extern "C" {
         */
         DLMS_CONFORMANCE_UN_CONFIRMED_WRITE = 0x20,
         /*
-        * Reserved six conformance bit.
+        Delta value encoding.
         */
-        DLMS_CONFORMANCE_RESERVED_SIX = 0x40,
+        DLMS_CONFORMANCE_DELTA_VALUE_ENCODING = 0x40,
         /*
         * Reserved seven conformance bit.
         */

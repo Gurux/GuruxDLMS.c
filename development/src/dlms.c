@@ -4808,7 +4808,11 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
             //Update IC.
-            *settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+            * settings->expectedInvocationCounter = (1 + invocationCounter);
+#else
+            * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
         }
         // Get command.
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
@@ -4886,7 +4890,11 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
             {
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
-            *settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+            * settings->expectedInvocationCounter = (1 + invocationCounter);
+#else
+            * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
         }
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);

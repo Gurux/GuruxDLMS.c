@@ -147,6 +147,9 @@ extern "C" {
 // ex. Int8 when data type should be UInt8.
 // #define DLMS_COSEM_EXACT_DATA_TYPES
 
+// If innovation counter size is UInt64 and not default UInt32.
+// #define DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+
 #ifdef ARDUINO_ARCH_AVR
 /////////////////////////////////////////////////////////////////////////////
 //If Arduino is used.

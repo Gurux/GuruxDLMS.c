@@ -529,7 +529,12 @@ int apdu_parseUserInformation(
             {
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
+#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+            *settings->expectedInvocationCounter = 1 + invocationCounter;
+#else
             *settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+
         }
         //If client system title doesn't match.
         if (settings->expectedClientSystemTitle != NULL &&

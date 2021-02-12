@@ -47,6 +47,7 @@ extern "C" {
 
 static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 static const unsigned char EMPTY_LN[6] = { 0, 0, 0, 0, 0, 0 };
+static const unsigned char DEFAULT_ASSOCIATION[6] = { 0, 0, 40, 0, 0, 255 };
 static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 

@@ -1042,9 +1042,9 @@ int var_getBytes3(
         assert(0);
 #endif
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-    return ret;
     }
+    return ret;
+}
 
 //Get size in bytes.
 int var_getSize(DLMS_DATA_TYPE vt)
@@ -1391,6 +1391,32 @@ int va_copyArray(
     }
     return ret;
 }
+
+int va_addValue(
+    variantArray* target,
+    dlmsVARIANT* value,
+    uint16_t count)
+{
+    int pos, ret = DLMS_ERROR_CODE_OK;
+    dlmsVARIANT* tmp;
+    for (pos = 0; pos != count; ++pos)
+    {
+        tmp = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
+        if (tmp == NULL)
+        {
+            ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+            break;
+        }
+        if ((ret = var_init(tmp)) != 0 ||
+            (ret = var_copy(tmp, value)) != 0 ||
+            (ret = va_push(target, tmp)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
 #endif //DLMS_IGNORE_MALLOC
 
 #ifndef DLMS_IGNORE_MALLOC
@@ -2091,7 +2117,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
         target->vt = source->vt & ~DLMS_DATA_TYPE_BYREF;
         target->ullVal = *source->pullVal;
         return 0;
-}
+    }
     if ((target->vt & DLMS_DATA_TYPE_BYREF) != 0)
     {
         uint16_t count;
@@ -2245,7 +2271,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
         ret = 0;
     }
     return ret;
-    }
+}
 
 #ifndef DLMS_IGNORE_MALLOC
 int var_setDateTime(dlmsVARIANT* target, gxtime* value)
@@ -2401,9 +2427,9 @@ int var_getDateTime(dlmsVARIANT* target, gxtime* value)
     else
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-    return DLMS_ERROR_CODE_OK;
     }
+    return DLMS_ERROR_CODE_OK;
+}
 
 double var_toDouble(dlmsVARIANT* target)
 {

@@ -232,9 +232,9 @@ int saveSecurity()
         if ((ret = bb_set(&bb, settings.base.cipher.blockCipherKey, 16)) == 0 &&
             (ret = bb_set(&bb, settings.base.cipher.authenticationKey, 16)) == 0 &&
             (ret = bb_set(&bb, settings.base.kek, 16)) == 0 &&
-            //Save server IV.
+            //Save server IC.
             (ret = bb_setUInt32(&bb, settings.base.cipher.invocationCounter)) == 0 &&
-            //Save last client IV.
+            //Save last client IC.
             (ret = bb_setUInt32(&bb, securitySetupHighGMac.minimumInvocationCounter)) == 0)
         {
             fwrite(bb.data, 1, bb.size, f);
@@ -450,7 +450,7 @@ uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
         fclose(f);
     }
     return count;
-}
+    }
 
 //Get current row count for allocated buffer.
 uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
@@ -1186,11 +1186,14 @@ int addRegisterMonitor()
     int ret;
     //Register Monitor threshold values.
     static dlmsVARIANT THRESHOLDS[10] = { 0 };
+    //Last threadholds is needed to ignore multiple script invokes.
+    static dlmsVARIANT LAST_THRESHOLDS[10] = { 0 };
     static gxActionSet ACTIONS[10] = { 0 };
     const unsigned char ln[6] = { 0,0,16,1,0,255 };
     if ((ret = INIT_OBJECT(registerMonitor, DLMS_OBJECT_TYPE_REGISTER_MONITOR, ln)) == 0)
     {
         VA_ATTACH(registerMonitor.thresholds, THRESHOLDS, 2);
+        VA_ATTACH(registerMonitor.lastValues, LAST_THRESHOLDS, sizeof(LAST_THRESHOLDS));
         ARR_ATTACH(registerMonitor.actions, ACTIONS, 2);
 
         //Add low value.
@@ -1200,16 +1203,16 @@ int addRegisterMonitor()
         registerMonitor.monitoredValue.attributeIndex = 2;
         registerMonitor.monitoredValue.target = BASE(activePowerL1);
 
-        //Add actions. Call disconnect control.
+        //Add actions. Call disconnect control. Turn LED OFF.
         ACTIONS[0].actionDown.script = &scriptTableDisconnectControl;
         ACTIONS[0].actionDown.scriptSelector = 1;
         ACTIONS[0].actionUp.script = NULL;
         ACTIONS[0].actionUp.scriptSelector = 0;
-        //Add high action.
+        //Add high action. Call disconnect control. Turn LED ON.
         ACTIONS[1].actionDown.script = NULL;
         ACTIONS[1].actionDown.scriptSelector = 0;
         ACTIONS[1].actionUp.script = &scriptTableDisconnectControl;
-        ACTIONS[1].actionUp.scriptSelector = 1;
+        ACTIONS[1].actionUp.scriptSelector = 2;
     }
     return ret;
 }
@@ -1844,9 +1847,9 @@ int loadSecurity()
             bb_clear(&bb);
             return ret;
         }
-    }
-    return saveSecurity();
 }
+    return saveSecurity();
+        }
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1887,9 +1890,9 @@ int loadSettings()
             return ret;
         }
         fclose(f);
-    }
-    return saveSettings();
 }
+    return saveSettings();
+    }
 
 //Create objects and load values from EEPROM.
 int createObjects()
@@ -2029,7 +2032,8 @@ int svr_findObject(
                 if (oa_getByIndex(&objects, pos, (gxObject**)&a) == 0)
                 {
                     if (a->clientSAP == settings->clientAddress &&
-                        a->authenticationMechanismName.mechanismId == settings->authentication)
+                        a->authenticationMechanismName.mechanismId == settings->authentication &&
+                        (memcmp(ln, DEFAULT_ASSOCIATION, sizeof(DEFAULT_ASSOCIATION)) == 0 || memcmp(a->base.logicalName, ln, 6) == 0))
                     {
                         e->target = (gxObject*)a;
                         break;
@@ -2633,8 +2637,8 @@ void handleProfileGenericActions(
             //Update values to the EEPROM.
             fwrite(pdu.data, 1, 4, f);
             fclose(f);
-        }
     }
+}
     else if (it->index == 2)
     {
         //Increase power value before each load profile read to increase the value.
@@ -2704,7 +2708,7 @@ void svr_preAction(
             if (f != NULL)
             {
                 fclose(f);
-            }
+        }
             //Load objects again.
             if ((ret = loadSettings()) != 0)
             {
@@ -2722,7 +2726,7 @@ void svr_preAction(
             }
             updateState(GURUX_EVENT_CODES_GLOBAL_METER_RESET);
             e->handled = 1;
-        }
+    }
         else if (e->target == BASE(disconnectControl))
         {
             updateState(GURUX_EVENT_CODES_OUTPUT_RELAY_STATE);
@@ -2882,7 +2886,7 @@ void svr_preAction(
             }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
-    }
+}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3679,9 +3683,9 @@ void ListenerThread(void* pVoid)
                     for (pos = 0; pos != reply.size; ++pos)
                     {
                         printf("%.2X ", reply.data[pos]);
-                    }
-                    printf("\n");
                 }
+                    printf("\n");
+            }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
                 if (send(socket1, (const char*)reply.data, reply.size - reply.position, 0) == -1)
                 {
@@ -3695,8 +3699,8 @@ void ListenerThread(void* pVoid)
                     break;
                 }
                 bb_clear(&reply);
-            }
-        }
+    }
+}
     }
 }
 
@@ -3720,7 +3724,7 @@ void* UnixSerialPortThread(void* pVoid)
             {
                 break;
             }
-        }
+}
         else
         {
             if (trace > GX_TRACE_LEVEL_WARNING)
@@ -3888,7 +3892,7 @@ int com_initializeSerialPort(
         return ret;
     }
     return 0;
-}
+    }
 #else //#if defined(__LINUX__)
 int com_initializeSerialPort(
     int* comPort,
@@ -4103,7 +4107,7 @@ int main(int argc, char* argv[])
             ret = errno;
 #endif
             return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
-        }
+    }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         receiverThread = (HANDLE)_beginthread(ListenerThread, 0, &ls);
 #else
@@ -4124,9 +4128,19 @@ int main(int argc, char* argv[])
     println("Master key (KEK)", settings.base.kek, sizeof(settings.base.kek));
     printf("----------------------------------------------------------\n");
     printf("Press Enter to close application.\r\n");
+    uint32_t lastMonitor = 0;
     while (1)
     {
         uint32_t start = time_current();
+        //Monitor values only once/second.
+        if (start - lastMonitor > 1)
+        {
+            lastMonitor = start;
+            if ((ret = svr_monitorAll(&settings)) != 0)
+            {
+                printf("Monitor failed.\r\n");
+            }
+        }
         if (executeTime <= start)
         {
             svr_run(&settings, start, &executeTime);
@@ -4191,5 +4205,5 @@ int main(int argc, char* argv[])
 #endif
 
     return 0;
-    }
+}
 

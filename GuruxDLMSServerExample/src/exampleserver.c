@@ -1253,7 +1253,10 @@ int addRegisterMonitor()
     var_init(tmp);
     var_setUInt32(tmp, 30000);
     va_push(&registerMonitor.thresholds, tmp);
-
+    //Add last values so script is not invoke multiple times.
+    dlmsVARIANT empty;
+    var_init(&empty);
+    va_addValue(&registerMonitor.lastValues, &empty, 2);
     registerMonitor.monitoredValue.attributeIndex = 2;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     registerMonitor.monitoredValue.target = BASE(activePowerL1);
@@ -1262,13 +1265,13 @@ int addRegisterMonitor()
     memcpy(registerMonitor.monitoredValue.logicalName, activePowerL1.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
-
-    //Add low action.
+    //////////////////////
+    //Add low action. Turn LED OFF.
     action = (gxActionSet*)malloc(sizeof(gxActionSet));
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    action->actionDown.script = NULL;
+    action->actionDown.script = &scriptTableDisconnectControl;
 #else
-    memset(action->actionUp.logicalName, 0, 6);
+    memcpy(action->actionDown.logicalName, scriptTableDisconnectControl.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
     action->actionDown.scriptSelector = 1;
@@ -1277,9 +1280,10 @@ int addRegisterMonitor()
 #else
     memset(action->actionUp.logicalName, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    action->actionUp.scriptSelector = 1;
+    action->actionUp.scriptSelector = 2;
     arr_push(&registerMonitor.actions, action);
-    //Add high action.
+    //////////////////////
+    //Add high action. Turn LED ON.
     action = (gxActionSet*)malloc(sizeof(gxActionSet));
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     action->actionDown.script = NULL;
@@ -1288,7 +1292,7 @@ int addRegisterMonitor()
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     action->actionDown.scriptSelector = 1;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    action->actionUp.script = NULL;
+    action->actionUp.script = &scriptTableDisconnectControl;
 #else
     memset(action->actionUp.logicalName, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -1744,6 +1748,7 @@ int loadSettings(dlmsSettings* settings)
             bb_clear(&bb);
             return ret;
         }
+        fclose(f);
     }
     return saveSettings();
 }
@@ -1925,7 +1930,8 @@ int svr_findObject(
                 if (oa_getByIndex(&objects, pos, (gxObject**)&a) == 0)
                 {
                     if (a->clientSAP == settings->clientAddress &&
-                        a->authenticationMechanismName.mechanismId == settings->authentication)
+                        a->authenticationMechanismName.mechanismId == settings->authentication &&
+                        (memcmp(ln, DEFAULT_ASSOCIATION, sizeof(DEFAULT_ASSOCIATION)) == 0 || memcmp(a->base.logicalName, ln, 6) == 0))
                     {
                         e->target = (gxObject*)a;
                         break;
@@ -2894,9 +2900,9 @@ int connectServer(
             close(*s);
 #endif
             return err;
-    };
+        };
         add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
-};
+    };
 
     //Connect to the meter.
     ret = connect(*s, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
@@ -2945,11 +2951,11 @@ int sendPush(
 #else
         close(s);
 #endif
-            }
+    }
     mes_clear(&messages);
     free(host);
     return 0;
-        }
+}
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 unsigned char svr_isTarget(
@@ -3402,12 +3408,12 @@ int svr_connected(
         {
             //Return error if client can connect only using pre-established connnection.
             return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-    }
+        }
 }
 #else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;
-    }
+}
 
 /**
     * Client has try to made invalid connection. Password is incorrect.

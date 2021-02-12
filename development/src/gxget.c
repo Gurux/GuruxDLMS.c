@@ -86,7 +86,15 @@ int cosem_getData(gxValueEventArg* e)
     int ret;
     if (e->index == 2)
     {
-        ret = cosem_setVariant(e->value.byteArr, &((gxData*)e->target)->value);
+        //Return plain value if request is coming from action.
+        if (e->action)
+        {
+            ret = var_copy(&e->value, &((gxData*)e->target)->value);
+        }
+        else
+        {
+            ret = cosem_setVariant(e->value.byteArr, &((gxData*)e->target)->value);
+        }
     }
     else
     {
@@ -103,7 +111,15 @@ int cosem_getRegister(
     gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
     {
-        ret = cosem_setVariant(e->value.byteArr, &((gxRegister*)e->target)->value);
+        //Return plain value if request is coming from action.
+        if (e->action)
+        {
+            ret = var_copy(&e->value, &((gxRegister*)e->target)->value);
+        }
+        else
+        {
+            ret = cosem_setVariant(e->value.byteArr, &((gxRegister*)e->target)->value);
+        }
     }
     else if (e->index == 3)
     {
@@ -1168,10 +1184,26 @@ int cosem_getDemandRegister(
     switch (e->index)
     {
     case 2:
-        ret = cosem_setVariant(data, &object->currentAverageValue);
+        //Return plain value if request is coming from action.
+        if (e->action)
+        {
+            ret = var_copy(&e->value, &object->currentAverageValue);
+        }
+        else
+        {
+            ret = cosem_setVariant(data, &object->currentAverageValue);
+        }
         break;
     case 3:
-        ret = cosem_setVariant(data, &object->lastAverageValue);
+        //Return plain value if request is coming from action.
+        if (e->action)
+        {
+            ret = var_copy(&e->value, &object->lastAverageValue);
+        }
+        else
+        {
+            ret = cosem_setVariant(data, &object->lastAverageValue);
+        }
         break;
     case 4:
         if ((ret = cosem_setStructure(data, 2)) != 0 ||
@@ -1181,7 +1213,15 @@ int cosem_getDemandRegister(
         }
         break;
     case 5:
-        ret = cosem_setVariant(data, &object->status);
+        //Return plain value if request is coming from action.
+        if (e->action)
+        {
+            ret = var_copy(&e->value, &object->status);
+        }
+        else
+        {
+            ret = cosem_setVariant(data, &object->status);
+        }
         break;
     case 6:
         ret = cosem_setDateTimeAsOctetString(data, &object->captureTime);
@@ -1228,7 +1268,15 @@ int cosem_getExtendedRegister(
     gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
     {
-        ret = cosem_setVariant(data, &object->value);
+        //Return plain value if request is coming from action.
+        if (e->action)
+        {
+            ret = var_copy(&e->value, &object->value);
+        }
+        else
+        {
+            ret = cosem_setVariant(data, &object->value);
+        }
     }
     else if (e->index == 3)
     {
@@ -1241,7 +1289,15 @@ int cosem_getExtendedRegister(
     }
     else if (e->index == 4)
     {
-        ret = cosem_setVariant(data, &object->status);
+        //Return plain value if request is coming from action.
+        if (e->action)
+        {
+            ret = var_copy(&e->value, &object->status);
+        }
+        else
+        {
+            ret = cosem_setVariant(data, &object->status);
+        }
     }
     else if (e->index == 5)
     {

@@ -2996,6 +2996,7 @@ unsigned char svr_isTarget(
                         GXTRACE(("Connecting using High authentication."), NULL);
                         break;
                     }
+                    settings->proposedConformance = a->xDLMSContextInfo.conformance;
                     settings->expectedClientSystemTitle = NULL;
                     //Set Invocation counter value.
                     settings->expectedInvocationCounter = NULL;

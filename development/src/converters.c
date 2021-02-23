@@ -734,27 +734,58 @@ int obj_mBusMasterPortSetupToString(gxMBusMasterPortSetup* object, char** buff)
     return 0;
 }
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
+
+int obj_timeWindowToString(gxArray* arr, gxByteBuffer* bb)
+{
+    gxKey* it;
+    int ret = 0;
+    uint16_t pos;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        if (pos != 0)
+        {
+            bb_addString(bb, ", ");
+        }
+        if ((ret = time_toString((gxtime*)it->key, bb)) != 0 ||
+            (ret = bb_addString(bb, " ")) != 0 ||
+            (ret = time_toString((gxtime*)it->value, bb)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int obj_pushSetupToString(gxPushSetup* object, char** buff)
 {
+    int ret;
     gxByteBuffer ba;
-    BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value: ");
-    //TODO: bb_addIntAsString(&ba, object->pushObjectList);
-    bb_addString(&ba, "\nIndex: 3 Value: ");
-    //TODO: bb_addIntAsString(&ba, object->sendDestinationAndMethod);
-    bb_addString(&ba, "\nIndex: 4 Value: ");
-    //TODO: bb_addIntAsString(&ba, object->communicationWindow);
-    bb_addString(&ba, "\nIndex: 5 Value: ");
-    bb_addIntAsString(&ba, object->randomisationStartInterval);
-    bb_addString(&ba, "\nIndex: 6 Value: ");
-    bb_addIntAsString(&ba, object->numberOfRetries);
-    bb_addString(&ba, "\nIndex: 7 Value: ");
-    bb_addIntAsString(&ba, object->repetitionDelay);
-    bb_addString(&ba, "\n");
-    *buff = bb_toString(&ba);
+    if ((ret = BYTE_BUFFER_INIT(&ba)) == 0 &&
+        (ret = bb_addString(&ba, "Index: 2 Value: ")) == 0 &&
+        (ret = obj_CaptureObjectsToString(&ba, &object->pushObjectList)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 3 Value: ")) == 0 &&
+        (ret = bb_set(&ba, object->destination.data, object->destination.size)) == 0 &&
+        (ret = bb_addString(&ba, " ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->message)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 4 Value: ")) == 0 &&
+        (ret = obj_timeWindowToString(&object->communicationWindow, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 5 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->randomisationStartInterval)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 6 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->numberOfRetries)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 7 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->repetitionDelay)) == 0 &&
+        (ret = bb_addString(&ba, "\n")) == 0)
+    {
+        *buff = bb_toString(&ba);
+    }
     bb_clear(&ba);
-    return 0;
+    return ret;
 }
 #endif //DLMS_IGNORE_PUSH_SETUP
 #ifndef DLMS_IGNORE_AUTO_CONNECT
@@ -1362,38 +1393,26 @@ int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
 #ifndef DLMS_IGNORE_AUTO_ANSWER
 int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
 {
-    int pos, ret = 0;
+    int pos, ret;
     gxKey* it;
     gxByteBuffer ba;
-    BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value: ");
-    bb_addIntAsString(&ba, object->mode);
-    bb_addString(&ba, "\nIndex: 3 Value: [");
-    for (pos = 0; pos != object->listeningWindow.size; ++pos)
+    if ((ret = BYTE_BUFFER_INIT(&ba)) == 0 &&
+        (ret = bb_addString(&ba, "Index: 2 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->mode)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 3 Value: [")) == 0 &&
+        (ret = obj_timeWindowToString(&object->listeningWindow, &ba)) == 0 &&
+        (ret = bb_addString(&ba, "]\nIndex: 4 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->status)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 5 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->numberOfCalls)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 6 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->numberOfRingsInListeningWindow)) == 0 &&
+        (ret = bb_addString(&ba, " ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->numberOfRingsOutListeningWindow)) == 0 &&
+        (ret = bb_addString(&ba, "\n")) == 0)
     {
-        ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&it);
-        if (ret != 0)
-        {
-            return ret;
-        }
-        if (pos != 0)
-        {
-            bb_addString(&ba, ", ");
-        }
-        time_toString((gxtime*)it->key, &ba);
-        bb_addString(&ba, " ");
-        time_toString((gxtime*)it->value, &ba);
+        *buff = bb_toString(&ba);
     }
-    bb_addString(&ba, "]\nIndex: 4 Value: ");
-    bb_addIntAsString(&ba, object->status);
-    bb_addString(&ba, "\nIndex: 5 Value: ");
-    bb_addIntAsString(&ba, object->numberOfCalls);
-    bb_addString(&ba, "\nIndex: 6 Value: ");
-    bb_addIntAsString(&ba, object->numberOfRingsInListeningWindow);
-    bb_addString(&ba, " ");
-    bb_addIntAsString(&ba, object->numberOfRingsOutListeningWindow);
-    bb_addString(&ba, "\n");
-    *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
 }

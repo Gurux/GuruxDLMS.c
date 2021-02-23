@@ -386,8 +386,9 @@ int svr_HandleAarqRequest(
     BB_ATTACH(error, ERROR_BUFF, 0);
     DLMS_ASSOCIATION_RESULT result;
     unsigned char diagnostic;
-    // Reset settings for wrapper.
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
+    // Reset settings for wrapper and PDU.
+    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER ||
+        settings->base.interfaceType == DLMS_INTERFACE_TYPE_PDU)
     {
         svr_setInitialize(settings);
     }
@@ -3398,8 +3399,9 @@ int svr_handleRequest2(
         return ret;
     }
 
-    if (first || settings->info.command == DLMS_COMMAND_SNRM ||
-        (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER && settings->info.command == DLMS_COMMAND_AARQ))
+    if ((first || settings->info.command == DLMS_COMMAND_SNRM ||
+        (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER && settings->info.command == DLMS_COMMAND_AARQ)) &&
+        settings->base.interfaceType != DLMS_INTERFACE_TYPE_PDU)
     {
 #ifndef DLMS_IGNORE_HDLC
         if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC && settings->info.preEstablished)

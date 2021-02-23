@@ -450,7 +450,7 @@ uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
         fclose(f);
     }
     return count;
-    }
+}
 
 //Get current row count for allocated buffer.
 uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
@@ -664,7 +664,7 @@ int addAssociationNone()
         associationNone.clientSAP = 0x10;
         //Max PDU is half of PDU size. This is for demonstration purposes only.
         associationNone.xDLMSContextInfo.maxSendPduSize = associationNone.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE / 2;
-        associationNone.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_GET | DLMS_CONFORMANCE_SET);
+        associationNone.xDLMSContextInfo.conformance = DLMS_CONFORMANCE_GET;
     }
     return ret;
 }
@@ -1847,9 +1847,9 @@ int loadSecurity()
             bb_clear(&bb);
             return ret;
         }
-}
+    }
     return saveSecurity();
-        }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1890,9 +1890,9 @@ int loadSettings()
             return ret;
         }
         fclose(f);
-}
-    return saveSettings();
     }
+    return saveSettings();
+}
 
 //Create objects and load values from EEPROM.
 int createObjects()
@@ -2708,7 +2708,7 @@ void svr_preAction(
             if (f != NULL)
             {
                 fclose(f);
-        }
+            }
             //Load objects again.
             if ((ret = loadSettings()) != 0)
             {
@@ -2726,7 +2726,7 @@ void svr_preAction(
             }
             updateState(GURUX_EVENT_CODES_GLOBAL_METER_RESET);
             e->handled = 1;
-    }
+        }
         else if (e->target == BASE(disconnectControl))
         {
             updateState(GURUX_EVENT_CODES_OUTPUT_RELAY_STATE);
@@ -3061,6 +3061,7 @@ unsigned char svr_isTarget(
                         GXTRACE(("Connecting using High authentication."), NULL);
                         break;
                     }
+                    settings->proposedConformance = a->xDLMSContextInfo.conformance;
                     settings->expectedClientSystemTitle = NULL;
                     //Set Invocation counter value.
                     settings->expectedInvocationCounter = NULL;

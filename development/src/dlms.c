@@ -2461,7 +2461,7 @@ int dlms_getHdlcFrame(
         if ((ret = bb_capacity(&primaryAddress, 1)) == 0 &&
             (ret = bb_capacity(&secondaryAddress, 4)) == 0)
         {
-            if (frame == 0x13 && ((dlmsServerSettings*)settings)->pushClientAddress != 0)
+            if ((frame == 0x13 || frame == 0x3) && ((dlmsServerSettings*)settings)->pushClientAddress != 0)
             {
                 ret = dlms_getAddressBytes(((dlmsServerSettings*)settings)->pushClientAddress, &primaryAddress);
             }
@@ -5927,7 +5927,15 @@ int dlms_getLnMessages(
     if (p->command == DLMS_COMMAND_DATA_NOTIFICATION ||
         p->command == DLMS_COMMAND_EVENT_NOTIFICATION)
     {
-        frame = 0x13;
+        if ((p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+        {
+            //If connection is established.
+            frame = 0x13;
+        }
+        else
+        {
+            frame = 0x3;
+        }
     }
 #endif //DLMS_IGNORE_HDLC
 #ifdef DLMS_IGNORE_MALLOC
@@ -6019,7 +6027,15 @@ int dlms_getSnMessages(
     unsigned char frame = 0x0;
     if (p->command == DLMS_COMMAND_INFORMATION_REPORT)
     {
-        frame = 0x13;
+        if ((p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+        {
+            //If connection is established.
+            frame = 0x13;
+        }
+        else
+        {
+            frame = 0x3;
+        }
     }
     else if (p->command == DLMS_COMMAND_NONE)
     {
@@ -6140,7 +6156,7 @@ int dlms_getData2(
         }
     }
     // If keepalive or get next frame request.
-    if (frame != 0x13 && (frame & 0x1) != 0)
+    if ((frame != 0x13 && frame != 0x3 || data->moreData != DLMS_DATA_REQUEST_TYPES_NONE) && (frame & 0x1) != 0)
     {
         if (dlms_useHdlc(settings->interfaceType) && data->data.size != 0)
         {

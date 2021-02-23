@@ -1966,15 +1966,8 @@ int cosem_setMacAddressSetup(gxMacAddressSetup* object, unsigned char index, dlm
     int ret = DLMS_ERROR_CODE_OK;
     if (index == 2)
     {
-        if (bb_available(value->byteArr) != 6)
-        {
-            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-        else
-        {
-            bb_clear(&object->macAddress);
-            ret = bb_set2(&object->macAddress, value->byteArr, 0, bb_size(value->byteArr));
-        }
+        bb_clear(&object->macAddress);
+        ret = bb_set2(&object->macAddress, value->byteArr, 0, bb_size(value->byteArr));
     }
     else
     {
@@ -2499,7 +2492,9 @@ int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char 
                     break;
                 }
                 tmp3 = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
-                if ((ret = var_copy(tmp, tmp3)) != 0 ||
+
+                if ((ret = var_init(tmp3)) != 0 ||
+                    (ret = var_copy(tmp, tmp3)) != 0 ||
                     (ret = va_push(&object->multicastIPAddress, tmp3)) != 0)
                 {
                     break;

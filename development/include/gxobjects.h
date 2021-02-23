@@ -1445,7 +1445,8 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        unsigned char numberOfRingsInListeningWindow, numberOfRingsOutListeningWindow;
+        unsigned char numberOfRingsInListeningWindow;
+        unsigned char numberOfRingsOutListeningWindow;
         DLMS_AUTO_ANSWER_MODE mode;
         gxArray listeningWindow;
         DLMS_AUTO_ANSWER_STATUS status;

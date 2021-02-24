@@ -760,6 +760,44 @@ int obj_timeWindowToString(gxArray* arr, gxByteBuffer* bb)
     return ret;
 }
 
+int obj_CaptureObjectsToString(gxByteBuffer* ba, gxArray* objects)
+{
+    uint16_t pos;
+    int ret = DLMS_ERROR_CODE_OK;
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    gxTarget* it;
+#else
+    gxKey* it;
+#endif //#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    for (pos = 0; pos != objects->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(objects, pos, (void**)&it)) != DLMS_ERROR_CODE_OK)
+        {
+            break;
+        }
+        if (pos != 0)
+        {
+            bb_addString(ba, ", ");
+        }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        if ((ret = bb_addString(ba, obj_typeToString2((DLMS_OBJECT_TYPE)it->target->objectType))) != 0 ||
+            (ret = bb_addString(ba, " ")) != 0 ||
+            (ret = hlp_appendLogicalName(ba, it->target->logicalName)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = bb_addString(ba, obj_typeToString2(((gxObject*)it->key)->objectType))) != 0 ||
+            (ret = bb_addString(ba, " ")) != 0 ||
+            (ret = hlp_appendLogicalName(ba, ((gxObject*)it->key)->logicalName)) != 0)
+        {
+            break;
+        }
+#endif //#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    }
+    return ret;
+}
+
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int obj_pushSetupToString(gxPushSetup* object, char** buff)
 {
@@ -1393,8 +1431,7 @@ int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
 #ifndef DLMS_IGNORE_AUTO_ANSWER
 int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
 {
-    int pos, ret;
-    gxKey* it;
+    int ret;
     gxByteBuffer ba;
     if ((ret = BYTE_BUFFER_INIT(&ba)) == 0 &&
         (ret = bb_addString(&ba, "Index: 2 Value: ")) == 0 &&
@@ -2155,44 +2192,6 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
     return 0;
 }
 #endif //DLMS_IGNORE_PPP_SETUP
-
-int obj_CaptureObjectsToString(gxByteBuffer* ba, gxArray* objects)
-{
-    uint16_t pos;
-    int ret = DLMS_ERROR_CODE_OK;
-#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
-    gxTarget* it;
-#else
-    gxKey* it;
-#endif //#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
-    for (pos = 0; pos != objects->size; ++pos)
-    {
-        if ((ret = arr_getByIndex(objects, pos, (void**)&it)) != DLMS_ERROR_CODE_OK)
-        {
-            break;
-        }
-        if (pos != 0)
-        {
-            bb_addString(ba, ", ");
-        }
-#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
-        if ((ret = bb_addString(ba, obj_typeToString2((DLMS_OBJECT_TYPE)it->target->objectType))) != 0 ||
-            (ret = bb_addString(ba, " ")) != 0 ||
-            (ret = hlp_appendLogicalName(ba, it->target->logicalName)) != 0)
-        {
-            break;
-        }
-#else
-        if ((ret = bb_addString(ba, obj_typeToString2(((gxObject*)it->key)->objectType))) != 0 ||
-            (ret = bb_addString(ba, " ")) != 0 ||
-            (ret = hlp_appendLogicalName(ba, ((gxObject*)it->key)->logicalName)) != 0)
-        {
-            break;
-        }
-#endif //#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
-    }
-    return ret;
-}
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 

@@ -6156,7 +6156,7 @@ int dlms_getData2(
         }
     }
     // If keepalive or get next frame request.
-    if ((frame != 0x13 && frame != 0x3 || data->moreData != DLMS_DATA_REQUEST_TYPES_NONE) && (frame & 0x1) != 0)
+    if (((frame != 0x13 && frame != 0x3) || data->moreData != DLMS_DATA_REQUEST_TYPES_NONE) && (frame & 0x1) != 0)
     {
         if (dlms_useHdlc(settings->interfaceType) && data->data.size != 0)
         {

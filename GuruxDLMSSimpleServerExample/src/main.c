@@ -2246,9 +2246,7 @@ unsigned char svr_isTarget(
                     //Client can establish a ciphered connection only with Security Suite 1.
                     settings->expectedSecuritySuite = 0;
                     //Security policy is not defined by default. Client can connect using any security policy.
-                    //settings->expectedSecurityPolicy = 0xFF;
-                    //Client can't establish ciphered connection if there is no security setup.
-                    settings->expectedSecurityPolicy = 0;
+                    settings->expectedSecurityPolicy = 0xFF;
                     if (a->securitySetup != NULL)
                     {
                         //Set expected client system title. If this is set only client that is using expected client system title can connect to the meter.

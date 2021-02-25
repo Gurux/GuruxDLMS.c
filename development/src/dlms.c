@@ -3011,6 +3011,20 @@ int dlms_getHdlcData(
             }
         }
         data->command = (DLMS_COMMAND)*frame;
+        switch (data->command)
+        {
+        case DLMS_COMMAND_SNRM:
+        case DLMS_COMMAND_UA:
+        case DLMS_COMMAND_DISCONNECT_MODE:
+        case DLMS_COMMAND_REJECTED:
+        case DLMS_COMMAND_DISC:
+        case 0x3:
+        case 0x13:
+            break;
+        default:
+            //Unknown command.
+            return DLMS_ERROR_CODE_REJECTED;
+        }
     }
     else if ((*frame & HDLC_FRAME_TYPE_S_FRAME) == HDLC_FRAME_TYPE_S_FRAME)
     {

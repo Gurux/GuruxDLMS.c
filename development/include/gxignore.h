@@ -153,6 +153,7 @@ extern "C" {
 #ifdef ARDUINO_ARCH_AVR
 /////////////////////////////////////////////////////////////////////////////
 //If Arduino is used.
+#define DLMS_IGNORE_IP6_SETUP 
 #define DLMS_USE_EPOCH_TIME
 #define DLMS_IGNORE_NOTIFY
 #define GX_DLMS_MICROCONTROLLER

@@ -33,6 +33,7 @@
 #ifndef GXOBJECTS_H
 #define GXOBJECTS_H
 
+#include "gxignore.h"
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
 #include <ws2tcpip.h>
 #else //Linux includes.
@@ -43,11 +44,6 @@
 #define IN6_ADDR struct in6_addr
 #endif //DLMS_IGNORE_IP6_SETUP
 #endif
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-#include "gxignore.h"
 #include "enums.h"
 #include "variant.h"
 #include "date.h"
@@ -55,6 +51,9 @@ extern "C" {
 #include "gxkey.h"
 #include "gxdefine.h"
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
     typedef enum
     {
         /*

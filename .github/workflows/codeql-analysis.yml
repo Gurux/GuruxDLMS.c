@@ -65,6 +65,7 @@ jobs:
         mkdir bin
         mkdir lib
         make
+        
     #   make bootstrap
     #   make release
 

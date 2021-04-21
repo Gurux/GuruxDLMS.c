@@ -60,13 +60,17 @@ char bb_isAttached(gxByteBuffer* arr)
 #endif
 }
 
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+uint32_t bb_available(gxByteBuffer* arr)
+#else
 uint16_t bb_available(gxByteBuffer* arr)
+#endif
 {
     if (arr == NULL)
     {
         return 0;
     }
-    return (uint16_t)(arr->size - arr->position);
+    return arr->size - arr->position;
 }
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
@@ -75,7 +79,7 @@ uint32_t bb_getCapacity(gxByteBuffer* arr)
 uint16_t bb_getCapacity(gxByteBuffer* arr)
 #endif
 {
-#if !defined(GX_DLMS_MICROCONTROLLER)&& (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER)&& (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     //If byte buffer is attached.
     return arr->capacity & 0x7FFFFFFF;
 #else
@@ -300,7 +304,7 @@ int bb_setUInt16(
     gxByteBuffer* arr,
     uint16_t item)
 {
-    int ret = bb_setUInt16ByIndex(arr, (unsigned short) arr->size, item);
+    int ret = bb_setUInt16ByIndex(arr, arr->size, item);
     if (ret == 0)
     {
         arr->size += 2;
@@ -308,13 +312,20 @@ int bb_setUInt16(
     return ret;
 }
 
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+int bb_setUInt16ByIndex(
+    gxByteBuffer* arr,
+    uint32_t index,
+    uint16_t item)
+#else
 int bb_setUInt16ByIndex(
     gxByteBuffer* arr,
     uint16_t index,
     uint16_t item)
+#endif
 {
     int ret = 0;
-    if ((uint16_t)(index + 2) > arr->size)
+    if (index + 2 > arr->size)
     {
         bb_allocate(arr, arr->size, 2);
     }
@@ -348,7 +359,7 @@ int bb_setUInt32ByIndex(
     gxByteBuffer* arr,
     uint16_t index,
     uint32_t item)
-#endif //!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#endif //defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 {
     int ret = bb_allocate(arr, index, 4);
     if (ret == 0)

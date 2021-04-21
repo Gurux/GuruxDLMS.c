@@ -80,9 +80,11 @@ extern "C" {
 #endif
 
     /*Returns amount of the available bytes.*/
-    uint16_t bb_available(
-        gxByteBuffer* arr);
-
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    uint32_t bb_available(gxByteBuffer* arr);
+#else
+    uint16_t bb_available(gxByteBuffer* arr);
+#endif
     /*
     * Initialize gxByteBuffer.
     */
@@ -162,10 +164,17 @@ extern "C" {
         gxByteBuffer* bb,
         uint16_t item);
 
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    int bb_setUInt16ByIndex(
+        gxByteBuffer* arr,
+        uint32_t index,
+        uint16_t item);
+#else
     int bb_setUInt16ByIndex(
         gxByteBuffer* arr,
         uint16_t index,
         uint16_t item);
+#endif
 
     int bb_setUInt32(
         gxByteBuffer* bb,

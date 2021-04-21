@@ -939,7 +939,7 @@ int cosem_parseLNObjects(dlmsSettings* settings, gxByteBuffer* data, objectArray
         version = (unsigned char)var_toInteger(it2);
         ret = cosem_createObject(class_id, &object);
         //If known object.
-        if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+        if (ret == 0)
         {
             object->version = version;
             ret = cosem_updateAttributeAccessModes(object, it3->Arr);
@@ -950,6 +950,14 @@ int cosem_parseLNObjects(dlmsSettings* settings, gxByteBuffer* data, objectArray
             cosem_setLogicalName(object, ln->byteArr->data);
             oa_push(&settings->objects, object);
             oa_push(&settings->releasedObjects, object);
+        }
+        else
+        {
+            if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+            {
+                break;
+            }
+            ret = 0;
         }
     }
     var_clear(&value);
@@ -1626,13 +1634,21 @@ int cosem_parseSNObjects(dlmsSettings* settings, gxByteBuffer* data, objectArray
         version = (unsigned char)var_toInteger(it3);
         ret = cosem_createObject(class_id, &object);
         //If known object.
-        if (ret != DLMS_ERROR_CODE_INVALID_PARAMETER)
+        if (ret == 0)
         {
             object->shortName = sn;
             object->version = version;
             cosem_setLogicalName(object, ln->byteArr->data);
             oa_push(objects, object);
             oa_push(&settings->releasedObjects, object);
+        }
+        else
+        {
+            if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+            {
+                break;
+            }
+            ret = 0;
         }
     }
     var_clear(&value);
@@ -4794,10 +4810,10 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
     }
     else if (index == 11)
     {
+        ccc = NULL;
         obj_clearCreditChargeConfigurations(&object->creditChargeConfigurations);
         for (pos = 0; pos != value->Arr->size; ++pos)
         {
-            ccc = NULL;
             ret = va_getByIndex(value->Arr, pos, &it);
             if (ret != 0)
             {

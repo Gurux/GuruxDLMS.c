@@ -442,8 +442,8 @@ int updateWeekProfileTable(gxArray* profile, dlmsVARIANT* data)
             {
                 break;
             }
+        }
     }
-}
     return ret;
 }
 
@@ -761,9 +761,10 @@ int cosem_parseLNObjects(dlmsSettings* settings, gxByteBuffer* data, objectArray
             {
                 break;
             }
+            object = NULL;
             ret = cosem_createObject(class_id, &object);
             //If known object.
-            if (object != NULL && ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+            if (object != NULL && ret == 0)
             {
                 object->version = version;
                 ret = cosem_updateAttributeAccessModes(object, data);
@@ -777,6 +778,11 @@ int cosem_parseLNObjects(dlmsSettings* settings, gxByteBuffer* data, objectArray
             }
             else
             {
+                if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+                {
+                    break;
+                }
+                ret = 0;
                 gxfree(object);
             }
         }
@@ -968,11 +974,11 @@ int cosem_setAssociationLogicalName(
         if ((ret = cosem_getOctetString2(value->byteArr, ln, 6, NULL)) == 0)
         {
             ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln, (gxObject**)&object->securitySetup);
-    }
+        }
 #else
         ret = cosem_getOctetString2(value->byteArr, object->securitySetupReference, 6, NULL);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-}
+    }
     else if (index == 10)
     {
         uint16_t count;
@@ -1019,9 +1025,9 @@ int cosem_setAssociationLogicalName(
                             break;
                         }
                         arr_push(&object->userList, it);
+                    }
+                }
             }
-        }
-    }
 #endif //DLMS_COSEM_EXACT_DATA_TYPES
         }
     }
@@ -1175,13 +1181,21 @@ int cosem_parseSNObjects(dlmsSettings* settings, gxByteBuffer* data, objectArray
         version = (unsigned char)var_toInteger(it3);
         ret = cosem_createObject(class_id, &object);
         //If known object.
-        if (ret != DLMS_ERROR_CODE_INVALID_PARAMETER)
+        if (ret == 0)
         {
             object->shortName = sn;
             object->version = version;
             cosem_setLogicalName(object, ln->byteArr->data);
             oa_push(objects, object);
             oa_push(&settings->releasedObjects, object);
+        }
+        else
+        {
+            if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+            {
+                break;
+            }
+            ret = 0;
         }
     }
     var_clear(&value);
@@ -1210,11 +1224,11 @@ int cosem_setAssociationShortName(
         if ((ret = cosem_getOctetString2(value->byteArr, ln, 6, NULL)) == 0)
         {
             ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln, (gxObject**)&object->securitySetup);
-    }
+        }
 #else
         ret = cosem_getOctetString2(value->byteArr, object->securitySetupReference, 6, NULL);
 #endif //!(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_SECURITY_SETUP))
-}
+    }
     else
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -1725,12 +1739,12 @@ int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char 
             if ((ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_NONE, ln, &object->dataLinkLayer)) != 0)
             {
                 return ret;
+            }
         }
-    }
 #else
         ret = cosem_getOctetString2(value->byteArr, object->dataLinkLayerReference, 6, NULL);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-}
+    }
     else if (index == 3)
     {
         ret = cosem_getUInt32(value->byteArr, &object->ipAddress);
@@ -1828,12 +1842,12 @@ int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char 
             if ((ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_NONE, ln, &object->dataLinkLayer)) != 0)
             {
                 return ret;
+            }
         }
-    }
 #else
         ret = cosem_getOctetString2(value->byteArr, object->dataLinkLayerReference, 6, NULL);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-}
+    }
     else if (index == 3)
     {
         if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
@@ -2136,8 +2150,8 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
             if ((ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP, ln, &object->mBusPort)) != 0)
             {
                 return ret;
+            }
         }
-    }
 #else
         ret = cosem_getOctetString2(value->byteArr, object->mBusPortReference, 6, NULL);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -2162,7 +2176,7 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
                     (ret = arr_push(&object->captureDefinition, key_init(start, end))) != 0)
                 {
                     break;
-}
+                }
             }
         }
 #else
@@ -2281,9 +2295,9 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
                         break;
                     }
                 }
+            }
         }
     }
-}
     else if (index == 4)
     {
         uint16_t count;
@@ -2336,12 +2350,12 @@ int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char 
             if ((ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_NONE, ln, &object->phy)) != 0)
             {
                 return ret;
+            }
         }
-    }
 #else
         ret = cosem_getOctetString2(value->byteArr, object->PHYReference, 6, NULL);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-}
+    }
     else if (index == 3)
     {
         arr_clear(&object->lcpOptions);
@@ -2506,7 +2520,7 @@ int cosem_setRegisterActivation(
                         {
                             break;
                         }
-            }
+                    }
 #else
                     k->count = (unsigned char)size;
                     for (pos2 = 0; pos2 != size; ++pos2)
@@ -2517,9 +2531,9 @@ int cosem_setRegisterActivation(
                         }
                     }
 #endif //DLMS_COSEM_EXACT_DATA_TYPES
+                }
+            }
         }
-    }
-}
     }
     else if (index == 4 && (value->vt & DLMS_DATA_TYPE_OCTET_STRING) != 0)
     {
@@ -2840,7 +2854,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
 #else
             memset(object->ipReference, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    }
+        }
         else
         {
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -2848,11 +2862,11 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
             if ((ret = cosem_getOctetString2(value->byteArr, ln, 6, NULL)) == 0)
             {
                 ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_IP4_SETUP, ln, &object->ipSetup);
-        }
+            }
 #else
             ret = bb_get(value->byteArr, object->ipReference, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-}
+        }
     }
     else if (index == 4)
     {
@@ -2941,10 +2955,10 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                     svr_notifyTrace2("Adding object ", type, ln, 0);
 #endif //DLMS_DEBUG
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-                    }
+                }
+            }
         }
     }
-}
     else if (index == 3)
     {
         if ((ret = bb_clear(&object->destination)) != 0 ||
@@ -3318,7 +3332,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
         {
             //Error code is returned at the end of the function.
         }
-}
+    }
     else if (index == 16)
     {
         ret = cosem_getInt32(value->byteArr, &object->lowCreditThreshold);
@@ -3939,11 +3953,11 @@ int cosem_setParameterMonitor(
             ret = cosem_findObjectByLN(settings, type, ln, &object->changedParameter.target);
 #else
             object->changedParameter.type = type;
-                memcpy(object->changedParameter.logicalName, ln, 6);
+            memcpy(object->changedParameter.logicalName, ln, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    }
+        }
         break;
-}
+    }
     case 3:
     {
         ret = cosem_getDateTimeFromOctetString(value->byteArr, &object->captureTime);
@@ -3981,10 +3995,10 @@ int cosem_setParameterMonitor(
                     break;
                 }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-                }
             }
-        break;
         }
+        break;
+    }
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
@@ -4410,12 +4424,12 @@ int cosem_setArbitrator(
                 if ((ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln, (gxObject**)&it->script)) != 0)
                 {
                     break;
-            }
+                }
 #else
                 memcpy(it->scriptLogicalName, ln, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+            }
         }
-    }
     }
     break;
     case 3:
@@ -4464,7 +4478,7 @@ int cosem_setArbitrator(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_ARBITRATOR
@@ -5038,7 +5052,7 @@ int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT* 
     break;
     default:
         return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-}
+    }
     return DLMS_ERROR_CODE_OK;
 }
 #endif //DLMS_ITALIAN_STANDARD

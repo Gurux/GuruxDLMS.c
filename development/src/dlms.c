@@ -3018,8 +3018,8 @@ int dlms_getHdlcData(
         case DLMS_COMMAND_DISCONNECT_MODE:
         case DLMS_COMMAND_REJECTED:
         case DLMS_COMMAND_DISC:
-        case 0x3:
-        case 0x13:
+        case DLMS_COMMAND_UNNUMBERED_INFORMATION_UI:
+        case DLMS_COMMAND_UNNUMBERED_INFORMATION_UI_FINAL:
             break;
         default:
             //Unknown command.

@@ -594,7 +594,7 @@ int hlp_hexToBytes2(
     return 0;
 }
 
-#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 void hlp_trace(unsigned char* data, int index, int count, unsigned char send)
 {
     char* buff = hlp_bytesToHex(data + index, count);

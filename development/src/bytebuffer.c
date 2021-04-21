@@ -52,7 +52,7 @@ char bb_isAttached(gxByteBuffer* arr)
     {
         return 0;
     }
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     //If byte buffer is attached.
     return (arr->capacity & 0x80000000) == 0x80000000;
 #else
@@ -69,7 +69,7 @@ uint16_t bb_available(gxByteBuffer* arr)
     return (uint16_t)(arr->size - arr->position);
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 uint32_t bb_getCapacity(gxByteBuffer* arr)
 #else
 uint16_t bb_getCapacity(gxByteBuffer* arr)
@@ -84,7 +84,7 @@ uint16_t bb_getCapacity(gxByteBuffer* arr)
 }
 
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 uint32_t bb_size(gxByteBuffer* arr)
 #else
 uint16_t bb_size(gxByteBuffer* arr)
@@ -107,7 +107,7 @@ int BYTE_BUFFER_INIT(
     return 0;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_capacity(
     gxByteBuffer* arr,
     uint32_t capacity)
@@ -165,7 +165,7 @@ int bb_capacity(
     return DLMS_ERROR_CODE_OK;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_zero(
     gxByteBuffer* arr,
     uint32_t index,
@@ -205,7 +205,7 @@ int bb_setUInt8(
     return ret;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_insertUInt8(
     gxByteBuffer* arr,
     uint32_t index,
@@ -225,7 +225,7 @@ int bb_insertUInt8(
     return ret;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_allocate(
     gxByteBuffer* arr,
     uint32_t index,
@@ -272,7 +272,7 @@ int bb_allocate(
     return 0;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_setUInt8ByIndex(
     gxByteBuffer* arr,
     uint32_t index,
@@ -338,7 +338,7 @@ int bb_setUInt32(
     return ret;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_setUInt32ByIndex(
     gxByteBuffer* arr,
     uint32_t index,
@@ -469,7 +469,7 @@ int bb_setInt64(
     return bb_setUInt64(arr, (uint64_t)item);
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_set(
     gxByteBuffer* arr,
     const unsigned char* pSource,
@@ -490,7 +490,7 @@ int bb_set(
     return ret;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_set2(
     gxByteBuffer* arr,
     gxByteBuffer* data,
@@ -506,7 +506,7 @@ int bb_set2(
 {
     if (data != NULL && count != 0)
     {
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
         if (count == (uint32_t)-1)
 #else
         if (count == (uint16_t)-1)
@@ -546,7 +546,7 @@ int bb_addString(
     return 0;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_attach(
     gxByteBuffer* arr,
     unsigned char* value,
@@ -566,7 +566,7 @@ int bb_attach(
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     arr->data = value;
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     arr->capacity = (0x80000000 | capacity);
 #else
     arr->capacity = (uint16_t)(0x8000 | capacity);
@@ -576,7 +576,7 @@ int bb_attach(
     return 0;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_attachString2(
     gxByteBuffer* arr,
     char* value,
@@ -1040,7 +1040,7 @@ int bb_addIntAsString2(gxByteBuffer* bb, int value, unsigned char digits)
     return ret;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_subArray(
     gxByteBuffer* bb,
     uint32_t index,
@@ -1059,7 +1059,7 @@ int bb_subArray(
     return 0;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_insert(const unsigned char* src,
     uint32_t count,
     gxByteBuffer* target,
@@ -1088,7 +1088,7 @@ int bb_insert(const unsigned char* src,
     return ret;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_move(
     gxByteBuffer* bb,
     uint32_t srcPos,
@@ -1158,7 +1158,7 @@ int bb_trim(
     return DLMS_ERROR_CODE_OK;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 unsigned char bb_compare(
     gxByteBuffer* bb,
     unsigned char* buff,
@@ -1184,7 +1184,7 @@ unsigned char bb_compare(
     return equal;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_get(
     gxByteBuffer* bb,
     unsigned char* value,

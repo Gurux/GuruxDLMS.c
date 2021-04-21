@@ -1304,6 +1304,11 @@ extern "C" {
         /*Ded initiate response.*/
         DLMS_COMMAND_DED_INITIATE_RESPONSE = 72,
 
+        /*Unnumbered information UI frame*/
+        DLMS_COMMAND_UNNUMBERED_INFORMATION_UI = 0x3,
+        /*Final unnumbered information UI*/
+        DLMS_COMMAND_UNNUMBERED_INFORMATION_UI_FINAL = 0x13,
+
 #endif //DLMS_IGNORE_HIGH_GMAC
         /*
         * Request message from client to gateway.

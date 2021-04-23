@@ -104,7 +104,7 @@ extern "C" {
         DLMS_DATA_TYPE type,
         dlmsVARIANT *value);
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     //Set data from DLMS Varuant to DLMS byte stream.
     int dlms_setData2(
         unsigned char *buff,

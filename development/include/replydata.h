@@ -76,7 +76,7 @@ extern "C" {
          */
         uint16_t totalCount;
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
         /**
         * Last read position. This is used in peek to solve how far data is read.
         */

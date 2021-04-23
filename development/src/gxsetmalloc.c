@@ -2691,7 +2691,7 @@ int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char 
     }
     else if (index == 7)
     {
-        if (value->byteArr->size != 16)
+        if (bb_size(value->byteArr) != 16)
         {
             ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
@@ -2702,7 +2702,7 @@ int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char 
     }
     else if (index == 8)
     {
-        if (value->byteArr->size != 16)
+        if (bb_size(value->byteArr) != 16)
         {
             ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
@@ -6755,10 +6755,16 @@ int cosem_setSFSKActiveInitiator(
         if (value->vt == DLMS_DATA_TYPE_STRUCTURE)
         {
             bb_clear(&object->systemTitle);
-            if ((ret = va_getByIndex(value->Arr, 0, &tmp)) != DLMS_ERROR_CODE_OK ||
-                (ret = bb_set(&object->systemTitle, tmp->byteArr->data, bb_size(tmp->byteArr))) != 0)
+            if ((ret = va_getByIndex(value->Arr, 0, &tmp)) != DLMS_ERROR_CODE_OK)
             {
                 break;
+            }
+            if (tmp->byteArr != NULL)
+            {
+                if ((ret = bb_set(&object->systemTitle, tmp->byteArr->data, bb_size(tmp->byteArr))) != 0)
+                {
+                    break;
+                }
             }
             if ((ret = va_getByIndex(value->Arr, 1, &tmp)) != DLMS_ERROR_CODE_OK)
             {

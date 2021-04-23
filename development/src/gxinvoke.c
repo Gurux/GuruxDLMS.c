@@ -291,7 +291,11 @@ int invoke_AssociationLogicalName(
 #ifdef DLMS_IGNORE_MALLOC
         ret = cosem_getOctetString(e->parameters.byteArr, &object->secret);
 #else
-        unsigned short size = bb_available(e->parameters.byteArr);
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    uint32_t size = bb_available(e->parameters.byteArr);
+#else
+    uint16_t size = bb_available(e->parameters.byteArr);
+#endif
         if (size == 0)
         {
             ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;

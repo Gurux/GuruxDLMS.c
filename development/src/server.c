@@ -70,6 +70,9 @@ typedef struct
     gxObject* item;
 } gxSNInfo;
 
+//Is interface type HDLC or HDLC with mode E.
+#define IS_HDLC(interfaceType) (interfaceType == DLMS_INTERFACE_TYPE_HDLC || interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
+
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 /**
  * Handle read request.
@@ -292,12 +295,13 @@ void svr_reset(
 
 int svr_generateExceptionResponse(
     dlmsSettings* settings,
+    DLMS_EXCEPTION_STATE_ERROR state,
     int error,
     gxByteBuffer* data)
 {
     int ret;
     if ((ret = bb_setUInt8(data, DLMS_COMMAND_EXCEPTION_RESPONSE)) == 0 &&
-        (ret = bb_setUInt8(data, DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN)) == 0)
+        (ret = bb_setUInt8(data, state)) == 0)
     {
         if (error == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL)
         {
@@ -362,7 +366,7 @@ int svr_generateExceptionResponse(
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
 #ifndef DLMS_IGNORE_HDLC
-    if (ret == 0 && settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    if (ret == 0 && IS_HDLC(settings->interfaceType))
     {
         ret = dlms_addLLCBytes(settings, data);
     }
@@ -400,7 +404,7 @@ int svr_HandleAarqRequest(
 #endif
     //If client is not called SNRM.
 #ifndef DLMS_IGNORE_HDLC
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC && (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) == 0)
+    if (IS_HDLC(settings->base.interfaceType) && (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) == 0)
     {
         return DLMS_ERROR_CODE_REJECTED;
     }
@@ -414,7 +418,11 @@ int svr_HandleAarqRequest(
         ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
         ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE)
     {
-        return svr_generateExceptionResponse(&settings->base, ret, data);
+        return svr_generateExceptionResponse(
+            &settings->base,
+            DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN,
+            ret,
+            data);
     }
     else if (ret == 0 && result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
     {
@@ -597,7 +605,7 @@ int svr_HandleAarqRequest(
     }
 
 #ifndef DLMS_IGNORE_HDLC
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    if (IS_HDLC(settings->base.interfaceType))
     {
         dlms_addLLCBytes(&settings->base, data);
     }
@@ -733,6 +741,56 @@ int svr_generateDisconnectRequest(
     return ret;
 }
 
+//Add PDU to frame.
+int dlms_addFrame(
+    dlmsSettings* settings,
+    DLMS_COMMAND command,
+    gxByteBuffer* data,
+    gxByteBuffer* reply)
+{
+    int ret;
+    switch (settings->interfaceType)
+    {
+#ifndef DLMS_IGNORE_HDLC
+    case DLMS_INTERFACE_TYPE_HDLC:
+    case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
+        if ((ret = dlms_getHdlcFrame(settings, 0, data, reply)) != 0)
+        {
+#ifdef DLMS_DEBUG
+            svr_notifyTrace("getHdlcFrame failed. ", ret);
+#endif //DLMS_DEBUG
+        }
+        break;
+#endif //DLMS_IGNORE_HDLC
+#ifndef DLMS_IGNORE_WRAPPER
+    case DLMS_INTERFACE_TYPE_WRAPPER:
+        if ((ret = dlms_getWrapperFrame(settings, command, data, reply)) != 0)
+        {
+#ifdef DLMS_DEBUG
+            svr_notifyTrace("dlms_getWrapperFrame failed. ", ret);
+#endif //DLMS_DEBUG
+        }
+        break;
+#endif //DLMS_IGNORE_WRAPPER
+#ifndef DLMS_IGNORE_PLC
+    case DLMS_INTERFACE_TYPE_PLC:
+    case DLMS_INTERFACE_TYPE_PLC_HDLC:
+        ret = dlms_getMacFrame(settings, 0, 0, data, reply);
+        break;
+#endif //DLMS_IGNORE_PLC
+    case DLMS_INTERFACE_TYPE_PDU:
+        ret = bb_set2(reply, data, 0, bb_size(data));
+        break;
+    default:
+#ifdef DLMS_DEBUG
+        svr_notifyTrace("Unknown frame type. ", -1);
+#endif //DLMS_DEBUG
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+
 int svr_reportError(
     dlmsServerSettings* settings,
     DLMS_COMMAND command,
@@ -807,24 +865,7 @@ int svr_reportError(
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     }
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
-    {
-#ifndef DLMS_IGNORE_HDLC
-        ret = dlms_getHdlcFrame(&settings->base, 0, &data, reply);
-#else
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //DLMS_IGNORE_HDLC
-    }
-#ifndef DLMS_IGNORE_WRAPPER
-    else if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
-    {
-        ret = dlms_getWrapperFrame(&settings->base, command, &data, reply);
-    }
-#endif //DLMS_IGNORE_WRAPPER
-    else
-    {
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+    ret = dlms_addFrame(&settings->base, command, &data, reply);
     bb_clear(&data);
     return ret;
 }
@@ -1084,7 +1125,7 @@ int svr_generateConfirmedServiceError(
 {
     bb_clear(data);
 #ifndef DLMS_IGNORE_HDLC
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+    if (IS_HDLC(settings->base.interfaceType))
     {
         dlms_addLLCBytes(&settings->base, data);
     }
@@ -1104,16 +1145,6 @@ int svr_handleSetRequest(
     gxLNParameters p;
     unsigned char invokeId, type;
     int ret;
-    // Return error if connection is not established.
-    if (!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0)
-    {
-        bb_clear(data);
-        return svr_generateConfirmedServiceError(
-            settings,
-            DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
-            DLMS_SERVICE_ERROR_SERVICE, DLMS_SERVICE_UNSUPPORTED,
-            data);
-    }
     // Get type.
     if ((ret = bb_getUInt8(data, &type)) != 0)
     {
@@ -1588,7 +1619,7 @@ int svr_getRequestWithList(
 #endif //DLMS_IGNORE_MALLOC
         if (e->error == 0 && !e->handled)
         {
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
             uint32_t pos2 = data->size;
 #else
             uint16_t pos2 = data->size;
@@ -1661,15 +1692,6 @@ int svr_handleGetRequest(
     int ret;
     DLMS_GET_COMMAND_TYPE type;
     unsigned char invokeId, ch;
-    // Return error if connection is not established.
-    if (!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0)
-    {
-        return svr_generateConfirmedServiceError(
-            settings,
-            DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
-            DLMS_SERVICE_ERROR_SERVICE, DLMS_SERVICE_UNSUPPORTED,
-            data);
-    }
     // Get type.
     if ((ret = bb_getUInt8(data, &ch)) != 0)
     {
@@ -1828,14 +1850,6 @@ int svr_handleRead(
             return ret;
         }
     }
-    // Return error if connection is not established.
-    if (!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0)
-    {
-        return svr_generateConfirmedServiceError(
-            settings,
-            DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR, DLMS_SERVICE_ERROR_SERVICE,
-            DLMS_SERVICE_UNSUPPORTED, data);
-    }
     if (svr_getAttributeAccess(&settings->base, info.item, info.index) == DLMS_ACCESS_MODE_NONE)
     {
         e->error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
@@ -1867,7 +1881,7 @@ int svr_getReadData(
     int ret;
     gxValueEventArg* e;
     uint32_t pos;
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     uint32_t statusindex;
 #else
     uint16_t statusindex;
@@ -2161,14 +2175,6 @@ int svr_handleReadRequest(
     uint16_t pos, cnt = 0;
     DLMS_VARIABLE_ACCESS_SPECIFICATION type;
     gxValueEventCollection list;
-    if (settings->base.useLogicalNameReferencing)
-    {
-        return svr_generateConfirmedServiceError(
-            settings,
-            DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
-            DLMS_SERVICE_ERROR_SERVICE, DLMS_SERVICE_UNSUPPORTED,
-            data);
-    }
     // If get next frame.
     if (data->size == 0)
     {
@@ -2268,14 +2274,6 @@ int svr_handleWriteRequest(
     gxValueEventCollection actions;
     DLMS_VARIABLE_ACCESS_SPECIFICATION type;
     gxByteBuffer results;
-    if (settings->base.useLogicalNameReferencing)
-    {
-        return svr_generateConfirmedServiceError(
-            settings,
-            DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
-            DLMS_SERVICE_ERROR_SERVICE, DLMS_SERVICE_UNSUPPORTED,
-            data);
-    }
     // Get object count.
     if (hlp_getObjectCount2(data, &cnt) != 0)
     {
@@ -2732,39 +2730,38 @@ int svr_handleReleaseRequest(
     unsigned char userInfo = len != 3;
     bb_clear(data);
 #ifdef DLMS_IGNORE_MALLOC
-    unsigned char offset = settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC ? 12 : 9;
+    unsigned char offset = IS_HDLC(settings->base.interfaceType) ? 12 : 9;
     bb_attach(&tmp, data->data + offset, 0, data->capacity - offset);
 #else
     BYTE_BUFFER_INIT(&tmp);
 #endif //DLMS_IGNORE_MALLOC
-    if (userInfo && (ret = apdu_getUserInformation(&settings->base, &tmp, 0)) != 0)
+    if (!(userInfo && (ret = apdu_getUserInformation(&settings->base, &tmp, 0)) != 0))
     {
-        return ret;
-    }
 #ifndef DLMS_IGNORE_HDLC
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
-    {
-        dlms_addLLCBytes(&settings->base, data);
-    }
-#endif //DLMS_IGNORE_HDLC
-    if ((ret = bb_setUInt8(data, 0x63)) == 0 &&
-        //Len.
-        (ret = bb_setUInt8(data, (unsigned char)(tmp.size + 3))) == 0 &&
-        (ret = bb_setUInt8(data, 0x80)) == 0 &&
-        (ret = bb_setUInt8(data, 0x01)) == 0 &&
-        //Reason
-        (ret = bb_setUInt8(data, ch)) == 0)
-    {
-        if (tmp.size != 0)
+        if (IS_HDLC(settings->base.interfaceType))
         {
-            if ((ret = bb_setUInt8(data, 0xBE)) == 0 &&
-                (ret = bb_setUInt8(data, (unsigned char)(tmp.size + 1))) == 0 &&
-                (ret = bb_setUInt8(data, 4)) == 0 &&
-                (ret = bb_setUInt8(data, (unsigned char)tmp.size)) == 0)
+            dlms_addLLCBytes(&settings->base, data);
+        }
+#endif //DLMS_IGNORE_HDLC
+        if ((ret = bb_setUInt8(data, 0x63)) == 0 &&
+            //Len.
+            (ret = bb_setUInt8(data, (unsigned char)(tmp.size + 3))) == 0 &&
+            (ret = bb_setUInt8(data, 0x80)) == 0 &&
+            (ret = bb_setUInt8(data, 0x01)) == 0 &&
+            //Reason
+            (ret = bb_setUInt8(data, ch)) == 0)
+        {
+            if (tmp.size != 0)
             {
+                if ((ret = bb_setUInt8(data, 0xBE)) == 0 &&
+                    (ret = bb_setUInt8(data, (unsigned char)(tmp.size + 1))) == 0 &&
+                    (ret = bb_setUInt8(data, 4)) == 0 &&
+                    (ret = bb_setUInt8(data, (unsigned char)tmp.size)) == 0)
+                {
 #ifndef DLMS_IGNORE_MALLOC
-                ret = bb_set(data, tmp.data, tmp.size);
+                    ret = bb_set(data, tmp.data, tmp.size);
 #endif //DLMS_IGNORE_MALLOC
+                }
             }
         }
     }
@@ -2977,7 +2974,10 @@ int svr_handleCommand(
     {
 #ifndef DLMS_IGNORE_SET
     case DLMS_COMMAND_SET_REQUEST:
-        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_SET) == 0)
+        //If connection is not established.
+        if ((!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0) ||
+            //If service is not negotiated.
+            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_SET) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
@@ -2989,6 +2989,7 @@ int svr_handleCommand(
 #endif //DLMS_IGNORE_SET
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_WRITE_REQUEST:
+        //Connection establised is checked inside of the function because of HLS.
         if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_WRITE) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
@@ -3000,7 +3001,10 @@ int svr_handleCommand(
         break;
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_GET_REQUEST:
-        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_GET) == 0)
+        //If connection is not established.
+        if ((!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0) ||
+            //If service is not negotiated.
+            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_GET) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
@@ -3020,7 +3024,10 @@ int svr_handleCommand(
         break;
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_READ_REQUEST:
-        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_READ) == 0)
+        //If connection is not established.
+        if ((!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0) ||
+            //If service is not negotiated.
+            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_READ) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
@@ -3040,6 +3047,8 @@ int svr_handleCommand(
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 #ifndef DLMS_IGNORE_ACTION
     case DLMS_COMMAND_METHOD_REQUEST:
+        //Connection establised is checked inside of the function because of HLS.
+        //If service is not negotiated.
         if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_ACTION) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
@@ -3126,51 +3135,27 @@ int svr_handleCommand(
     if (ret == DLMS_ERROR_CODE_INVALID_COMMAND)
     {
         bb_clear(data);
-        ret = svr_generateExceptionResponse(&settings->base, DLMS_ERROR_CODE_INVALID_COMMAND, data);
+        if (settings->base.useLogicalNameReferencing)
+        {
+            ret = svr_generateExceptionResponse(&settings->base,
+                DLMS_EXCEPTION_STATE_ERROR_SERVICE_NOT_ALLOWED,
+                DLMS_ERROR_CODE_INVALID_COMMAND,
+                data);
+        }
+        else
+        {
+            ret = svr_generateConfirmedServiceError(
+                settings,
+                DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
+                DLMS_SERVICE_ERROR_SERVICE, DLMS_SERVICE_UNSUPPORTED,
+                data);
+        }
     }
     if (ret != 0)
     {
         return ret;
     }
-    switch (settings->base.interfaceType)
-    {
-#ifndef DLMS_IGNORE_HDLC
-    case DLMS_INTERFACE_TYPE_HDLC:
-    case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
-        if ((ret = dlms_getHdlcFrame(&settings->base, frame, data, reply)) != 0)
-        {
-#ifdef DLMS_DEBUG
-            svr_notifyTrace("getHdlcFrame failed. ", ret);
-#endif //DLMS_DEBUG
-        }
-        break;
-#endif //DLMS_IGNORE_HDLC
-#ifndef DLMS_IGNORE_WRAPPER
-    case DLMS_INTERFACE_TYPE_WRAPPER:
-        if ((ret = dlms_getWrapperFrame(&settings->base, cmd, data, reply)) != 0)
-        {
-#ifdef DLMS_DEBUG
-            svr_notifyTrace("getHdlcFrame failed. ", ret);
-#endif //DLMS_DEBUG
-        }
-        break;
-#endif //DLMS_IGNORE_WRAPPER
-#ifndef DLMS_IGNORE_PLC
-    case DLMS_INTERFACE_TYPE_PLC:
-    case DLMS_INTERFACE_TYPE_PLC_HDLC:
-        ret = dlms_getMacFrame(&settings->base, frame, 0, data, reply);
-        break;
-#endif //DLMS_IGNORE_PLC
-    case DLMS_INTERFACE_TYPE_PDU:
-        ret = bb_set2(reply, data, 0, bb_size(data));
-        break;
-    default:
-#ifdef DLMS_DEBUG
-        svr_notifyTrace("Unknown frame type. ", -1);
-#endif //DLMS_DEBUG
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-        break;
-    }
+    ret = dlms_addFrame(&settings->base, frame, data, reply);
     if (cmd == DLMS_COMMAND_DISC ||
         (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER && cmd == DLMS_COMMAND_RELEASE_REQUEST))
     {
@@ -3194,7 +3179,7 @@ int svr_handleRequest(
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    return svr_handleRequest2(settings, data->data, bb_available(data), reply);
+    return svr_handleRequest2(settings, data->data, (uint16_t)bb_available(data), reply);
 }
 
 int svr_handleRequest3(
@@ -3229,7 +3214,7 @@ int svr_handleRequest2(
     //Check frame using inter Charachter Timeout.
 #ifndef DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC && settings->hdlc != NULL && settings->hdlc->interCharachterTimeout != 0)
+    if (IS_HDLC(settings->base.interfaceType) && settings->hdlc != NULL && settings->hdlc->interCharachterTimeout != 0)
     {
         uint32_t now = time_elapsed();
         uint16_t elapsed = (uint16_t)(now - settings->frameReceived) / 1000;
@@ -3249,7 +3234,7 @@ int svr_handleRequest2(
 #endif //DLMS_DEBUG
 #ifndef DLMS_IGNORE_HDLC
         //Send U-Frame Frame Reject if we have received more data that can fit to one HDLC frame.
-        if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+        if (IS_HDLC(settings->base.interfaceType))
         {
             ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, reply);
             settings->receivedData.position = settings->receivedData.size = 0;
@@ -3290,25 +3275,7 @@ int svr_handleRequest2(
                 settings->receivedData.position = settings->receivedData.size = 0;
                 return ret;
             }
-            if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
-            {
-#ifndef DLMS_IGNORE_HDLC
-                ret = dlms_getHdlcFrame(&settings->base, 0, &data, reply);
-#else
-                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //DLMS_IGNORE_HDLC
-            }
-#ifndef DLMS_IGNORE_WRAPPER
-            else if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
-            {
-                ret = dlms_getWrapperFrame(&settings->base, DLMS_COMMAND_NONE, &data, reply);
-            }
-#endif //DLMS_IGNORE_WRAPPER
-            else
-            {
-                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
-            return ret;
+            return dlms_addFrame(&settings->base, 0, &data, reply);
         }
         else if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS)
         {
@@ -3335,7 +3302,7 @@ int svr_handleRequest2(
                 }
             }
 #ifndef DLMS_IGNORE_HDLC
-            else if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC &&
+            else if (IS_HDLC(settings->base.interfaceType) &&
                 (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) != 0)
             {
                 ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, reply);
@@ -3368,7 +3335,7 @@ int svr_handleRequest2(
         else
         {
 #ifndef DLMS_IGNORE_HDLC
-            if (ret != DLMS_ERROR_CODE_WRONG_CRC && settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC &&
+            if (ret != DLMS_ERROR_CODE_WRONG_CRC && IS_HDLC(settings->base.interfaceType) &&
                 (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) != 0)
             {
                 ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, reply);
@@ -3404,7 +3371,7 @@ int svr_handleRequest2(
         settings->base.interfaceType != DLMS_INTERFACE_TYPE_PDU)
     {
 #ifndef DLMS_IGNORE_HDLC
-        if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC && settings->info.preEstablished)
+        if (IS_HDLC(settings->base.interfaceType) && settings->info.preEstablished)
         {
             svr_disconnected(settings);
         }
@@ -3423,7 +3390,7 @@ int svr_handleRequest2(
             }
         }
 #ifndef DLMS_IGNORE_HDLC
-        if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+        if (IS_HDLC(settings->base.interfaceType))
         {
             settings->base.connected |= DLMS_CONNECTION_STATE_HDLC;
             svr_connected(settings);
@@ -3468,7 +3435,7 @@ int svr_handleRequest2(
     //Check inactivity timeout.
 #ifndef DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
-    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC &&
+    if (IS_HDLC(settings->base.interfaceType) &&
         settings->hdlc != NULL && settings->hdlc->inactivityTimeout != 0)
     {
         if (settings->info.command != DLMS_COMMAND_SNRM)
@@ -3535,7 +3502,7 @@ int svr_handleRequest2(
     {
         bb_clear(reply);
 #ifndef DLMS_IGNORE_HDLC
-        if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+        if (IS_HDLC(settings->base.interfaceType))
         {
             if (ret == DLMS_ERROR_CODE_REJECTED)
             {
@@ -3574,7 +3541,7 @@ int svr_handleInactivityTimeout(
         uint32_t timeout = 0xFFFFFFFF;
 #ifndef DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
-        if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC &&
+        if (IS_HDLC(settings->base.interfaceType) &&
             settings->hdlc != NULL && settings->hdlc->inactivityTimeout != 0)
         {
             inactivity = !(elapsed < settings->hdlc->inactivityTimeout);

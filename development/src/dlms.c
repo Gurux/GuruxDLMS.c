@@ -348,7 +348,7 @@ int dlms_getMaxPduSize(
     return size;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int dlms_setData2(
     unsigned char* buff,
     uint32_t length,
@@ -754,7 +754,7 @@ int getOctetString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType
     else
     {
         ret = var_addBytes(value, buff->data + buff->position, len);
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
         buff->position += (uint32_t)len;
 #else
         buff->position += (uint16_t)len;
@@ -2779,7 +2779,7 @@ int dlms_getDataFromFrame(
     gxReplyData* data,
     unsigned char hdlc)
 {
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     uint32_t offset = data->data.size;
     uint32_t cnt;
 #else
@@ -2826,7 +2826,7 @@ int dlms_getHdlcData(
     int ret;
     unsigned char ch;
     uint16_t eopPos;
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     uint32_t pos, frameLen = 0;
     uint32_t packetStartID = reply->position;
 #else
@@ -3083,7 +3083,7 @@ int dlms_getHdlcData(
             settings->clientAddress = 0;
             if (reply->size - reply->position > 8)
             {
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
                 uint32_t pos = reply->position;
 #else
                 uint16_t pos = reply->position;
@@ -3615,7 +3615,7 @@ unsigned char dlms_isPlcSfskData(gxByteBuffer* buff)
 
 int dlms_getDataFromBlock(gxByteBuffer* data, uint16_t index)
 {
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     uint32_t pos, len = data->position - index;
 #else
     uint16_t pos, len = data->position - index;

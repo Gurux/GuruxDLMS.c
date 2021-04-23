@@ -42,9 +42,9 @@
 #include <windows.h>
 #endif //defined(_WIN32) || defined(_WIN64)
 
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 #include <stdio.h> //printf needs this or error is generated.
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 
 #include "../include/helpers.h"
 #include "../include/errorcodes.h"
@@ -594,7 +594,7 @@ int hlp_hexToBytes2(
     return 0;
 }
 
-#if !defined(GX_DLMS_MICROCONTROLLER) && !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 void hlp_trace(unsigned char* data, int index, int count, unsigned char send)
 {
     char* buff = hlp_bytesToHex(data + index, count);

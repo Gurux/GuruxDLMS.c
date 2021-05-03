@@ -754,12 +754,19 @@ int dlms_addFrame(
 #ifndef DLMS_IGNORE_HDLC
     case DLMS_INTERFACE_TYPE_HDLC:
     case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
-        if ((ret = dlms_getHdlcFrame(settings, 0, data, reply)) != 0)
+    {
+        unsigned char frame = 0;
+        if (command == DLMS_COMMAND_UA)
+        {
+            frame = (unsigned char)DLMS_COMMAND_UA;
+        }
+        if ((ret = dlms_getHdlcFrame(settings, frame, data, reply)) != 0)
         {
 #ifdef DLMS_DEBUG
             svr_notifyTrace("getHdlcFrame failed. ", ret);
 #endif //DLMS_DEBUG
         }
+    }
         break;
 #endif //DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_WRAPPER

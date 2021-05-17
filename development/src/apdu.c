@@ -645,7 +645,6 @@ int apdu_parseUserInformation(
         {
             return ret;
         }
-        // Skip if used.
         if (tag != 0)
         {
             if ((ret = bb_getUInt8(data, &settings->qualityOfService)) != 0)

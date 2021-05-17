@@ -2999,7 +2999,8 @@ int dlms_getHdlcData(
         data->packetLength = eopPos - 2;
     }
 
-    if ((*frame & HDLC_FRAME_TYPE_U_FRAME) == HDLC_FRAME_TYPE_U_FRAME)
+
+    if (*frame != 0x13 && *frame != 0x3 && (*frame & HDLC_FRAME_TYPE_U_FRAME) == HDLC_FRAME_TYPE_U_FRAME)
     {
         // Get Eop if there is no data.
         if (reply->position == packetStartID + frameLen + 1)
@@ -3018,15 +3019,13 @@ int dlms_getHdlcData(
         case DLMS_COMMAND_DISCONNECT_MODE:
         case DLMS_COMMAND_REJECTED:
         case DLMS_COMMAND_DISC:
-        case DLMS_COMMAND_UNNUMBERED_INFORMATION_UI:
-        case DLMS_COMMAND_UNNUMBERED_INFORMATION_UI_FINAL:
             break;
         default:
             //Unknown command.
             return DLMS_ERROR_CODE_REJECTED;
         }
     }
-    else if ((*frame & HDLC_FRAME_TYPE_S_FRAME) == HDLC_FRAME_TYPE_S_FRAME)
+    else if (*frame != 0x13 && *frame != 0x3 && (*frame & HDLC_FRAME_TYPE_S_FRAME) == HDLC_FRAME_TYPE_S_FRAME)
     {
         // If S-frame
         int tmp = (*frame >> 2) & 0x3;

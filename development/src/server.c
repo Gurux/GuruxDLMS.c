@@ -3054,7 +3054,7 @@ int svr_handleCommand(
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
 #ifndef DLMS_IGNORE_ACTION
     case DLMS_COMMAND_METHOD_REQUEST:
-        //Connection establised is checked inside of the function because of HLS.
+        //Connection established is checked inside of the function because of HLS.
         //If service is not negotiated.
         if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_ACTION) == 0)
         {

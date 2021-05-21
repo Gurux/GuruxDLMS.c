@@ -461,7 +461,7 @@ int notify_getPushValues(
     for (pos = 0; pos != pushSetup->pushObjectList.size; ++pos)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(&pushSetup->pushObjectList, pos, (void**)&, sizeof(gxListItem))) != 0)
+        if ((ret = arr_getByIndex(&pushSetup->pushObjectList, pos, (void**)&k, sizeof(gxListItem))) != 0)
         {
             break;
         }

@@ -410,7 +410,7 @@ int addAssociationLow(uint16_t serializationVersion)
       memcpy(meterData.association.llsPassword, "Gurux", 5);
       meterData.association.llsPasswordSize = 5;
     }
-    BB_ATTACH(associationLow.secret, meterData.association.llsPassword, meterData.association.llsPasswordSize);
+    BB_ATTACH(associationLow.secret, (unsigned char*) meterData.association.llsPassword, meterData.association.llsPasswordSize);
 
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     associationLow.securitySetup = &securitySetupLow;
@@ -475,6 +475,11 @@ int addAssociationHighGMac(uint16_t serializationVersion)
   int ret;
   //User list.
   static gxUser USER_LIST[10] = { 0 };
+  //If you are getting 'gxUser' does not name a type; did you mean 'gxKey'?
+  //Uncomment #define DLMS_IGNORE_MALLOC from gxignore.h
+  //This error is coming because this example is not using malloc 
+  //and there are no way to give compiler arguments in Arduino IDE.
+  
   //Dedicated key.
   static unsigned char CYPHERING_INFO[20] = { 0 };
   const unsigned char ln[6] = { 0, 0, 40, 0, 4, 255 };

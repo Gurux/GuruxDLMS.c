@@ -167,19 +167,26 @@ class GXDLMSClient
     int ParseAAREResponse(
       gxByteBuffer* data);
 
-    /**
-      Generates a release request.
-
-      @return Release request, as byte array.
-    */
+    /////////////////////////////////////////////////////////////////////////
+    // Generates a release request.
+    // returns Release request, as byte array.
     int ReleaseRequest(
       bool useProtectedRelease,
       message* packets);
 
     int DisconnectRequest(message* messages);
 
+    /////////////////////////////////////////////////////////////////////////
     //Release dynamically allocated objects.
     void ReleaseObjects();
+
+    /////////////////////////////////////////////////////////////////////////
+    // Convert physical address and logical address to server address.
+    // logicalAddress: Server logical address.
+    // physicalAddress: Server physical address.
+    // addressSize: Address size in bytes.
+    // Returns Server address.    
+    static uint16_t GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize);
 };
 
 static GXDLMSClient Client;

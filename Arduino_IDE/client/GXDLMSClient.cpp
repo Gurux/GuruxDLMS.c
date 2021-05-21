@@ -213,4 +213,9 @@ void GXDLMSClient::ReleaseObjects()
   oa_clear(&settings.releasedObjects, 1);
 }
 
+uint16_t GXDLMSClient::GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize)
+{
+  return cl_getServerAddress(logicalAddress, physicalAddress, addressSize);
+}
+
 //static GXDLMSClient Client;

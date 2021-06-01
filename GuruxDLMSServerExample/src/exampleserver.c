@@ -2917,7 +2917,7 @@ int sendPush(
     dlmsSettings* settings,
     gxPushSetup* push)
 {
-    char* p, * host;
+    unsigned char* p, * host;
     int ret, pos, port, s;
     message messages;
     gxByteBuffer* bb;

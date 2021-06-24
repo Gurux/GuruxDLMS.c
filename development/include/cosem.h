@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 #include "gxobjects.h"
-#include "dlmsSettings.h"
+#include "dlmssettings.h"
 
 #ifndef DLMS_IGNORE_MALLOC
   int cosem_createObject(

@@ -185,8 +185,34 @@ class GXDLMSClient
     // logicalAddress: Server logical address.
     // physicalAddress: Server physical address.
     // addressSize: Address size in bytes.
-    // Returns Server address.    
+    // Returns Server address.
     static uint16_t GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Set system title.
+    int SetSystemTitle(const gxByteBuffer* systemTitle);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get system title.
+    int GetSystemTitle(gxByteBuffer* systemTitle);
+
+
+    /////////////////////////////////////////////////////////////////////////
+    //Set block cipher key.
+    int SetBlockCipherKey(const gxByteBuffer* blockCipherKey);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get block cipher key.
+    int GetBlockCipherKey(gxByteBuffer* blockCipherKey);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get authentication key.
+    int SetAuthenticationKey(const gxByteBuffer* authenticationKey);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get authentication key.
+    int GetAuthenticationKey(gxByteBuffer* authenticationKey);
+
 };
 
 static GXDLMSClient Client;

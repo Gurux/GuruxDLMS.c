@@ -2305,7 +2305,6 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
                 }
                 else
                 {
-                    gxfree(it->subjectAltName);
                     it->subjectAltName = NULL;
                 }
                 arr_push(&object->certificates, it);

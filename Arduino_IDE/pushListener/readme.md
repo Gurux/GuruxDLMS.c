@@ -9,11 +9,12 @@ DLMS/COSEM [meter/simulator/proxy](https://www.gurux.fi/Gurux.DLMS.Server).
 
 If you have problems you can ask your questions in Gurux [Forum](http://www.gurux.org/forum).
 
-Before start you need to copy src and include folders from development folder under client, server or pushListener folders.
+Before start you need to copy src and include folders from development folder here.
 
 Because you can't give compiler parameters for Arduino IDE, it's recommended that you un-comment not needed functionality from gitignore.h.
 It makes schets smaller and compiler time is faster.
 You also need uncomment DLMS_IGNORE_MALLOC if you want to make the server application.
 
 Read more from:
-https://github.com/Gurux/GuruxDLMS.c/blob/master/GuruxDLMSSimpleServerExample/readme.md
+http://www.gurux.fi/Gurux.DLMS.Notify
+

@@ -146,6 +146,12 @@ int notify_parsePush(
     variantArray* data,
     gxArray* items);
 
+int notify_getPushValues(
+    dlmsSettings* settings,
+    gxPushSetup* pushSetup,
+    variantArray* data,
+    gxArray* items);
+
 //Sends Event Notification Request.
 int notify_generateEventNotificationMessages2(
     dlmsSettings* settings,

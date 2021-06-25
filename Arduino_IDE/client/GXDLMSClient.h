@@ -167,19 +167,52 @@ class GXDLMSClient
     int ParseAAREResponse(
       gxByteBuffer* data);
 
-    /**
-      Generates a release request.
-
-      @return Release request, as byte array.
-    */
+    /////////////////////////////////////////////////////////////////////////
+    // Generates a release request.
+    // returns Release request, as byte array.
     int ReleaseRequest(
       bool useProtectedRelease,
       message* packets);
 
     int DisconnectRequest(message* messages);
 
+    /////////////////////////////////////////////////////////////////////////
     //Release dynamically allocated objects.
     void ReleaseObjects();
+
+    /////////////////////////////////////////////////////////////////////////
+    // Convert physical address and logical address to server address.
+    // logicalAddress: Server logical address.
+    // physicalAddress: Server physical address.
+    // addressSize: Address size in bytes.
+    // Returns Server address.
+    static uint16_t GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Set system title.
+    int SetSystemTitle(const gxByteBuffer* systemTitle);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get system title.
+    int GetSystemTitle(gxByteBuffer* systemTitle);
+
+
+    /////////////////////////////////////////////////////////////////////////
+    //Set block cipher key.
+    int SetBlockCipherKey(const gxByteBuffer* blockCipherKey);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get block cipher key.
+    int GetBlockCipherKey(gxByteBuffer* blockCipherKey);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get authentication key.
+    int SetAuthenticationKey(const gxByteBuffer* authenticationKey);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get authentication key.
+    int GetAuthenticationKey(gxByteBuffer* authenticationKey);
+
 };
 
 static GXDLMSClient Client;

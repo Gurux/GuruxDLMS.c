@@ -939,7 +939,7 @@ int cosem_parseLNObjects(dlmsSettings* settings, gxByteBuffer* data, objectArray
         version = (unsigned char)var_toInteger(it2);
         ret = cosem_createObject(class_id, &object);
         //If known object.
-        if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+        if (ret == 0)
         {
             object->version = version;
             ret = cosem_updateAttributeAccessModes(object, it3->Arr);
@@ -950,6 +950,14 @@ int cosem_parseLNObjects(dlmsSettings* settings, gxByteBuffer* data, objectArray
             cosem_setLogicalName(object, ln->byteArr->data);
             oa_push(&settings->objects, object);
             oa_push(&settings->releasedObjects, object);
+        }
+        else
+        {
+            if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+            {
+                break;
+            }
+            ret = 0;
         }
     }
     var_clear(&value);
@@ -1626,13 +1634,21 @@ int cosem_parseSNObjects(dlmsSettings* settings, gxByteBuffer* data, objectArray
         version = (unsigned char)var_toInteger(it3);
         ret = cosem_createObject(class_id, &object);
         //If known object.
-        if (ret != DLMS_ERROR_CODE_INVALID_PARAMETER)
+        if (ret == 0)
         {
             object->shortName = sn;
             object->version = version;
             cosem_setLogicalName(object, ln->byteArr->data);
             oa_push(objects, object);
             oa_push(&settings->releasedObjects, object);
+        }
+        else
+        {
+            if (ret != DLMS_ERROR_CODE_UNAVAILABLE_OBJECT)
+            {
+                break;
+            }
+            ret = 0;
         }
     }
     var_clear(&value);
@@ -2289,7 +2305,6 @@ int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVAR
                 }
                 else
                 {
-                    gxfree(it->subjectAltName);
                     it->subjectAltName = NULL;
                 }
                 arr_push(&object->certificates, it);
@@ -2675,7 +2690,7 @@ int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char 
     }
     else if (index == 7)
     {
-        if (value->byteArr->size != 16)
+        if (bb_size(value->byteArr) != 16)
         {
             ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
@@ -2686,7 +2701,7 @@ int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char 
     }
     else if (index == 8)
     {
-        if (value->byteArr->size != 16)
+        if (bb_size(value->byteArr) != 16)
         {
             ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
@@ -4794,10 +4809,10 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
     }
     else if (index == 11)
     {
+        ccc = NULL;
         obj_clearCreditChargeConfigurations(&object->creditChargeConfigurations);
         for (pos = 0; pos != value->Arr->size; ++pos)
         {
-            ccc = NULL;
             ret = va_getByIndex(value->Arr, pos, &it);
             if (ret != 0)
             {
@@ -6739,10 +6754,16 @@ int cosem_setSFSKActiveInitiator(
         if (value->vt == DLMS_DATA_TYPE_STRUCTURE)
         {
             bb_clear(&object->systemTitle);
-            if ((ret = va_getByIndex(value->Arr, 0, &tmp)) != DLMS_ERROR_CODE_OK ||
-                (ret = bb_set(&object->systemTitle, tmp->byteArr->data, bb_size(tmp->byteArr))) != 0)
+            if ((ret = va_getByIndex(value->Arr, 0, &tmp)) != DLMS_ERROR_CODE_OK)
             {
                 break;
+            }
+            if (tmp->byteArr != NULL)
+            {
+                if ((ret = bb_set(&object->systemTitle, tmp->byteArr->data, bb_size(tmp->byteArr))) != 0)
+                {
+                    break;
+                }
             }
             if ((ret = va_getByIndex(value->Arr, 1, &tmp)) != DLMS_ERROR_CODE_OK)
             {

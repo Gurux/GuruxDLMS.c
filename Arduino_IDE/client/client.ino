@@ -776,6 +776,20 @@ void setup() {
   //Set frame capacity.
   bb_capacity(&frameData, 128);
   Client.init(true, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
+  //Un-comment this if you want to set system title, block cipher key or authentication key.
+  /*
+  gxByteBuffer bb;
+  bb_init(&bb);
+  bb_addHexString(&bb, "3132333435363738");
+  Client.SetSystemTitle(&bb);
+  bb_clear(&bb);
+  bb_addHexString(&bb, "D0 D1 D2 D3 D4 D5 D6 D7D8 D9 DA DB DC DD DE DF");
+  Client.SetAuthenticationKey(&bb);
+  bb_clear(&bb);
+  bb_addHexString(&bb, "00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F");
+  Client.SetBlockCipherKey(&bb);
+  bb_clear(&bb);
+  */
   //Serial 1 is used to send trace.
   Serial1.begin(115200);
 

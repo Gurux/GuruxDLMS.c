@@ -43,8 +43,8 @@
 
 
 DLMS_ACCESS_MODE svr_getAttributeAccess(
-  dlmsSettings * /*settings*/, 
-  gxObject * /*obj*/, 
+  dlmsSettings * /*settings*/,
+  gxObject * /*obj*/,
   unsigned char /*index*/)
 {
   //Client don't need this.
@@ -52,8 +52,8 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
 }
 
 DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
-  dlmsSettings * /*settings*/, 
-  gxObject * /*obj*/, 
+  dlmsSettings * /*settings*/,
+  gxObject * /*obj*/,
   unsigned char /*index*/)
 {
   //Client don't need this.
@@ -211,6 +211,63 @@ int GXDLMSClient::DisconnectRequest(message* messages)
 void GXDLMSClient::ReleaseObjects()
 {
   oa_clear(&settings.releasedObjects, 1);
+}
+
+uint16_t GXDLMSClient::GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize)
+{
+  return cl_getServerAddress(logicalAddress, physicalAddress, addressSize);
+}
+
+int GXDLMSClient::SetSystemTitle(const gxByteBuffer* systemTitle)
+{
+  if (systemTitle->size != 8)
+  {
+    return DLMS_ERROR_CODE_INVALID_PARAMETER;
+  }
+  bb_clear(&settings.cipher.systemTitle);
+  bb_set(&settings.cipher.systemTitle, systemTitle->data, 8);
+  return 0;
+}
+
+int GXDLMSClient::GetSystemTitle(gxByteBuffer* systemTitle)
+{
+  bb_set(systemTitle, settings.cipher.systemTitle.data, settings.cipher.systemTitle.size);
+  return 0;
+}
+
+int GXDLMSClient::SetBlockCipherKey(const gxByteBuffer* blockCipherKey)
+{
+  if (blockCipherKey->size != 16)
+  {
+    return DLMS_ERROR_CODE_INVALID_PARAMETER;
+  }
+  bb_clear(&settings.cipher.blockCipherKey);
+  bb_set(&settings.cipher.blockCipherKey, blockCipherKey->data, 8);
+  return 0;
+}
+
+int GXDLMSClient::GetBlockCipherKey(gxByteBuffer* blockCipherKey)
+{
+  bb_set(blockCipherKey, settings.cipher.blockCipherKey.data, settings.cipher.blockCipherKey.size);
+  return 0;
+}
+
+
+int GXDLMSClient::SetAuthenticationKey(const gxByteBuffer* authenticationKey)
+{
+  if (authenticationKey->size != 16)
+  {
+    return DLMS_ERROR_CODE_INVALID_PARAMETER;
+  }
+  bb_clear(&settings.cipher.authenticationKey);
+  bb_set(&settings.cipher.authenticationKey, authenticationKey->data, 8);
+  return 0;
+}
+
+int GXDLMSClient::GetAuthenticationKey(gxByteBuffer* authenticationKey)
+{
+  bb_set(authenticationKey, settings.cipher.authenticationKey.data, settings.cipher.authenticationKey.size);
+  return 0;
 }
 
 //static GXDLMSClient Client;

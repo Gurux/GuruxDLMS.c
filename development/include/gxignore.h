@@ -150,10 +150,14 @@ extern "C" {
 // If innovation counter size is UInt64 and not default UInt32.
 // #define DLMS_COSEM_INVOCATION_COUNTER_SIZE64
 
+// Use 32 bit max size bytebuffer instead of 16 bit.
+// This might be used in client side if a lot of data is read from the meter.
+// #define GX_DLMS_BYTE_BUFFER_SIZE_32
+
 #ifdef ARDUINO_ARCH_AVR
 /////////////////////////////////////////////////////////////////////////////
 //If Arduino is used.
-#define DLMS_IGNORE_IP6_SETUP 
+#define DLMS_IGNORE_IP6_SETUP
 #define DLMS_USE_EPOCH_TIME
 #define DLMS_IGNORE_NOTIFY
 #define GX_DLMS_MICROCONTROLLER
@@ -163,6 +167,21 @@ extern "C" {
 #define USE_PROGMEM
 /////////////////////////////////////////////////////////////////////////////
 #endif //ARDUINO_ARCH_AVR
+
+#ifdef ARDUINO_ARCH_ESP8266
+/////////////////////////////////////////////////////////////////////////////
+//If Arduino ESP is used.
+#define ESP_PLATFORM
+#define DLMS_IGNORE_IP6_SETUP
+#define DLMS_USE_EPOCH_TIME
+#define DLMS_IGNORE_NOTIFY
+#define GX_DLMS_MICROCONTROLLER
+#define DLMS_IGNORE_HIGH_SHA256
+#define DLMS_IGNORE_HIGH_SHA1
+#define DLMS_IGNORE_HIGH_MD5
+/////////////////////////////////////////////////////////////////////////////
+#endif //ARDUINO_ARCH_ESP8266
+
 
 #ifdef  __cplusplus
 }

@@ -645,7 +645,6 @@ int apdu_parseUserInformation(
         {
             return ret;
         }
-        // Skip if used.
         if (tag != 0)
         {
             if ((ret = bb_getUInt8(data, &settings->qualityOfService)) != 0)
@@ -1154,7 +1153,7 @@ int apdu_generateAarq(
     dlmsSettings* settings,
     gxByteBuffer* data)
 {
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     uint32_t offset;
 #else
     uint16_t offset;
@@ -1914,7 +1913,7 @@ int apdu_generateAARE(
     unsigned char command)
 {
     int ret;
-#if !defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     uint32_t offset = data->size;
 #else
     uint16_t offset = data->size;

@@ -42,9 +42,9 @@
 #include <windows.h>
 #endif //defined(_WIN32) || defined(_WIN64)
 
-#ifndef GX_DLMS_MICROCONTROLLER
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 #include <stdio.h> //printf needs this or error is generated.
-#endif //GX_DLMS_MICROCONTROLLER
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
 
 #include "../include/helpers.h"
 #include "../include/errorcodes.h"

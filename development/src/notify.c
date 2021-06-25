@@ -392,7 +392,7 @@ int notify_parsePush(
                 if ((ret = cosem_createObject((DLMS_OBJECT_TYPE)classID, &obj)) != 0)
                 {
                     return ret;
-            }
+                }
                 memcpy(obj->logicalName, tmp->byteArr, 6);
                 oa_push(&settings->objects, obj);
                 //Add object to released objects list.
@@ -439,6 +439,60 @@ int notify_parsePush(
         {
             return ret;
         }
+    }
+    return ret;
+}
+
+int notify_getPushValues(
+    dlmsSettings* settings,
+    gxPushSetup* pushSetup,
+    variantArray* data,
+    gxArray* items)
+{
+    gxObject* tmp;
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    gxTarget* k;
+#else
+    gxKey* k;
+#endif //#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    int ret = 0, pos;
+    gxValueEventArg e;
+    dlmsVARIANT* it;
+    for (pos = 0; pos != pushSetup->pushObjectList.size; ++pos)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&pushSetup->pushObjectList, pos, (void**)&k, sizeof(gxListItem))) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(&pushSetup->pushObjectList, pos, (void**)&k)) != 0)
+        {
+            break;
+        }
+        if ((ret = cosem_createObject2(((gxObject*)k->key)->objectType, ((gxObject*)k->key)->logicalName, &tmp)) != 0)
+        {
+            break;
+        }
+        // = 
+#endif //DLMS_IGNORE_MALLOC
+        if ((ret = va_getByIndex(data, pos, &it)) != 0)
+        {
+            return ret;
+        }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        e.target = (gxObject*)k->target;
+        e.index = k->attributeIndex;
+#else
+        e.target = (gxObject*)tmp;
+        e.index = ((gxTarget*)k->value)->attributeIndex;
+#endif //#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        e.value = *it;
+        if ((ret = cosem_setValue(settings, &e)) != 0)
+        {
+            break;
+        }
+        arr_push(items, key_init(tmp, co_init(e.index, 0)));
     }
     return ret;
 }

@@ -1609,7 +1609,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         else if (tmp.vt == DLMS_DATA_TYPE_INT64)
         {
-            hlp_int64ToString(buff, 250, tmp.uiVal, 1);
+            hlp_int64ToString(buff, 250, tmp.llVal, 1);
             bb_addString(item->strVal, buff);
             item->vt = type;
             var_clear(&tmp);

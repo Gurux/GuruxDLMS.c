@@ -141,7 +141,7 @@ int cosem_getRegister(
 int cosem_getRegisterTable(
     gxValueEventArg* e)
 {
-    int ret;
+    int ret = 0;
     if (e->index == 2)
     {
         //TODO:  ret = cosem_setVariant(e->value.byteArr, &((gxRegisterTable*)e->target)->value);

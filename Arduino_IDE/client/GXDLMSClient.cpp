@@ -270,4 +270,15 @@ int GXDLMSClient::GetAuthenticationKey(gxByteBuffer* authenticationKey)
   return 0;
 }
 
+DLMS_SECURITY GXDLMSClient::GetSecurity()
+{
+  return settings.cipher.security;
+}
+
+int GXDLMSClient::SetSecurity(DLMS_SECURITY value)
+{
+  settings.cipher.security = value;
+  return 0;
+}
+
 //static GXDLMSClient Client;

@@ -188,6 +188,15 @@ class GXDLMSClient
     // Returns Server address.
     static uint16_t GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize);
 
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get system title.
+    DLMS_SECURITY GetSecurity();
+
+    /////////////////////////////////////////////////////////////////////////
+    //Set security level.
+    int SetSecurity(DLMS_SECURITY value);
+
     /////////////////////////////////////////////////////////////////////////
     //Set system title.
     int SetSystemTitle(const gxByteBuffer* systemTitle);

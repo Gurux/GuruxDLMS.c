@@ -778,6 +778,7 @@ void setup() {
   Client.init(true, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
   //Un-comment this if you want to set system title, block cipher key or authentication key.
   /*
+  Client.SetSecurity(DLMS_SECURITY_AUTHENTICATION_ENCRYPTION);
   gxByteBuffer bb;
   bb_init(&bb);
   bb_addHexString(&bb, "3132333435363738");

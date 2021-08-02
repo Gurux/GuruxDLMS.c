@@ -242,7 +242,7 @@ int GXDLMSClient::SetBlockCipherKey(const gxByteBuffer* blockCipherKey)
     return DLMS_ERROR_CODE_INVALID_PARAMETER;
   }
   bb_clear(&settings.cipher.blockCipherKey);
-  bb_set(&settings.cipher.blockCipherKey, blockCipherKey->data, 8);
+  bb_set(&settings.cipher.blockCipherKey, blockCipherKey->data, blockCipherKey->size);
   return 0;
 }
 
@@ -260,7 +260,7 @@ int GXDLMSClient::SetAuthenticationKey(const gxByteBuffer* authenticationKey)
     return DLMS_ERROR_CODE_INVALID_PARAMETER;
   }
   bb_clear(&settings.cipher.authenticationKey);
-  bb_set(&settings.cipher.authenticationKey, authenticationKey->data, 8);
+  bb_set(&settings.cipher.authenticationKey, authenticationKey->data, authenticationKey->size);
   return 0;
 }
 

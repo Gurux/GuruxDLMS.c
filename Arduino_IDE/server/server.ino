@@ -145,11 +145,11 @@ typedef struct
 typedef struct
 {
   //Define low level password.
-  char llsPasswordSize;
-  char llsPassword[20];
+  unsigned char llsPasswordSize;
+  unsigned char llsPassword[20];
   //Define high level password.
-  char hlsPasswordSize;
-  char hlsPassword[20];
+  unsigned char hlsPasswordSize;
+  unsigned char hlsPassword[20];
 } GXAssociation;
 
 //Save serialized meter data here.
@@ -410,8 +410,7 @@ int addAssociationLow(uint16_t serializationVersion)
       memcpy(meterData.association.llsPassword, "Gurux", 5);
       meterData.association.llsPasswordSize = 5;
     }
-    BB_ATTACH(associationLow.secret, (unsigned char*) meterData.association.llsPassword, meterData.association.llsPasswordSize);
-
+    BB_ATTACH(associationLow.secret, meterData.association.llsPassword, meterData.association.llsPasswordSize);
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     associationLow.securitySetup = &securitySetupLow;
 #else
@@ -477,9 +476,9 @@ int addAssociationHighGMac(uint16_t serializationVersion)
   static gxUser USER_LIST[10] = { 0 };
   //If you are getting 'gxUser' does not name a type; did you mean 'gxKey'?
   //Uncomment #define DLMS_IGNORE_MALLOC from gxignore.h
-  //This error is coming because this example is not using malloc 
+  //This error is coming because this example is not using malloc
   //and there are no way to give compiler arguments in Arduino IDE.
-  
+
   //Dedicated key.
   static unsigned char CYPHERING_INFO[20] = { 0 };
   const unsigned char ln[6] = { 0, 0, 40, 0, 4, 255 };
@@ -1160,6 +1159,8 @@ void setup() {
   {
     GXTRACE(PSTR("Test mode Is OFF."), NULL);
   }
+  GXTRACE(PSTR("LLS password"), (char*)associationLow.secret.data);
+  GXTRACE(PSTR("HLS password"), (char*)meterData.association.hlsPassword);
   meterData.testMode = testMode;
 
   // start serial port with wanted communication speed:
@@ -1930,7 +1931,7 @@ DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
   {
     if (bb_compare(password, associationLow.secret.data, associationLow.secret.size) == 0)
     {
-      GXTRACE(PSTR("Invalid low level password."), (const char*) associationLow.secret.data);
+      GXTRACE(PSTR("Invalid low level password."), (char*) associationLow.secret.data);
       return DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE;
     }
     GXTRACE(PSTR("Valid low level password."), password->data);

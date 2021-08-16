@@ -2690,7 +2690,7 @@ int dlms_getMacHdlcFrame(
     };
     int ret;
     gxByteBuffer tmp;
-    bb_init(&tmp);
+    BYTE_BUFFER_INIT(&tmp);
     //Lenght is updated last.
     bb_setUInt16(reply, 0);
     //Add  Credit fields.

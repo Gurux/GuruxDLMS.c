@@ -650,8 +650,8 @@ int cosem_updateAttributeAccessModes(gxObject* object, gxByteBuffer* data)
         {
             object->access = (gxAccess*)gxmalloc(sizeof(gxAccess));
         }
-        bb_init(&object->access->attributeAccessModes);
-        bb_init(&object->access->methodAccessModes);
+        BYTE_BUFFER_INIT(&object->access->attributeAccessModes);
+        BYTE_BUFFER_INIT(&object->access->methodAccessModes);
         cnt = obj_methodCount(object);
         bb_capacity(&object->access->methodAccessModes, cnt);
         object->access->methodAccessModes.size = object->access->methodAccessModes.capacity;
@@ -1354,7 +1354,7 @@ int cosem_setAutoConnect(gxAutoConnect* object, unsigned char index, dlmsVARIANT
             for (pos = 0; pos != count; ++pos)
             {
                 it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                bb_init(it);
+                BYTE_BUFFER_INIT(it);
                 if ((ret = cosem_getOctetString(value->byteArr, it)) != 0 ||
                     (ret = arr_push(&object->destinations, it)) != 0)
                 {
@@ -1774,7 +1774,7 @@ int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char 
             for (pos = 0; pos != count; ++pos)
             {
                 ipItem = (gxip4SetupIpOption*)gxmalloc(sizeof(gxip4SetupIpOption));
-                bb_init(&ipItem->data);
+                BYTE_BUFFER_INIT(&ipItem->data);
                 if ((ret = cosem_checkStructure(value->byteArr, 3)) != 0 ||
                     (ret = cosem_getUInt8(value->byteArr, (unsigned char*)&ipItem->type)) != 0 ||
                     (ret = cosem_getUInt8(value->byteArr, &ipItem->length)) != 0 ||
@@ -2168,8 +2168,8 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
             {
                 start = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
                 end = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                bb_init(start);
-                bb_init(end);
+                BYTE_BUFFER_INIT(start);
+                BYTE_BUFFER_INIT(end);
                 if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
                     (ret = cosem_getOctetString(value->byteArr, start)) != 0 ||
                     (ret = cosem_getOctetString(value->byteArr, end)) != 0 ||
@@ -2308,7 +2308,7 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
             for (pos = 0; pos != count; ++pos)
             {
                 it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                bb_init(it);
+                BYTE_BUFFER_INIT(it);
                 if ((ret = cosem_getOctetString(value->byteArr, it)) != 0 ||
                     (ret = arr_push(&object->modemProfile, it)) != 0)
                 {
@@ -4838,7 +4838,7 @@ int cosem_setSFSKReportingSystemList(
             for (pos = 0; pos != count; ++pos)
             {
                 it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                bb_init(it);
+                BYTE_BUFFER_INIT(it);
                 if ((ret = cosem_getOctetString(value->byteArr, it)) != 0 ||
                     (ret = arr_push(&object->reportingSystemList, it)) != 0)
                 {

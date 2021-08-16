@@ -145,6 +145,7 @@ int cosem_getRegisterTable(
     if (e->index == 2)
     {
         //TODO:  ret = cosem_setVariant(e->value.byteArr, &((gxRegisterTable*)e->target)->value);
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     else if (e->index == 4)
     {

@@ -67,7 +67,7 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC_HDLC)
     {
         reply = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        bb_init(reply);
+        BYTE_BUFFER_INIT(reply);
         ret = dlms_getMacHdlcFrame(settings, DLMS_COMMAND_SNRM, 0, NULL, reply);
         if (ret == 0)
         {

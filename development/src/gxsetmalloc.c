@@ -5578,7 +5578,7 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
                     ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                     break;
                 }
-                bb_init(d);
+                BYTE_BUFFER_INIT(d);
                 bb_set2(d, it->strVal, 0, it->strVal->size);
                 arr_push(&object->descriptions, d);
             }
@@ -7064,7 +7064,7 @@ int cosem_setSFSKReportingSystemList(
                         break;
                     }
                     it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                    bb_init(it);
+                    BYTE_BUFFER_INIT(it);
                     bb_set(it, tmp->byteArr->data, tmp->byteArr->size);
                     if (it == NULL)
                     {

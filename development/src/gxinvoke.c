@@ -2175,8 +2175,8 @@ int invoke_copySeasonProfile(gxArray* target, gxArray* source)
 #else
                 it = gxmalloc(sizeof(gxSeasonProfile));
                 arr_push(target, it);
-                bb_init(&it->name);
-                bb_init(&it->weekName);
+                BYTE_BUFFER_INIT(&it->name);
+                BYTE_BUFFER_INIT(&it->weekName);
                 bb_set(&it->name, sp->name.data, sp->name.size);
                 it->start = sp->start;
                 bb_set(&it->weekName, sp->weekName.data, sp->weekName.size);
@@ -2214,7 +2214,7 @@ int invoke_copyWeekProfileTable(gxArray* target, gxArray* source)
 #else
                 it = gxmalloc(sizeof(gxWeekProfile));
                 arr_push(target, it);
-                bb_init(&it->name);
+                BYTE_BUFFER_INIT(&it->name);
                 bb_set(&it->name, wp->name.data, wp->name.size);
 #endif //#if defined(DLMS_IGNORE_MALLOC)
                 it->monday = wp->monday;

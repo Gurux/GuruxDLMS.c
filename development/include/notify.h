@@ -146,11 +146,13 @@ int notify_parsePush(
     variantArray* data,
     gxArray* items);
 
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
 int notify_getPushValues(
     dlmsSettings* settings,
     gxPushSetup* pushSetup,
     variantArray* data,
     gxArray* items);
+#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
 
 //Sends Event Notification Request.
 int notify_generateEventNotificationMessages2(

@@ -256,7 +256,8 @@ void captureEventLog(uint16_t value)
     meterData.eventLog.entriesInUse = eventLog.entriesInUse;
   }
   //Update row index where next row is added.
-  meterData.eventLog.rowIndex = ++meterData.eventLog.rowIndex % eventLog.profileEntries;
+  ++meterData.eventLog.rowIndex;
+  meterData.eventLog.rowIndex = meterData.eventLog.rowIndex % eventLog.profileEntries;
   save(&meterData.eventLog, sizeof(GXProfileGeneric));
 }
 
@@ -608,7 +609,7 @@ static int loadTargets(GXPushObjects* savedObjects, gxTarget* objects, uint16_t*
   *count = savedObjects->count;
   for (pos = 0; pos != savedObjects->count; ++pos)
   {
-    if ((ret = oa_findByLN(Server.getObjects(), savedObjects->values[pos].objectType, savedObjects->values[pos].logicalName, &it)) != 0)
+    if ((ret = oa_findByLN(Server.getObjects(), (DLMS_OBJECT_TYPE) savedObjects->values[pos].objectType, savedObjects->values[pos].logicalName, &it)) != 0)
     {
       break;
     }
@@ -645,7 +646,6 @@ static int saveTargets(GXPushObjects* savedObjects, gxTarget* objects, uint16_t 
 int addPushSetup(uint16_t serializationVersion)
 {
   int ret;
-  uint16_t pos;
   const unsigned char ln[6] = { 0, 0, 25, 9, 0, 255 };
   if ((ret = INIT_OBJECT(pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln)) == 0)
   {
@@ -957,34 +957,50 @@ int addIecHdlcSetup(uint16_t serializationVersion)
 }
 
 #ifdef USE_TIME_INTERRUPT
+
+#ifndef ESP_PLATFORM
+// Increase the time once per second.
+ISR(TIMER1_COMPA_vect) {
+  ++meterData.clock1.time.value;
+}
+#else
+hw_timer_t * timer = NULL;
+void IRAM_ATTR onTime() {
+  ++meterData.clock1.time.value;
+}
+#endif //ESP_PLATFORM
+
 /*
   Use interrupts to increase the time.
 */
 void setTimer()
 {
-  //Stop interrupts.
-  cli();
-  //set timer1 interrupt at 1Hz
-  TCCR1A = 0;
-  TCCR1B = 0;
-  //Initialize counter value to 0
-  TCNT1 = 0;
-  // set compare match register for 1hz increments
-  OCR1A = 15624;// = (16*10^6) / (1*1024) - 1 (must be < 65536)
-  // turn on CTC mode
-  TCCR1B |= (1 << WGM12);
-  // Set CS12 and CS10 bits for 1024 prescaler
-  TCCR1B |= (1 << CS12) | (1 << CS10);
-  // enable timer compare interrupt
-  TIMSK1 |= (1 << OCIE1A);
-  //Allow interrupts.
-  sei();
+#ifndef ESP_PLATFORM
+    //Stop interrupts.
+    cli();
+    //set timer1 interrupt at 1Hz
+    TCCR1A = 0;
+    TCCR1B = 0;
+    //Initialize counter value to 0
+    TCNT1 = 0;
+    // set compare match register for 1hz increments
+    OCR1A = 15624;// = (16*10^6) / (1*1024) - 1 (must be < 65536)
+    // turn on CTC mode
+    TCCR1B |= (1 << WGM12);
+    // Set CS12 and CS10 bits for 1024 prescaler
+    TCCR1B |= (1 << CS12) | (1 << CS10);
+    // enable timer compare interrupt
+    TIMSK1 |= (1 << OCIE1A);
+    //Allow interrupts.
+    sei();
+#else
+   timer = timerBegin(0, 80, true);                
+   timerAttachInterrupt(timer, &onTime, true);    
+   timerAlarmWrite(timer, 1000000, true);           
+   timerAlarmEnable(timer);
+#endif //ESP_PLATFORM
 }
 
-//Increase the time once per second.
-ISR(TIMER1_COMPA_vect) {
-  ++meterData.clock1.time.value;
-}
 #endif //USE_TIME_INTERRUPT
 
 /////////////////////////////////////////////////////////////////////////////
@@ -999,7 +1015,11 @@ void save(void* data, uint16_t size)
   uint16_t pos;
   for (pos = 0; pos != size; ++pos)
   {
+#ifdef ARDUINO_ARCH_ESP32
+    EEPROM.write(offset, ((unsigned char*)data)[pos]);
+#else
     EEPROM.update(offset, ((unsigned char*)data)[pos]);
+#endif //ARDUINO_ARCH_ESP32
     ++offset;
   }
 }
@@ -1016,7 +1036,11 @@ void updateMeterDataSize()
   uint16_t pos;
   for (pos = 0; pos != sizeof(uint16_t); ++pos)
   {
+#ifdef ARDUINO_ARCH_ESP32
+    EEPROM.write(pos, ((unsigned char*)data)[pos]);
+#else
     EEPROM.update(pos, ((unsigned char*)data)[pos]);
+#endif //ARDUINO_ARCH_ESP32
   }
 }
 
@@ -1136,12 +1160,13 @@ void setup() {
   //ADD serial number.
   memcpy(SERVER_SYSTEM_TITLE + 4, &meterData.SERIAL_NUMBER, 4);
 
+#ifndef ARDUINO_ARCH_ESP32
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
+#endif //ARDUINO_ARCH_ESP32
   bb_attach(&reply, replyFrame, 0, sizeof(replyFrame));
   Server.init(true, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, frameBuff, sizeof(frameBuff), pduBuff, sizeof(pduBuff));
   Server.SetPushClientAddress(64);
-  int ret;
   //Serial 1 is used to send trace.
   Serial1.begin(9600);
   createObjects();
@@ -1606,7 +1631,8 @@ void handleLoadProfileActions(
       meterData.loadProfile.entriesInUse = profileGeneric.entriesInUse;
     }
     //Update row index where next row is added.
-    meterData.loadProfile.rowIndex = ++meterData.loadProfile.rowIndex % profileGeneric.profileEntries;
+    ++meterData.loadProfile.rowIndex;
+    meterData.loadProfile.rowIndex = meterData.loadProfile.rowIndex % profileGeneric.profileEntries;
     save(&meterData.loadProfile, sizeof(GXProfileGeneric));
   }
 }
@@ -1688,11 +1714,17 @@ void svr_preAction(
       //Disconnect. Turn led OFF.
       if (e->index == 1)
       {
-        digitalWrite(LED_BUILTIN, LOW);
+        //If there is not buildin LED.
+#ifndef ARDUINO_ARCH_ESP32
+        digitalWrite(LED_BUILTIN, HIGH);
+#endif //ARDUINO_ARCH_ESP32
       }
       else //Reconnnect. Turn LED ON.
       {
+        //If there is not buildin LED.
+#ifndef ARDUINO_ARCH_ESP32
         digitalWrite(LED_BUILTIN, HIGH);
+#endif //ARDUINO_ARCH_ESP32
       }
     }
     else if (e->target == BASE(scriptTableActivateTestMode))
@@ -1781,7 +1813,7 @@ void svr_postWrite(
       //Save LLS password.
       meterData.association.llsPasswordSize = associationLow.secret.size;
       save(&meterData.association, sizeof(GXAssociation));
-      GXTRACE(PSTR("Low level password: "), associationLow.secret.data);
+      GXTRACE(PSTR("Low level password: "), (char*) associationLow.secret.data);
     }
   }
   //Reset execute time to update execute time if user add new execute times or changes the time.
@@ -1809,14 +1841,14 @@ void svr_postAction(
       //Save HLS passwords.
       meterData.association.hlsPasswordSize = associationHigh.secret.size;
       save(&meterData.association, sizeof(GXAssociation));
-      GXTRACE(PSTR("High level password: "), associationHigh.secret.data);
+      GXTRACE(PSTR("High level password: "), (char*)associationHigh.secret.data);
     }
     else if (e->target == BASE(associationHighGMac) && e->index == 2)
     {
       //Save HLS passwords.
       meterData.association.hlsPasswordSize = associationHighGMac.secret.size;
       save(&meterData.association, sizeof(GXAssociation));
-      GXTRACE(PSTR("High level password: "), associationHighGMac.secret.data);
+      GXTRACE(PSTR("High level password: "), (char*)associationHighGMac.secret.data);
     }
   }
 }
@@ -1934,7 +1966,7 @@ DLMS_SOURCE_DIAGNOSTIC svr_validateAuthentication(
       GXTRACE(PSTR("Invalid low level password."), (char*) associationLow.secret.data);
       return DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE;
     }
-    GXTRACE(PSTR("Valid low level password."), password->data);
+    GXTRACE(PSTR("Valid low level password."), (char*)password->data);
   }
   // Hith authentication levels are check on phase two.
   return DLMS_SOURCE_DIAGNOSTIC_NONE;

@@ -2783,7 +2783,7 @@ int svr_registerRequest(
     gxByteBuffer* data)
 {
     gxByteBuffer bb;
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     bb_setUInt8(&bb, DLMS_COMMAND_REGISTER_REQUEST);
     bb_set(&bb, initiatorSystemTitle->data, initiatorSystemTitle->size);
     // LEN
@@ -2870,7 +2870,7 @@ int dlms_pingRequest(
 {
     int ret;
     gxByteBuffer bb;
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     // Control byte.
     if ((ret = bb_setUInt8(&bb, DLMS_COMMAND_PING_REQUEST)) != 0 ||
         (ret = bb_set(&bb, systemTitle->data, systemTitle->size)) != 0 ||
@@ -2893,7 +2893,7 @@ int dlms_repeaterCallRequest(
 {
     int ret;
     gxByteBuffer bb;
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     // Control byte.
     if ((ret = bb_setUInt8(&bb, DLMS_COMMAND_REPEAT_CALL_REQUEST)) != 0 ||
         // MaxAdrMac.
@@ -2920,7 +2920,7 @@ int svr_discoverReport(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     gxByteBuffer bb;
-    bb_init(&bb);
+    BYTE_BUFFER_INIT(&bb);
     int ret;
     unsigned char alarmDescription;
     if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC)

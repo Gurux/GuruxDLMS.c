@@ -3172,7 +3172,7 @@ int ser_loadAutoConnect(
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                bb_init(dest);
+                BYTE_BUFFER_INIT(dest);
                 if ((ret = arr_push(&object->destinations, dest)) != 0)
                 {
                     break;
@@ -3601,13 +3601,13 @@ int ser_loadRegisterActivation(
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                bb_init(key);
+                BYTE_BUFFER_INIT(key);
                 value = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
                 if (value == NULL)
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                bb_init(value);
+                BYTE_BUFFER_INIT(value);
                 if ((ret = arr_push(&object->maskList, key_init(key, value))) != 0)
                 {
                     break;
@@ -4423,7 +4423,7 @@ int ser_loadModemConfiguration(
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                bb_init(it);
+                BYTE_BUFFER_INIT(it);
                 if ((ret = arr_push(&object->modemProfile, it)) != 0)
                 {
                     break;

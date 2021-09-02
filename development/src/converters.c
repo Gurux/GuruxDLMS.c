@@ -2372,9 +2372,18 @@ int obj_tokenGatewayToString(
     gxTokenGateway* object,
     char** buff)
 {
+    char* tmp;
     gxByteBuffer ba;
-    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
+    tmp = bb_toHexString(&object->token);
+    bb_addString(&ba, tmp);
+    gxfree(tmp);
+    bb_addString(&ba, "\nIndex: 3 Value: ");
+    time_toString(&object->time, &ba);
+    bb_addString(&ba, "\nIndex: 5 Value: ");
+    bb_addIntAsString(&ba, object->deliveryMethod);
+    bb_addString(&ba, "\nIndex: 6 Value: ");
+    bb_addIntAsString(&ba, object->status);
     bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);

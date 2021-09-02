@@ -1015,12 +1015,7 @@ int cosem_getDateTimeFromOctetStringBase(
     gxDataInfo info;
     dlmsVARIANT tmp;
     time_clear(value);
-#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     GX_DATETIME(tmp) = value;
-#else
-    tmp.dateTime = value;
-    tmp.vt = (DLMS_DATA_TYPE)type;
-#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     if (checkDataType)
     {
         if ((ret = bb_getUInt8(bb, &ch)) != 0)

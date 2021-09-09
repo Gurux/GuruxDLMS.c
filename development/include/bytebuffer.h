@@ -40,7 +40,7 @@ extern "C" {
 #include "gxint.h"
 #include "gxignore.h"
 
-    //Arduino DOIT ESP32 uses bb_init. bb_Init is used instead.
+//Arduino DOIT ESP32 uses bb_init. bb_Init is used instead.
 #ifndef ESP_PLATFORM
 #define BYTE_BUFFER_INIT bb_init
 #else

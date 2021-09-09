@@ -339,7 +339,8 @@ int cip_int(uint32_t* rk,
     return DLMS_ERROR_CODE_INVALID_PARAMETER;
 }
 
-void aes_encrypt(const uint32_t* rk, int Nr, const unsigned char* pt, unsigned char* ct)
+//Arduino DOIT ESP32 uses aes_encrypt. For that reason aes_Encrypt is used.
+void aes_Encrypt(const uint32_t* rk, int Nr, const unsigned char* pt, unsigned char* ct)
 {
     uint32_t s0, s1, s2, s3, t0, t1, t2, t3;
     int r;
@@ -546,12 +547,12 @@ static void cip_gctr(uint32_t* aes, const unsigned char* icb, unsigned char* in,
     {
         if (out == NULL)
         {
-            aes_encrypt(aes, aes[60], cb, tmp);
+            aes_Encrypt(aes, aes[60], cb, tmp);
             cip_xor(pin, tmp);
         }
         else
         {
-            aes_encrypt(aes, aes[60], cb, pout);
+            aes_Encrypt(aes, aes[60], cb, pout);
             cip_xor(pout, pin);
         }
         pin += 16;
@@ -563,7 +564,7 @@ static void cip_gctr(uint32_t* aes, const unsigned char* icb, unsigned char* in,
     //Last, partial block.
     if (last)
     {
-        aes_encrypt(aes, aes[60], cb, tmp);
+        aes_Encrypt(aes, aes[60], cb, tmp);
         for (i = 0; i < last; i++)
         {
             if (out == NULL)
@@ -662,7 +663,7 @@ int cip_crypt(
     aes[60] = 10;
 
     //Hash subkey.
-    aes_encrypt(aes, aes[60], H, H);
+    aes_Encrypt(aes, aes[60], H, H);
     cip_init_j0(nonse.data, (unsigned char)nonse.size, H, J0);
     //Allocate space for authentication tag.
     if (security != DLMS_SECURITY_ENCRYPTION && !encrypt)

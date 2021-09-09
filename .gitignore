@@ -21,6 +21,8 @@ Arduino_IDE/server/include
 Arduino_IDE/server/src
 Arduino_IDE/client/include
 Arduino_IDE/client/src
+Arduino_IDE/pushListener/include
+Arduino_IDE/pushListener/src
 GuruxDLMSSimpleServerExample2/dlms/
 GuruxDLMSServerExample2/dlms/
 

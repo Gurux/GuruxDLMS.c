@@ -34,10 +34,8 @@
 #include <EEPROM.h>
 #include "GXDLMSServer.h"
 //---------------------------------------------------------------------------
-// Un-comment following lines from gxignore.h or this this example doesn't work.
-// #define DLMS_IGNORE_SERVER
-// #define GX_DLMS_MICROCONTROLLER
-// #define DLMS_IGNORE_MALLOC
+// Un-comment ignored objects from ArduinoIgnore.h to improve performance
+// and memory usage.
 //---------------------------------------------------------------------------
 
 //Ignore time_now warning.

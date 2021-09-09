@@ -33,11 +33,8 @@
 //---------------------------------------------------------------------------
 #include "GXDLMSClient.h"
 //---------------------------------------------------------------------------
-// Un-comment following lines from gxignore.h to improve perforamance
+// Un-comment ignored objects from ArduinoIgnore.h to improve performance
 // and memory usage.
-// #define DLMS_IGNORE_SERVER
-// #define DLMS_IGNORE_CLIENT
-// #define GX_DLMS_MICROCONTROLLER
 //---------------------------------------------------------------------------
 
 //Received data.

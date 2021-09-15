@@ -74,6 +74,13 @@ extern "C" {
       DLMS_OBJECT_TYPE type,
       const unsigned char* ln);
 
+  //This initialize method will also check the size of the object type and compare it with the expected size.
+  int cosem_init4(
+      void* object,
+      const unsigned char expectedSize,
+      DLMS_OBJECT_TYPE type,
+      const unsigned char* ln);
+
   int cosem_checkStructure(gxByteBuffer* bb, uint16_t expectedItemCount);
 
   int cosem_getStructure(gxByteBuffer* bb, uint16_t* count);

@@ -84,7 +84,7 @@ void time_init3(
     short devitation, hours, minutes;
     time_getUtcOffset(&hours, &minutes);
     devitation = -(hours * 60 + minutes);
-    time_init(time, year, month, day, hour, minute, second, millisecond, devitation);
+    time_init(time, (uint16_t)year, (unsigned char)month, (unsigned char)day, (unsigned char)hour, (unsigned char)minute, (unsigned char)second, (unsigned char)millisecond, devitation);
 }
 #endif //DLMS_USE_EPOCH_TIME
 
@@ -412,7 +412,7 @@ uint16_t time_getYears(
 #ifdef DLMS_USE_EPOCH_TIME
     return time_getYears2(value->value);
 #else
-    return 1900 + value->value.tm_year;
+    return (uint16_t)(1900 + value->value.tm_year);
 #endif // DLMS_USE_EPOCH_TIME
 }
 
@@ -445,7 +445,7 @@ unsigned char time_getMonths(
 #ifdef DLMS_USE_EPOCH_TIME
     return time_getMonths2(value->value);
 #else
-    return 1 + value->value.tm_mon;
+    return (unsigned char)(1 + value->value.tm_mon);
 #endif // DLMS_USE_EPOCH_TIME
 }
 
@@ -469,7 +469,7 @@ unsigned char time_getDays(
 #ifdef DLMS_USE_EPOCH_TIME
     return time_getDays2(value->value);
 #else
-    return value->value.tm_mday;
+    return (unsigned char)value->value.tm_mday;
 #endif // DLMS_USE_EPOCH_TIME
 }
 
@@ -479,7 +479,7 @@ unsigned char time_getHours(
 #ifdef DLMS_USE_EPOCH_TIME
     return (unsigned char)((value->value % 86400L) / 3600L);
 #else
-    return value->value.tm_hour;
+    return (unsigned char) value->value.tm_hour;
 #endif // DLMS_USE_EPOCH_TIME
 }
 
@@ -489,7 +489,7 @@ unsigned char time_getMinutes(
 #ifdef DLMS_USE_EPOCH_TIME
     return (unsigned char)((value->value % 3600L) / 60L);
 #else
-    return value->value.tm_min;
+    return (unsigned char) value->value.tm_min;
 #endif // DLMS_USE_EPOCH_TIME
 }
 
@@ -499,7 +499,7 @@ unsigned char time_getSeconds(
 #ifdef DLMS_USE_EPOCH_TIME
     return (unsigned char)(value->value % 60);
 #else
-    return value->value.tm_sec;
+    return (unsigned char)value->value.tm_sec;
 #endif // DLMS_USE_EPOCH_TIME
 }
 
@@ -610,8 +610,8 @@ void time_init2(
     short devitation, hours, minutes;
     time_getUtcOffset(&hours, &minutes);
     devitation = -(hours * 60 + minutes);
-    time_init(time, value->tm_year + 1900, value->tm_mon + 1, value->tm_mday, value->tm_hour, value->tm_min,
-        value->tm_sec, 0, devitation);
+    time_init(time, (uint16_t)(value->tm_year + 1900), (unsigned char)(value->tm_mon + 1), (unsigned char)value->tm_mday, (unsigned char)value->tm_hour, (unsigned char)value->tm_min,
+        (unsigned char)value->tm_sec, 0, devitation);
 #endif //DLMS_USE_EPOCH_TIME
 }
 #endif //DLMS_USE_EPOCH_TIME
@@ -793,20 +793,20 @@ int time_toString(
 #ifdef DLMS_USE_EPOCH_TIME
     time_fromUnixTime2(time->value, &year, &mon, &day, &hour, &min, &sec, NULL);
 #else
-    year = time->value.tm_year;
+    year = (uint16_t)time->value.tm_year;
     if (year != -1)
     {
         year += 1900;
     }
-    mon = time->value.tm_mon;
+    mon = (unsigned char)time->value.tm_mon;
     if (year != -1)
     {
         mon += 1;
     }
-    day = time->value.tm_mday;
-    hour = time->value.tm_hour;
-    min = time->value.tm_min;
-    sec = time->value.tm_sec;
+    day = (unsigned char)time->value.tm_mday;
+    hour = (unsigned char)time->value.tm_hour;
+    min = (unsigned char)time->value.tm_min;
+    sec = (unsigned char) time->value.tm_sec;
 #endif //DLMS_USE_EPOCH_TIME
     //Add year, month and date if used.
     if ((time->skip & (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY)) != (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY))
@@ -1236,12 +1236,12 @@ int time_compareWithDiff(
     time_fromUnixTime2(time_toUnixTime2(value1), &year1, &month1,
         &day1, &hour1, &minute1, &second1, NULL);
 #else
-    year1 = 1900 + value1->value.tm_year;
-    month1 = 1 + value1->value.tm_mon;
-    day1 = value1->value.tm_mday;
-    hour1 = value1->value.tm_hour;
-    minute1 = value1->value.tm_min;
-    second1 = value1->value.tm_sec;
+    year1 = (uint16_t)(1900 + value1->value.tm_year);
+    month1 = (unsigned char)(1 + value1->value.tm_mon);
+    day1 = (unsigned char)(value1->value.tm_mday);
+    hour1 = (unsigned char)(value1->value.tm_hour);
+    minute1 = (unsigned char)(value1->value.tm_min);
+    second1 = (unsigned char)(value1->value.tm_sec);
 #endif //DLMS_USE_EPOCH_TIME
 
     if (deviationDiff != (short)0x8000)
@@ -1411,31 +1411,31 @@ int time_fromUnixTime3(
 #else
     if (year != NULL)
     {
-        *year = 1900 + time->value.tm_year;
+        *year = (uint16_t)(1900 + time->value.tm_year);
     }
     if (month != NULL)
     {
-        *month = 1 + time->value.tm_mon;
+        *month = (unsigned char)(1 + time->value.tm_mon);
     }
     if (day != NULL)
     {
-        *day = time->value.tm_mday;
+        *day = (unsigned char)(time->value.tm_mday);
     }
     if (hour != NULL)
     {
-        *hour = time->value.tm_hour;
+        *hour = (unsigned char)(time->value.tm_hour);
     }
     if (minute != NULL)
     {
-        *minute = time->value.tm_min;
+        *minute = (unsigned char)(time->value.tm_min);
     }
     if (second != NULL)
     {
-        *second = time->value.tm_sec;
+        *second = (unsigned char)(time->value.tm_sec);
     }
     if (dayOfWeek != NULL)
     {
-        *dayOfWeek = time->value.tm_year;
+        *dayOfWeek = (unsigned char)(time->value.tm_year);
     }
     return 0;
 #endif //DLMS_USE_EPOCH_TIME

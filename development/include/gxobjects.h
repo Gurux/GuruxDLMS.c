@@ -3665,9 +3665,15 @@ extern "C" {
     int obj_clearByteBufferList(
         gxArray* list);
 
+#if _CVI_ //If LabWindows/CVI
 #define BASE(X) &X.base
+#define INIT_OBJECT(X, Y, Z) cosem_init4(&X, sizeof(X), Y, Z)
+#else
+#define BASE(X) &X.base
+#define INIT_OBJECT(X, Y, Z) cosem_init4(&X.base, sizeof(X), Y, Z)
+#endif //_CVI_
 
-#define INIT_OBJECT(X, Y, Z) cosem_init2(&X.base, Y, Z)
+
 #define SET_OCTET_STRING(X, V, S) memcpy(X.value, V, S);X.size=S
 
 #ifdef  __cplusplus

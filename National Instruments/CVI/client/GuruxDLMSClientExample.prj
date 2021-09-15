@@ -1,0 +1,1509 @@
+[Project Header]
+Version = 2000
+Encoding = "ANSI"
+Pathname = "/c/Projects/National Instruments/CVI/GuruxDLMSClientExample.prj"
+CVI Dir = "/c/program files (x86)/national instruments/cvi2020"
+CVI Shared Dir = "/C/Program Files (x86)/National Instruments/Shared/CVI"
+CVI Pub Local Dir = "/C/ProgramData/National Instruments/CVI2020"
+CVI Pub Global Dir = "/C/ProgramData/National Instruments/CVI"
+IVI Standard Root Dir = "/C/Program Files (x86)/IVI Foundation/IVI"
+VXIplug&play Framework Dir = "/C/Program Files (x86)/IVI Foundation/VISA/winnt"
+IVI Standard Root 64-bit Dir = "/C/Program Files/IVI Foundation/IVI"
+VXIplug&play Framework 64-bit Dir = "/C/Program Files/IVI Foundation/VISA/win64"
+Number of Files = 86
+Target Type = "Executable"
+Flags = 3088
+Copied From Locked InstrDrv Directory = False
+Copied from VXIPNP Directory = False
+Locked InstrDrv Name = ""
+Don't Display Deploy InstrDrv Dialog = False
+
+[Folders]
+Include Files Folder Not Added Yet = True
+User Interface Files Folder Not Added Yet = True
+Instrument Files Folder Not Added Yet = True
+Folder 0 = "Source Files"
+FolderEx 0 = "Source Files"
+Folder 1 = "Source Files/dlms"
+FolderEx 1 = "dlms"
+FolderEx 1 Parent = 0
+Folder 2 = "Source Files/dlms/src"
+FolderEx 2 = "src"
+FolderEx 2 Parent = 1
+Folder 3 = "Source Files/dlms/Include"
+FolderEx 3 = "Include"
+FolderEx 3 Parent = 1
+Folder 4 = "Src"
+FolderEx 4 = "Src"
+Folder 5 = "Include"
+FolderEx 5 = "Include"
+Folder 6 = "Library Files"
+FolderEx 6 = "Library Files"
+
+[File 0001]
+File Type = "CSource"
+Res Id = 1
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/apdu.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/apdu.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0002]
+File Type = "CSource"
+Res Id = 2
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/bitarray.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/bitarray.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0003]
+File Type = "CSource"
+Res Id = 3
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/bytebuffer.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/bytebuffer.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0004]
+File Type = "CSource"
+Res Id = 4
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/ciphering.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/ciphering.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0005]
+File Type = "CSource"
+Res Id = 5
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/client.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/client.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0006]
+File Type = "CSource"
+Res Id = 6
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/converters.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/converters.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0007]
+File Type = "CSource"
+Res Id = 7
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/cosem.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/cosem.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0008]
+File Type = "CSource"
+Res Id = 8
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/datainfo.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/datainfo.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0009]
+File Type = "CSource"
+Res Id = 9
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/date.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/date.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0010]
+File Type = "CSource"
+Res Id = 10
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/dlms.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/dlms.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0011]
+File Type = "CSource"
+Res Id = 11
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/dlmsSettings.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/dlmsSettings.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0012]
+File Type = "CSource"
+Res Id = 12
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxaes.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxaes.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0013]
+File Type = "CSource"
+Res Id = 13
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxarray.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxarray.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0014]
+File Type = "CSource"
+Res Id = 14
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxget.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxget.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0015]
+File Type = "CSource"
+Res Id = 15
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxinvoke.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxinvoke.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0016]
+File Type = "CSource"
+Res Id = 16
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxkey.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxkey.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0017]
+File Type = "CSource"
+Res Id = 17
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxmd5.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxmd5.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0018]
+File Type = "CSource"
+Res Id = 18
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxobjects.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxobjects.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0019]
+File Type = "CSource"
+Res Id = 19
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxserializer.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxserializer.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0020]
+File Type = "CSource"
+Res Id = 20
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxset.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxset.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0021]
+File Type = "CSource"
+Res Id = 21
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxsetignoremalloc.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxsetignoremalloc.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0022]
+File Type = "CSource"
+Res Id = 22
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxsetmalloc.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxsetmalloc.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0023]
+File Type = "CSource"
+Res Id = 23
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxsha1.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxsha1.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0024]
+File Type = "CSource"
+Res Id = 24
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxsha256.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxsha256.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0025]
+File Type = "CSource"
+Res Id = 25
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/gxvalueeventargs.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxvalueeventargs.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0026]
+File Type = "CSource"
+Res Id = 26
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/helpers.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/helpers.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0027]
+File Type = "CSource"
+Res Id = 27
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/message.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/message.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0028]
+File Type = "CSource"
+Res Id = 28
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/notify.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/notify.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0029]
+File Type = "CSource"
+Res Id = 29
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/objectarray.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/objectarray.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0030]
+File Type = "CSource"
+Res Id = 30
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/parameters.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/parameters.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0031]
+File Type = "CSource"
+Res Id = 31
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/replydata.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/replydata.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0032]
+File Type = "CSource"
+Res Id = 32
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/server.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/server.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0033]
+File Type = "CSource"
+Res Id = 33
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/serverevents.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/serverevents.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0034]
+File Type = "CSource"
+Res Id = 34
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/src/variant.c"
+Path = "/c/Projects/National Instruments/CVI/dlms/src/variant.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files/dlms/src"
+Folder Id = 2
+
+[File 0035]
+File Type = "Include"
+Res Id = 35
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/apdu.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/apdu.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0036]
+File Type = "Include"
+Res Id = 36
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/bitarray.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/bitarray.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0037]
+File Type = "Include"
+Res Id = 37
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/bytebuffer.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/bytebuffer.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0038]
+File Type = "Include"
+Res Id = 38
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/ciphering.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/ciphering.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0039]
+File Type = "Include"
+Res Id = 39
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/cipheringenums.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/cipheringenums.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0040]
+File Type = "Include"
+Res Id = 40
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/client.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/client.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0041]
+File Type = "Include"
+Res Id = 41
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/converters.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/converters.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0042]
+File Type = "Include"
+Res Id = 42
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/cosem.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/cosem.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0043]
+File Type = "Include"
+Res Id = 43
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/crc.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/crc.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0044]
+File Type = "Include"
+Res Id = 44
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/datainfo.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/datainfo.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0045]
+File Type = "Include"
+Res Id = 45
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/date.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/date.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0046]
+File Type = "Include"
+Res Id = 46
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/dlms.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/dlms.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0047]
+File Type = "Include"
+Res Id = 47
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/dlmssettings.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/dlmssettings.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0048]
+File Type = "Include"
+Res Id = 48
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/enums.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/enums.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0049]
+File Type = "Include"
+Res Id = 49
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/errorcodes.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/errorcodes.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0050]
+File Type = "Include"
+Res Id = 50
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxaes.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxaes.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0051]
+File Type = "Include"
+Res Id = 51
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxarray.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxarray.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0052]
+File Type = "Include"
+Res Id = 52
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxdefine.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxdefine.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0053]
+File Type = "Include"
+Res Id = 53
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxget.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxget.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0054]
+File Type = "Include"
+Res Id = 54
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxignore.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxignore.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0055]
+File Type = "Include"
+Res Id = 55
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxint.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxint.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0056]
+File Type = "Include"
+Res Id = 56
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxinvoke.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxinvoke.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0057]
+File Type = "Include"
+Res Id = 57
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxkey.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxkey.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0058]
+File Type = "Include"
+Res Id = 58
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxmd5.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxmd5.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0059]
+File Type = "Include"
+Res Id = 59
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxmem.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxmem.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0060]
+File Type = "Include"
+Res Id = 60
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxobjects.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxobjects.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0061]
+File Type = "Include"
+Res Id = 61
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxserializer.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxserializer.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0062]
+File Type = "Include"
+Res Id = 62
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxset.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxset.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0063]
+File Type = "Include"
+Res Id = 63
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxsetignoremalloc.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxsetignoremalloc.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0064]
+File Type = "Include"
+Res Id = 64
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxsetmalloc.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxsetmalloc.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0065]
+File Type = "Include"
+Res Id = 65
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxsha1.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxsha1.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0066]
+File Type = "Include"
+Res Id = 66
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxsha256.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxsha256.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0067]
+File Type = "Include"
+Res Id = 67
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/gxvalueeventargs.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxvalueeventargs.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0068]
+File Type = "Include"
+Res Id = 68
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/helpers.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/helpers.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0069]
+File Type = "Include"
+Res Id = 69
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/lnparameters.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/lnparameters.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0070]
+File Type = "Include"
+Res Id = 70
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/message.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/message.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0071]
+File Type = "Include"
+Res Id = 71
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/notify.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/notify.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0072]
+File Type = "Include"
+Res Id = 72
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/objectarray.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/objectarray.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0073]
+File Type = "Include"
+Res Id = 73
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/parameters.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/parameters.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0074]
+File Type = "Include"
+Res Id = 74
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/replydata.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/replydata.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0075]
+File Type = "Include"
+Res Id = 75
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/server.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/server.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0076]
+File Type = "Include"
+Res Id = 76
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/serverevents.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/serverevents.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0077]
+File Type = "Include"
+Res Id = 77
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/snparameters.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/snparameters.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0078]
+File Type = "Include"
+Res Id = 78
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "dlms/include/variant.h"
+Path = "/c/Projects/National Instruments/CVI/dlms/include/variant.h"
+Exclude = False
+Project Flags = 0
+Folder = "Source Files/dlms/Include"
+Folder Id = 3
+
+[File 0079]
+File Type = "CSource"
+Res Id = 79
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "GuruxDLMSClientExample.c"
+Path = "/c/Projects/National Instruments/CVI/GuruxDLMSClientExample.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files"
+Folder Id = 0
+
+[File 0080]
+File Type = "CSource"
+Res Id = 80
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "src/communication.c"
+Path = "/c/Projects/National Instruments/CVI/src/communication.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Src"
+Folder Id = 4
+
+[File 0081]
+File Type = "CSource"
+Res Id = 81
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "src/connection.c"
+Path = "/c/Projects/National Instruments/CVI/src/connection.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Src"
+Folder Id = 4
+
+[File 0082]
+File Type = "CSource"
+Res Id = 82
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "src/getopt.c"
+Path = "/c/Projects/National Instruments/CVI/src/getopt.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Src"
+Folder Id = 4
+
+[File 0083]
+File Type = "Include"
+Res Id = 83
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "include/communication.h"
+Path = "/c/Projects/National Instruments/CVI/include/communication.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include"
+Folder Id = 5
+
+[File 0084]
+File Type = "Include"
+Res Id = 84
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "include/connection.h"
+Path = "/c/Projects/National Instruments/CVI/include/connection.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include"
+Folder Id = 5
+
+[File 0085]
+File Type = "Include"
+Res Id = 85
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "include/getopt.h"
+Path = "/c/Projects/National Instruments/CVI/include/getopt.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include"
+Folder Id = 5
+
+[File 0086]
+File Type = "Library"
+Res Id = 86
+Path Is Rel = True
+Path Rel To = "CVI"
+Path Rel Path = "sdk/lib/msvc64/WS2_32.Lib"
+Path = "/c/Program Files (x86)/Windows Kits/8.1/Lib/winv6.3/um/x64/WS2_32.Lib"
+Exclude = False
+Project Flags = 0
+Folder = "Library Files"
+Folder Id = 6
+
+[Custom Build Configs]
+Num Custom Build Configs = 0
+
+[Default Build Config Debug]
+Config Name = "Debug"
+Is 64-Bit = False
+Is Release = False
+Default Calling Convention = "cdecl"
+Optimization Level = "Optimize for speed (level 2)"
+Require Prototypes = True
+Show Warning IDs in Build Output = False
+Selected Warning Level = "Common"
+Warning List None = ""
+Error List None = ""
+Warning List Common = ""
+Error List Common = ""
+Warning List Extended = ""
+Error List Extended = ""
+Warning List All = ""
+Error List All = ""
+Warning Mode = 0
+Enable Unreferenced Identifiers Warning = True
+Enable Pointer Mismatch Warning = True
+Enable Unreachable Code Warning = True
+Enable Assignment In Conditional Warning = True
+Uninitialized Locals Compile Warning = "Aggressive"
+Require Return Values = True
+Enable C99 Extensions = True
+Enable OpenMP Extensions = False
+Stack Size = 250000
+Stack Reserve = 1048576
+Stack Commit = 4096
+Image Base Address = 4194304
+Image Base Address x64 = 4194304
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+Sign = False
+Sign Store = ""
+Sign Certificate = ""
+Sign Timestamp URL = ""
+Sign URL = ""
+Manifest Embed = False
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Runtime Support = "Full Runtime Support"
+Runtime Binding = "Shared"
+Embed Project .UIRs = False
+Generate Map File = False
+Embed Timestamp = True
+Create Console Application = True
+Using LoadExternalModule = False
+DLL Exports = "Include File Symbols"
+Register ActiveX Server = False
+Numeric File Version = "1,0,0,0"
+Numeric Prod Version = "1,0,0,0"
+Comments = ""
+Comments Ex = ""
+Company Name = ""
+Company Name Ex = "%company"
+File Description = "GuruxDLMSClientExample (Debug x86)"
+File Description Ex = "%application (%rel_dbg %arch)"
+File Version = "1.0"
+File Version Ex = "%f1.%f2"
+Internal Name = "GuruxDLMSClientExample"
+Internal Name Ex = "%basename"
+Legal Copyright = "Copyright (c)  2021"
+Legal Copyright Ex = "Copyright (c) %company %Y"
+Legal Trademarks = ""
+Legal Trademarks Ex = ""
+Original Filename = "GuruxDLMSClientExample.exe"
+Original Filename Ex = "%filename"
+Private Build = ""
+Private Build Ex = ""
+Product Name = " GuruxDLMSClientExample"
+Product Name Ex = "%company %application"
+Product Version = "1.0"
+Product Version Ex = "%p1.%p2"
+Special Build = ""
+Special Build Ex = ""
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+Add NI Type Info To DLL = False
+Use Single Header for NI Type Info = False
+Single Header NI Type Info File Is Rel = False
+Single Header NI Type Info File = ""
+
+[Default Build Config Release]
+Config Name = "Release"
+Is 64-Bit = False
+Is Release = True
+Default Calling Convention = "cdecl"
+Optimization Level = "Optimize for speed (level 2)"
+Require Prototypes = True
+Show Warning IDs in Build Output = False
+Selected Warning Level = "Common"
+Warning List None = ""
+Error List None = ""
+Warning List Common = ""
+Error List Common = ""
+Warning List Extended = ""
+Error List Extended = ""
+Warning List All = ""
+Error List All = ""
+Warning Mode = 0
+Enable Unreferenced Identifiers Warning = True
+Enable Pointer Mismatch Warning = True
+Enable Unreachable Code Warning = True
+Enable Assignment In Conditional Warning = True
+Uninitialized Locals Compile Warning = "Aggressive"
+Require Return Values = True
+Enable C99 Extensions = True
+Enable OpenMP Extensions = False
+Stack Size = 250000
+Stack Reserve = 1048576
+Stack Commit = 4096
+Image Base Address = 4194304
+Image Base Address x64 = 4194304
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+Sign = False
+Sign Store = ""
+Sign Certificate = ""
+Sign Timestamp URL = ""
+Sign URL = ""
+Manifest Embed = False
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Runtime Support = "Full Runtime Support"
+Runtime Binding = "Shared"
+Embed Project .UIRs = False
+Generate Map File = False
+Embed Timestamp = True
+Create Console Application = True
+Using LoadExternalModule = False
+DLL Exports = "Include File Symbols"
+Register ActiveX Server = False
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+Add NI Type Info To DLL = False
+Use Single Header for NI Type Info = False
+Single Header NI Type Info File Is Rel = False
+Single Header NI Type Info File = ""
+
+[Default Build Config Debug64]
+Config Name = "Debug64"
+Is 64-Bit = True
+Is Release = False
+Default Calling Convention = "cdecl"
+Optimization Level = "Optimize for speed (level 2)"
+Require Prototypes = True
+Show Warning IDs in Build Output = False
+Selected Warning Level = "Common"
+Warning List None = ""
+Error List None = ""
+Warning List Common = ""
+Error List Common = ""
+Warning List Extended = ""
+Error List Extended = ""
+Warning List All = ""
+Error List All = ""
+Warning Mode = 0
+Enable Unreferenced Identifiers Warning = True
+Enable Pointer Mismatch Warning = True
+Enable Unreachable Code Warning = True
+Enable Assignment In Conditional Warning = True
+Uninitialized Locals Compile Warning = "Aggressive"
+Require Return Values = True
+Enable C99 Extensions = True
+Enable OpenMP Extensions = False
+Stack Size = 250000
+Stack Reserve = 1048576
+Stack Commit = 4096
+Image Base Address = 4194304
+Image Base Address x64 = 4194304
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+Sign = False
+Sign Store = ""
+Sign Certificate = ""
+Sign Timestamp URL = ""
+Sign URL = ""
+Manifest Embed = False
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Runtime Support = "Full Runtime Support"
+Runtime Binding = "Shared"
+Embed Project .UIRs = False
+Generate Map File = False
+Embed Timestamp = True
+Create Console Application = True
+Using LoadExternalModule = False
+DLL Exports = "Include File Symbols"
+Register ActiveX Server = False
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+Add NI Type Info To DLL = False
+Use Single Header for NI Type Info = False
+Single Header NI Type Info File Is Rel = False
+Single Header NI Type Info File = ""
+
+[Default Build Config Release64]
+Config Name = "Release64"
+Is 64-Bit = True
+Is Release = True
+Default Calling Convention = "cdecl"
+Optimization Level = "Optimize for speed (level 2)"
+Require Prototypes = True
+Show Warning IDs in Build Output = False
+Selected Warning Level = "Common"
+Warning List None = ""
+Error List None = ""
+Warning List Common = ""
+Error List Common = ""
+Warning List Extended = ""
+Error List Extended = ""
+Warning List All = ""
+Error List All = ""
+Warning Mode = 0
+Enable Unreferenced Identifiers Warning = True
+Enable Pointer Mismatch Warning = True
+Enable Unreachable Code Warning = True
+Enable Assignment In Conditional Warning = True
+Uninitialized Locals Compile Warning = "Aggressive"
+Require Return Values = True
+Enable C99 Extensions = True
+Enable OpenMP Extensions = False
+Stack Size = 250000
+Stack Reserve = 1048576
+Stack Commit = 4096
+Image Base Address = 4194304
+Image Base Address x64 = 4194304
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+Sign = False
+Sign Store = ""
+Sign Certificate = ""
+Sign Timestamp URL = ""
+Sign URL = ""
+Manifest Embed = False
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Runtime Support = "Full Runtime Support"
+Runtime Binding = "Shared"
+Embed Project .UIRs = False
+Generate Map File = False
+Embed Timestamp = True
+Create Console Application = True
+Using LoadExternalModule = False
+DLL Exports = "Include File Symbols"
+Register ActiveX Server = False
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+Add NI Type Info To DLL = False
+Use Single Header for NI Type Info = False
+Single Header NI Type Info File Is Rel = False
+Single Header NI Type Info File = ""
+
+[Compiler Options]
+Default Calling Convention = "cdecl"
+Require Prototypes = True
+Require Return Values = True
+Enable Pointer Mismatch Warning = True
+Enable Unreachable Code Warning = True
+Enable Unreferenced Identifiers Warning = True
+Enable Assignment In Conditional Warning = True
+Enable C99 Extensions = True
+Uninitialized Locals Compile Warning = "Aggressive"
+Precompile Prefix Header = False
+Prefix Header File = ""
+
+[Run Options]
+Stack Size = 250000
+Stack Commit = 4096
+Image Base Address = 4194304
+Image Base Address x64 = 4194304
+
+[Compiler Defines]
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+
+[Create Executable]
+Executable File_Debug Is Rel = True
+Executable File_Debug Rel To = "Project"
+Executable File_Debug Rel Path = "GuruxDLMSClientExample.exe"
+Executable File_Debug = "/c/Projects/National Instruments/CVI/GuruxDLMSClientExample.exe"
+Executable File_Release Is Rel = True
+Executable File_Release Rel To = "Project"
+Executable File_Release Rel Path = "GuruxDLMSClientExample.exe"
+Executable File_Release = "/c/Projects/National Instruments/CVI/GuruxDLMSClientExample.exe"
+Executable File_Debug64 Is Rel = True
+Executable File_Debug64 Rel To = "Project"
+Executable File_Debug64 Rel Path = "GuruxDLMSClientExample.exe"
+Executable File_Debug64 = "/c/Projects/National Instruments/CVI/GuruxDLMSClientExample.exe"
+Executable File_Release64 Is Rel = True
+Executable File_Release64 Rel To = "Project"
+Executable File_Release64 Rel Path = "GuruxDLMSClientExample.exe"
+Executable File_Release64 = "/c/Projects/National Instruments/CVI/GuruxDLMSClientExample.exe"
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+DLL Exports = "Include File Symbols"
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+Type Lib Guid = ""
+Runtime Support = "Full Runtime Support"
+Instrument Driver Support Only = False
+Embed Project .UIRs = False
+Generate Map File = False
+
+[External Compiler Support]
+UIR Callbacks File Option = 0
+Using LoadExternalModule = False
+Create Project Symbols File = True
+UIR Callbacks Obj File Is Rel = False
+UIR Callbacks Obj File = ""
+Project Symbols H File Is Rel = False
+Project Symbols H File = ""
+Project Symbols Obj File Is Rel = False
+Project Symbols Obj File = ""
+
+[ActiveX Server Options]
+Specification File Is Rel = False
+Specification File = ""
+Source File Is Rel = False
+Source File = ""
+Include File Is Rel = False
+Include File = ""
+IDL File Is Rel = False
+IDL File = ""
+Register ActiveX Server = False
+
+[Signing Info]
+Sign = False
+Sign Debug Build = False
+Store = ""
+Certificate = ""
+Timestamp URL = ""
+URL = ""
+
+[Manifest Info]
+Embed = False
+
+[tpcSection]
+tpcEnabled = 0
+tpcOverrideEnvironment = 0
+tpcEnabled x64 = 0
+tpcOverrideEnvironment x64 = 0
+

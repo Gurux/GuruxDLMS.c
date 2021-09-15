@@ -241,7 +241,7 @@ static void KeyExpansion(void)
                 tempa[3] = getSBoxValue(tempa[3]);
             }
 
-            tempa[0] = tempa[0] ^ getRCon(i / Nk);
+            tempa[0] = (unsigned char)(tempa[0] ^ getRCon((unsigned char)(i / Nk)));
         }
 #if defined(AES256) && (AES256 == 1)
         if (i % Nk == 4)
@@ -323,7 +323,7 @@ static void ShiftRows(void)
 
 static unsigned char xtime(unsigned char x)
 {
-    return ((x << 1) ^ (((x >> 7) & 1) * 0x1b));
+    return (unsigned char)((x << 1) ^ (((x >> 7) & 1) * 0x1b));
 }
 
 // MixColumns function mixes the columns of the state matrix

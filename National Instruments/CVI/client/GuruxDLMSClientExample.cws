@@ -1,0 +1,814 @@
+[Workspace Header]
+Version = 2000
+Pathname = "/c/Projects/National Instruments/CVI/GuruxDLMSClientExample.cws"
+CVI Dir = "/c/program files (x86)/national instruments/cvi2020"
+CVI Shared Dir = "/C/Program Files (x86)/National Instruments/Shared/CVI"
+CVI Pub Local Dir = "/C/ProgramData/National Instruments/CVI2020"
+CVI Pub Global Dir = "/C/ProgramData/National Instruments/CVI"
+IVI Standard Root Dir = "/C/Program Files (x86)/IVI Foundation/IVI"
+IVI Standard Root 64-bit Dir = "/C/Program Files/IVI Foundation/IVI"
+VXIplug&play Framework Dir = "/C/Program Files (x86)/IVI Foundation/VISA/winnt"
+VXIplug&play Framework 64-bit Dir = "/C/Program Files/IVI Foundation/VISA/win64"
+Number of Projects = 1
+Active Project = 1
+Project 0001 = "GuruxDLMSClientExample.prj"
+Project 0001 Folder Source Files/dlms/src Collapsed = True
+Project 0001 FolderId 2 Collapsed = True
+Project 0001 Folder Source Files/dlms/Include Collapsed = True
+Project 0001 FolderId 3 Collapsed = True
+Drag Bar Left = 329
+Window Top = 62
+Window Left = 26
+Window Bottom = 564
+Window Right = 816
+Maximized = True
+Maximized Children = True
+Max32 Number Of Errors = 20
+Track Include File Dependencies = True
+Prompt For Missing Includes = True
+Stop On First Error File = False
+Bring Up Err Win At Start = True
+Bring Up Err Win For Errors = False
+Save Changes Before Running = "Always"
+Save Changes Before Compiling = "Always"
+Hide Windows = False
+Break At First Statement = False
+Sort Type = "File Name"
+Number of Opened Files = 2
+Window Confinement Region Enabled = True
+MainColumnWidth = 312
+FileDateColumnWidth = 70
+FileSizeColumnWidth = 70
+
+[Project Header 0001]
+Version = 2000
+Don't Update DistKit = False
+Platform Code = 4
+Build Configuration = "Debug"
+Warn User If Debugging Release = 1
+Batch Build Release = False
+Batch Build Debug = False
+
+[File 0001]
+Path = "/c/Projects/National Instruments/CVI/GuruxDLMSClientExample.c"
+File Type = "CSource"
+Disk Date = 3714552511
+In Projects = "1,"
+Source Window State = "1,513,515,513,4,55,4,0,3,0,0,0,0,0,0,0,491,0,515,55,266,518,1,0,"
+Window Top = 32
+Window Left = 10
+Window Z-Order = 2
+
+[File 0002]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/variant.c"
+File Type = "CSource"
+Disk Date = 3714551270
+In Projects = "1,"
+Source Window State = "1,2270,2270,2270,8,8,8,0,0,0,0,0,0,0,0,0,2252,0,2270,8,266,693,1,0,"
+Window Top = 62
+Window Left = 26
+
+[File 0003]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxignore.h"
+File Type = "Include"
+Disk Date = 3714552771
+In Projects = "1,"
+Source Window State = "1,118,118,118,36,36,36,0,0,0,0,0,0,0,0,0,18,0,118,36,266,693,1,0,"
+Window Top = 62
+Window Left = 26
+
+[File 0004]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxobjects.h"
+File Type = "Include"
+Disk Date = 3714540858
+In Projects = "1,"
+Source Window State = "1,3672,3672,3672,8,19,8,0,3,0,0,0,0,0,0,0,3650,0,3672,19,296,693,1,0,"
+Window Top = 62
+Window Left = 26
+
+[File 0005]
+Path = "/c/Projects/National Instruments/CVI/src/communication.c"
+File Type = "CSource"
+Disk Date = 3714553867
+In Projects = "1,"
+Source Window State = "1,114,114,114,5,5,5,0,0,0,0,0,0,0,0,0,96,0,114,5,281,693,1,0,"
+Breakpoint 0001 = "170,0,enabled,"
+Tracepoint 0001 = "0,0,44,1,"
+Breakpoint 0002 = "181,0,enabled,"
+Tracepoint 0002 = "0,0,55,1,"
+Breakpoint 0003 = "200,0,enabled,"
+Tracepoint 0003 = "0,0,74,1,"
+Window Top = 92
+Window Left = 42
+Window Z-Order = 1
+
+[File 0006]
+Path = "/c/Projects/National Instruments/CVI/src/connection.c"
+File Type = "CSource"
+Disk Date = 3714539831
+In Projects = "1,"
+Source Window State = "1,20,20,20,16,16,16,0,0,0,0,0,0,0,0,0,5,0,20,16,281,693,1,0,"
+Window Top = 122
+Window Left = 58
+
+[File 0007]
+Path = "/c/Projects/National Instruments/CVI/src/getopt.c"
+File Type = "CSource"
+Disk Date = 3585629643
+In Projects = "1,"
+Source Window State = "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,281,693,1,0,"
+Window Top = 152
+Window Left = 74
+
+[File 0008]
+Path = "/c/Projects/National Instruments/CVI/include/communication.h"
+File Type = "Include"
+Disk Date = 3714538879
+In Projects = "1,"
+Source Window State = "1,29,29,29,9,9,9,0,0,0,0,0,0,0,0,0,8,0,29,9,281,693,1,0,"
+Window Top = 62
+Window Left = 26
+
+[File 0009]
+Path = "/c/Projects/National Instruments/CVI/include/connection.h"
+File Type = "Include"
+Disk Date = 3714540734
+In Projects = "1,"
+Source Window State = "1,33,33,33,20,20,20,0,0,0,0,0,0,0,0,0,18,0,33,20,281,693,1,0,"
+Window Top = 32
+Window Left = 10
+
+[File 0010]
+Path = "/c/Projects/National Instruments/CVI/include/getopt.h"
+File Type = "Include"
+Disk Date = 3585624558
+In Projects = "1,"
+Source Window State = "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,281,693,1,0,"
+Window Top = 62
+Window Left = 26
+
+[File 0011]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/apdu.c"
+File Type = "CSource"
+Disk Date = 3702890994
+In Projects = "1,"
+Source Window State = "1,715,715,715,47,48,47,0,3,0,0,0,0,0,0,0,698,0,715,48,266,693,1,0,"
+Window Top = 92
+Window Left = 42
+
+[File 0012]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/bitarray.c"
+File Type = "CSource"
+Disk Date = 3714533025
+In Projects = "1,"
+Source Window State = "1,190,190,190,57,57,57,0,0,0,0,0,0,0,0,0,178,0,190,57,266,693,1,0,"
+Window Top = 122
+Window Left = 58
+
+[File 0013]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/bytebuffer.c"
+File Type = "CSource"
+Disk Date = 3714543514
+In Projects = "1,"
+Source Window State = "1,559,559,559,0,0,0,0,0,0,0,0,0,0,0,0,530,0,559,0,266,693,1,0,"
+Window Top = 152
+Window Left = 74
+
+[File 0014]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/ciphering.c"
+File Type = "CSource"
+Disk Date = 3714532604
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0015]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/client.c"
+File Type = "CSource"
+Disk Date = 3714543643
+In Projects = "1,"
+Source Window State = "1,1724,1724,1724,15,15,15,0,0,0,0,0,0,0,0,0,1709,0,1724,15,266,693,1,0,"
+Window Top = 32
+Window Left = 10
+
+[File 0016]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/converters.c"
+File Type = "CSource"
+Disk Date = 3714552166
+In Projects = "1,"
+Source Window State = "1,1651,1651,1651,31,31,31,0,0,0,0,0,0,0,0,0,1634,0,1651,31,266,693,1,0,"
+Window Top = 122
+Window Left = 58
+
+[File 0017]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/cosem.c"
+File Type = "CSource"
+Disk Date = 3714543816
+In Projects = "1,"
+Source Window State = "1,511,511,511,28,28,28,0,0,0,0,0,0,0,0,0,487,0,511,28,266,693,1,0,"
+Window Top = 92
+Window Left = 42
+
+[File 0018]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/datainfo.c"
+File Type = "CSource"
+Disk Date = 3644556673
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0019]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/date.c"
+File Type = "CSource"
+Disk Date = 3714544445
+In Projects = "1,"
+Source Window State = "1,491,491,491,27,27,27,0,0,0,0,0,0,0,0,0,474,0,491,27,386,693,1,0,"
+Window Top = 122
+Window Left = 58
+
+[File 0020]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/dlms.c"
+File Type = "CSource"
+Disk Date = 3714544838
+In Projects = "1,"
+Source Window State = "1,4272,4272,4272,17,17,17,0,0,0,0,0,0,0,0,0,4243,0,4272,17,386,693,1,0,"
+Window Top = 152
+Window Left = 74
+
+[File 0021]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/dlmsSettings.c"
+File Type = "CSource"
+Disk Date = 3690366991
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0022]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxaes.c"
+File Type = "CSource"
+Disk Date = 3714545104
+In Projects = "1,"
+Source Window State = "1,243,243,243,72,72,72,0,0,0,0,0,0,0,0,0,226,0,243,72,386,693,1,0,"
+Window Top = 182
+Window Left = 90
+
+[File 0023]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxarray.c"
+File Type = "CSource"
+Disk Date = 3714545173
+In Projects = "1,"
+Source Window State = "1,114,114,114,5,5,5,0,0,0,0,0,0,0,0,0,82,0,114,5,400,600,0,0,"
+
+[File 0024]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxget.c"
+File Type = "CSource"
+Disk Date = 3714547143
+In Projects = "1,"
+Source Window State = "1,5164,5164,5164,1,1,1,0,0,0,0,0,0,0,0,0,5140,0,5164,1,401,693,1,0,"
+Window Top = 32
+Window Left = 10
+
+[File 0025]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxinvoke.c"
+File Type = "CSource"
+Disk Date = 3711962827
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0026]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxkey.c"
+File Type = "CSource"
+Disk Date = 3656916702
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0027]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxmd5.c"
+File Type = "CSource"
+Disk Date = 3670999750
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0028]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxobjects.c"
+File Type = "CSource"
+Disk Date = 3702002880
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0029]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxserializer.c"
+File Type = "CSource"
+Disk Date = 3711962827
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0030]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxset.c"
+File Type = "CSource"
+Disk Date = 3692007897
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0031]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxsetignoremalloc.c"
+File Type = "CSource"
+Disk Date = 3711962827
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0032]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxsetmalloc.c"
+File Type = "CSource"
+Disk Date = 3714548246
+In Projects = "1,"
+Source Window State = "1,739,739,739,39,41,39,0,3,0,0,0,0,0,0,0,722,0,739,41,386,693,1,0,"
+Window Top = 152
+Window Left = 74
+
+[File 0033]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxsha1.c"
+File Type = "CSource"
+Disk Date = 3670999750
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0034]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxsha256.c"
+File Type = "CSource"
+Disk Date = 3670999750
+In Projects = "1,"
+Source Window State = "1,104,104,104,0,0,0,0,0,0,0,0,0,0,0,0,87,0,104,0,386,693,1,0,"
+Window Top = 122
+Window Left = 58
+
+[File 0035]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/gxvalueeventargs.c"
+File Type = "CSource"
+Disk Date = 3695898558
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0036]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/helpers.c"
+File Type = "CSource"
+Disk Date = 3714551093
+In Projects = "1,"
+Source Window State = "1,946,946,946,12,12,12,0,0,0,0,0,0,0,0,0,931,0,946,12,266,693,1,0,"
+Window Top = 32
+Window Left = 10
+
+[File 0037]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/message.c"
+File Type = "CSource"
+Disk Date = 3652153500
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0038]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/notify.c"
+File Type = "CSource"
+Disk Date = 3714543266
+In Projects = "1,"
+Source Window State = "1,259,353,259,0,1,0,0,3,0,0,0,0,0,0,0,320,0,353,1,266,693,1,0,"
+Window Top = 92
+Window Left = 42
+
+[File 0039]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/objectarray.c"
+File Type = "CSource"
+Disk Date = 3695900923
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0040]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/parameters.c"
+File Type = "CSource"
+Disk Date = 3670999750
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0041]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/replydata.c"
+File Type = "CSource"
+Disk Date = 3689921230
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0042]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/server.c"
+File Type = "CSource"
+Disk Date = 3711962827
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0043]
+Path = "/c/Projects/National Instruments/CVI/dlms/src/serverevents.c"
+File Type = "CSource"
+Disk Date = 3684987148
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0044]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/apdu.h"
+File Type = "Include"
+Disk Date = 3676001435
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0045]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/bitarray.h"
+File Type = "Include"
+Disk Date = 3689072330
+In Projects = "1,"
+Source Window State = "1,0,30,0,0,77,0,0,3,0,0,0,0,0,0,0,0,0,30,77,400,600,0,0,"
+
+[File 0046]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/bytebuffer.h"
+File Type = "Include"
+Disk Date = 3714532604
+In Projects = "1,"
+Source Window State = "1,419,419,419,0,74,0,0,3,0,0,0,0,0,0,0,413,0,419,74,266,693,1,0,"
+Window Top = 62
+Window Left = 26
+
+[File 0047]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/ciphering.h"
+File Type = "Include"
+Disk Date = 3680240272
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0048]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/cipheringenums.h"
+File Type = "Include"
+Disk Date = 3642742015
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0049]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/client.h"
+File Type = "Include"
+Disk Date = 3687502453
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0050]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/converters.h"
+File Type = "Include"
+Disk Date = 3680082699
+In Projects = "1,"
+Source Window State = "1,77,77,77,0,0,0,0,0,0,0,0,0,0,0,0,46,0,77,0,266,693,1,0,"
+Window Top = 152
+Window Left = 74
+
+[File 0051]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/cosem.h"
+File Type = "Include"
+Disk Date = 3714536219
+In Projects = "1,"
+Source Window State = "1,71,71,71,6,14,6,0,3,0,0,0,0,0,0,0,58,0,71,14,266,693,1,0,"
+Window Top = 32
+Window Left = 10
+
+[File 0052]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/crc.h"
+File Type = "Include"
+Disk Date = 3679477330
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0053]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/datainfo.h"
+File Type = "Include"
+Disk Date = 3670999748
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0054]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/date.h"
+File Type = "Include"
+Disk Date = 3691153221
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0055]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/dlms.h"
+File Type = "Include"
+Disk Date = 3702002185
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0056]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/dlmssettings.h"
+File Type = "Include"
+Disk Date = 3695958936
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0057]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/enums.h"
+File Type = "Include"
+Disk Date = 3701756022
+In Projects = "1,"
+Source Window State = "1,56,56,56,8,35,8,0,3,0,0,0,0,0,0,0,51,0,56,35,386,693,1,0,"
+Window Top = 92
+Window Left = 42
+
+[File 0058]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/errorcodes.h"
+File Type = "Include"
+Disk Date = 3680235863
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0059]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxaes.h"
+File Type = "Include"
+Disk Date = 3670999748
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0060]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxarray.h"
+File Type = "Include"
+Disk Date = 3692605400
+In Projects = "1,"
+Source Window State = "1,53,53,53,17,21,17,0,3,0,0,0,0,0,0,0,40,0,53,21,386,693,1,0,"
+Window Top = 32
+Window Left = 10
+
+[File 0061]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxdefine.h"
+File Type = "Include"
+Disk Date = 3690343590
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0062]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxget.h"
+File Type = "Include"
+Disk Date = 3692111242
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0063]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxint.h"
+File Type = "Include"
+Disk Date = 3670999748
+In Projects = "1,"
+Source Window State = "1,44,44,44,0,0,0,0,0,0,0,0,0,0,0,0,27,0,44,0,386,693,1,0,"
+Window Top = 92
+Window Left = 42
+
+[File 0064]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxinvoke.h"
+File Type = "Include"
+Disk Date = 3691408387
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0065]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxkey.h"
+File Type = "Include"
+Disk Date = 3652176524
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0066]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxmd5.h"
+File Type = "Include"
+Disk Date = 3642742016
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0067]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxmem.h"
+File Type = "Include"
+Disk Date = 3652684254
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0068]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxserializer.h"
+File Type = "Include"
+Disk Date = 3690863844
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0069]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxset.h"
+File Type = "Include"
+Disk Date = 3692605767
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0070]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxsetignoremalloc.h"
+File Type = "Include"
+Disk Date = 3692007882
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0071]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxsetmalloc.h"
+File Type = "Include"
+Disk Date = 3692007888
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0072]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxsha1.h"
+File Type = "Include"
+Disk Date = 3642742015
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0073]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxsha256.h"
+File Type = "Include"
+Disk Date = 3642742015
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0074]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/gxvalueeventargs.h"
+File Type = "Include"
+Disk Date = 3714546082
+In Projects = "1,"
+Source Window State = "1,101,101,101,16,16,16,0,0,0,0,0,0,0,0,0,80,0,101,16,386,693,1,0,"
+Window Top = 62
+Window Left = 26
+
+[File 0075]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/helpers.h"
+File Type = "Include"
+Disk Date = 3695901331
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0076]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/lnparameters.h"
+File Type = "Include"
+Disk Date = 3670999748
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0077]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/message.h"
+File Type = "Include"
+Disk Date = 3652083665
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0078]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/notify.h"
+File Type = "Include"
+Disk Date = 3711593475
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0079]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/objectarray.h"
+File Type = "Include"
+Disk Date = 3679898711
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0080]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/parameters.h"
+File Type = "Include"
+Disk Date = 3670999748
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0081]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/replydata.h"
+File Type = "Include"
+Disk Date = 3702002044
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0082]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/server.h"
+File Type = "Include"
+Disk Date = 3695958936
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0083]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/serverevents.h"
+File Type = "Include"
+Disk Date = 3680147110
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0084]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/snparameters.h"
+File Type = "Include"
+Disk Date = 3670999748
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0085]
+Path = "/c/Projects/National Instruments/CVI/dlms/include/variant.h"
+File Type = "Include"
+Disk Date = 3695877859
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[File 0086]
+Path = "/c/Program Files (x86)/Windows Kits/8.1/Lib/winv6.3/um/x86/WS2_32.Lib"
+File Type = "Library"
+Disk Date = 3459946174
+In Projects = "1,"
+
+[Tab Order]
+Tab 0001 = "/c/Projects/National Instruments/CVI/GuruxDLMSClientExample.c"
+Tab 0002 = "/c/Projects/National Instruments/CVI/src/communication.c"
+
+[Default Build Config 0001 Debug]
+Generate Browse Info = True
+Enable Uninitialized Locals Runtime Warning = True
+Batch Build = False
+Profile = "Disabled"
+Debugging Level = "Standard"
+Execution Trace = "Disabled"
+Command Line Args = "-h localhost -p 4061 -t Verbose"
+Working Directory = ""
+Environment Options = ""
+External Process Path = ""
+
+[Default Build Config 0001 Release]
+Generate Browse Info = True
+Enable Uninitialized Locals Runtime Warning = True
+Batch Build = False
+Profile = "Disabled"
+Debugging Level = "Standard"
+Execution Trace = "Disabled"
+Command Line Args = ""
+Working Directory = ""
+Environment Options = ""
+External Process Path = ""
+
+[Default Build Config 0001 Debug64]
+Generate Browse Info = True
+Enable Uninitialized Locals Runtime Warning = True
+Batch Build = False
+Profile = "Disabled"
+Debugging Level = "Standard"
+Execution Trace = "Disabled"
+Command Line Args = ""
+Working Directory = ""
+Environment Options = ""
+External Process Path = ""
+
+[Default Build Config 0001 Release64]
+Generate Browse Info = True
+Enable Uninitialized Locals Runtime Warning = True
+Batch Build = False
+Profile = "Disabled"
+Debugging Level = "Standard"
+Execution Trace = "Disabled"
+Command Line Args = ""
+Working Directory = ""
+Environment Options = ""
+External Process Path = ""
+
+[Build Dependencies 0001]
+Number of Dependencies = 0
+
+[Build Options 0001]
+Generate Browse Info = True
+Enable Uninitialized Locals Runtime Warning = True
+Execution Trace = "Disabled"
+Profile = "Disabled"
+Debugging Level = "Standard"
+Break On Library Errors = True
+Break On First Chance Exceptions = False
+
+[Execution Target 0001]
+Execution Target Address = "Local desktop computer"
+Execution Target Port = 0
+Execution Target Type = 0
+
+[SCC Options 0001]
+Use global settings = True
+SCC Provider = ""
+SCC Project = ""
+Local Path = ""
+Auxiliary Path = ""
+Perform Same Action For .h File As For .uir File = "Ask"
+Perform Same Action For .cds File As For .prj File = "Ask"
+Username = ""
+Comment = ""
+Use Default Username = False
+Use Default Comment = False
+Suppress CVI Error Messages = False
+Always show confirmation dialog = True
+
+[DLL Debugging Support 0001]
+External Process Path = ""
+
+[Command Line Args 0001]
+Command Line Args = ""
+Working Directory = ""
+Environment Options = ""
+

@@ -111,7 +111,7 @@ int arr_capacity(gxArray* arr, int capacity)
                 arr->data = tmp;
             }
         }
-        arr->capacity = capacity;
+        arr->capacity = (uint16_t) capacity;
     }
 #endif //DLMS_IGNORE_MALLOC
     if (arr_getCapacity(arr) < capacity)

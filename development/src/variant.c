@@ -466,22 +466,22 @@ int var_getDateTime2(
     //Add week day
     if ((dateTime->value.tm_wday != -1 && dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
     {
-        dayOfWeek = dateTime->value.tm_wday;
+        dayOfWeek = (unsigned char)dateTime->value.tm_wday;
     }
     //Add Hours
     if (dateTime->value.tm_hour != -1 && (dateTime->skip & DATETIME_SKIPS_HOUR) == 0)
     {
-        hour = dateTime->value.tm_hour;
+        hour = (unsigned char)dateTime->value.tm_hour;
     }
     //Add Minutes
     if (dateTime->value.tm_min != -1 && (dateTime->skip & DATETIME_SKIPS_MINUTE) == 0)
     {
-        minute = dateTime->value.tm_min;
+        minute = (unsigned char)dateTime->value.tm_min;
     }
     //Add seconds.
     if (dateTime->value.tm_sec != -1 && (dateTime->skip & DATETIME_SKIPS_SECOND) == 0)
     {
-        second = dateTime->value.tm_sec;
+        second = (unsigned char)dateTime->value.tm_sec;
     }
 #endif // DLMS_USE_EPOCH_TIME
     //Add year.
@@ -628,7 +628,7 @@ int var_getDate(
     //Add week day
     if ((dateTime->value.tm_wday != -1 && dateTime->skip & DATETIME_SKIPS_DAYOFWEEK) == 0)
     {
-        dayOfWeek = dateTime->value.tm_wday;
+        dayOfWeek = (unsigned char)dateTime->value.tm_wday;
     }
 #endif // DLMS_USE_EPOCH_TIME
     //Add year.
@@ -700,17 +700,17 @@ int var_getTime(
     //Add Hours
     if (dateTime->value.tm_hour != -1 && (dateTime->skip & DATETIME_SKIPS_HOUR) == 0)
     {
-        hour = dateTime->value.tm_hour;
+        hour = (unsigned char)dateTime->value.tm_hour;
     }
     //Add Minutes
     if (dateTime->value.tm_min != -1 && (dateTime->skip & DATETIME_SKIPS_MINUTE) == 0)
     {
-        minute = dateTime->value.tm_min;
+        minute = (unsigned char)dateTime->value.tm_min;
     }
     //Add seconds.
     if (dateTime->value.tm_sec != -1 && (dateTime->skip & DATETIME_SKIPS_SECOND) == 0)
     {
-        second = dateTime->value.tm_sec;
+        second = (unsigned char)dateTime->value.tm_sec;
     }
 #endif // DLMS_USE_EPOCH_TIME
     //Add Hours
@@ -826,7 +826,7 @@ int var_getBytes3(
     gxByteBuffer* ba,
     unsigned char addType)
 {
-    int ret, pos;
+    int ret = 0, pos;
     if ((type & DLMS_DATA_TYPE_BYREF) != 0)
     {
         return var_getBytes3(data, type & ~DLMS_DATA_TYPE_BYREF, ba, addType);
@@ -2138,7 +2138,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
         }
         else
         {
-            count = hlp_getDataTypeSize(source->vt);
+            count = (uint16_t)hlp_getDataTypeSize(source->vt);
             if (count != hlp_getDataTypeSize(target->vt ^ DLMS_DATA_TYPE_BYREF))
             {
                 return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -2266,7 +2266,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
         ret = var_getSize(source->vt);
         if (ret > 0)
         {
-            memcpy(&target->bVal, &source->bVal, ret);
+            memcpy(&target->pVal, &source->pVal, ret);
         }
         ret = 0;
     }

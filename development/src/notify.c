@@ -126,7 +126,8 @@ int notify_generateDataNotificationMessages(
     gxArray* objects,
     message* messages)
 {
-    int pos, ret = 0;
+    int ret = 0;
+	uint16_t pos;
     gxListItem* it;
     gxByteBuffer buff;
     BYTE_BUFFER_INIT(&buff);
@@ -257,7 +258,8 @@ int notify_generatePushSetupMessages(
     gxPushSetup* push,
     message* messages)
 {
-    int pos, ret = 0;
+    int ret = 0;
+	uint16_t pos;
     gxByteBuffer pdu;
     gxValueEventCollection args;
     gxValueEventArg e;
@@ -310,7 +312,9 @@ int notify_generatePushSetupMessages(
 #else
             e.target = (gxObject*)it->key;
             e.index = ((gxTarget*)it->value)->attributeIndex;
+#ifndef DLMS_IGNORE_SERVER
             svr_preRead(settings, &args);
+#endif
             if (e.error != 0)
             {
                 break;
@@ -328,7 +332,9 @@ int notify_generatePushSetupMessages(
                 }
             }
 #endif //DLMS_IGNORE_MALLOC
+#ifndef DLMS_IGNORE_SERVER
             svr_postRead(settings, &args);
+#endif //DLMS_IGNORE_SERVER
             ve_clear(&e);
             if (e.error != 0)
             {
@@ -355,7 +361,8 @@ int notify_parsePush(
     gxListItem* k;
     gxObject* obj;
     unsigned char index;
-    int classID, pos, ret;
+    int classID, ret;
+	uint16_t pos;
     gxValueEventArg e;
     dlmsVARIANT* it, * list, * tmp;
     if ((ret = va_getByIndex(data, 0, &list)) != 0)
@@ -452,7 +459,8 @@ int notify_getPushValues(
 {
     gxObject* tmp;
     gxKey* k;
-    int ret = 0, pos;
+    int ret = 0;
+	uint16_t pos;
     gxValueEventArg e;
     dlmsVARIANT* it;
     for (pos = 0; pos != pushSetup->pushObjectList.size; ++pos)

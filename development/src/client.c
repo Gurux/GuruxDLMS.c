@@ -1133,7 +1133,8 @@ int cl_updateValues(
     gxByteBuffer* data)
 {
     uint16_t count;
-    int pos, ret = 0;
+    int ret = 0;
+	uint16_t pos;
     gxListItem* it;
     gxDataInfo info;
     unsigned char ch;
@@ -1724,11 +1725,11 @@ uint16_t cl_getServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, 
     uint16_t value;
     if (addressSize < 4 && physicalAddress < 0x80 && logicalAddress < 0x80)
     {
-        value = logicalAddress << 7 | physicalAddress;
+        value = (uint16_t)(logicalAddress << 7 | physicalAddress);
     }
     else if (physicalAddress < 0x4000 && logicalAddress < 0x4000)
     {
-        value = logicalAddress << 14 | physicalAddress;
+        value = (uint16_t)(logicalAddress << 14 | physicalAddress);
     }
     else
     {

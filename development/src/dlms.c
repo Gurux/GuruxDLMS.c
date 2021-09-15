@@ -1128,7 +1128,7 @@ int getTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
     unsigned char ch, hour, minute, second;
-    int ms = -1;
+    uint16_t ms = 0xFFFF;
     if (buff->size - buff->position < 4)
     {
         // If there is not enough data available.
@@ -1180,7 +1180,8 @@ int getTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 */
 int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
-    int ret, month, day;
+    int ret;
+	unsigned char month, day;
     uint16_t year;
     unsigned char ch;
     if (buff->size - buff->position < 5)
@@ -1640,7 +1641,7 @@ int getDataTypes(
     DLMS_DATA_TYPE dt;
     if (cols->size == 0)
     {
-        va_capacity(cols, len);
+        va_capacity(cols, (uint16_t)len);
     }
     for (int pos = 0; pos != len; ++pos)
     {
@@ -2451,7 +2452,7 @@ int dlms_getHdlcFrame(
     unsigned char tmp[4], tmp2[4];
     uint16_t crc;
     int ret;
-    uint16_t frameSize, len;
+    uint16_t frameSize, len = 0;
     gxByteBuffer primaryAddress, secondaryAddress;
     bb_clear(reply);
     bb_attach(&primaryAddress, tmp, 0, 4);
@@ -2604,21 +2605,21 @@ int dlms_getPlcFrame(
         frameSize = 134;
     }
     //PAD Length.
-    int padLen = (36 - ((11 + frameSize) % 36)) % 36;
+    unsigned char padLen = (unsigned char)((36 - ((11 + frameSize) % 36)) % 36);
     bb_capacity(reply, 15 + frameSize + padLen);
     //Add STX
     bb_setUInt8(reply, 2);
     //Length.
-    bb_setUInt8(reply, 11 + frameSize);
+    bb_setUInt8(reply, (unsigned char)(11 + frameSize));
     //Length.
     bb_setUInt8(reply, 0x50);
     //Add  Credit fields.
     bb_setUInt8(reply, creditFields);
     //Add source and target MAC addresses.
-    bb_setUInt8(reply, settings->plcSettings.macSourceAddress >> 4);
+    bb_setUInt8(reply, (unsigned char)(settings->plcSettings.macSourceAddress >> 4));
     int val = settings->plcSettings.macSourceAddress << 12;
     val |= settings->plcSettings.macDestinationAddress & 0xFFF;
-    bb_setUInt16(reply, val);
+    bb_setUInt16(reply, (uint16_t)val);
     bb_setUInt8(reply, padLen);
     //Control byte.
     bb_setUInt8(reply, DLMS_PLC_DATA_LINK_DATA_REQUEST);
@@ -2696,10 +2697,10 @@ int dlms_getMacHdlcFrame(
     //Add  Credit fields.
     bb_setUInt8(reply, creditFields);
     //Add source and target MAC addresses.
-    bb_setUInt8(reply, settings->plcSettings.macSourceAddress >> 4);
+    bb_setUInt8(reply, (unsigned char)(settings->plcSettings.macSourceAddress >> 4));
     int val = settings->plcSettings.macSourceAddress << 12;
     val |= settings->plcSettings.macDestinationAddress & 0xFFF;
-    bb_setUInt16(reply, val);
+    bb_setUInt16(reply, (uint16_t)val);
     if ((ret = dlms_getHdlcFrame(settings, frame, data, &tmp)) == 0)
     {
         unsigned char padLen = (unsigned char)((36 - ((10 + tmp.size) % 36)) % 36);
@@ -2753,7 +2754,7 @@ int dlms_getMacHdlcFrame(
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
-        ret = bb_setUInt16ByIndex(reply, 0, val);
+        ret = bb_setUInt16ByIndex(reply, 0, (uint16_t)val);
     }
     return ret;
 }
@@ -3594,7 +3595,7 @@ unsigned char dlms_isPlcSfskData(gxByteBuffer* buff)
     uint16_t len;
     if ((ret = bb_getUInt16ByIndex(buff, buff->position, &len)) != 0)
     {
-        return ret;
+        return (unsigned char)ret;
     }
     switch (len)
     {

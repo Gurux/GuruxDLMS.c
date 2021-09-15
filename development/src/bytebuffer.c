@@ -181,10 +181,10 @@ int bb_zero(
     uint16_t count)
 #endif
 {
-    short ret;
+    int ret;
     if (index + count > arr->capacity)
     {
-        if ((ret = bb_capacity(arr, index + count)) != 0)
+        if ((ret = bb_capacity(arr, (index + count))) != 0)
         {
             return ret;
         }
@@ -688,13 +688,12 @@ int bb_getUInt16(
     gxByteBuffer* arr,
     uint16_t* value)
 {
-
     if (arr->position + 2 > arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = ((unsigned char*)arr->data)[arr->position] << 8 |
-        ((unsigned char*)arr->data)[arr->position + 1];
+    *value = (uint16_t)(((unsigned char*)arr->data)[arr->position] << 8 |
+        ((unsigned char*)arr->data)[arr->position + 1]);
     arr->position += 2;
     return 0;
 }
@@ -722,8 +721,8 @@ int bb_getInt16(
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = ((unsigned char*)arr->data)[arr->position] << 8 |
-        ((unsigned char*)arr->data)[arr->position + 1];
+    *value = (short)(((unsigned char*)arr->data)[arr->position] << 8 |
+        ((unsigned char*)arr->data)[arr->position + 1]);
     arr->position += 2;
     return 0;
 }
@@ -902,8 +901,8 @@ int bb_getUInt16ByIndex(
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = ((unsigned char*)arr->data)[index] << 8 |
-        ((unsigned char*)arr->data)[index + 1];
+    *value = (uint16_t)(((unsigned char*)arr->data)[index] << 8 |
+        ((unsigned char*)arr->data)[index + 1]);
     return 0;
 }
 
@@ -992,7 +991,7 @@ int bb_toHexString2(
     return hlp_bytesToHex2(arr->data, (uint16_t)arr->size, buffer, size);
 }
 
-#if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_STRING_CONVERTER) || !defined(DLMS_IGNORE_MALLOC)
 char* bb_toString(
     gxByteBuffer* arr)
 {
@@ -1032,7 +1031,7 @@ void bb_addDoubleAsString(
         bb_addString(bb, buff);
     }
 }
-#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) || !defined(DLMS_IGNORE_MALLOC)
 
 int bb_addIntAsString(gxByteBuffer* bb, int value)
 {

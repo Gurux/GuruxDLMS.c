@@ -188,7 +188,7 @@ int ba_setByIndex(bitArray* arr, uint16_t index, unsigned char item)
     byteIndex = getByteIndex(index);
     if (index % 8 == 0 || newItem)
     {
-        arr->data[byteIndex] = item << 7;
+        arr->data[byteIndex] = (unsigned char)(item << 7);
     }
     else
     {

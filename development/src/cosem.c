@@ -502,6 +502,15 @@ int cosem_init3(
     DLMS_OBJECT_TYPE type,
     const unsigned char* ln)
 {
+	return cosem_init4((void*) object, expectedSize, type, ln);
+}
+
+int cosem_init4(
+    void* object,
+    const unsigned char expectedSize,
+    DLMS_OBJECT_TYPE type,
+    const unsigned char* ln)
+{
     int size = cosem_getObjectSize(type);
     if (size == 0)
     {
@@ -512,13 +521,13 @@ int cosem_init3(
         return DLMS_ERROR_CODE_UNMATCH_TYPE;
     }
     memset(object, 0, size);
-    object->objectType = type;
-    object->logicalName[0] = ln[0];
-    object->logicalName[1] = ln[1];
-    object->logicalName[2] = ln[2];
-    object->logicalName[3] = ln[3];
-    object->logicalName[4] = ln[4];
-    object->logicalName[5] = ln[5];
+    ((gxObject*)object)->objectType = type;
+    ((gxObject*)object)->logicalName[0] = ln[0];
+    ((gxObject*)object)->logicalName[1] = ln[1];
+    ((gxObject*)object)->logicalName[2] = ln[2];
+    ((gxObject*)object)->logicalName[3] = ln[3];
+    ((gxObject*)object)->logicalName[4] = ln[4];
+    ((gxObject*)object)->logicalName[5] = ln[5];
     //Set default values, if any.
     switch (type)
     {
@@ -536,7 +545,7 @@ int cosem_init3(
     case DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME:
     {
         gxAssociationLogicalName* it = (gxAssociationLogicalName*)object;
-        object->version = 2;
+        ((gxObject*)object)->version = 2;
         it->xDLMSContextInfo.dlmsVersionNumber = 6;
         it->applicationContextName.jointIsoCtt = 2;
         it->applicationContextName.country = 16;
@@ -558,15 +567,15 @@ int cosem_init3(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
     {
-        object->shortName = 0xFA00;
-        object->version = 2;
+        ((gxObject*)object)->shortName = 0xFA00;
+        ((gxObject*)object)->version = 2;
     }
     break;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
         break;
     case DLMS_OBJECT_TYPE_AUTO_CONNECT:
-        object->version = 2;
+        ((gxObject*)object)->version = 2;
         break;
     case DLMS_OBJECT_TYPE_DEMAND_REGISTER:
         break;
@@ -580,7 +589,7 @@ int cosem_init3(
         break;
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
-        object->version = 1;
+        ((gxObject*)object)->version = 1;
         ((gxIecHdlcSetup*)object)->communicationSpeed = DLMS_BAUD_RATE_9600;
         ((gxIecHdlcSetup*)object)->windowSizeTransmit = 1;
         ((gxIecHdlcSetup*)object)->windowSizeReceive = 1;
@@ -592,10 +601,10 @@ int cosem_init3(
         break;
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
     case DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP:
-        object->version = 1;
+        ((gxObject*)object)->version = 1;
         break;
     case DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP:
-        object->version = 1;
+        ((gxObject*)object)->version = 1;
         break;
     case DLMS_OBJECT_TYPE_IP4_SETUP:
         break;
@@ -610,10 +619,10 @@ int cosem_init3(
     case DLMS_OBJECT_TYPE_LIMITER:
         break;
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
-        object->version = 1;
+        ((gxObject*)object)->version = 1;
         break;
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
-        object->version = 1;
+        ((gxObject*)object)->version = 1;
         break;
     case DLMS_OBJECT_TYPE_PPP_SETUP:
         break;
@@ -675,7 +684,7 @@ int cosem_init3(
     case DLMS_OBJECT_TYPE_TOKEN_GATEWAY:
         break;
     case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
-        object->version = 1;
+        ((gxObject*)object)->version = 1;
         break;
     default:
         break;
@@ -1580,7 +1589,8 @@ int getSelectedColumns(
     dlmsVARIANT* it, * it2;
     unsigned char* ln;
     DLMS_OBJECT_TYPE ot;
-    int ret, pos, pos2, dataIndex;
+    int ret, dataIndex;
+	uint16_t pos, pos2;
     unsigned char attributeIndex;
     for (pos = 0; pos != cols->size; ++pos)
     {
@@ -1797,7 +1807,7 @@ int cosem_getColumns(
                 {
                     return ret;
                 }
-                start = var_toInteger(it);
+                start = (uint16_t)var_toInteger(it);
             }
             if (parameters->Arr->size > 3)
             {
@@ -1805,7 +1815,7 @@ int cosem_getColumns(
                 {
                     return ret;
                 }
-                count = var_toInteger(it);
+                count = (uint16_t)var_toInteger(it);
             }
             else if (start != 1)
             {

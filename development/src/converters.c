@@ -30,6 +30,9 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <Ws2tcpip.h>
+#endif
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include <assert.h>
 #include <stdio.h> //printf needs this or error is generated.
@@ -44,16 +47,14 @@
 #include "../include/gxmem.h"
 #ifndef DLMS_IGNORE_STRING_CONVERTER
 #include <string.h>
-#include "../include/helpers.h"
 #include "../include/objectarray.h"
 #include "../include/gxkey.h"
-
 #endif //DLMS_IGNORE_STRING_CONVERTER
 #else
 #include "../include/enums.h"
-#include "../include/helpers.h"
 #endif //DLMS_IGNORE_MALLOC
 #include <string.h>
+#include "../include/helpers.h"
 
 int obj_typeToString(DLMS_OBJECT_TYPE type, char* buff)
 {
@@ -71,7 +72,8 @@ int obj_typeToString(DLMS_OBJECT_TYPE type, char* buff)
 
 int obj_UInt16ArrayToString(gxByteBuffer* bb, gxArray* arr)
 {
-    int ret = 0, pos;
+    int ret = 0;
+	uint16_t pos;
     uint16_t* it;
     for (pos = 0; pos != arr->size; ++pos)
     {
@@ -593,7 +595,8 @@ int obj_clockToString(gxClock* object, char** buff)
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
 int obj_ScriptTableToString(gxScriptTable* object, char** buff)
 {
-    int ret, pos, pos2;
+	int ret;
+    uint16_t pos, pos2;
     gxByteBuffer ba;
     gxScript* s;
     gxScriptAction* sa;
@@ -663,7 +666,8 @@ int obj_ScriptTableToString(gxScriptTable* object, char** buff)
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
 int obj_specialDaysTableToString(gxSpecialDaysTable* object, char** buff)
 {
-    int ret, pos;
+    int ret;
+	uint16_t pos;
     gxSpecialDay* sd;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -830,7 +834,8 @@ int obj_pushSetupToString(gxPushSetup* object, char** buff)
 int obj_autoConnectToString(gxAutoConnect* object, char** buff)
 {
     gxKey* k;
-    int pos, ret;
+    int ret;
+	uint16_t pos;
     gxByteBuffer ba, * dest;
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
@@ -880,7 +885,8 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
 int obj_seasonProfileToString(gxArray* arr, gxByteBuffer* ba)
 {
     gxSeasonProfile* it;
-    int pos, ret;
+    int ret;
+	uint16_t pos;
     bb_addString(ba, "[");
     for (pos = 0; pos != arr->size; ++pos)
     {
@@ -907,7 +913,8 @@ int obj_seasonProfileToString(gxArray* arr, gxByteBuffer* ba)
 int obj_weekProfileToString(gxArray* arr, gxByteBuffer* ba)
 {
     gxWeekProfile* it;
-    int pos, ret;
+    int ret;
+	uint16_t pos;
     bb_addString(ba, "[");
     for (pos = 0; pos != arr->size; ++pos)
     {
@@ -944,7 +951,8 @@ int obj_dayProfileToString(gxArray* arr, gxByteBuffer* ba)
 {
     gxDayProfile* dp;
     gxDayProfileAction* it;
-    int pos, pos2, ret;
+    int ret;
+	uint16_t pos, pos2;
     bb_addString(ba, "[");
     for (pos = 0; pos != arr->size; ++pos)
     {
@@ -1186,7 +1194,8 @@ int obj_demandRegisterToString(gxDemandRegister* object, char** buff)
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
 int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
 {
-    int pos, ret = 0;
+    int ret = 0;
+	uint16_t pos;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
     gxObjectDefinition* od;
     gxKey* it;
@@ -1280,7 +1289,8 @@ void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
 }
 int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
 {
-    int pos, ret;
+    int ret;
+	uint16_t pos;
     dlmsVARIANT* tmp;
     gxByteBuffer ba;
     gxActionSet* as;
@@ -1349,7 +1359,8 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
 int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
 {
-    int pos = 0, ret;
+    int ret;
+	uint16_t pos;
     gxtime* tm;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -1402,7 +1413,8 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
 int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
 {
-    int pos, ret;
+    int ret;
+	uint16_t pos;
     gxSapItem* it;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -1457,7 +1469,8 @@ int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
 #ifndef DLMS_IGNORE_IP4_SETUP
 int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
 {
-    int ret, pos;
+    int ret;
+	uint16_t pos;
 #if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     dlmsVARIANT* tmp;
 #else
@@ -1543,7 +1556,8 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
 int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
 {
     char tmp[64];
-    int pos, ret;
+    int ret;
+	uint16_t pos;
     IN6_ADDR* ip;
     if ((ret = bb_addString(ba, "{")) == 0)
     {
@@ -1557,6 +1571,7 @@ int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
             {
                 bb_addString(ba, ", ");
             }
+			//Add Ws2_32.lib for LabWindows/CVI.
             inet_ntop(AF_INET6, &ip, tmp, sizeof(tmp));
             bb_addString(ba, tmp);
         }
@@ -1570,7 +1585,8 @@ int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
 
 int obj_getNeighborDiscoverySetupAsString(gxByteBuffer* ba, gxArray* arr)
 {
-    int ret, pos;
+    int ret;
+	uint16_t pos;
     gxNeighborDiscoverySetup* it;
     if ((ret = bb_addString(ba, "{")) == 0)
     {
@@ -1628,6 +1644,8 @@ int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
         (ret = obj_getIPAddress(&ba, &object->gatewayIPAddress)) == 0 &&
         (ret = bb_addString(&ba, "]\nIndex: 7 Value: ")) == 0)
     {
+		//Add Ws2_32.lib for LabWindows/CVI.
+
         inet_ntop(AF_INET6, &object->primaryDNSAddress, tmp, sizeof(tmp));
         bb_addString(&ba, tmp);
         inet_ntop(AF_INET6, &object->secondaryDNSAddress, tmp, sizeof(tmp));
@@ -1687,7 +1705,8 @@ int obj_mbusSlavePortSetupToString(gxMbusSlavePortSetup* object, char** buff)
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
 int obj_imageTransferToString(gxImageTransfer* object, char** buff)
 {
-    int pos, ret;
+	uint16_t pos;
+    int ret;
     gxImageActivateInfo* it;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -1856,7 +1875,8 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
 int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
 {
-    int pos, ret;
+	uint16_t pos;
+    int ret;
     gxModemInitialisation* mi;
     gxByteBuffer ba, * it;
     BYTE_BUFFER_INIT(&ba);
@@ -2008,7 +2028,8 @@ int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
 {
     dlmsVARIANT* tmp;
     variantArray* va;
-    int r, c, ret;
+    int ret;
+	uint16_t r, c;
     for (r = 0; r != buffer->size; ++r)
     {
         ret = arr_getByIndex(buffer, r, (void**)&va);
@@ -2088,7 +2109,8 @@ void obj_authenticationMechanismNameToString(gxByteBuffer* ba, gxAuthenticationM
 
 int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** buff)
 {
-    int pos, ret = 0;
+	uint16_t pos;
+    int ret = 0;
     gxKey2* it;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -2230,7 +2252,8 @@ int obj_ProfileGenericToString(gxProfileGeneric* object, char** buff)
 #ifndef DLMS_IGNORE_ACCOUNT
 int obj_appendReferences(gxByteBuffer* ba, gxArray* list)
 {
-    int ret = 0, pos;
+	uint16_t pos;
+    int ret = 0;
     unsigned char* it;
     for (pos = 0; pos != list->size; ++pos)
     {
@@ -2374,6 +2397,7 @@ int obj_tokenGatewayToString(
 {
     char* tmp;
     gxByteBuffer ba;
+	bb_init(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     tmp = bb_toHexString(&object->token);
     bb_addString(&ba, tmp);
@@ -2393,7 +2417,8 @@ int obj_tokenGatewayToString(
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
 int obj_GsmDiagnosticToString(gxGsmDiagnostic* object, char** buff)
 {
-    int pos, ret;
+    int ret;
+	uint16_t pos;
     gxAdjacentCell* it;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -2544,7 +2569,8 @@ int obj_ParameterMonitorToString(gxParameterMonitor* object, char** buff)
 #ifndef DLMS_IGNORE_ARBITRATOR
 int obj_ArbitratorToString(gxArbitrator* object, char** buff)
 {
-    int pos, ret = 0;
+    uint16_t pos;
+ 	int ret = 0;
     gxByteBuffer bb;
     gxActionItem* it;
     bitArray* ba;
@@ -2677,7 +2703,8 @@ int obj_SFSKActiveInitiatorToString(gxSFSKActiveInitiator* object, char** buff)
 
 int obj_getArrayAsString(gxByteBuffer* bb, gxArray* arr)
 {
-    int ret = 0, pos;
+	uint16_t pos;
+    int ret = 0;
     gxUint16PairUint32* it;
     for (pos = 0; pos != arr->size; ++pos)
     {
@@ -2798,7 +2825,8 @@ int obj_SFSKPhyMacSetUpToString(gxSFSKPhyMacSetUp* object, char** buff)
 #ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 int obj_SFSKReportingSystemListToString(gxSFSKReportingSystemList* object, char** buff)
 {
-    int pos, ret = 0;
+	uint16_t pos;
+    int ret = 0;
     gxByteBuffer* it;
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);

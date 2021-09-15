@@ -705,6 +705,17 @@ int hlp_appendLogicalName(gxByteBuffer* bb, const unsigned char value[6])
 int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
 {
     int ret;
+#if defined(_WIN32) || defined(_WIN64)
+	#if _MSC_VER > 1000
+        ret = sprintf_s(ln, 25, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
+	#else
+	    ret = sprintf(ln, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
+	#endif  
+    if (ret != -1)
+    {
+        ret = 0;
+    }
+#else
     ret = hlp_intToString(ln, 25, value[0], 0, 1);
     if (ret != -1)
     {
@@ -745,6 +756,7 @@ int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
     {
         ret = 0;
     }
+#endif //WIN32
     return ret;
 }
 
@@ -936,8 +948,11 @@ int hlp_intToString(char* str, int bufsize, int32_t value, unsigned char isSigne
             return -1;
         }
         *str = (value % 10) + '0';
-        --str;
         value /= 10;
+		if (value != 0)
+		{
+        	--str;
+		}
         --bufsize;
         ++cnt;
     } while (value != 0);

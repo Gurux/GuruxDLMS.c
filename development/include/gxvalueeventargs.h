@@ -95,11 +95,11 @@ extern "C" {
         /**
         *  Transaction begin index.
         */
-        uint16_t transactionStartIndex;
+        uint32_t transactionStartIndex;
         /**
         *  Transaction end index.
         */
-        uint16_t transactionEndIndex;
+        uint32_t transactionEndIndex;
         //It this transaction.
         uint16_t transaction;
     } gxValueEventArg;

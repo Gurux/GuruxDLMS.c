@@ -29,8 +29,8 @@
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
-#ifndef GXIGNORE_H
-#define GXIGNORE_H
+#ifndef ARDUINO_IGNORE_H
+#define ARDUINO_IGNORE_H
 
 #ifdef  __cplusplus
 extern "C" {
@@ -126,4 +126,4 @@ extern "C" {
 }
 #endif
 
-#endif //GXIGNORE_H
+#endif //ARDUINO_IGNORE_H

@@ -59,25 +59,25 @@ extern "C" {
   int cosem_init(
       gxObject* object,
       DLMS_OBJECT_TYPE type,
-      const char* logicalNameString);
+      uint8_t* logicalNameString);
 #endif //DLMS_IGNORE_MALLOC
 
   int cosem_init2(
     gxObject* object,
     DLMS_OBJECT_TYPE type,
-    const unsigned char* ln);
+    const uint8_t * ln);
 
   //This initialize method will also check the size of the object type and compare it with the expected size.
   int cosem_init3(
       gxObject* object,
-      const unsigned char expectedSize,
+      uint16_t expectedSize,
       DLMS_OBJECT_TYPE type,
       const unsigned char* ln);
 
   //This initialize method will also check the size of the object type and compare it with the expected size.
   int cosem_init4(
       void* object,
-      const unsigned char expectedSize,
+      uint16_t expectedSize,
       DLMS_OBJECT_TYPE type,
       const unsigned char* ln);
 

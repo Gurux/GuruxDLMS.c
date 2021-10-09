@@ -480,7 +480,7 @@ int cosem_setLogicalName(
 int cosem_init(
     gxObject* object,
     DLMS_OBJECT_TYPE type,
-    const char* logicalNameString)
+    uint8_t * logicalNameString)
 {
     unsigned char ln[6];
     hlp_setLogicalName(ln, logicalNameString);
@@ -498,7 +498,7 @@ int cosem_init2(
 
 int cosem_init3(
     gxObject* object,
-    const unsigned char expectedSize,
+    const uint16_t expectedSize,
     DLMS_OBJECT_TYPE type,
     const unsigned char* ln)
 {
@@ -507,7 +507,7 @@ int cosem_init3(
 
 int cosem_init4(
     void* object,
-    const unsigned char expectedSize,
+    uint16_t expectedSize,
     DLMS_OBJECT_TYPE type,
     const unsigned char* ln)
 {

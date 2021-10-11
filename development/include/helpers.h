@@ -130,7 +130,7 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 #if !defined(DLMS_IGNORE_MALLOC)
     //Set logical name from string.
-    int hlp_setLogicalName(unsigned char ln[6], const char* name);
+    int hlp_setLogicalName(unsigned char ln[6], const uint8_t *name);
 #endif //!defined(DLMS_IGNORE_MALLOC)
 
 #if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
@@ -139,7 +139,7 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     int hlp_parseLogicalName(gxByteBuffer* value, unsigned char ln[6]);
 
     //Set logical name from string.
-    int hlp_setLogicalName2(dlmsVARIANT* ln, const char* name);
+    int hlp_setLogicalName2(dlmsVARIANT* ln, const uint8_t *name);
 
     int hlp_appendLogicalName(gxByteBuffer* bb, const unsigned char value[6]);
 

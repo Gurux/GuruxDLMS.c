@@ -46,9 +46,9 @@ extern "C" {
       gxObject** object);
 
   int cosem_createObject2(
-      DLMS_OBJECT_TYPE type,
-      const char* ln,
-      gxObject** object);
+          DLMS_OBJECT_TYPE type,
+          const uint8_t *ln,
+          gxObject** object);
 #endif //DLMS_IGNORE_MALLOC
 
   int cosem_setLogicalName(

@@ -656,7 +656,7 @@ int hlp_parseLogicalName(gxByteBuffer* value, unsigned char ln[6])
 }
 
 //Set logical name from string.
-int hlp_setLogicalName2(dlmsVARIANT* ln, const char* name)
+int hlp_setLogicalName2(dlmsVARIANT* ln, const uint8_t *name)
 {
     int ret;
     unsigned char tmp[6];
@@ -762,12 +762,12 @@ int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
 
 #if !defined(DLMS_IGNORE_MALLOC)
 //Set logical name from string.
-int hlp_setLogicalName(unsigned char ln[6], const char* name)
+int hlp_setLogicalName(unsigned char ln[6], const uint8_t *name)
 {
     char* ch;
     char* pOriginalBuff;
     char* pBuff;
-    int val = 0, count = 0, size = (int)strlen(name);
+    int val = 0, count = 0, size = (int)strlen((char *)name);
     if (size < 11)
     {
         return -1;

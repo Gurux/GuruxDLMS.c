@@ -167,7 +167,7 @@ int startServers(int port, int trace)
             }
         }
 #else
-        char ch = _getch();
+        char ch = getchar();
         if (ch == '\n')
         {
             printf("Closing the server.\n");
@@ -176,6 +176,7 @@ int startServers(int port, int trace)
 #endif
     }
     con_close(&snHdlc);
+    con_close(&lnHdlc);
     con_close(&snWrapper);
     con_close(&lnWrapper);
     return 0;
@@ -283,6 +284,7 @@ int main(int argc, char* argv[])
             return 1;
         }
     }
+    trace = GX_TRACE_LEVEL_ERROR;
     startServers(port, trace);
 #if defined(_WIN32) || defined(_WIN64)//Windows
 

@@ -2620,7 +2620,7 @@ void svr_preAction(
                 }
                 info->identification.size = size;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                printf("Updating image %s Size: %d\r\n", imageFile, info->size);
+                printf("Updating image %s Size: %ld\r\n", imageFile, info->size);
 #endif
                 allocateImageTransfer(imageFile, info->size);
                 ba_clear(&i->imageTransferredBlocksStatus);
@@ -2926,7 +2926,7 @@ int sendPush(
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    pos = (int)(p - push->destination.data);
+    pos = (int)(p - (char *)push->destination.data);
     host = (char*)malloc(pos + 1);
     memcpy(host, push->destination.data, pos);
     host[pos] = '\0';

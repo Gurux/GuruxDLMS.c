@@ -454,9 +454,9 @@ int cosem_createObject(DLMS_OBJECT_TYPE type, gxObject** object)
 }
 
 int cosem_createObject2(
-    DLMS_OBJECT_TYPE type,
-    const char* ln,
-    gxObject** object)
+        DLMS_OBJECT_TYPE type,
+        const uint8_t *ln,
+        gxObject** object)
 {
     int ret = cosem_createObject(type, object);
     if (ret != 0)
@@ -480,7 +480,7 @@ int cosem_setLogicalName(
 int cosem_init(
     gxObject* object,
     DLMS_OBJECT_TYPE type,
-    uint8_t * logicalNameString)
+    uint8_t* logicalNameString)
 {
     unsigned char ln[6];
     hlp_setLogicalName(ln, logicalNameString);

@@ -586,16 +586,15 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-
+        gxtime time;
+        gxtime begin;
+        gxtime end;
+        gxtime presetTime;
+        DLMS_CLOCK_STATUS status;
         DLMS_CLOCK_BASE clockBase;
+        int16_t timeZone;
         signed char deviation;
         unsigned char enabled;
-        gxtime end;
-        DLMS_CLOCK_STATUS status;
-        gxtime begin;
-        int16_t timeZone;
-        gxtime time;
-        gxtime presetTime;
     } gxClock;
 
 #ifndef DLMS_IGNORE_CLOCK

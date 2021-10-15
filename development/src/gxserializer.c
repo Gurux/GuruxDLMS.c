@@ -191,9 +191,9 @@ int ser_seek(gxSerializerSettings* serializeSettings, int count)
 //Whether to save the item.
 unsigned char ser_serialize(gxSerializerSettings* serializeSettings)
 {
-    if (serializeSettings->savedObject != NULL)
+    if (serializeSettings->savedObject != NULL && serializeSettings->currentIndex != 0)
     {
-        return serializeSettings->savedObject == serializeSettings->currentObject &&
+        return serializeSettings->savedObject == serializeSettings->currentObject &&            
             (serializeSettings->savedAttributes & 1 << (serializeSettings->currentIndex - 1)) != 0;
     }
     return 1;
@@ -4220,6 +4220,21 @@ int ser_saveObject(
     return ret;
 }
 
+#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+void ResetPosition(gxSerializerSettings* serializeSettings)
+{
+    serializeSettings->currentObject = NULL;
+    serializeSettings->currentIndex = 0;
+    serializeSettings->position = 0;
+    serializeSettings->updateEnd = 0;
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) && !defined(GX_DLMS_MICROCONTROLLER)
+    serializeSettings->updateStart = 0xFFFFFFFF;
+#else
+    serializeSettings->updateStart = 0xFFFF;
+#endif //defined(GX_DLMS_BYTE_BUFFER_SIZE_32) && !defined(GX_DLMS_MICROCONTROLLER)
+}
+#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+
 //Serialize objects to bytebuffer.
 int ser_saveObjects(
     gxSerializerSettings* serializeSettings,
@@ -4228,6 +4243,10 @@ int ser_saveObjects(
 {
     uint16_t pos;
     int ret = 0;
+#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    ResetPosition(serializeSettings);
+#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+
 #ifdef DLMS_IGNORE_MALLOC
     if (serializeSettings->savedAttributes == 0)
     {
@@ -4314,6 +4333,9 @@ int ser_saveObjects2(
     uint16_t pos;
     int ret;
     gxObject* obj;
+#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    ResetPosition(serializeSettings);
+#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 #ifdef DLMS_IGNORE_MALLOC
     if (serializeSettings->savedAttributes == 0)
     {
@@ -7566,6 +7588,9 @@ int ser_getDataSize(gxSerializerSettings* serializeSettings, uint32_t* size)
     int ret;
     //Serializer version number.
     unsigned char version;
+#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    ResetPosition(serializeSettings);
+#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     if ((ret = ser_loadUInt8(serializeSettings, &version)) == 0)
     {
         if (version == 0 || version > SERIALIZATION_VERSION)

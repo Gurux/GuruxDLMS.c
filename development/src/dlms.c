@@ -6608,10 +6608,24 @@ int dlms_parseSnrmUaResponse(
         switch (id)
         {
         case HDLC_INFO_MAX_INFO_TX:
+#ifdef DLMS_IGNORE_MALLOC
+            if (var_toInteger(&value) < settings->maxInfoRX)
+            {
+                settings->maxInfoRX = (uint16_t)var_toInteger(&value);
+            }
+#else
             settings->maxInfoRX = (uint16_t)var_toInteger(&value);
+#endif //DLMS_IGNORE_MALLOC
             break;
         case HDLC_INFO_MAX_INFO_RX:
+#ifdef DLMS_IGNORE_MALLOC
+            if (var_toInteger(&value) < settings->maxInfoTX)
+            {
+                settings->maxInfoTX = (uint16_t)var_toInteger(&value);
+            }
+#else
             settings->maxInfoTX = (uint16_t)var_toInteger(&value);
+#endif //DLMS_IGNORE_MALLOC
             break;
         case HDLC_INFO_WINDOW_SIZE_TX:
             settings->windowSizeRX = (unsigned char)var_toInteger(&value);
@@ -6656,7 +6670,6 @@ int dlms_isPduFull(dlmsSettings* settings, gxByteBuffer* data, uint16_t* size)
             }
             len = *size;
         }
-
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (settings->cipher.security != DLMS_SECURITY_NONE)
         {

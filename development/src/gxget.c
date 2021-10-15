@@ -575,17 +575,20 @@ int getLNObjects(
                     --count;
                 }
             }
-            //Remove objects that are only internal use.
-            for (pos2 = 0; pos2 != settings->internalObjects.size; ++pos2)
+            if (!found)
             {
-                if ((ret = oa_getByIndex(&settings->internalObjects, pos2, &it2)) != 0)
+                //Remove objects that are only internal use.
+                for (pos2 = 0; pos2 != settings->internalObjects.size; ++pos2)
                 {
-                    return ret;
-                }
-                if (it2 == it)
-                {
-                    --count;
-                    break;
+                    if ((ret = oa_getByIndex(&settings->internalObjects, pos2, &it2)) != 0)
+                    {
+                        return ret;
+                    }
+                    if (it2 == it)
+                    {
+                        --count;
+                        break;
+                    }
                 }
             }
         }
@@ -647,7 +650,6 @@ int getLNObjects(
             {
                 if (!(it == e->target || memcmp(ln, it->logicalName, 6) == 0))
                 {
-                    ++e->transactionStartIndex;
                     continue;
                 }
             }

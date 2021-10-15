@@ -101,7 +101,8 @@ extern "C" {
 
     //Check is client changing the settings with action.
     //This can be used to check is meter data changed.
-    unsigned char svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex);
+    //Return value is saved atribute index or zero if nothing hasn't change.
+    uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex);
 #ifdef  __cplusplus
 }
 #endif

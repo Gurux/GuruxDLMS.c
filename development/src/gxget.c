@@ -213,7 +213,7 @@ int cosem_getActionSchedule(
     gxValueEventArg* e)
 {
     int ret = DLMS_ERROR_CODE_OK;
-	uint16_t pos;
+    uint16_t pos;
     gxtime* tm;
     gxActionSchedule* object = (gxActionSchedule*)e->target;
     gxByteBuffer* data = e->value.byteArr;
@@ -280,7 +280,7 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
     gxDayProfile* dp;
     gxDayProfileAction* action;
     int ret;
-	uint16_t pos, pos2;
+    uint16_t pos, pos2;
     if ((ret = cosem_setArray(ba, list->size)) != 0)
     {
         return ret;
@@ -333,7 +333,7 @@ int getActivityCalendarDayProfileTable(gxArray* list, gxByteBuffer* ba)
 int getActivityCalendarWeekProfileTable(gxArray* list, gxByteBuffer* ba)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxWeekProfile* wp;
     //Add count
     if ((ret = cosem_setArray(ba, list->size)) != 0)
@@ -378,7 +378,7 @@ int getActivityCalendarWeekProfileTable(gxArray* list, gxByteBuffer* ba)
 int getActivityCalendarSeasonProfile(gxArray* list, gxByteBuffer* ba)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxSeasonProfile* sp;
     //Add count
     if ((ret = cosem_setArray(ba, list->size)) != 0)
@@ -544,9 +544,9 @@ int getLNObjects(
     uint16_t pduSize;
     gxAssociationLogicalName* object = (gxAssociationLogicalName*)e->target;
     int ret;
-    uint16_t pos;
+    uint16_t pos, pos2;
     unsigned char found = 0;
-    gxObject* it;
+    gxObject* it, * it2;
     unsigned char ln[] = { 0, 0, 40, 0, 0, 255 };
     if ((ret = bb_capacity(data, settings->maxPduSize)) != 0)
     {
@@ -556,13 +556,10 @@ int getLNObjects(
     if (!e->transaction)
     {
         uint16_t count = object->objectList.size;
-        e->transactionEndIndex = object->objectList.size;
-
         //Find current association and if nout found add it.
         for (pos = 0; pos != object->objectList.size; ++pos)
         {
-            ret = oa_getByIndex(&object->objectList, pos, &it);
-            if (ret != 0)
+            if ((ret = oa_getByIndex(&object->objectList, pos, &it)) != 0)
             {
                 return ret;
             }
@@ -578,11 +575,25 @@ int getLNObjects(
                     --count;
                 }
             }
+            //Remove objects that are only internal use.
+            for (pos2 = 0; pos2 != settings->internalObjects.size; ++pos2)
+            {
+                if ((ret = oa_getByIndex(&settings->internalObjects, pos2, &it2)) != 0)
+                {
+                    return ret;
+                }
+                if (it2 == it)
+                {
+                    --count;
+                    break;
+                }
+            }
         }
         if (!found)
         {
             ++count;
         }
+        e->transactionEndIndex = count;
         if ((ret = cosem_setArray(data, count)) != 0)
         {
             return ret;
@@ -608,6 +619,7 @@ int getLNObjects(
             }
         }
     }
+    unsigned char ignore;
     for (pos = (uint16_t)e->transactionStartIndex; pos != object->objectList.size; ++pos)
     {
         ret = oa_getByIndex(&object->objectList, pos, &it);
@@ -615,42 +627,59 @@ int getLNObjects(
         {
             return ret;
         }
-        if (it->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
+        ignore = 0;
+        //Remove objects that are only internal use.
+        for (pos2 = 0; pos2 != settings->internalObjects.size; ++pos2)
         {
-            if (!(it == e->target || memcmp(ln, it->logicalName, 6) == 0))
+            if ((ret = oa_getByIndex(&settings->internalObjects, pos2, &it2)) != 0)
             {
-                ++e->transactionStartIndex;
-                continue;
+                return ret;
             }
-        }
-        pduSize = (uint16_t)data->size;
-        //Count
-        if ((ret = cosem_setStructure(data, 4)) != 0 ||
-            //ClassID
-            (ret = cosem_setUInt16(data, it->objectType)) != 0 ||
-            //Version
-            (ret = cosem_setUInt8(data, (unsigned char)it->version)) != 0 ||
-            //LN.
-            (ret = cosem_setOctetString2(data, it->logicalName, 6)) != 0)
-        {
-            break;
-        }
-        //Access rights.
-        ret = getLNAccessRights(settings, it, data);
-        if (ret != 0)
-        {
-            break;
-        }
-        if (settings->server)
-        {
-            //If PDU is full.
-            if (!e->skipMaxPduSize && dlms_isPduFull(settings, data, NULL))
+            if (it2 == it)
             {
-                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                ignore = 1;
                 break;
             }
         }
-        ++e->transactionStartIndex;
+        if (!ignore)
+        {
+            if (it->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
+            {
+                if (!(it == e->target || memcmp(ln, it->logicalName, 6) == 0))
+                {
+                    ++e->transactionStartIndex;
+                    continue;
+                }
+            }
+            pduSize = (uint16_t)data->size;
+            //Count
+            if ((ret = cosem_setStructure(data, 4)) != 0 ||
+                //ClassID
+                (ret = cosem_setUInt16(data, it->objectType)) != 0 ||
+                //Version
+                (ret = cosem_setUInt8(data, (unsigned char)it->version)) != 0 ||
+                //LN.
+                (ret = cosem_setOctetString2(data, it->logicalName, 6)) != 0)
+            {
+                break;
+            }
+            //Access rights.
+            ret = getLNAccessRights(settings, it, data);
+            if (ret != 0)
+            {
+                break;
+            }
+            if (settings->server)
+            {
+                //If PDU is full.
+                if (!e->skipMaxPduSize && dlms_isPduFull(settings, data, NULL))
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+            }
+            ++e->transactionStartIndex;
+        }
     }
     if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
     {
@@ -712,7 +741,7 @@ int getUserList(
         // Count
         if ((ret = cosem_setStructure(data, 2)) != 0 ||
             // Id
-            (ret = cosem_setUInt8(data, (unsigned char) id)) != 0 ||
+            (ret = cosem_setUInt8(data, (unsigned char)id)) != 0 ||
             // Name
             (ret = cosem_setOctetString2(data, (unsigned char*)name, len)) != 0)
         {
@@ -1022,7 +1051,7 @@ int cosem_getAutoAnswer(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxAutoAnswer* object = (gxAutoAnswer*)e->target;
     gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
@@ -1092,7 +1121,7 @@ int cosem_getAutoConnect(
     gxValueEventArg* e)
 {
     int ret = DLMS_ERROR_CODE_OK;
-	uint16_t pos;
+    uint16_t pos;
 #ifndef DLMS_IGNORE_MALLOC
     gxKey* k;
     gxByteBuffer* it;
@@ -1169,9 +1198,6 @@ int cosem_getAutoConnect(
                 break;
             }
 #endif //DLMS_IGNORE_MALLOC
-            {
-                break;
-            }
         }
     }
     else
@@ -1411,7 +1437,7 @@ int cosem_getSecuritySetup(
                     break;
                 }
                 len = (uint16_t)strlen(it->serialNumber);
-                if ((ret = cosem_setOctetString2(data, (unsigned char*)it->serialNumber,  len)) != 0)
+                if ((ret = cosem_setOctetString2(data, (unsigned char*)it->serialNumber, len)) != 0)
                 {
                     break;
                 }
@@ -1583,7 +1609,7 @@ int cosem_getIP4Setup(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
 #if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     dlmsVARIANT* tmp;
 #endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
@@ -1729,7 +1755,7 @@ int getAddressList(gxArray* list, gxValueEventArg* e)
 {
     IN6_ADDR* it;
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     if ((ret = cosem_setArray(e->value.byteArr, list->size)) == 0)
     {
         for (pos = 0; pos != list->size; ++pos)
@@ -1867,7 +1893,7 @@ int cosem_getImageTransfer(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxImageActivateInfo* ai;
     gxImageTransfer* object = (gxImageTransfer*)e->target;
     gxByteBuffer* data = e->value.byteArr;
@@ -1958,7 +1984,7 @@ int getColumns(
 {
     uint16_t pduSize;
     int ret = 0;
-	uint16_t pos;
+    uint32_t pos;
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     gxTarget* it;
 #else
@@ -1981,7 +2007,7 @@ int getColumns(
     {
         pduSize = (uint16_t)ba->size;
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxTarget))) != 0)
+        if ((ret = arr_getByIndex(list, (uint16_t)pos, (void**)&it, sizeof(gxTarget))) != 0)
         {
             break;
         }
@@ -2016,7 +2042,7 @@ int getColumns(
             break;
         }
 #else
-        if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0 ||
+        if ((ret = arr_getByIndex(list, (uint16_t)pos, (void**)&it)) != 0 ||
             (ret = bb_setUInt8(ba, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             (ret = bb_setUInt8(ba, 4)) != 0 ||
             //ClassID
@@ -2623,7 +2649,7 @@ int cosem_getmMbusClient(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxMBusClient* object = (gxMBusClient*)e->target;
     gxByteBuffer* data = e->value.byteArr;
 #ifdef DLMS_IGNORE_MALLOC
@@ -2756,7 +2782,7 @@ int cosem_getModemConfiguration(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxModemInitialisation* mi;
 #ifdef DLMS_IGNORE_MALLOC
     gxModemProfile* ba;
@@ -2831,9 +2857,9 @@ int cosem_getModemConfiguration(
                 (ret = cosem_add(data, "BUSY", 4) != 0) ||
                 (ret = cosem_add(data, "NO ANSWER", 9) != 0) ||
                 (ret = cosem_add(data, "CONNECT 600", 11) != 0) ||
-                (ret = cosem_add(data, "CONNECT 2400", 11) != 0) ||
-                (ret = cosem_add(data, "CONNECT 4800", 11) != 0) ||
-                (ret = cosem_add(data, "CONNECT 9600", 11) != 0) ||
+                (ret = cosem_add(data, "CONNECT 2400", 12) != 0) ||
+                (ret = cosem_add(data, "CONNECT 4800", 12) != 0) ||
+                (ret = cosem_add(data, "CONNECT 9600", 12) != 0) ||
                 (ret = cosem_add(data, "CONNECT 14 400", 14) != 0) ||
                 (ret = cosem_add(data, "CONNECT 28 800", 14) != 0) ||
                 (ret = cosem_add(data, "CONNECT 33 600", 14) != 0) ||
@@ -2881,7 +2907,7 @@ int cosem_getPppSetup(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxpppSetupLcpOption* lcpItem;
     gxpppSetupIPCPOption* ipcpItem;
     gxPppSetup* object = (gxPppSetup*)e->target;
@@ -3006,7 +3032,7 @@ int cosem_getRegisterActivation(
     gxValueEventArg* e)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     gxObject* od;
 #else
@@ -3163,7 +3189,7 @@ int cosem_getRegisterMonitor(
     gxValueEventArg* e)
 {
     int ret = DLMS_ERROR_CODE_OK;
-	uint16_t pos;
+    uint16_t pos;
     dlmsVARIANT_PTR tmp;
     gxActionSet* actionSet;
     gxRegisterMonitor* object = (gxRegisterMonitor*)e->target;
@@ -3273,7 +3299,7 @@ int cosem_getSapAssignment(
     gxValueEventArg* e)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxSapItem* it;
     gxSapAssignment* object = (gxSapAssignment*)e->target;
     gxByteBuffer* data = e->value.byteArr;
@@ -3323,7 +3349,7 @@ int cosem_getSchedule(
     gxValueEventArg* e)
 {
     int ret = DLMS_ERROR_CODE_OK;
-	uint16_t pos;
+    uint16_t pos;
     gxScheduleEntry* se;
     gxSchedule* object = (gxSchedule*)e->target;
     gxByteBuffer* data = e->value.byteArr;
@@ -3386,7 +3412,7 @@ int cosem_getScriptTable(
     gxValueEventArg* e)
 {
     int ret;
-	uint16_t pos, pos2;
+    uint16_t pos, pos2;
     gxScript* it;
     gxScriptAction* a;
     gxScriptTable* object = (gxScriptTable*)e->target;
@@ -3454,7 +3480,7 @@ int cosem_getSpecialDaysTable(
     gxValueEventArg* e)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     dlmsVARIANT tmp;
     gxSpecialDay* sd;
     gxSpecialDaysTable* object = (gxSpecialDaysTable*)e->target;
@@ -3578,7 +3604,7 @@ int cosem_getPushSetup(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     gxTarget* it;
     gxTimePair* d;
@@ -3703,7 +3729,7 @@ int cosem_getZigbeeNetworkControl(
 {
     gxZigBeeNetworkControl* object = (gxZigBeeNetworkControl*)e->target;
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxActiveDevice* it;
     gxByteBuffer* data = e->value.byteArr;
     if (e->index == 2)
@@ -3772,7 +3798,7 @@ int cosem_getZigbeeNetworkControl(
 int getUnitCharge(gxUnitCharge* target, gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxChargeTable* it;
     gxByteBuffer* data = e->value.byteArr;
     if ((ret = cosem_setStructure(data, 3)) != 0 ||
@@ -3898,7 +3924,7 @@ int cosem_getTokenGateway(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxByteBuffer* data = e->value.byteArr;
 #ifdef DLMS_IGNORE_MALLOC
     gxTokenGatewayDescription* it;
@@ -4015,7 +4041,7 @@ int cosem_getAccount(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     unsigned char* it;
     gxCreditChargeConfiguration* ccc;
     gxTokenGatewayConfiguration* gwc;
@@ -4108,9 +4134,9 @@ int cosem_getAccount(
                         (ret = cosem_setOctetString2(data, ccc->chargeReference, 6)) != 0 ||
                         //collection configuration
                         (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
-                    {
-                        break;
-                    }
+                {
+                    break;
+                }
         }
     }
     else if (e->index == 12)
@@ -4800,7 +4826,7 @@ int cosem_getGsmDiagnostic(
     gxByteBuffer* data = e->value.byteArr;
     gxGsmDiagnostic* object = (gxGsmDiagnostic*)e->target;
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     switch (e->index)
     {
     case 2:
@@ -4915,7 +4941,7 @@ int cosem_getParameterMonitor(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxByteBuffer* data = e->value.byteArr;
     gxParameterMonitor* object = (gxParameterMonitor*)e->target;
     switch (e->index)
@@ -5155,7 +5181,7 @@ int cosem_getPrimeNbOfdmPlcMacFunctionalParameters(
         ret = cosem_setUInt8(e->value.byteArr, object->beaconTxFrequency);
         break;
     case 14:
-        ret = cosem_setEnum(e->value.byteArr, (unsigned char) object->capabilities);
+        ret = cosem_setEnum(e->value.byteArr, (unsigned char)object->capabilities);
         break;
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -5204,7 +5230,7 @@ int cosem_getMulticastEntries(gxValueEventArg* e)
 {
     gxMacMulticastEntry* it;
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
     gxByteBuffer* data = e->value.byteArr;
     if ((ret = cosem_setArray(data, object->multicastEntries.size)) == 0)
@@ -5241,7 +5267,7 @@ int cosem_getSwitchTable(gxValueEventArg* e)
 {
     uint16_t* it;
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
     gxByteBuffer* data = e->value.byteArr;
     if ((ret = cosem_setArray(data, object->switchTable.size)) == 0)
@@ -5272,7 +5298,7 @@ int cosem_getDirectTable(gxValueEventArg* e)
 {
     gxMacDirectTable* it;
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
     gxByteBuffer* data = e->value.byteArr;
     if ((ret = cosem_setArray(data, object->directTable.size)) == 0)
@@ -5311,7 +5337,7 @@ int cosem_getAvailableSwitches(gxValueEventArg* e)
 {
     gxMacAvailableSwitch* it;
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
     gxByteBuffer* data = e->value.byteArr;
     if ((ret = cosem_setArray(data, object->availableSwitches.size)) == 0)
@@ -5348,8 +5374,8 @@ int cosem_getCommunications(gxValueEventArg* e)
 {
     gxMacPhyCommunication* it;
     int ret;
-	uint16_t pos;
-	gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
+    uint16_t pos;
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object = (gxPrimeNbOfdmPlcMacNetworkAdministrationData*)e->target;
     gxByteBuffer* data = e->value.byteArr;
     if ((ret = cosem_setArray(data, object->communications.size)) == 0)
     {
@@ -5443,7 +5469,7 @@ int  cosem_getPrimeNbOfdmPlcApplicationsIdentification(
 int cosem_getArbitrator(gxValueEventArg* e)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxActionItem* it;
     gxByteBuffer* data = e->value.byteArr;
     gxArbitrator* object = (gxArbitrator*)e->target;
@@ -5695,7 +5721,7 @@ int cosem_getFSKMacCounters(
     gxValueEventArg* e)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxByteBuffer* data = e->value.byteArr;
     gxFSKMacCounters* object = (gxFSKMacCounters*)e->target;
     switch (e->index)

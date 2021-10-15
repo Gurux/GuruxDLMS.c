@@ -830,7 +830,6 @@ double hlp_getScaler(int scaler)
     return pow((float)10, scaler);
 #else
     return 1;
-    //TODO:
 #endif
 }
 

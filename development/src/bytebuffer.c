@@ -94,11 +94,7 @@ uint32_t bb_size(gxByteBuffer* arr)
 uint16_t bb_size(gxByteBuffer* arr)
 #endif
 {
-    if (arr == NULL)
-    {
-        return 0;
-    }
-    return arr->size;
+    return arr != NULL ? arr->size : 0;
 }
 
 int BYTE_BUFFER_INIT(
@@ -524,14 +520,14 @@ int bb_set2(
 #endif
         {
             count = data->size - index;
-        }
+    }
         int ret = bb_set(arr, data->data + index, count);
         if (ret == 0)
         {
             data->position += count;
         }
         return ret;
-    }
+}
     return 0;
 }
 
@@ -578,8 +574,16 @@ int bb_attach(
     }
     arr->data = value;
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    if (capacity >= 0x80000000)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     arr->capacity = (0x80000000 | capacity);
 #else
+    if (capacity >= 0x8000)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     arr->capacity = (uint16_t)(0x8000 | capacity);
 #endif
     arr->size = count;
@@ -634,7 +638,7 @@ int bb_clear(
     arr->size = 0;
     arr->position = 0;
     return 0;
-}
+    }
 
 int bb_empty(
     gxByteBuffer* arr)
@@ -991,7 +995,7 @@ int bb_toHexString2(
     return hlp_bytesToHex2(arr->data, (uint16_t)arr->size, buffer, size);
 }
 
-#if !defined(DLMS_IGNORE_STRING_CONVERTER) || !defined(DLMS_IGNORE_MALLOC)
+#if !(defined(DLMS_IGNORE_STRING_CONVERTER) || defined(DLMS_IGNORE_MALLOC))
 char* bb_toString(
     gxByteBuffer* arr)
 {
@@ -1031,7 +1035,7 @@ void bb_addDoubleAsString(
         bb_addString(bb, buff);
     }
 }
-#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) || !defined(DLMS_IGNORE_MALLOC)
+#endif //!(defined(DLMS_IGNORE_STRING_CONVERTER) || defined(DLMS_IGNORE_MALLOC))
 
 int bb_addIntAsString(gxByteBuffer* bb, int value)
 {

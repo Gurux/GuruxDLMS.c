@@ -143,6 +143,17 @@ extern "C" {
         unsigned char item);
 #endif
 
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    int bb_allocate(
+        gxByteBuffer* arr,
+        uint32_t index,
+        uint32_t dataSize);
+#else
+    int bb_allocate(
+        gxByteBuffer* arr,
+        uint16_t index,
+        uint16_t dataSize);
+#endif
     //Set new data to the gxByteBuffer.
     int bb_setUInt8(
         gxByteBuffer* bb,
@@ -417,7 +428,7 @@ extern "C" {
         char* buffer,
         uint16_t size);
 
-#if !defined(DLMS_IGNORE_STRING_CONVERTER) || !defined(DLMS_IGNORE_MALLOC)
+#if !(defined(DLMS_IGNORE_STRING_CONVERTER) || defined(DLMS_IGNORE_MALLOC))
     //Get byte array as a string.
     char* bb_toString(
         gxByteBuffer* bb);
@@ -430,7 +441,7 @@ extern "C" {
     void bb_addDoubleAsString(
         gxByteBuffer* ba,
         double value);
-#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_MALLOC)
+#endif //!(defined(DLMS_IGNORE_STRING_CONVERTER) || defined(DLMS_IGNORE_MALLOC))
 
     //Add integer value to byte array as a string.
     int bb_addIntAsString(

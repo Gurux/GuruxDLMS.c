@@ -587,11 +587,11 @@ extern "C" {
         */
         gxObject base;
 
-        DLMS_CLOCK_BASE clockBase;
+        DLMS_CLOCK_BASE clockBase: 8;
         signed char deviation;
         unsigned char enabled;
         gxtime end;
-        DLMS_CLOCK_STATUS status;
+        DLMS_CLOCK_STATUS status : 8;
         gxtime begin;
         int16_t timeZone;
         gxtime time;

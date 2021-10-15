@@ -51,6 +51,7 @@
 #include "../include/gxset.h"
 #include "../include/gxget.h"
 #include "../include/gxinvoke.h"
+#include "../include/gxserializer.h"
 
 typedef struct
 {
@@ -767,7 +768,7 @@ int dlms_addFrame(
 #endif //DLMS_DEBUG
         }
     }
-        break;
+    break;
 #endif //DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_WRAPPER
     case DLMS_INTERFACE_TYPE_WRAPPER:
@@ -1025,6 +1026,10 @@ int svr_handleSetRequest2(
                             else if (!e->handled && !p->multipleBlocks)
                             {
                                 ret = cosem_setValue(&settings->base, e);
+                                if (ret != 0 && e->error == 0)
+                                {
+                                    e->error = ret;
+                                }
                                 svr_postWrite(&settings->base, &list);
                                 if (e->error != 0)
                                 {
@@ -1393,7 +1398,12 @@ int svr_getRequestNormal(
     gxLNParameters p;
     params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 1, NULL, data, status, settings->info.encryptedCommand, moreData, !moreData);
     ret = dlms_getLNPdu(&p, data);
-    if (e->transactionStartIndex != e->transactionEndIndex || data->size > settings->base.maxPduSize)
+    if (e->transactionStartIndex != e->transactionEndIndex || data->size > settings->base.maxPduSize
+#ifdef DLMS_IGNORE_MALLOC
+        || ((settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC ||
+            settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E) && data->size > settings->base.maxInfoTX)
+#endif //DLMS_IGNORE_MALLOC
+        )
     {
 #ifndef DLMS_IGNORE_MALLOC
         trans_clear(&settings->transaction);
@@ -3072,6 +3082,7 @@ int svr_handleCommand(
         }
         break;
 #endif //DLMS_IGNORE_ACTION
+#ifndef DLMS_IGNORE_HDLC
     case DLMS_COMMAND_SNRM:
         if ((ret = svr_handleSnrmRequest(settings, data)) == 0)
         {
@@ -3085,6 +3096,7 @@ int svr_handleCommand(
 #endif //DLMS_DEBUG
         }
         break;
+#endif //DLMS_IGNORE_HDLC
     case DLMS_COMMAND_AARQ:
         ret = svr_HandleAarqRequest(settings, data);
         if (ret == 0 && settings->base.authentication < DLMS_AUTHENTICATION_HIGH)
@@ -3104,6 +3116,7 @@ int svr_handleCommand(
         svr_disconnected(settings);
         settings->base.connected &= ~DLMS_CONNECTION_STATE_DLMS;
         break;
+#ifndef DLMS_IGNORE_HDLC
     case DLMS_COMMAND_DISC:
         ret = svr_generateDisconnectRequest(settings, data);
         if (settings->base.connected != DLMS_CONNECTION_STATE_NONE)
@@ -3113,6 +3126,7 @@ int svr_handleCommand(
         }
         frame = DLMS_COMMAND_UA;
         break;
+#endif //DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_PLC
     case DLMS_COMMAND_DISCOVER_REQUEST:
     {
@@ -3219,8 +3233,7 @@ int svr_handleRequest2(
         return DLMS_ERROR_CODE_NOT_INITIALIZED;
     }
     //Check frame using inter Charachter Timeout.
-#ifndef DLMS_IGNORE_HDLC
-#ifndef DLMS_IGNORE_IEC_HDLC_SETUP
+#if !defined(DLMS_IGNORE_HDLC) || !defined(DLMS_IGNORE_IEC_HDLC_SETUP)
     if (IS_HDLC(settings->base.interfaceType) && settings->hdlc != NULL && settings->hdlc->interCharachterTimeout != 0)
     {
         uint32_t now = time_elapsed();
@@ -3232,8 +3245,7 @@ int svr_handleRequest2(
         }
         settings->frameReceived = now;
     }
-#endif //DLMS_IGNORE_IEC_HDLC_SETUP
-#endif //DLMS_IGNORE_HDLC
+#endif //!defined(DLMS_IGNORE_HDLC) || !defined(DLMS_IGNORE_IEC_HDLC_SETUP)
     if (bb_isAttached(&settings->receivedData) && settings->receivedData.size + size > bb_getCapacity(&settings->receivedData))
     {
 #ifdef DLMS_DEBUG
@@ -3469,9 +3481,9 @@ int svr_handleRequest2(
                 {
                     svr_disconnected(settings);
                 }
-            }
         }
     }
+}
 #endif // DLMS_IGNORE_IEC_HDLC_SETUP
 #endif //DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_WRAPPER
@@ -3499,8 +3511,8 @@ int svr_handleRequest2(
                 {
                     svr_disconnected(settings);
                 }
-            }
         }
+    }
     }
 #endif // DLMS_IGNORE_TCP_UDP_SETUP
 #endif //DLMS_IGNORE_WRAPPER
@@ -3636,7 +3648,7 @@ int svr_invoke(
 #endif //DLMS_IGNORE_MALLOC
         //Increase time by one second so next scheduled date is retreaved.
         ++time;
-    }
+        }
     if (start != NULL)
     {
         uint32_t tmp = time_getNextScheduledDate(time, start);
@@ -3646,7 +3658,7 @@ int svr_invoke(
         }
     }
     return 0;
-}
+    }
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 
@@ -3710,7 +3722,7 @@ int svr_handleSingleActionSchedule(
         if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&s)) != 0)
         {
             break;
-        }
+}
 #else
         if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&s, sizeof(gxtime))) != 0)
         {
@@ -3772,7 +3784,7 @@ int svr_handleSingleActionSchedule(
                 }
             }
         }
-    }
+}
     return ret;
 }
 #endif //!defined(DLMS_IGNORE_ACTION_SCHEDULE) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
@@ -3846,7 +3858,7 @@ int svr_invokeScript(
     vec_clear(&args);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-}
+    }
 
 int svr_handleActivityCalendar(
     dlmsServerSettings* settings,
@@ -4053,7 +4065,7 @@ int svr_handlePushSetup(
         {
             //Save infor that invoke failed.
         }
-    }
+}
     return ret;
 }
 #endif //DLMS_IGNORE_PUSH_SETUP
@@ -4102,7 +4114,7 @@ int svr_handleAutoConnect(
         {
             break;
         }
-    }
+}
     return ret;
 }
 #endif //DLMS_IGNORE_AUTO_CONNECT
@@ -4117,7 +4129,7 @@ int svr_run(
     gxObject* obj;
     *next = -1;
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
-    //Push objects.
+    //profile Generic objects.
     for (pos = 0; pos != settings->base.objects.size; ++pos)
     {
         if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
@@ -4193,27 +4205,82 @@ int svr_run(
     return svr_handleInactivityTimeout(settings, time, next);
 }
 
-unsigned char svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex)
+uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex)
 {
-    if (objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME && methodIndex == 2)
+    uint32_t ret = 0;
+    switch (objectType)
     {
-        //Save password.
-        return 1;
-    }
-    if (objectType == DLMS_OBJECT_TYPE_SAP_ASSIGNMENT)
-    {
+    case DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME:
+        switch (methodIndex)
+        {
+        case 2:
+            //Secret.
+            ret = GET_ATTRIBUTE(7);
+            break;
+        case 3:
+        case 4:
+            //Object.
+            ret = GET_ATTRIBUTE(2);
+            break;
+        case 5:
+        case 6:
+            //User.
+            ret = GET_ATTRIBUTE(10);
+            break;
+        default:
+            break;
+        }
+        break;
+    case DLMS_OBJECT_TYPE_SECURITY_SETUP:
+        switch (methodIndex)
+        {
+        case 1:
+            //Activate Security policy.
+            ret = GET_ATTRIBUTE(2);
+            break;
+        case 2:
+            //Key transfer. TODO: Check this when SS 1 is released.
+            ret = GET_ATTRIBUTE(7);
+            break;
+        case 4:
+            //Generate key pair. TODO: Check this when SS 1 is released.
+            ret = GET_ATTRIBUTE(2);
+            break;
+        case 6:
+        case 8:
+            //Import or export certificate.
+            ret = GET_ATTRIBUTE(6);
+            break;
+        default:
+            break;
+        }
+        break;
         //SAP assignment is added or removed.
-        return 1;
-    }
-    if (objectType == DLMS_OBJECT_TYPE_DISCONNECT_CONTROL)
-    {
+    case DLMS_OBJECT_TYPE_SAP_ASSIGNMENT:
+        ret = GET_ATTRIBUTE(2);
+        break;
         //Connection state is changed.
-        return 1;
-    }
-    if (objectType == DLMS_OBJECT_TYPE_REGISTER_ACTIVATION)
-    {
+    case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
         //Register activation is changed.
-        return 1;
+        ret = GET_ATTRIBUTE(2, 3);
+        break;
+    case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
+        if (methodIndex == 1)
+        {
+            //Register is assigned.
+            ret = GET_ATTRIBUTE(2);
+        }
+        else
+        {
+            //Mask is added.
+            ret = GET_ATTRIBUTE(3);
+        }
+        break;
+    case DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE:
+        ret = GET_ATTRIBUTE(2);
+        break;
+    default:
+        break;
     }
     return 0;
 }

@@ -63,6 +63,7 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     mes_clear(messages);
     settings->connected = DLMS_CONNECTION_STATE_NONE;
     settings->isAuthenticationRequired = 0;
+#ifndef DLMS_IGNORE_PLC
     // SNRM request is not used for all communication channels.
     if (settings->interfaceType == DLMS_INTERFACE_TYPE_PLC_HDLC)
     {
@@ -75,6 +76,7 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
         }
         return ret;
     }
+#endif //DLMS_IGNORE_PLC
     if (settings->interfaceType != DLMS_INTERFACE_TYPE_HDLC && settings->interfaceType != DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
     {
         return 0;

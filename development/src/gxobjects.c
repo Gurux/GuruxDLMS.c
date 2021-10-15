@@ -1931,7 +1931,7 @@ int obj_clearParametersList(gxArray* buffer)
 #ifndef DLMS_IGNORE_SERVER
 void clock_updateDST(gxClock* object, gxtime* value)
 {
-    if (object->enabled && time_compare(&object->begin, value) != -1 && time_compare(value, &object->end) != 1)
+    if (object->enabled && time_compare(&object->begin, value) != 1 && time_compare(&object->end, value) != -1)
     {
         object->status |= DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
     }

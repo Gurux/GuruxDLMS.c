@@ -50,7 +50,7 @@
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 //cosem_getObjectSize returns zero if object is not supported.
-int cosem_getObjectSize(DLMS_OBJECT_TYPE type)
+uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
 {
     int size = 0;
     switch (type)
@@ -418,7 +418,7 @@ int cosem_createObject(DLMS_OBJECT_TYPE type, gxObject** object)
 {
     int ret;
     unsigned char ln[] = { 0,0,40,0,0,255 };
-    int size = cosem_getObjectSize(type);
+    uint16_t size = cosem_getObjectSize(type);
     if (size == 0)
     {
         return DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
@@ -498,7 +498,7 @@ int cosem_init2(
 
 int cosem_init3(
     gxObject* object,
-    const unsigned char expectedSize,
+    const uint16_t expectedSize,
     DLMS_OBJECT_TYPE type,
     const unsigned char* ln)
 {
@@ -507,11 +507,11 @@ int cosem_init3(
 
 int cosem_init4(
     void* object,
-    const unsigned char expectedSize,
+    const uint16_t expectedSize,
     DLMS_OBJECT_TYPE type,
     const unsigned char* ln)
 {
-    int size = cosem_getObjectSize(type);
+    uint16_t size = cosem_getObjectSize(type);
     if (size == 0)
     {
         return DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
@@ -1872,7 +1872,7 @@ int cosem_findObjectByLN(
             {
                 if ((ret = oa_findByLN(&settings->releasedObjects, ot, ln, object)) == 0)
                 {
-                    if (*object == NULL)
+                    if (*object == NULL && ot != DLMS_OBJECT_TYPE_NONE)
                     {
                         if ((ret = cosem_createObject(ot, object)) == 0)
                         {

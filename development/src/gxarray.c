@@ -111,7 +111,7 @@ int arr_capacity(gxArray* arr, int capacity)
                 arr->data = tmp;
             }
         }
-        arr->capacity = (uint16_t) capacity;
+        arr->capacity = (uint16_t)capacity;
     }
 #endif //DLMS_IGNORE_MALLOC
     if (arr_getCapacity(arr) < capacity)
@@ -205,12 +205,27 @@ int arr_get(gxArray* arr, void** value)
 }
 #endif //DLMS_IGNORE_MALLOC
 
+
+
 #ifndef DLMS_IGNORE_MALLOC
 int arr_getByIndex(gxArray* arr, uint16_t index, void** value)
 {
     if (index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    *value = arr->data[index];
+    return 0;
+}
+
+int arr_getByIndex3(gxArray* arr, uint16_t index, void** value, unsigned char checkSize)
+{
+    if (index >= arr->size)
+    {
+        if (checkSize || index >= arr->capacity)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
     }
     *value = arr->data[index];
     return 0;
@@ -225,6 +240,18 @@ int arr_getByIndex(gxArray* arr, uint16_t index, void** value, uint16_t itemSize
     *value = (void*)((unsigned char*)arr->data + (index * itemSize));
     return 0;
 }
+int arr_getByIndex3(gxArray* arr, uint16_t index, void** value, uint16_t itemSize, unsigned char checkSize)
+{
+    if (index >= arr->size)
+    {
+        if (checkSize || index >= arr->capacity)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+    }
+    *value = (void*)((unsigned char*)arr->data + (index * itemSize));
+    return 0;
+}
 #endif //DLMS_IGNORE_MALLOC
 
 
@@ -234,6 +261,15 @@ int arr_getByIndex2(gxArray* arr, uint16_t index, void** value, uint16_t itemSiz
     return arr_getByIndex(arr, index, value);
 #else
     return arr_getByIndex(arr, index, value, itemSize);
+#endif //DLMS_IGNORE_MALLOC
+}
+
+int arr_getByIndex4(gxArray* arr, uint16_t index, void** value, uint16_t itemSize, unsigned char checkSize)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    return arr_getByIndex3(arr, index, value, checkSize);
+#else
+    return arr_getByIndex3(arr, index, value, itemSize, checkSize);
 #endif //DLMS_IGNORE_MALLOC
 }
 

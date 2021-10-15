@@ -88,6 +88,11 @@ uint16_t ba_getCapacity(bitArray* arr)
     return arr->capacity & 0x7FFF;
 }
 
+uint16_t ba_size(bitArray* bb)
+{
+    return bb != 0 ? bb->size : 0;
+}
+
 void ba_attach(
     bitArray* arr,
     unsigned char* value,

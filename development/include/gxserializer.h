@@ -44,8 +44,16 @@
 extern "C" {
 #endif
 
+#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    /*Return EEPROM size.*/
+    extern uint16_t EEPROM_SIZE();
+    //Read byte
+    extern int EEPROM_READ(uint16_t index, unsigned char* value);
+    //Write byte
+    extern int EEPROM_WRITE(uint16_t index, unsigned char value);
+#endif //#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 
-//This attribute is not serialized.
+    //This attribute is not serialized.
 #define IGNORE_ATTRIBUTE(OBJECT, INDEX) {OBJECT, INDEX, 0}
 
 //This attribute is not serialized by object type.
@@ -76,8 +84,8 @@ extern "C" {
 #define CONC(A, B) CONC_(A, B)
 #define CONC_(A, B) A##B
 #define GET_ATTRIBUTE(...) CONC(GET_ATTRIBUTE, ___COUNT_ATTRIBUTES(__VA_ARGS__))(__VA_ARGS__)
-#define GET_ATTRIBUTE_EXCEPT(...) ~(GET_ATTRIBUTE(__VA_ARGS__))
-#define GET_ATTRIBUTE_ALL() -1
+#define GET_ATTRIBUTE_EXCEPT(...) (uint16_t)~(GET_ATTRIBUTE(__VA_ARGS__))
+#define GET_ATTRIBUTE_ALL() 0xFFFF
 
     typedef struct
     {
@@ -95,35 +103,73 @@ extern "C" {
         gxSerializerIgnore* ignoredAttributes;
         //Count of ignored objects.
         uint16_t count;
+
+        
+#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+        FILE* stream;
+#else
+        //Serialization position is used to save serialization index.
+        uint16_t position;
+        //Index of where changed data starts. This is used for debugging. 
+        uint16_t updateStart;
+        //Index of where changed data ends. This is used for debugging. 
+        uint16_t updateEnd;
+#endif //!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#ifdef DLMS_IGNORE_MALLOC
+
+        //Only this object is saved if it is set.
+        gxObject* savedObject;
+        //Only attributes saved when savedObject is used.
+        uint32_t savedAttributes;
+        //This is for internal use.
+        //Whether to save the object. This is needed if only changed object is used. 
+        gxObject* currentObject;
+        //This is for internal use.
+        uint16_t currentIndex;
+#endif //DLMS_IGNORE_MALLOC
     } gxSerializerSettings;
+
+    void ser_init(gxSerializerSettings* settings);
 
     //Serialize object to bytebuffer.
     int ser_saveObject(
         gxSerializerSettings* serializeSettings,
-        gxObject* object,
-        gxByteBuffer* serializer);
+        gxObject* object);
 
-    //Serialize objects to bytebuffer.
+    //Serialize objects to flash.
     int ser_saveObjects(
         gxSerializerSettings* serializeSettings,
-        gxObject** object,
-        uint16_t count,
-        gxByteBuffer* serializer);
+        gxObject** objects,
+        uint16_t count);
 
-    //Serialize object from bytebuffer.
+    //Serialize objects to flash.
+    int ser_saveObjects2(
+        gxSerializerSettings* serializeSettings,
+        objectArray* objects);
+
+    //Serialize object from flash.
     int ser_loadObject(
         dlmsSettings* settings,
         gxSerializerSettings* serializeSettings,
-        gxObject* object,
-        gxByteBuffer* serializer);
+        gxObject* object);
 
-    //Serialize objects from the bytebuffer.
+    //Serialize objects from the flash.
     int ser_loadObjects(
         dlmsSettings* settings,
         gxSerializerSettings* serializeSettings,
         gxObject** object,
-        uint16_t count,
-        gxByteBuffer* serializer);
+        uint16_t count);
+
+    //Serialize objects from the flash.
+    int ser_loadObjects2(
+        dlmsSettings* settings,
+        gxSerializerSettings* serializeSettings,
+        objectArray* object);
+
+    //Get data size in bytes.
+    int ser_getDataSize(
+        gxSerializerSettings* serializeSettings,
+        uint32_t* size);
 
 #ifdef  __cplusplus
 }

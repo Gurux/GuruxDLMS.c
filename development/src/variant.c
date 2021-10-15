@@ -333,8 +333,8 @@ int var_clear(dlmsVARIANT* data)
     {
         data->llVal = 0;
         data->vt = DLMS_DATA_TYPE_NONE;
-        data->size = 0;
     }
+    data->size = 0;
 #else
     //Referenced values are not cleared. User must do it.
     if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
@@ -379,6 +379,7 @@ int var_clear(dlmsVARIANT* data)
         {
             va_clear(data->Arr);
             gxfree(data->Arr);
+            data->Arr = NULL;
         }
         break;
     case DLMS_DATA_TYPE_BIT_STRING:
@@ -923,7 +924,18 @@ int var_getBytes3(
             }
         }
 #else
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        if (data->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRING))
+        {
+            if ((ret = hlp_setObjectCount(data->size, ba)) != 0 ||
+                (ret = bb_set(ba, data->pbVal, data->size)) != 0)
+            {
+                //Error code is returned at the end of the function.
+            }
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
 #endif //DLMS_IGNORE_MALLOC
         break;
     case DLMS_DATA_TYPE_OCTET_STRING:
@@ -1076,9 +1088,7 @@ int var_getSize(DLMS_DATA_TYPE vt)
         nSize = 8;
         break;
     case DLMS_DATA_TYPE_BIT_STRING:
-        break;
     case DLMS_DATA_TYPE_OCTET_STRING:
-        break;
     case DLMS_DATA_TYPE_STRING:
     case DLMS_DATA_TYPE_STRING_UTF8:
         nSize = -1;
@@ -1201,6 +1211,11 @@ int var_toInteger(dlmsVARIANT* data)
 char va_isAttached(variantArray* arr)
 {
     return (arr->capacity & 0x8000) == 0x8000;
+}
+
+uint16_t va_size(variantArray* arr)
+{
+    return arr == NULL ? 0 : arr->size;
 }
 
 uint16_t va_getCapacity(variantArray* arr)
@@ -1510,7 +1525,10 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
     {
         item->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         BYTE_BUFFER_INIT(item->strVal);
-        if (tmp.vt == DLMS_DATA_TYPE_ARRAY || tmp.vt == DLMS_DATA_TYPE_STRUCTURE)
+        switch (tmp.vt)
+        {
+        case DLMS_DATA_TYPE_ARRAY:
+        case DLMS_DATA_TYPE_STRUCTURE:
         {
             bb_setUInt8(item->strVal, '{');
             for (pos = 0; pos != tmp.Arr->size; ++pos)
@@ -1545,7 +1563,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_BOOLEAN)
+        case DLMS_DATA_TYPE_BOOLEAN:
         {
             if (tmp.boolVal == 0)
             {
@@ -1559,7 +1577,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_INT32)
+        case DLMS_DATA_TYPE_INT32:
         {
             hlp_intToString(buff, 250, tmp.lVal, 1, 0);
             bb_addString(item->strVal, buff);
@@ -1567,7 +1585,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_UINT32)
+        case DLMS_DATA_TYPE_UINT32:
         {
             hlp_intToString(buff, 250, tmp.ulVal, 0, 0);
             bb_addString(item->strVal, buff);
@@ -1575,7 +1593,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_INT8)
+        case DLMS_DATA_TYPE_INT8:
         {
             hlp_intToString(buff, 250, tmp.cVal, 1, 0);
             bb_addString(item->strVal, buff);
@@ -1583,7 +1601,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_INT16)
+        case DLMS_DATA_TYPE_INT16:
         {
             hlp_intToString(buff, 250, tmp.iVal, 1, 0);
             bb_addString(item->strVal, buff);
@@ -1591,7 +1609,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_UINT8)
+        case DLMS_DATA_TYPE_UINT8:
         {
             hlp_intToString(buff, 250, tmp.bVal, 0, 0);
             bb_addString(item->strVal, buff);
@@ -1599,7 +1617,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_UINT16)
+        case DLMS_DATA_TYPE_UINT16:
         {
             hlp_intToString(buff, 250, tmp.uiVal, 0, 0);
             bb_addString(item->strVal, buff);
@@ -1607,7 +1625,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_INT64)
+        case DLMS_DATA_TYPE_INT64:
         {
             hlp_int64ToString(buff, 250, tmp.llVal, 1);
             bb_addString(item->strVal, buff);
@@ -1615,7 +1633,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_UINT64)
+        case DLMS_DATA_TYPE_UINT64:
         {
             hlp_int64ToString(buff, 250, tmp.ullVal, 0);
             bb_addString(item->strVal, buff);
@@ -1623,7 +1641,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_ENUM)
+        case DLMS_DATA_TYPE_ENUM:
         {
             hlp_intToString(buff, 250, tmp.bVal, 0, 0);
             bb_addString(item->strVal, buff);
@@ -1631,9 +1649,9 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_FLOAT32)
-        {
 #if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT32)
+        case DLMS_DATA_TYPE_FLOAT32:
+        {
 #if _MSC_VER > 1000
             sprintf_s(buff, 250, "%f", tmp.fltVal);
 #else
@@ -1643,13 +1661,11 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
-#else
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT32)
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_FLOAT64)
-        {
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT32)
 #if !defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT64)
+        case DLMS_DATA_TYPE_FLOAT64:
+        {
 #if _MSC_VER > 1000
             sprintf_s(buff, 250, "%lf", tmp.dblVal);
 #else
@@ -1659,11 +1675,9 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
-#else
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT64)
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_BIT_STRING)
+#endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && !defined(DLMS_IGNORE_FLOAT64)
+        case DLMS_DATA_TYPE_BIT_STRING:
         {
             char* str = ba_toString(tmp.bitArr);
             bb_attachString(item->strVal, str);
@@ -1671,19 +1685,18 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_DATETIME)
-        {
 #ifndef DLMS_IGNORE_STRING_CONVERTER
+        case DLMS_DATA_TYPE_DATETIME:
+        case DLMS_DATA_TYPE_DATE:
+        case DLMS_DATA_TYPE_TIME:
+        {
             time_toString(tmp.dateTime, item->strVal);
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
-#else
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //DLMS_IGNORE_STRING_CONVERTER
-
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_OCTET_STRING)
+#endif //DLMS_IGNORE_STRING_CONVERTER
+        case DLMS_DATA_TYPE_OCTET_STRING:
         {
 #ifndef DLMS_IGNORE_STRING_CONVERTER
             if (tmp.byteArr != NULL)
@@ -1699,14 +1712,13 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_STRING_CONVERTER
         }
-        else if (tmp.vt == DLMS_DATA_TYPE_NONE)
+        case DLMS_DATA_TYPE_NONE:
         {
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else
-        {
+        default:
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
         }
     }

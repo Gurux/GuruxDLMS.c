@@ -192,6 +192,11 @@ extern "C" {
         gxPlcSettings plcSettings;
 #endif //DLMS_IGNORE_PLC
 
+        //List of internal COSEM objects.
+        //Objects in this list are not added to assocaition view.
+        //Objects can be used to save internal data.
+        objectArray internalObjects;
+
         //List of COSEM objects.
         objectArray objects;
 

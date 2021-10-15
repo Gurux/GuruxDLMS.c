@@ -52,13 +52,13 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 
 //Get error message directly from EEPROM to save RAM.
-#ifdef ARDUINO_ARCH_AVR
+#if defined(ARDUINO) || defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
 //If AVR is used.
 #include <avr/pgmspace.h>
 #define GET_STR_FROM_EEPROM(x) PSTR(x)
 #else
 #define GET_STR_FROM_EEPROM(x) x
-#endif//ARDUINO_ARCH_AVR
+#endif//defined(ARDUINO) || defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
 
 
 //Get UInt32.

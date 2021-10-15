@@ -1488,19 +1488,26 @@ uint32_t time_toUnixTime(struct tm* time)
 // Convert date time to Epoch time.
 uint32_t time_toUnixTime2(gxtime* time)
 {
+    gxtime tmp = *time;
+    if ((time->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY) != 0)
+    {
+        unsigned char days = time_getDays(time);
+        unsigned char max = date_daysInMonth(time_getYears(time), time_getMonths(time));
+        time_addDays(&tmp, max - days);
+    }
     uint32_t value;
 #ifdef DLMS_USE_EPOCH_TIME
-    value = time->value;
-    if (time->deviation != 0 && time->deviation != (short)0x8000)
+    value = tmp.value;
+    if (tmp.deviation != 0 && time->deviation != (short)0x8000)
     {
 #ifdef DLMS_USE_UTC_TIME_ZONE
-        value -= 60 * time->deviation;
+        value -= 60 * tmp.deviation;
 #else
-        value += 60 * time->deviation;
+        value += 60 * tmp.deviation;
 #endif //DLMS_USE_UTC_TIME_ZONE
     }
 #else
-    value = (uint32_t)gxmktime(&time->value);
+    value = (uint32_t)gxmktime(&tmp.value);
 #endif //DLMS_USE_EPOCH_TIME
     return value;
 }

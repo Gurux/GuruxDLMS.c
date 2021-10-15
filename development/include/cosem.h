@@ -70,14 +70,14 @@ extern "C" {
   //This initialize method will also check the size of the object type and compare it with the expected size.
   int cosem_init3(
       gxObject* object,
-      uint16_t expectedSize,
+      const uint16_t expectedSize,
       DLMS_OBJECT_TYPE type,
       const unsigned char* ln);
 
   //This initialize method will also check the size of the object type and compare it with the expected size.
   int cosem_init4(
       void* object,
-      uint16_t expectedSize,
+      const uint16_t expectedSize,
       DLMS_OBJECT_TYPE type,
       const unsigned char* ln);
 

@@ -45,10 +45,21 @@ extern "C" {
 #if _MSC_VER > 1400
 #pragma warning(disable : 4201)
 #endif
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+#include <assert.h>
+#endif
+
+#define GX_SWAP_UINT16(a)(((a & 0xFF) << 8) | ((a & 0xFF00) >> 8))
+#define GX_SWAP_UINT32(a)(GX_SWAP_UINT16(a & 0xFFFF) << 16) | (GX_SWAP_UINT16(a >> 16) )
 
 #define VARIANT_ARRAY_CAPACITY 10
 
-#define GET_DLMS_TYPE()
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+#define VERIFY(X, TYPE) (assert(X.vt == TYPE))
+#else
+#define VERIFY(X, TYPE)
+#endif
+
 #define V_VT(X)         ((X)->vt)
 #define GX_UNION(X, Y, Z) V_VT(X)=Z;(X)->Y
 #define GX_UNION2(X, Y, Z, S, C)  (X)->size=S;(X)->capacity=C;V_VT(X)=Z;(X)->Y
@@ -62,6 +73,7 @@ extern "C" {
 #define GX_INT64(X) GX_UNION(&X, llVal, DLMS_DATA_TYPE_INT64)
 #define GX_FLOAT(X) GX_UNION(&X, fltVal, DLMS_DATA_TYPE_FLOAT32, 0, 0)
 #define GX_DOUBLE(X) GX_UNION(&X, dblVal, DLMS_DATA_TYPE_FLOAT64)
+#define GX_BOOL(X) GX_UNION(&X, bVal, DLMS_DATA_TYPE_BOOLEAN)
 #ifdef DLMS_IGNORE_MALLOC
 #define GX_DATETIME(X) X.size = 12; GX_UNION(&X, pVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_DATETIME))
 #else
@@ -69,7 +81,7 @@ extern "C" {
 #endif //DLMS_IGNORE_MALLOC
 #define GX_DATE(X) GX_UNION(&X, pVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_DATE))
 #define GX_TIME(X) GX_UNION(&X, pVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_TIME))
-#define GX_UINT8_BYREF(X) GX_UNION(&X, pbVal, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT8))
+#define GX_UINT8_BYREF(X, VALUE_) GX_UNION(&X, pbVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT8))
 #define GX_UINT16_BYREF(X, VALUE_) GX_UNION(&X, puiVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT16))
 #define GX_UINT32_BYREF(X, VALUE_) GX_UNION(&X, pulVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT32))
 #define GX_UINT64_BYREF(X, VALUE_) GX_UNION(&X, pullVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_UINT64))
@@ -84,6 +96,34 @@ extern "C" {
 #define GX_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRING), SIZE_, sizeof(VALUE_))
 #define GX_ARRAY(X, VALUE_) GX_UNION2(&X, pVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_ARRAY), 0, 0)
 #define GX_STRUCT(X, VALUE_) GX_UNION2(&X, pVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRUCTURE), 0, 0)
+#define GX_BOOL_BYREF(X, VALUE_) GX_UNION(&X, pcVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_BOOLEAN))
+
+/*Get UInt8 value from variant.*/
+#define GX_GET_UINT8(X)  (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.bVal : *X.pbVal
+
+/*Get UInt16 value from variant.*/
+#define GX_GET_UINT16(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.uiVal : *X.puiVal
+
+/*Get UInt32 value from variant.*/
+#define GX_GET_UINT32(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.culVal : *X.pulVal
+
+/*Get UInt64 value from variant.*/
+#define GX_GET_UINT64(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.cullVal : *X.pullVal
+
+/*Get Int8 value from variant.*/
+#define GX_GET_INT8(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.cVal : *X.pcVal
+/*Get Int16 value from variant.*/
+#define GX_GET_INT16(X)(X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.iVal : *X.piVal
+/*Get Int32 value from variant.*/
+#define GX_GET_INT32(X)(X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.lVal : *X.plVal
+/*Get Int64 value from variant.*/
+#define GX_GET_INT64(X)(X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.llVal : *X.pllVal
+/*Get float value from variant.*/
+#define GX_GET_FLOAT(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.fltVal : *X.fltVal
+/*Get double value from variant.*/
+#define GX_GET_DOUBLE(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.dblVal : *X.dblVal
+/*Get boolean value from variant.*/
+#define GX_GET_BOOL(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.bVal != 0 : *X.pbVal != 0
 
     typedef struct
     {
@@ -103,7 +143,7 @@ extern "C" {
         {
             unsigned char bVal;
             signed char cVal;
-            short iVal;
+            int16_t iVal;
             int32_t lVal;
             int64_t llVal;
 #ifndef DLMS_IGNORE_FLOAT32
@@ -169,7 +209,11 @@ extern "C" {
     //Is variant array attached.
     char va_isAttached(variantArray* arr);
 
-    ///Get variant array capacity.
+    //Get variant array capacity.
+    uint16_t va_size(
+        variantArray* arr);
+
+    //Get variant array capacity.
     uint16_t va_getCapacity(
         variantArray* arr);
 

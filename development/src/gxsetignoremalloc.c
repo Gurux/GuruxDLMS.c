@@ -261,12 +261,13 @@ int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index,
 {
     unsigned char ch;
     int ret;
-    if (index == 2)
+    switch (index)
     {
+    case 2:
         ret = cosem_getDateTimeFromOctetString(value->byteArr, &object->time);
+#ifndef DLMS_IGNORE_SERVER
         if (ret == 0)
         {
-#ifndef DLMS_IGNORE_SERVER
             //If user set's new time transform it to the same time zone as the server is.
             if (settings->server)
             {
@@ -274,30 +275,49 @@ int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index,
                 time_toUTC(&object->time);
                 clock_updateDST(object, &object->time);
             }
-#endif// DLMS_IGNORE_SERVER
         }
-    }
-    else if (index == 3)
-    {
+#endif// DLMS_IGNORE_SERVER
+        break;
+    case 3:
         ret = cosem_getInt16(value->byteArr, &object->timeZone);
-    }
-    else if (index == 4)
-    {
+        break;
+    case 4:
         if ((ret = cosem_getUInt8(value->byteArr, &ch)) == 0)
         {
             object->status = (DLMS_CLOCK_STATUS)ch;
         }
-    }
-    else if (index == 5)
-    {
+        break;
+    case 5:
         ret = cosem_getDateTimeFromOctetString(value->byteArr, &object->begin);
-    }
-    else if (index == 6)
-    {
+#ifndef DLMS_IGNORE_SERVER
+        if (ret == 0)
+        {
+            //If user set's new time transform it to the same time zone as the server is.
+            if (settings->server)
+            {
+                //Convert time to UCT if time zone is given.
+                time_toUTC(&object->time);
+                clock_updateDST(object, &object->time);
+            }
+        }
+#endif// DLMS_IGNORE_SERVER
+        break;
+    case 6:
         ret = cosem_getDateTimeFromOctetString(value->byteArr, &object->end);
-    }
-    else if (index == 7)
-    {
+#ifndef DLMS_IGNORE_SERVER
+        if (ret == 0)
+        {
+            //If user set's new time transform it to the same time zone as the server is.
+            if (settings->server)
+            {
+                //Convert time to UCT if time zone is given.
+                time_toUTC(&object->time);
+                clock_updateDST(object, &object->time);
+            }
+        }
+#endif// DLMS_IGNORE_SERVER
+        break;
+    case 7:
         ret = cosem_getInt8(value->byteArr, &object->deviation);
 #ifndef DLMS_IGNORE_SERVER
         if (settings->server)
@@ -305,9 +325,8 @@ int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index,
             clock_updateDST(object, &object->time);
         }
 #endif// DLMS_IGNORE_SERVER
-    }
-    else if (index == 8)
-    {
+        break;
+    case 8:
         ret = cosem_getBoolean(value->byteArr, &object->enabled);
 #ifndef DLMS_IGNORE_SERVER
         if (settings->server)
@@ -315,17 +334,16 @@ int cosem_setClock(dlmsSettings* settings, gxClock* object, unsigned char index,
             clock_updateDST(object, &object->time);
         }
 #endif //DLMS_IGNORE_SERVER
-    }
-    else if (index == 9)
-    {
+        break;
+    case 9:
         if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
         {
             object->clockBase = (DLMS_CLOCK_BASE)ch;
         }
-    }
-    else
-    {
+        break;
+    default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
     }
     return ret;
 }

@@ -181,8 +181,8 @@ int invoke_AssociationLogicalName(
     // Check reply_to_HLS_authentication
     if (e->index == 1)
     {
-        unsigned char ch;
 #ifndef DLMS_IGNORE_HIGH_GMAC
+        unsigned char ch;
         gxByteBuffer tmp;
 #endif //DLMS_IGNORE_HIGH_GMAC
         unsigned char tmp2[64];
@@ -748,7 +748,10 @@ int invoke_SapAssigment(
 #ifndef DLMS_IGNORE_SECURITY_SETUP
 int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, gxValueEventArg* e)
 {
-    int pos, ret = 0;
+    int ret = 0;
+#ifndef DLMS_IGNORE_HIGH_GMAC
+    int pos;
+#endif //DLMS_IGNORE_HIGH_GMAC
     if (e->index == 1)
     {
         //The security policy can only be strengthened.
@@ -763,6 +766,9 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
     }
     else if (e->index == 2)
     {
+#ifdef DLMS_IGNORE_HIGH_GMAC
+        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+#else
 #ifdef DLMS_IGNORE_MALLOC
         if (e->parameters.vt != DLMS_DATA_TYPE_OCTET_STRING)
         {
@@ -869,6 +875,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
             bb_clear(&bb);
         }
 #endif //DLMS_IGNORE_MALLOC
+#endif //DLMS_IGNORE_HIGH_GMAC
     }
     else
     {

@@ -113,6 +113,7 @@ unsigned char dlms_usePreEstablishedSystemTitle(dlmsSettings* settings)
 #endif //DLMS_IGNORE_MALLOC
 }
 
+#ifndef DLMS_IGNORE_HIGH_GMAC
 /**
 * Get used glo message.
 *
@@ -281,6 +282,7 @@ unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, D
     }
     return cmd;
 }
+#endif //DLMS_IGNORE_HIGH_GMAC
 #endif //DLMS_IGNORE_HIGH_GMAC
 
 unsigned char dlms_getInvokeIDPriority(dlmsSettings* settings, unsigned char increase)
@@ -1160,7 +1162,10 @@ int getTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         ms = ch * 10;
     }
 #if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
-    value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
+    }
     time_init(value->dateTime, (uint16_t)-1, 0xFF, 0xFF, hour, minute, second, ms, 0x8000);
     value->vt = DLMS_DATA_TYPE_TIME;
 #else
@@ -1214,7 +1219,10 @@ int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     }
 
 #if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
-    value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->dateTime = (gxtime*)gxmalloc(sizeof(gxtime));
+    }
     time_init(value->dateTime, year, month, day, 0xFF, 0xFF, 0xFF, 0xFF, 0x8000);
     if (ch > 7)
     {
@@ -4725,15 +4733,16 @@ int dlms_handleGbt(
     return ret;
 }
 
+#if !defined(DLMS_IGNORE_SERVER)
 int dlms_handleGloDedRequest(dlmsSettings* settings,
     gxReplyData* data)
 {
     int ret = 0;
-    DLMS_SECURITY_SUITE suite;
-    uint64_t invocationCounter;
 #ifdef DLMS_IGNORE_HIGH_GMAC
     ret = DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #else
+    DLMS_SECURITY_SUITE suite;
+    uint64_t invocationCounter;
     // If all frames are read.
     if ((data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
     {
@@ -4843,7 +4852,9 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
 }
+#endif // !defined(DLMS_IGNORE_SERVER)
 
+#if !defined(DLMS_IGNORE_CLIENT)
 int dlms_handleGloDedResponse(dlmsSettings* settings,
     gxReplyData* data, uint16_t index)
 {
@@ -4917,7 +4928,9 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
     return ret;
 #endif //DLMS_IGNORE_HIGH_GMAC
 }
+#endif //!defined(DLMS_IGNORE_CLIENT)
 
+#if !defined(DLMS_IGNORE_GENERAL_CIPHERING) && !defined(DLMS_IGNORE_HIGH_GMAC)
 int dlms_handleGeneralCiphering(
     dlmsSettings* settings,
     gxReplyData* data)
@@ -4965,10 +4978,12 @@ int dlms_handleGeneralCiphering(
     return 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
 }
+#endif //!defined(DLMS_IGNORE_GENERAL_CIPHERING) && !defined(DLMS_IGNORE_HIGH_GMAC)
 
-int dlms_handleConfirmedServiceError(gxByteBuffer* data)
+#if !defined(DLMS_IGNORE_SERVER)
+int32_t dlms_handleConfirmedServiceError(gxByteBuffer* data)
 {
-    int ret;
+    int32_t ret;
     unsigned char ch;
     if ((ret = bb_getUInt8(data, &ch)) != 0)
     {
@@ -4984,7 +4999,12 @@ int dlms_handleConfirmedServiceError(gxByteBuffer* data)
     {
         return ret;
     }
-    return DLMS_ERROR_TYPE_CONFIRMED_SERVICE_ERROR | service << 16 | type << 8 | ch;
+    ret = service;
+    ret <<= 16;
+    ret |= DLMS_ERROR_TYPE_CONFIRMED_SERVICE_ERROR;
+    ret |= type << 8;
+    ret |= ch;
+    return ret;
 }
 
 int dlms_handleExceptionResponse(gxByteBuffer* data)
@@ -5010,6 +5030,8 @@ int dlms_handleExceptionResponse(gxByteBuffer* data)
     }
     return DLMS_ERROR_TYPE_EXCEPTION_RESPONSE | value << 8 | error;
 }
+#endif //!defined(DLMS_IGNORE_SERVER)
+
 
 int dlms_getPdu(
     dlmsSettings* settings,
@@ -5039,6 +5061,7 @@ int dlms_getPdu(
         data->command = cmd;
         switch (cmd)
         {
+#if !defined(DLMS_IGNORE_CLIENT)
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_READ_RESPONSE:
             if ((ret = dlms_handleReadResponse(settings, data, index)) != 0)
@@ -5075,6 +5098,7 @@ int dlms_getPdu(
         case DLMS_COMMAND_GENERAL_BLOCK_TRANSFER:
             ret = dlms_handleGbt(settings, data);
             break;
+#endif //!defined(DLMS_IGNORE_CLIENT)
         case DLMS_COMMAND_AARQ:
         case DLMS_COMMAND_AARE:
             // This is parsed later.
@@ -5082,6 +5106,7 @@ int dlms_getPdu(
             break;
         case DLMS_COMMAND_RELEASE_RESPONSE:
             break;
+#if !defined(DLMS_IGNORE_SERVER)
         case DLMS_COMMAND_CONFIRMED_SERVICE_ERROR:
             ret = dlms_handleConfirmedServiceError(&data->data);
             break;
@@ -5102,7 +5127,9 @@ int dlms_getPdu(
                 break;
             }
             break;
+#endif //!defined(DLMS_IGNORE_SERVER)
 #ifndef DLMS_IGNORE_HIGH_GMAC
+#if !defined(DLMS_IGNORE_SERVER)
         case DLMS_COMMAND_GLO_READ_REQUEST:
         case DLMS_COMMAND_GLO_WRITE_REQUEST:
         case DLMS_COMMAND_GLO_GET_REQUEST:
@@ -5114,6 +5141,8 @@ int dlms_getPdu(
             ret = dlms_handleGloDedRequest(settings, data);
             // Server handles this.
             break;
+#endif //!defined(DLMS_IGNORE_SERVER)
+#if !defined(DLMS_IGNORE_CLIENT)
         case DLMS_COMMAND_GLO_READ_RESPONSE:
         case DLMS_COMMAND_GLO_WRITE_RESPONSE:
         case DLMS_COMMAND_GLO_GET_RESPONSE:
@@ -5126,8 +5155,10 @@ int dlms_getPdu(
             // If all frames are read.
             ret = dlms_handleGloDedResponse(settings, data, index);
             break;
+#endif // !defined(DLMS_IGNORE_CLIENT)
         case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
         case DLMS_COMMAND_GENERAL_DED_CIPHERING:
+#if !defined(DLMS_IGNORE_SERVER)
             if (settings->server)
             {
                 if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0)
@@ -5136,14 +5167,21 @@ int dlms_getPdu(
                 }
                 ret = dlms_handleGloDedRequest(settings, data);
             }
+#endif// !defined(DLMS_IGNORE_CLIENT)
+#if !defined(DLMS_IGNORE_CLIENT)
+#if !defined(DLMS_IGNORE_SERVER)
             else
+#endif // !defined(DLMS_IGNORE_SERVER)
             {
                 ret = dlms_handleGloDedResponse(settings, data, index);
             }
+#endif //!defined(DLMS_IGNORE_CLIENT)
             break;
+#if !defined(DLMS_IGNORE_GENERAL_CIPHERING) && !defined(DLMS_IGNORE_HIGH_GMAC)
         case DLMS_COMMAND_GENERAL_CIPHERING:
             ret = dlms_handleGeneralCiphering(settings, data);
             break;
+#endif //!defined(DLMS_IGNORE_GENERAL_CIPHERING) && !defined(DLMS_IGNORE_HIGH_GMAC)
 #endif //DLMS_IGNORE_HIGH_GMAC
         case DLMS_COMMAND_DATA_NOTIFICATION:
             ret = dlms_handleDataNotification(settings, data);
@@ -5183,6 +5221,7 @@ int dlms_getPdu(
             data->command = DLMS_COMMAND_NONE;
         }
         // Get command if operating as a server.
+#ifndef DLMS_IGNORE_SERVER
         if (settings->server)
         {
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -5204,6 +5243,7 @@ int dlms_getPdu(
 #endif //DLMS_IGNORE_HIGH_GMAC
         }
         else
+#endif //DLMS_IGNORE_SERVER
         {
             // Client do not need a command any more.
             data->command = DLMS_COMMAND_NONE;
@@ -5824,7 +5864,7 @@ int dlms_getLNPdu(
             }
             if (ret == 0 && p->data != NULL && p->data->size != 0)
             {
-                len = (uint16_t)(p->data->size - p->data->position);
+                len = bb_available(p->data);
                 if (len + reply->size > p->settings->maxPduSize)
                 {
                     len = (uint16_t)(p->settings->maxPduSize - h->size - p->data->size - p->data->position);
@@ -6379,6 +6419,7 @@ int dlms_secure(
 #ifdef DLMS_IGNORE_HIGH_SHA256
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #else
+#ifndef DLMS_IGNORE_HIGH_GMAC
 #ifdef DLMS_IGNORE_MALLOC
             if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
                 (ret = bb_set(&challenge, settings->cipher.systemTitle, 8)) != 0 ||
@@ -6410,6 +6451,7 @@ int dlms_secure(
                     return ret;
                 }
             }
+#endif //DLMS_IGNORE_HIGH_GMAC
 #endif //DLMS_IGNORE_HIGH_SHA256
         }
         else

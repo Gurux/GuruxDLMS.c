@@ -73,6 +73,11 @@ extern "C" {
     uint16_t ba_getCapacity(
         bitArray* arr);
 
+    /*
+    * Get size.
+    */
+    uint16_t ba_size(bitArray* bb);
+
     //How many bytes bit array will take.
     uint16_t ba_getByteCount(
         uint16_t bitCount);

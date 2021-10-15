@@ -154,6 +154,16 @@ extern "C" {
 // This might be used in client side if a lot of data is read from the meter.
 // #define GX_DLMS_BYTE_BUFFER_SIZE_32
 
+//GENERAL_CIPHERING is not used.
+//#define DLMS_IGNORE_GENERAL_CIPHERING
+
+#ifdef ARDUINO
+/////////////////////////////////////////////////////////////////////////////
+//If Arduino is used.
+#include "../ArduinoIgnore.h"
+/////////////////////////////////////////////////////////////////////////////
+#endif //ARDUINO
+
 #ifdef ARDUINO_ARCH_AVR
 /////////////////////////////////////////////////////////////////////////////
 //If Arduino is used.

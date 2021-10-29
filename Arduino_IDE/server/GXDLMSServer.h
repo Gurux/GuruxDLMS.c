@@ -49,6 +49,8 @@
 #include "include/variant.h"
 #include "include/objectarray.h"
 #include "include/cosem.h"
+//#include "include/server.h"
+#include "include/gxserializer.h"
 
 class GXDLMSServer
 {
@@ -60,23 +62,23 @@ class GXDLMSServer
     unsigned char C2S_CHALLENGE[64];
     //Space for server challenge.
     unsigned char S2C_CHALLENGE[64];
-public:
+  public:
     //Constructor.
     int init(
-        bool useLogicalNameReferencing,
-        DLMS_INTERFACE_TYPE interfaceType,
-        //Max frame size.
-        unsigned short frameSize,
-        //Max PDU size.
-        unsigned short pduSize,
-        //Buffer where received frames are saved.
-        unsigned char* frameBuffer,
-        //Size of frame buffer.
-        unsigned short frameBufferSize,
-        //PDU Buffer.
-        unsigned char* pduBuffer,
-        //Size of PDU buffer.
-        unsigned short pduBufferSize);
+      bool useLogicalNameReferencing,
+      DLMS_INTERFACE_TYPE interfaceType,
+      //Max frame size.
+      unsigned short frameSize,
+      //Max PDU size.
+      unsigned short pduSize,
+      //Buffer where received frames are saved.
+      unsigned char* frameBuffer,
+      //Size of frame buffer.
+      unsigned short frameBufferSize,
+      //PDU Buffer.
+      unsigned char* pduBuffer,
+      //Size of PDU buffer.
+      unsigned short pduBufferSize);
 
     //Get authentication level.
     DLMS_AUTHENTICATION GetAuthentication();
@@ -88,6 +90,11 @@ public:
 
     //Add objects.
     int initObjects(gxObject** objects, unsigned short count);
+
+    //List of COSEM objects that are removed from association view(s).
+    //Objects can be used to save meter internal data.
+    int internalObjects(gxObject** objects, unsigned short count);
+
     //Initialize server.
     int initialize();
 
@@ -122,6 +129,35 @@ public:
 
     //Set default clock.
     void setDefaultClock(gxClock* clock);
+
+    //Serialize objects to bytebuffer.
+    int loadObjects(
+      gxSerializerSettings* serializeSettings,
+      gxObject** object,
+      uint16_t count);
+
+    //Serialize objects to bytebuffer.
+    int saveObjects(
+      gxSerializerSettings* serializeSettings,
+      gxObject** object,
+      uint16_t count);
+
+    //Check is client changing the settings with action.
+    //This can be used to check is meter data changed.
+    //Return value is saved atribute index or zero if nothing hasn't change.
+    uint32_t isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex);
+
+    //Assign block cipher key.
+    void assingBlockCipherKey(dlmsVARIANT* value);
+
+    //Assign authentication key.
+    void assingAuthenticationKey(dlmsVARIANT* value);
+
+    //Assign KEK.
+    void assingKek(dlmsVARIANT* value);
+
+    //Assign aerver Invocation counter.
+    void assignServerInvocationCounter(dlmsVARIANT* value);
 };
 
 static  GXDLMSServer Server;

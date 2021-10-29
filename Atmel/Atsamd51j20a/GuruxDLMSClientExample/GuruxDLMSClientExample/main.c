@@ -30,8 +30,19 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
+#if defined(__SAMD51J20A__)
+#define __ASF__
+#endif //defined(__SAMD51J20A__)
+#ifdef __ASF__
+#include <sam.h>
+#include <atmel_start.h>
+#endif //__ASF__
+
+#ifdef __AVR__
 #include <xc.h>
 #include <avr/io.h>
+#endif //__AVR__
+
 #include <time.h>
 #include "dlms/include/gxignore.h"
 #include "dlms/include/client.h"
@@ -47,8 +58,16 @@
 #include "dlms/include/converters.h"
 #include "dlms/include/helpers.h"
 
-#define F_CPU	16000000UL
+#ifdef __ASF__
+struct io_descriptor *io;
 
+struct io_descriptor *traceIo;
+#endif //__ASF__
+
+#ifdef __AVR__
+// TODO: This depends from the CPU. 
+// Verify this from the documentation. If it's wrong the serial port is not work correctly.
+#define F_CPU	16000000UL
 /**
  * \brief Set the desired baud rate value
  *
@@ -74,13 +93,12 @@
 #include <util/setbaud.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
-#include <stdio.h>
+#endif // __AVR__
 
+#include <stdlib.h>
+#include <stdio.h>
 //DLMS settings.
 dlmsSettings settings;
-
-//Is new data available for read in the UART.
-volatile unsigned char available = 0;
 
 //How long reply is waited from the meter.
 const uint32_t WAIT_TIME = 2000;
@@ -92,6 +110,9 @@ static GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_VERBOSE;
 //Received data.
 static gxByteBuffer frameData;
 
+#ifdef __AVR__
+//Is new data available for read in the UART.
+volatile unsigned char available = 0;
 volatile unsigned long milliseconds;
 
 ISR(TIMER1_COMPA_vect)
@@ -108,6 +129,16 @@ unsigned long millis(void)
 	return milliseconds;
 }
 
+#endif //__AVR__
+
+#ifdef __ASF__
+unsigned long millis(void)
+{
+	return SysTick->VAL;
+}
+#endif //__ASF__
+
+
 #ifdef UBRR1H
 /**
  * \brief Function for putting a char in the trace UART buffer
@@ -117,6 +148,7 @@ unsigned long millis(void)
  */
 static inline void uart_putTraceChar(uint8_t data)
 {
+#ifdef __AVR__
 	//Wait until data is written.
 	while ((UCSR1B & (1 << UDRIE1)) != 0)
 	{
@@ -129,6 +161,7 @@ static inline void uart_putTraceChar(uint8_t data)
 	UCSR1B |= (1 << UDRIE1);
 	/* Enable interrupts */
 	sei();
+#endif //__AVR__
 }
 #endif //UBRR1H
 
@@ -153,6 +186,7 @@ static inline int uart_traceWrite(const char* data)
 	return 0;
 }
 
+
 ///////////////////////////////////////////////////////////////////////
 // Write trace to the serial port.
 //
@@ -162,6 +196,7 @@ void GXTRACE(const char* str, const char* data)
 {
 	if (trace == GX_TRACE_LEVEL_VERBOSE)
 	{
+#ifdef __AVR__
 		time_t tm = time(NULL);
 		uart_traceWrite((const char*) "\t:");
 		uart_traceWrite(asctime(gmtime(&tm)));
@@ -170,6 +205,10 @@ void GXTRACE(const char* str, const char* data)
 		uart_traceWrite(data);
 		uart_traceWrite((const char*) "\0");
 		_delay_ms(10);		
+#endif //__AVR__
+#ifdef __ASF__
+		delay_ms(10);
+#endif //__ASF__
 	}
 }
 
@@ -195,6 +234,25 @@ int com_readSerialPort(
   uint32_t start = millis();
   do
   {
+#ifdef __ASF__	  
+	io_read(io, frameData.data, 1);
+	frameData.size += 1;
+    //Search eop.
+    if (frameData.size > 5)
+    {
+	    //Some optical strobes can return extra bytes.
+	    for (pos = frameData.size - 1; pos != lastReadIndex; --pos)
+	    {
+		    if (frameData.data[pos] == eop)
+		    {
+			    eopFound = 1;
+			    break;
+		    }
+	    }
+	    lastReadIndex = pos;
+    }
+#endif //__ASF__	  
+#ifdef __AVR__
     if (available)
     {
       //Search eop.
@@ -212,9 +270,15 @@ int com_readSerialPort(
         lastReadIndex = pos;
       }
     }
+#endif //__AVR__
     else
     {
+#ifdef __AVR__
       _delay_ms(50);
+#endif //__AVR__
+#ifdef __ASF__
+	  delay_ms(50);
+#endif //__ASF__
     }
     //If the meter doesn't reply in given time.
     if (!(millis() - start < WAIT_TIME))
@@ -227,6 +291,7 @@ int com_readSerialPort(
 }
 
 
+#ifdef __AVR__
 /**
  * \brief Function for putting a char in the UART buffer
  *
@@ -244,6 +309,7 @@ static inline void uart_putchar(uint8_t data)
 	// First data in buffer, enable data ready interrupt
 	UCSR0B |= (1 << UDRIE0);
 }
+#endif //__AVR__
 
 /**
  * \brief Function for putting a char in the UART buffer
@@ -253,14 +319,26 @@ static inline void uart_putchar(uint8_t data)
  */
 static inline int uart_write(gxByteBuffer* data)
 {
+#ifdef __AVR__
 	while (data->position < data->size)
 	{
 		uart_putchar(data->data[data->position]);
 		++data->position;
 	}
+#endif //__AVR__
+#ifdef __ASF__
+	int ret;
+	while (bb_available(data) > 0)
+	{
+		ret = io_write(io, data->data + data->position, bb_available(data));
+		if (ret > 0)
+		{			
+			data->position += ret;
+		}
+	}
+#endif //__ASF__
 	return 0;
 }
-
 
 // Read DLMS Data frame from the device.
 int readDLMSPacket(
@@ -843,6 +921,7 @@ int com_readAllObjects()
   GXTRACE(GET_STR_FROM_EEPROM("Logical Device Name"), data);
   obj_clear(BASE(ldn));
   free(data);
+#ifdef __AVR__
   if (time_getYears2(time(NULL)) == 1970)
   {
 	  //Read clock and set micro controller to use meter time if it's not set.
@@ -856,6 +935,8 @@ int com_readAllObjects()
 	  obj_clear(BASE(clock1));
 	  free(data);
   }
+#endif // __AVR__
+
 /* TODO: This is an example how to read profile generic by range (start and end index).
   //Read Profile generic.
   gxProfileGeneric pg;
@@ -873,7 +954,7 @@ int com_readAllObjects()
   return ret;
 }
 
-
+#ifdef __AVR__
 /**
  * \brief UART data register empty interrupt handler
  *
@@ -993,8 +1074,11 @@ static void timer_init(void)
 	TIMSK1 |= (1 << OCIE1A);
 }
 
+#endif //__AVR__
+
 int main(void)
 {
+#ifdef __AVR__
 	uart_init();
 #ifdef UBRR1H
 	uart_debugInit();
@@ -1002,6 +1086,18 @@ int main(void)
 	timer_init();
 	/* Enable interrupts */
 	sei();
+#endif // __AVR__
+
+#ifdef __ASF__
+	atmel_start_init();	
+	usart_sync_get_io_descriptor(&USART_0, &io);
+	usart_sync_set_mode(&USART_0, USART_MODE_SYNCHRONOUS);
+	usart_sync_set_baud_rate(&USART_0, 9600);
+	usart_sync_set_character_size(&USART_0, USART_CHARACTER_SIZE_8BITS);
+	usart_sync_set_parity(&USART_0, USART_PARITY_NONE);
+	usart_sync_set_stopbits(&USART_0, USART_STOP_BITS_ONE );
+	usart_sync_enable(&USART_0);
+#endif //__ASF__
 
 	cl_init(&settings, 1, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
 	GXTRACE(GET_STR_FROM_EEPROM("Start application"), NULL);
@@ -1011,6 +1107,11 @@ int main(void)
 	while(1)
 	{		
 		com_readAllObjects();
-		_delay_ms(1000);	
+#ifdef __AVR__
+		_delay_ms(1000);
+#endif // __AVR__
+#ifdef __ASF__
+		delay_ms(1000);
+#endif //__ASF__
 	}
 }

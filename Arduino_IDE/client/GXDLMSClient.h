@@ -45,6 +45,7 @@
 #include "include/variant.h"
 #include "include/objectarray.h"
 #include "include/cosem.h"
+#include "include/helpers.h"
 //obj_toString requires this
 #include "include/converters.h"
 
@@ -188,25 +189,16 @@ class GXDLMSClient
     // Returns Server address.
     static uint16_t GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize);
 
-
+#ifndef DLMS_IGNORE_HIGH_GMAC
     /////////////////////////////////////////////////////////////////////////
-    //Get system title.
+    //Get security.
     DLMS_SECURITY GetSecurity();
 
     /////////////////////////////////////////////////////////////////////////
     //Set security level.
     int SetSecurity(DLMS_SECURITY value);
 
-    /////////////////////////////////////////////////////////////////////////
-    //Set system title.
-    int SetSystemTitle(const gxByteBuffer* systemTitle);
-
-    /////////////////////////////////////////////////////////////////////////
-    //Get system title.
-    int GetSystemTitle(gxByteBuffer* systemTitle);
-
-
-    /////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////
     //Set block cipher key.
     int SetBlockCipherKey(const gxByteBuffer* blockCipherKey);
 
@@ -222,6 +214,14 @@ class GXDLMSClient
     //Get authentication key.
     int GetAuthenticationKey(gxByteBuffer* authenticationKey);
 
+    /////////////////////////////////////////////////////////////////////////
+    //Set system title.
+    int SetSystemTitle(const gxByteBuffer* systemTitle);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get system title.
+    int GetSystemTitle(gxByteBuffer* systemTitle);
+#endif //DLMS_IGNORE_HIGH_GMAC
 };
 
 static GXDLMSClient Client;

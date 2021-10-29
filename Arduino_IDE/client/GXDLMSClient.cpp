@@ -218,6 +218,8 @@ uint16_t GXDLMSClient::GetServerAddress(uint16_t logicalAddress, uint16_t physic
   return cl_getServerAddress(logicalAddress, physicalAddress, addressSize);
 }
 
+#ifndef DLMS_IGNORE_HIGH_GMAC
+
 int GXDLMSClient::SetSystemTitle(const gxByteBuffer* systemTitle)
 {
   if (systemTitle->size != 8)
@@ -280,5 +282,6 @@ int GXDLMSClient::SetSecurity(DLMS_SECURITY value)
   settings.cipher.security = value;
   return 0;
 }
+#endif //DLMS_IGNORE_HIGH_GMAC
 
 //static GXDLMSClient Client;

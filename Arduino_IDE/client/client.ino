@@ -143,7 +143,7 @@ int com_readSerialPort(
     //If the meter doesn't reply in given time.
     if (!(millis() - start < WAIT_TIME))
     {
-      GXTRACE_INT(PSTR("Received bytes: \n"), frameData.size);
+      GXTRACE_INT(GET_STR_FROM_EEPROM("Received bytes: \n"), frameData.size);
       return DLMS_ERROR_CODE_RECEIVE_FAILED;
     }
   } while (eopFound == 0);
@@ -167,7 +167,7 @@ int readDLMSPacket(
   if ((ret = Serial.write(data->data, data->size)) != data->size)
   {
     //If failed to write all bytes.
-    GXTRACE(PSTR("Failed to write all data to the serial port.\n"), NULL);
+    GXTRACE(GET_STR_FROM_EEPROM("Failed to write all data to the serial port.\n"), NULL);
   }
   //Loop until packet is complete.
   do
@@ -179,11 +179,11 @@ int readDLMSPacket(
         return DLMS_ERROR_CODE_SEND_FAILED;
       }
       ++resend;
-      GXTRACE_INT(PSTR("Data send failed. Try to resend."), resend);
+      GXTRACE_INT(GET_STR_FROM_EEPROM("Data send failed. Try to resend."), resend);
       if ((ret = Serial.write(data->data, data->size)) != data->size)
       {
         //If failed to write all bytes.
-        GXTRACE(PSTR("Failed to write all data to the serial port.\n"), NULL);
+        GXTRACE(GET_STR_FROM_EEPROM("Failed to write all data to the serial port.\n"), NULL);
       }
     }
     ret = Client.GetData(&frameData, reply);
@@ -343,7 +343,7 @@ int com_read(
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
       (ret = Client.UpdateValue(object, attributeOrdinal, &reply.dataValue)) != 0)
   {
-    GXTRACE_INT(PSTR("com_read failed."), ret);
+    GXTRACE_INT(GET_STR_FROM_EEPROM("com_read failed."), ret);
   }
   mes_clear(&data);
   reply_clear(&reply);
@@ -362,7 +362,7 @@ int com_write(
   if ((ret = Client.Write(object, attributeOrdinal, &data)) != 0 ||
       (ret = com_readDataBlock(&data, &reply)) != 0)
   {
-    GXTRACE_INT(PSTR("com_write failed."), ret);
+    GXTRACE_INT(GET_STR_FROM_EEPROM("com_write failed."), ret);
   }
   mes_clear(&data);
   reply_clear(&reply);
@@ -382,7 +382,7 @@ int com_method(
   if ((ret = Client.Method(object, attributeOrdinal, params, &messages)) != 0 ||
       (ret = com_readDataBlock(&messages, &reply)) != 0)
   {
-    GXTRACE_INT(PSTR("com_method failed."), ret);
+    GXTRACE_INT(GET_STR_FROM_EEPROM("com_method failed."), ret);
   }
   mes_clear(&messages);
   reply_clear(&reply);
@@ -402,7 +402,7 @@ int com_readList(
     mes_init(&messages);
     if ((ret = Client.ReadList(list, &messages)) != 0)
     {
-      GXTRACE_INT(PSTR("com_readList failed."), ret);
+      GXTRACE_INT(GET_STR_FROM_EEPROM("com_readList failed."), ret);
     }
     else
     {
@@ -457,7 +457,7 @@ int com_readRowsByEntry(
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
       (ret = Client.UpdateValue((gxObject*)object, 2, &reply.dataValue)) != 0)
   {
-    GXTRACE_INT(PSTR("com_readRowsByEntry failed."), ret);
+    GXTRACE_INT(GET_STR_FROM_EEPROM("com_readRowsByEntry failed."), ret);
   }
   mes_clear(&data);
   reply_clear(&reply);
@@ -479,7 +479,7 @@ int com_readRowsByRange(
       (ret = com_readDataBlock(&data, &reply)) != 0 ||
       (ret = Client.UpdateValue((gxObject*)object, 2, &reply.dataValue)) != 0)
   {
-    GXTRACE_INT(PSTR("com_readRowsByRange failed."), ret);
+    GXTRACE_INT(GET_STR_FROM_EEPROM("com_readRowsByRange failed."), ret);
   }
   mes_clear(&data);
   reply_clear(&reply);
@@ -652,14 +652,6 @@ int com_readProfileGenerics()
   return ret;
 }
 
-int com_readValue(gxObject* object, unsigned char index)
-{
-  int ret;
-  char* data = NULL;
-  ret = com_read(object, index);
-  return ret;
-}
-
 // This function reads ALL objects that meter have excluded profile generic objects.
 // It will loop all object's attributes.
 int com_readValues()
@@ -728,10 +720,10 @@ int com_readAllObjects()
   ret = com_initializeConnection();
   if (ret != DLMS_ERROR_CODE_OK)
   {
-    GXTRACE_INT(PSTR("com_initializeConnection failed"), ret);
+    GXTRACE_INT(GET_STR_FROM_EEPROM("com_initializeConnection failed"), ret);
     return ret;
   }
-  GXTRACE_INT(PSTR("com_initializeConnection SUCCEEDED"), ret);
+  GXTRACE_INT(GET_STR_FROM_EEPROM("com_initializeConnection SUCCEEDED"), ret);
 
   char* data = NULL;
   //Read Logical Device Name
@@ -739,36 +731,37 @@ int com_readAllObjects()
   cosem_init(BASE(ldn), DLMS_OBJECT_TYPE_DATA, "0.0.42.0.0.255");
   com_read(BASE(ldn), 2);
   obj_toString(BASE(ldn), &data);
-  GXTRACE(PSTR("Logical Device Name"), data);
+  GXTRACE(GET_STR_FROM_EEPROM("Logical Device Name"), data);
   obj_clear(BASE(ldn));
   free(data);
-
   //Read clock
   gxClock clock1;
   cosem_init(BASE(clock1), DLMS_OBJECT_TYPE_CLOCK, "0.0.1.0.0.255");
   com_read(BASE(clock1), 3);
   com_read(BASE(clock1), 2);
   obj_toString(BASE(clock1), &data);
-  GXTRACE(PSTR("Clock"), data);
+  GXTRACE(GET_STR_FROM_EEPROM("Clock"), data);
   obj_clear(BASE(clock1));
   free(data);
-
+/*
+ * TODO: This is an example how to read profile generic.
   //Read Profile generic.
   gxProfileGeneric pg;
   cosem_init(BASE(pg), DLMS_OBJECT_TYPE_PROFILE_GENERIC, "1.0.99.1.0.255");
   com_read(BASE(pg), 3);
   com_readRowsByEntry(&pg, 1, 2);
   obj_toString(BASE(pg), &data);
-  GXTRACE(PSTR("Load profile"), data);
+  GXTRACE(GET_STR_FROM_EEPROM("Load profile"), data);
   obj_clear(BASE(pg));
   free(data);
+  */
   //Release dynamically allocated objects.
   Client.ReleaseObjects();
   return ret;
 }
 
 void setup() {
-  GXTRACE(PSTR("Start application"), NULL);
+  GXTRACE(GET_STR_FROM_EEPROM("Start application"), NULL);
   BYTE_BUFFER_INIT(&frameData);
   //Set frame capacity.
   bb_capacity(&frameData, 128);
@@ -803,7 +796,7 @@ void loop() {
   if (millis() - runTime > 5000)
   {
     runTime = millis();
-    GXTRACE(PSTR("Start reading"), NULL);
+    GXTRACE(GET_STR_FROM_EEPROM("Start reading"), NULL);
     ret = com_readAllObjects();
     com_close();
   }

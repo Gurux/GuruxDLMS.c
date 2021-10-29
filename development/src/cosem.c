@@ -1292,10 +1292,10 @@ int cosem_setOctetString(gxByteBuffer* bb, gxByteBuffer* value)
     return ret;
 }
 
-int cosem_setString(gxByteBuffer* bb, const char* value)
+int cosem_setString(gxByteBuffer* bb, const char* value, uint16_t len)
 {
     int ret;
-    if (value == NULL)
+    if (value == NULL || len == 0)
     {
         if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_STRING)) != 0 ||
             (ret = bb_setUInt8(bb, 0)) != 0)
@@ -1305,7 +1305,6 @@ int cosem_setString(gxByteBuffer* bb, const char* value)
     }
     else
     {
-        uint16_t len = (uint16_t)strlen(value);
         if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_STRING)) != 0 ||
             (ret = hlp_setObjectCount(len, bb)) != 0 ||
             (ret = bb_set(bb, (unsigned char*)value, len)) != 0)

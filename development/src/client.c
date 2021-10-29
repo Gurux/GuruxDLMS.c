@@ -526,7 +526,11 @@ int cl_parseObjects(dlmsSettings* settings, gxByteBuffer* data)
     oa_clear(&settings->releasedObjects, 1);
     if (settings->useLogicalNameReferencing)
     {
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
         ret = cosem_parseLNObjects(settings, data, &settings->objects);
+#else
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif // DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
     }
     else
     {
@@ -1721,6 +1725,7 @@ int cl_methodSN(
     bb_clear(&bb);
     return ret;
 }
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
 uint16_t cl_getServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize)
 {
@@ -1740,5 +1745,4 @@ uint16_t cl_getServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, 
     return value;
 }
 
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #endif //!defined(DLMS_IGNORE_CLIENT)

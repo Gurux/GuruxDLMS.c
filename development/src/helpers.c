@@ -623,7 +623,8 @@ int hlp_parseLogicalName(gxByteBuffer* value, unsigned char ln[6])
     pOriginalBuff = pBuff;
     memcpy(pBuff, value->data, size);
     pBuff[value->size] = 0;
-    while ((ch = strchr(pBuff, '.')) != NULL)
+    //AVR compiler can't handle this if casting to char* is removed.
+    while ((ch = (char*)strchr(pBuff, '.')) != NULL)
     {
         *ch = '\0';
         val = hlp_stringToInt(pBuff);
@@ -776,7 +777,8 @@ int hlp_setLogicalName(unsigned char ln[6], const char* name)
     pOriginalBuff = pBuff;
     memcpy(pBuff, name, size);
     pBuff[size] = 0;
-    while ((ch = strchr(pBuff, '.')) != NULL)
+    //AVR compiler can't handle this if casting to char* is removed.
+    while ((ch = (char*) strchr(pBuff, '.')) != NULL)
     {
         *ch = '\0';
         val = hlp_stringToInt(pBuff);

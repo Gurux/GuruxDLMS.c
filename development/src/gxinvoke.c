@@ -172,6 +172,7 @@ int invoke_gxTokenGateway(
 }
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 int invoke_AssociationLogicalName(
     dlmsServerSettings* settings,
     gxValueEventArg* e)
@@ -433,6 +434,7 @@ int invoke_AssociationLogicalName(
     }
     return ret;
 }
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
 int invoke_ImageTransfer(

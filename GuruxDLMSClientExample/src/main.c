@@ -112,7 +112,9 @@ int disconnect(connection* connection)
     unsigned char ln[] = { 0,0,96,3,10,255 };
     INIT_OBJECT(dc, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln);
     //Call Disconnect action.
-    ret = com_method(connection, &dc.base, 1, NULL);
+    dlmsVARIANT param;
+    GX_INT8(param) = 0;
+    ret = com_method(connection, &dc.base, 1, &param);
     return ret;
 }
 

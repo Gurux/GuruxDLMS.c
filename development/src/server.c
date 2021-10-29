@@ -164,6 +164,7 @@ int svr_initialize(
         objectArray* list;
         if (settings->base.useLogicalNameReferencing)
         {
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
             gxAssociationLogicalName* ln;
             if ((ret = cosem_createObject(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, (gxObject**)&ln)) != 0)
             {
@@ -174,6 +175,7 @@ int svr_initialize(
             //Add object to released objects list.
             ret = oa_push(&settings->base.releasedObjects, (gxObject*)ln);
             oa_copy(list, &settings->base.objects);
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
         }
         else
         {
@@ -514,6 +516,7 @@ int svr_HandleAarqRequest(
             }
             if (settings->base.useLogicalNameReferencing)
             {
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
                 gxAssociationLogicalName* it;
                 unsigned char ln[] = { 0, 0, 40, 0, 0, 255 };
                 if ((ret = oa_findByLN(&settings->base.objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln, (gxObject**)&it)) != 0)
@@ -553,12 +556,14 @@ int svr_HandleAarqRequest(
                     svr_notifyTrace("Association logical name not found. ", -1);
 #endif //DLMS_DEBUG
                 }
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
             }
         }
         else if (result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
         {
             if (settings->base.useLogicalNameReferencing)
             {
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
                 gxAssociationLogicalName* it;
                 unsigned char ln[] = { 0, 0, 40, 0, 0, 255 };
                 if ((ret = oa_findByLN(&settings->base.objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln, (gxObject**)&it)) != 0)
@@ -589,6 +594,7 @@ int svr_HandleAarqRequest(
                     it->authenticationMechanismName.mechanismId = settings->base.authentication;
                     it->associationStatus = DLMS_ASSOCIATION_STATUS_ASSOCIATED;
                 }
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
             }
         }
     }
@@ -2702,6 +2708,7 @@ int svr_handleMethodRequest(
         // If High level authentication fails.
         if (e->target != NULL && e->target->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME && id == 1)
         {
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
             if (((gxAssociationLogicalName*)e->target)->associationStatus == DLMS_ASSOCIATION_STATUS_ASSOCIATED)
             {
                 settings->base.connected |= DLMS_CONNECTION_STATE_DLMS;
@@ -2712,6 +2719,7 @@ int svr_handleMethodRequest(
                 svr_invalidConnection(settings);
                 settings->base.connected &= ~DLMS_CONNECTION_STATE_DLMS;
             }
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
         }
     }
 #ifndef DLMS_IGNORE_MALLOC

@@ -2059,6 +2059,7 @@ int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
     return 0;
 }
 
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 void obj_applicationContextNameToString(gxByteBuffer* ba, gxApplicationContextName* object)
 {
     hlp_appendLogicalName(ba, object->logicalName);
@@ -2134,11 +2135,13 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** 
     if (object->base.version > 0)
     {
         bb_addString(&ba, "\nIndex: 9 Value: ");
+#ifndef DLMS_IGNORE_SECURITY_SETUP
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         bb_addLogicalName(&ba, obj_getLogicalName((gxObject*)object->securitySetup));
 #else
         bb_addLogicalName(&ba, object->securitySetupReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+#endif //DLMS_IGNORE_SECURITY_SETUP
     }
     if (object->base.version > 1)
     {
@@ -2162,6 +2165,8 @@ int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** 
     return 0;
 }
 
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
+
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int obj_associationShortNameToString(gxAssociationShortName* object, char** buff)
 {
@@ -2171,12 +2176,14 @@ int obj_associationShortNameToString(gxAssociationShortName* object, char** buff
     obj_objectsToString(&ba, &object->objectList);
     bb_addString(&ba, "]\nIndex: 3 Value: ");
     //TODO: Show access rights.
+#ifndef DLMS_IGNORE_SECURITY_SETUP
     bb_addString(&ba, "\nIndex: 4 Value: ");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
     bb_addLogicalName(&ba, obj_getLogicalName((gxObject*)object->securitySetup));
 #else
     hlp_appendLogicalName(&ba, object->securitySetupReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+#endif //DLMS_IGNORE_SECURITY_SETUP
     bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);

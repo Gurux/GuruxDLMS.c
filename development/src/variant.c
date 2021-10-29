@@ -1794,7 +1794,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-#ifndef DLMS_IGNORE_FLOAT32
+#if !defined(DLMS_IGNORE_FLOAT32) && !defined(DLMS_IGNORE_STRING_CONVERTER)
         else if (type == DLMS_DATA_TYPE_FLOAT32)
         {
 #if _MSC_VER > 1000
@@ -1806,6 +1806,8 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
+#endif //DLMS_IGNORE_FLOAT32
+#if !defined(DLMS_IGNORE_FLOAT64) && !defined(DLMS_IGNORE_STRING_CONVERTER)
         else if (type == DLMS_DATA_TYPE_FLOAT64)
         {
 #if _MSC_VER > 1000
@@ -1817,7 +1819,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-#endif //DLMS_IGNORE_FLOAT32
+#endif //DLMS_IGNORE_FLOAT64
         else if (type == DLMS_DATA_TYPE_OCTET_STRING)
         {
             char* pBuff = (char*)tmp.strVal->data;
@@ -2555,7 +2557,7 @@ int va_print(
 {
     dlmsVARIANT* it;
     int pos, ret = DLMS_ERROR_CODE_OK;
-    char* format = "%s,\r\n";
+    const char* format = "%s,\r\n";
     for (pos = 0; pos != items->size; ++pos)
     {
         if ((ret = va_getByIndex(items, pos, &it)) != 0)

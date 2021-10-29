@@ -34,6 +34,8 @@
 #define GXSERIALIZER_H
 
 #include "gxignore.h"
+#ifndef DLMS_IGNORE_SERIALIZER
+
 #include "gxobjects.h"
 #include "dlmssettings.h"
 
@@ -114,9 +116,6 @@ extern "C" {
         uint16_t updateStart;
         //Index of where changed data ends. This is used for debugging. 
         uint16_t updateEnd;
-#endif //!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-#ifdef DLMS_IGNORE_MALLOC
-
         //Only this object is saved if it is set.
         gxObject* savedObject;
         //Only attributes saved when savedObject is used.
@@ -126,7 +125,7 @@ extern "C" {
         gxObject* currentObject;
         //This is for internal use.
         uint16_t currentIndex;
-#endif //DLMS_IGNORE_MALLOC
+#endif //!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     } gxSerializerSettings;
 
     void ser_init(gxSerializerSettings* settings);
@@ -174,5 +173,5 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
-
+#endif //DLMS_IGNORE_SERIALIZER
 #endif //GXSERIALIZER_H

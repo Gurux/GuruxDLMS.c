@@ -62,7 +62,9 @@ extern "C" {
 
 #define V_VT(X)         ((X)->vt)
 #define GX_UNION(X, Y, Z) V_VT(X)=Z;(X)->Y
+#ifdef DLMS_IGNORE_MALLOC
 #define GX_UNION2(X, Y, Z, S, C)  (X)->size=S;(X)->capacity=C;V_VT(X)=Z;(X)->Y
+#endif //DLMS_IGNORE_MALLOC
 #define GX_UINT8(X) GX_UNION(&X, bVal, DLMS_DATA_TYPE_UINT8)
 #define GX_UINT16(X) GX_UNION(&X, uiVal, DLMS_DATA_TYPE_UINT16)
 #define GX_UINT32(X) GX_UNION(&X, ulVal, DLMS_DATA_TYPE_UINT32)
@@ -91,11 +93,15 @@ extern "C" {
 #define GX_INT64_BYREF(X, VALUE_) GX_UNION(&X, pllVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_INT64))
 #define GX_FLOAT_BYREF(X, VALUE_) GX_UNION(&X, pfltVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_FLOAT32))
 #define GX_DOUBLE_BYREF(X, VALUE_) GX_UNION(&X, pdblVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_FLOAT64))
+
+#ifdef DLMS_IGNORE_MALLOC
 #define GX_OCTET_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE) (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING), SIZE_, sizeof(VALUE_))
 #define GX_BIT_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE) (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_BIT_STRING), SIZE_, 8 * sizeof(VALUE_)/sizeof(VALUE_[0]))
 #define GX_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRING), SIZE_, sizeof(VALUE_))
 #define GX_ARRAY(X, VALUE_) GX_UNION2(&X, pVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_ARRAY), 0, 0)
 #define GX_STRUCT(X, VALUE_) GX_UNION2(&X, pVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRUCTURE), 0, 0)
+#endif //DLMS_IGNORE_MALLOC
+
 #define GX_BOOL_BYREF(X, VALUE_) GX_UNION(&X, pcVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_BOOLEAN))
 
 /*Get UInt8 value from variant.*/
@@ -169,8 +175,12 @@ extern "C" {
             short* piVal;
             int32_t* plVal;
             int64_t* pllVal;
+#ifndef DLMS_IGNORE_FLOAT32
             float* pfltVal;
+#endif //DLMS_IGNORE_FLOAT32
+#ifndef DLMS_IGNORE_FLOAT64
             double* pdblVal;
+#endif //DLMS_IGNORE_FLOAT64
             unsigned char* pboolVal;
             uint16_t* puiVal;
             uint32_t* pulVal;

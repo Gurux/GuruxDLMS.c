@@ -57,7 +57,7 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 #include <avr/pgmspace.h>
 #define GET_STR_FROM_EEPROM(x) PSTR(x)
 #else
-#define GET_STR_FROM_EEPROM(x) x
+#define GET_STR_FROM_EEPROM(x) (const char*)x
 #endif//defined(ARDUINO) || defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
 
 

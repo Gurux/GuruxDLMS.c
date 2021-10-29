@@ -179,7 +179,7 @@ extern "C" {
 
   int cosem_setOctetString(gxByteBuffer* bb, gxByteBuffer* value);
 
-  int cosem_setString(gxByteBuffer* bb, const char* value);
+  int cosem_setString(gxByteBuffer* bb, const char* value, uint16_t len);
 
   int cosem_setString2(gxByteBuffer* bb, gxByteBuffer* value);
 

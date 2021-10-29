@@ -210,6 +210,10 @@ int arr_get(gxArray* arr, void** value)
 #ifndef DLMS_IGNORE_MALLOC
 int arr_getByIndex(gxArray* arr, uint16_t index, void** value)
 {
+    if (arr == NULL || value == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     if (index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -220,6 +224,10 @@ int arr_getByIndex(gxArray* arr, uint16_t index, void** value)
 
 int arr_getByIndex3(gxArray* arr, uint16_t index, void** value, unsigned char checkSize)
 {
+    if (arr == NULL || value == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     if (index >= arr->size)
     {
         if (checkSize || index >= arr->capacity)
@@ -233,6 +241,10 @@ int arr_getByIndex3(gxArray* arr, uint16_t index, void** value, unsigned char ch
 #else
 int arr_getByIndex(gxArray* arr, uint16_t index, void** value, uint16_t itemSize)
 {
+    if (arr == NULL || value == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     if (index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -242,6 +254,10 @@ int arr_getByIndex(gxArray* arr, uint16_t index, void** value, uint16_t itemSize
 }
 int arr_getByIndex3(gxArray* arr, uint16_t index, void** value, uint16_t itemSize, unsigned char checkSize)
 {
+    if (arr == NULL || value == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     if (index >= arr->size)
     {
         if (checkSize || index >= arr->capacity)
@@ -275,6 +291,10 @@ int arr_getByIndex4(gxArray* arr, uint16_t index, void** value, uint16_t itemSiz
 
 int arr_getByIndexRef(gxArray* arr, uint16_t index, void** value)
 {
+    if (arr == NULL || value == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     if (index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;

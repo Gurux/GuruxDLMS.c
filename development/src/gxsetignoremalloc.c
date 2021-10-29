@@ -2872,6 +2872,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
 #else
             memset(object->ipReference, 0, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+            ret = 0;
         }
         else
         {

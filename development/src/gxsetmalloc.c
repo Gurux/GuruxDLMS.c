@@ -1679,11 +1679,13 @@ int cosem_setAssociationShortName(
         }
         else
         {
+#ifndef DLMS_IGNORE_SECURITY_SETUP
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
             ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_SECURITY_SETUP, value->byteArr->data, (gxObject**)&object->securitySetup);
 #else
             memcpy(object->securitySetupReference, value->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+#endif // DLMS_IGNORE_SECURITY_SETUP
         }
     }
     else

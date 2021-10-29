@@ -31,6 +31,8 @@
 //---------------------------------------------------------------------------
 
 #include "../include/gxignore.h"
+#ifndef DLMS_IGNORE_SERIALIZER
+
 #include "../include/gxmem.h"
 #include "../include/gxserializer.h"
 #include "../include/helpers.h"
@@ -3219,6 +3221,7 @@ int ser_saveExtendedRegister(
 }
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
 
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 int ser_saveApplicationContextName(gxSerializerSettings* serializeSettings, gxApplicationContextName* object)
 {
     int ret;
@@ -3239,6 +3242,7 @@ int ser_saveApplicationContextName(gxSerializerSettings* serializeSettings, gxAp
     }
     return ret;
 }
+
 
 int ser_savexDLMSContextType(gxSerializerSettings* serializeSettings, gxXDLMSContextType* object)
 {
@@ -3334,6 +3338,7 @@ int ser_saveAssociationLogicalName(
     //Security Setup Reference is from version 1.
     if (ret == 0 && object->base.version > 0)
     {
+#ifndef DLMS_IGNORE_SECURITY_SETUP
         if (!isAttributeSet(serializeSettings, ignored, 9))
         {
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -3346,6 +3351,7 @@ int ser_saveAssociationLogicalName(
             ret = ser_set(&ba, object->securitySetupReference, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         }
+#endif //DLMS_IGNORE_SECURITY_SETUP
     }
     if (ret == 0 && object->base.version > 1)
     {
@@ -3377,6 +3383,7 @@ int ser_saveAssociationLogicalName(
     }
     return ret;
 }
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int ser_saveAssociationShortName(
@@ -6418,6 +6425,7 @@ int ser_loadExtendedRegister(
 }
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
 
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 int ser_loadApplicationContextName(
     gxSerializerSettings* serializeSettings,
     gxApplicationContextName* object)
@@ -6580,6 +6588,7 @@ int ser_loadAssociationLogicalName(
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 9))
     {
+#ifndef DLMS_IGNORE_SECURITY_SETUP
         //Security Setup Reference is from version 1.
         if (object->base.version > 0)
         {
@@ -6599,6 +6608,7 @@ int ser_loadAssociationLogicalName(
             }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         }
+#endif //DLMS_IGNORE_SECURITY_SETUP
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 10))
     {
@@ -6642,6 +6652,7 @@ int ser_loadAssociationLogicalName(
     }
     return ret;
 }
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int ser_loadAssociationShortName(
@@ -7688,3 +7699,4 @@ int ser_loadObjects2(
     }
     return ret;
 }
+#endif //DLMS_IGNORE_SERIALIZER

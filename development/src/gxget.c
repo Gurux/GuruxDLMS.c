@@ -535,6 +535,8 @@ int getLNAccessRights(
 #endif //DLMS_IGNORE_SERVER
 
 #ifndef DLMS_IGNORE_SERVER
+
+#ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 // Returns LN Association View.
 int getLNObjects(
     dlmsSettings* settings,
@@ -690,6 +692,7 @@ int getLNObjects(
     }
     return ret;
 }
+#endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 #endif //DLMS_IGNORE_SERVER
 
 #ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
@@ -1984,7 +1987,7 @@ int getColumns(
     gxByteBuffer* ba,
     gxValueEventArg* e)
 {
-    uint16_t pduSize;
+    uint16_t pduSize = 0;
     int ret = 0;
     uint32_t pos;
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
@@ -2161,7 +2164,7 @@ int profileGeneric_getData(
     gxByteBuffer* data)
 {
     gxArray columns;
-    uint16_t pduSize;
+    uint16_t pduSize = 0;
     int ret = 0, pos;
     //Add count only for first time.
     if (!e->transaction)
@@ -4835,7 +4838,8 @@ int cosem_getGsmDiagnostic(
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         ret = cosem_setString2(e->value.byteArr, &object->operatorName);
 #else
-        ret = cosem_setString(e->value.byteArr, object->operatorName);
+        ret = cosem_setString(e->value.byteArr, object->operatorName,  
+            object->operatorName != NULL ? (uint16_t)strlen(object->operatorName) : 0);
 #endif //DLMS_IGNORE_MALLOC
         break;
     case 3:

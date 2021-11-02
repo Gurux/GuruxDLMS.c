@@ -316,6 +316,7 @@
       <Value>DLMS_IGNORE_SERVER</Value>
       <Value>DLMS_IGNORE_NOTIFY</Value>
       <Value>DLMS_USE_EPOCH_TIME</Value>
+      <Value>DLMS_IGNORE_IP6_SETUP</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>

@@ -817,10 +817,10 @@ void setup() {
     bb_addHexString(&bb, "3132333435363738");
     Client.SetSystemTitle(&bb);
     bb_clear(&bb);
-    bb_addHexString(&bb, "33 33 33 33 33 33 33 33 33 33 33 33 33 33 33 33");
+    bb_addHexString(&bb, "D0 D1 D2 D3 D4 D5 D6 D7D8 D9 DA DB DC DD DE DF");
     Client.SetAuthenticationKey(&bb);
     bb_clear(&bb);
-    bb_addHexString(&bb, "11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11");
+    bb_addHexString(&bb, "00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F");
     Client.SetBlockCipherKey(&bb);
     bb_clear(&bb);
   */

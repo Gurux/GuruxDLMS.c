@@ -260,6 +260,42 @@ int com_close()
   return ret;
 }
 
+//Read Invocation counter (frame counter) from the meter and update it.
+int com_updateInvocationCounter(const char* invocationCounter)
+{
+  int ret = DLMS_ERROR_CODE_OK;
+  //Read frame counter if security is used.
+  if (invocationCounter != NULL && Client.GetSecurity() != DLMS_SECURITY_NONE)
+  {
+    uint32_t ic = 0;
+    message messages;
+    gxReplyData reply;
+    unsigned short add = Client.GetClientAddress();
+    DLMS_AUTHENTICATION auth = Client.GetAuthentication();
+    DLMS_SECURITY security = Client.GetSecurity();
+    Client.SetClientAddress(16);
+    Client.SetAuthentication(DLMS_AUTHENTICATION_NONE);
+    Client.SetSecurity(DLMS_SECURITY_NONE);
+    if ((ret = com_initializeConnection()) == DLMS_ERROR_CODE_OK)
+    {
+      gxData d;
+      cosem_init(BASE(d), DLMS_OBJECT_TYPE_DATA, invocationCounter);
+      com_read(BASE(d), 2);
+      GXTRACE_INT(GET_STR_FROM_EEPROM("Invocation Counter:"), var_toInteger(&d.value));
+      ic = 1 + var_toInteger(&d.value);
+      obj_clear(BASE(d));
+    }
+    //Close connection. It's OK if this fails.
+    com_close();
+    //Return original settings.
+    Client.SetClientAddress(add);
+    Client.SetAuthentication(auth);
+    Client.SetSecurity(security);
+    Client.SetInvocationCounter(ic);
+  }
+  return ret;
+}
+
 //Initialize connection to the meter.
 int com_initializeConnection()
 {
@@ -712,10 +748,16 @@ int com_readValues()
 }
 
 //This function reads ALL objects that meter have. It will loop all object's attributes.
-int com_readAllObjects()
+int com_readAllObjects(const char* invocationCounter)
 {
   int ret;
-
+  if (invocationCounter != NULL)
+  {
+    if ((ret = com_updateInvocationCounter(invocationCounter)) != 0)
+    {
+      return ret;
+    }
+  }
   //Initialize connection.
   ret = com_initializeConnection();
   if (ret != DLMS_ERROR_CODE_OK)
@@ -743,17 +785,17 @@ int com_readAllObjects()
   GXTRACE(GET_STR_FROM_EEPROM("Clock"), data);
   obj_clear(BASE(clock1));
   free(data);
-/*
- * TODO: This is an example how to read profile generic.
-  //Read Profile generic.
-  gxProfileGeneric pg;
-  cosem_init(BASE(pg), DLMS_OBJECT_TYPE_PROFILE_GENERIC, "1.0.99.1.0.255");
-  com_read(BASE(pg), 3);
-  com_readRowsByEntry(&pg, 1, 2);
-  obj_toString(BASE(pg), &data);
-  GXTRACE(GET_STR_FROM_EEPROM("Load profile"), data);
-  obj_clear(BASE(pg));
-  free(data);
+  /*
+     TODO: This is an example how to read profile generic.
+    //Read Profile generic.
+    gxProfileGeneric pg;
+    cosem_init(BASE(pg), DLMS_OBJECT_TYPE_PROFILE_GENERIC, "1.0.99.1.0.255");
+    com_read(BASE(pg), 3);
+    com_readRowsByEntry(&pg, 1, 2);
+    obj_toString(BASE(pg), &data);
+    GXTRACE(GET_STR_FROM_EEPROM("Load profile"), data);
+    obj_clear(BASE(pg));
+    free(data);
   */
   //Release dynamically allocated objects.
   Client.ReleaseObjects();
@@ -768,18 +810,19 @@ void setup() {
   Client.init(true, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
   //Un-comment this if you want to set system title, block cipher key or authentication key.
   /*
-  Client.SetSecurity(DLMS_SECURITY_AUTHENTICATION_ENCRYPTION);
-  gxByteBuffer bb;
-  bb_init(&bb);
-  bb_addHexString(&bb, "3132333435363738");
-  Client.SetSystemTitle(&bb);
-  bb_clear(&bb);
-  bb_addHexString(&bb, "D0 D1 D2 D3 D4 D5 D6 D7D8 D9 DA DB DC DD DE DF");
-  Client.SetAuthenticationKey(&bb);
-  bb_clear(&bb);
-  bb_addHexString(&bb, "00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F");
-  Client.SetBlockCipherKey(&bb);
-  bb_clear(&bb);
+    Client.SetSecurity(DLMS_SECURITY_AUTHENTICATION_ENCRYPTION);
+    //TODO: Change logical name of the frame counter if it's used to com_readAllObjects.
+    gxByteBuffer bb;
+    bb_init(&bb);
+    bb_addHexString(&bb, "3132333435363738");
+    Client.SetSystemTitle(&bb);
+    bb_clear(&bb);
+    bb_addHexString(&bb, "33 33 33 33 33 33 33 33 33 33 33 33 33 33 33 33");
+    Client.SetAuthenticationKey(&bb);
+    bb_clear(&bb);
+    bb_addHexString(&bb, "11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11");
+    Client.SetBlockCipherKey(&bb);
+    bb_clear(&bb);
   */
   //Serial 1 is used to send trace.
   Serial1.begin(115200);
@@ -797,7 +840,8 @@ void loop() {
   {
     runTime = millis();
     GXTRACE(GET_STR_FROM_EEPROM("Start reading"), NULL);
-    ret = com_readAllObjects();
+    //TODO: Change logical name of the frame counter if it's used.
+    ret = com_readAllObjects("0.0.43.1.0.255");
     com_close();
   }
 }

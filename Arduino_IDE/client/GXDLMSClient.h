@@ -40,7 +40,7 @@
 #include "include/serverevents.h"
 #include "include/dlmssettings.h"
 #include "include/gxvalueeventargs.h"
-#include "include/gxObjects.h"
+#include "include/gxobjects.h"
 #include "include/bytebuffer.h"
 #include "include/variant.h"
 #include "include/objectarray.h"
@@ -67,7 +67,11 @@ class GXDLMSClient
 
     DLMS_AUTHENTICATION GetAuthentication();
 
+    void SetAuthentication(DLMS_AUTHENTICATION value);
 
+    //Get password.
+    gxByteBuffer* GetPassword();
+    
     //Handle received reply.
     int GetData(gxByteBuffer* reply, gxReplyData* data);
 
@@ -189,7 +193,25 @@ class GXDLMSClient
     // Returns Server address.
     static uint16_t GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize);
 
+ /////////////////////////////////////////////////////////////////////////
+    //Get client address.
+    uint16_t GetClientAddress();
+
+    //Set client address.
+    void SetClientAddress(uint16_t value);
+
+    //Get server address.
+    uint32_t GetServerAddress();
+    
 #ifndef DLMS_IGNORE_HIGH_GMAC
+    /////////////////////////////////////////////////////////////////////////
+    //Get invocation counter.
+    uint32_t GetInvocationCounter();
+
+    /////////////////////////////////////////////////////////////////////////
+    //Set invocation counter.
+    void SetInvocationCounter(uint32_t value);
+
     /////////////////////////////////////////////////////////////////////////
     //Get security.
     DLMS_SECURITY GetSecurity();
@@ -198,7 +220,7 @@ class GXDLMSClient
     //Set security level.
     int SetSecurity(DLMS_SECURITY value);
 
-        /////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
     //Set block cipher key.
     int SetBlockCipherKey(const gxByteBuffer* blockCipherKey);
 

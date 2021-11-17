@@ -103,6 +103,11 @@ DLMS_AUTHENTICATION GXDLMSClient::GetAuthentication()
   return settings.authentication;
 }
 
+void GXDLMSClient::SetAuthentication(DLMS_AUTHENTICATION value)
+{
+  settings.authentication = value;
+}
+
 int GXDLMSClient::GetData(gxByteBuffer* reply, gxReplyData* data)
 {
   return dlms_getData2(&settings, reply, data, 0);
@@ -272,6 +277,16 @@ int GXDLMSClient::GetAuthenticationKey(gxByteBuffer* authenticationKey)
   return 0;
 }
 
+uint32_t GXDLMSClient::GetInvocationCounter()
+{
+  return settings.cipher.invocationCounter;
+}
+
+void GXDLMSClient::SetInvocationCounter(uint32_t value)
+{
+  settings.cipher.invocationCounter = value;
+}
+
 DLMS_SECURITY GXDLMSClient::GetSecurity()
 {
   return settings.cipher.security;
@@ -283,5 +298,27 @@ int GXDLMSClient::SetSecurity(DLMS_SECURITY value)
   return 0;
 }
 #endif //DLMS_IGNORE_HIGH_GMAC
+
+gxByteBuffer* GXDLMSClient::GetPassword()
+{
+  settings.password.position = 0;
+  return &settings.password;
+}
+
+uint16_t GXDLMSClient::GetClientAddress()
+{
+  return settings.clientAddress;
+}
+
+
+void GXDLMSClient::SetClientAddress(uint16_t value)
+{
+  settings.clientAddress = value;
+}
+
+uint32_t GXDLMSClient::GetServerAddress()
+{
+  return settings.serverAddress;
+}
 
 //static GXDLMSClient Client;

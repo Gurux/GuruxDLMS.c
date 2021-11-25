@@ -1717,7 +1717,6 @@ int cosem_setAssociationShortName(
                     ret = 0;
                 }
             }
-            var_clear(&value);
         }
     }
     else if (index == 3)

@@ -1357,7 +1357,6 @@ void va_attach2(
     trg->size = src->size;
     src->data = NULL;
     src->size = src->capacity = 0;
-    src->size = src->capacity = 0;
 }
 
 //Get item from variant array by index.

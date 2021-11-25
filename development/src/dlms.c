@@ -2516,15 +2516,15 @@ int dlms_getHdlcFrame(
     }
     else if (ret == 0 && data->size - data->position <= frameSize)
     {
-        len = (uint16_t)(data->size - data->position);
         // Is last packet.
+        len = bb_available(data);
         ret = bb_setUInt8(reply, (unsigned char)(0xA0 | (((7 + primaryAddress.size + secondaryAddress.size + len) >> 8) & 0x7)));
     }
     else if (ret == 0)
     {
         // More data to left.
-        ret = bb_setUInt8(reply, 0xA8);
         len = frameSize;
+        ret = bb_setUInt8(reply, (unsigned char)(0xA8 | (((7 + primaryAddress.size + secondaryAddress.size + len) >> 8) & 0x7)));
     }
     // Frame len.
     if (ret == 0 && len == 0)
@@ -4271,11 +4271,13 @@ int dlms_handleReadResponse(
     }
     if (values.size != 0)
     {
-#ifdef DLMS_IGNORE_MALLOC
-#else
+#ifndef DLMS_IGNORE_MALLOC
+        reply->dataValue.vt = DLMS_DATA_TYPE_ARRAY;
         reply->dataValue.Arr = gxmalloc(sizeof(variantArray));
         va_init(reply->dataValue.Arr);
-        va_attach2(reply->dataValue.Arr, &values);
+        reply->dataValue.Arr->capacity = values.capacity;
+        va_copyArray(reply->dataValue.Arr, &values);
+        gxfree(values.data);
 #endif //DLMS_IGNORE_MALLOC
     }
     if (cnt != 1)
@@ -6543,10 +6545,6 @@ int dlms_parseSnrmUaResponse(
     //If default settings are used.
     if (data->size - data->position == 0)
     {
-        settings->maxInfoRX = DEFAULT_MAX_INFO_RX;
-        settings->maxInfoTX = DEFAULT_MAX_INFO_TX;
-        settings->windowSizeRX = DEFAULT_MAX_WINDOW_SIZE_RX;
-        settings->windowSizeTX = DEFAULT_MAX_WINDOW_SIZE_TX;
         return 0;
     }
     // Skip FromatID
@@ -6608,30 +6606,28 @@ int dlms_parseSnrmUaResponse(
         switch (id)
         {
         case HDLC_INFO_MAX_INFO_TX:
-#ifdef DLMS_IGNORE_MALLOC
             if (var_toInteger(&value) < settings->maxInfoRX)
             {
                 settings->maxInfoRX = (uint16_t)var_toInteger(&value);
             }
-#else
-            settings->maxInfoRX = (uint16_t)var_toInteger(&value);
-#endif //DLMS_IGNORE_MALLOC
             break;
         case HDLC_INFO_MAX_INFO_RX:
-#ifdef DLMS_IGNORE_MALLOC
             if (var_toInteger(&value) < settings->maxInfoTX)
             {
                 settings->maxInfoTX = (uint16_t)var_toInteger(&value);
             }
-#else
-            settings->maxInfoTX = (uint16_t)var_toInteger(&value);
-#endif //DLMS_IGNORE_MALLOC
             break;
         case HDLC_INFO_WINDOW_SIZE_TX:
-            settings->windowSizeRX = (unsigned char)var_toInteger(&value);
+            if (var_toInteger(&value) < settings->windowSizeRX)
+            {
+                settings->windowSizeRX = (unsigned char)var_toInteger(&value);
+            }
             break;
         case HDLC_INFO_WINDOW_SIZE_RX:
-            settings->windowSizeTX = (unsigned char)var_toInteger(&value);
+            if (var_toInteger(&value) < settings->windowSizeTX)
+            {
+                settings->windowSizeTX = (unsigned char)var_toInteger(&value);
+            }
             break;
         default:
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

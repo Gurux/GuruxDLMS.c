@@ -642,6 +642,22 @@ int svr_handleSnrmRequest(
 #ifndef DLMS_IGNORE_HIGH_GMAC
     DLMS_SECURITY security;
 #endif
+    //Initialize default settings.
+    if (settings->hdlc != NULL)
+    {
+        settings->base.maxInfoRX = settings->hdlc->maximumInfoLengthReceive;
+        settings->base.maxInfoTX = settings->hdlc->maximumInfoLengthTransmit;
+        settings->base.windowSizeRX = settings->hdlc->windowSizeReceive;
+        settings->base.windowSizeTX = settings->hdlc->windowSizeTransmit;
+    }
+    else
+    {
+        settings->base.maxInfoRX = DEFAULT_MAX_INFO_RX;
+        settings->base.maxInfoTX = DEFAULT_MAX_INFO_TX;
+        settings->base.windowSizeRX = DEFAULT_MAX_WINDOW_SIZE_RX;
+        settings->base.windowSizeTX = DEFAULT_MAX_WINDOW_SIZE_TX;
+
+    }
     if ((ret = dlms_parseSnrmUaResponse(&settings->base, data)) != 0)
     {
         return ret;
@@ -658,31 +674,6 @@ int svr_handleSnrmRequest(
 #endif
     settings->base.serverAddress = serverAddress;
     settings->base.clientAddress = clientAddress;
-#ifndef DLMS_IGNORE_IEC_HDLC_SETUP
-    if (settings->hdlc != NULL)
-    {
-        //If client wants send larger HDLC frames what meter accepts.
-        if (settings->hdlc->maximumInfoLengthReceive != 0 && settings->base.maxInfoTX > settings->hdlc->maximumInfoLengthReceive)
-        {
-            settings->base.maxInfoTX = settings->hdlc->maximumInfoLengthReceive;
-        }
-        //If client wants receive larger HDLC frames what meter accepts.
-        if (settings->hdlc->maximumInfoLengthTransmit != 0 && settings->base.maxInfoRX > settings->hdlc->maximumInfoLengthTransmit)
-        {
-            settings->base.maxInfoRX = settings->hdlc->maximumInfoLengthTransmit;
-        }
-        //If client asks higher window size what meter accepts.
-        if (settings->hdlc->windowSizeReceive != 0 && settings->base.windowSizeTX > settings->hdlc->windowSizeReceive)
-        {
-            settings->base.windowSizeTX = settings->hdlc->windowSizeReceive;
-        }
-        //If client asks higher window size what meter accepts.
-        if (settings->hdlc->windowSizeTransmit != 0 && settings->base.windowSizeRX > settings->hdlc->windowSizeTransmit)
-        {
-            settings->base.windowSizeRX = settings->hdlc->windowSizeTransmit;
-        }
-    }
-#endif //DLMS_IGNORE_IEC_HDLC_SETUP
     bb_setUInt8(data, 0x81); // FromatID
     bb_setUInt8(data, 0x80); // GroupID
     bb_setUInt8(data, 0); // Length

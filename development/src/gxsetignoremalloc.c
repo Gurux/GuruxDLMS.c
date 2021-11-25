@@ -1528,7 +1528,7 @@ int cosem_setGprsSetup(gxGPRSSetup* object, unsigned char index, dlmsVARIANT* va
 #endif //DLMS_IGNORE_GPRS_SETUP
 
 #ifndef DLMS_IGNORE_SECURITY_SETUP
-int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setSecuritySetup(dlmsSettings* settings, gxSecuritySetup* object, unsigned char index, dlmsVARIANT* value)
 {
     unsigned char ch;
     int pos, ret;

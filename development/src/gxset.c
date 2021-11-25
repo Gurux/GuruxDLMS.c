@@ -131,7 +131,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
 #endif //DLMS_IGNORE_GPRS_SETUP
 #ifndef DLMS_IGNORE_SECURITY_SETUP
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
-        ret = cosem_setSecuritySetup((gxSecuritySetup*)e->target, e->index, &e->value);
+        ret = cosem_setSecuritySetup(settings, (gxSecuritySetup*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_SECURITY_SETUP
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP

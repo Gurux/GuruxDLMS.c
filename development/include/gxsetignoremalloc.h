@@ -98,7 +98,7 @@ extern "C" {
 #endif //DLMS_IGNORE_GPRS_SETUP
 
 #ifndef DLMS_IGNORE_SECURITY_SETUP
-    int cosem_setSecuritySetup(gxSecuritySetup* object, unsigned char index, dlmsVARIANT *value);
+    int cosem_setSecuritySetup(dlmsSettings* settings, gxSecuritySetup* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_SECURITY_SETUP
 
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP

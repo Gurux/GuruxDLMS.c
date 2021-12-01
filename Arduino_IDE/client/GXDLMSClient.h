@@ -48,6 +48,7 @@
 #include "include/helpers.h"
 //obj_toString requires this
 #include "include/converters.h"
+#include "include/gxserializer.h"
 
 class GXDLMSClient
 {
@@ -71,7 +72,7 @@ class GXDLMSClient
 
     //Get password.
     gxByteBuffer* GetPassword();
-    
+
     //Handle received reply.
     int GetData(gxByteBuffer* reply, gxReplyData* data);
 
@@ -193,7 +194,7 @@ class GXDLMSClient
     // Returns Server address.
     static uint16_t GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize);
 
- /////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
     //Get client address.
     uint16_t GetClientAddress();
 
@@ -202,7 +203,7 @@ class GXDLMSClient
 
     //Get server address.
     uint32_t GetServerAddress();
-    
+
 #ifndef DLMS_IGNORE_HIGH_GMAC
     /////////////////////////////////////////////////////////////////////////
     //Get invocation counter.
@@ -244,6 +245,36 @@ class GXDLMSClient
     //Get system title.
     int GetSystemTitle(gxByteBuffer* systemTitle);
 #endif //DLMS_IGNORE_HIGH_GMAC
+
+    /////////////////////////////////////////////////////////////////////////
+    //Serialize objects from EEPROM.
+    int LoadObjects(gxSerializerSettings* serializeSettings, gxObject** objects, uint16_t count);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Serialize objects to EEPROM.
+    int SaveObjects(gxSerializerSettings* serializeSettings, gxObject** objects, uint16_t count);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Serialize objects to EEPROM.
+    int SaveObjects2(gxSerializerSettings* serializeSettings);
+
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get objects count in association view.
+    int ParseObjectCount(gxByteBuffer* data, uint16_t* count);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Serialize objects to EEPROM.
+    //Parse next association view object.
+    // This method can be used when malloc is not used or
+    // there is a limited amount of the memory in use.
+    int ParseNextObject(
+      gxByteBuffer* data,
+      gxObject* object);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Is Logical Name referencing used.
+    bool UseLogicalNameReferencing();
 };
 
 static GXDLMSClient Client;

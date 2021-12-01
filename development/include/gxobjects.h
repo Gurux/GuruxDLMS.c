@@ -841,6 +841,18 @@ extern "C" {
         unsigned char securitySetupReference[6];
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         gxByteBuffer secret;
+        /*
+        * User list.
+        */
+        gxArray userList;
+        /*
+        * Current user.
+        */
+#ifdef DLMS_IGNORE_MALLOC
+        gxUser currentUser;
+#else
+        gxKey2 currentUser;
+#endif //DLMS_IGNORE_MALLOC
     } gxAssociationShortName;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 

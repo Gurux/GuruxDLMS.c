@@ -41,7 +41,6 @@
 #include "include/dlms.h"
 #include "include/converters.h"
 
-
 DLMS_ACCESS_MODE svr_getAttributeAccess(
   dlmsSettings * /*settings*/,
   gxObject * /*obj*/,
@@ -259,6 +258,10 @@ int GXDLMSClient::GetBlockCipherKey(gxByteBuffer* blockCipherKey)
   return 0;
 }
 
+bool GXDLMSClient::UseLogicalNameReferencing()
+{
+  return settings.useLogicalNameReferencing;
+}
 
 int GXDLMSClient::SetAuthenticationKey(const gxByteBuffer* authenticationKey)
 {
@@ -319,6 +322,31 @@ void GXDLMSClient::SetClientAddress(uint16_t value)
 uint32_t GXDLMSClient::GetServerAddress()
 {
   return settings.serverAddress;
+}
+
+int GXDLMSClient::LoadObjects(gxSerializerSettings* serializeSettings, gxObject** objects, uint16_t count)
+{
+  return ser_loadObjects(&settings, serializeSettings, objects, count);
+}
+
+int GXDLMSClient::SaveObjects(gxSerializerSettings* serializeSettings, gxObject** objects, uint16_t count)
+{
+  return ser_saveObjects(serializeSettings, objects, count);
+}
+
+int GXDLMSClient::SaveObjects2(gxSerializerSettings* serializeSettings)
+{
+  return ser_saveObjects2(serializeSettings, GetObjects());
+}
+
+int GXDLMSClient::ParseObjectCount(gxByteBuffer* data, uint16_t* count)
+{
+  return cl_parseObjectCount(data, count);
+}
+
+int GXDLMSClient::ParseNextObject(gxByteBuffer* data, gxObject* object)
+{
+  return cl_parseNextObject(&settings, data, object);
 }
 
 //static GXDLMSClient Client;

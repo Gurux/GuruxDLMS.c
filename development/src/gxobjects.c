@@ -1634,7 +1634,14 @@ unsigned char obj_methodCount(gxObject* object)
         }
         break;
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
-        ret = 8;
+        if (object->version < 3)
+        {
+            ret = 8;
+        }
+        else
+        {
+            ret = 10;
+        }
         break;
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
         ret = 0;

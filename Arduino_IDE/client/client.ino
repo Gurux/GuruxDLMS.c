@@ -31,6 +31,7 @@
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
+#include <EEPROM.h>
 #include "GXDLMSClient.h"
 //---------------------------------------------------------------------------
 // Un-comment ignored objects from ArduinoIgnore.h to improve performance
@@ -44,6 +45,24 @@ gxByteBuffer frameData;
 const uint32_t WAIT_TIME = 2000;
 //How many times message is try to resend to the meter.
 const uint8_t RESEND_COUNT = 3;
+
+
+uint16_t EEPROM_SIZE()
+{
+  return EEPROM.length();
+}
+
+int EEPROM_READ(uint16_t index, unsigned char* value)
+{
+  *value = EEPROM.read(index);
+  return 0;
+}
+
+int EEPROM_WRITE(uint16_t index, unsigned char value)
+{
+  EEPROM.write(index, value);
+  return 0;
+}
 
 ///////////////////////////////////////////////////////////////////////
 // Write trace to the serial port.
@@ -360,6 +379,44 @@ int com_getAssociationView()
       (ret = Client.ParseObjects(&reply.data)) != 0)
   {
   }
+  //Parse object one at the time. This can be used if there is a limited amount of the memory available.
+  /*
+    //Value is not parsed for decrease the memory usage.
+    reply.ignoreValue = 1;
+    if ((ret = Client.GetObjectsRequest(&data)) == 0 &&
+      (ret = com_readDataBlock(&data, &reply)) == 0)
+    {
+    uint16_t pos, count;
+    if ((ret = Client.ParseObjectCount(&reply.data, &count)) != 0)
+    {
+      GXTRACE_INT("cl_parseObjectCount failed", ret);
+    }
+    gxObject obj;
+    for (pos = 0; pos != count; ++pos)
+    {
+      memset(&obj, 0, sizeof(gxObject));
+      if ((ret = Client.ParseNextObject(&reply.data, &obj)) != 0)
+      {
+        break;
+      }
+      //Only data and register objects are added to the association view.
+      if (obj.objectType == DLMS_OBJECT_TYPE_DATA)
+      {
+        gxData* data = (gxData*) malloc(sizeof(gxData));
+        INIT_OBJECT((*data), (DLMS_OBJECT_TYPE) obj.objectType, obj.logicalName);
+        data->base.shortName = obj.shortName;
+        oa_push(Client.GetObjects(), BASE((*data)));
+      }
+      else if (obj.objectType == DLMS_OBJECT_TYPE_REGISTER)
+      {
+        gxRegister* r = (gxRegister*) malloc(sizeof(gxRegister));
+        INIT_OBJECT((*r), (DLMS_OBJECT_TYPE) obj.objectType, obj.logicalName);
+        r->base.shortName = obj.shortName;
+        oa_push(Client.GetObjects(), BASE((*r)));
+      }
+    }
+    }
+  */
   mes_clear(&data);
   reply_clear(&reply);
   return ret;
@@ -766,7 +823,103 @@ int com_readAllObjects(const char* invocationCounter)
     return ret;
   }
   GXTRACE_INT(GET_STR_FROM_EEPROM("com_initializeConnection SUCCEEDED"), ret);
-
+  ///////////////////////////////////////////////////////////////////////////////////
+  // Un-commnent this if association view is read and serialized.
+  // Note! Modify com_getAssociationView to returns only wanted objects.
+  ///////////////////////////////////////////////////////////////////////////////////
+  /*
+    //Only current association view (attribute #2) is serialized.
+    gxObject* obj = NULL;
+    gxAssociationLogicalName ln;
+    gxAssociationShortName sn;
+    static unsigned char CURRENT_LN[] = { 0, 0, 40, 0, 0, 0xFF };
+    gxSerializerSettings serializerSettings;
+    ser_init(&serializerSettings);
+    gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE_EXCEPT(2)) };
+    serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
+    serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
+    gxObject* CURRENT_ASSOCIATION[1];
+    if (Client.UseLogicalNameReferencing())
+    {
+    if ((ret = INIT_OBJECT(ln, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, CURRENT_LN)) != 0)
+    {
+      return ret;
+    }
+    CURRENT_ASSOCIATION[0] = BASE(ln);
+    }
+    else
+    {
+    if ((ret = INIT_OBJECT(sn, DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME, CURRENT_LN)) != 0)
+    {
+      return ret;
+    }
+    NON_SERIALIZED_OBJECTS[0].objectType = DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME;
+    CURRENT_ASSOCIATION[0] = BASE(sn);
+    }
+    if ((ret = Client.LoadObjects(&serializerSettings, CURRENT_ASSOCIATION, sizeof(CURRENT_ASSOCIATION) / sizeof(CURRENT_ASSOCIATION[0]))) != 0)
+    {
+    GXTRACE_INT(GET_STR_FROM_EEPROM("LoadObjects FAILED:"), ret);
+    //Read the association view from the meter if reading from the EEPROM fails.
+    //Get objects from the meter and read them.
+    ret = com_getAssociationView();
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+      //If error code is 260 association view is too big and can't fit to memory.
+      GXTRACE_INT(GET_STR_FROM_EEPROM("Association View read FAILED:"), ret);
+      return ret;
+    }
+    ret = com_readScalerAndUnits();
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+      GXTRACE_INT(GET_STR_FROM_EEPROM("Scaler and units read FAILED:"), ret);
+      return ret;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////
+    //Read Profile Generic columns.
+    ret = com_readProfileGenericColumns();
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+      GXTRACE_INT(GET_STR_FROM_EEPROM("Profile Generic columns read FAILED:"), ret);
+      return ret;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////
+    //Only current association view is serialized.
+    if (Client.UseLogicalNameReferencing())
+    {
+      oa_copy(&ln.objectList, Client.GetObjects());
+    }
+    else
+    {
+      oa_copy(&sn.objectList, Client.GetObjects());
+    }
+    if ((ret = Client.SaveObjects(&serializerSettings, CURRENT_ASSOCIATION, sizeof(CURRENT_ASSOCIATION) / sizeof(CURRENT_ASSOCIATION[0]))) != 0)
+    {
+      GXTRACE_INT(GET_STR_FROM_EEPROM("SaveObjects FAILED:"), ret);
+      return ret;
+    }
+    if (Client.UseLogicalNameReferencing())
+    {
+      obj_clear(BASE(ln));
+    }
+    else
+    {
+      obj_clear(BASE(sn));
+    }
+    }
+    else
+    {
+    if (Client.UseLogicalNameReferencing())
+    {
+      oa_attach(Client.GetObjects(), ln.objectList.data, ln.objectList.size);
+    }
+    else
+    {
+      oa_attach(Client.GetObjects(), sn.objectList.data, sn.objectList.size);
+    }
+    GXTRACE_INT(GET_STR_FROM_EEPROM("LoadObjects Items loaded:"), Client.GetObjects()->size);
+    }
+  */
+  //Read just wanted objects withour serializating the association view.
   char* data = NULL;
   //Read Logical Device Name
   gxData ldn;

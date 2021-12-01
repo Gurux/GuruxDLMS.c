@@ -570,75 +570,80 @@ int cl_parseObjectCount(
 }
 
 int cl_parseNextObject(
+    dlmsSettings* settings,
     gxByteBuffer* data,
     gxObject* object)
 {
     int ret = 0;
-    uint16_t pos, size, capacity = sizeof(object->logicalName);
-    signed char id;
-    unsigned char mode;
-    dlmsVARIANT selector;
-    if ((ret = cosem_checkStructure(data, 4)) == 0 &&
-        (ret = cosem_getUInt16(data, &object->objectType)) == 0 &&
-        (ret = cosem_getUInt8(data, &object->version)) == 0 &&
-        (ret = cosem_getOctetString2(data, object->logicalName, capacity, &size)) == 0 &&
-        (ret = cosem_checkStructure(data, 2)) == 0)
+    uint16_t size, capacity = sizeof(object->logicalName);
+    if (settings->useLogicalNameReferencing)
     {
-        size = 0xFFFF;
-        if ((ret = cosem_checkArray(data, &size)) == 0)
+        uint16_t pos;
+        signed char id;
+        unsigned char mode;
+        dlmsVARIANT selector;
+        if ((ret = cosem_checkStructure(data, 4)) == 0 &&
+            (ret = cosem_getUInt16(data, &object->objectType)) == 0 &&
+            (ret = cosem_getUInt8(data, &object->version)) == 0 &&
+            (ret = cosem_getOctetString2(data, object->logicalName, capacity, &size)) == 0 &&
+            (ret = cosem_checkStructure(data, 2)) == 0)
         {
-            var_init(&selector);
-            //Get access modes.
-            for (pos = 0; pos != size; ++pos)
+            size = 0xFFFF;
+            if ((ret = cosem_checkArray(data, &size)) == 0)
             {
-                if ((ret = cosem_checkStructure(data, 3)) != 0 ||
-                    (ret = cosem_getInt8(data, &id)) != 0 ||
-                    (ret = cosem_getEnum(data, &mode)) != 0 ||
-                    (ret = cosem_getVariant(data, &selector)) != 0)
+                var_init(&selector);
+                //Get access modes.
+                for (pos = 0; pos != size; ++pos)
                 {
-                    break;
-                }
-                //Save access mode if user wants to know it.
-                if (object->access != NULL)
-                {
-                    if ((ret = bb_setUInt8ByIndex(&object->access->attributeAccessModes, pos, mode)) != 0)
+                    if ((ret = cosem_checkStructure(data, 3)) != 0 ||
+                        (ret = cosem_getInt8(data, &id)) != 0 ||
+                        (ret = cosem_getEnum(data, &mode)) != 0 ||
+                        (ret = cosem_getVariant(data, &selector)) != 0)
                     {
                         break;
                     }
-                }
-            }
-            //Get action access modes.
-            if (ret == 0)
-            {
-                size = 0xFFFF;
-                if ((ret = cosem_checkArray(data, &size)) == 0)
-                {
-                    for (pos = 0; pos != size; ++pos)
+                    //Save access mode if user wants to know it.
+                    if (object->access != NULL)
                     {
-                        if ((ret = cosem_checkStructure(data, 2)) != 0 ||
-                            (ret = cosem_getInt8(data, &id)) != 0)
+                        if ((ret = bb_setUInt8ByIndex(&object->access->attributeAccessModes, pos, mode)) != 0)
                         {
                             break;
                         }
-                        if ((ret = bb_getUInt8(data, &mode)) != 0)
+                    }
+                }
+                //Get action access modes.
+                if (ret == 0)
+                {
+                    size = 0xFFFF;
+                    if ((ret = cosem_checkArray(data, &size)) == 0)
+                    {
+                        for (pos = 0; pos != size; ++pos)
                         {
-                            return ret;
-                        }
-                        //Version 0 uses boolean and other versions uses enum.
-                        if (mode != DLMS_DATA_TYPE_ENUM && mode != DLMS_DATA_TYPE_BOOLEAN)
-                        {
-                            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-                        }
-                        if ((ret = bb_getUInt8(data, &mode)) != 0)
-                        {
-                            return ret;
-                        }
-                        //Save action access mode if user wants to know it.
-                        if (object->access != NULL)
-                        {
-                            if ((ret = bb_setUInt8ByIndex(&object->access->methodAccessModes, pos, mode)) != 0)
+                            if ((ret = cosem_checkStructure(data, 2)) != 0 ||
+                                (ret = cosem_getInt8(data, &id)) != 0)
                             {
                                 break;
+                            }
+                            if ((ret = bb_getUInt8(data, &mode)) != 0)
+                            {
+                                return ret;
+                            }
+                            //Version 0 uses boolean and other versions uses enum.
+                            if (mode != DLMS_DATA_TYPE_ENUM && mode != DLMS_DATA_TYPE_BOOLEAN)
+                            {
+                                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+                            }
+                            if ((ret = bb_getUInt8(data, &mode)) != 0)
+                            {
+                                return ret;
+                            }
+                            //Save action access mode if user wants to know it.
+                            if (object->access != NULL)
+                            {
+                                if ((ret = bb_setUInt8ByIndex(&object->access->methodAccessModes, pos, mode)) != 0)
+                                {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -646,7 +651,22 @@ int cl_parseNextObject(
             }
         }
     }
-    return ret;
+    else
+    {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+        if ((ret = cosem_checkStructure(data, 4)) == 0 &&
+            (ret = cosem_getInt16(data, &object->shortName)) == 0 &&
+            (ret = cosem_getUInt16(data, &object->objectType)) == 0 &&
+            (ret = cosem_getUInt8(data, &object->version)) == 0 &&
+            (ret = cosem_getOctetString2(data, object->logicalName, capacity, &size)) == 0)
+        {
+           
+        }
+#else
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+    }
+return ret;
 }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME

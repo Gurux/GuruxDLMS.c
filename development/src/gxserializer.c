@@ -3390,7 +3390,92 @@ int ser_saveAssociationShortName(
     gxSerializerSettings* serializeSettings,
     gxAssociationShortName* object)
 {
-    return 0;
+    int ret = 0;
+    uint16_t pos, count;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+#ifdef DLMS_IGNORE_MALLOC
+    gxUser* it;
+#else
+    gxKey2* it;
+#endif //DLMS_IGNORE_MALLOC
+
+    //Save object list.
+    if (!isAttributeSet(serializeSettings, ignored, 2))
+    {
+        gxObject* obj;
+        if ((ret = ser_saveObjectArrayCount(serializeSettings, &object->objectList, &count)) == 0)
+        {
+            for (pos = 0; pos != object->objectList.size; ++pos)
+            {
+                if ((ret = oa_getByIndex(&object->objectList, pos, &obj)) != DLMS_ERROR_CODE_OK ||
+                    (ret = ser_saveInt16(serializeSettings, obj->shortName)) != DLMS_ERROR_CODE_OK ||
+                    (ret = ser_saveUInt8(serializeSettings, obj->version)) != DLMS_ERROR_CODE_OK ||
+                    (ret = ser_saveUInt16(serializeSettings, obj->objectType)) != DLMS_ERROR_CODE_OK ||
+                    (ret = ser_set(serializeSettings, obj->logicalName, 6
+#ifdef DLMS_IGNORE_MALLOC
+                        , 6
+#endif //DLMS_IGNORE_MALLOC
+                    )) != 0)
+                {
+                    break;
+                }
+            }
+#ifdef DLMS_IGNORE_MALLOC
+            object->objectList.size = count;
+#endif //DLMS_IGNORE_MALLOC
+        }
+        if (ret != 0)
+        {
+            return ret;
+        }
+    }
+    //Security Setup Reference is from version 2.
+    if (ret == 0 && object->base.version > 2)
+    {
+#ifndef DLMS_IGNORE_SECURITY_SETUP
+        if (!isAttributeSet(serializeSettings, ignored, 9))
+        {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            ret = ser_set(serializeSettings, obj_getLogicalName((gxObject*)object->securitySetup), 6
+#ifdef DLMS_IGNORE_MALLOC
+                , 6
+#endif //DLMS_IGNORE_MALLOC
+            );
+#else
+            ret = ser_set(&ba, object->securitySetupReference, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        }
+#endif //DLMS_IGNORE_SECURITY_SETUP
+    }
+    if (ret == 0 && object->base.version > 3)
+    {
+        if (!isAttributeSet(serializeSettings, ignored, 10) &&
+            (ret = ser_saveArrayCount(serializeSettings, &object->userList, &count)) == 0)
+        {
+            for (pos = 0; pos != object->userList.size; ++pos)
+            {
+#ifdef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex3(&object->userList, pos, (void**)&it, sizeof(gxUser), 0)) != 0 ||
+                    (ret = ser_saveUInt8(serializeSettings, it->id)) != 0 ||
+                    (ret = ser_saveOctetString2(serializeSettings, it->name, MAX_USER_NAME_LENGTH)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex3(&object->userList, pos, (void**)&it, 0)) != 0 ||
+                    (ret = ser_saveUInt8(serializeSettings, it->key)) != 0 ||
+                    (ret = ser_saveOctetString2(serializeSettings, it->value, (uint16_t)((gxByteBuffer*)it->value)->size)) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+            }
+#ifdef DLMS_IGNORE_MALLOC
+            object->userList.size = count;
+#endif //DLMS_IGNORE_MALLOC
+        }
+    }
+    return ret;
 }
 
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -6504,7 +6589,7 @@ int ser_loadAssociationLogicalName(
         oa_empty(&object->objectList);
         if ((ret = ser_loadArray(serializeSettings, (gxArray*)&object->objectList, &count)) == 0)
         {
-            for (pos = 0; pos != object->objectList.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 obj = NULL;
                 if ((ret = ser_loadUInt8(serializeSettings, &version)) != 0 ||
@@ -6657,9 +6742,157 @@ int ser_loadAssociationLogicalName(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int ser_loadAssociationShortName(
     gxSerializerSettings* serializeSettings,
+    dlmsSettings* settings,
     gxAssociationShortName* object)
 {
-    return 0;
+#ifdef DLMS_IGNORE_MALLOC
+    gxUser* it;
+#endif //DLMS_IGNORE_MALLOC
+    unsigned char ch;
+    int pos, ret = 0;
+    uint16_t count, value;
+#ifdef DLMS_IGNORE_MALLOC
+    uint16_t capacity2;
+#endif //DLMS_IGNORE_MALLOC
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if (!isAttributeSet(serializeSettings, ignored, 2))
+    {
+        gxObject* obj = NULL;
+        unsigned char version;
+        DLMS_OBJECT_TYPE type = DLMS_OBJECT_TYPE_NONE;
+        unsigned char ln[6];
+        uint16_t shortName;
+        oa_empty(&object->objectList);
+        if ((ret = ser_loadArray(serializeSettings, (gxArray*)&object->objectList, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                obj = NULL;
+                if ((ret = ser_loadUInt16(serializeSettings, &shortName)) != 0 ||
+                    (ret = ser_loadUInt8(serializeSettings, &version)) != 0 ||
+                    (ret = ser_loadUInt16(serializeSettings, &value)) != 0)
+                {
+                    break;
+                }
+                type = value;
+                if ((ret = ser_get(serializeSettings, ln, 6
+#ifdef DLMS_IGNORE_MALLOC
+                    , 6
+#endif //DLMS_IGNORE_MALLOC
+                )) != 0 ||
+                    (ret = oa_findBySN(&settings->objects, shortName, &obj)) != 0)
+                {
+                    break;
+                }
+                if (obj == NULL)
+                {
+#ifdef DLMS_IGNORE_MALLOC
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
+#else
+                    if ((ret = cosem_createObject(type, &obj)) != DLMS_ERROR_CODE_OK)
+                    {
+                        //If unknown object.
+                        if (ret == DLMS_ERROR_CODE_INVALID_PARAMETER)
+                        {
+                            ret = 0;
+                            continue;
+                        }
+                        break;
+                    }
+                    if ((ret = cosem_setLogicalName(obj, ln)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+                    obj->shortName = shortName;
+                    obj->version = version;
+                    //Add object to released objects list.
+                    ret = oa_push(&settings->releasedObjects, obj);
+                    if (ret != DLMS_ERROR_CODE_OK)
+                    {
+                        return ret;
+                    }
+#endif //DLMS_IGNORE_MALLOC
+                }
+#ifndef DLMS_IGNORE_MALLOC
+                oa_push(&object->objectList, obj);
+#endif //DLMS_IGNORE_MALLOC
+                // obj->version = (unsigned char)version;
+            }
+#ifdef DLMS_IGNORE_MALLOC
+            object->objectList.size = count;
+#endif //DLMS_IGNORE_MALLOC
+        }
+        if (ret != 0)
+        {
+            return ret;
+        }
+    }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 9))
+    {
+#ifndef DLMS_IGNORE_SECURITY_SETUP
+        //Security Setup Reference is from version 1.
+        if (object->base.version > 0)
+        {
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+            unsigned char ln[6];
+            if ((ret = ser_get(serializeSettings, ln, 6
+#ifdef DLMS_IGNORE_MALLOC
+                , 6
+#endif //DLMS_IGNORE_MALLOC
+            )) != 0 ||
+                (ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln, (gxObject**)&object->securitySetup)) != 0)
+            {
+            }
+#else
+            if ((ret = ser_get(&ba, object->securitySetupReference, 6)) != 0)
+            {
+            }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        }
+#endif //DLMS_IGNORE_SECURITY_SETUP
+    }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 10))
+    {
+        obj_clearUserList(&object->userList);
+        if (object->base.version > 1)
+        {
+            if ((ret = ser_loadArray(serializeSettings, &object->userList, &count)) == 0)
+            {
+                for (pos = 0; pos != object->userList.size; ++pos)
+                {
+#ifdef DLMS_IGNORE_MALLOC
+                    if ((ret = ser_getArrayItem(&object->userList, pos, (void**)&it, sizeof(gxUser))) != 0 ||
+                        (ret = ser_loadUInt8(serializeSettings, &it->id)) != 0 ||
+                        (ret = ser_loadOctetString3(serializeSettings, (unsigned char*)it->name, &capacity2)) != 0)
+                    {
+                        break;
+                    }
+#else
+                    uint8_t id;
+                    gxByteBuffer* value = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+                    if (value == NULL)
+                    {
+                        return DLMS_ERROR_CODE_OUTOFMEMORY;
+                    }
+                    if ((ret = ser_loadUInt8(serializeSettings, &id)) != 0 ||
+                        (ret = ser_loadOctetString(serializeSettings, value)) != 0)
+                    {
+                        break;
+                    }
+                    if ((ret = arr_push(&object->userList, key_init2(id, value))) != 0)
+                    {
+                        break;
+                    }
+#endif //DLMS_IGNORE_MALLOC
+                }
+#ifdef DLMS_IGNORE_MALLOC
+                object->userList.size = count;
+#endif //DLMS_IGNORE_MALLOC
+            }
+        }
+    }
+    return ret;
 }
 
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -7257,7 +7490,7 @@ int ser_loadObject(
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     case DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME:
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-        ret = ser_loadAssociationShortName(serializeSettings, (gxAssociationShortName*)object);
+        ret = ser_loadAssociationShortName(serializeSettings, settings, (gxAssociationShortName*)object);
 #else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME

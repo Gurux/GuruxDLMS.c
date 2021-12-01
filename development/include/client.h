@@ -90,8 +90,10 @@ extern "C" {
         gxByteBuffer* data,
         uint16_t* count);
 
-    /*Parse next association view object. This method can be used when malloc is not used.*/
+    /*Parse next association view object. 
+    This method can be used when malloc is not used or there is a limited amount of the memory in use.*/
     int cl_parseNextObject(
+        dlmsSettings* settings,
         gxByteBuffer* data,
         gxObject* object);
 

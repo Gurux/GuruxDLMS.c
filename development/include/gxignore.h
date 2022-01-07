@@ -103,7 +103,6 @@ extern "C" {
 // #define DLMS_IGNORE_CHARGE
 // #define DLMS_IGNORE_TOKEN_GATEWAY
 // #define DLMS_IGNORE_COMPACT_DATA
-// #define DLMS_ITALIAN_STANDARD
 // #define DLMS_IGNORE_LLC_SSCS_SETUP
 // #define DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
 // #define DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
@@ -156,6 +155,9 @@ extern "C" {
 
 //GENERAL_CIPHERING is not used.
 //#define DLMS_IGNORE_GENERAL_CIPHERING
+
+// #define DLMS_ITALIAN_STANDARD
+// #define DLMS_INDONESIA_STANDARD
 
 #ifdef ARDUINO
 /////////////////////////////////////////////////////////////////////////////

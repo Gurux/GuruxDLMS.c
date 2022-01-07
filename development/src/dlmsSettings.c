@@ -163,6 +163,7 @@ void cl_init(
 #ifndef DLMS_IGNORE_PLC
     plc_reset(settings);
 #endif //DLMS_IGNORE_PLC
+    oa_init(&settings->internalObjects);
 }
 
 void cl_clear(
@@ -200,6 +201,7 @@ void cl_clear(
     settings->maxPduSize = 0xFFFF;
     settings->userId = -1;
     oa_clear(&settings->releasedObjects, 1);
+    oa_clear(&settings->internalObjects, 0);
     resetFrameSequence(settings);
     settings->expectedInvocationCounter = NULL;
 }

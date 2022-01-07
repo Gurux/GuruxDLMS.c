@@ -72,7 +72,7 @@ class GXDLMSClient
 
     //Get password.
     gxByteBuffer* GetPassword();
-
+    
     //Handle received reply.
     int GetData(gxByteBuffer* reply, gxReplyData* data);
 
@@ -194,7 +194,7 @@ class GXDLMSClient
     // Returns Server address.
     static uint16_t GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize);
 
-    /////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////
     //Get client address.
     uint16_t GetClientAddress();
 
@@ -203,7 +203,7 @@ class GXDLMSClient
 
     //Get server address.
     uint32_t GetServerAddress();
-
+    
 #ifndef DLMS_IGNORE_HIGH_GMAC
     /////////////////////////////////////////////////////////////////////////
     //Get invocation counter.

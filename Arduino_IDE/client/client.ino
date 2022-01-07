@@ -299,9 +299,11 @@ int com_updateInvocationCounter(const char* invocationCounter)
     {
       gxData d;
       cosem_init(BASE(d), DLMS_OBJECT_TYPE_DATA, invocationCounter);
-      com_read(BASE(d), 2);
-      GXTRACE_INT(GET_STR_FROM_EEPROM("Invocation Counter:"), var_toInteger(&d.value));
-      ic = 1 + var_toInteger(&d.value);
+      if ((ret = com_read(BASE(d), 2)) == 0)
+      {
+        GXTRACE_INT(GET_STR_FROM_EEPROM("Invocation Counter:"), var_toInteger(&d.value));
+        ic = 1 + var_toInteger(&d.value);
+      }
       obj_clear(BASE(d));
     }
     //Close connection. It's OK if this fails.

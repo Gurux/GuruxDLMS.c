@@ -1868,18 +1868,13 @@ int apdu_parsePDU(
     }
     if (ret == 0)
     {
-        if (
 #ifndef DLMS_IGNORE_SERVER
-            settings->server && afu != 0 && 
-#endif //DLMS_IGNORE_SERVER
+        if (settings->server && afu != 0 && 
             *result == DLMS_ASSOCIATION_RESULT_ACCEPTED &&
             !(
-#ifndef DLMS_IGNORE_SERVER
                 afu == DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE &&
-#endif //DLMS_IGNORE_SERVER
                 settings->authentication == DLMS_AUTHENTICATION_NONE))
         {
-#ifndef DLMS_IGNORE_SERVER
 #ifdef DLMS_DEBUG
             switch (afu)
             {
@@ -1896,11 +1891,11 @@ int apdu_parsePDU(
                 break;
             }
 #endif //DLMS_DEBUG
-#endif //DLMS_IGNORE_SERVER
             * result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             *diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE;
             return 0;
         }
+#endif //DLMS_IGNORE_SERVER
         //All meters don't send user-information if connection is failed.
         //For this reason result component is check again.
         if ((ret = apdu_handleResultComponent(*diagnostic)) != 0)

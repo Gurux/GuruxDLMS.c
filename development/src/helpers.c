@@ -831,7 +831,22 @@ double hlp_getScaler(int scaler)
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     return pow((float)10, scaler);
 #else
-    return 1;
+    double ret = 1;
+    if (scaler > 0) 
+    {
+        while (scaler--)
+        {
+            ret *= 10;
+        }
+    }
+    else if (scaler < 0)
+    {
+        while (scaler++)
+        {
+            ret /= 10;
+        }
+    }
+    return ret; 
 #endif
 }
 

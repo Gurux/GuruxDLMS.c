@@ -43,16 +43,17 @@
 
 unsigned char svr_isTarget(
     dlmsSettings* settings,
-    unsigned long serverAddress,
-    unsigned long clientAddress)
+    uint32_t serverAddress,
+    uint32_t clientAddress)
 {
     //Empty skeleton. This is added because server implementation needs this.
+    return 0;
 }
 
 void time_now(
     gxtime* value, unsigned char meterTime)
 {
-    //Empty skeleton. This is added because server implementation needs this.
+    time_initUnix(value, time(NULL));
 }
 
 /**
@@ -64,6 +65,7 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     unsigned char index)
 {
     //Empty skeleton. This is added because server implementation needs this.
+    return DLMS_ACCESS_MODE_NONE;
 }
 
 /**
@@ -75,6 +77,7 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
     unsigned char index)
 {
     //Empty skeleton. This is added because server implementation needs this.
+    return DLMS_METHOD_ACCESS_MODE_NONE;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -84,6 +87,25 @@ int svr_connected(
     dlmsServerSettings* settings)
 {
     //Empty skeleton. This is added because server implementation needs this.
+    return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+/////////////////////////////////////////////////////////////////////////////
+void svr_preRead(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+/////////////////////////////////////////////////////////////////////////////
+void svr_postRead(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
 }
 
 //Initialize connection buffers.
@@ -123,9 +145,9 @@ void ListenerThread(void* pVoid)
     socklen_t len;
     socklen_t AddrLen = sizeof(add);
 #endif
-    char *info;
+    char* info;
     int pos;
-    gxKey *it;
+    gxKey* it;
     char* buff = NULL;
     char ln[25];
     gxByteBuffer bb, senderInfo;
@@ -146,7 +168,7 @@ void ListenerThread(void* pVoid)
         socket = accept(con->socket, (struct sockaddr*)&client, &len);
         if (isConnected(con))
         {
-            if ((ret = getpeername(socket, (struct sockaddr*) &add, &AddrLen)) == -1)
+            if ((ret = getpeername(socket, (struct sockaddr*)&add, &AddrLen)) == -1)
             {
                 bb_empty(&bb);
 #if defined(_WIN32) || defined(_WIN64)//If Windows
@@ -218,6 +240,41 @@ void ListenerThread(void* pVoid)
                     bb_empty(&bb);
                     if (data.moreData == DLMS_DATA_REQUEST_TYPES_NONE)
                     {
+                        gxPushSetup ps;
+                        {
+                            const unsigned char ln[6] = { 0,7,25,9,0,255 };
+                            INIT_OBJECT(ps, DLMS_OBJECT_TYPE_PUSH_SETUP, ln);
+                        }
+                        gxClock clock;
+                        {
+                            const unsigned char ln[6] = { 0,0,1,0,0,255 };
+                            INIT_OBJECT(clock, DLMS_OBJECT_TYPE_CLOCK, ln);
+                        }
+                        arr_push(&ps.pushObjectList, key_init(&ps, co_init(2, 0)));
+                        arr_push(&ps.pushObjectList, key_init(&clock, co_init(2, 0)));
+                        gxArray items;
+                        arr_init(&items);
+                        if (notify_getPushValues(&con->settings.base, &ps, data.dataValue.Arr, &items) == 0)
+                        {
+                            gxKey* k;
+                            //gxObject* obj;
+                            char* str = NULL;
+                            for (pos = 0; pos != ps.pushObjectList.size; ++pos)
+                            {
+                                if ((ret = arr_getByIndex(&ps.pushObjectList, pos, (void**)&k)) != 0 ||
+                                    (ret = obj_toString((gxObject*)k->key, &str)) != 0)
+                                {
+                                    break;
+                                }
+                                printf("%s\r\n", str);
+                                free(str);
+                            }
+                        }
+                        obj_clearPushObjectList(&items);
+                        va_toString(data.dataValue.Arr, &bb);
+                        bb.data[bb.size] = 0;
+                        ++bb.size;
+                        printf("%s", bb.data);
                         ret = notify_parsePush(&con->settings.base, data.dataValue.Arr, &list);
                         if (ret != 0)
                         {
@@ -260,7 +317,7 @@ void ListenerThread(void* pVoid)
 
 #if defined(_WIN32) || defined(_WIN64)//If Windows
 #else //If Linux
-void * UnixListenerThread(void * pVoid)
+void* UnixListenerThread(void* pVoid)
 {
     ListenerThread(pVoid);
     return NULL;
@@ -299,7 +356,7 @@ int svr_listen(
         //socket creation.
         return -1;
     }
-    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char *)&fFlag, sizeof(fFlag)) == -1)
+    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char*)&fFlag, sizeof(fFlag)) == -1)
     {
         //setsockopt.
         return -1;
@@ -311,7 +368,7 @@ int svr_listen(
 #else
     add.sin_family = AF_INET;
 #endif
-    if ((ret = bind(con->socket, (struct sockaddr*) &add, sizeof(add))) == -1)
+    if ((ret = bind(con->socket, (struct sockaddr*)&add, sizeof(add))) == -1)
     {
         //bind;
         return -1;
@@ -324,7 +381,7 @@ int svr_listen(
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
     con->receiverThread = (HANDLE)_beginthread(ListenerThread, 0, (LPVOID)con);
 #else
-    ret = pthread_create(&con->receiverThread, NULL, UnixListenerThread, (void *)con);
+    ret = pthread_create(&con->receiverThread, NULL, UnixListenerThread, (void*)con);
 #endif
     return ret;
 }
@@ -346,8 +403,8 @@ int con_close(
 #else
         close(con->socket);
         con->socket = -1;
-        void *res;
-        pthread_join(con->receiverThread, (void **)&res);
+        void* res;
+        pthread_join(con->receiverThread, (void**)&res);
         free(res);
 #endif
 

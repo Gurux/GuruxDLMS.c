@@ -41,9 +41,9 @@ extern "C" {
 #ifndef uint16_t
 #define uint16_t unsigned short
 #endif //uint16_t
-#ifndef uint32_t
+#if !(defined uint32_t) && !(defined _UINT32_T_DECLARED)
 #define uint32_t unsigned long
-#endif //uint32_t
+#endif //!(defined uint32_t) && !(defined _UINT32_T_DECLARED)
 #ifndef uint64_t
 #define uint64_t unsigned long long
 #endif //uint64_t

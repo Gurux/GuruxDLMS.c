@@ -397,6 +397,7 @@ int var_clear(dlmsVARIANT* data)
             gxfree(data->dateTime);
             data->dateTime = NULL;
         }
+        break;
     default:
         data->llVal = 0;
         break;

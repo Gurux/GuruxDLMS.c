@@ -19,6 +19,7 @@
 
 #include "../../development/include/bytebuffer.h"
 #include "../../development/include/dlmssettings.h"
+#include "../../development/include/converters.h"
 
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
 #include <Windows.h> //Add support for serial port functions.

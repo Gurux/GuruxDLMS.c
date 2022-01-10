@@ -660,13 +660,13 @@ int cl_parseNextObject(
             (ret = cosem_getUInt8(data, &object->version)) == 0 &&
             (ret = cosem_getOctetString2(data, object->logicalName, capacity, &size)) == 0)
         {
-           
+
         }
 #else
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }
-return ret;
+    return ret;
 }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
@@ -1095,6 +1095,65 @@ int cl_readRowsByRange2(
     return ret;
 }
 
+#ifdef DLMS_INDONESIA_STANDARD
+int cl_readRowsByRange3(
+    dlmsSettings* settings,
+    gxProfileGeneric* object,
+    gxtime* start,
+    gxtime* end,
+    unsigned char startRegister,
+    unsigned char numberOfRegisters,
+    message* messages)
+{
+    int ret;
+    gxByteBuffer data;
+    if (start == NULL || end == NULL || messages == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned char buff[100];
+    bb_attach(&data, buff, 0, sizeof(buff));
+#else
+    BYTE_BUFFER_INIT(&data);
+#endif //DLMS_IGNORE_MALLOC
+    //Add AccessSelector
+    if ((ret = bb_setUInt8(&data, 1)) == 0 &&
+        //Add structure tag.
+        (ret = cosem_setStructure(&data, 4)) == 0)
+    {
+        //Add start time
+        if ((ret = cosem_setDateTimeAsOctetString(&data, start)) != 0)
+        {
+            bb_clear(&data);
+            return ret;
+        }
+        //Add end time
+        if ((ret = cosem_setDateTimeAsOctetString(&data, end)) != 0)
+        {
+            bb_clear(&data);
+            return ret;
+        }
+        //Add start register
+        bb_setUInt8(&data, startRegister);
+        //Add number of registers.
+        bb_setUInt8(&data, numberOfRegisters);
+        if (settings->useLogicalNameReferencing)
+        {
+            ret = cl_readLN(settings, object->base.logicalName, object->base.objectType, 2, &data, messages);
+        }
+        else
+        {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+            ret = cl_readSN(settings, object->base.shortName, 2, &data, messages);
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+        }
+    }
+    bb_clear(&data);
+    return ret;
+}
+#endif //DLMS_INDONESIA_STANDARD
+
 #ifdef DLMS_USE_EPOCH_TIME
 int cl_readRowsByRange(
     dlmsSettings* settings,
@@ -1160,7 +1219,7 @@ int cl_updateValues(
 {
     uint16_t count;
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxListItem* it;
     gxDataInfo info;
     unsigned char ch;

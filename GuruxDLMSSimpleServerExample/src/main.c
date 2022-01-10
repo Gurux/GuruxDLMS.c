@@ -1803,6 +1803,14 @@ void svr_preWrite(
         {
             updateState(GURUX_EVENT_CODES_TIME_CHANGE);
         }
+        //If client try to update low level password when high level authentication is established.
+        //This is possible in Indian standard.
+        else if (e->target == BASE(associationHigh) && e->index == 7)
+        {
+            ret = cosem_getOctetString(e->value.byteArr, &associationLow.secret);
+            saveSettings();
+            e->handled = 1;
+        }
         hlp_getLogicalNameToString(e->target->logicalName, str);
         printf("Writing %s\r\n", str);
 
@@ -2038,7 +2046,7 @@ void svr_preAction(
             }
             updateState(GURUX_EVENT_CODES_GLOBAL_METER_RESET);
             e->handled = 1;
-    }
+        }
         else if (e->target == BASE(disconnectControl))
         {
             updateState(GURUX_EVENT_CODES_OUTPUT_RELAY_STATE);
@@ -2064,7 +2072,7 @@ void svr_preAction(
             testMode = 0;
             saveSettings();
         }
-}
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2783,7 +2791,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-        }
+            }
             //If client closes the connection.
             if (ret == 0)
             {
@@ -2795,7 +2803,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-    }
+            }
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             if (trace > GX_TRACE_LEVEL_WARNING)
             {
@@ -2817,7 +2825,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-}
+            }
             if (reply.size != 0)
             {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -2842,7 +2850,7 @@ void ListenerThread(void* pVoid)
                     socket1 = -1;
 #endif
                     break;
-            }
+                }
                 bb_clear(&reply);
             }
         }

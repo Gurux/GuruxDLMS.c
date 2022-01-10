@@ -479,7 +479,7 @@ unsigned char time_getHours(
 #ifdef DLMS_USE_EPOCH_TIME
     return (unsigned char)((value->value % 86400L) / 3600L);
 #else
-    return (unsigned char) value->value.tm_hour;
+    return (unsigned char)value->value.tm_hour;
 #endif // DLMS_USE_EPOCH_TIME
 }
 
@@ -489,7 +489,7 @@ unsigned char time_getMinutes(
 #ifdef DLMS_USE_EPOCH_TIME
     return (unsigned char)((value->value % 3600L) / 60L);
 #else
-    return (unsigned char) value->value.tm_min;
+    return (unsigned char)value->value.tm_min;
 #endif // DLMS_USE_EPOCH_TIME
 }
 
@@ -794,19 +794,19 @@ int time_toString(
     time_fromUnixTime2(time->value, &year, &mon, &day, &hour, &min, &sec, NULL);
 #else
     year = (uint16_t)time->value.tm_year;
-    if (year != -1)
+    if (year != 0xFFFF)
     {
         year += 1900;
     }
     mon = (unsigned char)time->value.tm_mon;
-    if (year != -1)
+    if (mon != 0xFF)
     {
         mon += 1;
     }
     day = (unsigned char)time->value.tm_mday;
     hour = (unsigned char)time->value.tm_hour;
     min = (unsigned char)time->value.tm_min;
-    sec = (unsigned char) time->value.tm_sec;
+    sec = (unsigned char)time->value.tm_sec;
 #endif //DLMS_USE_EPOCH_TIME
     //Add year, month and date if used.
     if ((time->skip & (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY)) != (DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY))
@@ -1064,7 +1064,7 @@ int time_toString(
                 {
                     empty = 0;
                 }
-                bb_addIntAsString(ba, (time->skip& DATETIME_SKIPS_YEAR) == 0 ? year : 0);
+                bb_addIntAsString(ba, (time->skip & DATETIME_SKIPS_YEAR) == 0 ? year : 0);
             }
             else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
             {

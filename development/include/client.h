@@ -163,12 +163,27 @@ extern "C" {
         message* messages);
 #endif //DLMS_USE_EPOCH_TIME
 
+    /////////////////////////////////////////////////////////////////////////
+    //Read profile generic using start and end times.
     int cl_readRowsByRange2(
         dlmsSettings* settings,
         gxProfileGeneric* object,
         gxtime* start,
         gxtime* end,
         message* messages);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Read profile generic using Indonesia standard.
+#ifdef DLMS_INDONESIA_STANDARD
+    int cl_readRowsByRange3(
+        dlmsSettings* settings,
+        gxProfileGeneric* object,
+        gxtime* start,
+        gxtime* end,
+        unsigned char startRegister,
+        unsigned char numberOfRegisters,
+        message* messages)
+#endif //DLMS_INDONESIA_STANDARD
 
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 

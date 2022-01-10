@@ -543,7 +543,7 @@ int getLNObjects(
     gxValueEventArg* e,
     gxByteBuffer* data)
 {
-    uint16_t pduSize;
+    uint16_t pduSize = 0;
     gxAssociationLogicalName* object = (gxAssociationLogicalName*)e->target;
     int ret;
     uint16_t pos, pos2;

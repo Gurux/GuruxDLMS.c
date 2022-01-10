@@ -1775,6 +1775,14 @@ void svr_preWrite(
         {
             updateState(GURUX_EVENT_CODES_TIME_CHANGE);
         }
+        //If client try to update low level password when high level authentication is established.
+        //This is possible in Indian standard.
+        if (e->target == BASE(associationHigh) && e->index == 7)
+        {
+            ret = cosem_getOctetString(e->value.byteArr, &associationLow.secret);
+            saveSettings();
+            e->handled = 1;
+        }
         hlp_getLogicalNameToString(e->target->logicalName, str);
         printf("Writing %s\r\n", str);
 
@@ -2269,7 +2277,7 @@ unsigned char svr_isTarget(
     {
         // If address is not broadcast or serial number.
         //Remove logical address from the server address.
-        unsigned char broadcast = (serverAddress & 0x3FFF) == 0x3FFF || (serverAddress & 0x7F) == 0x7F;
+        unsigned char broadcast = (serverAddress & 0xFFFF) == 0x3FFF || (serverAddress & 0xFF) == 0x7F;
         if (!(broadcast ||
             (serverAddress & 0x3FFF) == SERIAL_NUMBER % 10000 + 1000))
         {

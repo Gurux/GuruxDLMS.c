@@ -73,7 +73,7 @@ int obj_typeToString(DLMS_OBJECT_TYPE type, char* buff)
 int obj_UInt16ArrayToString(gxByteBuffer* bb, gxArray* arr)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     uint16_t* it;
     for (pos = 0; pos != arr->size; ++pos)
     {
@@ -352,165 +352,350 @@ const char* obj_getUnitAsString(unsigned char unit)
     const char* ret;
     switch (unit)
     {
-    case 0:
+    case DLMS_UNIT_NONE:
         ret = GET_STR_FROM_EEPROM("None");
-    case 1:
+        break;
+    case DLMS_UNIT_YEAR:
         ret = GET_STR_FROM_EEPROM("Year");
         break;
-    case 2:
+    case DLMS_UNIT_MONTH:
         ret = GET_STR_FROM_EEPROM("Month");
         break;
-    case 3:
+    case DLMS_UNIT_WEEK:
         ret = GET_STR_FROM_EEPROM("Week");
         break;
-    case 4:
+    case DLMS_UNIT_DAY:
         ret = GET_STR_FROM_EEPROM("Day");
         break;
-    case 5:
+    case DLMS_UNIT_HOUR:
         ret = GET_STR_FROM_EEPROM("Hour");
         break;
-    case 6:
+    case DLMS_UNIT_MINUTE:
         ret = GET_STR_FROM_EEPROM("Minute");
         break;
-    case 7:
+    case DLMS_UNIT_SECOND:
         ret = GET_STR_FROM_EEPROM("Second");
         break;
-    case 8:
+    case DLMS_UNIT_PHASE_ANGLE_DEGREE:
         ret = GET_STR_FROM_EEPROM("PhaseAngle");
         break;
-    case 9:
+    case DLMS_UNIT_TEMPERATURE:
         ret = GET_STR_FROM_EEPROM("Temperature");
         break;
-    case 10:
+    case DLMS_UNIT_LOCAL_CURRENCY:
         ret = GET_STR_FROM_EEPROM("LocalCurrency");
         break;
-    case 11:
+    case DLMS_UNIT_LENGTH:
         ret = GET_STR_FROM_EEPROM("Length");
         break;
-    case 12:
+    case DLMS_UNIT_SPEED:
         ret = GET_STR_FROM_EEPROM("Speed");
         break;
-    case 13:
-        ret = GET_STR_FROM_EEPROM("Volume");
+    case DLMS_UNIT_VOLUME_CUBIC_METER:
+        ret = GET_STR_FROM_EEPROM("Volume Cubic Meter");
         break;
-    case 14:
-        ret = GET_STR_FROM_EEPROM("CorrectedVolume");
+    case DLMS_UNIT_CORRECTED_VOLUME:
+        ret = GET_STR_FROM_EEPROM("Corrected volume");
         break;
-    case 15:
-        ret = GET_STR_FROM_EEPROM("VolumeFlux");
+    case DLMS_UNIT_VOLUME_FLUX_HOUR:
+        ret = GET_STR_FROM_EEPROM("Volume flux hour");
         break;
-    case 16:
-        ret = GET_STR_FROM_EEPROM("CorrectedVolumeFlux");
+    case DLMS_UNIT_CORRECTED_VOLUME_FLUX_HOUR:
+        ret = GET_STR_FROM_EEPROM("Corrected volume flux hour");
         break;
-    case 17:
-        ret = GET_STR_FROM_EEPROM("VolumeFlux");
+    case DLMS_UNIT_VOLUME_FLUX_DAY:
+        ret = GET_STR_FROM_EEPROM("Volume flux day");
         break;
-    case 18:
-        ret = GET_STR_FROM_EEPROM("CorrectedVolumeFlux");
+    case DLMS_UNIT_CORRECTED_VOLUME_FLUX_DAY:
+        ret = GET_STR_FROM_EEPROM("Corrected volume flux day");
         break;
-    case 19:
-        ret = GET_STR_FROM_EEPROM("Volume");
+    case DLMS_UNIT_VOLUME_LITER:
+        ret = GET_STR_FROM_EEPROM("Volume liter");
         break;
-    case 20:
-        ret = GET_STR_FROM_EEPROM("MassKg");
+    case DLMS_UNIT_MASS_KG:
+        ret = GET_STR_FROM_EEPROM("Mass Kg");
         break;
-    case 21:
+    case DLMS_UNIT_FORCE:
         ret = GET_STR_FROM_EEPROM("Force");
         break;
-    case 22:
+    case DLMS_UNIT_ENERGY:
         ret = GET_STR_FROM_EEPROM("Energy");
         break;
-    case 23:
-        ret = GET_STR_FROM_EEPROM("PressurePascal");
+    case DLMS_UNIT_PRESSURE_PASCAL:
+        ret = GET_STR_FROM_EEPROM("Pressure pascal");
         break;
-    case 24:
-        ret = GET_STR_FROM_EEPROM("PressureBar");
+    case DLMS_UNIT_PRESSURE_BAR:
+        ret = GET_STR_FROM_EEPROM("Pressure Bar");
         break;
-    case 25:
-        ret = GET_STR_FROM_EEPROM("Energy");
+    case DLMS_UNIT_ENERGY_JOULE:
+        ret = GET_STR_FROM_EEPROM("Energy joule");
         break;
-    case 26:
-        ret = GET_STR_FROM_EEPROM("ThermalPower");
+    case DLMS_UNIT_THERMAL_POWER:
+        ret = GET_STR_FROM_EEPROM("Thermal power");
         break;
-    case 27:
-        ret = GET_STR_FROM_EEPROM("ActivePower");
+    case DLMS_UNIT_ACTIVE_POWER:
+        ret = GET_STR_FROM_EEPROM("Active power");
         break;
-    case 28:
-        ret = GET_STR_FROM_EEPROM("ApparentPower");
+    case DLMS_UNIT_APPARENT_POWER:
+        ret = GET_STR_FROM_EEPROM("Apparent power");
         break;
-    case 29:
-        ret = GET_STR_FROM_EEPROM("ReactivePower");
+    case DLMS_UNIT_REACTIVE_POWER:
+        ret = GET_STR_FROM_EEPROM("Reactive power");
         break;
-    case 30:
-        ret = GET_STR_FROM_EEPROM("ActiveEnergy");
+    case DLMS_UNIT_ACTIVE_ENERGY:
+        ret = GET_STR_FROM_EEPROM("Active energy");
         break;
-    case 31:
-        ret = GET_STR_FROM_EEPROM("ApparentEnergy");
+    case DLMS_UNIT_APPARENT_ENERGY:
+        ret = GET_STR_FROM_EEPROM("Apparent energy");
         break;
-    case 32:
-        ret = GET_STR_FROM_EEPROM("ReactiveEnergy");
+    case DLMS_UNIT_REACTIVE_ENERGY:
+        ret = GET_STR_FROM_EEPROM("Reactive energy");
         break;
-    case 33:
+    case DLMS_UNIT_CURRENT:
         ret = GET_STR_FROM_EEPROM("Current");
         break;
-    case 34:
+    case DLMS_UNIT_ELECTRICAL_CHARGE:
         ret = GET_STR_FROM_EEPROM("ElectricalCharge");
         break;
-    case 35:
+    case DLMS_UNIT_VOLTAGE:
         ret = GET_STR_FROM_EEPROM("Voltage");
         break;
-    case 36:
+    case DLMS_UNIT_ELECTRICAL_FIELD_STRENGTH:
         ret = GET_STR_FROM_EEPROM("Electrical field strength E V/m");
         break;
-    case 37:
+    case DLMS_UNIT_CAPACITY:
         ret = GET_STR_FROM_EEPROM("Capacity C farad C/V = As/V");
         break;
-    case 38:
+    case DLMS_UNIT_RESISTANCE:
         ret = GET_STR_FROM_EEPROM("Resistance");
         break;
-    case 39:
+    case DLMS_UNIT_RESISTIVITY:
         ret = GET_STR_FROM_EEPROM("Resistivity");
         break;
-    case 40:
+    case DLMS_UNIT_MAGNETIC_FLUX:
         ret = GET_STR_FROM_EEPROM("Magnetic flux F weber Wb = Vs");
         break;
-    case 41:
+    case DLMS_UNIT_INDUCTION:
         ret = GET_STR_FROM_EEPROM("Induction T tesla Wb/m2");
         break;
-    case 42:
+    case DLMS_UNIT_MAGNETIC:
         ret = GET_STR_FROM_EEPROM("Magnetic field strength H A/m");
         break;
-    case 43:
+    case DLMS_UNIT_INDUCTIVITY:
         ret = GET_STR_FROM_EEPROM("Inductivity L henry H = Wb/A");
         break;
-    case 44:
+    case DLMS_UNIT_FREQUENCY:
         ret = GET_STR_FROM_EEPROM("Frequency");
         break;
-    case 45:
-        ret = GET_STR_FROM_EEPROM("ActiveEnergy");
+    case DLMS_UNIT_ACTIVE:
+        ret = GET_STR_FROM_EEPROM("Active energy");
         break;
-    case 46:
-        ret = GET_STR_FROM_EEPROM("ReactiveEnergy");
+    case DLMS_UNIT_REACTIVE:
+        ret = GET_STR_FROM_EEPROM("Reactive energy");
         break;
-    case 47:
-        ret = GET_STR_FROM_EEPROM("ApparentEnergy");
+    case DLMS_UNIT_APPARENT:
+        ret = GET_STR_FROM_EEPROM("Apparent energy");
         break;
-    case 48:
+    case DLMS_UNIT_V260:
         ret = GET_STR_FROM_EEPROM("V260*60s");
         break;
-    case 49:
+    case DLMS_UNIT_A260:
         ret = GET_STR_FROM_EEPROM("A260*60s");
         break;
-    case 50:
+    case DLMS_UNIT_MASS_KG_PER_SECOND:
         ret = GET_STR_FROM_EEPROM("Mass");
         break;
-    case 51:
-        ret = GET_STR_FROM_EEPROM("ConductanceSiemens");
+    case DLMS_UNIT_CONDUCTANCE:
+        ret = GET_STR_FROM_EEPROM("Conductance siemens");
         break;
-    case 254:
-        ret = GET_STR_FROM_EEPROM("OtherUnit");
+    case DLMS_UNIT_KELVIN:
+        ret = GET_STR_FROM_EEPROM("Kelvin");
         break;
-    case 255:
+    case DLMS_UNIT_RU2H:
+        ret = GET_STR_FROM_EEPROM("RU2h");
+        break;
+    case DLMS_UNIT_RI2H:
+        ret = GET_STR_FROM_EEPROM("RI2h");
+        break;
+    case DLMS_UNIT_CUBIC_METER_RV:
+        ret = GET_STR_FROM_EEPROM("Cubic meter RV");
+        break;
+    case DLMS_UNIT_PERCENTAGE:
+        ret = GET_STR_FROM_EEPROM("Percentage");
+        break;
+    case DLMS_UNIT_AMPERE_HOURS:
+        ret = GET_STR_FROM_EEPROM("Ampere hours");
+        break;
+    case DLMS_UNIT_ENERGY_PER_VOLUME:
+        ret = GET_STR_FROM_EEPROM("Energy per volume");
+        break;
+    case DLMS_UNIT_WOBBE:
+        ret = GET_STR_FROM_EEPROM("Wobbe");
+        break;
+    case DLMS_UNIT_MOLE_PERCENT:
+        ret = GET_STR_FROM_EEPROM("Mole percent");
+        break;
+    case DLMS_UNIT_MASS_DENSITY:
+        ret = GET_STR_FROM_EEPROM("Mass density");
+        break;
+    case DLMS_UNIT_PASCAL_SECOND:
+        ret = GET_STR_FROM_EEPROM("Pascal second");
+        break;
+    case DLMS_UNIT_JOULE_KILOGRAM:
+        ret = GET_STR_FROM_EEPROM("Joule kilogram");
+        break;
+    case DLMS_UNIT_PRESSURE_GRAM_PER_SQUARE_CENTIMETER:
+        ret = GET_STR_FROM_EEPROM("Pressure, gram per square centimeter.");
+        break;
+    case DLMS_UNIT_PRESSURE_ATMOSPHERE:
+        ret = GET_STR_FROM_EEPROM("Pressure, atmosphere.");
+        break;
+    case DLMS_UNIT_SIGNAL_STRENGTH_MILLI_WATT:
+        ret = GET_STR_FROM_EEPROM("Signal strength, dB milliwatt");
+        break;
+    case DLMS_UNIT_SIGNAL_STRENGTH_MICRO_VOLT:
+        //logarithmic unit that expresses the ratio between two values of a physical quantity
+        ret = GET_STR_FROM_EEPROM("Signal strength, dB microvolt");
+        break;
+    case DLMS_UNIT_DB:
+        ret = GET_STR_FROM_EEPROM("dB");
+        break;
+    case DLMS_UNIT_INCH:
+        ret = GET_STR_FROM_EEPROM("Inch");
+        break;
+    case DLMS_UNIT_FOOT:
+        ret = GET_STR_FROM_EEPROM("Foot");
+        break;
+    case DLMS_UNIT_POUND:
+        ret = GET_STR_FROM_EEPROM("Pound");
+        break;
+    case DLMS_UNIT_FAHRENHEIT:
+        ret = GET_STR_FROM_EEPROM("Fahrenheit");
+        break;
+    case DLMS_UNIT_RANKINE:
+        ret = GET_STR_FROM_EEPROM("Rankine");
+        break;
+    case DLMS_UNIT_SQUARE_INCH:
+        ret = GET_STR_FROM_EEPROM("Square inch");
+        break;
+    case DLMS_UNIT_SQUARE_FOOT:
+        ret = GET_STR_FROM_EEPROM("Square foot");
+        break;
+    case DLMS_UNIT_ACRE:
+        ret = GET_STR_FROM_EEPROM("Acre");
+        break;
+    case DLMS_UNIT_CUBIC_INCH:
+        ret = GET_STR_FROM_EEPROM("Cubic inch");
+        break;
+    case DLMS_UNIT_CUBIC_FOOT:
+        ret = GET_STR_FROM_EEPROM("Cubic foot");
+        break;
+    case DLMS_UNIT_ACRE_FOOT:
+        ret = GET_STR_FROM_EEPROM("Acre foot");
+        break;
+    case DLMS_UNIT_GALLON_IMPERIAL:
+        ret = GET_STR_FROM_EEPROM("Gallon Imperial");
+        break;
+    case DLMS_UNIT_GALLON_US:
+        ret = GET_STR_FROM_EEPROM("GallonUS");
+        break;
+    case DLMS_UNIT_POUND_FORCE:
+        ret = GET_STR_FROM_EEPROM("Pound force");
+        break;
+    case DLMS_UNIT_POUND_FORCE_PER_SQUARE_INCH:
+        ret = GET_STR_FROM_EEPROM("Pound force per square inch");
+        break;
+    case DLMS_UNIT_POUND_PER_CUBIC_FOOT:
+        ret = GET_STR_FROM_EEPROM("Pound per cubic foot");
+        break;
+    case DLMS_UNIT_POUND_PER_FOOT_SECOND:
+        ret = GET_STR_FROM_EEPROM("Pound per foot second");
+        break;
+    case DLMS_UNIT_BRITISH_THERMAL_UNIT:
+        ret = GET_STR_FROM_EEPROM("British thermal unit");
+        break;
+    case DLMS_UNIT_THERM_EU:
+        ret = GET_STR_FROM_EEPROM("Therm EU");
+        break;
+    case DLMS_UNIT_THERM_US:
+        ret = GET_STR_FROM_EEPROM("Therm US");
+        break;
+    case DLMS_UNIT_BRITISH_THERMAL_UNIT_PER_POUND:
+        ret = GET_STR_FROM_EEPROM("British thermal unit per pound");
+        break;
+    case DLMS_UNIT_BRITISH_THERMAL_UNIT_PER_CUBIC_FOOT:
+        ret = GET_STR_FROM_EEPROM("British thermal unit per cubic foot");
+        break;
+    case DLMS_UNIT_CUBIC_FEET:
+        ret = GET_STR_FROM_EEPROM("Cubic feet");
+        break;
+    case DLMS_UNIT_FOOT_PER_SECOND:
+        ret = GET_STR_FROM_EEPROM("Foot per second");
+        break;
+    case DLMS_UNIT_CUBIC_FOOT_PER_MIN:
+        ret = GET_STR_FROM_EEPROM("Foot per min");
+        break;
+    case DLMS_UNIT_CUBIC_FOOT_PER_DAY:
+        ret = GET_STR_FROM_EEPROM("Foot per day");
+        break;
+    case DLMS_UNIT_ACRE_FOOT_PER_SECOND:
+        ret = GET_STR_FROM_EEPROM("Acre foot per second");
+        break;
+    case DLMS_UNIT_ACRE_FOOT_PER_MIN:
+        ret = GET_STR_FROM_EEPROM("Acre foot per min");
+        break;
+    case DLMS_UNIT_ACRE_FOOT_PER_HOUR:
+        ret = GET_STR_FROM_EEPROM("Acre foot per hour");
+        break;
+    case DLMS_UNIT_ACRE_FOOT_PER_DAY:
+        ret = GET_STR_FROM_EEPROM("Acre foot per day");
+        break;
+    case DLMS_UNIT_IMPERIAL_GALLON:
+        ret = GET_STR_FROM_EEPROM("Imperial gallon");
+        break;
+    case DLMS_UNIT_IMPERIAL_GALLON_PER_SECOND:
+        ret = GET_STR_FROM_EEPROM("Imperial gallon per second");
+        break;
+    case DLMS_UNIT_IMPERIAL_GALLON_PER_MIN:
+        ret = GET_STR_FROM_EEPROM("Imperial gallon per min");
+        break;
+    case DLMS_UNIT_IMPERIAL_GALLON_PER_HOUR:
+        ret = GET_STR_FROM_EEPROM("Imperial gallon per hour");
+        break;
+    case DLMS_UNIT_IMPERIAL_GALLON_PER_DAY:
+        ret = GET_STR_FROM_EEPROM("Imperial gallon per day");
+        break;
+    case DLMS_UNIT_US_GALLON:
+        ret = GET_STR_FROM_EEPROM("US Gallon");
+        break;
+    case DLMS_UNIT_US_GALLON_PER_SECOND:
+        ret = GET_STR_FROM_EEPROM("US gallon per second");
+        break;
+    case DLMS_UNIT_US_GALLON_PER_MIN:
+        ret = GET_STR_FROM_EEPROM("US gallon per min");
+        break;
+    case DLMS_UNIT_US_GALLON_PER_HOUR:
+        ret = GET_STR_FROM_EEPROM("US gallon per hour");
+        break;
+    case DLMS_UNIT_US_GALLON_PER_DAY:
+        ret = GET_STR_FROM_EEPROM("US gallon per day");
+        break;
+    case DLMS_UNIT_BRITISH_THERMAL_UNIT_PER_SECOND:
+        ret = GET_STR_FROM_EEPROM("British thermal unit per second");
+        break;
+    case DLMS_UNIT_BRITISH_THERMAL_UNIT_PER_MIN:
+        ret = GET_STR_FROM_EEPROM("British thermal unit per min");
+        break;
+    case DLMS_UNIT_BRITISH_THERMAL_UNIT_PER_HOUR:
+        ret = GET_STR_FROM_EEPROM("British thermal unit per hour");
+        break;
+    case DLMS_UNIT_BRITISH_THERMAL_UNIT_PER_DAY:
+        ret = GET_STR_FROM_EEPROM("British thermal unit per day");
+        break;
+    case DLMS_UNIT_OTHER:
+        ret = GET_STR_FROM_EEPROM("Other unit");
+        break;
+    case DLMS_UNIT_NO_UNIT:
         ret = GET_STR_FROM_EEPROM("NoUnit");
         break;
     default:
@@ -595,7 +780,7 @@ int obj_clockToString(gxClock* object, char** buff)
 #ifndef DLMS_IGNORE_SCRIPT_TABLE
 int obj_ScriptTableToString(gxScriptTable* object, char** buff)
 {
-	int ret;
+    int ret;
     uint16_t pos, pos2;
     gxByteBuffer ba;
     gxScript* s;
@@ -661,13 +846,13 @@ int obj_ScriptTableToString(gxScriptTable* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-}
+            }
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
 int obj_specialDaysTableToString(gxSpecialDaysTable* object, char** buff)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxSpecialDay* sd;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -835,7 +1020,7 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
 {
     gxKey* k;
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxByteBuffer ba, * dest;
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
@@ -879,14 +1064,14 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_AUTO_CONNECT
 #ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
 int obj_seasonProfileToString(gxArray* arr, gxByteBuffer* ba)
 {
     gxSeasonProfile* it;
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     bb_addString(ba, "[");
     for (pos = 0; pos != arr->size; ++pos)
     {
@@ -914,7 +1099,7 @@ int obj_weekProfileToString(gxArray* arr, gxByteBuffer* ba)
 {
     gxWeekProfile* it;
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     bb_addString(ba, "[");
     for (pos = 0; pos != arr->size; ++pos)
     {
@@ -952,7 +1137,7 @@ int obj_dayProfileToString(gxArray* arr, gxByteBuffer* ba)
     gxDayProfile* dp;
     gxDayProfileAction* it;
     int ret;
-	uint16_t pos, pos2;
+    uint16_t pos, pos2;
     bb_addString(ba, "[");
     for (pos = 0; pos != arr->size; ++pos)
     {
@@ -1149,14 +1334,14 @@ int obj_IecTwistedPairSetupToString(gxIecTwistedPairSetup* object, char** buff)
                 ret = bb_addString(&ba, "]\n");
             }
         }
-    }
+            }
     if (ret == 0)
     {
         *buff = bb_toString(&ba);
     }
     bb_clear(&ba);
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
@@ -1195,7 +1380,7 @@ int obj_demandRegisterToString(gxDemandRegister* object, char** buff)
 int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
     gxObjectDefinition* od;
     gxKey* it;
@@ -1247,7 +1432,7 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
                 if (pos != 0)
                 {
                     bb_addString(&ba, ", ");
-                }
+            }
 #if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
                 bb_attachString(&ba, bb_toString((gxByteBuffer*)it->key));
                 bb_addString(&ba, " ");
@@ -1260,14 +1445,14 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
                     break;
                 }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-            }
+        }
             bb_addString(&ba, "]\n");
             *buff = bb_toString(&ba);
-        }
     }
+}
     bb_clear(&ba);
     return ret;
-}
+        }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
 void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
@@ -1290,7 +1475,7 @@ void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
 int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     dlmsVARIANT* tmp;
     gxByteBuffer ba;
     gxActionSet* as;
@@ -1349,18 +1534,18 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
         actionItemToString(&as->actionUp, &ba);
         bb_addString(&ba, " ");
         actionItemToString(&as->actionDown, &ba);
-    }
+        }
     bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
 int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxtime* tm;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -1369,7 +1554,7 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
     if (object->executedScript == NULL)
     {
         hlp_appendLogicalName(&ba, EMPTY_LN);
-    }
+}
     else
     {
         hlp_appendLogicalName(&ba, object->executedScript->base.logicalName);
@@ -1414,7 +1599,7 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
 int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxSapItem* it;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -1470,7 +1655,7 @@ int obj_autoAnswerToString(gxAutoAnswer* object, char** buff)
 int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
 #if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     dlmsVARIANT* tmp;
 #else
@@ -1505,7 +1690,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
         if (pos != 0)
         {
             bb_addString(&ba, ", ");
-        }
+    }
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         ret = bb_addIntAsString(&ba, *tmp);
 #else
@@ -1515,7 +1700,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
         {
             return ret;
         }
-    }
+}
     bb_addString(&ba, "]\nIndex: 5 Value: [");
     for (pos = 0; pos != object->ipOptions.size; ++pos)
     {
@@ -1548,7 +1733,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_IP4_SETUP
 
 #ifndef DLMS_IGNORE_IP6_SETUP
@@ -1557,7 +1742,7 @@ int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
 {
     char tmp[64];
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     IN6_ADDR* ip;
     if ((ret = bb_addString(ba, "{")) == 0)
     {
@@ -1571,7 +1756,7 @@ int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
             {
                 bb_addString(ba, ", ");
             }
-			//Add Ws2_32.lib for LabWindows/CVI.
+            //Add Ws2_32.lib for LabWindows/CVI.
             inet_ntop(AF_INET6, &ip, tmp, sizeof(tmp));
             bb_addString(ba, tmp);
         }
@@ -1586,7 +1771,7 @@ int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
 int obj_getNeighborDiscoverySetupAsString(gxByteBuffer* ba, gxArray* arr)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxNeighborDiscoverySetup* it;
     if ((ret = bb_addString(ba, "{")) == 0)
     {
@@ -1644,7 +1829,7 @@ int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
         (ret = obj_getIPAddress(&ba, &object->gatewayIPAddress)) == 0 &&
         (ret = bb_addString(&ba, "]\nIndex: 7 Value: ")) == 0)
     {
-		//Add Ws2_32.lib for LabWindows/CVI.
+        //Add Ws2_32.lib for LabWindows/CVI.
 
         inet_ntop(AF_INET6, &object->primaryDNSAddress, tmp, sizeof(tmp));
         bb_addString(&ba, tmp);
@@ -1705,7 +1890,7 @@ int obj_mbusSlavePortSetupToString(gxMbusSlavePortSetup* object, char** buff)
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
 int obj_imageTransferToString(gxImageTransfer* object, char** buff)
 {
-	uint16_t pos;
+    uint16_t pos;
     int ret;
     gxImageActivateInfo* it;
     gxByteBuffer ba;
@@ -1875,7 +2060,7 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
 int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
 {
-	uint16_t pos;
+    uint16_t pos;
     int ret;
     gxModemInitialisation* mi;
     gxByteBuffer ba, * it;
@@ -2020,16 +2205,16 @@ int obj_objectsToString(gxByteBuffer* ba, objectArray* objects)
 #endif
         bb_addString(ba, " ");
         hlp_appendLogicalName(ba, it->logicalName);
-    }
+        }
     return ret;
-}
+    }
 
 int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
 {
     dlmsVARIANT* tmp;
     variantArray* va;
     int ret;
-	uint16_t r, c;
+    uint16_t r, c;
     for (r = 0; r != buffer->size; ++r)
     {
         ret = arr_getByIndex(buffer, r, (void**)&va);
@@ -2053,11 +2238,11 @@ int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
             {
                 return ret;
             }
-        }
+            }
         bb_addString(ba, "\n");
-    }
+        }
     return 0;
-}
+    }
 
 #ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 void obj_applicationContextNameToString(gxByteBuffer* ba, gxApplicationContextName* object)
@@ -2110,7 +2295,7 @@ void obj_authenticationMechanismNameToString(gxByteBuffer* ba, gxAuthenticationM
 
 int obj_associationLogicalNameToString(gxAssociationLogicalName* object, char** buff)
 {
-	uint16_t pos;
+    uint16_t pos;
     int ret = 0;
     gxKey2* it;
     gxByteBuffer ba;
@@ -2259,7 +2444,7 @@ int obj_ProfileGenericToString(gxProfileGeneric* object, char** buff)
 #ifndef DLMS_IGNORE_ACCOUNT
 int obj_appendReferences(gxByteBuffer* ba, gxArray* list)
 {
-	uint16_t pos;
+    uint16_t pos;
     int ret = 0;
     unsigned char* it;
     for (pos = 0; pos != list->size; ++pos)
@@ -2404,7 +2589,7 @@ int obj_tokenGatewayToString(
 {
     char* tmp;
     gxByteBuffer ba;
-	bb_init(&ba);
+    BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
     tmp = bb_toHexString(&object->token);
     bb_addString(&ba, tmp);
@@ -2425,7 +2610,7 @@ int obj_tokenGatewayToString(
 int obj_GsmDiagnosticToString(gxGsmDiagnostic* object, char** buff)
 {
     int ret;
-	uint16_t pos;
+    uint16_t pos;
     gxAdjacentCell* it;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -2577,7 +2762,7 @@ int obj_ParameterMonitorToString(gxParameterMonitor* object, char** buff)
 int obj_ArbitratorToString(gxArbitrator* object, char** buff)
 {
     uint16_t pos;
- 	int ret = 0;
+    int ret = 0;
     gxByteBuffer bb;
     gxActionItem* it;
     bitArray* ba;
@@ -2710,7 +2895,7 @@ int obj_SFSKActiveInitiatorToString(gxSFSKActiveInitiator* object, char** buff)
 
 int obj_getArrayAsString(gxByteBuffer* bb, gxArray* arr)
 {
-	uint16_t pos;
+    uint16_t pos;
     int ret = 0;
     gxUint16PairUint32* it;
     for (pos = 0; pos != arr->size; ++pos)
@@ -2832,7 +3017,7 @@ int obj_SFSKPhyMacSetUpToString(gxSFSKPhyMacSetUp* object, char** buff)
 #ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 int obj_SFSKReportingSystemListToString(gxSFSKReportingSystemList* object, char** buff)
 {
-	uint16_t pos;
+    uint16_t pos;
     int ret = 0;
     gxByteBuffer* it;
     gxByteBuffer bb;

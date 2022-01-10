@@ -3278,7 +3278,7 @@ int dlms_getMBusData(
             return ret;
         }
         //A-Field.
-        unsigned long id;
+        uint32_t id;
         if ((ret = bb_getUInt32(buff, &id)) != 0)
         {
             return ret;
@@ -5025,7 +5025,7 @@ int dlms_handleExceptionResponse(gxByteBuffer* data)
         return ret;
     }
     error = (DLMS_EXCEPTION_SERVICE_ERROR)ch;
-    unsigned long value = 0;
+    uint32_t value = 0;
     if (error == DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR && bb_available(data) > 3)
     {
         bb_getUInt32(data, &value);

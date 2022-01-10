@@ -900,7 +900,7 @@ int ser_loadVariant(dlmsVARIANT* data,
         case DLMS_DATA_TYPE_STRING:
 #if !defined(DLMS_IGNORE_MALLOC)
             data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(data->byteArr);
+            BYTE_BUFFER_INIT(data->byteArr);
             ret = ser_getOctetString(serializeSettings, data->byteArr);
 #else
             ret = ser_loadOctetString3(serializeSettings, (unsigned char*)data->pVal, &data->size);
@@ -909,7 +909,7 @@ int ser_loadVariant(dlmsVARIANT* data,
         case DLMS_DATA_TYPE_STRING_UTF8:
 #if !defined(DLMS_IGNORE_MALLOC)
             data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(data->byteArr);
+            BYTE_BUFFER_INIT(data->byteArr);
             ret = ser_getOctetString(serializeSettings, data->byteArr);
 #else
             ret = ser_loadOctetString3(serializeSettings, data->pVal, &data->size);
@@ -918,7 +918,7 @@ int ser_loadVariant(dlmsVARIANT* data,
         case DLMS_DATA_TYPE_OCTET_STRING:
 #if !defined(DLMS_IGNORE_MALLOC)
             data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(data->byteArr);
+            BYTE_BUFFER_INIT(data->byteArr);
             ret = ser_getOctetString(serializeSettings, data->byteArr);
 #else
             ret = ser_loadOctetString3(serializeSettings, data->pVal, &data->size);

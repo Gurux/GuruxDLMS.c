@@ -4281,7 +4281,7 @@ uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char meth
     default:
         break;
     }
-    return 0;
+    return ret;
 }
 
 #ifndef DLMS_IGNORE_REGISTER_MONITOR

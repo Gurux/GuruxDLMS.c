@@ -969,13 +969,13 @@ void setup() {
     //TODO: Change logical name of the frame counter if it's used to com_readAllObjects.
     gxByteBuffer bb;
     bb_init(&bb);
-    bb_addHexString(&bb, "3132333435363738");
+    bb_addHexString(&bb, GET_STR_FROM_EEPROM("3132333435363738"));
     Client.SetSystemTitle(&bb);
     bb_clear(&bb);
-    bb_addHexString(&bb, "D0 D1 D2 D3 D4 D5 D6 D7D8 D9 DA DB DC DD DE DF");
+    bb_addHexString(&bb, GET_STR_FROM_EEPROM("D0 D1 D2 D3 D4 D5 D6 D7D8 D9 DA DB DC DD DE DF"));
     Client.SetAuthenticationKey(&bb);
     bb_clear(&bb);
-    bb_addHexString(&bb, "00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F");
+    bb_addHexString(&bb, GET_STR_FROM_EEPROM("00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F"));
     Client.SetBlockCipherKey(&bb);
     bb_clear(&bb);
   */
@@ -1000,3 +1000,11 @@ void loop() {
     com_close();
   }
 }
+
+#ifdef DLMS_DEBUG
+//Print detailed information to the serial port.
+void svr_trace(const char* str, const char* data)
+{
+  GXTRACE(str, data);
+}
+#endif //DLMS_DEBUG

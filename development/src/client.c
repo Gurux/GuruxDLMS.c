@@ -655,7 +655,7 @@ int cl_parseNextObject(
     {
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         if ((ret = cosem_checkStructure(data, 4)) == 0 &&
-            (ret = cosem_getInt16(data, &object->shortName)) == 0 &&
+            (ret = cosem_getInt16(data, (int16_t*)&object->shortName)) == 0 &&
             (ret = cosem_getUInt16(data, &object->objectType)) == 0 &&
             (ret = cosem_getUInt8(data, &object->version)) == 0 &&
             (ret = cosem_getOctetString2(data, object->logicalName, capacity, &size)) == 0)

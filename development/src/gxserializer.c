@@ -6748,7 +6748,6 @@ int ser_loadAssociationShortName(
 #ifdef DLMS_IGNORE_MALLOC
     gxUser* it;
 #endif //DLMS_IGNORE_MALLOC
-    unsigned char ch;
     int pos, ret = 0;
     uint16_t count, value;
 #ifdef DLMS_IGNORE_MALLOC

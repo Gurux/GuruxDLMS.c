@@ -39,6 +39,9 @@ extern "C" {
 
 #include "gxignore.h"
 #if !(defined(DLMS_IGNORE_CLIENT) && defined(DLMS_IGNORE_MALLOC))
+#ifdef DLMS_DEBUG
+#include "serverevents.h"
+#endif //DLMS_DEBUG
 
 #include "dlms.h"
 

@@ -901,7 +901,7 @@ int getSNObjects(
     gxValueEventArg* e,
     gxByteBuffer* ba)
 {
-    uint16_t pduSize;
+    uint16_t pduSize = 0;
     objectArray* list = &((gxAssociationShortName*)e->target)->objectList;
     uint16_t pos;
     int ret = DLMS_ERROR_CODE_OK;

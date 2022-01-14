@@ -5317,6 +5317,7 @@ int cosem_setProfileGeneric(
                             gxtime tmp4;
                             time_initUnix(&tmp4, data->ulVal);
                             var_setDateTime(data, &tmp4);
+                            lastDate = *data->dateTime;
                         }
                     }
                 }

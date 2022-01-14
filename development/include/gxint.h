@@ -38,25 +38,25 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-#ifndef uint16_t
+#if !(defined uint16_t) && !(defined _UINT16_T_DECLARED)
 #define uint16_t unsigned short
-#endif //uint16_t
+#endif //!(defined uint16_t) && !(defined _UINT16_T_DECLARED)
 #if !(defined uint32_t) && !(defined _UINT32_T_DECLARED)
 #define uint32_t unsigned long
 #endif //!(defined uint32_t) && !(defined _UINT32_T_DECLARED)
-#ifndef uint64_t
+#if !(defined uint64_t) && !(defined _UINT64_T_DECLARED)
 #define uint64_t unsigned long long
-#endif //uint64_t
+#endif //#!(defined uint64_t) && !(defined _UINT64_T_DECLARED)
 
-#ifndef int16_t
+#if !(defined int16_t) && !(defined _INT16_T_DECLARED)
 #define int16_t short
-#endif //uint16_t
-#ifndef int32_t
+#endif //!(defined int16_t) && !(defined _INT16_T_DECLARED)
+#if !(defined int32_t) && !(defined _INT32_T_DECLARED)
 #define int32_t long
-#endif //int32_t
-#ifndef int64_t
+#endif //!(defined int32_t) && !(defined _INT32_T_DECLARED)
+#if !(defined int64_t) && !(defined _INT64_T_DECLARED)
 #define int64_t long long
-#endif //int64_t
+#endif //!(defined int64_t) && !(defined _INT64_T_DECLARED)
 
 #ifdef  __cplusplus
 }

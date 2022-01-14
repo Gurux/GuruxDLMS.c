@@ -34,13 +34,13 @@
 #define SERVER_EVENTS_H
 
 #include "gxignore.h"
-#ifndef DLMS_IGNORE_SERVER
+#if !defined(DLMS_IGNORE_SERVER) || defined(DLMS_DEBUG)
 #include "dlmssettings.h"
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
+#ifndef DLMS_IGNORE_SERVER
     /**
   * Check is data sent to this server.
   *
@@ -201,8 +201,7 @@ extern "C" {
     extern void svr_getDataType(
         dlmsSettings* settings,
         gxValueEventCollection* args);
-
-
+#endif //DLMS_IGNORE_SERVER
 #ifdef DLMS_DEBUG
     /**
     * Trace that can be used in debugging.

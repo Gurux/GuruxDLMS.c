@@ -1587,11 +1587,13 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         case DLMS_DATA_TYPE_UINT32:
         {
-            hlp_intToString(buff, 250, tmp.ulVal, 0, 0);
-            bb_addString(item->strVal, buff);
-            item->vt = type;
+            hlp_uint64ToString(buff, 250, tmp.ulVal, 0);
+            if ((ret = bb_addString(item->strVal, buff)) == 0)
+            {
+                item->vt = type;
+            }
             var_clear(&tmp);
-            return DLMS_ERROR_CODE_OK;
+            return ret;
         }
         case DLMS_DATA_TYPE_INT8:
         {
@@ -1635,7 +1637,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         case DLMS_DATA_TYPE_UINT64:
         {
-            hlp_int64ToString(buff, 250, tmp.ullVal, 0);
+            hlp_uint64ToString(buff, 250, tmp.ullVal, 0);
             bb_addString(item->strVal, buff);
             item->vt = type;
             var_clear(&tmp);

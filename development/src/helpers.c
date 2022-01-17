@@ -975,6 +975,55 @@ int hlp_intToString(char* str, int bufsize, int32_t value, unsigned char isSigne
     return cnt;
 }
 
+
+int hlp_uint64ToString(char* str, int bufsize, uint64_t value, unsigned char digits)
+{
+    int cnt = 0;
+    uint64_t val = value;
+    if (digits != 0)
+    {
+        --digits;
+    }
+    //Find length.
+    while ((val = (val / 10)) > 0)
+    {
+        ++str;
+        if (digits != 0)
+        {
+            --digits;
+        }
+    }
+    *(str + digits + 1) = '\0';
+    while (digits != 0)
+    {
+        if (bufsize < 1)
+        {
+            return -1;
+        }
+        *str = '0';
+        --digits;
+        --bufsize;
+        ++str;
+        ++cnt;
+    }
+    do
+    {
+        if (bufsize < 1)
+        {
+            return -1;
+        }
+        *str = (value % 10) + '0';
+        value /= 10;
+        if (value != 0)
+        {
+            --str;
+        }
+        --bufsize;
+        ++cnt;
+    } while (value != 0);
+    return cnt;
+}
+
 int32_t hlp_stringToInt(const char* str)
 {
     if (str == NULL)

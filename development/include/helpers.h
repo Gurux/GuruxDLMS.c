@@ -189,6 +189,25 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         unsigned char digits);
 
     /**
+    * Convert integer to string.
+    *
+    * @param str
+    *            Parsed string.
+    * @param strsize
+    *            String size.
+    * @param value
+    *            Integer value.
+    * @param digits
+    *            number of digits in string.
+    * @return Length of the string or -1 if error has occurred.
+    */
+    int hlp_uint64ToString(
+        char* str,
+        int bufsize,
+        uint64_t value,
+        unsigned char digits);
+
+    /**
     * Convert string to integer.
     *
     * @param str

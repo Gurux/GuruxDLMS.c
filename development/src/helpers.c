@@ -64,19 +64,19 @@ const char* hlp_getErrorMessage(int error)
         switch (error & 0xFF)
         {
         case DLMS_EXCEPTION_SERVICE_ERROR_OPERATION_NOT_POSSIBLE:
-            return GET_STR_FROM_EEPROM("OperationNotPossible");
+            str = GET_STR_FROM_EEPROM("OperationNotPossible");
         case DLMS_EXCEPTION_SERVICE_ERROR_SERVICE_NOT_SUPPORTED:
-            return GET_STR_FROM_EEPROM("ServiceNotSupported");
+            str = GET_STR_FROM_EEPROM("ServiceNotSupported");
         case DLMS_EXCEPTION_SERVICE_ERROR_OTHER_REASON:
-            return GET_STR_FROM_EEPROM("OtherReason");
+            str = GET_STR_FROM_EEPROM("OtherReason");
         case DLMS_EXCEPTION_SERVICE_ERROR_PDU_TOO_LONG:
-            return GET_STR_FROM_EEPROM("PduTooLong");
+            str = GET_STR_FROM_EEPROM("PduTooLong");
         case DLMS_EXCEPTION_SERVICE_ERROR_DECIPHERING_ERROR:
-            return GET_STR_FROM_EEPROM("DecipheringError");
+            str = GET_STR_FROM_EEPROM("DecipheringError");
         case DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR:
-            return GET_STR_FROM_EEPROM("InvocationCounterError");
+            str = GET_STR_FROM_EEPROM("InvocationCounterError");
         default:
-            return GET_STR_FROM_EEPROM("Unknown Exception response.");
+            str = GET_STR_FROM_EEPROM("Unknown Exception response.");
         }
     }
     else if ((error & DLMS_ERROR_TYPE_CONFIRMED_SERVICE_ERROR) != 0)
@@ -94,11 +94,13 @@ const char* hlp_getErrorMessage(int error)
             (LPWSTR)&s, 0, NULL);
         printf("%S\n", s);
         LocalFree(s);
-        str = "Connection error.";
+        str = GET_STR_FROM_EEPROM("Connection error.");
 #else
         str = strerror(error & ~DLMS_ERROR_TYPE_COMMUNICATION_ERROR);
 #endif
-        str = "Connection error.";
+        str = GET_STR_FROM_EEPROM("Connection error.");
+#else
+        str = GET_STR_FROM_EEPROM("Connection error.");
 #endif
     }
     else

@@ -61,6 +61,22 @@ unsigned char sn47pduBuff[PDU_BUFFER_SIZE];
 unsigned char ln47frameBuff[WRAPPER_BUFFER_SIZE];
 unsigned char ln47pduBuff[PDU_BUFFER_SIZE];
 
+char _getch()
+{
+    struct timeval tv;
+    fd_set fds;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv);
+    if (FD_ISSET(0, &fds))
+    {
+        return getchar();
+    }
+    return 0;
+}
+
 int startServers(int port, int trace)
 {
     int ret;

@@ -1450,7 +1450,10 @@ void svr_preRead(
         {
             return;
         }
-        GXTRACE_LN(GET_STR_FROM_EEPROM("svr_preRead: "), e->target->objectType, e->target->logicalName);
+        if (!e->action)
+        {
+            GXTRACE_LN(GET_STR_FROM_EEPROM("svr_preRead: "), e->target->objectType, e->target->logicalName);
+        }
         //Let framework handle Logical Name read.
         if (e->index == 1)
         {

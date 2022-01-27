@@ -236,17 +236,12 @@ int saveSettings()
 #endif
     if (f != NULL)
     {
-        unsigned char tmp[2048];
-        gxByteBuffer bb;
-        BB_ATTACH(bb, tmp, 0);
         gxSerializerSettings serializerSettings;
+        ser_init(&serializerSettings);
+        serializerSettings.stream = f;
         serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
         serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
-        if ((ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb)) == 0)
-        {
-            fwrite(bb.data, bb.size, 1, f);
-        }
-        bb_clear(&bb);
+        ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
         fclose(f);
     }
     else
@@ -1207,17 +1202,14 @@ int loadSettings()
         uint16_t size = (uint16_t)ftell(f);
         if (size != 0)
         {
-            unsigned char tmp[2048];
             fseek(f, 0L, SEEK_SET);
-            gxByteBuffer bb;
-            BB_ATTACH(bb, tmp, 0);
-            bb.size += (uint16_t)fread(bb.data, 1, size, f);
-            fclose(f);
             gxSerializerSettings serializerSettings;
+            ser_init(&serializerSettings);
+            serializerSettings.stream = f;
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
-            ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
-            bb_clear(&bb);
+            ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
+            fclose(f);
             return ret;
         }
         fclose(f);

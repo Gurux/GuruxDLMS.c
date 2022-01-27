@@ -539,7 +539,12 @@ int hlp_hexToBytes(
     }
     if (len / 2 != *count)
     {
+#ifdef gxrealloc
+        //If compiler supports realloc.
         *buffer = gxrealloc(*buffer, *count);
+ #else
+        //A few extra bytes are returned if compiler doesn't support realloc.
+ #endif // gxrealloc  
     }
     return 0;
 }

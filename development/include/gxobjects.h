@@ -822,6 +822,16 @@ extern "C" {
     } gxSecuritySetup;
 #endif //DLMS_IGNORE_SECURITY_SETUP
 
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        //User ID.
+        unsigned char id;
+        //User name
+        char name[MAX_USER_NAME_LENGTH];
+    }gxUser;
+#endif //DLMS_IGNORE_MALLOC
+
     /*
     ---------------------------------------------------------------------------
     Online help:
@@ -904,16 +914,6 @@ extern "C" {
         unsigned char authenticationMechanismName;
         DLMS_AUTHENTICATION mechanismId;
     } gxAuthenticationMechanismName;
-
-#ifdef DLMS_IGNORE_MALLOC
-    typedef struct
-    {
-        //User ID.
-        unsigned char id;
-        //User name
-        char name[MAX_USER_NAME_LENGTH];
-    }gxUser;
-#endif //DLMS_IGNORE_MALLOC
 
     /*
     ---------------------------------------------------------------------------

@@ -118,13 +118,132 @@ int disconnect(connection* connection)
     return ret;
 }
 
+/**
+* Update firmware of the meter.
+*
+* In image update following steps are made:
+1. Image_transfer_enabled is read.
+2. Image block size is read.
+3. image_transferred_blocks_status is read to check is image try to update before.
+4. image_transfer_initiate
+5. image_transfer_status is read.
+6. image_block_transfer
+7. image_transfer_status is read.
+8. image_transfer_status is read.
+9. image_verify is called.
+10. image_transfer_status is read.
+11. image_activate is called.
+*/
+int imageUpdate(connection* connection, char* identification, uint16_t identificationSize, unsigned char* image, uint32_t imageSize)
+{
+    int ret;
+    gxByteBuffer bb;
+    bb_init(&bb);
+    dlmsVARIANT param;
+    var_init(&param);
+    gxImageTransfer im;
+    unsigned char ln[] = { 0,0,44,0,0,255 };
+    INIT_OBJECT(im, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln);
+
+    //1. Image_transfer_enabled is read.
+    if ((ret = com_read(connection, BASE(im), 5)) == 0 &&
+        //2. Image block size is read.
+        (ret = com_read(connection, BASE(im), 2)) == 0 &&
+        //3. image_transferred_blocks_status is read to check is image try to update before.
+        (ret = com_read(connection, BASE(im), 3)) == 0 &&
+        //4. image_transfer_initiate
+        (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_STRUCTURE)) == 0 &&
+        (ret = bb_setInt8(&bb, 2)) == 0 &&
+        (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
+        (ret = hlp_setObjectCount(identificationSize, &bb)) == 0 &&
+        (ret = bb_set(&bb, identification, identificationSize)) == 0 &&
+        (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_UINT32)) == 0 &&
+        (ret = bb_setInt32(&bb, imageSize)) == 0 &&
+        (ret = var_addOctetString(&param, &bb)) == 0 &&
+        (ret = com_method(connection, BASE(im), 1, &param)) == 0)
+    {
+        //5. image_transfer_status is read.
+        if ((ret = com_read(connection, BASE(im), 6)) == 0)
+        {
+            // 6. image_block_transfer
+            uint32_t count = im.imageBlockSize;
+            uint32_t blockNumber = 0;
+            while (imageSize != 0)
+            {
+                if (imageSize < im.imageBlockSize)
+                {
+                    count = imageSize;
+                }
+                bb_clear(&bb);
+                if ((ret = bb_setInt8(&bb, DLMS_DATA_TYPE_STRUCTURE)) == 0 &&
+                    (ret = bb_setInt8(&bb, 2)) == 0 &&
+                    (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_UINT32)) == 0 &&
+                    (ret = bb_setInt32(&bb, blockNumber)) == 0 &&
+                    (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
+                    (ret = hlp_setObjectCount(count, &bb)) == 0 &&
+                    (ret = bb_set(&bb, image, count)) != 0 ||
+                    (ret = var_addOctetString(&param, &bb)) != 0 ||
+                    (ret = com_method(connection, BASE(im), 2, &param)) != 0)
+                {
+                    break;
+                }
+                imageSize -= count;
+                ++blockNumber;
+            }
+            if (ret == 0)
+            {
+                //7. image_transfer_status is read.
+                ret = com_read(connection, BASE(im), 6);
+                if (ret == 0)
+                {
+                    //9. image_verify is called.
+                    var_clear(&param);
+                    GX_INT8(param) = 0;
+                    if ((ret = com_method(connection, BASE(im), 3, &param)) == 0 ||
+                        ret == DLMS_ERROR_CODE_TEMPORARY_FAILURE)
+                    {
+                        while (1)
+                        {
+                            //10. image_transfer_status is read.
+                            ret = com_read(connection, BASE(im), 6);
+                            if (im.imageTransferStatus == DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_SUCCESSFUL)
+                            {
+                                break;
+                            }
+                            if (im.imageTransferStatus == DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_FAILED)
+                            {
+                                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                                break;
+                            }
+
+                            //Wait until image is activated.
+                            Sleep(10000);
+                        }
+                        if (ret == 0)
+                        {
+                            ret = com_read(connection, BASE(im), 6);
+                            //11. image_activate is called.
+                            ret = com_method(connection, BASE(im), 4, &param);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    bb_clear(&bb);
+    var_clear(&param);
+    return ret;
+}
+
+
 /*Read DLMS meter using TCP/IP connection.*/
 int readTcpIpConnection(
     connection* connection,
     const char* address,
     const int port,
     char* readObjects,
-    const char* invocationCounter)
+    const char* invocationCounter,
+    const char* outputFile)
 {
     int ret;
 #if defined(_WIN32) || defined(_WIN64)//Windows
@@ -151,7 +270,7 @@ int readTcpIpConnection(
     {
         if ((ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 &&
             (ret = com_initializeConnection(connection)) == 0 &&
-            (ret = com_getAssociationView(connection)) == 0)
+            (ret = com_getAssociationView(connection, outputFile)) == 0)
         {
             int index;
             unsigned char buff[200];
@@ -190,7 +309,7 @@ int readTcpIpConnection(
         //Initialize connection.
         if ((ret = com_updateInvocationCounter(connection, invocationCounter)) != 0 ||
             (ret = com_initializeConnection(connection)) != 0 ||
-            (ret = com_readAllObjects(connection)) != 0)
+            (ret = com_readAllObjects(connection, outputFile)) != 0)
             //Read all objects from the meter.
         {
             //Error code is returned at the end of the function.
@@ -207,7 +326,8 @@ int readSerialPort(
     connection* connection,
     const char* port,
     char* readObjects,
-    char* invocationCounter)
+    const char* invocationCounter,
+    const char* outputFile)
 {
     int ret;
     ret = com_open(connection, port);
@@ -217,7 +337,7 @@ int readSerialPort(
             (ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 &&
             (ret = com_initializeOpticalHead(connection)) == 0 &&
             (ret = com_initializeConnection(connection)) == 0 &&
-            (ret = com_getAssociationView(connection)) == 0)
+            (ret = com_getAssociationView(connection, outputFile)) == 0)
         {
             int index;
             unsigned char buff[200];
@@ -251,7 +371,7 @@ int readSerialPort(
             (ret = com_updateInvocationCounter(connection, invocationCounter)) != 0 ||
             (ret = com_initializeOpticalHead(connection)) != 0 ||
             (ret = com_initializeConnection(connection)) != 0 ||
-            (ret = com_readAllObjects(connection)) != 0)
+            (ret = com_readAllObjects(connection, outputFile)) != 0)
             //Read all objects from the meter.
         {
             //Error code is returned at the end of the function.
@@ -282,7 +402,7 @@ static void ShowHelp()
     printf(" -C \t Security Level. (None, Authentication, Encrypted, AuthenticationEncryption)\n");
     printf(" -v \t Invocation counter data object Logical Name. Ex. 0.0.43.1.1.255\n");
     printf(" -I \t Auto increase invoke ID\n");
-    printf(" -o \t Cache association view to make reading faster. Ex. -o C:\\device.xml");
+    printf(" -o \t Cache association view to make reading faster. Ex. -o C:\\device.bin");
     printf(" -T \t System title that is used with chiphering. Ex -T 4775727578313233\n");
     printf(" -A \t Authentication key that is used with chiphering. Ex -A D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF\n");
     printf(" -B \t Block cipher key that is used with chiphering. Ex -B 000102030405060708090A0B0C0D0E0F\n");
@@ -471,7 +591,7 @@ int connectMeter(int argc, char* argv[])
             {
                 ShowHelp();
                 return 1;
-            }
+        }
             break;
         case 'g':
             //Get (read) selected objects.
@@ -490,10 +610,10 @@ int connectMeter(int argc, char* argv[])
                 {
                     ShowHelp();
                     return 1;
-                }
-            } while ((p = strchr(p, ',')) != NULL);
-            readObjects = optarg;
-            break;
+            }
+    } while ((p = strchr(p, ',')) != NULL);
+    readObjects = optarg;
+    break;
         case 'S':
             serialPort = optarg;
             break;
@@ -606,8 +726,8 @@ int connectMeter(int argc, char* argv[])
         break;
         default:
             return 1;
-        }
-    }
+}
+}
 
     if (port != 0 || address != NULL)
     {
@@ -621,11 +741,11 @@ int connectMeter(int argc, char* argv[])
             printf("Missing mandatory host option.\n");
             return 1;
         }
-        ret = readTcpIpConnection(&con, address, port, readObjects, invocationCounter);
+        ret = readTcpIpConnection(&con, address, port, readObjects, invocationCounter, outputFile);
     }
     else if (serialPort != NULL)
     {
-        ret = readSerialPort(&con, serialPort, readObjects, invocationCounter);
+        ret = readSerialPort(&con, serialPort, readObjects, invocationCounter, outputFile);
     }
     else
     {

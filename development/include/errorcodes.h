@@ -151,7 +151,13 @@ extern "C" {
         //Client try to connect with wrong security.
         DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR,
         //Client try to connect with wrong security suite.
-        DLMS_ERROR_CODE_INVALID_SECURITY_SUITE
+        DLMS_ERROR_CODE_INVALID_SECURITY_SUITE,
+        //Serialization load failed.
+        DLMS_ERROR_CODE_SERIALIZATION_LOAD_FAILURE,
+        //Serialization save failed.
+        DLMS_ERROR_CODE_SERIALIZATION_SAVE_FAILURE,
+        //Serialization count failed.
+        DLMS_ERROR_CODE_SERIALIZATION_COUNT_FAILURE
     }DLMS_ERROR_CODE;
 
 #ifdef  __cplusplus

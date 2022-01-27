@@ -76,7 +76,8 @@ int com_initializeConnection(
 
 //Get Association view.
 int com_getAssociationView(
-    connection *connection);
+    connection *connection,
+    const char* outputFile);
 
 //Read object.
 int com_read(
@@ -140,7 +141,8 @@ int com_readValue(
 
 //This function reads ALL objects that meter have. It will loop all object's attributes.
 int com_readAllObjects(
-    connection *connection);
+    connection *connection,
+    const char* outputFile);
 
 #ifdef  __cplusplus
 }

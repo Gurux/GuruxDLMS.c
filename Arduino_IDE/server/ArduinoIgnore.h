@@ -112,6 +112,7 @@ extern "C" {
 #define DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 #define DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 #define DLMS_IGNORE_ARBITRATOR
+// #define DLMS_IGNORE_SERIALIZER
 
 //////////////////////////////////////////////////////////////////////
 //Arduino server spesific settings.

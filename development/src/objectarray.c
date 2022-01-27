@@ -80,7 +80,22 @@ int oa_capacity(objectArray* arr, const uint16_t capacity)
         }
         else
         {
+#ifdef gxrealloc
+            //If compiler supports realloc.
             arr->data = (gxObject**)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
+ #else
+            //If compiler doesn't support realloc.
+            gxObject** old = arr->data;
+            arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
+            //If not enought memory available.
+            if (arr->data == NULL)
+            {
+                arr->data = old;
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            memcpy(arr->data, old, sizeof(gxObject*) * arr->size);
+            gxfree(old);
+ #endif // gxrealloc    
         }
     }
 #endif //DLMS_IGNORE_MALLOC
@@ -147,7 +162,22 @@ int oa_push(objectArray* arr, gxObject* item)
         }
         else
         {
+#ifdef gxrealloc
+            //If compiler supports realloc.
             arr->data = (gxObject**)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
+ #else
+            //If compiler doesn't support realloc.
+            gxObject** old = arr->data;
+            arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
+            //If not enought memory available.
+            if (arr->data == NULL)
+            {
+                arr->data = old;
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            memcpy(arr->data, old, sizeof(gxObject*) * arr->size);
+            gxfree(old);
+ #endif // gxrealloc    
         }
     }
     if (oa_getCapacity(arr) <= arr->size)
@@ -160,7 +190,6 @@ int oa_push(objectArray* arr, gxObject* item)
 }
 #endif //DLMS_IGNORE_MALLOC
 
-//Copy content of object array.
 void oa_copy(objectArray* target, objectArray* source)
 {
     int pos;
@@ -171,6 +200,22 @@ void oa_copy(objectArray* target, objectArray* source)
         target->data[pos] = source->data[pos];
     }
     target->size = source->size;
+}
+
+void oa_move(objectArray* target, objectArray* source)
+{
+    int pos;
+    oa_empty(target);
+    oa_capacity(target, source->size);
+    for (pos = 0; pos != source->size; ++pos)
+    {
+        target->data[pos] = source->data[pos];
+    }
+    target->size = source->size;
+    source->size = 0;
+#if !(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
+    source->position = 0;
+#endif //!(defined(GX_DLMS_MICROCONTROLLER) || defined(DLMS_IGNORE_MALLOC))
 }
 
 void oa_clear2(

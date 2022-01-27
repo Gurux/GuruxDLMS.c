@@ -170,7 +170,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;_CRTDBG_MAP_ALLOC;GX_DLMS_MICROCONTROLLER;DLMS_USE_EPOCH_TIME;DLMS_IGNORE_CLIENT;DLMS_IGNORE_MALLOC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;_CRTDBG_MAP_ALLOC;GX_DLMS_MICROCONTROLLER;DLMS_USE_EPOCH_TIME;DLMS_IGNORE_CLIENT;DLMS_IGNORE_MALLOC;GX_DLMS_SERIALIZER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -185,7 +185,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN64;_DEBUG;_CONSOLE;_CRTDBG_MAP_ALLOC;GX_DLMS_MICROCONTROLLER;DLMS_USE_EPOCH_TIME;DLMS_IGNORE_CLIENT;DLMS_IGNORE_MALLOC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN64;_DEBUG;_CONSOLE;_CRTDBG_MAP_ALLOC;GX_DLMS_MICROCONTROLLER;DLMS_USE_EPOCH_TIME;DLMS_IGNORE_CLIENT;DLMS_IGNORE_MALLOC;GX_DLMS_SERIALIZER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -202,7 +202,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;GX_DLMS_MICROCONTROLLER;DLMS_USE_EPOCH_TIME;DLMS_IGNORE_CLIENT;DLMS_IGNORE_MALLOC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;GX_DLMS_MICROCONTROLLER;DLMS_USE_EPOCH_TIME;DLMS_IGNORE_CLIENT;DLMS_IGNORE_MALLOC;GX_DLMS_SERIALIZER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -221,7 +221,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;GX_DLMS_MICROCONTROLLER;DLMS_USE_EPOCH_TIME;DLMS_IGNORE_CLIENT;DLMS_IGNORE_MALLOC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;GX_DLMS_MICROCONTROLLER;DLMS_USE_EPOCH_TIME;DLMS_IGNORE_CLIENT;DLMS_IGNORE_MALLOC;GX_DLMS_SERIALIZER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>

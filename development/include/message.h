@@ -58,7 +58,7 @@ void mes_attach(message* mes, gxByteBuffer** data, unsigned char capacity);
 
 #ifndef DLMS_IGNORE_MALLOC
 //Push new message.
-void mes_push(
+int mes_push(
     message * mes,
     gxByteBuffer* item);
 #endif //DLMS_IGNORE_MALLOC

@@ -174,6 +174,8 @@ void GXDLMSServer::setDefaultClock(gxClock* clock)
   settings.defaultClock = clock;
 }
 
+#ifndef DLMS_IGNORE_SERIALIZER
+
 int GXDLMSServer::loadObjects(
   gxSerializerSettings* serializeSettings,
   gxObject** object,
@@ -189,6 +191,8 @@ int GXDLMSServer::saveObjects(
 {
   return ser_saveObjects(serializeSettings, object, count);
 }
+
+#endif //DLMS_IGNORE_SERIALIZER
 
 //Check is client changing the settings with action.
 //This can be used to check is meter data changed.

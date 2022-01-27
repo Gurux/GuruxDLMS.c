@@ -57,70 +57,67 @@
 
 unsigned char ser_isEof(gxSerializerSettings* serializeSettings)
 {
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     return feof(serializeSettings->stream);
 #else
-    return !(serializeSettings->position < EEPROM_SIZE());
+    return !(serializeSettings->position < SERIALIZER_SIZE());
 #endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 }
 
 int ser_loadUInt8(gxSerializerSettings* serializeSettings, unsigned char* value)
 {
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     return fread(value, sizeof(unsigned char), 1, serializeSettings->stream) != 1;
 #else
-    int ret = EEPROM_READ((uint16_t)serializeSettings->position, value);
-    ++serializeSettings->position;
+    int ret = SERIALIZER_LOAD((uint16_t)serializeSettings->position, sizeof(unsigned char), (void*)value);
+    if (ret == 0)
+    {
+        ++serializeSettings->position;
+    }
     return ret;
 #endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 }
 
 int ser_loadUInt16(gxSerializerSettings* serializeSettings, uint16_t* value)
 {
-    unsigned char tmp;
-    int ret;
-    if ((ret = ser_loadUInt8(serializeSettings, &tmp)) == 0)
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+    return fread(value, sizeof(uint16_t), 1, serializeSettings->stream) != 1;
+#else
+    int ret = SERIALIZER_LOAD(serializeSettings->position, sizeof(uint16_t), (void*) value);
+    if (ret == 0)
     {
-        *value = tmp;
-        *value <<= 8;
-        if ((ret = ser_loadUInt8(serializeSettings, &tmp)) == 0)
-        {
-            *value |= tmp;
-        }
+        serializeSettings->position += sizeof(uint16_t);
     }
     return ret;
+#endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 }
 
-int ser_loadUInt32(gxSerializerSettings* serializeSettings, uint32_t* value)
+int ser_loadUInt32(gxSerializerSettings* serializeSettings, void* value)
 {
-    uint16_t tmp;
-    int ret;
-    if ((ret = ser_loadUInt16(serializeSettings, &tmp)) == 0)
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+    return fread(value, sizeof(uint32_t), 1, serializeSettings->stream) != 1;
+#else
+    int ret = SERIALIZER_LOAD(serializeSettings->position, sizeof(uint32_t), value);
+    if (ret == 0)
     {
-        *value = tmp;
-        *value <<= 16;
-        if ((ret = ser_loadUInt16(serializeSettings, &tmp)) == 0)
-        {
-            *value |= tmp;
-        }
+        serializeSettings->position += sizeof(uint32_t);
     }
     return ret;
+#endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 }
 
 int ser_loadUInt64(gxSerializerSettings* serializeSettings, uint64_t* value)
 {
-    uint32_t tmp;
-    int ret;
-    if ((ret = ser_loadUInt32(serializeSettings, &tmp)) == 0)
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+    return fread(value, sizeof(uint64_t), 1, serializeSettings->stream) != 1;
+#else
+    int ret = SERIALIZER_LOAD(serializeSettings->position, sizeof(uint64_t), (void*) value);
+    if (ret == 0)
     {
-        *value = tmp;
-        *value <<= 32;
-        if ((ret = ser_loadUInt32(serializeSettings, &tmp)) == 0)
-        {
-            *value |= tmp;
-        }
+        serializeSettings->position += sizeof(uint64_t);
     }
     return ret;
+#endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 }
 
 int ser_loadInt8(gxSerializerSettings* serializeSettings, signed char* value)
@@ -130,55 +127,22 @@ int ser_loadInt8(gxSerializerSettings* serializeSettings, signed char* value)
 
 int ser_loadInt16(gxSerializerSettings* serializeSettings, int16_t* value)
 {
-    signed char tmp;
-    int ret;
-    if ((ret = ser_loadInt8(serializeSettings, &tmp)) == 0)
-    {
-        *value = tmp;
-        *value <<= 8;
-        if ((ret = ser_loadInt8(serializeSettings, &tmp)) == 0)
-        {
-            *value |= tmp;
-        }
-    }
-    return ret;
+    return ser_loadUInt16(serializeSettings, (uint16_t*)value);
 }
 
 int ser_loadInt32(gxSerializerSettings* serializeSettings, int32_t* value)
 {
-    int16_t tmp;
-    int ret;
-    if ((ret = ser_loadInt16(serializeSettings, &tmp)) == 0)
-    {
-        *value = tmp;
-        *value <<= 16;
-        if ((ret = ser_loadInt16(serializeSettings, &tmp)) == 0)
-        {
-            *value |= tmp;
-        }
-    }
-    return ret;
+    return ser_loadUInt32(serializeSettings, (uint32_t*)value);
 }
 
 int ser_loadInt64(gxSerializerSettings* serializeSettings, int64_t* value)
 {
-    int32_t tmp;
-    int ret;
-    if ((ret = ser_loadInt32(serializeSettings, &tmp)) == 0)
-    {
-        *value = tmp;
-        *value <<= 32;
-        if ((ret = ser_loadInt32(serializeSettings, &tmp)) == 0)
-        {
-            *value |= tmp;
-        }
-    }
-    return ret;
+    return ser_loadUInt64(serializeSettings, (uint64_t*)value);
 }
 
 int ser_seek(gxSerializerSettings* serializeSettings, int count)
 {
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     if (fseek(serializeSettings->stream, count, SEEK_CUR) != 0)
     {
         return DLMS_ERROR_CODE_HARDWARE_FAULT;
@@ -195,43 +159,48 @@ unsigned char ser_serialize(gxSerializerSettings* serializeSettings)
 {
     if (serializeSettings->savedObject != NULL && serializeSettings->currentIndex != 0)
     {
-        return serializeSettings->savedObject == serializeSettings->currentObject &&            
+        return serializeSettings->savedObject == serializeSettings->currentObject &&
             (serializeSettings->savedAttributes & 1 << (serializeSettings->currentIndex - 1)) != 0;
     }
     return 1;
 }
 #endif //DLMS_IGNORE_MALLOC
 
-int ser_saveUInt8(
-    gxSerializerSettings* serializeSettings,
-    unsigned char item)
+int ser_save(gxSerializerSettings* serializeSettings, const void* item, uint16_t count)
 {
 #ifdef DLMS_IGNORE_MALLOC
     if (!ser_serialize(serializeSettings))
     {
-        return ser_seek(serializeSettings, sizeof(unsigned char));
+        return ser_seek(serializeSettings, count);
     }
 #endif //DLMS_IGNORE_MALLOC
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    if (fwrite(&item, sizeof(unsigned char), 1, serializeSettings->stream) != 1)
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+    if (fwrite(item, count, 1, serializeSettings->stream) != 1)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     return 0;
 #else
-    int ret = EEPROM_WRITE((uint16_t)serializeSettings->position, item);
+    int ret = SERIALIZER_SAVE(serializeSettings->position, count, item);
     //Update changed positions.
     if (serializeSettings->position < serializeSettings->updateStart)
     {
         serializeSettings->updateStart = serializeSettings->position;
     }
-    ++serializeSettings->position;
+    serializeSettings->position += count;
     if (serializeSettings->updateEnd < serializeSettings->position)
     {
         serializeSettings->updateEnd = serializeSettings->position;
     }
     return ret;
 #endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+}
+
+int ser_saveUInt8(
+    gxSerializerSettings* serializeSettings,
+    unsigned char item)
+{
+    return ser_save(serializeSettings, &item, 1);
 }
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
@@ -274,7 +243,7 @@ int ser_set(
             break;
         }
     }
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 #ifdef DLMS_IGNORE_MALLOC
     serializeSettings->position += capacity - count;
     //Update changed positions.
@@ -287,7 +256,7 @@ int ser_set(
         serializeSettings->updateEnd = serializeSettings->position;
     }
 #endif //DLMS_IGNORE_MALLOC
-#endif //!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#endif //!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     return ret;
 }
 
@@ -318,31 +287,25 @@ int ser_get(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
 #endif //DLMS_IGNORE_MALLOC
-    int pos;
-    for (pos = 0; pos != count; ++pos)
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+    if (fread(value, sizeof(unsigned char), count, serializeSettings->stream) != count)
     {
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-        if (fread(value, sizeof(unsigned char), 1, serializeSettings->stream) != 1)
-        {
-            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-            break;
-        }
-#else
-        if ((ret = EEPROM_READ((uint16_t)serializeSettings->position, &value[pos])) != 0)
-        {
-            break;
-        }
-        ++serializeSettings->position;
-#endif//!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#else
+    if ((ret = SERIALIZER_LOAD((uint16_t)serializeSettings->position, count, value)) == 0)
+    {
+        serializeSettings->position += count;
+    }
+#endif//!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 #ifdef DLMS_IGNORE_MALLOC
     if (ret == 0)
     {
         serializeSettings->position += capacity - count;
     }
 #endif //#ifdef DLMS_IGNORE_MALLOC
-#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     return ret;
 }
 
@@ -380,32 +343,30 @@ int ser_set2(
         }
         if (ret == 0)
         {
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
             int pos;
             for (pos = 0; pos != count; ++pos)
             {
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
                 if (fread(&arr->data[pos + arr->size], sizeof(unsigned char), 1, serializeSettings->stream) != 1)
                 {
                     ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
                     break;
                 }
-#else
-                if ((ret = EEPROM_READ(serializeSettings->position, &arr->data[pos + arr->size])) != 0)
-                {
-                    break;
-                }
-                ++serializeSettings->position;
-#endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-
             }
+#else
+            if ((ret = SERIALIZER_LOAD(serializeSettings->position, count, arr->data + arr->size)) == 0)
+            {
+                serializeSettings->position += count;
+            }
+#endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
             if (ret == 0)
             {
                 arr->size += count;
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 #ifdef DLMS_IGNORE_MALLOC
                 serializeSettings->position += capacity - count;
 #endif //DLMS_IGNORE_MALLOC
-#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
             }
         }
     }
@@ -518,23 +479,22 @@ int ser_loadDateTime(gxtime* value, gxSerializerSettings* serializeSettings, DLM
         unsigned char buff[12];
         gxByteBuffer bb;
         bb_attach(&bb, buff, size, sizeof(buff));
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         int pos;
         for (pos = 0; pos != size; ++pos)
         {
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
             if (fread(&buff[pos], sizeof(unsigned char), 1, serializeSettings->stream) != 1)
             {
                 ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
                 break;
             }
-#else
-            if ((ret = EEPROM_READ(serializeSettings->position, &buff[pos])) != 0)
-            {
-                break;
-            }
-            ++serializeSettings->position;
-#endif //!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         }
+#else
+        if ((ret = SERIALIZER_LOAD(serializeSettings->position, size, buff)) == 0)
+        {
+            serializeSettings->position += size;
+        }
+#endif //!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         ret = dlms_changeType(&bb, type, &tmp);
     }
     return ret;
@@ -547,9 +507,8 @@ int ser_loadVariantArray(gxSerializerSettings* serializeSettings, variantArray* 
     {
         va_clear(arr);
 #ifdef DLMS_IGNORE_MALLOC
-        uint16_t capacity;
-        ret = ser_loadObjectCount(serializeSettings, &capacity);
-        arr->size = capacity;
+        arr->size = *count;
+        ret = ser_loadObjectCount(serializeSettings, count);
 #else
 #endif //DLMS_IGNORE_MALLOC
         va_capacity(arr, *count);
@@ -789,8 +748,8 @@ int ser_loadBitString(gxSerializerSettings* serializeSettings, bitArray* value)
     {
         return ret;
     }
-    uint16_t size = ba_getByteCount(ba_getCapacity(value));
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+    uint16_t size = ba_getByteCount(ba_getCapacity(value));
     if (size != capacity)
     {
         printf("Warning! Serialized capacity is different than allocated capacity.\n");
@@ -810,6 +769,28 @@ int ser_loadBitString(gxSerializerSettings* serializeSettings, bitArray* value)
 #endif //DLMS_IGNORE_MALLOC
     );
     return ret;
+}
+
+// Get item from the buffer if DLMS_IGNORE_MALLOC is defined.
+// Otherwice create the variant object dynamically.
+int ser_getVariantArrayItem(variantArray* arr, uint16_t index, dlmsVARIANT** value)
+{
+#ifdef DLMS_IGNORE_MALLOC
+    int ret = va_getByIndex(arr, index, value);
+    if (ret == 0)
+    {
+        var_clear(*value);
+    }
+    return ret;
+#else
+    * value = gxmalloc(sizeof(dlmsVARIANT));
+    if (*value == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    var_init(*value);
+    return arr_push(arr, *value);
+#endif //DLMS_COSEM_EXACT_DATA_TYPES
 }
 
 int ser_loadVariant(dlmsVARIANT* data,
@@ -841,28 +822,26 @@ int ser_loadVariant(dlmsVARIANT* data,
             data->Arr = gxmalloc(sizeof(variantArray));
             va_init(data->Arr);
 #else
+            dlmsVARIANT tmp2;
+            var_init(&tmp2);
             va_clear(data->Arr);
 #endif //DLMS_IGNORE_MALLOC
             if ((ret = ser_loadVariantArray(serializeSettings, data->Arr, &count)) == 0)
             {
-                for (pos = 0; pos != data->Arr->size; ++pos)
+                for (pos = 0; pos != count; ++pos)
                 {
+                    if (pos < data->Arr->size)
+                    {
+                        if ((ret = ser_getVariantArrayItem(data->Arr, pos, &tmp)) != 0)
+                        {
+                            break;
+                        }
+                    }
 #ifdef DLMS_IGNORE_MALLOC
-                    if ((ret = va_getByIndex(data->Arr, pos, &tmp)) != 0)
+                    else
                     {
-                        break;
-                    }
-                    var_clear(tmp);
-#else
-                    tmp = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
-                    if (tmp == NULL)
-                    {
-                        return DLMS_ERROR_CODE_OUTOFMEMORY;
-                    }
-                    var_init(tmp);
-                    if ((ret = va_push(data->Arr, tmp)) != 0)
-                    {
-                        break;
+                        var_clear(&tmp2);
+                        tmp = &tmp2;
                     }
 #endif //DLMS_IGNORE_MALLOC
                     if ((ret = ser_loadVariant(tmp, serializeSettings)) != 0)
@@ -900,7 +879,7 @@ int ser_loadVariant(dlmsVARIANT* data,
         case DLMS_DATA_TYPE_STRING:
 #if !defined(DLMS_IGNORE_MALLOC)
             data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            BYTE_BUFFER_INIT(data->byteArr);
+            bb_init(data->byteArr);
             ret = ser_getOctetString(serializeSettings, data->byteArr);
 #else
             ret = ser_loadOctetString3(serializeSettings, (unsigned char*)data->pVal, &data->size);
@@ -909,7 +888,7 @@ int ser_loadVariant(dlmsVARIANT* data,
         case DLMS_DATA_TYPE_STRING_UTF8:
 #if !defined(DLMS_IGNORE_MALLOC)
             data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            BYTE_BUFFER_INIT(data->byteArr);
+            bb_init(data->byteArr);
             ret = ser_getOctetString(serializeSettings, data->byteArr);
 #else
             ret = ser_loadOctetString3(serializeSettings, data->pVal, &data->size);
@@ -918,7 +897,7 @@ int ser_loadVariant(dlmsVARIANT* data,
         case DLMS_DATA_TYPE_OCTET_STRING:
 #if !defined(DLMS_IGNORE_MALLOC)
             data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            BYTE_BUFFER_INIT(data->byteArr);
+            bb_init(data->byteArr);
             ret = ser_getOctetString(serializeSettings, data->byteArr);
 #else
             ret = ser_loadOctetString3(serializeSettings, data->pVal, &data->size);
@@ -1008,13 +987,7 @@ int ser_saveUInt16(
         return ser_seek(serializeSettings, sizeof(uint16_t));
     }
 #endif //DLMS_IGNORE_MALLOC
-    int ret;
-    if ((ret = ser_saveUInt8(serializeSettings, (unsigned char)(item >> 8))) == 0 &&
-        (ret = ser_saveUInt8(serializeSettings, (unsigned char)(item & 0xFF))) == 0)
-    {
-
-    }
-    return ret;
+    return ser_save(serializeSettings, &item, sizeof(uint16_t));
 }
 
 int ser_saveUInt32(
@@ -1027,12 +1000,7 @@ int ser_saveUInt32(
         return ser_seek(serializeSettings, sizeof(uint32_t));
     }
 #endif //DLMS_IGNORE_MALLOC
-    int ret;
-    if ((ret = ser_saveUInt16(serializeSettings, (uint16_t)(item >> 16))) == 0 &&
-        (ret = ser_saveUInt16(serializeSettings, (uint16_t)(item & 0xFFFF))) == 0)
-    {
-    }
-    return ret;
+    return ser_save(serializeSettings, &item, sizeof(uint32_t));
 }
 
 int ser_saveUInt64(
@@ -1045,13 +1013,7 @@ int ser_saveUInt64(
         return ser_seek(serializeSettings, sizeof(uint64_t));
     }
 #endif //DLMS_IGNORE_MALLOC
-    int ret;
-    if ((ret = ser_saveUInt32(serializeSettings, (uint32_t)(item >> 32))) == 0 &&
-        (ret = ser_saveUInt32(serializeSettings, (uint32_t)(item & 0xFFFFFFFF))) == 0)
-    {
-
-    }
-    return ret;
+    return ser_save(serializeSettings, &item, sizeof(uint64_t));
 }
 
 int ser_saveInt8(
@@ -4312,7 +4274,7 @@ int ser_saveObject(
     return ret;
 }
 
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 void ResetPosition(gxSerializerSettings* serializeSettings)
 {
     serializeSettings->currentObject = NULL;
@@ -4325,7 +4287,7 @@ void ResetPosition(gxSerializerSettings* serializeSettings)
     serializeSettings->updateStart = 0xFFFF;
 #endif //defined(GX_DLMS_BYTE_BUFFER_SIZE_32) && !defined(GX_DLMS_MICROCONTROLLER)
 }
-#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 
 //Serialize objects to bytebuffer.
 int ser_saveObjects(
@@ -4335,9 +4297,9 @@ int ser_saveObjects(
 {
     uint16_t pos;
     int ret = 0;
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     ResetPosition(serializeSettings);
-#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 
 #ifdef DLMS_IGNORE_MALLOC
     if (serializeSettings->savedAttributes == 0)
@@ -4367,13 +4329,13 @@ int ser_saveObjects(
         serializeSettings->savedAttributes = 0xFFFF;
         serializeSettings->savedObject = NULL;
 #endif //DLMS_IGNORE_MALLOC
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) && !defined(GX_DLMS_MICROCONTROLLER)
         serializeSettings->updateStart = 0xFFFFFFFF;
 #else
         serializeSettings->updateStart = 0xFFFF;
 #endif //defined(GX_DLMS_BYTE_BUFFER_SIZE_32) && !defined(GX_DLMS_MICROCONTROLLER)
-#endif //!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#endif //!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     }
     else
     {
@@ -4398,13 +4360,13 @@ int ser_saveObjects(
 #endif //DLMS_IGNORE_MALLOC
     if (ret == 0)
     {
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         int index = ftell(serializeSettings->stream);
         uint32_t size = (uint32_t)(index - 5);
 #else
         int index = serializeSettings->position;
         uint32_t size = (uint16_t)serializeSettings->position - 5;
-#endif //#!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#endif //#!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         if (dataSize == 0 || dataSize != size)
         {
             --index;
@@ -4425,9 +4387,9 @@ int ser_saveObjects2(
     uint16_t pos;
     int ret;
     gxObject* obj;
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     ResetPosition(serializeSettings);
-#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 #ifdef DLMS_IGNORE_MALLOC
     if (serializeSettings->savedAttributes == 0)
     {
@@ -4456,13 +4418,13 @@ int ser_saveObjects2(
         serializeSettings->savedAttributes = 0xFFFF;
         serializeSettings->savedObject = NULL;
 #endif //DLMS_IGNORE_MALLOC
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) && !defined(GX_DLMS_MICROCONTROLLER)
         serializeSettings->updateStart = 0xFFFFFFFF;
 #else
         serializeSettings->updateStart = 0xFFFF;
 #endif //defined(GX_DLMS_BYTE_BUFFER_SIZE_32) && !defined(GX_DLMS_MICROCONTROLLER)
-#endif //!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#endif //!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     }
     else
     {
@@ -4492,13 +4454,13 @@ int ser_saveObjects2(
 #endif //DLMS_IGNORE_MALLOC
     if (ret == 0)
     {
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         int index = ftell(serializeSettings->stream);
         uint32_t size = (uint32_t)(index - 5);
 #else
         int index = serializeSettings->position;
         uint32_t size = (uint16_t)serializeSettings->position - 5;
-#endif //#!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#endif //#!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         if (dataSize == 0 || dataSize != size)
         {
             --index;
@@ -4522,7 +4484,11 @@ int ser_getArrayItem(gxArray* arr, uint16_t index, void** value, uint16_t itemSi
 #ifdef DLMS_IGNORE_MALLOC
     return arr_getByIndex4(arr, index, value, itemSize, 0);
 #else
-    unsigned char* it = gxcalloc(1, itemSize);
+    void* it = gxcalloc(1, itemSize);
+    if (it == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     *value = it;
     return arr_push(arr, it);
 #endif //DLMS_COSEM_EXACT_DATA_TYPES
@@ -4534,13 +4500,12 @@ int ser_loadArray(gxSerializerSettings* serializeSettings, gxArray* arr, uint16_
     if (ret == 0)
     {
 #ifdef DLMS_IGNORE_MALLOC
-        uint16_t capacity;
-        ret = ser_loadObjectCount(serializeSettings, &capacity);
-        if (arr_getCapacity(arr) != capacity)
+        arr->size = *count;
+        ret = ser_loadObjectCount(serializeSettings, count);
+        if (arr_getCapacity(arr) != *count)
         {
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        arr->size = capacity;
 #else
         arr_clear(arr);
         arr_capacity(arr, *count);
@@ -4634,7 +4599,7 @@ int ser_loadScriptTable(
         obj_clearScriptTable(&object->scripts);
         if ((ret = ser_loadArray(serializeSettings, &object->scripts, &count)) == 0)
         {
-            for (pos = 0; pos != object->scripts.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->scripts, pos, (void**)&s, sizeof(gxScript))) != 0)
                 {
@@ -4646,7 +4611,7 @@ int ser_loadScriptTable(
                 }
                 if ((ret = ser_loadArray(serializeSettings, &s->actions, &count2)) == 0)
                 {
-                    for (pos2 = 0; pos2 != s->actions.size; ++pos2)
+                    for (pos2 = 0; pos2 != count2; ++pos2)
                     {
                         if ((ret = ser_getArrayItem(&s->actions, pos2, (void**)&sa, sizeof(gxScriptAction))) != 0)
                         {
@@ -4670,6 +4635,7 @@ int ser_loadScriptTable(
                         }
                         if (pos2 < count2)
                         {
+                            sa->target = NULL;
                             if ((ret = cosem_findObjectByLN(settings, ot, ln, &sa->target)) != 0)
                             {
                                 break;
@@ -4693,18 +4659,12 @@ int ser_loadScriptTable(
                             break;
                         }
                     }
-#ifdef DLMS_IGNORE_MALLOC
-                    s->actions.size = count2;
-#endif //DLMS_IGNORE_MALLOC
                 }
                 if (ret != 0)
                 {
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->scripts.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     return ret;
@@ -4724,7 +4684,7 @@ int ser_loadSpecialDaysTable(
         arr_clear(&object->entries);
         if ((ret = ser_loadArray(serializeSettings, &object->entries, &count)) == 0)
         {
-            for (pos = 0; pos != object->entries.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->entries, pos, (void**)&sd, sizeof(gxSpecialDay))) != 0)
                 {
@@ -4737,9 +4697,6 @@ int ser_loadSpecialDaysTable(
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->entries.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     return ret;
@@ -4823,7 +4780,7 @@ int ser_loadObjectsInternal(
     obj_clearProfileGenericCaptureObjects(objects);
     if ((ret = ser_loadArray(serializeSettings, objects, &count)) == 0)
     {
-        for (pos = 0; pos != objects->size; ++pos)
+        for (pos = 0; pos != count; ++pos)
         {
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             if ((ret = ser_getArrayItem(objects, pos, (void**)&it, sizeof(gxTarget))) != 0)
@@ -4868,9 +4825,6 @@ int ser_loadObjectsInternal(
             }
 #endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
         }
-#ifdef DLMS_IGNORE_MALLOC
-        objects->size = count;
-#endif //DLMS_IGNORE_MALLOC
     }
     return ret;
 }
@@ -4889,7 +4843,7 @@ int loadTimeWindow(
     arr_clearKeyValuePair(arr);
     if ((ret = ser_loadArray(serializeSettings, arr, &count)) == 0)
     {
-        for (pos = 0; pos != arr->size; ++pos)
+        for (pos = 0; pos != count; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
             if ((ret = arr_getByIndex3(arr, pos, (void**)&k, sizeof(gxTimePair), 0)) != 0)
@@ -4920,9 +4874,6 @@ int loadTimeWindow(
                 break;
             }
         }
-#ifdef DLMS_IGNORE_MALLOC
-        arr->size = count;
-#endif //DLMS_IGNORE_MALLOC
     }
     return ret;
 }
@@ -4998,7 +4949,7 @@ int ser_loadAutoConnect(
         arr_clearStrings(&object->destinations);
         if (ret == 0 && (ret = ser_loadArray(serializeSettings, &object->destinations, &count)) == 0)
         {
-            for (pos = 0; pos != object->destinations.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
                 if ((ret = arr_getByIndex3(&object->destinations, pos, (void**)&dest, sizeof(gxDestination), 0)) != 0)
@@ -5026,9 +4977,6 @@ int ser_loadAutoConnect(
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->destinations.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     return ret;
@@ -5046,7 +4994,7 @@ int ser_loadSeasonProfile(
     if ((ret = obj_clearSeasonProfile(arr)) == 0 &&
         (ret = ser_loadArray(serializeSettings, arr, &count)) == 0)
     {
-        for (pos = 0; pos != arr->size; ++pos)
+        for (pos = 0; pos != count; ++pos)
         {
             if ((ret = ser_getArrayItem(arr, pos, (void**)&it, sizeof(gxSeasonProfile))) != 0)
             {
@@ -5068,9 +5016,6 @@ int ser_loadSeasonProfile(
             }
 #endif //DLMS_IGNORE_MALLOC
         }
-#ifdef DLMS_IGNORE_MALLOC
-        arr->size = count;
-#endif //DLMS_IGNORE_MALLOC
     }
     return ret;
 }
@@ -5085,7 +5030,7 @@ int ser_loadweekProfile(
     if ((ret = obj_clearWeekProfileTable(arr)) == 0 &&
         (ret = ser_loadArray(serializeSettings, arr, &count)) == 0)
     {
-        for (pos = 0; pos != arr->size; ++pos)
+        for (pos = 0; pos != count; ++pos)
         {
             if ((ret = ser_getArrayItem(arr, pos, (void**)&it, sizeof(gxWeekProfile))) != 0)
             {
@@ -5113,9 +5058,6 @@ int ser_loadweekProfile(
                 break;
             }
         }
-#ifdef DLMS_IGNORE_MALLOC
-        arr->size = count;
-#endif //DLMS_IGNORE_MALLOC
     }
     return ret;
 }
@@ -5135,7 +5077,7 @@ int ser_loadDayProfile(
     if ((ret = obj_clearDayProfileTable(arr)) == 0 &&
         (ret = ser_loadArray(serializeSettings, arr, &count)) == 0)
     {
-        for (pos = 0; pos != arr->size; ++pos)
+        for (pos = 0; pos != count; ++pos)
         {
             if ((ret = ser_getArrayItem(arr, pos, (void**)&dp, sizeof(gxDayProfile))) != 0)
             {
@@ -5146,7 +5088,7 @@ int ser_loadDayProfile(
             {
                 break;
             }
-            for (pos2 = 0; pos2 != dp->daySchedules.size; ++pos2)
+            for (pos2 = 0; pos2 != count2; ++pos2)
             {
                 if ((ret = ser_getArrayItem(&dp->daySchedules, pos2, (void**)&it, sizeof(gxDayProfileAction))) != 0)
                 {
@@ -5184,13 +5126,7 @@ int ser_loadDayProfile(
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            dp->daySchedules.size = count2;
-#endif //DLMS_IGNORE_MALLOC
         }
-#ifdef DLMS_IGNORE_MALLOC
-        arr->size = count;
-#endif //DLMS_IGNORE_MALLOC
     }
     return ret;
 }
@@ -5383,6 +5319,7 @@ int ser_loadRegisterActivation(
     gxRegisterActivationMask* it;
 #if defined(DLMS_IGNORE_MALLOC)
     uint16_t v;
+    uint16_t size;
 #endif //defined(DLMS_IGNORE_MALLOC)
 #else
     gxByteBuffer* key, * value;
@@ -5395,11 +5332,14 @@ int ser_loadRegisterActivation(
         obj_clearRegisterActivationAssignment(&object->registerAssignment);
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         if ((ret = ser_loadArray(serializeSettings, &object->registerAssignment, &count)) == 0)
+        {
+            size = object->registerAssignment.size;
+            object->registerAssignment.size = count;
 #else
         if ((ret = ser_verifyObjectArray(serializeSettings, &object->registerAssignment, &count)) == 0)
-#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         {
-            for (pos = 0; pos != object->registerAssignment.size; ++pos)
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+            for (pos = 0; pos != count; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
                 if ((ret = arr_getByIndexRef(&object->registerAssignment, pos, (void**)&od)) != 0)
@@ -5432,7 +5372,7 @@ int ser_loadRegisterActivation(
             }
         }
 #ifdef DLMS_IGNORE_MALLOC
-        object->registerAssignment.size = count;
+        object->registerAssignment.size = size;
 #endif //DLMS_IGNORE_MALLOC
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 3))
@@ -5440,7 +5380,7 @@ int ser_loadRegisterActivation(
         obj_clearRegisterActivationMaskList(&object->maskList);
         if (ret == 0 && (ret = ser_loadArray(serializeSettings, &object->maskList, &count)) == 0)
         {
-            for (pos = 0; pos != object->maskList.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
                 if ((ret = ser_getArrayItem(&object->maskList, pos, (void**)&it, sizeof(gxRegisterActivationMask))) != 0)
@@ -5489,9 +5429,6 @@ int ser_loadRegisterActivation(
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->maskList.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 4))
@@ -5549,43 +5486,25 @@ int ser_loadRegisterMonitor(
         va_clear(&object->thresholds);
         if ((ret = ser_loadVariantArray(serializeSettings, &object->thresholds, &count)) == 0)
         {
-            for (pos = 0; pos != object->thresholds.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
-#ifdef DLMS_IGNORE_MALLOC
-                if (pos < count)
+                if (pos < object->thresholds.size)
                 {
-                    if ((ret = va_getByIndex(&object->thresholds, pos, &tmp)) != 0)
+                    if ((ret = ser_getVariantArrayItem(&object->thresholds, pos, &tmp)) != 0)
                     {
                         break;
                     }
                 }
                 else
                 {
-                    //Serialize values, but them are not saved.
+                    var_clear(&tmp2);
                     tmp = &tmp2;
                 }
-                var_clear(tmp);
-#else
-                tmp = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
-                if (tmp == NULL)
-                {
-                    return DLMS_ERROR_CODE_OUTOFMEMORY;
-                }
-                var_init(tmp);
-                if ((ret = va_push(&object->thresholds, tmp)) != 0)
-                {
-                    break;
-                }
-#endif //DLMS_IGNORE_MALLOC
                 if ((ret = ser_loadVariant(tmp, serializeSettings)) != 0)
                 {
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            //Return original size.
-            object->thresholds.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 3))
@@ -5599,7 +5518,7 @@ int ser_loadRegisterMonitor(
                 , 6
 #endif //DLMS_IGNORE_MALLOC
             )) != 0 ||
-            (ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_NONE, ln, &object->monitoredValue.target)) != 0 ||
+            (ret = cosem_findObjectByLN(settings, (DLMS_OBJECT_TYPE)ot, ln, &object->monitoredValue.target)) != 0 ||
             (ret = ser_loadInt8(serializeSettings, &object->monitoredValue.attributeIndex)) != 0)
         {
 
@@ -5622,7 +5541,7 @@ int ser_loadRegisterMonitor(
         obj_clearRegisterMonitorActions(&object->actions);
         if ((ret = ser_loadArray(serializeSettings, &object->actions, &count)) == 0)
         {
-            for (pos = 0; pos != object->actions.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->actions, pos, (void**)&as, sizeof(gxActionSet))) != 0 ||
                     (ret = ser_loadActionItem(settings, &as->actionUp, serializeSettings)) != 0 ||
@@ -5631,9 +5550,6 @@ int ser_loadRegisterMonitor(
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->actions.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     return ret;
@@ -5686,7 +5602,7 @@ int ser_loadActionSchedule(
         arr_clear(&object->executionTime);
         if ((ret = ser_loadArray(serializeSettings, &object->executionTime, &count)) == 0)
         {
-            for (pos = 0; pos != object->executionTime.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->executionTime, pos, (void**)&tm, sizeof(gxtime))) != 0 ||
                     (ret = ser_loadDateTime(tm, serializeSettings, DLMS_DATA_TYPE_DATETIME)) != 0)
@@ -5694,9 +5610,6 @@ int ser_loadActionSchedule(
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->executionTime.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     return ret;
@@ -5717,7 +5630,7 @@ int ser_loadSapAssignment(
         //Add count.
         if ((ret = ser_loadArray(serializeSettings, &object->sapAssignmentList, &count)) == 0)
         {
-            for (pos = 0; pos != object->sapAssignmentList.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->sapAssignmentList, pos, (void**)&it, sizeof(gxSapItem))) != 0 ||
                     (ret = ser_loadUInt16(serializeSettings, &it->id)) != 0)
@@ -5736,9 +5649,6 @@ int ser_loadSapAssignment(
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->sapAssignmentList.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     return ret;
@@ -5839,7 +5749,7 @@ if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 4))
     if ((ret = ser_loadVariantArray(serializeSettings, &object->multicastIPAddress, &count)) == 0)
 #endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     {
-        for (pos = 0; pos != object->multicastIPAddress.size; ++pos)
+        for (pos = 0; pos != count; ++pos)
         {
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             if ((ret = ser_getArrayItem(&object->multicastIPAddress, pos, (void**)&tmp, sizeof(uint32_t))) != 0 ||
@@ -5862,16 +5772,13 @@ if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 4))
             }
 #endif //DLMS_IGNORE_MALLOC
         }
-#ifdef DLMS_IGNORE_MALLOC
-        object->multicastIPAddress.size = count;
-#endif //DLMS_IGNORE_MALLOC    }
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 5))
     {
         arr_clear(&object->ipOptions);
         if ((ret = ser_loadArray(serializeSettings, &object->ipOptions, &count)) == 0)
         {
-            for (pos = 0; pos != object->ipOptions.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->ipOptions, pos, (void**)&ip, sizeof(gxip4SetupIpOption))) != 0 ||
                     (ret = ser_loadUInt8(serializeSettings, (unsigned char*)&ip->type)) != 0)
@@ -5890,9 +5797,6 @@ if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 4))
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->ipOptions.size = count;
-#endif //DLMS_IGNORE_MALLOC 
         }
     }
 }
@@ -5958,7 +5862,7 @@ int ser_loadIp6Setup(
         arr_clear(&object->unicastIPAddress);
         if (ret == 0 && (ret = ser_loadArray(serializeSettings, &object->unicastIPAddress, &count)) == 0)
         {
-            for (pos = 0; pos != object->unicastIPAddress.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->unicastIPAddress, pos, (void**)&ip, sizeof(IN6_ADDR))) != 0 ||
                     (ret = ser_get(serializeSettings, (unsigned char*)ip, 16
@@ -5970,9 +5874,6 @@ int ser_loadIp6Setup(
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->unicastIPAddress.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 5))
@@ -5980,7 +5881,7 @@ int ser_loadIp6Setup(
         arr_clear(&object->multicastIPAddress);
         if (ret == 0 && (ret = ser_loadArray(serializeSettings, &object->multicastIPAddress, &count)) == 0)
         {
-            for (pos = 0; pos != object->multicastIPAddress.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->multicastIPAddress, pos, (void**)&ip, sizeof(IN6_ADDR))) != 0 ||
                     (ret = ser_get(serializeSettings, (unsigned char*)ip, 16
@@ -6002,7 +5903,7 @@ int ser_loadIp6Setup(
         arr_clear(&object->gatewayIPAddress);
         if (ret == 0 && (ret = ser_loadArray(serializeSettings, &object->gatewayIPAddress, &count)) == 0)
         {
-            for (pos = 0; pos != object->gatewayIPAddress.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->gatewayIPAddress, pos, (void**)&ip, sizeof(IN6_ADDR))) != 0 ||
                     (ret = ser_get(serializeSettings, (unsigned char*)ip, 16
@@ -6014,9 +5915,6 @@ int ser_loadIp6Setup(
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->gatewayIPAddress.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 7))
@@ -6045,7 +5943,7 @@ int ser_loadIp6Setup(
         gxNeighborDiscoverySetup* it2;
         if ((ret = ser_loadArray(serializeSettings, &object->neighborDiscoverySetup, &count)) == 0)
         {
-            for (pos = 0; pos != object->neighborDiscoverySetup.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->neighborDiscoverySetup, pos, (void**)&it2, sizeof(gxNeighborDiscoverySetup))) != 0 ||
                     (ret = ser_loadUInt8(serializeSettings, &it2->maxRetry)) != 0 ||
@@ -6055,9 +5953,6 @@ int ser_loadIp6Setup(
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->neighborDiscoverySetup.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     return ret;
@@ -6117,7 +6012,7 @@ int ser_loadImageTransfer(
         arr_clear(&object->imageActivateInfo);
         if ((ret = ser_loadArray(serializeSettings, &object->imageActivateInfo, &count)) == 0)
         {
-            for (pos = 0; pos != object->imageActivateInfo.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->imageActivateInfo, pos, (void**)&it, sizeof(gxImageActivateInfo))) != 0 ||
                     (ret = ser_loadUInt32(serializeSettings, &it->size)) != 0)
@@ -6138,9 +6033,6 @@ int ser_loadImageTransfer(
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->imageActivateInfo.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     return ret;
@@ -6238,7 +6130,7 @@ int ser_loadLimiter(
         if ((ret = ser_loadVariantArray(serializeSettings, &object->emergencyProfileGroupIDs, &count)) == 0)
 #endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         {
-            for (pos = 0; pos != object->emergencyProfileGroupIDs.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
                 if ((ret = ser_getArrayItem(&object->emergencyProfileGroupIDs, pos, (void**)&it, sizeof(uint16_t))) != 0 ||
@@ -6260,10 +6152,6 @@ int ser_loadLimiter(
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-#ifdef DLMS_IGNORE_MALLOC
-            //Return original size.
-            object->emergencyProfileGroupIDs.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
         if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 10))
         {
@@ -6361,7 +6249,7 @@ int ser_loadModemConfiguration(
         obj_clearModemConfigurationInitialisationStrings(&object->initialisationStrings);
         if ((ret = ser_loadArray(serializeSettings, &object->initialisationStrings, &count)) == 0)
         {
-            for (pos = 0; pos != object->initialisationStrings.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->initialisationStrings, pos, (void**)&mi, sizeof(gxModemInitialisation))) != 0)
                 {
@@ -6383,9 +6271,6 @@ int ser_loadModemConfiguration(
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->initialisationStrings.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 4))
@@ -6393,7 +6278,7 @@ int ser_loadModemConfiguration(
         arr_clearStrings(&object->modemProfile);
         if ((ret = ser_loadArray(serializeSettings, &object->modemProfile, &count)) == 0)
         {
-            for (pos = 0; pos != object->modemProfile.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
                 if ((ret = arr_getByIndex3(&object->modemProfile, pos, (void**)&it, sizeof(gxModemProfile), 0)) != 0)
@@ -6421,9 +6306,6 @@ int ser_loadModemConfiguration(
                 }
 #endif //DLMS_IGNORE_MALLOC
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->modemProfile.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     return ret;
@@ -6603,7 +6485,7 @@ int ser_loadAssociationLogicalName(
                     , 6
 #endif //DLMS_IGNORE_MALLOC
                 )) != 0 ||
-                    (ret = cosem_findObjectByLN(settings, type, ln, &obj)) != 0)
+                    (ret = oa_findByLN(&settings->objects, type, ln, &obj)) != 0)
                 {
                     break;
                 }
@@ -6628,22 +6510,10 @@ int ser_loadAssociationLogicalName(
                         break;
                     }
                     obj->version = version;
-                    //Add object to released objects list.
-                    ret = oa_push(&settings->releasedObjects, obj);
-                    if (ret != DLMS_ERROR_CODE_OK)
-                    {
-                        return ret;
-                    }
+                    oa_push(&object->objectList, obj);
 #endif //DLMS_IGNORE_MALLOC
                 }
-#ifndef DLMS_IGNORE_MALLOC
-                oa_push(&object->objectList, obj);
-#endif //DLMS_IGNORE_MALLOC
-                // obj->version = (unsigned char)version;
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->objectList.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
         if (ret != 0)
         {
@@ -6702,7 +6572,7 @@ int ser_loadAssociationLogicalName(
         {
             if ((ret = ser_loadArray(serializeSettings, &object->userList, &count)) == 0)
             {
-                for (pos = 0; pos != object->userList.size; ++pos)
+                for (pos = 0; pos != count; ++pos)
                 {
 #ifdef DLMS_IGNORE_MALLOC
                     if ((ret = ser_getArrayItem(&object->userList, pos, (void**)&it, sizeof(gxUser))) != 0 ||
@@ -6729,9 +6599,6 @@ int ser_loadAssociationLogicalName(
                     }
 #endif //DLMS_IGNORE_MALLOC
                 }
-#ifdef DLMS_IGNORE_MALLOC
-                object->userList.size = count;
-#endif //DLMS_IGNORE_MALLOC
             }
         }
     }
@@ -6818,9 +6685,6 @@ int ser_loadAssociationShortName(
 #endif //DLMS_IGNORE_MALLOC
                 // obj->version = (unsigned char)version;
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->objectList.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
         if (ret != 0)
         {
@@ -6858,7 +6722,7 @@ int ser_loadAssociationShortName(
         {
             if ((ret = ser_loadArray(serializeSettings, &object->userList, &count)) == 0)
             {
-                for (pos = 0; pos != object->userList.size; ++pos)
+                for (pos = 0; pos != count; ++pos)
                 {
 #ifdef DLMS_IGNORE_MALLOC
                     if ((ret = ser_getArrayItem(&object->userList, pos, (void**)&it, sizeof(gxUser))) != 0 ||
@@ -6885,9 +6749,6 @@ int ser_loadAssociationShortName(
                     }
 #endif //DLMS_IGNORE_MALLOC
                 }
-#ifdef DLMS_IGNORE_MALLOC
-                object->userList.size = count;
-#endif //DLMS_IGNORE_MALLOC
             }
         }
     }
@@ -7113,7 +6974,7 @@ int ser_loadUnitCharge(
             return ret;
         }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        for (pos = 0; pos != target->chargeTables.size; ++pos)
+        for (pos = 0; pos != count; ++pos)
         {
             if ((ret = ser_getArrayItem(&target->chargeTables, pos, (void**)&ct, sizeof(gxChargeTable))) != 0 ||
 #ifdef DLMS_IGNORE_MALLOC
@@ -7126,9 +6987,6 @@ int ser_loadUnitCharge(
                 break;
             }
         }
-#ifdef DLMS_IGNORE_MALLOC
-        target->chargeTables.size = count;
-#endif //DLMS_IGNORE_MALLOC
     }
     return ret;
 }
@@ -7245,7 +7103,7 @@ int ser_loadGsmDiagnostic(
         arr_clear(&object->adjacentCells);
         if ((ret = ser_loadArray(serializeSettings, &object->adjacentCells, &count)) == 0)
         {
-            for (pos = 0; pos != object->adjacentCells.size; ++pos)
+            for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = ser_getArrayItem(&object->adjacentCells, pos, (void**)&it, sizeof(gxAdjacentCell))) != 0 ||
                     (ret = ser_loadUInt32(serializeSettings, &it->cellId)) != 0 ||
@@ -7254,9 +7112,6 @@ int ser_loadGsmDiagnostic(
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->adjacentCells.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 8))
@@ -7826,14 +7681,14 @@ int ser_loadObject(
     return ret;
 }
 
-int ser_getDataSize(gxSerializerSettings* serializeSettings, uint32_t* size)
+int ser_getDataSize(gxSerializerSettings* serializeSettings, void* size)
 {
     int ret;
     //Serializer version number.
     unsigned char version;
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     ResetPosition(serializeSettings);
-#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     if ((ret = ser_loadUInt8(serializeSettings, &version)) == 0)
     {
         if (version == 0 || version > SERIALIZATION_VERSION)
@@ -7859,7 +7714,7 @@ int ser_loadObjects(
     int ret = 0;
     uint32_t size;
     //Serializer version number.
-    if ((ret = ser_getDataSize(serializeSettings, &size)) == 0)
+    if ((ret = ser_getDataSize(serializeSettings, &size)) == 0 && size != 0)
     {
         for (pos = 0; pos != count; ++pos)
         {
@@ -7879,13 +7734,12 @@ int ser_loadObjects(
                 break;
             }
         }
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
         if (ret == 0 && serializeSettings->position - 5 != size)
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
-#endif //!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-
+#endif //!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     }
     return ret;
 }
@@ -7922,12 +7776,12 @@ int ser_loadObjects2(
                 break;
             }
         }
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
         if (serializeSettings->position - 5 != size)
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
-#endif //!(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     }
     return ret;
 }

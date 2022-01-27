@@ -82,7 +82,22 @@ int vec_capacity(gxValueEventCollection* arr, unsigned char capacity)
         }
         else
         {
+#ifdef gxrealloc
+            //If compiler supports realloc.
             arr->data = (gxValueEventArg * *)gxrealloc(arr->data, arr->capacity * sizeof(gxValueEventArg*));
+#else
+            //If compiler doesn't supports realloc.
+            gxValueEventArg ** old = arr->data;
+            arr->data = (gxValueEventArg * *)gxmalloc(arr->capacity * sizeof(gxValueEventArg*));
+            //If not enought memory available.
+            if (arr->data == NULL)
+            {
+                arr->data = old;
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            memcpy(arr->data, old, sizeof(gxValueEventArg*) * arr->size);
+            gxfree(old);
+#endif //gxrealloc
         }
     }
 #endif //DLMS_IGNORE_MALLOC

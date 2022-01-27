@@ -2460,7 +2460,12 @@ int dlms_getHdlcFrame(
     unsigned char tmp[4], tmp2[4];
     uint16_t crc;
     int ret;
-    uint16_t frameSize, len = 0;
+    uint16_t frameSize;
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    uint32_t len = 0;
+#else
+    uint16_t len = 0;
+#endif
     gxByteBuffer primaryAddress, secondaryAddress;
     bb_clear(reply);
     bb_attach(&primaryAddress, tmp, 0, 4);
@@ -5626,7 +5631,11 @@ int dlms_getLNPdu(
 #else
     unsigned char ciphering = 0;
 #endif //DLMS_IGNORE_HIGH_GMAC
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    uint32_t len = 0;
+#else
     uint16_t len = 0;
+#endif
     if (p->command == DLMS_COMMAND_AARQ)
     {
         //Data is already added to reply when malloc is not used.

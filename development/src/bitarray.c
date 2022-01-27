@@ -134,6 +134,8 @@ int ba_capacity(bitArray* arr, uint16_t capacity)
             }
             else
             {
+#ifdef gxrealloc
+                //If compiler supports realloc.
                 unsigned char* tmp = (unsigned char*)gxrealloc(arr->data, ba_getByteCount(arr->capacity));
                 //If not enought memory available.
                 if (tmp == NULL)
@@ -141,6 +143,19 @@ int ba_capacity(bitArray* arr, uint16_t capacity)
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
                 arr->data = tmp;
+ #else
+                //If compiler doesn't support realloc.
+                unsigned char* old = arr->data;
+                arr->data = (unsigned char*)gxmalloc(ba_getByteCount(arr->capacity));
+                //If not enought memory available.
+                if (arr->data == NULL)
+                {
+                    arr->data = old;
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                memcpy(arr->data, old, ba_getByteCount(arr->size));
+                gxfree(old);
+ #endif // gxrealloc  
             }
         }
     }

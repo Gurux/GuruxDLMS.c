@@ -1,8 +1,0 @@
-sample:
-  name: GuruxDLMSServerExample
-tests:
-  test_build:
-    build_only: true
-    build_on_all: true
-    platform_whitelist: nrf9160_pca10090
-    tags: ci_build

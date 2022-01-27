@@ -50,6 +50,52 @@
 #include "../dlms/include/notify.h"
 //Add support for serialization.
 #include "../dlms/include/gxserializer.h"
+#include "../dlms/include/gxset.h"
+
+static unsigned char SERIALIZE_BUFFER[25000] = { 0 };
+
+uint32_t SERIALIZER_SIZE()
+{
+    return sizeof(SERIALIZE_BUFFER);
+}
+
+//Read byte
+extern int SERIALIZER_LOAD(uint32_t index, uint32_t count, const void* value)
+{
+    uint16_t pos;
+    if (value == NULL)
+    {
+        return DLMS_ERROR_CODE_SERIALIZATION_LOAD_FAILURE;
+    }
+    unsigned char* p = (unsigned char*) value;
+    for (pos = 0; pos != count; ++pos)
+    {
+        *p = SERIALIZE_BUFFER[index + pos];
+        ++p;
+    }
+    return 0;
+}
+
+//Write byte
+extern int SERIALIZER_SAVE(uint32_t index, uint32_t count, const void* value)
+{
+    uint16_t pos;
+    if (value == NULL)
+    {
+        return DLMS_ERROR_CODE_SERIALIZATION_SAVE_FAILURE;
+    }
+    if (!((index + count) < sizeof(SERIALIZE_BUFFER)))
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    unsigned char* p = (unsigned char*)value;
+    for (pos = 0; pos != count; ++pos)
+    {
+        SERIALIZE_BUFFER[index + pos] = *p;
+        ++p;
+    }
+    return 0;
+}
 
 //DLMS settings.
 dlmsServerSettings settings;
@@ -57,8 +103,6 @@ dlmsServerSettings settings;
 GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_OFF;
 
 const static char* FLAG_ID = "GRX";
-//Serialization version is increased every time when structure of serialized data is changed.
-const static uint16_t SERIALIZATION_VERSION = 2;
 
 //Space for client password.
 static unsigned char PASSWORD[20];
@@ -69,7 +113,6 @@ static unsigned char S2C_CHALLENGE[64];
 //Allocate space for read list.
 static gxValueEventArg events[10];
 
-unsigned char testMode = 1;
 int socket1 = -1;
 uint32_t SERIAL_NUMBER = 123456;
 
@@ -101,10 +144,22 @@ uint32_t time_elapsed(void)
     return (uint32_t)clock() / (CLOCKS_PER_SEC / 1000);
 }
 
-static gxByteBuffer reply;
 
+static gxByteBuffer reply;
 static gxClock clock1;
 static gxIecHdlcSetup hdlc;
+static gxData eeprom;
+//Is meter in test mode. This is used to serialize data and it's not shown in association view.
+static gxData testMode;
+//blockCipherKey. This is used to serialize data and it's not shown in association view.
+static gxData blockCipherKey;
+//authenticationKey. This is used to serialize data and it's not shown in association view.
+static gxData authenticationKey;
+//KEK. This is used to serialize data and it's not shown in association view.
+static gxData kek;
+//Server invocationCounter. This is used to serialize data and it's not shown in association view.
+static gxData serverInvocationCounter;
+
 static gxData ldn;
 static gxData eventCode;
 static gxData unixTime;
@@ -157,7 +212,7 @@ gxData currentlyActiveTariff;
 
 //Append new COSEM object to the end so serialization will work correctly.
 static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
-                                   BASE(ldn), BASE(sapAssignment), BASE(eventCode),
+                                   BASE(ldn), BASE(eeprom), BASE(testMode), BASE(sapAssignment), BASE(eventCode),
                                    BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
                                    BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
                                    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
@@ -165,9 +220,13 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
                                    BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData),
                                    BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff),
-                                   BASE(primeNbOfdmPlcMacCounters)
+                                   BASE(primeNbOfdmPlcMacCounters),
+                                   BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter)
 };
 
+//List of COSEM objects that are removed from association view(s).
+//Objects can be used to save meter internal data.
+static gxObject* INTERNAL_OBJECTS[] = { BASE(testMode), BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter) };
 
 ////////////////////////////////////////////////////
 //Define what is serialized to decrease EEPROM usage.
@@ -178,7 +237,13 @@ gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
     IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
     //Only scaler and unit are saved for all register objects.
-    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)) };
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)),
+    //Association object list or association status are never saved.
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE(2, 8)),
+    //Profile generic buffer is never saved.
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_PROFILE_GENERIC, GET_ATTRIBUTE(2)),
+    //EEPROM is not serialized.
+    IGNORE_ATTRIBUTE(BASE(eeprom) , GET_ATTRIBUTE_ALL()) };
 
 static uint32_t executeTime = 0;
 
@@ -206,80 +271,67 @@ typedef enum
     GURUX_EVENT_CODES_GLOBAL_METER_RESET = 0x100
 } GURUX_EVENT_CODES;
 
-
-/////////////////////////////////////////////////////////////////////////////
-// Save security settings to the EEPROM.
-//
-// Only updated value is saved. This is done because write to EEPROM is slow
-// and there is a limit how many times value can be written to the EEPROM.
-/////////////////////////////////////////////////////////////////////////////
-int saveSecurity()
+unsigned char fileExists(const char* fileName)
 {
-    int ret = 0;
-    const char* fileName = "security.raw";
-    //Save keys to own block in EEPROM.
-#if _MSC_VER > 1400
-    FILE* f = NULL;
-    fopen_s(&f, fileName, "wb");
-#else
-    FILE* f = fopen(fileName, "wb");
-#endif
-    unsigned char tmp[100];
-    gxByteBuffer bb;
-    BB_ATTACH(bb, tmp, 0);
-    if (f != NULL)
-    {
-        if ((ret = bb_set(&bb, settings.base.cipher.blockCipherKey, 16)) == 0 &&
-            (ret = bb_set(&bb, settings.base.cipher.authenticationKey, 16)) == 0 &&
-            (ret = bb_set(&bb, settings.base.kek, 16)) == 0 &&
-            //Save server IC.
-            (ret = bb_setUInt32(&bb, settings.base.cipher.invocationCounter)) == 0 &&
-            //Save last client IC.
-            (ret = bb_setUInt32(&bb, securitySetupHighGMac.minimumInvocationCounter)) == 0)
-        {
-            fwrite(bb.data, 1, bb.size, f);
-        }
-        bb_clear(&bb);
-        fclose(f);
-    }
-    else
-    {
-        printf("%s\r\n", "Failed to open keys file.");
-    }
-    return ret;
+#if defined(_WIN64) || defined(_WIN32)
+    return GetFileAttributes(fileName) != 0xFFFFFFFF;
+#else // defined(_WIN64) || defined(_WIN32)
+    return access(fileName, F_OK) == 0;
+#endif // defined(_WIN64) || defined(_WIN32)
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Save data to the EEPROM.
-//
+// This example saves data is hex format so it's easier to handle.
 // Only updated value is saved. This is done because write to EEPROM is slow
 // and there is a limit how many times value can be written to the EEPROM.
 /////////////////////////////////////////////////////////////////////////////
-int saveSettings()
+int saveSettings(gxObject* savedObject, uint32_t savedAttributes)
 {
     int ret = 0;
-    const char* fileName = "settings.raw";
-    //Save keys to own block in EEPROM.
+    gxSerializerSettings serializerSettings;
+    ser_init(&serializerSettings);
+    serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
+    serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
+    serializerSettings.savedObject = savedObject;
+    serializerSettings.savedAttributes = savedAttributes;
+    if ((ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]))) != 0)
+    {
+        printf("saveObjects failed: %d", ret);
+        return ret;
+    }
+    const char* fileName = "settings.hex";
+    //Save association view.
 #if _MSC_VER > 1400
     FILE* f = NULL;
-    fopen_s(&f, fileName, "wb");
+    fopen_s(&f, fileName, "w");
 #else
-    FILE* f = fopen(fileName, "wb");
+    FILE* f = fopen(fileName, "w");
 #endif
     if (f != NULL)
     {
-        unsigned char tmp[2048];
-        gxByteBuffer bb;
-        BB_ATTACH(bb, tmp, 0);
-        gxSerializerSettings serializerSettings;
-        serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
-        serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
-        if ((ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb)) == 0)
+        uint32_t size = serializerSettings.position;
+        char buffer[3];
+        uint32_t pos;
+        //Write one byte at the time as hex string.
+        for (pos = 0; pos != size; ++pos)
         {
-            fwrite(bb.data, bb.size, 1, f);
+            if ((ret = hlp_bytesToHex2(&SERIALIZE_BUFFER[pos], 1, buffer, 3)) != 0)
+            {
+                break;
+            }
+            if (fwrite(buffer, 1, 2, f) != 2)
+            {
+                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                break;
+            }
+            //Append space.
+            if (fwrite(" ", 1, 1, f) != 1)
+            {
+                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                break;
+            }
         }
-        bb_clear(&bb);
         fclose(f);
     }
     else
@@ -349,9 +401,9 @@ int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
 {
     int ret = hlp_getLogicalNameToString(pg->base.logicalName, fileName);
 #if defined(_WIN64)
-    strcat(fileName, "64.raw");
+    strcat(fileName, "64.bin");
 #else // defined(_WIN32) || defined(__linux__)
-    strcat(fileName, ".raw");
+    strcat(fileName, ".bin");
 #endif //defined(_WIN32) || defined(__linux__)
     return ret;
 }
@@ -577,7 +629,8 @@ void updateState(uint16_t value)
 {
     GX_UINT16(eventCode.value) = value;
     captureProfileGeneric(&eventLog);
-    saveSettings();
+    //Update Entries in use for even log.
+    saveSettings(BASE(eventLog), GET_ATTRIBUTE(7));
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -588,7 +641,7 @@ void updateState(uint16_t value)
 void GXTRACE(const char* str, const char* data)
 {
     //Send trace to the serial port in test mode.
-    if (testMode)
+    if (GX_GET_BOOL(testMode.value) != 0)
     {
         if (data == NULL)
         {
@@ -693,7 +746,7 @@ int addAssociationLow()
             DLMS_CONFORMANCE_ACTION |
             DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
             DLMS_CONFORMANCE_GET);
-        BB_ATTACH_STR(associationLow.secret, SECRET, (uint16_t)strlen(SECRET));
+        BB_ATTACH(associationLow.secret, SECRET, (uint16_t)strlen(SECRET));
         associationLow.securitySetup = NULL;
     }
     return ret;
@@ -711,7 +764,7 @@ int addAssociationHigh()
     static char SECRET[20];
     strcpy(SECRET, "Gurux");
     //Dedicated key.
-    static unsigned char CYPHERING_INFO[20] = { 0 };
+    static unsigned char CYPHERING_INFO[16] = { 0 };
     const unsigned char ln[6] = { 0, 0, 40, 0, 3, 255 };
     if ((ret = INIT_OBJECT(associationHigh, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
     {
@@ -751,7 +804,7 @@ int addAssociationHighGMac()
     //User list.
     static gxUser USER_LIST[10] = { 0 };
     //Dedicated key.
-    static unsigned char CYPHERING_INFO[20] = { 0 };
+    static unsigned char CYPHERING_INFO[16] = { 0 };
     const unsigned char ln[6] = { 0, 0, 40, 0, 4, 255 };
     if ((ret = INIT_OBJECT(associationHighGMac, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
     {
@@ -859,6 +912,90 @@ int addLogicalDeviceName()
     return ret;
 }
 
+/// <summary>
+/// User can read content of the EEPROM. This is for debugging purposes only.
+/// </summary>
+int addEeprom()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 128, 0, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(eeprom, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        eeprom.value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+    }
+    return ret;
+}
+
+/// <summary>
+/// User can read content of the EEPROM. This is for debugging purposes only.
+/// </summary>
+int addTestMode()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 128, 0, 1, 0, 255 };
+    if ((ret = INIT_OBJECT(testMode, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_BOOL(testMode.value) = 0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+// BlockCipher key. 
+// This is used to serialize the data and it's not in association view.
+int addBlockCipherKey()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 128, 2, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(blockCipherKey, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_OCTET_STRING(blockCipherKey.value, settings.base.cipher.blockCipherKey, 16);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+// Authentication key. 
+// This is used to serialize the data and it's not in association view.
+int addAuthenticationKey()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 128, 3, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(authenticationKey, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_OCTET_STRING(authenticationKey.value, settings.base.cipher.authenticationKey, 16);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+// Kek. 
+// This is used to serialize the data and it's not in association view.
+int addKek()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 128, 4, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(kek, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_OCTET_STRING(kek.value, settings.base.kek, 16);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+// Server Invocation Counter. 
+// This is used to serialize the data and it's not in association view.
+int addServerInvocationCounter()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 128, 5, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(serverInvocationCounter, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_UINT32_BYREF(serverInvocationCounter.value, settings.base.cipher.invocationCounter);
+    }
+    return ret;
+}
+
 //Add event code object.
 int addEventCode()
 {
@@ -903,7 +1040,7 @@ int addInvocationCounter()
 int addImageTransfer()
 {
     int ret;
-    unsigned char IMAGE_TRANSFERRED_BLOCKS_STATUS[1000];
+    static unsigned char IMAGE_TRANSFERRED_BLOCKS_STATUS[200];
     unsigned char ln[6] = { 0,0,44,0,0,255 };
     if ((ret = INIT_OBJECT(imageTransfer, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln)) == 0)
     {
@@ -944,11 +1081,12 @@ int addAutoConnect()
 {
     int ret;
     static gxTimePair CALLING_WINDOW[10] = { 0 };
-    static unsigned char DESTINATIONS[10][20] = { 0 };
+    static gxDestination DESTINATIONS[10] = { 0 };
 
     const unsigned char ln[6] = { 0,0,2,1,0,255 };
     if ((ret = INIT_OBJECT(autoConnect, DLMS_OBJECT_TYPE_AUTO_CONNECT, ln)) == 0)
     {
+        const char* destination = "192.168.39.158:4059";
         autoConnect.mode = DLMS_AUTO_CONNECT_MODE_AUTO_DIALLING_ALLOWED_ANYTIME;
         autoConnect.repetitions = 10;
         autoConnect.repetitionDelay = 60;
@@ -957,7 +1095,7 @@ int addAutoConnect()
         time_init(&CALLING_WINDOW[0].second, -1, -1, -1, 6, 0, 0, -1, -clock1.timeZone);
         ARR_ATTACH(autoConnect.callingWindow, CALLING_WINDOW, 1);
         //Add one destination.
-        strcpy((char*)DESTINATIONS[0], "127.0.0.1:4059");
+        SET_OCTET_STRING(DESTINATIONS[0], destination, (unsigned short)strlen(destination));
         ARR_ATTACH(autoConnect.destinations, DESTINATIONS, 1);
     }
     return ret;
@@ -1247,7 +1385,7 @@ int addAutoAnswer()
 int addModemConfiguration()
 {
     int ret;
-    static gxModemProfile PROFILES[10] = { 0 };
+    static gxModemProfile PROFILES[20] = { 0 };
     static gxModemInitialisation INITIALISATIONS[20] = { 0 };
     const unsigned char ln[6] = { 0,0,2,0,0,255 };
     if ((ret = INIT_OBJECT(modemConfiguration, DLMS_OBJECT_TYPE_MODEM_CONFIGURATION, ln)) == 0)
@@ -1335,10 +1473,14 @@ int addIP4Setup()
 int addPppSetup()
 {
     int ret;
+    static unsigned char USER_NAME[10];
+    static unsigned char PASSWORD[10];
     const unsigned char ln[6] = { 0,0,25,3,0,255 };
     if ((ret = INIT_OBJECT(pppSetup, DLMS_OBJECT_TYPE_PPP_SETUP, ln)) == 0)
     {
         pppSetup.phy = BASE(gprsSetup);
+        BB_ATTACH(pppSetup.userName, USER_NAME, 0);
+        BB_ATTACH(pppSetup.password, PASSWORD, 0);
     }
     return ret;
 }
@@ -1426,12 +1568,13 @@ int addPushSetup()
 {
     int ret;
     static gxTimePair COMMUNICATION_WINDOW[10];
+    static char DESTINATION[20] = { 0 };
     //Push objects are added here.
     static gxTarget PUSH_OBJECTS[6];
     const unsigned char ln[6] = { 0, 0, 25, 9, 0, 255 };
     if ((ret = INIT_OBJECT(pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln)) == 0)
     {
-        pushSetup.service = DLMS_SERVICE_TYPE_HDLC;
+        BB_ATTACH(pushSetup.destination, DESTINATION, 0);
         ARR_ATTACH(pushSetup.communicationWindow, COMMUNICATION_WINDOW, 2);
         //This push is sent every minute, but max 10 seconds over.
         time_init(&COMMUNICATION_WINDOW[0].first, -1, -1, -1, -1, -1, 0, 0, 0);
@@ -1536,7 +1679,7 @@ int addTarifficationScriptTable()
         ACTIONS1[1].target = BASE(currentlyActiveTariff);
         ACTIONS1[1].index = 2;
         //Action data is register activation mask name (RATE1).
-        GX_OCTET_STRING(ACTIONS1[1].parameter, MASK1, strlen(MASK1));
+        GX_OCTET_STRING(ACTIONS1[1].parameter, MASK1, (uint16_t)strlen(MASK1));
 
         ARR_ATTACH(SCRIPTS[1].actions, ACTIONS2, 2);
         ACTIONS2[0].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
@@ -1550,7 +1693,7 @@ int addTarifficationScriptTable()
         ACTIONS2[1].target = BASE(currentlyActiveTariff);
         ACTIONS2[1].index = 2;
         //Action data is register activation mask name (RATE2).
-        GX_OCTET_STRING(ACTIONS2[1].parameter, MASK2, strlen(MASK2));
+        GX_OCTET_STRING(ACTIONS2[1].parameter, MASK2, (uint16_t)strlen(MASK2));
     }
     return ret;
 }
@@ -1569,8 +1712,9 @@ int addRegisterActivation()
     {
         BB_ATTACH(registerActivation.activeMask, ACTIVE_MASK, 0);
         bb_addString(&registerActivation.activeMask, "RATE1");
-        REGISTER_ASSIGNMENT[0] = &activePowerL1.base;
-        ARR_ATTACH(registerActivation.registerAssignment, REGISTER_ASSIGNMENT, 1);
+        REGISTER_ASSIGNMENT[0] = BASE(activePowerL1);
+        REGISTER_ASSIGNMENT[1] = BASE(activePowerL1);
+        ARR_ATTACH(registerActivation.registerAssignment, REGISTER_ASSIGNMENT, 2);
         ARR_ATTACH(registerActivation.maskList, MASK_LIST, 2);
         strcpy((char*)MASK_LIST[0].name, "RATE1");
         MASK_LIST[0].length = (unsigned char)strlen(MASK_LIST[0].name);
@@ -1809,63 +1953,20 @@ int addIecHdlcSetup()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Load security settings from the EEPROM.
-/////////////////////////////////////////////////////////////////////////////
-int loadSecurity()
-{
-    const char* fileName = "security.raw";
-    int ret = 0;
-    //Update keys.
-#if _MSC_VER > 1400
-    FILE* f = NULL;
-    fopen_s(&f, fileName, "rb");
-#else
-    FILE* f = fopen(fileName, "rb");
-#endif
-    if (f != NULL)
-    {
-        //Check that file is not empty.
-        fseek(f, 0L, SEEK_END);
-        unsigned short size = (unsigned short)ftell(f);
-        if (size != 0)
-        {
-            unsigned char tmp[100];
-            fseek(f, 0L, SEEK_SET);
-            gxByteBuffer bb;
-            BB_ATTACH(bb, tmp, 0);
-            bb.size += (unsigned short)fread(bb.data, 1, size, f);
-            fclose(f);
-            if ((ret = bb_get(&bb, settings.base.cipher.blockCipherKey, 16)) != 0 ||
-                (ret = bb_get(&bb, settings.base.cipher.authenticationKey, 16)) != 0 ||
-                (ret = bb_get(&bb, settings.base.kek, 16)) != 0 ||
-                //load last server IC.
-                (ret = bb_getUInt32(&bb, &settings.base.cipher.invocationCounter)) != 0 ||
-                //load last client IC.
-                (ret = bb_getUInt32(&bb, &securitySetupHighGMac.minimumInvocationCounter)) != 0)
-            {
-            }
-            bb_clear(&bb);
-            return ret;
-        }
-    }
-    return saveSecurity();
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 // Load data from the EEPROM.
+// This example uses the hex format so it's easier to handle.
 // Returns serialization version or zero if data is not saved.
 /////////////////////////////////////////////////////////////////////////////
 int loadSettings()
 {
-    const char* fileName = "settings.raw";
+    const char* fileName = "settings.hex";
     int ret = 0;
     //Update keys.
 #if _MSC_VER > 1400
     FILE* f = NULL;
-    fopen_s(&f, fileName, "rb");
+    fopen_s(&f, fileName, "r");
 #else
-    FILE* f = fopen(fileName, "rb");
+    FILE* f = fopen(fileName, "r");
 #endif
     if (f != NULL)
     {
@@ -1874,32 +1975,56 @@ int loadSettings()
         uint16_t size = (uint16_t)ftell(f);
         if (size != 0)
         {
-            unsigned char tmp[2048];
+            if (size > sizeof(SERIALIZE_BUFFER))
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
             fseek(f, 0L, SEEK_SET);
-            gxByteBuffer bb;
-            BB_ATTACH(bb, tmp, 0);
-            bb.size += (uint16_t)fread(bb.data, 1, size, f);
+            unsigned char buffer[3];
+            uint16_t count;
+            unsigned char* pBuffer = SERIALIZE_BUFFER;
+            while (size != 0)
+            {
+                if (fread(buffer, 1, 3, f) != 3)
+                {
+                    fclose(f);
+                    return 1;
+                }
+                buffer[2] = '\0';
+                if (hlp_hexToBytes2(buffer, pBuffer, &count) != 0)
+                {
+                    fclose(f);
+                    return 1;
+                }
+                ++pBuffer;
+                size -= 3;
+            }
             fclose(f);
             gxSerializerSettings serializerSettings;
+            ser_init(&serializerSettings);
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
-            ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
-            {
-            }
-            bb_clear(&bb);
+            ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
             return ret;
         }
-        fclose(f);
+        fclose(f);       
     }
-    return saveSettings();
+    return saveSettings(NULL, 0xFF);
 }
 
 //Create objects and load values from EEPROM.
 int createObjects()
 {
     int ret;
+    OA_ATTACH(settings.base.internalObjects, INTERNAL_OBJECTS);
     OA_ATTACH(settings.base.objects, ALL_OBJECTS);
     if ((ret = addLogicalDeviceName()) != 0 ||
+        (ret = addEeprom()) != 0 ||
+        (ret = addTestMode()) != 0 ||
+        (ret = addBlockCipherKey()) != 0 ||
+        (ret = addAuthenticationKey()) != 0 ||
+        (ret = addKek()) != 0 ||
+        (ret = addServerInvocationCounter()) != 0 ||
         (ret = addSapAssignment()) != 0 ||
         (ret = addEventCode()) != 0 ||
         (ret = addUnixTime()) != 0 ||
@@ -1955,14 +2080,12 @@ int createObjects()
     if ((ret = loadSettings()) != 0)
     {
         GXTRACE_INT(("Failed to load settings!"), ret);
+        ret = saveSettings(NULL, 0xFFFF);
         executeTime = 0;
-        return ret;
-    }
-    if ((ret = loadSecurity()) != 0)
-    {
-        GXTRACE_INT(("Failed to load security settings!"), ret);
-        executeTime = 0;
-        return ret;
+        if ((ret = loadSettings()) != 0)
+        {
+            return ret;
+        }
     }
     updateState(GURUX_EVENT_CODES_POWER_UP);
     GXTRACE(("Meter started."), NULL);
@@ -2208,7 +2331,7 @@ int readProfileGeneric(
     gxTarget CAPTURE_OBJECT[10] = { 0 };
     ARR_ATTACH(captureObjects, CAPTURE_OBJECT, 0);
     char fileName[20];
-    getProfileGenericFileName(pg, fileName);
+    ret = getProfileGenericFileName(pg, fileName);
     if (ret == DLMS_ERROR_CODE_OK)
     {
         e->byteArray = 1;
@@ -2402,6 +2525,36 @@ void svr_preRead(
         {
             continue;
         }
+        if (e->target == BASE(eeprom))
+        {
+            //If EEPROM is read.
+            gxSerializerSettings serializerSettings;
+            ser_init(&serializerSettings);
+            if (e->transactionEndIndex == 0)
+            {
+                uint32_t size;
+                if ((ret = ser_getDataSize(&serializerSettings, &size)) != 0)
+                {
+                    e->error = ret;
+                    break;
+                }
+                //Add version and data size to the data.
+                size += 5;
+                e->transactionStartIndex = 0;
+                e->transactionEndIndex = size;
+                bb_clear(e->value.byteArr);
+                bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_OCTET_STRING);
+                hlp_setObjectCount(size, e->value.byteArr);
+            }
+            uint16_t count = (uint16_t)(e->transactionEndIndex - e->transactionStartIndex);
+            if (count > 100)
+            {
+                count = 100;
+            }
+            bb_set(e->value.byteArr, &SERIALIZE_BUFFER[e->transactionStartIndex], count);
+            e->transactionStartIndex += count;
+            e->handled = 1;
+        }
 
         //Get target type.
         type = (DLMS_OBJECT_TYPE)e->target->objectType;
@@ -2468,7 +2621,6 @@ void svr_preWrite(
         }
         hlp_getLogicalNameToString(e->target->logicalName, str);
         printf("Writing %s\r\n", str);
-
     }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
 }
@@ -2637,8 +2789,8 @@ void handleProfileGenericActions(
             //Update values to the EEPROM.
             fwrite(pdu.data, 1, 4, f);
             fclose(f);
+        }
     }
-}
     else if (it->index == 2)
     {
         //Increase power value before each load profile read to increase the value.
@@ -2649,7 +2801,8 @@ void handleProfileGenericActions(
         }
         captureProfileGeneric(((gxProfileGeneric*)it->target));
     }
-    saveSettings();
+    //Update Entries in use for profile generic.
+    saveSettings(it->target, GET_ATTRIBUTE(7));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2659,11 +2812,7 @@ void svr_preAction(
     dlmsSettings* settings,
     gxValueEventCollection* args)
 {
-#if defined(_WIN64)
-    const char* fileName = "settings64.raw";
-#else // defined(_WIN32) || defined(__linux__)
-    const char* fileName = "settings.raw";
-#endif //defined(_WIN32) || defined(__linux__)
+    const char* fileName = "settings.hex";
     gxValueEventArg* e;
     int ret, pos;
     for (pos = 0; pos != args->size; ++pos)
@@ -2701,9 +2850,9 @@ void svr_preAction(
             //Initialize data size so default values are used on next connection.
 #if _MSC_VER > 1400
             FILE* f = NULL;
-            fopen_s(&f, fileName, "wb");
+            fopen_s(&f, fileName, "w");
 #else
-            FILE* f = fopen(fileName, "wb");
+            FILE* f = fopen(fileName, "w");
 #endif
             if (f != NULL)
             {
@@ -2713,13 +2862,6 @@ void svr_preAction(
             if ((ret = loadSettings()) != 0)
             {
                 GXTRACE_INT(("Failed to load settings!"), ret);
-                executeTime = 0;
-                e->error = ret;
-                break;
-            }
-            if ((ret = loadSecurity()) != 0)
-            {
-                GXTRACE_INT(("Failed to load security settings!"), ret);
                 executeTime = 0;
                 e->error = ret;
                 break;
@@ -2743,12 +2885,12 @@ void svr_preAction(
         else if (e->target == BASE(scriptTableActivateTestMode))
         {
             //Activate test mode.
-            testMode = 1;
+            GX_BOOL(testMode.value) = 1;
         }
         else if (e->target == BASE(scriptTableActivateNormalMode))
         {
             //Activate normal mode.
-            testMode = 0;
+            GX_BOOL(testMode.value) = 0;
         }
         else if (e->target == BASE(tarifficationScriptTable))
         {
@@ -2760,7 +2902,7 @@ void svr_preAction(
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             FILE* f;
             gxImageTransfer* i = (gxImageTransfer*)e->target;
-            const char* imageFile = "image.raw";
+            const char* imageFile = "image.bin";
             //Image name and size to transfer
             if (e->index == 1)
             {
@@ -2886,7 +3028,7 @@ void svr_preAction(
             }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
-}
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2928,7 +3070,6 @@ void svr_postWrite(
             //Use want to change capture objects.
             if (e->index == 3)
             {
-                saveSettings();
                 //Clear buffer if user changes captured objects.
                 gxValueEventArg it;
                 ve_init(&it);
@@ -2963,7 +3104,12 @@ void svr_postWrite(
         if (e->error == 0)
         {
             //Save settings to EEPROM.
-            saveSettings();
+            if ((ret = saveSettings(e->target, GET_ATTRIBUTE(e->index))) != 0 ||
+                (ret = loadSettings()) != 0)
+            {
+                e->error = ret;
+                break;
+            }
         }
         else
         {
@@ -2984,6 +3130,7 @@ void svr_postAction(
 {
     gxValueEventArg* e;
     int ret, pos;
+    uint32_t attribute;
     for (pos = 0; pos != args->size; ++pos)
     {
         if ((ret = vec_getByIndex(args, pos, &e)) != 0)
@@ -2991,28 +3138,18 @@ void svr_postAction(
             return;
         }
         GXTRACE_LN(("svr_postAction: "), e->target->objectType, e->target->logicalName);
-        if (e->target == BASE(securitySetupHigh) ||
-            e->target == BASE(securitySetupHighGMac))
-        {
-            //Update block cipher key authentication key or broadcast key.
-            //Save settings to EEPROM.
-            if (e->error == 0)
-            {
-                saveSecurity();
-            }
-            else
-            {
-                //Load default settings if there is an error.
-                loadSecurity();
-            }
-        }
         //Check is client changing the settings with action.
-        else if (svr_isChangedWithAction(e->target->objectType, e->index))
+        if ((attribute = svr_isChangedWithAction(e->target->objectType, e->index)) != 0)
         {
             //Save settings to EEPROM.
             if (e->error == 0)
             {
-                saveSettings();
+                saveSettings(e->target, attribute);
+                if ((ret = loadSettings()) != 0)
+                {
+                    GXTRACE_INT(("Failed to load settings!"), ret);
+                    executeTime = 0;
+                }
             }
             else
             {
@@ -3033,16 +3170,15 @@ unsigned char svr_isTarget(
     oa_init(&objects);
     unsigned char ret = 0;
     uint16_t pos;
-    gxObject* tmp[6];
-    oa_attach(&objects, tmp, sizeof(tmp) / sizeof(tmp[0]));
-    objects.size = 0;
-    if (oa_getObjects(&settings->objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, &objects) == 0)
+    gxObject* obj;
+    gxAssociationLogicalName* a;
+    for (pos = 0; pos != settings->objects.size; ++pos)
     {
-        gxAssociationLogicalName* a;
-        for (pos = 0; pos != objects.size; ++pos)
+        if (oa_getByIndex(&settings->objects, pos, (gxObject**)&obj) == 0)
         {
-            if (oa_getByIndex(&objects, pos, (gxObject**)&a) == 0)
+            if (obj->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
             {
+                a = (gxAssociationLogicalName*)obj;
                 if (a->clientSAP == clientAddress)
                 {
                     ret = 1;
@@ -3112,15 +3248,14 @@ unsigned char svr_isTarget(
             ret = 0;
             // Find address from the SAP table.
             gxSapAssignment* sap;
-            objects.size = 0;
-            if (oa_getObjects(&settings->objects, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, &objects) == 0)
+            gxSapItem* it;
+            for (pos = 0; pos != settings->objects.size; ++pos)
             {
-                gxSapItem* it;
-                uint16_t sapIndex, pos;
-                for (sapIndex = 0; sapIndex != objects.size; ++sapIndex)
+                if (oa_getByIndex(&settings->objects, pos, (gxObject**)&obj) == 0)
                 {
-                    if (oa_getByIndex(&objects, sapIndex, (gxObject**)&sap) == 0)
+                    if (obj->objectType == DLMS_OBJECT_TYPE_SAP_ASSIGNMENT)
                     {
+                        sap = (gxSapAssignment*)obj;
                         for (pos = 0; pos != sap->sapAssignmentList.size; ++pos)
                         {
                             if (arr_getByIndex(&sap->sapAssignmentList, pos, (void**)&it, sizeof(gxSapItem)) == 0)
@@ -3137,8 +3272,11 @@ unsigned char svr_isTarget(
                         }
                     }
                 }
+                if (ret)
+                {
+                    break;
+                }
             }
-            oa_empty(&objects);
         }
         //Set serial number as meter address if broadcast is used.
         if (broadcast)
@@ -3220,6 +3358,7 @@ DLMS_ACCESS_MODE getPushSetupAttributeAccess(
         switch (index)
         {
         case 2://pushObjectList
+        case 3://Send destination and method.
         case 4://communicationWindow
             return DLMS_ACCESS_MODE_READ_WRITE;
         default:
@@ -3269,6 +3408,10 @@ DLMS_ACCESS_MODE getDataAttributeAccess(
     dlmsSettings* settings,
     unsigned char index)
 {
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW && index == 2)
+    {
+        return DLMS_ACCESS_MODE_READ_WRITE;
+    }
     return DLMS_ACCESS_MODE_READ;
 }
 
@@ -3495,8 +3638,6 @@ int svr_disconnected(
     GXTRACE(("svr_disconnected"), NULL);
     if (settings->base.cipher.security != 0 && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) != 0)
     {
-        //Save Invocation counter value when connection is closed.
-        saveSecurity();
     }
     return 0;
 }
@@ -3679,12 +3820,12 @@ void ListenerThread(void* pVoid)
                 {
                     first = 1;
                     printf("\nTX %u:\t", (uint16_t)reply.size);
-                    for (pos = 0; pos != reply.size; ++pos)
+                    for (pos = 0; pos < reply.size; ++pos)
                     {
                         printf("%.2X ", reply.data[pos]);
-                }
+                    }
                     printf("\n");
-            }
+                }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
                 if (send(socket1, (const char*)reply.data, reply.size - reply.position, 0) == -1)
                 {
@@ -3698,8 +3839,8 @@ void ListenerThread(void* pVoid)
                     break;
                 }
                 bb_clear(&reply);
-    }
-}
+            }
+        }
     }
 }
 
@@ -3723,7 +3864,7 @@ void* UnixSerialPortThread(void* pVoid)
             {
                 break;
             }
-}
+        }
         else
         {
             if (trace > GX_TRACE_LEVEL_WARNING)
@@ -3891,7 +4032,7 @@ int com_initializeSerialPort(
         return ret;
     }
     return 0;
-    }
+}
 #else //#if defined(__LINUX__)
 int com_initializeSerialPort(
     int* comPort,
@@ -4106,7 +4247,7 @@ int main(int argc, char* argv[])
             ret = errno;
 #endif
             return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
-    }
+        }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         receiverThread = (HANDLE)_beginthread(ListenerThread, 0, &ls);
 #else

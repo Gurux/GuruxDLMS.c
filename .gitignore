@@ -245,6 +245,7 @@ GuruxDLMSServerExample/VS/trace.txt
 GuruxDLMSServerExample/src/lib.rules
 GuruxDLMSServerExample/trace.txt
 GuruxDLMSServerExample2/VS/trace.txt
+NordicSemiconductor/GuruxDLMSSimpleServerExample2/src/dlms
 *.testlog
 *.manifest
 *.raw

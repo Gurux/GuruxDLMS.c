@@ -49,7 +49,6 @@
 #include "include/variant.h"
 #include "include/objectarray.h"
 #include "include/cosem.h"
-//#include "include/server.h"
 #include "include/gxserializer.h"
 
 class GXDLMSServer
@@ -130,6 +129,7 @@ class GXDLMSServer
     //Set default clock.
     void setDefaultClock(gxClock* clock);
 
+#ifndef DLMS_IGNORE_SERIALIZER
     //Serialize objects to bytebuffer.
     int loadObjects(
       gxSerializerSettings* serializeSettings,
@@ -141,7 +141,7 @@ class GXDLMSServer
       gxSerializerSettings* serializeSettings,
       gxObject** object,
       uint16_t count);
-
+#endif //DLMS_IGNORE_SERIALIZER
     //Check is client changing the settings with action.
     //This can be used to check is meter data changed.
     //Return value is saved atribute index or zero if nothing hasn't change.

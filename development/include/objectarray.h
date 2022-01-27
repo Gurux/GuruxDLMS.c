@@ -79,6 +79,11 @@ extern "C" {
         objectArray *target,
         objectArray* source);
 
+    //Move content of object array.
+    void oa_move(
+        objectArray* target,
+        objectArray* source);
+
     //Clear object array. Clear will free objects as well.
     void oa_clear2(
         objectArray* arr,

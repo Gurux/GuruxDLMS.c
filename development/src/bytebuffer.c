@@ -142,6 +142,8 @@ int bb_capacity(
             }
             else
             {
+#ifdef gxrealloc
+                //If compiler supports realloc.
                 unsigned char* tmp = (unsigned char*)gxrealloc(arr->data, capacity);
                 //If not enought memory available.
                 if (tmp == NULL)
@@ -149,7 +151,20 @@ int bb_capacity(
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
                 arr->data = tmp;
-            }
+ #else
+                //If compiler doesn't support realloc.
+                unsigned char* old = arr->data;
+                arr->data = (unsigned char*)gxmalloc(capacity);
+                //If not enought memory available.
+                if (arr->data == NULL)
+                {
+                    arr->data = old;
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                memcpy(arr->data, old, arr->size);
+                gxfree(old);
+ #endif // gxrealloc       
+            }    
             if (arr->size > capacity)
             {
                 arr->size = capacity;
@@ -253,16 +268,35 @@ int bb_allocate(
         if (empty)
         {
             arr->data = (unsigned char*)gxmalloc(arr->capacity);
+            if (arr->data == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
         }
         else
         {
+#ifdef gxrealloc
+            //If compiler supports realloc.
             unsigned char* tmp = (unsigned char*)gxrealloc(arr->data, arr->capacity);
             if (tmp == NULL)
             {
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
             arr->data = tmp;
-        }
+#else
+            //If compiler doesn't supports realloc.
+            unsigned char* old = arr->data;
+            arr->data = (unsigned char*)gxmalloc(arr->capacity);
+            //If not enought memory available.
+            if (arr->data == NULL)
+            {
+                arr->data = old;
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            memcpy(arr->data, old, arr->size);
+            gxfree(old);
+#endif //gxrealloc
+        }        
     }
 #endif //DLMS_IGNORE_MALLOC
     if (bb_getCapacity(arr) < index + dataSize)

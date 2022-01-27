@@ -41,6 +41,7 @@
 #include <errno.h>
 #endif
 
+#include "../../development/include/gxmem.h"
 #include "../../development/include/dlmssettings.h"
 #include "../../development/include/variant.h"
 #include "../../development/include/cosem.h"
@@ -142,6 +143,8 @@ gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     //Only password is saved for low and high authentication.
     IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
     IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
+    //Nothing is saved when authentication is not used.
+    IGNORE_ATTRIBUTE(BASE(associationHighGMac), GET_ATTRIBUTE_ALL()),    
     //Only scaler and unit are saved for all register objects.
     IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)) };
 
@@ -231,19 +234,14 @@ int saveSettings()
 #else
     FILE* f = fopen(fileName, "wb");
 #endif
-    gxByteBuffer bb;
-    bb_init(&bb);
-    bb_capacity(&bb, 256);
     if (f != NULL)
     {
         gxSerializerSettings serializerSettings;
+        ser_init(&serializerSettings);
+        serializerSettings.stream = f;
         serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
         serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
-        if ((ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb)) == 0)
-        {
-            fwrite(bb.data, bb.size, 1, f);
-        }
-        bb_clear(&bb);
+        ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
         fclose(f);
     }
     else
@@ -276,9 +274,9 @@ void allocateProfileGenericBuffer(const char* fileName, uint32_t size)
                     break;
                 }
             }
-        }
-        fclose(f);
     }
+        fclose(f);
+}
 }
 
 int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
@@ -391,9 +389,9 @@ uint16_t getProfileGenericBufferMaxRowCount(
             //Decrease current index and total amount of the entries.
             count -= 4;
             count /= rowSize;
-        }
-        fclose(f);
     }
+        fclose(f);
+}
     return count;
 }
 
@@ -610,7 +608,7 @@ int addAssociationNone()
         associationNone.clientSAP = 0x10;
         //Max PDU is half of PDU size. This is for demonstration purposes only.
         associationNone.xDLMSContextInfo.maxSendPduSize = associationNone.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE / 2;
-        associationNone.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_GET | DLMS_CONFORMANCE_SET);
+        associationNone.xDLMSContextInfo.conformance = DLMS_CONFORMANCE_GET;
     }
     return ret;
 }
@@ -761,7 +759,7 @@ int addSapAssignment()
     if ((ret = INIT_OBJECT(sapAssignment, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, ln)) == 0)
     {
         char tmp[17];
-        gxSapItem* it = (gxSapItem*)malloc(sizeof(gxSapItem));
+        gxSapItem* it = (gxSapItem*)gxmalloc(sizeof(gxSapItem));
         bb_init(&it->name);
         ret = sprintf(tmp, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
         bb_addString(&it->name, tmp);
@@ -841,27 +839,27 @@ int addPushSetup()
     {
         pushSetup.service = DLMS_SERVICE_TYPE_HDLC;
         gxtime* start, * end;
-        start = (gxtime*)malloc(sizeof(gxtime));
-        end = (gxtime*)malloc(sizeof(gxtime));
+        start = (gxtime*)gxmalloc(sizeof(gxtime));
+        end = (gxtime*)gxmalloc(sizeof(gxtime));
         //This push is sent every minute, but max 10 seconds over.
         time_init(start, -1, -1, -1, -1, -1, 0, 0, 0);
         time_init(end, -1, -1, -1, -1, -1, 10, 0, 0);
         arr_push(&pushSetup.communicationWindow, key_init(start, end));
         //This push is sent every half minute, but max 40 seconds over.
-        start = (gxtime*)malloc(sizeof(gxtime));
-        end = (gxtime*)malloc(sizeof(gxtime));
+        start = (gxtime*)gxmalloc(sizeof(gxtime));
+        end = (gxtime*)gxmalloc(sizeof(gxtime));
         time_init(start, -1, -1, -1, -1, -1, 30, 0, 0);
         time_init(end, -1, -1, -1, -1, -1, 40, 0, 0);
         arr_push(&pushSetup.communicationWindow, key_init(start, end));
         // Add logical device name.
-        gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
+        gxTarget* capture = (gxTarget*)gxmalloc(sizeof(gxTarget));
         capture->attributeIndex = 2;
         capture->dataIndex = 0;
         arr_push(&pushSetup.pushObjectList, key_init(BASE(ldn), capture));
 
         // Add push object logical name. This is needed to tell structure of data to the Push listener.
         // Also capture object list can be used here.
-        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture = (gxTarget*)gxmalloc(sizeof(gxTarget));
         capture->attributeIndex = 1;
         capture->dataIndex = 0;
         arr_push(&pushSetup.pushObjectList, key_init(BASE(pushSetup), capture));
@@ -926,11 +924,10 @@ uint16_t readEventCode()
 int addscriptTableGlobalMeterReset()
 {
     int ret;
-    static gxScript SCRIPTS[1] = { 0 };
     const unsigned char ln[6] = { 0, 0, 10, 0, 0, 255 };
     if ((ret = INIT_OBJECT(scriptTableGlobalMeterReset, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
     {
-        gxScript* s = (gxScript*)malloc(sizeof(gxScript));
+        gxScript* s = (gxScript*)gxmalloc(sizeof(gxScript));
         s->id = 1;
         arr_init(&s->actions);
         //Add executed script to script list.
@@ -950,10 +947,10 @@ int addscriptTableDisconnectControl()
     const unsigned char ln[6] = { 0, 0, 10, 0, 106, 255 };
     if ((ret = INIT_OBJECT(scriptTableDisconnectControl, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
     {
-        gxScript* s = (gxScript*)malloc(sizeof(gxScript));
+        gxScript* s = (gxScript*)gxmalloc(sizeof(gxScript));
         s->id = 1;
         arr_init(&s->actions);
-        gxScriptAction* a = (gxScriptAction*)malloc(sizeof(gxScriptAction));
+        gxScriptAction* a = (gxScriptAction*)gxmalloc(sizeof(gxScriptAction));
 
         a->type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
         a->target = BASE(disconnectControl);
@@ -965,10 +962,10 @@ int addscriptTableDisconnectControl()
         //Add executed script to script list.
         arr_push(&scriptTableDisconnectControl.scripts, s);
 
-        s = (gxScript*)malloc(sizeof(gxScript));
+        s = (gxScript*)gxmalloc(sizeof(gxScript));
         s->id = 2;
         arr_init(&s->actions);
-        a = (gxScriptAction*)malloc(sizeof(gxScriptAction));
+        a = (gxScriptAction*)gxmalloc(sizeof(gxScriptAction));
         a->type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
         a->target = BASE(disconnectControl);
         a->index = 2;
@@ -991,7 +988,7 @@ int addscriptTableActivateTestMode()
     const unsigned char ln[6] = { 0, 0, 10, 0, 101, 255 };
     if ((ret = INIT_OBJECT(scriptTableActivateTestMode, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
     {
-        gxScript* s = (gxScript*)malloc(sizeof(gxScript));
+        gxScript* s = (gxScript*)gxmalloc(sizeof(gxScript));
         s->id = 1;
         arr_init(&s->actions);
         //Add executed script to script list.
@@ -1009,7 +1006,7 @@ int addscriptTableActivateNormalMode()
     const unsigned char ln[6] = { 0, 0, 10, 0, 102, 255 };
     if ((ret = INIT_OBJECT(scriptTableActivateNormalMode, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
     {
-        gxScript* s = (gxScript*)malloc(sizeof(gxScript));
+        gxScript* s = (gxScript*)gxmalloc(sizeof(gxScript));
         s->id = 1;
         arr_init(&s->actions);
         //Add executed script to script list.
@@ -1033,12 +1030,12 @@ int addLoadProfileProfileGeneric()
         ///////////////////////////////////////////////////////////////////
         //Add 2 columns.
         //Add clock obect.
-        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture = (gxTarget*)gxmalloc(sizeof(gxTarget));
         capture->attributeIndex = 2;
         capture->dataIndex = 0;
         arr_push(&loadProfile.captureObjects, key_init(&clock1, capture));
         //Add active power.
-        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture = (gxTarget*)gxmalloc(sizeof(gxTarget));
         capture->attributeIndex = 2;
         capture->dataIndex = 0;
         arr_push(&loadProfile.captureObjects, key_init(&activePowerL1, capture));
@@ -1067,13 +1064,13 @@ int addEventLogProfileGeneric()
         //Add 2 columns as default.
         gxTarget* capture;
         //Add clock obect.
-        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture = (gxTarget*)gxmalloc(sizeof(gxTarget));
         capture->attributeIndex = 2;
         capture->dataIndex = 0;
         arr_push(&eventLog.captureObjects, key_init(&clock1, capture));
 
         //Add event code.
-        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture = (gxTarget*)gxmalloc(sizeof(gxTarget));
         capture->attributeIndex = 2;
         capture->dataIndex = 0;
         arr_push(&eventLog.captureObjects, key_init(&eventCode, capture));
@@ -1221,16 +1218,13 @@ int loadSettings()
         if (size != 0)
         {
             fseek(f, 0L, SEEK_SET);
-            gxByteBuffer bb;
-            bb_init(&bb);
-            bb_capacity(&bb, size);
-            bb.size += fread(bb.data, 1, size, f);
-            fclose(f);
             gxSerializerSettings serializerSettings;
+            ser_init(&serializerSettings);
+            serializerSettings.stream = f;
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
-            ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
-            bb_clear(&bb);
+            ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
+            fclose(f);
             return ret;
         }
     }
@@ -1528,8 +1522,8 @@ int getProfileGenericDataByRangeFromRingBuffer(
                 }
             }
             fclose(f);
-        }
     }
+}
     return ret;
 }
 
@@ -1635,7 +1629,7 @@ int readProfileGeneric(
             if (f != NULL)
             {
                 getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &dataSize);
-            }
+        }
             //Append data.
             if (ret == 0 && dataSize != 0)
             {
@@ -1711,8 +1705,8 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
-        }
     }
+}
     return ret;
 }
 
@@ -1759,7 +1753,7 @@ void svr_preRead(
             time_now(&dt, 1);
             if (e->value.byteArr == NULL)
             {
-                e->value.byteArr = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
+                e->value.byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
                 bb_init(e->value.byteArr);
             }
             e->error = cosem_setDateTimeAsOctetString(e->value.byteArr, &dt);
@@ -1868,10 +1862,10 @@ int sendEventNotification(dlmsSettings* settings)
         va_init(&values);
         gxtime dt;
         time_now(&dt, 1);
-        dlmsVARIANT* tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        dlmsVARIANT* tmp = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
         GX_DATETIME(*tmp) = &dt;
         va_push(&values, tmp);
-        tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        tmp = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
         GX_UINT16(*tmp) = activePowerL1Value;
         va_push(&values, tmp);
         gxByteBuffer pdu;
@@ -2803,7 +2797,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-            }
+        }
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             if (trace > GX_TRACE_LEVEL_WARNING)
             {
@@ -2813,7 +2807,7 @@ void ListenerThread(void* pVoid)
                     first = 0;
                 }
                 printf("%.2X ", data);
-            }
+}
 #endif //OS
             if (svr_handleRequest3(&settings, data, &reply) != 0)
             {
@@ -3009,7 +3003,7 @@ int com_initializeSerialPort(
         ret = GetLastError();
         printf("Failed to open serial port: \"%s\"\n", buff);
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
-    }
+}
     DCB dcb = { 0 };
     unsigned long sendSize = 0;
     if (*comPort == INVALID_HANDLE_VALUE)
@@ -3192,7 +3186,7 @@ int main(int argc, char* argv[])
             showHelp();
             return 1;
         }
-    }
+}
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
@@ -3233,7 +3227,7 @@ int main(int argc, char* argv[])
             0)) != 0)
         {
             return ret;
-    }
+        }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         receiverThread = (HANDLE)_beginthread(serialPortThread, 0, &comPort);
 #else
@@ -3332,12 +3326,12 @@ int main(int argc, char* argv[])
                 void* res;
                 pthread_join(receiverThread, (void**)&res);
                 free(res);
-                }
-            break;
             }
+            break;
+        }
         usleep(1000000);
 #endif
-        }
+    }
     oa_clear(&settings.base.objects, 0);
     svr_clear(&settings);
 #if defined(_WIN32) || defined(_WIN64)//Windows
@@ -3347,4 +3341,4 @@ int main(int argc, char* argv[])
 #endif
 #endif
     return 0;
-    }
+            }

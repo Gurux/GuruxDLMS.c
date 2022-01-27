@@ -1258,12 +1258,27 @@ int va_capacity(variantArray* arr, uint16_t capacity)
             }
             else
             {
+#ifdef gxrealloc
+                //If compiler supports realloc.
                 void** tmp = (void**)gxrealloc(arr->data, capacity * sizeof(dlmsVARIANT*));
                 if (tmp == NULL)
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
                 arr->data = tmp;
+#else
+                //If compiler doesn't support realloc.
+                void** old = arr->data;
+                arr->data = (void**)gxmalloc(capacity * sizeof(dlmsVARIANT*));
+                //If not enought memory available.
+                if (arr->data == NULL)
+                {
+                    arr->data = old;
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                memcpy(arr->data, old, sizeof(dlmsVARIANT*) * arr->size);
+                gxfree(old);
+ #endif // gxrealloc  
             }
         }
         arr->capacity = capacity;
@@ -1292,12 +1307,27 @@ int va_push(variantArray* arr, dlmsVARIANT* item)
             }
             else
             {
+#ifdef gxrealloc
+                //If compiler supports realloc.
                 void** tmp = (void**)gxrealloc(arr->data, arr->capacity * sizeof(dlmsVARIANT*));
                 if (tmp == NULL)
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
                 arr->data = tmp;
+#else
+                //If compiler doesn't support realloc.
+                void** old = arr->data;
+                arr->data = (void**)gxmalloc(arr->capacity * sizeof(dlmsVARIANT*));
+                //If not enought memory available.
+                if (arr->data == NULL)
+                {
+                    arr->data = old;
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                memcpy(arr->data, old, sizeof(dlmsVARIANT*) * arr->size);
+                gxfree(old);
+ #endif // gxrealloc  
             }
         }
     }

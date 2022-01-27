@@ -686,24 +686,34 @@ int cip_crypt(
             memcpy(input->data + 1, settings->authenticationKey, 16);
 #endif //DLMS_IGNORE_MALLOC
             aes_gcm_ghash(H, input->data, input->size, input->data, 0, S);
-            ret = bb_move(input, 17, 0, input->size - 17);
-            cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
-            if (encrypt)
+            if ((ret = bb_move(input, 17, 0, input->size - 17)) == 0)
             {
-                if (type == DLMS_COUNT_TYPE_TAG)
+                cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
+                if (encrypt)
                 {
-                    bb_move(input, input->size, 0, 12);
+                    if (type == DLMS_COUNT_TYPE_TAG)
+                    {
+                        if (input->size == 8)
+                        {
+                            input->size += 8;
+                            ret = bb_move(input, 8, 0, 12);
+                        }
+                        else
+                        {
+                            ret = bb_move(input, input->size, 0, 12);
+                        }
+                    }
+                    else
+                    {
+                        input->size += 12;
+                    }
                 }
                 else
                 {
-                    input->size += 12;
-                }
-            }
-            else
-            {
-                if (memcmp(NONSE, input->data + input->size, 12) != 0)
-                {
-                    ret = DLMS_ERROR_CODE_INVALID_TAG;
+                    if (memcmp(NONSE, input->data + input->size, 12) != 0)
+                    {
+                        ret = DLMS_ERROR_CODE_INVALID_TAG;
+                    }
                 }
             }
         }

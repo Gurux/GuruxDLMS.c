@@ -46,14 +46,14 @@
 extern "C" {
 #endif
 
-#if !(!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-    /*Return EEPROM size.*/
-    extern uint16_t EEPROM_SIZE();
-    //Read byte
-    extern int EEPROM_READ(uint16_t index, unsigned char* value);
+#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    /*Return EEPROM or Flash size.*/
+    extern uint32_t SERIALIZER_SIZE();
+    //Read bytes from.
+    extern int SERIALIZER_LOAD(uint32_t index, uint32_t count, void* value);
     //Write byte
-    extern int EEPROM_WRITE(uint16_t index, unsigned char value);
-#endif //#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+    extern int SERIALIZER_SAVE(uint32_t index, uint32_t count, const void* value);
+#endif //#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
 
     //This attribute is not serialized.
 #define IGNORE_ATTRIBUTE(OBJECT, INDEX) {OBJECT, INDEX, 0}
@@ -107,15 +107,17 @@ extern "C" {
         uint16_t count;
 
         
-#if !defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         FILE* stream;
 #else
         //Serialization position is used to save serialization index.
-        uint16_t position;
+        uint32_t position;
         //Index of where changed data starts. This is used for debugging. 
-        uint16_t updateStart;
+        uint32_t updateStart;
         //Index of where changed data ends. This is used for debugging. 
-        uint16_t updateEnd;
+        uint32_t updateEnd;
+#endif //!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#ifdef DLMS_IGNORE_MALLOC
         //Only this object is saved if it is set.
         gxObject* savedObject;
         //Only attributes saved when savedObject is used.
@@ -125,7 +127,7 @@ extern "C" {
         gxObject* currentObject;
         //This is for internal use.
         uint16_t currentIndex;
-#endif //!defined(GX_DLMS_EEPROM) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#endif //DLMS_IGNORE_MALLOC
     } gxSerializerSettings;
 
     void ser_init(gxSerializerSettings* settings);
@@ -168,7 +170,7 @@ extern "C" {
     //Get data size in bytes.
     int ser_getDataSize(
         gxSerializerSettings* serializeSettings,
-        uint32_t* size);
+        void* size);
 
 #ifdef  __cplusplus
 }

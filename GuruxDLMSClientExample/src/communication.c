@@ -36,7 +36,7 @@
 #include "../../development/include/gxkey.h"
 #include "../../development/include/converters.h"
 #include "../../development/include/cosem.h"
-
+#include "../../development/include/gxserializer.h"
 
 //Returns current time.
 //If you are not using operating system you have to implement this by yourself.
@@ -974,7 +974,7 @@ int com_updateInvocationCounter(
             connection->settings.cipher.invocationCounter = 1 + var_toInteger(&d.value);
             if (connection->trace > GX_TRACE_LEVEL_WARNING)
             {
-                printf("Invocation counter: %ld (0x%lX)\r\n",
+                printf("Invocation counter: %u (0x%lX)\r\n",
                     connection->settings.cipher.invocationCounter,
                     connection->settings.cipher.invocationCounter);
             }
@@ -1079,21 +1079,178 @@ void com_reportError(const char* description,
     printf("%s %s %s:%d %s\r\n", description, obj_typeToString2(object->objectType), ln, attributeOrdinal, hlp_getErrorMessage(ret));
 }
 
-//Get Association view.
-int com_getAssociationView(connection* connection)
+static unsigned char CURRENT_LN[] = { 0, 0, 40, 0, 0, 0xFF };
+
+//Association view is read from association logical name object.
+int com_loadAssociationView(connection* connection, const char* outputFile)
 {
+    int ret = 0;
+    if (outputFile != NULL)
+    {
+        //Load settings.
+#if _MSC_VER > 1400
+        FILE* f = NULL;
+        fopen_s(&f, outputFile, "rb");
+#else
+        FILE* f = fopen(fileName, "rb");
+#endif
+        if (f != NULL)
+        {
+            gxObject* CURRENT_ASSOCIATION[1] = { NULL };
+            gxAssociationLogicalName ln;
+            gxAssociationShortName sn;
+            gxSerializerSettings serializerSettings;
+            ser_init(&serializerSettings);
+            serializerSettings.stream = f;
+            gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE_EXCEPT(2)) };
+            serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
+            serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
+            if (connection->settings.useLogicalNameReferencing)
+            {
+                INIT_OBJECT(ln, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, CURRENT_LN);
+                CURRENT_ASSOCIATION[0] = BASE(ln);
+            }
+            else
+            {
+                NON_SERIALIZED_OBJECTS[0].objectType = DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME;
+                INIT_OBJECT(sn, DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME, CURRENT_LN);
+                CURRENT_ASSOCIATION[0] = BASE(sn);
+            }
+            oa_clear(&connection->settings.objects, 1);
+            ret = ser_loadObjects(&connection->settings, &serializerSettings, CURRENT_ASSOCIATION, sizeof(CURRENT_ASSOCIATION) / sizeof(CURRENT_ASSOCIATION[0]));
+            fclose(f);
+            if (ret == 0)
+            {
+                if (connection->settings.useLogicalNameReferencing)
+                {
+                    oa_move(&connection->settings.objects, &ln.objectList);
+                    obj_clear(BASE(ln));
+                }
+                else
+                {
+                    oa_move(&connection->settings.objects, &sn.objectList);
+                    obj_clear(BASE(sn));
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+//Get Association view.
+int com_getAssociationView(connection* connection, const char* outputFile)
+{
+    //If association view is already read.
+    if (connection->settings.objects.size != 0)
+    {
+        return 0;
+    }
     int ret;
     message data;
     gxReplyData reply;
-
+    if (outputFile != NULL)
+    {
+        //Load settings.
+        return com_loadAssociationView(connection, outputFile);
+    }
     printf("GetAssociationView\r\n");
     mes_init(&data);
     reply_init(&reply);
+    /*
     if ((ret = cl_getObjectsRequest(&connection->settings, &data)) != 0 ||
         (ret = com_readDataBlock(connection, &data, &reply)) != 0 ||
         (ret = cl_parseObjects(&connection->settings, &reply.data)) != 0)
     {
         printf("GetObjects failed %s\r\n", hlp_getErrorMessage(ret));
+    }
+    */
+    // Parse object one at the time. This can be used if there is a limited amount of the memory available.
+    // Only needed object can be created.
+    if ((ret = cl_getObjectsRequest(&connection->settings, &data)) != 0 ||
+        (ret = com_readDataBlock(connection, &data, &reply)) != 0)
+    {
+        printf("cl_getObjectsRequest failed %s\r\n", hlp_getErrorMessage(ret));
+    }
+    else
+    {
+        gxObject* CURRENT_ASSOCIATION[1] = { NULL };
+        uint16_t pos, count;
+        if ((ret = cl_parseObjectCount(&reply.data, &count)) != 0)
+        {
+            printf("cl_parseObjectCount failed %s\r\n", hlp_getErrorMessage(ret));
+        }
+        gxObject obj;
+        for (pos = 0; pos != count; ++pos)
+        {
+            memset(&obj, 0, sizeof(gxObject));
+            if ((ret = cl_parseNextObject(&connection->settings, &reply.data, &obj)) != 0)
+            {
+                break;
+            }
+            if (connection->settings.useLogicalNameReferencing && obj.objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME && memcmp(obj.logicalName, CURRENT_LN, sizeof(CURRENT_LN)) == 0)
+            {
+                gxAssociationLogicalName* ln = (gxAssociationLogicalName*)malloc(sizeof(gxAssociationLogicalName));
+                INIT_OBJECT((*ln), obj.objectType, obj.logicalName);
+                ln->base.shortName = obj.shortName;
+                oa_push(&connection->settings.objects, (gxObject*) ln);
+                CURRENT_ASSOCIATION[0] = (gxObject*)ln;
+            }
+            else if (!connection->settings.useLogicalNameReferencing && obj.objectType == DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME && memcmp(obj.logicalName, CURRENT_LN, sizeof(CURRENT_LN)) == 0)
+            {
+                gxAssociationShortName* sn = (gxAssociationShortName*)malloc(sizeof(gxAssociationShortName));
+                INIT_OBJECT((*sn), obj.objectType, obj.logicalName);
+                sn->base.shortName = obj.shortName;
+                oa_push(&connection->settings.objects, (gxObject*)sn);
+                CURRENT_ASSOCIATION[0] = (gxObject*)sn;
+            }
+            else if (obj.objectType == DLMS_OBJECT_TYPE_DATA)
+            {
+                gxData* data = (gxData*)malloc(sizeof(gxData));
+                INIT_OBJECT((*data), obj.objectType, obj.logicalName);
+                data->base.shortName = obj.shortName;
+                oa_push(&connection->settings.objects, (gxObject*)data);
+            }
+            else
+            {
+                gxObject* pObj = NULL;
+                if ((ret = cosem_createObject(obj.objectType, &pObj)) == 0 &&
+                    (ret = cosem_init2(pObj, obj.objectType, obj.logicalName)) == 0)
+                {
+                    pObj->shortName = obj.shortName;
+                    oa_push(&connection->settings.objects, pObj);
+                }
+            }
+        }
+        if (outputFile != NULL && CURRENT_ASSOCIATION[0] != NULL)
+        {
+            //Write settings.
+#if _MSC_VER > 1400
+            FILE* f = NULL;
+            fopen_s(&f, outputFile, "wb");
+#else
+            FILE* f = fopen(fileName, "wb");
+#endif
+            if (f != NULL)
+            {
+                gxSerializerSettings serializerSettings;
+                ser_init(&serializerSettings);
+                serializerSettings.stream = f;
+                gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = { IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE_EXCEPT(2)) };
+                serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
+                serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
+                if (connection->settings.useLogicalNameReferencing)
+                {
+                    oa_copy(&((gxAssociationLogicalName*)CURRENT_ASSOCIATION[0])->objectList, &connection->settings.objects);
+                }
+                else
+                {
+                    NON_SERIALIZED_OBJECTS[0].objectType = DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME;
+                    oa_copy(&((gxAssociationShortName*)CURRENT_ASSOCIATION[0])->objectList, &connection->settings.objects);
+                }
+                ret = ser_saveObjects(&serializerSettings, CURRENT_ASSOCIATION, sizeof(CURRENT_ASSOCIATION) / sizeof(CURRENT_ASSOCIATION[0]));
+                fclose(f);
+            }
+        }
     }
     mes_clear(&data);
     reply_clear(&reply);
@@ -1507,6 +1664,30 @@ int com_readProfileGenerics(
         {
             continue;
         }
+        //Read capture period.
+        ret = com_read(connection, (gxObject*)pg, 4);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            if (connection->trace > GX_TRACE_LEVEL_OFF)
+            {
+                printf("Failed to read object %s %s attribute index %d\r\n", str, ln, 8);
+            }
+            //Do not clear objects list because it will free also objects from association view list.
+            oa_empty(&objects);
+            return ret;
+        }
+        //Read Sort method.
+        ret = com_read(connection, (gxObject*)pg, 5);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            if (connection->trace > GX_TRACE_LEVEL_OFF)
+            {
+                printf("Failed to read object %s %s attribute index %d\r\n", str, ln, 8);
+            }
+            //Do not clear objects list because it will free also objects from association view list.
+            oa_empty(&objects);
+            return ret;
+        }
         //Read first row from Profile Generic.
         ret = com_readRowsByEntry(connection, pg, 1, 1);
         if (ret != DLMS_ERROR_CODE_OK)
@@ -1688,11 +1869,10 @@ int com_readValues(connection* connection)
     return ret;
 }
 
-int com_readAllObjects(connection* connection)
+int com_readAllObjects(connection* connection, const char* outputFile)
 {
-    int ret;
     //Get objects from the meter and read them.
-    ret = com_getAssociationView(connection);
+    int ret = com_getAssociationView(connection, outputFile);
     if (ret != DLMS_ERROR_CODE_OK)
     {
         return ret;

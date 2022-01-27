@@ -345,6 +345,11 @@ int notify_generatePushSetupMessages(
     vec_empty(&args);
     if (ret == 0)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        //Update size and position
+        settings->serializedPdu->position = pdu.position;
+        settings->serializedPdu->size = pdu.size;
+#endif //DLMS_IGNORE_MALLOC
         ret = notify_generateDataNotificationMessages2(settings, date, &pdu, messages);
     }
 #ifndef DLMS_IGNORE_MALLOC

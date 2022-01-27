@@ -153,6 +153,11 @@ extern "C" {
 // This might be used in client side if a lot of data is read from the meter.
 // #define GX_DLMS_BYTE_BUFFER_SIZE_32
 
+//Serializer is not used.
+//DLMS_IGNORE_SERIALIZER
+//Serializer is used instead of file system.
+//#define GX_DLMS_SERIALIZER
+
 //GENERAL_CIPHERING is not used.
 //#define DLMS_IGNORE_GENERAL_CIPHERING
 

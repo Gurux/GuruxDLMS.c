@@ -40,6 +40,7 @@
 #endif
 #include <string.h>
 #include "../include/message.h"
+#include "../include/errorcodes.h"
 
 #ifndef DLMS_IGNORE_MALLOC
 //Initialize gxByteBuffer.
@@ -60,7 +61,7 @@ void mes_attach(message* mes, gxByteBuffer **data, unsigned char capacity)
 
 #ifndef DLMS_IGNORE_MALLOC
 //Push new message.
-void mes_push(message * mes, gxByteBuffer* item)
+int mes_push(message * mes, gxByteBuffer* item)
 {
 
     if(mes->size == mes->capacity)
@@ -72,11 +73,27 @@ void mes_push(message * mes, gxByteBuffer* item)
         }
         else
         {
-            mes->data = (gxByteBuffer**) gxrealloc(mes->data, mes->capacity * sizeof(gxByteBuffer*));
+#ifdef gxrealloc
+                //If compiler supports realloc.
+                mes->data = (gxByteBuffer**) gxrealloc(mes->data, mes->capacity * sizeof(gxByteBuffer*));
+ #else
+                //If compiler doesn't support realloc.
+                gxByteBuffer** old = mes->data;
+                mes->data = (gxByteBuffer**) gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
+                //If not enought memory available.
+                if (mes->data == NULL)
+                {
+                    mes->data = old;
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                memcpy(mes->data, old, sizeof(gxByteBuffer*) * mes->size);
+                gxfree(old);
+ #endif // gxrealloc      
         }
     }
     mes->data[mes->size] = item;
-    mes->size++;
+    ++mes->size;
+    return 0;
 }
 #endif //DLMS_IGNORE_MALLOC
 

@@ -36,16 +36,22 @@
 gxKey* key_init(void* key, void* value)
 {
     gxKey* obj = (gxKey*) gxmalloc(sizeof(gxKey));
-    obj->key = key;
-    obj->value = value;
+    if (obj != NULL)
+    {
+        obj->key = key;
+        obj->value = value;
+    }
     return obj;
 }
 
 gxKey2* key_init2(unsigned char key, void* value)
 {
     gxKey2* obj = (gxKey2*)gxmalloc(sizeof(gxKey2));
-    obj->key = key;
-    obj->value = value;
+    if (obj != NULL)
+    {
+        obj->key = key;
+        obj->value = value;
+    }
     return obj;
 }
 #endif //DLMS_IGNORE_MALLOC

@@ -324,6 +324,7 @@ uint32_t GXDLMSClient::GetServerAddress()
   return settings.serverAddress;
 }
 
+#ifndef DLMS_IGNORE_SERIALIZER 
 int GXDLMSClient::LoadObjects(gxSerializerSettings* serializeSettings, gxObject** objects, uint16_t count)
 {
   return ser_loadObjects(&settings, serializeSettings, objects, count);
@@ -338,6 +339,7 @@ int GXDLMSClient::SaveObjects2(gxSerializerSettings* serializeSettings)
 {
   return ser_saveObjects2(serializeSettings, GetObjects());
 }
+#endif //DLMS_IGNORE_SERIALIZER 
 
 int GXDLMSClient::ParseObjectCount(gxByteBuffer* data, uint16_t* count)
 {

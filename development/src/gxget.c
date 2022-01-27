@@ -546,7 +546,7 @@ int getLNObjects(
     uint16_t pduSize = 0;
     gxAssociationLogicalName* object = (gxAssociationLogicalName*)e->target;
     int ret;
-    uint16_t pos, pos2;
+    uint16_t pos;
     unsigned char found = 0;
     gxObject* it, * it2;
     unsigned char ln[] = { 0, 0, 40, 0, 0, 255 };
@@ -565,38 +565,31 @@ int getLNObjects(
             {
                 return ret;
             }
-            if (it->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
+            if (e->target != it && it->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
             {
                 if (memcmp(ln, it->logicalName, 6) == 0)
                 {
                     found = 1;
                 }
-                else if (it != e->target)
+                else
                 {
                     //Remove extra association view.
                     --count;
                 }
             }
-            if (!found)
-            {
-                //Remove objects that are only internal use.
-                for (pos2 = 0; pos2 != settings->internalObjects.size; ++pos2)
-                {
-                    if ((ret = oa_getByIndex(&settings->internalObjects, pos2, &it2)) != 0)
-                    {
-                        return ret;
-                    }
-                    if (it2 == it)
-                    {
-                        --count;
-                        break;
-                    }
-                }
-            }
         }
-        if (!found)
+        //Remove objects that are only internal use.
+        for (pos = 0; pos != settings->internalObjects.size; ++pos)
         {
-            ++count;
+            if ((ret = oa_getByIndex(&settings->internalObjects, pos, &it)) != 0)
+            {
+                return ret;
+            }
+            oa_findByLN(&object->objectList, it->objectType, it->logicalName, &it2);
+            if (it2 != NULL)
+            {
+                --count;
+            }
         }
         e->transactionEndIndex = count;
         if ((ret = cosem_setArray(data, count)) != 0)
@@ -605,6 +598,7 @@ int getLNObjects(
         }
         if (!found)
         {
+            ++count;
             //Count
             if ((ret = cosem_setStructure(data, 4)) != 0 ||
                 //ClassID
@@ -624,29 +618,21 @@ int getLNObjects(
             }
         }
     }
-    unsigned char ignore;
-    for (pos = (uint16_t)e->transactionStartIndex; pos != object->objectList.size; ++pos)
+    uint16_t pos2 = 0;
+    for (pos = 0; pos != object->objectList.size; ++pos)
     {
         ret = oa_getByIndex(&object->objectList, pos, &it);
         if (ret != 0)
         {
             return ret;
         }
-        ignore = 0;
-        //Remove objects that are only internal use.
-        for (pos2 = 0; pos2 != settings->internalObjects.size; ++pos2)
+        //Remove objects that are only for internal use.
+        if ((ret = oa_findByLN(&settings->internalObjects, it->objectType, it->logicalName, &it2)) != 0)
         {
-            if ((ret = oa_getByIndex(&settings->internalObjects, pos2, &it2)) != 0)
-            {
-                return ret;
-            }
-            if (it2 == it)
-            {
-                ignore = 1;
-                break;
-            }
+            break;
         }
-        if (!ignore)
+        //If this is not ignored.
+        if (it2 == NULL)
         {
             if (it->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
             {
@@ -655,34 +641,38 @@ int getLNObjects(
                     continue;
                 }
             }
-            pduSize = (uint16_t)data->size;
-            //Count
-            if ((ret = cosem_setStructure(data, 4)) != 0 ||
-                //ClassID
-                (ret = cosem_setUInt16(data, it->objectType)) != 0 ||
-                //Version
-                (ret = cosem_setUInt8(data, (unsigned char)it->version)) != 0 ||
-                //LN.
-                (ret = cosem_setOctetString2(data, it->logicalName, 6)) != 0)
+            if (!(pos2 < (uint16_t)e->transactionStartIndex))
             {
-                break;
-            }
-            //Access rights.
-            ret = getLNAccessRights(settings, it, data);
-            if (ret != 0)
-            {
-                break;
-            }
-            if (settings->server)
-            {
-                //If PDU is full.
-                if (!e->skipMaxPduSize && dlms_isPduFull(settings, data, NULL))
+                pduSize = (uint16_t)data->size;
+                //Count
+                if ((ret = cosem_setStructure(data, 4)) != 0 ||
+                    //ClassID
+                    (ret = cosem_setUInt16(data, it->objectType)) != 0 ||
+                    //Version
+                    (ret = cosem_setUInt8(data, (unsigned char)it->version)) != 0 ||
+                    //LN.
+                    (ret = cosem_setOctetString2(data, it->logicalName, 6)) != 0)
                 {
-                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                     break;
                 }
+                //Access rights.
+                ret = getLNAccessRights(settings, it, data);
+                if (ret != 0)
+                {
+                    break;
+                }
+                if (settings->server)
+                {
+                    //If PDU is full.
+                    if (!e->skipMaxPduSize && dlms_isPduFull(settings, data, NULL))
+                    {
+                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                        break;
+                    }
+                }
+                ++e->transactionStartIndex;
             }
-            ++e->transactionStartIndex;
+            ++pos2;
         }
     }
     if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
@@ -4838,7 +4828,7 @@ int cosem_getGsmDiagnostic(
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         ret = cosem_setString2(e->value.byteArr, &object->operatorName);
 #else
-        ret = cosem_setString(e->value.byteArr, object->operatorName,  
+        ret = cosem_setString(e->value.byteArr, object->operatorName,
             object->operatorName != NULL ? (uint16_t)strlen(object->operatorName) : 0);
 #endif //DLMS_IGNORE_MALLOC
         break;

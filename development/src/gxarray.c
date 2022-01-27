@@ -102,6 +102,7 @@ int arr_capacity(gxArray* arr, int capacity)
             }
             else
             {
+#ifdef gxrealloc
                 void* tmp = (void**)gxrealloc(arr->data, capacity * sizeof(void*));
                 //If not enought memory available.
                 if (tmp == NULL)
@@ -109,6 +110,19 @@ int arr_capacity(gxArray* arr, int capacity)
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
                 arr->data = tmp;
+ #else
+                //If compiler doesn't support realloc.
+                void* old = arr->data;
+                arr->data = (void**)gxmalloc(capacity * sizeof(void*));
+                //If not enought memory available.
+                if (arr->data == NULL)
+                {
+                    arr->data = old;
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                memcpy(arr->data, old, sizeof(void*) * arr->size);
+                gxfree(old);
+ #endif // gxrealloc     
             }
         }
         arr->capacity = (uint16_t)capacity;
@@ -151,12 +165,12 @@ void arr_clear(
             gxfree(arr->data[pos]);
         }
     }
-    if (arr->capacity != 0)
+    if (!arr_isAttached(arr) && arr->capacity != 0)
     {
         gxfree(arr->data);
         arr->data = NULL;
+        arr->capacity = 0;
     }
-    arr->capacity = 0;
     if (!arr_isAttached(arr))
     {
         arr->size = 0;

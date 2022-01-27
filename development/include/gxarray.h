@@ -145,6 +145,8 @@ extern "C" {
         uint16_t itemSize,
         void* tmp);
 
+    //This method is used to access array where items are saved with pointer.
+    //Example: registerAssignment.
     int arr_getByIndexRef(gxArray* arr, uint16_t index, void** value);
 
     int arr_setByIndexRef(gxArray* arr, void* value);

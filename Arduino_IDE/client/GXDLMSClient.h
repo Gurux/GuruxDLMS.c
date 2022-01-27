@@ -48,7 +48,9 @@
 #include "include/helpers.h"
 //obj_toString requires this
 #include "include/converters.h"
+#ifndef DLMS_IGNORE_SERIALIZER
 #include "include/gxserializer.h"
+#endif DLMS_IGNORE_SERIALIZER
 
 class GXDLMSClient
 {
@@ -246,6 +248,7 @@ class GXDLMSClient
     int GetSystemTitle(gxByteBuffer* systemTitle);
 #endif //DLMS_IGNORE_HIGH_GMAC
 
+#ifndef DLMS_IGNORE_SERIALIZER 
     /////////////////////////////////////////////////////////////////////////
     //Serialize objects from EEPROM.
     int LoadObjects(gxSerializerSettings* serializeSettings, gxObject** objects, uint16_t count);
@@ -257,6 +260,7 @@ class GXDLMSClient
     /////////////////////////////////////////////////////////////////////////
     //Serialize objects to EEPROM.
     int SaveObjects2(gxSerializerSettings* serializeSettings);
+#endif //DLMS_IGNORE_SERIALIZER 
 
 
     /////////////////////////////////////////////////////////////////////////

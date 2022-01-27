@@ -175,7 +175,9 @@ gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
     IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
     //Only scaler and unit are saved for all register objects.
-    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)) };
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)),
+    //Objects are not load because they are created statically.
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE(2)) };
 
 static uint32_t executeTime = 0;
 
@@ -265,19 +267,14 @@ int saveSettings()
 #else
     FILE* f = fopen(fileName, "wb");
 #endif
-    gxByteBuffer bb;
-    bb_init(&bb);
-    bb_capacity(&bb, 256);
     if (f != NULL)
     {
         gxSerializerSettings serializerSettings;
+        ser_init(&serializerSettings);
+        serializerSettings.stream = f;
         serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
         serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
-        if ((ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb)) == 0)
-        {
-            fwrite(bb.data, bb.size, 1, f);
-        }
-        bb_clear(&bb);
+        ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
         fclose(f);
     }
     else
@@ -310,9 +307,9 @@ void allocateProfileGenericBuffer(const char* fileName, uint32_t size)
                     break;
                 }
             }
-        }
-        fclose(f);
     }
+        fclose(f);
+}
 }
 
 int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
@@ -428,9 +425,9 @@ uint16_t getProfileGenericBufferMaxRowCount(
             //Decrease current index and total amount of the entries.
             count -= 4;
             count /= rowSize;
-        }
-        fclose(f);
     }
+        fclose(f);
+}
     return count;
 }
 
@@ -1736,16 +1733,12 @@ int loadSettings(dlmsSettings* settings)
         if (size != 0)
         {
             fseek(f, 0L, SEEK_SET);
-            gxByteBuffer bb;
-            bb_init(&bb);
-            bb_capacity(&bb, size);
-            bb.size += fread(bb.data, 1, size, f);
-            fclose(f);
             gxSerializerSettings serializerSettings;
+            ser_init(&serializerSettings);
+            serializerSettings.stream = f;
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
-            ret = ser_loadObjects(settings, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]), &bb);
-            bb_clear(&bb);
+            ret = ser_loadObjects(settings, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
             return ret;
         }
         fclose(f);
@@ -2107,8 +2100,8 @@ int getProfileGenericDataByRangeFromRingBuffer(
                 }
             }
             fclose(f);
-        }
     }
+}
     return ret;
 }
 
@@ -2215,7 +2208,7 @@ int readProfileGeneric(
             if (f != NULL)
             {
                 getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
-            }
+        }
             //Append data.
             if (ret == 0 && dataSize != 0)
             {
@@ -2291,8 +2284,8 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
-        }
     }
+}
     return ret;
 }
 
@@ -2409,7 +2402,7 @@ void svr_preWrite(
             updateState(settings, GURUX_EVENT_CODES_TIME_CHANGE);
         }
         //Loop buffer elements in write.
-        if (e->target == &compactData.base && e->index == 2)
+        else if (e->target == &compactData.base && e->index == 2)
         {
 #ifndef GX_DLMS_MICROCONTROLLER
             variantArray values;
@@ -2423,6 +2416,22 @@ void svr_preWrite(
             va_clear(&values);
 #endif //GX_DLMS_MICROCONTROLLER
             break;
+        }
+        //If client try to update low level password when high level authentication is established.
+        //This is possible in Indian standard.
+        else if (e->target == BASE(associationHigh) && e->index == 7)
+        {
+            ret = cosem_getOctetString(e->value.byteArr, &associationLow.secret);
+            saveSettings();
+            e->handled = 1;
+        }
+        //If client try to update low level password when high level authentication is established.
+        //This is possible in Indian standard.
+        else if (e->target == BASE(associationHigh) && e->index == 7)
+        {
+            ret = cosem_getOctetString(e->value.byteArr, &associationLow.secret);
+            saveSettings();
+            e->handled = 1;
         }
         hlp_getLogicalNameToString(e->target->logicalName, str);
         printf("Writing %s\r\n", str);
@@ -2497,9 +2506,9 @@ void allocateImageTransfer(const char* fileName, uint32_t size)
                     break;
                 }
             }
-        }
-        fclose(f);
     }
+        fclose(f);
+}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2772,6 +2781,7 @@ void svr_postWrite(
                 gxValueEventArg it;
                 ve_init(&it);
                 it.index = 1;
+                it.target = e->target;
                 handleProfileGenericActions(settings, &it);
                 //Count how many rows fit to the buffer.
                 ((gxProfileGeneric*)e->target)->profileEntries = getProfileGenericBufferMaxRowCount(settings, ((gxProfileGeneric*)e->target));
@@ -3050,12 +3060,22 @@ unsigned char svr_isTarget(
             objects.size = 0;
             if (oa_getObjects(&settings->objects, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, &objects) == 0)
             {
+                //If SAP assigment is not used.
+                if (objects.size == 0)
+                {
+                    ret = 1;
+                }
                 gxSapItem* it;
                 uint16_t sapIndex, pos;
                 for (sapIndex = 0; sapIndex != objects.size; ++sapIndex)
                 {
                     if (oa_getByIndex(&objects, sapIndex, (gxObject**)&sap) == 0)
                     {
+                        //If SAP assigment list is empty.
+                        if (objects.size == 1 && sap->sapAssignmentList.size == 0)
+                        {
+                            ret = 1;
+                        }
                         for (pos = 0; pos != sap->sapAssignmentList.size; ++pos)
                         {
                             if (arr_getByIndex(&sap->sapAssignmentList, pos, (void**)&it) == 0)
@@ -3070,6 +3090,10 @@ unsigned char svr_isTarget(
                                 }
                             }
                         }
+                    }
+                    if (ret != 0)
+                    {
+                        break;
                     }
                 }
             }
@@ -3408,7 +3432,7 @@ int svr_connected(
             //Return error if client can connect only using pre-established connnection.
             return DLMS_ERROR_CODE_READ_WRITE_DENIED;
         }
-}
+    }
 #else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;

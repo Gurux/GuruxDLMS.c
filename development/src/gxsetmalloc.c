@@ -5306,7 +5306,8 @@ int cosem_setProfileGeneric(
                                 }
                                 else
                                 {
-                                    time_addSeconds(&lastDate, -object->capturePeriod);
+                                    int tm = object->capturePeriod;
+                                    time_addSeconds(&lastDate, -tm);
                                 }
                                 var_setDateTime(data, &lastDate);
                             }

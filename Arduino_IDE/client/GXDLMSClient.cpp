@@ -182,6 +182,7 @@ int GXDLMSClient::ParseApplicationAssociationResponse(gxByteBuffer* reply)
   return cl_parseApplicationAssociationResponse(&settings, reply);
 }
 
+#ifndef DLMS_IGNORE_HDLC
 int GXDLMSClient::SnrmRequest(  message* messages)
 {
   return cl_snrmRequest(&settings, messages);
@@ -192,6 +193,7 @@ int GXDLMSClient::ParseUAResponse(gxByteBuffer* data)
   return cl_parseUAResponse(&settings, data);
 }
 
+#endif //DLMS_IGNORE_HDLC
 int GXDLMSClient::AarqRequest(message* messages)
 {
   return cl_aarqRequest(&settings, messages);

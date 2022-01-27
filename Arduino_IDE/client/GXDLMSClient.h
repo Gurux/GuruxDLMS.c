@@ -50,7 +50,7 @@
 #include "include/converters.h"
 #ifndef DLMS_IGNORE_SERIALIZER
 #include "include/gxserializer.h"
-#endif DLMS_IGNORE_SERIALIZER
+#endif //DLMS_IGNORE_SERIALIZER
 
 class GXDLMSClient
 {
@@ -163,12 +163,15 @@ class GXDLMSClient
     int ParseApplicationAssociationResponse(
       gxByteBuffer* reply);
 
+
+#ifndef DLMS_IGNORE_HDLC
     int SnrmRequest(
       message* messages);
 
     int ParseUAResponse(
       gxByteBuffer* data);
 
+#endif //DLMS_IGNORE_HDLC
     int AarqRequest(
       message* messages);
 

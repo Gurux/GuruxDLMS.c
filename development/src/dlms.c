@@ -67,14 +67,16 @@ static const unsigned char LLC_SEND_BYTES[3] = { 0xE6, 0xE6, 0x00 };
 static const unsigned char LLC_REPLY_BYTES[3] = { 0xE6, 0xE7, 0x00 };
 static const unsigned char HDLC_FRAME_START_END = 0x7E;
 
-#ifndef DLMS_IGNORE_HDLC
 unsigned char dlms_useHdlc(DLMS_INTERFACE_TYPE type)
 {
+#ifndef DLMS_IGNORE_HDLC
     return type == DLMS_INTERFACE_TYPE_HDLC ||
         type == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E ||
         type == DLMS_INTERFACE_TYPE_PLC_HDLC;
-}
+#else
+    return 0;
 #endif //DLMS_IGNORE_HDLC
+}
 
 //Makes sure that the basic settings are set.
 int dlms_checkInit(dlmsSettings* settings)
@@ -5355,10 +5357,12 @@ int dlms_appendMultipleSNBlocks(
     if (ciphering)
     {
         maxSize -= CIPHERING_HEADER_SIZE;
+#ifndef DLMS_IGNORE_HDLC
         if (dlms_useHdlc(p->settings->interfaceType))
         {
             maxSize -= 3;
         }
+#endif //DLMS_IGNORE_HDLC
     }
     maxSize -= hlp_getObjectCountSizeInBytes(maxSize);
     if ((uint16_t)(p->data->size - p->data->position) > maxSize)

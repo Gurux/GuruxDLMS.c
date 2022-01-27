@@ -789,7 +789,7 @@ int ser_getVariantArrayItem(variantArray* arr, uint16_t index, dlmsVARIANT** val
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     var_init(*value);
-    return arr_push(arr, *value);
+    return va_push(arr, *value);
 #endif //DLMS_COSEM_EXACT_DATA_TYPES
 }
 

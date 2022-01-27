@@ -326,6 +326,8 @@ int com_initializeConnection()
   mes_init(&messages);
   reply_init(&reply);
 
+
+#ifndef DLMS_IGNORE_HDLC
   //Get meter's send and receive buffers size.
   if ((ret = Client.SnrmRequest(&messages)) != 0 ||
       (ret = com_readDataBlock(&messages, &reply)) != 0 ||
@@ -337,6 +339,8 @@ int com_initializeConnection()
   }
   mes_clear(&messages);
   reply_clear(&reply);
+#endif //DLMS_IGNORE_HDLC
+
   if ((ret = Client.AarqRequest(&messages)) != 0 ||
       (ret = com_readDataBlock(&messages, &reply)) != 0 ||
       (ret = Client.ParseAAREResponse(&reply.data)) != 0)

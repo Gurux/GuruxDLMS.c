@@ -4880,7 +4880,7 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
         data->data.position = index;
         gxByteBuffer bb;
         bb_attach(&bb, data->data.data + index, bb_available(&data->data), bb_getCapacity(&data->data));
-        if (dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+        if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0 && dlms_useDedicatedKey(settings))
         {
             if ((ret = cip_decrypt(&settings->cipher,
                 settings->sourceSystemTitle,

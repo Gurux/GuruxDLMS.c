@@ -722,6 +722,11 @@ int cip_crypt(
     {
         //Encrypt the data.
         aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+        if (!encrypt)
+        {
+            ret = bb_move(input, input->position, 0, bb_available(input));
+            input->position = 0;
+        }
     }
     else if (security == DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
     {

@@ -217,11 +217,14 @@ int apdu_generateApplicationContextName(
 #ifndef DLMS_IGNORE_HIGH_GMAC
 unsigned char useDedicatedKey(dlmsSettings* settings)
 {
+    if (settings->cipher.dedicatedKey == NULL)
+    {
+        return 0;
+    }
 #ifndef DLMS_IGNORE_MALLOC
-    return settings->cipher.dedicatedKey->size == 0;
+    return settings->cipher.dedicatedKey->size == 16;
 #else
-    unsigned char tmp[8] = { 0 };
-    return memcmp(settings->cipher.dedicatedKey, tmp, 8) != 0;
+    return memcmp(settings->cipher.dedicatedKey, EMPTY_KEY, sizeof(EMPTY_KEY)) != 0;
 #endif //DLMS_IGNORE_MALLOC
 }
 #endif //DLMS_IGNORE_HIGH_GMAC
@@ -288,7 +291,7 @@ int apdu_getInitiateRequest(
     bb_setUInt8(data, 0);
 #else
     // Usage field for dedicated-key component.
-    if (settings->cipher.security == DLMS_SECURITY_NONE || settings->cipher.dedicatedKey == NULL || !useDedicatedKey(settings))
+    if (settings->cipher.security == DLMS_SECURITY_NONE || !useDedicatedKey(settings))
     {
         bb_setUInt8(data, 0);
     }

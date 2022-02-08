@@ -276,7 +276,7 @@ int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
         }
         return DLMS_ERROR_CODE_REJECTED_PERMAMENT;
     }
-    settings->isAuthenticationRequired = result == DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED && sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
+    settings->isAuthenticationRequired = sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
     if (!settings->isAuthenticationRequired)
     {
         settings->connected |= DLMS_CONNECTION_STATE_DLMS;
@@ -285,10 +285,6 @@ int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
     {
         //Invalid DLMS version number.
         return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
-    }
-    if (settings->isAuthenticationRequired != 0)
-    {
-        settings->connected |= DLMS_CONNECTION_STATE_DLMS;
     }
     return 0;
 }

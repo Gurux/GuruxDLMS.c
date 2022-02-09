@@ -4326,6 +4326,7 @@ int dlms_handleMethodResponse(
         {
             return ch;
         }
+        resetBlockIndex(settings);
         // Get data if exists. Some meters do not return here anything.
         if (data->data.position < data->data.size)
         {
@@ -4348,6 +4349,19 @@ int dlms_handleMethodResponse(
                 }
                 if (ch != 0)
                 {
+                    if (ch == 9)
+                    {
+                        //Handle Texas Instrument missing byte here.
+                        if ((ret = bb_getUInt8ByIndex(&data->data, data->data.position, &ch)) != 0)
+                        {
+                            return ret;
+                        }
+                        if (ch == 16)
+                        {
+                            --data->data.position;
+                            return dlms_getDataFromBlock(&data->data, 0);
+                        }
+                    }
                     if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
                     {
                         return ret;

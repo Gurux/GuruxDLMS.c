@@ -144,6 +144,12 @@ int com_readAllObjects(
     connection *connection,
     const char* outputFile);
 
+
+// Update high level password.
+int com_updateHighLevelPassword(
+    connection* connection,
+    gxAssociationLogicalName* object);
+
 #ifdef  __cplusplus
 }
 #endif

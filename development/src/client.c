@@ -354,9 +354,7 @@ int cl_getApplicationAssociationRequest(
 #else
         data.byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         BYTE_BUFFER_INIT(data.byteArr);
-        if ((ret = bb_setUInt8(data.byteArr, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
-            (ret = hlp_setObjectCount(challenge.size, data.byteArr)) == 0 &&
-            (ret = bb_set2(data.byteArr, &challenge, 0, challenge.size)) == 0 &&
+        if ((ret = bb_set2(data.byteArr, &challenge, 0, challenge.size)) == 0 &&
             (ret = bb_clear(&challenge)) == 0)
 #endif //DLMS_IGNORE_MALLOC
         {
@@ -1701,7 +1699,8 @@ int cl_methodLN(
 #else
         if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
         {
-            if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+            if ((value->vt == DLMS_DATA_TYPE_ARRAY || value->vt == DLMS_DATA_TYPE_STRUCTURE) &&
+                value->vt == DLMS_DATA_TYPE_OCTET_STRING)
             {
                 ret = bb_set(&data, value->byteArr->data, value->byteArr->size);
             }

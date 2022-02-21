@@ -1338,6 +1338,27 @@ int com_method(
     return ret;
 }
 
+int com_updateHighLevelPassword(
+    connection* connection,
+    gxAssociationLogicalName* object)
+{
+    int ret;
+    dlmsVARIANT tmp;
+    var_init(&tmp);
+    tmp.byteArr = &object->secret;
+    if (tmp.byteArr == NULL || tmp.byteArr->size == 0)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    //Secret is not copied and for that reason position is set to zero.
+    tmp.byteArr->position = 0;
+    tmp.vt = DLMS_DATA_TYPE_OCTET_STRING;
+    ret = com_method(connection, &object->base, 1, &tmp);
+    tmp.byteArr->position = 0;
+    var_clear(&tmp);
+    return ret;
+}
+
 //Read objects.
 int com_readList(
     connection* connection,

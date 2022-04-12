@@ -53,6 +53,23 @@
 #include "dlms/include/notify.h"
 #include "dlms/include/gxserializer.h"
 
+
+///TCP/IP 
+#include <errno.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+char TCP_BUFFER[1024];
+
+/////////////////////////////////////////////////////////////////////////////
+//Define TCP/IP port if TCP/IP server is established.
+
+#define BIND_PORT 0
+// #define BIND_PORT 4061
+
 /////////////////////////////////////////////////////////////////////////////
 //Led settings.
 
@@ -130,6 +147,8 @@ int SERIALIZER_SAVE(uint32_t index, uint32_t size, const void* value)
 /////////////////////////////////////////////////////////////////////////////
 //DLMS settings.
 dlmsServerSettings uartSettings;
+//DLMS settings.
+dlmsServerSettings tcp_ipSettings;
 //Space for client targets.
 gxValueEventArg events[10];
 //Space for client password.
@@ -145,19 +164,27 @@ uint32_t SERIAL_NUMBER = 303;
 
 #define HDLC_HEADER_SIZE 17
 #define HDLC_BUFFER_SIZE 128
+#define TCP_IP_BUFFER_SIZE 1024
 #define PDU_BUFFER_SIZE 512
 #define WRAPPER_BUFFER_SIZE 8 + PDU_BUFFER_SIZE
-//Buffer where frames are saved.
+//TCP/IP Buffer where frames are saved.
+static unsigned char tcp_ipframeBuff[TCP_IP_BUFFER_SIZE];
+
+//UART Buffer where frames are saved.
 static unsigned char frameBuff[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Buffer where PDUs are saved.
 static unsigned char pduBuff[PDU_BUFFER_SIZE];
 static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
+//TCP/IP Buffer where reply frames are saved.
+static unsigned char tcp_ipreplyFrame[TCP_IP_BUFFER_SIZE];
+
 //Define server system title.
 static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
 
 #define USE_TIME_INTERRUPT
 
-static gxByteBuffer reply;
+static gxByteBuffer uartReply;
+static gxByteBuffer tcp_ipReply;
 
 //Define profile generic buffer row data for Load profile.
 typedef struct
@@ -341,7 +368,7 @@ void GXTRACE(const char* str, const char* data)
 void GXTRACE_INT(const char* str, int32_t value)
 {
     char data[10];
-    int ret = sprintf(data, " %ld", value);
+    int ret = sprintf(data, " %d", value);
     if (ret > 0)
     {
         data[ret] = 0;
@@ -379,9 +406,11 @@ int saveSettings(gxObject* savedObject, uint16_t savedAttributes)
     if ((ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]))) != 0)
     {
         GXTRACE_INT(GET_STR_FROM_EEPROM("saveObjects failed: "), ret);
+    }else
+    {
+        GXTRACE_INT(GET_STR_FROM_EEPROM("saveObjects succeeded. Index: "), serializerSettings.updateStart);
+        GXTRACE_INT(GET_STR_FROM_EEPROM("Count: "), serializerSettings.updateEnd - serializerSettings.updateStart);
     }
-    GXTRACE_INT(GET_STR_FROM_EEPROM("saveObjects succeeded. Index: "), serializerSettings.updateStart);
-    GXTRACE_INT(GET_STR_FROM_EEPROM("Count: "), serializerSettings.updateEnd - serializerSettings.updateStart);
     return ret;
 }
 
@@ -717,6 +746,8 @@ int addBlockCipherKey()
     if ((ret = INIT_OBJECT(blockCipherKey, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
     {
         GX_OCTET_STRING(blockCipherKey.value, uartSettings.base.cipher.blockCipherKey, 16);
+        //Serial port and TCP/IP connections share the same keys.
+        GX_OCTET_STRING(blockCipherKey.value, tcp_ipSettings.base.cipher.blockCipherKey, 16);
     }
     return ret;
 }
@@ -731,6 +762,8 @@ int addAuthenticationKey()
     if ((ret = INIT_OBJECT(authenticationKey, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
     {
         GX_OCTET_STRING(authenticationKey.value, uartSettings.base.cipher.blockCipherKey, 16);
+        //Serial port and TCP/IP connections share the same keys.
+        GX_OCTET_STRING(authenticationKey.value, tcp_ipSettings.base.cipher.blockCipherKey, 16);
     }
     return ret;
 }
@@ -759,6 +792,8 @@ int addServerInvocationCounter()
     if ((ret = INIT_OBJECT(serverInvocationCounter, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
     {
         GX_UINT32_BYREF(serverInvocationCounter.value, uartSettings.base.cipher.invocationCounter);
+        //In this example serial port and TCP/IP connections share the same invocation counter.
+        GX_UINT32_BYREF(serverInvocationCounter.value, tcp_ipSettings.base.cipher.invocationCounter);
     }
     return ret;
 }
@@ -1079,6 +1114,9 @@ void createObjects()
     int ret;
     OA_ATTACH(uartSettings.base.internalObjects, INTERNAL_OBJECTS);
     OA_ATTACH(uartSettings.base.objects, ALL_OBJECTS);
+    //Serial port and TCP/IP connection share the same objects.
+    OA_ATTACH(tcp_ipSettings.base.internalObjects, INTERNAL_OBJECTS);
+    OA_ATTACH(tcp_ipSettings.base.objects, ALL_OBJECTS);
 
     if ((ret = addLogicalDeviceName()) != 0 ||
         (ret = addEeprom()) != 0 ||
@@ -1110,8 +1148,10 @@ void createObjects()
         (ret = addDisconnectControl()) != 0 ||
         (ret = addIecHdlcSetup()) != 0 ||
         (ret = oa_verify(&uartSettings.base.objects)) != 0 ||
-        //Start server
-        (ret = svr_initialize(&uartSettings)) != 0)
+        //Start UART server
+        (ret = svr_initialize(&uartSettings)) != 0 ||
+        //Start TCP/IP server
+        (ret = svr_initialize(&tcp_ipSettings)) != 0)
     {
         GXTRACE_INT(GET_STR_FROM_EEPROM("Failed to start the meter!"), ret);
         executeTime = 0;
@@ -2229,8 +2269,82 @@ static int gx_uart_init(char* uart_dev_name)
     return err;
 }
 
+
+/* For Zephyr, keep max number of fd's in sync with max poll() capacity */
+#ifdef CONFIG_NET_SOCKETS_POLL_MAX
+#define NUM_FDS CONFIG_NET_SOCKETS_POLL_MAX
+#else
+#define NUM_FDS 3
+#endif
+
+/* Number of simultaneous client connections will be NUM_FDS be minus 2 */
+struct pollfd pollfds[NUM_FDS];
+int pollnum;
+
+#define fatal(msg, ...) { \
+		printf("Error: " msg "\n", ##__VA_ARGS__); \
+		exit(1); \
+	}
+
+
+static void setblocking(int fd, bool val)
+{
+	int fl, res;
+
+	fl = fcntl(fd, F_GETFL, 0);
+	if (fl == -1) {
+		fatal("fcntl(F_GETFL): %d", errno);
+	}
+
+	if (val) {
+		fl &= ~O_NONBLOCK;
+	} else {
+		fl |= O_NONBLOCK;
+	}
+
+	res = fcntl(fd, F_SETFL, fl);
+	if (fl == -1) {
+		fatal("fcntl(F_SETFL): %d", errno);
+	}
+}
+
+int pollfds_add(int fd)
+{
+	int i;
+	if (pollnum < NUM_FDS) {
+		i = pollnum++;
+	} else {
+		for (i = 0; i < NUM_FDS; i++) {
+			if (pollfds[i].fd < 0) {
+				goto found;
+			}
+		}
+
+		return -1;
+	}
+
+found:
+	pollfds[i].fd = fd;
+	pollfds[i].events = POLLIN;
+
+	return 0;
+}
+
+void pollfds_del(int fd)
+{
+	for (int i = 0; i < pollnum; i++) {
+		if (pollfds[i].fd == fd) {
+			pollfds[i].fd = -1;
+			break;
+		}
+	}
+}
+
 void main(void)
 {
+    int serv = 0;
+    int num_servs = 0;
+	struct sockaddr_in bind_addr;
     int ret;
     led = device_get_binding(LED0);
     ret = gpio_pin_configure(led, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
@@ -2242,6 +2356,36 @@ void main(void)
         printk("Gurux DLMS sample failed.\n");
         return;
     }
+    //If TCP/IP server is used.
+    if (BIND_PORT != 0)
+    {
+        serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+        if (serv < 0) {
+            printf("error: socket: %d\n", errno);
+        }else
+        {
+            bind_addr.sin_family = AF_INET;
+            bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+            bind_addr.sin_port = htons(BIND_PORT);
+
+            if (bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) < 0) {
+                printf("error: bind: %d\n", errno);
+                exit(1);
+            }
+
+            //Port is unblocking.
+            setblocking(serv, false);
+            if (listen(serv, 5) < 0) {
+                printf("error: listen: %d\n", errno);
+                exit(1);
+            }
+            pollfds_add(serv);
+
+            printf("Single-threaded TCP DLMS server waits for a connection on "
+                "port %d.\n", BIND_PORT);
+        }
+    }
     started = time_elapsed();
     //Initialize serialization settings.
     ser_init(&serializerSettings);
@@ -2252,27 +2396,37 @@ void main(void)
     memcpy(SERVER_SYSTEM_TITLE, FLAG_ID, 3);
     //ADD serial number.
     memcpy(SERVER_SYSTEM_TITLE + 4, &SERIAL_NUMBER, 4);
-    bb_attach(&reply, replyFrame, 0, sizeof(replyFrame));
+    bb_attach(&uartReply, replyFrame, 0, sizeof(replyFrame));
+    bb_attach(&tcp_ipReply, tcp_ipreplyFrame, 0, sizeof(tcp_ipreplyFrame));
     svr_init(&uartSettings, 1, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, frameBuff, sizeof(frameBuff), pduBuff, sizeof(pduBuff));
+    svr_init(&tcp_ipSettings, 1, DLMS_INTERFACE_TYPE_WRAPPER, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, tcp_ipframeBuff, sizeof(tcp_ipframeBuff), pduBuff, sizeof(pduBuff));
     //Set master key (KEK) to 1111111111111111.
     unsigned char KEK[16] = { 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 };
 #ifdef DLMS_IGNORE_MALLOC
     //Allocate space for read list.
     vec_attach(&uartSettings.transaction.targets, events, 0, sizeof(events) / sizeof(events[0]));
+    vec_attach(&tcp_ipSettings.transaction.targets, events, 0, sizeof(events) / sizeof(events[0]));
     //Allocate space for client password.
     BB_ATTACH(uartSettings.base.password, PASSWORD, 0);
+    BB_ATTACH(tcp_ipSettings.base.password, PASSWORD, 0);
     //Allocate space for client challenge.
     BB_ATTACH(uartSettings.base.ctoSChallenge, C2S_CHALLENGE, 0);
+    BB_ATTACH(tcp_ipSettings.base.ctoSChallenge, C2S_CHALLENGE, 0);
     //Allocate space for server challenge.
     BB_ATTACH(uartSettings.base.stoCChallenge, S2C_CHALLENGE, 0);
+    BB_ATTACH(tcp_ipSettings.base.stoCChallenge, S2C_CHALLENGE, 0);
     memcpy(uartSettings.base.kek, KEK, sizeof(KEK));
+    memcpy(tcp_ipSettings.base.kek, KEK, sizeof(KEK));
     uartSettings.base.serializedPdu = &uartSettings.info.data;
+    tcp_ipSettings.base.serializedPdu = &tcp_ipSettings.info.data;
 #else
     bb_set(&uartSettings.base.kek, KEK, sizeof(KEK));
+    bb_set(&tcp_ipSettings.base.kek, KEK, sizeof(KEK));
 #endif //DLMS_IGNORE_MALLOC
     createObjects();
     //Set default clock.
     uartSettings.defaultClock = &clock1;
+    tcp_ipSettings.defaultClock = &clock1;
     //Communication speed is trace always because this is causing most of the problems.
     GXTRACE_INT(GET_STR_FROM_EEPROM("Communication speed"), getCommunicationSpeed());
     //Set pin state.
@@ -2299,6 +2453,9 @@ void main(void)
 #endif // DLMS_IGNORE_REGISTER_MONITOR
     while (true)
     {
+        struct sockaddr_storage client_addr;
+		socklen_t client_addr_len = sizeof(client_addr);
+		char addr_str[32];
         uint32_t start = time_current();
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
         //Monitor values only once/second.
@@ -2313,6 +2470,7 @@ void main(void)
 #endif //DLMS_IGNORE_REGISTER_MONITOR
         if (executeTime <= start)
         {
+            //Because the same objects are shared the run is executed only for UART.
             svr_run(&uartSettings, start, &executeTime);
             if (executeTime != -1)
             {
@@ -2320,22 +2478,90 @@ void main(void)
                 GXTRACE_INT(GET_STR_FROM_EEPROM("Seconds for next execution."), executeTime - start);
             }
         }
+        if (serv != 0)
+        {
+            ret = poll(pollfds, pollnum, -1);
+            if (ret == -1) {
+                printf("poll error: %d\n", errno);
+                continue;
+            }
+            //Hanle TCP/IP connections.
+            for (int i = 0; i < pollnum; i++) {
+                if (!(pollfds[i].revents & POLLIN)) {
+                    continue;
+                }
+                int fd = pollfds[i].fd;
+                if (i < num_servs) {
+                    /* If server socket */
+                    int client = accept(fd, (struct sockaddr *)&client_addr,
+                                &client_addr_len);
+                    void *addr = &((struct sockaddr_in *)&client_addr)->sin_addr;
+
+                    if (client < 0) {
+                        printf("error: accept: %d\n", errno);
+                        continue;
+                    }
+                    inet_ntop(client_addr.ss_family, addr, addr_str, sizeof(addr_str));
+                    printf("Connection from %s fd=%d\n",  addr_str, client);
+                    if (pollfds_add(client) < 0) {
+                        static char msg[] = "Too many connections\n";
+                        ret = send(client, msg, sizeof(msg) - 1, 0);
+                        if (ret < 0) {
+                            printf("error: send: %d\n", errno);
+                        }
+                        close(client);
+                    } else {
+                        setblocking(client, false);
+                    }
+                } else {
+                    int len = recv(fd, TCP_BUFFER, sizeof(TCP_BUFFER), 0);
+                    if (len <= 0) {
+                        if (len < 0) {
+                            printf("error: recv: %d\n", errno);
+                        }
+                        pollfds_del(fd);
+                        close(fd);
+                        printf("Connection fd=%d closed\n", fd);
+                    } else {
+                        // Reads are async, but writes are sync.
+                        setblocking(fd, true);
+                        if (svr_handleRequest2(&tcp_ipSettings, TCP_BUFFER, len, &tcp_ipReply) != 0)
+                        {
+                            bb_clear(&tcp_ipReply);
+                        }
+                        if (tcp_ipReply.size != 0)
+                        {
+                            //Send reply.
+                            if (send(fd, tcp_ipReply.data, tcp_ipReply.size, 0) < 0)
+                            {
+                                pollfds_del(fd);
+                                close(fd);
+                                printf("Connection fd=%d closed\n", fd);
+                            }
+                            bb_clear(&tcp_ipReply);
+                        }                    
+                        setblocking(fd, false);
+                    }
+                }
+            }
+        }
+        //Serial port connection.
         if (uartBufferPosition != 0)
         {
             uart_irq_rx_disable(uart_dev);
-            if (svr_handleRequest2(&uartSettings, UART_BUFFER, uartBufferPosition, &reply) != 0)
+            if (svr_handleRequest2(&uartSettings, UART_BUFFER, uartBufferPosition, &uartReply) != 0)
             {
-                bb_clear(&reply);
+                bb_clear(&uartReply);
             }
             uartBufferPosition = 0;
             uart_irq_rx_enable(uart_dev);
-            if (reply.size != 0)
+            if (uartReply.size != 0)
             {
                 //Send reply.
-                for (size_t i = 0; i < reply.size; i++) {
-                    uart_poll_out(uart_dev, reply.data[i]);
+                for (size_t i = 0; i < uartReply.size; i++) {
+                    uart_poll_out(uart_dev, uartReply.data[i]);
                 }
-                bb_clear(&reply);
+                bb_clear(&uartReply);
             }
         }
     }

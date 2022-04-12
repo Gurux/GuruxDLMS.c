@@ -126,7 +126,7 @@ int GXDLMSServer::handleRequest(unsigned char* data, unsigned short size, gxByte
   return svr_handleRequest2(&settings, data, size, reply);
 }
 
-int GXDLMSServer::run(unsigned long start, unsigned long* executeTime)
+int GXDLMSServer::run(uint32_t start, uint32_t* executeTime)
 {
   return svr_run(&settings, start, executeTime);
 }

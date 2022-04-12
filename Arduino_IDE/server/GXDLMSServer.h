@@ -116,7 +116,7 @@ class GXDLMSServer
     //Execute invokes.
     //start: current time.
     //executeTime: Next execute time.
-    int run(unsigned long start, unsigned long* executeTime);
+    int run(uint32_t start, uint32_t* executeTime);
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
     //Generate push notification messages.

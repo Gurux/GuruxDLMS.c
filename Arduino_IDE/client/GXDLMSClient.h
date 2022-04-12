@@ -74,7 +74,7 @@ class GXDLMSClient
 
     //Get password.
     gxByteBuffer* GetPassword();
-    
+
     //Handle received reply.
     int GetData(gxByteBuffer* reply, gxReplyData* data);
 
@@ -199,7 +199,7 @@ class GXDLMSClient
     // Returns Server address.
     static uint16_t GetServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize);
 
- /////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
     //Get client address.
     uint16_t GetClientAddress();
 
@@ -208,7 +208,7 @@ class GXDLMSClient
 
     //Get server address.
     uint32_t GetServerAddress();
-    
+
 #ifndef DLMS_IGNORE_HIGH_GMAC
     /////////////////////////////////////////////////////////////////////////
     //Get invocation counter.
@@ -251,7 +251,7 @@ class GXDLMSClient
     int GetSystemTitle(gxByteBuffer* systemTitle);
 #endif //DLMS_IGNORE_HIGH_GMAC
 
-#ifndef DLMS_IGNORE_SERIALIZER 
+#ifndef DLMS_IGNORE_SERIALIZER
     /////////////////////////////////////////////////////////////////////////
     //Serialize objects from EEPROM.
     int LoadObjects(gxSerializerSettings* serializeSettings, gxObject** objects, uint16_t count);
@@ -282,6 +282,15 @@ class GXDLMSClient
     /////////////////////////////////////////////////////////////////////////
     //Is Logical Name referencing used.
     bool UseLogicalNameReferencing();
+
+    /////////////////////////////////////////////////////////////////////////
+    //Get HDLC settings.
+    void GetHDLCSettings(uint16_t& maxInfoTX, uint16_t& maxInfoRX, unsigned char& windowSizeTX, unsigned char& windowSizeRX);
+
+    /////////////////////////////////////////////////////////////////////////
+    //Set HDLC settings.
+    void SetHDLCSettings(uint16_t maxInfoTX, uint16_t maxInfoRX, unsigned char windowSizeTX, unsigned char windowSizeRX);
+
 };
 
 static GXDLMSClient Client;

@@ -10,3 +10,5 @@ target_sources(app PRIVATE
     ${app_sources}
     )
 zephyr_include_directories(src/dlms/src)
+
+include(${ZEPHYR_BASE}/samples/net/common/common.cmake)

@@ -15,6 +15,15 @@ Build
 
 In this example we are using SEGGER Embedded Studio v4.14.
 
+TCP/IP support.
+=========================== 
+
+TCP/IP is not used as a default because retreaving TCP/IP address might take a long time.
+
+If TCP/IP supported is needed open main.c and set server port for BIND_PORT.
+Then open prj.conf and change config networking to y 
+CONFIG_NETWORKING=y
+
 Server example
 =========================== 
 In this example we'll create simple DLMS server that have register, data and clock object.

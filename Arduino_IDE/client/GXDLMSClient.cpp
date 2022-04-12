@@ -326,7 +326,7 @@ uint32_t GXDLMSClient::GetServerAddress()
   return settings.serverAddress;
 }
 
-#ifndef DLMS_IGNORE_SERIALIZER 
+#ifndef DLMS_IGNORE_SERIALIZER
 int GXDLMSClient::LoadObjects(gxSerializerSettings* serializeSettings, gxObject** objects, uint16_t count)
 {
   return ser_loadObjects(&settings, serializeSettings, objects, count);
@@ -351,6 +351,22 @@ int GXDLMSClient::ParseObjectCount(gxByteBuffer* data, uint16_t* count)
 int GXDLMSClient::ParseNextObject(gxByteBuffer* data, gxObject* object)
 {
   return cl_parseNextObject(&settings, data, object);
+}
+
+void GXDLMSClient::GetHDLCSettings(uint16_t& maxInfoTX, uint16_t& maxInfoRX, unsigned char& windowSizeTX, unsigned char& windowSizeRX)
+{
+  maxInfoTX = settings.maxInfoTX;
+  maxInfoRX = settings.maxInfoRX;
+  windowSizeTX = settings.windowSizeTX;
+  windowSizeRX = settings.windowSizeRX;
+}
+
+void GXDLMSClient::SetHDLCSettings(uint16_t maxInfoTX, uint16_t maxInfoRX, unsigned char windowSizeTX, unsigned char windowSizeRX)
+{
+  settings.maxInfoTX = maxInfoTX;
+  settings.maxInfoRX = maxInfoRX;
+  settings.windowSizeTX = windowSizeTX;
+  settings.windowSizeRX = windowSizeRX;
 }
 
 //static GXDLMSClient Client;

@@ -262,14 +262,15 @@ int notify_generatePushSetupMessages(
 	uint16_t pos;
     gxByteBuffer pdu;
     gxValueEventCollection args;
-    gxValueEventArg e;
 #ifdef DLMS_IGNORE_MALLOC
     gxTarget* it;
     pdu = *settings->serializedPdu;
-    ve_init(&e);
     gxValueEventArg p[1];
+    ve_init(&p[0]);
+    p[0].action = 1;
     vec_attach(&args, p, 1, 1);
 #else
+    gxValueEventArg e;
     gxKey* it;
     BYTE_BUFFER_INIT(&pdu);
     ve_init(&e);
@@ -301,7 +302,7 @@ int notify_generatePushSetupMessages(
             p[0].target = it->target;
             p[0].index = it->attributeIndex;
             svr_preRead(settings, &args);
-            if (e.error != 0)
+            if (p[0].error != 0)
             {
                 break;
             }
@@ -335,11 +336,19 @@ int notify_generatePushSetupMessages(
 #ifndef DLMS_IGNORE_SERVER
             svr_postRead(settings, &args);
 #endif //DLMS_IGNORE_SERVER
+#ifdef DLMS_IGNORE_MALLOC
+            ve_clear(&p[0]);
+            if (p[0].error != 0)
+            {
+                break;
+            }
+#else
             ve_clear(&e);
             if (e.error != 0)
             {
                 break;
             }
+#endif //DLMS_IGNORE_MALLOC
         }
     }
     vec_empty(&args);

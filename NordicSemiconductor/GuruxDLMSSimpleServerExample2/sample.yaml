@@ -1,5 +1,9 @@
 sample:
   name: Gurux DLMS Server example without malloc
+common:
+  harness: net
+  depends_on: netif
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
 tests:
 samples.peripheral.lpuart_int_driven:
     build_only: true
@@ -22,4 +26,10 @@ samples.peripheral.lpuart_int_driven:
     depends_on: gpio
     harness: led
     integration_platforms:
-      - frdm_k64f         
+      - frdm_k64f 
+
+  sample.net.sockets.echo:
+    tags: net socket
+  sample.net.sockets.echo.offload.simplelink:
+    platform_allow: cc3220sf_launchxl
+    tags: net socket offload simplelink

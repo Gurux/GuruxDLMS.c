@@ -4277,8 +4277,10 @@ int ser_saveObject(
 #if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 void ResetPosition(gxSerializerSettings* serializeSettings)
 {
+#ifdef DLMS_IGNORE_MALLOC
     serializeSettings->currentObject = NULL;
     serializeSettings->currentIndex = 0;
+#endif //DLMS_IGNORE_MALLOC
     serializeSettings->position = 0;
     serializeSettings->updateEnd = 0;
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) && !defined(GX_DLMS_MICROCONTROLLER)

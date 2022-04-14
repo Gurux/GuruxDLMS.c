@@ -2345,7 +2345,7 @@ int dlms_checkHdlcAddress(
         }
         else
         {
-            settings->serverAddress = (uint16_t)target;
+            settings->serverAddress = target;
         }
 
         // Check that client addresses match.

@@ -117,34 +117,24 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
         (ret = bb_setUInt8(pData, 0)) == 0)
     {
         // If custom HDLC parameters are used.
-        if (ret == 0 && DEFAULT_MAX_INFO_TX != settings->maxInfoTX)
+        if (ret == 0 &&
+            (DEFAULT_MAX_INFO_TX != settings->maxInfoTX ||
+                DEFAULT_MAX_INFO_RX != settings->maxInfoRX ||
+                DEFAULT_MAX_WINDOW_SIZE_TX != settings->windowSizeTX ||
+                DEFAULT_MAX_WINDOW_SIZE_RX != settings->windowSizeRX))
         {
-            if ((ret = bb_setUInt8(pData, HDLC_INFO_MAX_INFO_TX)) == 0)
+            if ((ret = bb_setUInt8(pData, HDLC_INFO_MAX_INFO_TX)) != 0 ||
+                (ret = dlms_appendHdlcParameter(pData, settings->maxInfoTX)) != 0 ||
+                (ret = bb_setUInt8(pData, HDLC_INFO_MAX_INFO_RX)) != 0 ||
+                (ret = dlms_appendHdlcParameter(pData, settings->maxInfoRX)) != 0 ||
+                (ret = bb_setUInt8(pData, HDLC_INFO_WINDOW_SIZE_TX)) != 0 ||
+                (ret = bb_setUInt8(pData, 4)) != 0 ||
+                (ret = bb_setUInt32(pData, settings->windowSizeTX)) != 0 ||
+                (ret = bb_setUInt8(pData, HDLC_INFO_WINDOW_SIZE_RX)) != 0 ||
+                (ret = bb_setUInt8(pData, 4)) != 0 ||
+                (ret = bb_setUInt32(pData, settings->windowSizeRX)) != 0)
             {
-                ret = dlms_appendHdlcParameter(pData, settings->maxInfoTX);
-            }
-        }
-        if (ret == 0 && DEFAULT_MAX_INFO_RX != settings->maxInfoRX)
-        {
-            if ((ret = bb_setUInt8(pData, HDLC_INFO_MAX_INFO_RX)) == 0)
-            {
-                ret = dlms_appendHdlcParameter(pData, settings->maxInfoRX);
-            }
-        }
-        if (ret == 0 && DEFAULT_MAX_WINDOW_SIZE_TX != settings->windowSizeTX)
-        {
-            if ((ret = bb_setUInt8(pData, HDLC_INFO_WINDOW_SIZE_TX)) == 0 &&
-                (ret = bb_setUInt8(pData, 4)) == 0)
-            {
-                ret = bb_setUInt32(pData, settings->windowSizeTX);
-            }
-        }
-        if (ret == 0 && DEFAULT_MAX_WINDOW_SIZE_RX != settings->windowSizeRX)
-        {
-            if ((ret = bb_setUInt8(pData, HDLC_INFO_WINDOW_SIZE_RX)) == 0 &&
-                (ret = bb_setUInt8(pData, 4)) == 0)
-            {
-                ret = bb_setUInt32(pData, settings->windowSizeRX);
+                //Error is returned in the end of this method.
             }
         }
         // If default HDLC parameters are not used.

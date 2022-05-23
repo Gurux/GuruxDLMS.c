@@ -591,6 +591,10 @@ int getLNObjects(
                 --count;
             }
         }
+        if (!found)
+        {
+            ++count;
+        }
         e->transactionEndIndex = count;
         if ((ret = cosem_setArray(data, count)) != 0)
         {
@@ -598,7 +602,6 @@ int getLNObjects(
         }
         if (!found)
         {
-            ++count;
             //Count
             if ((ret = cosem_setStructure(data, 4)) != 0 ||
                 //ClassID
@@ -679,6 +682,11 @@ int getLNObjects(
     {
         data->size = pduSize;
         ret = 0;
+    }
+    else if (pos == object->objectList.size)
+    {
+        //If all objects fit to one PDU.
+        e->transactionEndIndex = e->transactionStartIndex = 0;
     }
     return ret;
 }

@@ -3233,12 +3233,12 @@ int svr_handleRequest2(
     }
     //Check frame using inter Charachter Timeout.
 #if !defined(DLMS_IGNORE_HDLC) || !defined(DLMS_IGNORE_IEC_HDLC_SETUP)
-    if (IS_HDLC(settings->base.interfaceType) && settings->hdlc != NULL && settings->hdlc->interCharachterTimeout != 0)
+    if (IS_HDLC(settings->base.interfaceType) && settings->hdlc != NULL && settings->hdlc->inactivityTimeout != 0)
     {
         uint32_t now = time_elapsed();
         uint16_t elapsed = (uint16_t)(now - settings->frameReceived) / 1000;
         //If frame shoud be fully received.
-        if (elapsed >= settings->hdlc->interCharachterTimeout)
+        if (elapsed >= settings->hdlc->inactivityTimeout)
         {
             settings->receivedData.position = settings->receivedData.size = 0;
         }
@@ -3712,6 +3712,9 @@ int svr_handleSingleActionSchedule(
     uint32_t time,
     uint32_t* next)
 {
+    //Execution time is saved in case there are multiple actions in one schedule.
+    //If it's not returned only the first action is executed.
+    uint32_t originalExecutedTime = object->executedTime;
     gxtime* s;
     int ret = 0;
     int pos;
@@ -3767,6 +3770,8 @@ int svr_handleSingleActionSchedule(
                             break;
                         }
 #endif //DLMS_IGNORE_MALLOC
+                        //Execution time is returned in case there are multiple actions in one schedule.
+                        object->executedTime = originalExecutedTime;
                         if ((ret = svr_invoke(
                             settings,
                             (gxObject*)a->target,

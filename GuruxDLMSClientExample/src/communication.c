@@ -974,7 +974,7 @@ int com_updateInvocationCounter(
             connection->settings.cipher.invocationCounter = 1 + var_toInteger(&d.value);
             if (connection->trace > GX_TRACE_LEVEL_WARNING)
             {
-                printf("Invocation counter: %u (0x%lX)\r\n",
+                printf("Invocation counter: %lu (0x%lX)\r\n",
                     connection->settings.cipher.invocationCounter,
                     connection->settings.cipher.invocationCounter);
             }
@@ -1092,7 +1092,7 @@ int com_loadAssociationView(connection* connection, const char* outputFile)
         FILE* f = NULL;
         fopen_s(&f, outputFile, "rb");
 #else
-        FILE* f = fopen(fileName, "rb");
+        FILE* f = fopen(outputFile, "rb");
 #endif
         if (f != NULL)
         {
@@ -1133,6 +1133,11 @@ int com_loadAssociationView(connection* connection, const char* outputFile)
                 }
             }
         }
+        else
+        {
+            //Return false, if file doesn't exist.
+            ret = DLMS_ERROR_CODE_FALSE;
+        }
     }
     return ret;
 }
@@ -1151,7 +1156,11 @@ int com_getAssociationView(connection* connection, const char* outputFile)
     if (outputFile != NULL)
     {
         //Load settings.
-        return com_loadAssociationView(connection, outputFile);
+        ret = com_loadAssociationView(connection, outputFile);
+        if (ret != DLMS_ERROR_CODE_FALSE)
+        {
+            return ret;
+        }
     }
     printf("GetAssociationView\r\n");
     mes_init(&data);
@@ -1228,7 +1237,7 @@ int com_getAssociationView(connection* connection, const char* outputFile)
             FILE* f = NULL;
             fopen_s(&f, outputFile, "wb");
 #else
-            FILE* f = fopen(fileName, "wb");
+            FILE* f = fopen(outputFile, "wb");
 #endif
             if (f != NULL)
             {

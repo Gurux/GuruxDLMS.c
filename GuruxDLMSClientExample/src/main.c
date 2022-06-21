@@ -134,7 +134,7 @@ int disconnect(connection* connection)
 10. image_transfer_status is read.
 11. image_activate is called.
 */
-int imageUpdate(connection* connection, char* identification, uint16_t identificationSize, unsigned char* image, uint32_t imageSize)
+int imageUpdate(connection* connection, const unsigned char* identification, uint16_t identificationSize, unsigned char* image, uint32_t imageSize)
 {
     int ret;
     gxByteBuffer bb;
@@ -175,12 +175,12 @@ int imageUpdate(connection* connection, char* identification, uint16_t identific
                     count = imageSize;
                 }
                 bb_clear(&bb);
-                if ((ret = bb_setInt8(&bb, DLMS_DATA_TYPE_STRUCTURE)) == 0 &&
-                    (ret = bb_setInt8(&bb, 2)) == 0 &&
-                    (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_UINT32)) == 0 &&
-                    (ret = bb_setInt32(&bb, blockNumber)) == 0 &&
-                    (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
-                    (ret = hlp_setObjectCount(count, &bb)) == 0 &&
+                if ((ret = bb_setInt8(&bb, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+                    (ret = bb_setInt8(&bb, 2)) != 0 ||
+                    (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_UINT32)) != 0 ||
+                    (ret = bb_setInt32(&bb, blockNumber)) != 0 ||
+                    (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                    (ret = hlp_setObjectCount(count, &bb)) != 0 ||
                     (ret = bb_set(&bb, image, count)) != 0 ||
                     (ret = var_addOctetString(&param, &bb)) != 0 ||
                     (ret = com_method(connection, BASE(im), 2, &param)) != 0)
@@ -217,7 +217,11 @@ int imageUpdate(connection* connection, char* identification, uint16_t identific
                             }
 
                             //Wait until image is activated.
+#if defined(_WIN32) || defined(_WIN64)//Windows
                             Sleep(10000);
+#else
+                            usleep(1000000);
+#endif //defined(_WIN32) || defined(_WIN64)
                         }
                         if (ret == 0)
                         {
@@ -299,7 +303,15 @@ int readTcpIpConnection(
                         printf("Object '%s' not found from the association view.\n", p);
                         break;
                     }
-                    com_readValue(connection, obj, index);
+                    //Capture objects are read first if the buffer of the profile generic is read.
+                    if (obj->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC && index == 2)
+                    {
+                        if ((ret = com_readValue(connection, obj, 3)) != 0)
+                        {
+                            break;
+                        }
+                    }
+                    ret = com_readValue(connection, obj, index);
                 }
             } while ((p = strchr(p2, ',')) != NULL);
         }
@@ -360,7 +372,20 @@ int readSerialPort(
 #endif
                 hlp_setLogicalName(buff, p);
                 oa_findByLN(&connection->settings.objects, DLMS_OBJECT_TYPE_NONE, buff, &obj);
-                com_readValue(connection, obj, index);
+                if (obj == NULL)
+                {
+                    printf("Object '%s' not found from the association view.\n", p);
+                    break;
+                }
+                //Capture objects are read first if the buffer of the profile generic is read.
+                if (obj->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC && index == 2)
+                {
+                    if ((ret = com_readValue(connection, obj, 3)) != 0)
+                    {
+                        break;
+                    }
+                }
+                ret = com_readValue(connection, obj, index);
             } while ((p = strchr(p2, ',')) != NULL);
         }
     }
@@ -591,7 +616,7 @@ int connectMeter(int argc, char* argv[])
             {
                 ShowHelp();
                 return 1;
-        }
+            }
             break;
         case 'g':
             //Get (read) selected objects.
@@ -610,10 +635,10 @@ int connectMeter(int argc, char* argv[])
                 {
                     ShowHelp();
                     return 1;
-            }
-    } while ((p = strchr(p, ',')) != NULL);
-    readObjects = optarg;
-    break;
+                }
+                } while ((p = strchr(p, ',')) != NULL);
+                readObjects = optarg;
+                break;
         case 'S':
             serialPort = optarg;
             break;
@@ -659,7 +684,7 @@ int connectMeter(int argc, char* argv[])
             con.settings.serverAddress = atoi(optarg);
             break;
         case 'l':
-            con.settings.serverAddress = cl_getServerAddress(atoi(optarg), con.settings.serverAddress, 0);
+            con.settings.serverAddress = cl_getServerAddress(atoi(optarg), (unsigned short)con.settings.serverAddress, 0);
             break;
         case 'n':
             //TODO: Add support for serial number. con.settings.serverAddress = cl_getServerAddress(atoi(optarg));
@@ -726,8 +751,8 @@ int connectMeter(int argc, char* argv[])
         break;
         default:
             return 1;
-}
-}
+            }
+        }
 
     if (port != 0 || address != NULL)
     {
@@ -764,7 +789,7 @@ int connectMeter(int argc, char* argv[])
     }
     cl_clear(&con.settings);
     return 0;
-}
+    }
 
 int main(int argc, char* argv[])
 {

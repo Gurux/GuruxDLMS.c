@@ -39,6 +39,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <fcntl.h>
 #endif
 
 #include "../../development/include/gxmem.h"
@@ -57,15 +58,11 @@ dlmsServerSettings settings;
 GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_OFF;
 
 const static char* FLAG_ID = "GRX";
-//Serialization version is increased every time when structure of serialized data is changed.
-const static uint16_t SERIALIZATION_VERSION = 2;
 
 //Space for client challenge.
 static unsigned char C2S_CHALLENGE[64];
 //Space for server challenge.
 static unsigned char S2C_CHALLENGE[64];
-//Allocate space for read list.
-static gxValueEventArg events[10];
 
 unsigned char testMode = 1;
 int socket1 = -1;
@@ -399,7 +396,6 @@ uint16_t getProfileGenericBufferMaxRowCount(
 uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
 {
     uint16_t index = 0;
-    int ret = 0;
     char fileName[30];
     getProfileGenericFileName(pg, fileName);
     FILE* f = NULL;
@@ -410,7 +406,6 @@ uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
 #endif
     if (f != NULL)
     {
-        uint16_t dataSize = 0;
         //Load current entry index from the begin of the data.
         unsigned char pduBuff[2];
         gxByteBuffer pdu;

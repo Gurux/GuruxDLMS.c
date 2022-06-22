@@ -838,14 +838,17 @@ int var_getBytes3(
     {
         dlmsVARIANT* tmp;
         if ((ret = bb_setUInt8(ba, type)) == 0 &&
-            (ret = hlp_setObjectCount(data->Arr->size, ba)) == 0)
+            (ret = hlp_setObjectCount(data->Arr != NULL ? data->Arr->size : 0, ba)) == 0)
         {
-            for (pos = 0; pos != data->Arr->size; ++pos)
+            if (data->Arr != NULL)
             {
-                if ((ret = va_getByIndex(data->Arr, pos, &tmp)) != DLMS_ERROR_CODE_OK ||
-                    (ret = var_getBytes(tmp, ba)) != DLMS_ERROR_CODE_OK)
+                for (pos = 0; pos != data->Arr->size; ++pos)
                 {
-                    break;
+                    if ((ret = va_getByIndex(data->Arr, pos, &tmp)) != DLMS_ERROR_CODE_OK ||
+                        (ret = var_getBytes(tmp, ba)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
                 }
             }
         }

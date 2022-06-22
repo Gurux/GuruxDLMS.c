@@ -503,7 +503,7 @@ int svr_HandleAarqRequest(
             }
         }
         // Generate AARE packet.
-        if (settings->base.authentication > DLMS_AUTHENTICATION_LOW)
+        if (settings->base.authentication > DLMS_AUTHENTICATION_LOW && settings->base.customChallenges == 0)
         {
             // If High authentication is used.
             if ((ret = dlms_generateChallenge(&settings->base.stoCChallenge)) != 0)
@@ -1631,19 +1631,22 @@ int svr_getRequestWithList(
         e->value.byteArr = data;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
 #endif //DLMS_IGNORE_MALLOC
-        if (e->error == 0 && !e->handled)
+        if (e->error == 0)
         {
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
             uint32_t pos2 = data->size;
 #else
             uint16_t pos2 = data->size;
 #endif
-            bb_setUInt8(data, 0);
-            if ((ret = cosem_getValue(&settings->base, e)) != 0)
+            bb_setUInt8(data, (unsigned char)e->error);
+            if (!e->handled)
             {
-                e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                if ((ret = cosem_getValue(&settings->base, e)) != 0)
+                {
+                    e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    bb_setUInt8ByIndex(data, pos2, (unsigned char)e->error);
+                }
             }
-            bb_setUInt8ByIndex(data, pos2, (unsigned char)e->error);
         }
         if (e->error == 0)
         {
@@ -2666,7 +2669,18 @@ int svr_handleMethodRequest(
             }
             if (e->byteArray)
             {
-                e->value.vt = DLMS_DATA_TYPE_NONE;
+                if (!bb_isAttached(e->value.byteArr))
+                {
+                    if ((ret = bb_set2(data, e->value.byteArr, 0, e->value.byteArr->size)) != 0)
+                    {
+                        error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    }
+                    var_clear(&e->value);
+                }
+                else
+                {
+                    e->value.vt = DLMS_DATA_TYPE_NONE;
+                }
             }
             else
             {

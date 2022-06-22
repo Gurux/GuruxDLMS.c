@@ -24,10 +24,9 @@
 #endif
 #include <tchar.h>
 #include <conio.h>
-#include <Winsock.h> //Add support for sockets
+#include <ws2tcpip.h>//Add support for sockets
 #include <time.h>
 #include <process.h>//Add support for threads
-#include <Winsock.h> //Add support for sockets
 #endif
 #if defined(__linux__) //Linux includes.
 #include <stdio.h>
@@ -112,9 +111,9 @@ const gxObject* ALL_DC_OBJECTS[] = { BASE(associationNone), BASE(lowAssociation)
 };
 
 //Returns the approximate processor time in ms.
-long time_elapsed(void)
+uint32_t time_elapsed(void)
 {
-    return (long)clock() * 1000;
+    return (uint32_t)clock() * 1000;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -274,7 +273,7 @@ int addFirmwareVersion()
         const unsigned char ln[6] = { 1,0,0,2,0,255 };
         if ((ret = INIT_OBJECT(fw, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
         {
-            GX_OCTECT_STRING(fw.value, FW, (unsigned short)strlen(FW));
+            GX_OCTET_STRING(fw.value, FW, (unsigned short)strlen(FW));
         }
     }
     return ret;
@@ -288,12 +287,11 @@ int addPushSetup()
     int ret;
     const char* DEST = "";
     static gxTarget PUSH_OBJECTS[3] = { 0 };
-    unsigned char pos;
     const unsigned char ln[6] = { 0,1,25,9,0,255 };
     if ((ret = INIT_OBJECT(pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln)) == 0)
     {
         pushSetup.service = DLMS_SERVICE_TYPE_HDLC;
-        SET_OCTECT_STRING(pushSetup.destination, DEST, 0);
+        bb_set(&pushSetup.destination, DEST, 0);
         // Add push object itself. This is needed to tell structure of data to
         // the Push listener.
         PUSH_OBJECTS[0].target = &pushSetup.base;
@@ -328,7 +326,7 @@ int addOnConnectivityPushSetup()
     if ((ret = INIT_OBJECT(connectivityPushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln)) == 0)
     {
         connectivityPushSetup.service = DLMS_SERVICE_TYPE_HDLC;
-        SET_OCTECT_STRING(connectivityPushSetup.destination, DEST, (unsigned short)strlen(DEST));
+        bb_set(&connectivityPushSetup.destination, DEST, (unsigned short)strlen(DEST));
 
         // Add push object itself. This is needed to tell structure of data to
         // the Push listener.
@@ -386,7 +384,7 @@ int svr_InitObjects(
         const unsigned char ln[6] = { 0,0,42,0,0,255 };
         if ((ret = INIT_OBJECT(ldn, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
         {
-            GX_OCTECT_STRING(ldn.value, LDN, sizeof(LDN));
+            GX_OCTET_STRING(ldn.value, LDN, sizeof(LDN));
         }
     }
     //Electricity ID 1
@@ -394,7 +392,7 @@ int svr_InitObjects(
         const unsigned char ln[6] = { 1,1,0,0,0,255 };
         if ((ret = INIT_OBJECT(id1, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
         {
-            GX_OCTECT_STRING(id1.value, LDN, sizeof(LDN));
+            GX_OCTET_STRING(id1.value, LDN, sizeof(LDN));
         }
     }
 
@@ -527,7 +525,7 @@ int getRestrictingObject(gxValueEventArg* e)
     if ((ret = cosem_checkStructure(e->parameters.byteArr, 4)) == 0 &&
         (ret = cosem_checkStructure(e->parameters.byteArr, 4)) == 0 &&
         (ret = cosem_getUInt16(e->parameters.byteArr, &ot)) == 0 &&
-        (ret = cosem_getOctectString2(e->parameters.byteArr, ln, 6, NULL)) == 0 &&
+        (ret = cosem_getOctetString2(e->parameters.byteArr, ln, 6, NULL)) == 0 &&
         (ret = cosem_getInt8(e->parameters.byteArr, &aIndex)) == 0 &&
         (ret = cosem_getUInt16(e->parameters.byteArr, &dIndex)) == 0)
     {
@@ -562,8 +560,8 @@ void read(dlmsSettings* settings, gxValueEventCollection* args, unsigned char ig
         {
             gxtime start, end;
             if ((ret = getRestrictingObject(e)) != 0 ||
-                (ret = cosem_getDateTimeFromOctectString(e->parameters.byteArr, &start)) != 0 ||
-                (ret = cosem_getDateTimeFromOctectString(e->parameters.byteArr, &end)) != 0)
+                (ret = cosem_getDateTimeFromOctetString(e->parameters.byteArr, &start)) != 0 ||
+                (ret = cosem_getDateTimeFromOctetString(e->parameters.byteArr, &end)) != 0)
             {
                 e->error = ret;
                 break;

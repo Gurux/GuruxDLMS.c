@@ -249,3 +249,5 @@ NordicSemiconductor/GuruxDLMSSimpleServerExample2/src/dlms
 *.testlog
 *.manifest
 *.raw
+*.vsidx
+*.lock

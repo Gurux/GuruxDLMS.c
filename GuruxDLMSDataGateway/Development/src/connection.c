@@ -49,7 +49,7 @@ static char hex[2048];
 
 
 //Initialize connection buffers.
-void conCl_initializeBuffers(clientConnection* connection, int size)
+void con_initializeBuffers(clientConnection* connection, int size)
 {
     if (size == 0)
     {
@@ -80,7 +80,7 @@ void conCl_init(clientConnection* con, GX_TRACE_LEVEL trace)
     con->receiverThread = -1;
     con->closing = 0;
     bb_init(&con->data);
-    bb_capacity(&con->data, 500);
+    bb_capacity(&con->data, 2048);
 }
 
 //Close connection..
@@ -310,9 +310,6 @@ int svr_listen(
 #endif
     con->socket = -1;
     con->closing = 0;
-    bb_init(&con->data);
-    bb_capacity(&con->data, 50);
-
     con->socket = socket(AF_INET, SOCK_STREAM, 0);
     if (!isConnected(con))
     {
@@ -385,7 +382,6 @@ int con_close(
         }
 #endif
         con->socket = -1;
-        bb_clear(&con->data);
         con->closing = 0;
         svr_disconnected(&con->settings);
     }

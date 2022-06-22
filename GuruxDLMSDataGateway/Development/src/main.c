@@ -48,23 +48,14 @@
 
 //DLMS settings.
 dlmsServerSettings settings;
-unsigned char TMP[HDLC_HEADER_SIZE + HDLC_SIZE];
-
-//Space for client password.
-unsigned char PASSWORD[20];
-//Space for client challenge.
-unsigned char C2S_CHALLENGE[64];
-//Space for server challenge.
-unsigned char S2C_CHALLENGE[64];
-
-gxValueEventArg events[10] = { 0 };
 
 gxByteBuffer reply;
 
 void showHelp()
 {
-    printf("Gurux DLMS example Server implements DLMS/COSEM data collector.\r\n");
+    printf("Gurux DLMS gateway parameters.\r\n");
     printf(" -t [Error, Warning, Info, Verbose] Trace messages.\r\n");
+    printf(" -p TCT/IP port number [4061].\r\n");
     printf(" -S \t serial port.\r\n");
 }
 
@@ -149,29 +140,15 @@ int main(int argc, char* argv[])
 #else //If Linux
     socklen_t len;
 #endif
-    bb_attach(&reply, SERVER_REPLY_PDU, 0, sizeof(SERVER_REPLY_PDU));
     //Start server using logical name referencing and HDLC framing.
 #ifdef USE_HDLC
     svr_init(&settings, 1, DLMS_INTERFACE_TYPE_HDLC, HDLC_SIZE, PDU_BUFFER_SIZE, SERVER_FRAME, sizeof(SERVER_FRAME), SERVER_PDU, sizeof(SERVER_PDU));
 #else
     svr_init(&settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, HDLC_SIZE, PDU_BUFFER_SIZE, SERVER_FRAME, sizeof(SERVER_FRAME), SERVER_PDU, sizeof(SERVER_PDU));
 #endif //USE_HDLC
-    //Allow non-ciphered pre-established connections.
-    settings.info.preEstablished = 1;
-    //Readlist and write list are not supported.
-    settings.base.proposedConformance &= ~DLMS_CONFORMANCE_MULTIPLE_REFERENCES;
-    //Allocate space for client password.
-    BB_ATTACH(settings.base.password, PASSWORD, 0);
-    //Allocate space for client challenge.
-    BB_ATTACH(settings.base.ctoSChallenge, C2S_CHALLENGE, 0);
-    //Allocate space for server challenge.
-    BB_ATTACH(settings.base.stoCChallenge, S2C_CHALLENGE, 0);
-
-    //Allocate space for read list.
-    vec_attach(&settings.transaction.targets, events, 0, sizeof(events) / sizeof(events[0]));
-
+    settings.base.customChallenges = 1;
     //Add COSEM objects.
-    if ((ret = svr_InitObjects(&settings, serialPort, port)) != 0)
+    if ((ret = svr_InitObjects(&settings, serialPort, port, trace)) != 0)
     {
         //TODO: Show error.
         return ret;
@@ -183,25 +160,26 @@ int main(int argc, char* argv[])
         return ret;
     }
 #ifdef USE_HDLC
-    printf("Logical Name DLMS Server using HDLC in port %d.\n", port);
+    printf("Logical Name DLMS gateway using HDLC in port %d.\n", port);
     printf("Example connection settings:\n");
     printf("GuruxDLMSClientExample -h localhost -p %d\n", port);
 #else
-    printf("Logical Name DLMS Server using WRAPPER in port %d.\n", port);
+    printf("Logical Name DLMS gateway using WRAPPER in port %d.\n", port);
     printf("Example connection settings:\n");
-    printf("GuruxDLMSClientExample -h localhost -p %d -w\n", port);
+    printf("GuruxDLMSClientExample -h localhost -p %d -i WRAPPER\n", port);
 #endif //USE_HDLC
 
     ls = socket(AF_INET, SOCK_STREAM, 0);
     add.sin_port = htons(port);
     add.sin_addr.s_addr = htonl(INADDR_ANY);
     add.sin_family = AF_INET;
-    if ((ret = bind(ls, (struct sockaddr*) & add, sizeof(add))) == -1)
+    if ((ret = bind(ls, (struct sockaddr*)&add, sizeof(add))) == -1)
     {
         return -1;
     }
 
-    while (1)
+    unsigned char running = 1;
+    while (running)
     {
         if ((ret = listen(ls, 1)) == -1)
         {
@@ -209,13 +187,13 @@ int main(int argc, char* argv[])
             return -1;
         }
         len = sizeof(client);
-        s = accept(ls, (struct sockaddr*) & client, &len);
-        while (1)
+        s = accept(ls, (struct sockaddr*)&client, &len);
+        while (running)
         {
             //Update push socket.
             pushSocket = s;
             //Read one char at the time.
-            if ((ret = recv(s, (char*)& data, 1, 0)) == -1)
+            if ((ret = recv(s, (char*)&data, 1, 0)) == -1)
             {
                 pushSocket = -1;
 #if defined(_WIN32) || defined(_WIN64)//If Windows
@@ -265,14 +243,16 @@ int main(int argc, char* argv[])
                     break;
                 }
                 printf("TX: ");
-                bb_toHexString2(&reply, TMP, sizeof(TMP));
-                printf(TMP);
+                char* tmp = bb_toHexString(&reply);
+                printf(tmp);
+                free(tmp);
                 printf("\r");
                 bb_clear(&reply);
             }
         }
     }
-
+    bb_clear(&reply);
+    svr_clear(&settings);
 #if defined(_WIN32) || defined(_WIN64)//Windows
     WSACleanup();
 #if _MSC_VER > 1400

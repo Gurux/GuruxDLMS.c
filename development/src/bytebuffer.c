@@ -296,7 +296,7 @@ int bb_allocate(
             memcpy(arr->data, old, arr->size);
             gxfree(old);
 #endif //gxrealloc
-        }        
+        }
     }
 #endif //DLMS_IGNORE_MALLOC
     if (bb_getCapacity(arr) < index + dataSize)
@@ -522,13 +522,24 @@ int bb_set(
     uint16_t count)
 #endif
 {
-    int ret = bb_allocate(arr, arr->size, count);
-    if (ret == 0)
+    if (count != 0)
     {
-        memcpy(arr->data + arr->size, pSource, count);
-        arr->size += count;
+        int ret = bb_allocate(arr, arr->size, count);
+        if (ret == 0)
+        {
+            if (arr->size + count > arr->capacity)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            memcpy(arr->data + arr->size, pSource, count);
+            arr->size += count;
+        }
+        return ret;
     }
-    return ret;
+    else
+    {
+        return 0;
+    }
 }
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
@@ -554,7 +565,7 @@ int bb_set2(
 #endif
         {
             count = data->size - index;
-    }
+        }
         int ret = bb_set(arr, data->data + index, count);
         if (ret == 0)
         {
@@ -672,7 +683,7 @@ int bb_clear(
     arr->size = 0;
     arr->position = 0;
     return 0;
-    }
+}
 
 int bb_empty(
     gxByteBuffer* arr)
@@ -1067,7 +1078,7 @@ void bb_addDoubleAsString(
         sprintf(buff, "%lf", value);
 #endif
         bb_addString(bb, buff);
-    }
+}
 }
 #endif //!(defined(DLMS_IGNORE_STRING_CONVERTER) || defined(DLMS_IGNORE_MALLOC))
 

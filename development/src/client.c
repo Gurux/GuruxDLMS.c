@@ -207,7 +207,6 @@ int cl_aarqRequest(
         return ret;
     }
     bb_clear(&settings->stoCChallenge);
-    bb_clear(&settings->ctoSChallenge);
     if (settings->autoIncreaseInvokeID)
     {
         settings->invokeID = 0;
@@ -217,7 +216,7 @@ int cl_aarqRequest(
         settings->invokeID = 1;
     }
     // If authentication or ciphering is used.
-    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW && settings->customChallenges == 0)
     {
         if ((ret = dlms_generateChallenge(&settings->ctoSChallenge)) != 0)
         {

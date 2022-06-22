@@ -53,7 +53,10 @@
     <ClCompile Include="..\dlms\src\gxkey.c" />
     <ClCompile Include="..\dlms\src\gxmd5.c" />
     <ClCompile Include="..\dlms\src\gxobjects.c" />
+    <ClCompile Include="..\dlms\src\gxserializer.c" />
     <ClCompile Include="..\dlms\src\gxset.c" />
+    <ClCompile Include="..\dlms\src\gxsetignoremalloc.c" />
+    <ClCompile Include="..\dlms\src\gxsetmalloc.c" />
     <ClCompile Include="..\dlms\src\gxsha1.c" />
     <ClCompile Include="..\dlms\src\gxsha256.c" />
     <ClCompile Include="..\dlms\src\gxvalueeventargs.c" />
@@ -64,6 +67,7 @@
     <ClCompile Include="..\dlms\src\parameters.c" />
     <ClCompile Include="..\dlms\src\replydata.c" />
     <ClCompile Include="..\dlms\src\server.c" />
+    <ClCompile Include="..\dlms\src\serverevents.c" />
     <ClCompile Include="..\dlms\src\variant.c" />
     <ClCompile Include="..\src\communication.c" />
     <ClCompile Include="..\src\connection.c" />
@@ -93,12 +97,16 @@
     <ClInclude Include="..\dlms\include\gxdefine.h" />
     <ClInclude Include="..\dlms\include\gxget.h" />
     <ClInclude Include="..\dlms\include\gxignore.h" />
+    <ClInclude Include="..\dlms\include\gxint.h" />
     <ClInclude Include="..\dlms\include\gxinvoke.h" />
     <ClInclude Include="..\dlms\include\gxkey.h" />
     <ClInclude Include="..\dlms\include\gxmd5.h" />
     <ClInclude Include="..\dlms\include\gxmem.h" />
     <ClInclude Include="..\dlms\include\gxobjects.h" />
+    <ClInclude Include="..\dlms\include\gxserializer.h" />
     <ClInclude Include="..\dlms\include\gxset.h" />
+    <ClInclude Include="..\dlms\include\gxsetignoremalloc.h" />
+    <ClInclude Include="..\dlms\include\gxsetmalloc.h" />
     <ClInclude Include="..\dlms\include\gxsha1.h" />
     <ClInclude Include="..\dlms\include\gxsha256.h" />
     <ClInclude Include="..\dlms\include\gxvalueeventargs.h" />
@@ -130,51 +138,51 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Indian|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Italian|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Indian|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Italian|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">

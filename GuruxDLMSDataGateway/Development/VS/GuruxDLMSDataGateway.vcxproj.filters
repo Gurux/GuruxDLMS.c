@@ -24,6 +24,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\connection.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\exampleserver.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\getopt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\main.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\communication.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\dlms\src\apdu.c">
       <Filter>dlms\Source Files</Filter>
     </ClCompile>
@@ -78,7 +93,16 @@
     <ClCompile Include="..\dlms\src\gxobjects.c">
       <Filter>dlms\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\dlms\src\gxserializer.c">
+      <Filter>dlms\Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\dlms\src\gxset.c">
+      <Filter>dlms\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gxsetignoremalloc.c">
+      <Filter>dlms\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gxsetmalloc.c">
       <Filter>dlms\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\dlms\src\gxsha1.c">
@@ -111,43 +135,25 @@
     <ClCompile Include="..\dlms\src\server.c">
       <Filter>dlms\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\dlms\src\variant.c">
-      <Filter>dlms\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\connection.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\exampleserver.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\getopt.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\communication.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\objects.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\dlms\src\gxserializer.c">
-      <Filter>dlms\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\dlms\src\gxsetignoremalloc.c">
-      <Filter>dlms\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\dlms\src\gxsetmalloc.c">
-      <Filter>dlms\Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\dlms\src\serverevents.c">
+      <Filter>dlms\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\variant.c">
       <Filter>dlms\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\dlms\include\variant.h">
-      <Filter>dlms\Header Files</Filter>
+    <ClInclude Include="..\include\connection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\getopt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\exampleserver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\communication.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\dlms\include\apdu.h">
       <Filter>dlms\Header Files</Filter>
@@ -209,6 +215,9 @@
     <ClInclude Include="..\dlms\include\gxignore.h">
       <Filter>dlms\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\dlms\include\gxint.h">
+      <Filter>dlms\Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\dlms\include\gxinvoke.h">
       <Filter>dlms\Header Files</Filter>
     </ClInclude>
@@ -224,7 +233,16 @@
     <ClInclude Include="..\dlms\include\gxobjects.h">
       <Filter>dlms\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\dlms\include\gxserializer.h">
+      <Filter>dlms\Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\dlms\include\gxset.h">
+      <Filter>dlms\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\gxsetignoremalloc.h">
+      <Filter>dlms\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\gxsetmalloc.h">
       <Filter>dlms\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\dlms\include\gxsha1.h">
@@ -266,32 +284,11 @@
     <ClInclude Include="..\dlms\include\snparameters.h">
       <Filter>dlms\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\connection.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\getopt.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\exampleserver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\communication.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\objects.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\dlms\include\gxint.h">
+    <ClInclude Include="..\dlms\include\variant.h">
       <Filter>dlms\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\dlms\include\gxserializer.h">
-      <Filter>dlms\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\dlms\include\gxsetignoremalloc.h">
-      <Filter>dlms\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\dlms\include\gxsetmalloc.h">
-      <Filter>dlms\Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" />
   </ItemGroup>
 </Project>

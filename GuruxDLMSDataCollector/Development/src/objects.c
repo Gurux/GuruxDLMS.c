@@ -44,50 +44,46 @@ int addactivityCalendarActiveTime()
     const unsigned char ln[6] = { 0, 0, 13, 0, 0, 255 };
     if ((ret = INIT_OBJECT(activityCalendarActiveTime, DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR, ln)) == 0)
     {
-        /*
-        const char* activeSeasonName = ACTIVE_SEASON_NAME;
-        const char* passiveSeasonName = PASSIVE_SEASON_NAME;
-        const char* activeWeekProfileName = ACTIVE_WEEK_PROFILE_NAME;
-        const char* passiveWeekProfileName = PASSIVE_WEEK_PROFILE_NAME;
-        strcpy((char*)ACTIVE_CALENDAR_NAME, ACTIVE_CALENDAR_NAME_T);
-        strcpy((char*)PASSIVE_CALENDAR_NAME, PASSIVE_CALENDAR_NAME_T);
+        const char* activeSeasonName = "DST";
+        const char* passiveSeasonName = "Normal";
+        const char* WeekProfileName01 = "01";
+        const char* WeekProfileName02 = "02";
+        strcpy((char*)ACTIVE_CALENDAR_NAME, "DST");
+        strcpy((char*)PASSIVE_CALENDAR_NAME, "Passive");
 
         BB_ATTACH(activityCalendarActiveTime.calendarNameActive, ACTIVE_CALENDAR_NAME, (unsigned short)strlen(ACTIVE_CALENDAR_NAME));
 
         /////////////////////////////////////////////////////////////////////////
         //Add active season profile.
         ARR_ATTACH(activityCalendarActiveTime.seasonProfileActive, ACTIVE_SEASON_PROFILE, 1);
-        SET_OCTECT_STRING(ACTIVE_SEASON_PROFILE[0].name, activeSeasonName, (unsigned short)strlen(activeSeasonName));
+        SET_OCTET_STRING(ACTIVE_SEASON_PROFILE[0].name, activeSeasonName, (unsigned short)strlen(activeSeasonName));
         time_init(&ACTIVE_SEASON_PROFILE[0].start, -1, 3, 31, -1, -1, -1, -1, -clock1.timeZone);
         /////////////////////////////////////////////////////////////////////////
         //Add week profile.
         ARR_ATTACH(activityCalendarActiveTime.weekProfileTableActive, ACTIVE_WEEK_PROFILE, 1);
-        SET_OCTECT_STRING(ACTIVE_WEEK_PROFILE[0].name, activeWeekProfileName, (unsigned short)strlen(activeWeekProfileName));
+        SET_OCTET_STRING(ACTIVE_WEEK_PROFILE[0].name, WeekProfileName01, (unsigned short)strlen(WeekProfileName01));
         wp = &ACTIVE_WEEK_PROFILE[0];
         wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
         /////////////////////////////////////////////////////////////////////////
         //Add active day profiles. There are max three day profiles where one is in use.
         ARR_ATTACH(activityCalendarActiveTime.dayProfileTableActive, ACTIVE_DAY_PROFILE, 1);
         ACTIVE_DAY_PROFILE[0].dayId = 1;
-        ARR_ATTACH(ACTIVE_DAY_PROFILE[0].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS1, 1);
+        ARR_ATTACH(ACTIVE_DAY_PROFILE[0].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS1, 0);
         ARR_ATTACH(ACTIVE_DAY_PROFILE[1].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS2, 0);
         ARR_ATTACH(ACTIVE_DAY_PROFILE[2].daySchedules, ACTIVE_DAY_PROFILE_ACTIONS3, 0);
-
-        //MIKKO time_now(&ACTIVE_DAY_PROFILE_ACTIONS1[0].startTime, 0);
-        ACTIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(actionSchedule);
-        ACTIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
+        time_init(&ACTIVE_DAY_PROFILE_ACTIONS1[0].startTime, -1, -1, -1, 0, 0, 0, 0, 0x8000);
 
         /////////////////////////////////////////////////////////////////////////
         //Add passive season profile.
         BB_ATTACH(activityCalendarActiveTime.calendarNamePassive, PASSIVE_CALENDAR_NAME, (unsigned short)strlen((char*)PASSIVE_CALENDAR_NAME));
         ARR_ATTACH(activityCalendarActiveTime.seasonProfilePassive, PASSIVE_SEASON_PROFILE, 1);
-        SET_OCTECT_STRING(PASSIVE_SEASON_PROFILE[0].name, passiveSeasonName, (unsigned short)strlen(passiveSeasonName));
+        SET_OCTET_STRING(PASSIVE_SEASON_PROFILE[0].name, passiveSeasonName, (unsigned short)strlen(passiveSeasonName));
         time_init(&PASSIVE_SEASON_PROFILE[0].start, -1, 10, 30, -1, -1, -1, -1, -clock1.timeZone);
 
         /////////////////////////////////////////////////////////////////////////
         //Add week profile.
         ARR_ATTACH(activityCalendarActiveTime.weekProfileTablePassive, PASSIVE_WEEK_PROFILE, 1);
-        SET_OCTECT_STRING(PASSIVE_WEEK_PROFILE[0].name, passiveWeekProfileName, (unsigned short)strlen(passiveWeekProfileName));
+        SET_OCTET_STRING(PASSIVE_WEEK_PROFILE[0].name, WeekProfileName02, (unsigned short)strlen(WeekProfileName02));
         wp = &PASSIVE_WEEK_PROFILE[0];
         wp->monday = wp->tuesday = wp->wednesday = wp->thursday = wp->friday = wp->saturday = wp->sunday = 1;
 
@@ -95,14 +91,10 @@ int addactivityCalendarActiveTime()
         //Add passive day profiles. There are max three day profiles where one is in use.
         ARR_ATTACH(activityCalendarActiveTime.dayProfileTablePassive, PASSIVE_DAY_PROFILE, 1);
         PASSIVE_DAY_PROFILE[0].dayId = 1;
-        ARR_ATTACH(PASSIVE_DAY_PROFILE[0].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS1, 1);
+        ARR_ATTACH(PASSIVE_DAY_PROFILE[0].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS1, 0);
         ARR_ATTACH(PASSIVE_DAY_PROFILE[1].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS2, 0);
         ARR_ATTACH(PASSIVE_DAY_PROFILE[2].daySchedules, PASSIVE_DAY_PROFILE_ACTIONS3, 0);
-        //MIKKO time_now(&PASSIVE_DAY_PROFILE_ACTIONS1[0].startTime, 0);
-        PASSIVE_DAY_PROFILE_ACTIONS1[0].script = BASE(actionSchedule);
-        PASSIVE_DAY_PROFILE_ACTIONS2[0].scriptSelector = 1;
-        //MIKKO time_now(&activityCalendarActiveTime.time, 0);
-        */
+        time_init(&PASSIVE_DAY_PROFILE_ACTIONS1[0].startTime, -1, -1, -1, 0, 0, 0, 0, 0x8000);
     }
     return ret;
 }
@@ -161,7 +153,7 @@ int addcosemLogicalDeviceName()
         static unsigned char data[16];
 
 
-        GX_OCTECT_STRING(cosemLogicalDeviceName.value, data, 16);
+        GX_OCTET_STRING(cosemLogicalDeviceName.value, data, 16);
     }
     return ret;
 }
@@ -208,7 +200,7 @@ int addmanufacturerName()
         static char data[301];
 
 
-        GX_OCTECT_STRING(manufacturerName.value, data, 30);
+        GX_OCTET_STRING(manufacturerName.value, data, 30);
     }
     return ret;
 }
@@ -332,7 +324,7 @@ int addfirmwareVersionForMeter()
         static char data[131];
 
 
-        GX_OCTECT_STRING(firmwareVersionForMeter.value, data, 13);
+        GX_OCTET_STRING(firmwareVersionForMeter.value, data, 13);
     }
     return ret;
 }
@@ -1354,7 +1346,7 @@ int addbillingDateImportMode()
         static unsigned char data[12];
 
 
-        GX_OCTECT_STRING(billingDateImportMode.value, data, 12);
+        GX_OCTET_STRING(billingDateImportMode.value, data, 12);
         billingDateImportMode.scaler = 0;
         billingDateImportMode.unit = DLMS_UNIT_NO_UNIT;
     }

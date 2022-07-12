@@ -50,6 +50,13 @@ extern "C" {
         gxByteBuffer* reply,
         gxReplyData* data);
 
+    int cl_getData2(
+        dlmsSettings* settings,
+        gxByteBuffer* reply,
+        gxReplyData* data,
+        gxReplyData* notify,
+        unsigned char* isNotify);
+
 #ifndef DLMS_IGNORE_HDLC
     int cl_snrmRequest(
         dlmsSettings* settings,

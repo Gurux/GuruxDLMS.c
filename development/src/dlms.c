@@ -1188,7 +1188,7 @@ int getTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 int getDate(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     int ret;
-	unsigned char month, day;
+    unsigned char month, day;
     uint16_t year;
     unsigned char ch;
     if (buff->size - buff->position < 5)
@@ -3120,10 +3120,14 @@ int dlms_getHdlcData(
 
 #ifndef DLMS_IGNORE_WRAPPER
 int dlms_checkWrapperAddress(dlmsSettings* settings,
-    gxByteBuffer* buff)
+    gxByteBuffer* buff,
+    gxReplyData* data,
+    gxReplyData* notify,
+    unsigned char* isNotify)
 {
     int ret;
     uint16_t value;
+    *isNotify = 0;
     if (settings->server)
     {
         if ((ret = bb_getUInt16(buff, &value)) != 0)
@@ -3163,7 +3167,12 @@ int dlms_checkWrapperAddress(dlmsSettings* settings,
         // Check that server addresses match.
         if (settings->serverAddress != 0 && settings->serverAddress != value)
         {
-            return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
+            if (notify == NULL)
+            {
+                return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
+            }
+            notify->serverAddress = value;
+            *isNotify = 1;
         }
         else
         {
@@ -3177,7 +3186,12 @@ int dlms_checkWrapperAddress(dlmsSettings* settings,
         // Check that client addresses match.
         if (settings->clientAddress != 0 && settings->clientAddress != value)
         {
-            return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
+            if (notify == NULL)
+            {
+                return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
+            }
+            notify->clientAddress = value;
+            *isNotify = 1;
         }
         else
         {
@@ -3192,10 +3206,13 @@ int dlms_checkWrapperAddress(dlmsSettings* settings,
 int dlms_getTcpData(
     dlmsSettings* settings,
     gxByteBuffer* buff,
-    gxReplyData* data)
+    gxReplyData* data,
+    gxReplyData* notify,
+    unsigned char* isNotify)
 {
     int ret, pos;
     uint16_t value;
+    *isNotify = 0;
     // If whole frame is not received yet.
     if (buff->size - buff->position < 8)
     {
@@ -3203,8 +3220,11 @@ int dlms_getTcpData(
         return DLMS_ERROR_CODE_OK;
     }
     pos = buff->position;
-
     data->complete = 0;
+    if (notify != NULL)
+    {
+        notify->complete = 0;
+    }
     while (buff->position != buff->size)
     {
         // Get version
@@ -3215,9 +3235,14 @@ int dlms_getTcpData(
         if (value == 1)
         {
             // Check TCP/IP addresses.
-            if ((ret = dlms_checkWrapperAddress(settings, buff)) != 0)
+            if ((ret = dlms_checkWrapperAddress(settings, buff, data, notify, isNotify)) != 0)
             {
                 return ret;
+            }
+            //If notify.
+            if (notify != NULL && *isNotify != 0)
+            {
+                data = notify;
             }
             // Get length.
             if ((ret = bb_getUInt16(buff, &value)) != 0)
@@ -6184,8 +6209,24 @@ int dlms_getData2(
     gxReplyData* data,
     unsigned char first)
 {
+    unsigned char isNotify;
+    return dlms_getData3(settings, reply, data, NULL, first, &isNotify);
+}
+
+int dlms_getData3(
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data,
+    gxReplyData* notify,
+    unsigned char first,
+    unsigned char* isNotify)
+{
     int ret;
     unsigned char frame = 0;
+    if (isNotify != NULL)
+    {
+        *isNotify = 0;
+    }
     switch (settings->interfaceType)
     {
 #ifndef DLMS_IGNORE_HDLC
@@ -6196,7 +6237,7 @@ int dlms_getData2(
 #endif //DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_WRAPPER
     case DLMS_INTERFACE_TYPE_WRAPPER:
-        ret = dlms_getTcpData(settings, reply, data);
+        ret = dlms_getTcpData(settings, reply, data, notify, isNotify);
         break;
 #endif //DLMS_IGNORE_WRAPPER
 #ifndef DLMS_IGNORE_WIRELESS_MBUS
@@ -6226,9 +6267,18 @@ int dlms_getData2(
     {
         return ret;
     }
-    // If all data is not read yet.
-    if (!data->complete)
+    if (*isNotify && notify != NULL)
     {
+        if (!notify->complete)
+        {
+            // If all data is not read yet.
+            return 0;
+        }
+        data = notify;
+    }
+    else if (!data->complete)
+    {
+        // If all data is not read yet.
         return 0;
     }
     if (settings->interfaceType != DLMS_INTERFACE_TYPE_PLC_HDLC)
@@ -6254,7 +6304,38 @@ int dlms_getData2(
         }
         return DLMS_ERROR_CODE_OK;
     }
-    return dlms_getPdu(settings, data, first);
+    ret = dlms_getPdu(settings, data, first);
+    if (ret == 0 && notify != NULL && !isNotify)
+    {
+        //Check command to make sure it's not notify message.
+        switch (data->command)
+        {
+        case DLMS_COMMAND_DATA_NOTIFICATION:
+        case DLMS_COMMAND_GLO_EVENT_NOTIFICATION_REQUEST:
+        case DLMS_COMMAND_INFORMATION_REPORT:
+        case DLMS_COMMAND_EVENT_NOTIFICATION:
+        case DLMS_COMMAND_DED_EVENT_NOTIFICATION:
+            *isNotify = 1;
+            notify->complete = data->complete;
+            notify->moreData = data->moreData;
+            notify->command = data->command;
+            data->command = DLMS_COMMAND_NONE;
+            notify->time = data->time;
+#ifdef DLMS_USE_EPOCH_TIME
+            data->time = 0;
+#else
+            memset(&data->time, 0, sizeof(data->time));
+#endif // DLMS_USE_EPOCH_TIME
+            bb_set2(&notify->data, &data->data, data->data.position, bb_available(&data->data));
+            bb_clear(&data->data);
+            notify->dataValue = data->dataValue;
+            data->dataValue.vt = DLMS_DATA_TYPE_NONE;
+            break;
+        default:
+            break;
+        }
+    }
+    return ret;
 }
 
 int dlms_generateChallenge(

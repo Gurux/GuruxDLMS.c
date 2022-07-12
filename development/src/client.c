@@ -1170,6 +1170,16 @@ int cl_getData(dlmsSettings* settings, gxByteBuffer* reply, gxReplyData* data)
     return dlms_getData2(settings, reply, data, 0);
 }
 
+int cl_getData2(
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data,
+    gxReplyData* notify,
+    unsigned char* isNotify)
+{
+    return dlms_getData3(settings, reply, data, notify, 0, isNotify);
+}
+
 int cl_changeType(
     gxByteBuffer* value,
     DLMS_DATA_TYPE type,

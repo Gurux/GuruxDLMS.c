@@ -745,6 +745,9 @@ int readDLMSPacket(
     }
     //Loop until packet is complete.
     unsigned char pos = 0;
+    unsigned char isNotify;
+    gxReplyData notify;
+    reply_init(&notify);
     do
     {
         if ((ret = readData(connection, &connection->data, &index)) != 0)
@@ -762,13 +765,24 @@ int readDLMSPacket(
         }
         else
         {
-            ret = cl_getData(&connection->settings, &connection->data, reply);
+            ret = cl_getData2(&connection->settings, &connection->data, reply, &notify, &isNotify);
             if (ret != 0 && ret != DLMS_ERROR_CODE_FALSE)
             {
                 break;
             }
+            if (isNotify)
+            {
+                gxByteBuffer bb;
+                bb_init(&bb);
+                var_toString(&notify.dataValue, &bb);
+                char* tmp = bb_toString(&bb);
+                printf("Notification received: %s", tmp);
+                free(tmp);
+                bb_clear(&bb);
+            }
         }
     } while (reply->complete == 0);
+    reply_clear(&notify);
     if (connection->trace == GX_TRACE_LEVEL_VERBOSE)
     {
         printf("\n");

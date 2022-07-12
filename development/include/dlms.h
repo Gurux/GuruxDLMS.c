@@ -175,7 +175,8 @@ extern "C" {
     int dlms_getTcpData(
         dlmsSettings* settings,
         gxByteBuffer* buff,
-        gxReplyData* data);
+        gxReplyData* data,
+        gxReplyData* notify);
 #endif //DLMS_IGNORE_WRAPPER
 
     int dlms_changeType2(
@@ -199,6 +200,14 @@ extern "C" {
         gxByteBuffer* reply,
         gxReplyData* data,
         unsigned char first);
+
+    int dlms_getData3(
+        dlmsSettings* settings,
+        gxByteBuffer* reply,
+        gxReplyData* data,
+        gxReplyData* notify,
+        unsigned char first,
+        unsigned char* isNotify);
 
     /**
          * Get all Logical name messages. Client uses this to generate messages.

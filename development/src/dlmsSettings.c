@@ -146,7 +146,7 @@ void cl_init(
     BYTE_BUFFER_INIT(&settings->ctoSChallenge);
     BYTE_BUFFER_INIT(&settings->stoCChallenge);
     settings->priority = DLMS_PRIORITY_HIGH;
-    settings->serviceClass = DLMS_SERVICE_CLASS_UN_CONFIRMED;
+    settings->serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     cip_init(&settings->cipher);
 #endif //DLMS_IGNORE_HIGH_GMAC

@@ -4904,7 +4904,7 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
 
 #if !defined(DLMS_IGNORE_CLIENT)
 int dlms_handleGloDedResponse(dlmsSettings* settings,
-    gxReplyData* data, uint16_t index)
+    gxReplyData* data, uint32_t index)
 {
 #ifdef DLMS_IGNORE_HIGH_GMAC
     return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
@@ -5087,7 +5087,7 @@ int dlms_getPdu(
     unsigned char first)
 {
     int ret = DLMS_ERROR_CODE_OK;
-    uint16_t index;
+    uint32_t index;
     unsigned char ch;
     DLMS_COMMAND cmd = data->command;
     // If header is not read yet or GBT message.
@@ -5099,7 +5099,7 @@ int dlms_getPdu(
             // Invalid PDU.
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        index = (uint16_t)(data->data.position);
+        index = data->data.position;
         // Get command.
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
         {
@@ -5112,7 +5112,7 @@ int dlms_getPdu(
 #if !defined(DLMS_IGNORE_CLIENT)
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_READ_RESPONSE:
-            if ((ret = dlms_handleReadResponse(settings, data, index)) != 0)
+            if ((ret = dlms_handleReadResponse(settings, data, (uint16_t) index)) != 0)
             {
                 if (ret == DLMS_ERROR_CODE_FALSE)
                 {
@@ -5123,7 +5123,7 @@ int dlms_getPdu(
             break;
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_GET_RESPONSE:
-            if ((ret = dlms_handleGetResponse(settings, data, index)) != 0)
+            if ((ret = dlms_handleGetResponse(settings, data, (uint16_t) index)) != 0)
             {
                 if (ret == DLMS_ERROR_CODE_FALSE)
                 {

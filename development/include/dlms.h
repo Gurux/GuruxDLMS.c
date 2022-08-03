@@ -176,7 +176,8 @@ extern "C" {
         dlmsSettings* settings,
         gxByteBuffer* buff,
         gxReplyData* data,
-        gxReplyData* notify);
+        gxReplyData* notify,
+        unsigned char* isNotify);
 #endif //DLMS_IGNORE_WRAPPER
 
     int dlms_changeType2(

@@ -116,7 +116,7 @@ extern "C" {
 // #define DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 // #define DLMS_IGNORE_ARBITRATOR
 
-#define DLMS_IGNORE_MALLOC
+// #define DLMS_IGNORE_MALLOC
 
 //Use EPOCH time. This can be used to improve memory usage.
 #define DLMS_USE_EPOCH_TIME
@@ -132,7 +132,6 @@ extern "C" {
 #define DLMS_USE_EPOCH_TIME
 #define DLMS_IGNORE_CLIENT
 #define DLMS_IGNORE_SERVER
-#define DLMS_IGNORE_CLIENT
 #define GX_DLMS_MICROCONTROLLER
 
 #ifdef  __cplusplus

@@ -124,4 +124,78 @@ int GXDLMSNotify::GetData(gxByteBuffer* reply, gxReplyData* data)
   return notify_getData(&settings, reply, data);
 }
 
+#ifndef DLMS_IGNORE_HIGH_GMAC
+
+int GXDLMSNotify::SetSystemTitle(const gxByteBuffer* systemTitle)
+{
+  if (systemTitle->size != 8)
+  {
+    return DLMS_ERROR_CODE_INVALID_PARAMETER;
+  }
+  bb_clear(&settings.cipher.systemTitle);
+  bb_set(&settings.cipher.systemTitle, systemTitle->data, 8);
+  return 0;
+}
+
+int GXDLMSNotify::GetSystemTitle(gxByteBuffer* systemTitle)
+{
+  bb_set(systemTitle, settings.cipher.systemTitle.data, settings.cipher.systemTitle.size);
+  return 0;
+}
+
+int GXDLMSNotify::SetBlockCipherKey(const gxByteBuffer* blockCipherKey)
+{
+  if (blockCipherKey->size != 16)
+  {
+    return DLMS_ERROR_CODE_INVALID_PARAMETER;
+  }
+  bb_clear(&settings.cipher.blockCipherKey);
+  bb_set(&settings.cipher.blockCipherKey, blockCipherKey->data, blockCipherKey->size);
+  return 0;
+}
+
+int GXDLMSNotify::GetBlockCipherKey(gxByteBuffer* blockCipherKey)
+{
+  bb_set(blockCipherKey, settings.cipher.blockCipherKey.data, settings.cipher.blockCipherKey.size);
+  return 0;
+}
+
+int GXDLMSNotify::SetAuthenticationKey(const gxByteBuffer* authenticationKey)
+{
+  if (authenticationKey->size != 16)
+  {
+    return DLMS_ERROR_CODE_INVALID_PARAMETER;
+  }
+  bb_clear(&settings.cipher.authenticationKey);
+  bb_set(&settings.cipher.authenticationKey, authenticationKey->data, authenticationKey->size);
+  return 0;
+}
+
+int GXDLMSNotify::GetAuthenticationKey(gxByteBuffer* authenticationKey)
+{
+  bb_set(authenticationKey, settings.cipher.authenticationKey.data, settings.cipher.authenticationKey.size);
+  return 0;
+}
+
+uint32_t GXDLMSNotify::GetInvocationCounter()
+{
+  return settings.cipher.invocationCounter;
+}
+
+void GXDLMSNotify::SetInvocationCounter(uint32_t value)
+{
+  settings.cipher.invocationCounter = value;
+}
+
+DLMS_SECURITY GXDLMSNotify::GetSecurity()
+{
+  return settings.cipher.security;
+}
+
+int GXDLMSNotify::SetSecurity(DLMS_SECURITY value)
+{
+  settings.cipher.security = value;
+  return 0;
+}
+#endif //DLMS_IGNORE_HIGH_GMAC
 //static GXDLMSNotify Notify;

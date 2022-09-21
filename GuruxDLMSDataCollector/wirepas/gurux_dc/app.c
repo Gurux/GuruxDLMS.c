@@ -890,12 +890,15 @@ static app_lib_data_receive_res_e dataReceivedCb(
         BB_ATTACH(meterSettings.stoCChallenge, S2C_CHALLENGE, 0);
         if ((ret = connect2Client(&meterSettings)) == 0)
         {
+            dlmsVARIANT param;
+            var_init(&param);
             unsigned char ln[6] = { 0, 0, 96, 3, 10, 255 };
-            if ((ret = com_method(DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln, data->bytes[0])) != 0)
+            if ((ret = com_method(DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln, data->bytes[0], &param)) != 0)
             {
                 static char* READ_FAILED = "Action failed";
                 SendToSink(false, (unsigned char*)READ_FAILED, 13);
             }
+            var_clear(&param);
             com_close();
         }
     }

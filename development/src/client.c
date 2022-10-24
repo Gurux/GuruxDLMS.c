@@ -173,6 +173,99 @@ int cl_parseUAResponse(dlmsSettings* settings, gxByteBuffer* data)
     settings->connected = DLMS_CONNECTION_STATE_HDLC;
     return ret;
 }
+
+int cl_getFrameSize(dlmsSettings* settings, gxByteBuffer* data, uint32_t* size)
+{
+    static const unsigned char HDLC_FRAME_START_END = 0x7E;
+    int ret = 0;
+    uint16_t value;
+    unsigned char ch;
+    *size = 1;
+    switch (settings->interfaceType)
+    {
+    case DLMS_INTERFACE_TYPE_HDLC:
+    case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
+    {
+        uint32_t pos, index = data->position;
+        // If whole frame is not received yet.
+        if (bb_available(data) > 8)
+        {
+            // Find start of HDLC frame.
+            for (pos = data->position; pos < data->size; ++pos)
+            {
+                ret = bb_getUInt8(data, &ch);
+                if (ret != 0 || ch == HDLC_FRAME_START_END)
+                {
+                    break;
+                }
+            }
+            if ((ret = bb_getUInt8(data, &ch)) == 0)
+            {
+                // Check frame length.
+                if ((ch & 0x7) != 0)
+                {
+                    *size = ((ch & 0x7) << 8);
+                }
+                if ((ret = bb_getUInt8(data, &ch)) == 0)
+                {
+                    *size += 1 + ch;
+                }
+            }
+        }
+        data->position = index;
+    }
+    break;
+    case DLMS_INTERFACE_TYPE_WRAPPER:
+        if (bb_available(data) < 8 ||
+            (ret = bb_getUInt16ByIndex(data, data->position, &value)) != 0 ||
+            value != 1)
+        {
+            *size = 8;
+        }
+        else
+        {
+            if ((ret = bb_getUInt16ByIndex(data, data->position + 6, &value)) == 0)
+            {
+                *size = 8 + value;
+            }
+        }
+        break;
+    case DLMS_INTERFACE_TYPE_PLC:
+        if (bb_available(data) < 2 ||
+            (ret = bb_getUInt8ByIndex(data, data->position, &ch)) != 0 ||
+            ch != 2)
+        {
+            *size = 2;
+        }
+        else
+        {
+            if ((ret = bb_getUInt8ByIndex(data, data->position + 1, &ch)) == 0)
+            {
+                *size = 2 + ch;
+            }
+        }
+        break;
+    default:
+        *size = 1;
+        break;
+    }
+    if (*size < 1)
+    {
+        *size = 1;
+    }
+    return ret;
+}
+
+int cl_getRemainingFrameSize(dlmsSettings* settings, gxByteBuffer* data, uint32_t* size)
+{
+    int ret = cl_getFrameSize(settings, data, size);
+    if (ret == 0)
+    {
+        *size -= bb_available(data);
+    }
+    return ret;
+}
+
 #endif //DLMS_IGNORE_HDLC
 
 int cl_aarqRequest(
@@ -1817,5 +1910,4 @@ uint16_t cl_getServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, 
     }
     return value;
 }
-
 #endif //!defined(DLMS_IGNORE_CLIENT)

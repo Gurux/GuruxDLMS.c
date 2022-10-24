@@ -65,6 +65,18 @@ extern "C" {
     int cl_parseUAResponse(
         dlmsSettings* settings,
         gxByteBuffer* data);
+
+    // Get size of the frame.
+    // size: Size of received bytes on the frame.
+    // Returns: Zero if succeeded, or rccurred error code.
+    int cl_getFrameSize(dlmsSettings* settings, gxByteBuffer* data, uint32_t* size);
+
+    // Returns the number of bytes to read before the frame is complete.
+    // When WRAPPER is used this method can be used to check how many bytes we need to read.
+    // data: Received data.
+    // size: Size of received bytes on the frame.
+    // Returns: Zero if succeeded, or rccurred error code.
+    int cl_getRemainingFrameSize(dlmsSettings* settings, gxByteBuffer* data, uint32_t* size);
 #endif //DLMS_IGNORE_HDLC
 
     int cl_aarqRequest(
@@ -100,7 +112,7 @@ extern "C" {
         gxByteBuffer* data,
         uint16_t* count);
 
-    /*Parse next association view object. 
+    /*Parse next association view object.
     This method can be used when malloc is not used or there is a limited amount of the memory in use.*/
     int cl_parseNextObject(
         dlmsSettings* settings,

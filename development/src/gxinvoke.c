@@ -285,6 +285,7 @@ int invoke_AssociationLogicalName(
         else
         {
             object->associationStatus = DLMS_ASSOCIATION_STATUS_NON_ASSOCIATED;
+            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
         }
     }
     else if (e->index == 2)

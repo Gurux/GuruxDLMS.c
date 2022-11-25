@@ -2669,9 +2669,9 @@ int svr_handleMethodRequest(
             }
             if (e->byteArray)
             {
-                if (!bb_isAttached(e->value.byteArr))
+                if (!bb_isAttached(e->value.byteArr) && e->value.vt == DLMS_DATA_TYPE_OCTET_STRING)
                 {
-                    if ((ret = bb_set2(data, e->value.byteArr, 0, e->value.byteArr->size)) != 0)
+                    if ((ret = bb_set2(data, e->value.byteArr, 0, bb_size(e->value.byteArr))) != 0)
                     {
                         error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     }
@@ -3494,9 +3494,9 @@ int svr_handleRequest2(
                 {
                     svr_disconnected(settings);
                 }
+            }
         }
     }
-}
 #endif // DLMS_IGNORE_IEC_HDLC_SETUP
 #endif //DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_WRAPPER
@@ -3524,8 +3524,8 @@ int svr_handleRequest2(
                 {
                     svr_disconnected(settings);
                 }
+            }
         }
-    }
     }
 #endif // DLMS_IGNORE_TCP_UDP_SETUP
 #endif //DLMS_IGNORE_WRAPPER
@@ -3661,7 +3661,7 @@ int svr_invoke(
 #endif //DLMS_IGNORE_MALLOC
         //Increase time by one second so next scheduled date is retreaved.
         ++time;
-        }
+    }
     if (start != NULL)
     {
         uint32_t tmp = time_getNextScheduledDate(time, start);
@@ -3671,7 +3671,7 @@ int svr_invoke(
         }
     }
     return 0;
-    }
+}
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 
@@ -3738,7 +3738,7 @@ int svr_handleSingleActionSchedule(
         if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&s)) != 0)
         {
             break;
-}
+        }
 #else
         if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&s, sizeof(gxtime))) != 0)
         {
@@ -3802,7 +3802,7 @@ int svr_handleSingleActionSchedule(
                 }
             }
         }
-}
+    }
     return ret;
 }
 #endif //!defined(DLMS_IGNORE_ACTION_SCHEDULE) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
@@ -3876,7 +3876,7 @@ int svr_invokeScript(
     vec_clear(&args);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-    }
+}
 
 int svr_handleActivityCalendar(
     dlmsServerSettings* settings,
@@ -4083,7 +4083,7 @@ int svr_handlePushSetup(
         {
             //Save infor that invoke failed.
         }
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_PUSH_SETUP
@@ -4132,7 +4132,7 @@ int svr_handleAutoConnect(
         {
             break;
         }
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_AUTO_CONNECT

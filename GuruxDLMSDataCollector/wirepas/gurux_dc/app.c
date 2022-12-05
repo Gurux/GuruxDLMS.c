@@ -871,9 +871,9 @@ static app_lib_data_receive_res_e dataReceivedCb(
     {
         int ret;
 #ifdef USE_HDLC
-        cl_init(&meterSettings, SERVER_ADDRESS, CLIENT_ADDRESS, 1, AUTHENTICATION_LEVEL, NULL, DLMS_INTERFACE_TYPE_HDLC);
+        cl_init(&meterSettings, 1, SERVER_ADDRESS, CLIENT_ADDRESS, AUTHENTICATION_LEVEL, NULL, DLMS_INTERFACE_TYPE_HDLC);
 #else
-        cl_init(&meterSettings, SERVER_ADDRESS, CLIENT_ADDRESS, 1, AUTHENTICATION_LEVEL, NULL, DLMS_INTERFACE_TYPE_WRAPPER);
+        cl_init(&meterSettings, 1, SERVER_ADDRESS, CLIENT_ADDRESS, AUTHENTICATION_LEVEL, NULL, DLMS_INTERFACE_TYPE_WRAPPER);
 #endif //USE_HDLC
         bb_attach(&frameData, CLIENT_FRAME, 0, sizeof(CLIENT_FRAME));
         bb_attach(&rerverReply, SERVER_REPLY_PDU, 0, sizeof(SERVER_REPLY_PDU));

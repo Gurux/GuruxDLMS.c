@@ -118,6 +118,25 @@ int disconnect(connection* connection)
     return ret;
 }
 
+
+/**
+* Executes selected script.
+* params:
+* ln: Logical name of the script table object.
+* scriptId: Script Id.
+*/
+int execute(connection* connection, const unsigned char* ln, uint16_t scriptId)
+{
+    int ret;
+    gxScriptTable st;
+    INIT_OBJECT(st, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln);
+    //Call script id.
+    dlmsVARIANT param;
+    GX_UINT16(param) = scriptId;
+    ret = com_method(connection, &st.base, 1, &param);
+    return ret;
+}
+
 /**
 * Update firmware of the meter.
 *

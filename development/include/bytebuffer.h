@@ -438,7 +438,7 @@ extern "C" {
         gxByteBuffer* bb);
 
     //Add double value to byte array as a string.
-    void bb_addDoubleAsString(
+    int bb_addDoubleAsString(
         gxByteBuffer* ba,
         double value);
 #endif //!(defined(DLMS_IGNORE_STRING_CONVERTER) || defined(DLMS_IGNORE_MALLOC))

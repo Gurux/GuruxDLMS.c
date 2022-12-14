@@ -1060,7 +1060,7 @@ char* bb_toHexString(
     return buff;
 }
 
-void bb_addDoubleAsString(
+int bb_addDoubleAsString(
     gxByteBuffer* bb,
     double value)
 {
@@ -1068,7 +1068,7 @@ void bb_addDoubleAsString(
     //Show as integer value if there is no fractal part.
     if (value - (int32_t)value == 0)
     {
-        bb_addIntAsString(bb, (int)value);
+        return bb_addIntAsString(bb, (int)value);
     }
     else
     {
@@ -1077,7 +1077,7 @@ void bb_addDoubleAsString(
 #else
         sprintf(buff, "%lf", value);
 #endif
-        bb_addString(bb, buff);
+        return bb_addString(bb, buff);
 }
 }
 #endif //!(defined(DLMS_IGNORE_STRING_CONVERTER) || defined(DLMS_IGNORE_MALLOC))

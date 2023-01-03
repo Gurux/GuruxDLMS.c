@@ -33,10 +33,33 @@
 //---------------------------------------------------------------------------
 #include <EEPROM.h>
 #include "GXDLMSServer.h"
+
+#ifdef ARDUINO_ARCH_ESP8266
+#include <ESP8266WiFi.h>
+
+//---------------------------------------------------------------------------
+// TODO: Change WIFI settings.
+//---------------------------------------------------------------------------
+const char* ssid = "YOUR_SSID";
+const char* password = "YOUR_PASSWORD";
+const int port = 4059;  //Port number
+static WiFiServer tcpServer(port);
+#else
+#define USE_TIME_INTERRUPT
+#endif //ARDUINO_ARCH_ESP8266
+
 //---------------------------------------------------------------------------
 // Un-comment ignored objects from ArduinoIgnore.h to improve performance
 // and memory usage.
 //---------------------------------------------------------------------------
+
+//2000 bytes is for settings.
+//1000 bytes is for load profile
+//1000 bytes is for event profile
+
+#define SETTINGS_BUFFER_SIZE 2000
+#define LOAD_PROFILE_BUFFER_SIZE 1000
+#define EVENT_PROFILE_BUFFER_SIZE 1000
 
 //Ignore time_now warning.
 #pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
@@ -48,11 +71,15 @@ uint32_t SERIALIZER_SIZE()
 
 int SERIALIZER_LOAD(uint32_t index, uint32_t count, void* value)
 {
+  if (index + count > SERIALIZER_SIZE())
+  {
+    return DLMS_ERROR_CODE_SERIALIZATION_LOAD_FAILURE;
+  }
   unsigned char* p = (unsigned char*) value;
   uint32_t pos;
-  for(pos = 0; pos != count; ++pos)
+  for (pos = 0; pos != count; ++pos)
   {
-    *p = EEPROM.read(index + pos);    
+    *p = EEPROM.read(index + pos);
     ++p;
   }
   return 0;
@@ -60,9 +87,13 @@ int SERIALIZER_LOAD(uint32_t index, uint32_t count, void* value)
 
 int SERIALIZER_SAVE(uint32_t index, uint32_t count, const void* value)
 {
+  if (index + count > SERIALIZER_SIZE())
+  {
+    return DLMS_ERROR_CODE_SERIALIZATION_LOAD_FAILURE;
+  }
   unsigned char* p = (unsigned char*) value;
   uint32_t pos;
-  for(pos = 0; pos != count; ++pos)
+  for (pos = 0; pos != count; ++pos)
   {
     EEPROM.write(index + pos, *p);
     ++p;
@@ -87,8 +118,6 @@ static unsigned char pduBuff[PDU_BUFFER_SIZE];
 static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Define server system title.
 static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
-
-#define USE_TIME_INTERRUPT
 
 static gxByteBuffer reply;
 
@@ -218,6 +247,8 @@ typedef enum
   GURUX_EVENT_CODES_GLOBAL_METER_RESET = 0x100
 } GURUX_EVENT_CODES;
 
+uint16_t eventLogRowIndex = 0;
+
 void captureEventLog(uint16_t value)
 {
   gxEventLogData row;
@@ -225,16 +256,16 @@ void captureEventLog(uint16_t value)
   // Ring buffer is used here.
   row.time = time_current();
   row.event = value;
-  //MIKKO  EEPROM.put(2048 + meterData.eventLog.rowIndex * sizeof(gxEventLogData), row);
+  SERIALIZER_SAVE(SETTINGS_BUFFER_SIZE + LOAD_PROFILE_BUFFER_SIZE + eventLogRowIndex * sizeof(gxEventLogData), sizeof(gxEventLogData), &row);
   //Update how many entries is used until buffer is full.
   if (eventLog.entriesInUse != eventLog.profileEntries)
   {
     ++eventLog.entriesInUse;
   }
   //Update row index where next row is added.
-  //MIKKO  ++meterData.eventLog.rowIndex;
-  //MIKKO meterData.eventLog.rowIndex = meterData.eventLog.rowIndex % eventLog.profileEntries;
-  //MIKKO saveSettings(BASE(eventLog), GET_ATTRIBUTE(7));
+  ++eventLogRowIndex;
+  eventLogRowIndex = eventLogRowIndex % eventLog.profileEntries;
+  saveSettings(BASE(eventLog), GET_ATTRIBUTE(7));
 }
 
 void updateState(uint16_t value)
@@ -242,7 +273,7 @@ void updateState(uint16_t value)
   GX_UINT16(eventCode.value) = value;
   captureEventLog(value);
   //Update Entries in use for even log.
-  //MIKKO saveSettings(BASE(eventLog), GET_ATTRIBUTE(7));
+  saveSettings(BASE(eventLog), GET_ATTRIBUTE(7));
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -308,13 +339,10 @@ int saveSettings(gxObject* savedObject, uint16_t savedAttributes)
   {
     GXTRACE_INT(GET_STR_FROM_EEPROM("saveObjects failed: "), ret);
   }
-  GXTRACE_INT(GET_STR_FROM_EEPROM("saveObjects succeeded. Index: "), serializerSettings.updateStart);
-  GXTRACE_INT(GET_STR_FROM_EEPROM("Count: "), serializerSettings.updateEnd - serializerSettings.updateStart);
-
-  int pos = 0;
-  for (pos = 0; pos != 6; ++pos)
+  else
   {
-    GXTRACE_INT(GET_STR_FROM_EEPROM("MIKKO: "), EEPROM.read(pos));
+    GXTRACE_INT(GET_STR_FROM_EEPROM("saveObjects succeeded. Index: "), serializerSettings.updateStart);
+    GXTRACE_INT(GET_STR_FROM_EEPROM("Count: "), serializerSettings.updateEnd - serializerSettings.updateStart);
   }
   return ret;
 }
@@ -624,7 +652,7 @@ int addInvocationCounter()
   if ((ret = INIT_OBJECT(invocationCounter, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
   {
     //Initial invocation counter value.
-    //MIKKO GX_UINT32_BYREF(invocationCounter.value, securitySetupHighGMac.minimumInvocationCounter);
+    GX_UINT32_BYREF(invocationCounter.value, securitySetupHigh.minimumInvocationCounter);
   }
   return ret;
 }
@@ -1192,6 +1220,20 @@ void setup() {
   }
   updateState(GURUX_EVENT_CODES_POWER_UP);
   GXTRACE_INT(GET_STR_FROM_EEPROM("EEPROM size"), EEPROM.length());
+
+#ifdef ARDUINO_ARCH_ESP8266
+  //Start Wifi.
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    GXTRACE(GET_STR_FROM_EEPROM("Connection Failed! Rebooting..."), NULL);
+    delay(2000);
+  }
+  tcpServer.begin();
+  Serial.print(WiFi.localIP().toString().c_str());
+  GXTRACE(PSTR("Server started with IP address."), WiFi.localIP().toString().c_str());
+#endif //ARDUINO_ARCH_ESP8266  
+
 #ifdef USE_TIME_INTERRUPT
   setTimer();
 #endif //USE_TIME_INTERRUPT
@@ -1208,6 +1250,45 @@ void loop() {
   {
     Server.run(start, &executeTime);
   }
+#ifdef ARDUINO_ARCH_ESP8266
+  WiFiClient client = tcpServer.available();
+  if (client)
+  {
+    if (client.connected())
+    {
+      GXTRACE(PSTR("Client Connected"), NULL);
+    }
+    while (client.connected()) {
+      //Execute invokes when needed.
+      if (executeTime <= start)
+      {
+        Server.run(start, &executeTime);
+      }
+      available = client.available();
+      if (available > 0)
+      {
+        if (available > sizeof(tmp))
+        {
+          available = sizeof(tmp);
+        }
+        available = client.readBytes(tmp, available);
+        if ((available = Server.handleRequest(tmp, available, &reply)) != 0)
+        {
+          GXTRACE_INT(PSTR("handleRequest failed:"), available);
+          bb_clear(&reply);
+        }
+        if (reply.size != 0)
+        {
+          //Send reply.
+          client.write(reply.data, reply.size);
+          bb_clear(&reply);
+        }
+      }
+    }
+    client.stop();
+    GXTRACE(PSTR("Client disconnected"), NULL);
+  }
+#endif //ARDUINO_ARCH_ESP8266
   available = Serial.available();
   if (available > 0)
   {
@@ -1320,12 +1401,12 @@ int getProfileGenericDataByRangeFromRingBuffer(
     //Load data from EEPROM.
     if (type == 0)
     {
-      EEPROM.get(1024 + (pos * sizeof(gxLoadProfileData)), lp);
+      SERIALIZER_LOAD(SETTINGS_BUFFER_SIZE + (pos * sizeof(gxLoadProfileData)), sizeof(gxLoadProfileData), &lp);
       t = lp.time;
     }
     else
     {
-      EEPROM.get(2048 + (pos * sizeof(gxEventLogData)), event1);
+      SERIALIZER_LOAD(SETTINGS_BUFFER_SIZE + LOAD_PROFILE_BUFFER_SIZE + (pos * sizeof(gxEventLogData)), sizeof(gxEventLogData), &event1);
       t = event1.time;
     }
     //If value is inside of start and end time.
@@ -1442,7 +1523,7 @@ int readProfileGeneric(
       //Load data from EEPROM.
       if (type == 0)
       {
-        EEPROM.get(1024 + (pos * sizeof(gxLoadProfileData)), lp);
+        SERIALIZER_LOAD(SETTINGS_BUFFER_SIZE + (pos * sizeof(gxLoadProfileData)), sizeof(gxLoadProfileData), &lp);
         time_initUnix(&tm, lp.time);
         if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
             (ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm)) != 0 ||
@@ -1453,7 +1534,7 @@ int readProfileGeneric(
       }
       else
       {
-        EEPROM.get(2048 + (pos * sizeof(gxEventLogData)), event1);
+        SERIALIZER_LOAD(SETTINGS_BUFFER_SIZE + LOAD_PROFILE_BUFFER_SIZE + (pos * sizeof(gxEventLogData)), sizeof(gxEventLogData), &event1);
         time_initUnix(&tm, event1.time);
         if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
             (ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm)) != 0 ||
@@ -1561,7 +1642,7 @@ void svr_preRead(
 #ifndef USE_TIME_INTERRUPT
       gxtime dt;
       time_now(&dt, 1);
-      e->error = cosem_setDateTimeAsOctetString(e->value.byteArr, &dt);
+      e->error = (DLMS_ERROR_CODE) cosem_setDateTimeAsOctetString(e->value.byteArr, &dt);
       e->value.vt = DLMS_DATA_TYPE_DATETIME;
       e->handled = 1;
 #endif //USE_TIME_INTERRUPT
@@ -1641,6 +1722,8 @@ int sendPush(
   return ret;
 }
 
+uint16_t loadProfileRowIndex = 0;
+
 void handleLoadProfileActions(
   gxValueEventArg* it)
 {
@@ -1648,6 +1731,7 @@ void handleLoadProfileActions(
   {
     // Profile generic clear is called. Clear data.
     profileGeneric.entriesInUse = 0;
+    loadProfileRowIndex = 0;
   }
   else if (it->index == 2)
   {
@@ -1656,14 +1740,14 @@ void handleLoadProfileActions(
     //We are using ring buffer here.
     row.time = time_current();
     row.activePowerL1 = readActivePowerValue();
-    // EEPROM.put(1024 + profileGeneric.entriesInUse * sizeof(gxLoadProfileData), row);
+    SERIALIZER_SAVE(SETTINGS_BUFFER_SIZE + loadProfileRowIndex * sizeof(gxLoadProfileData), sizeof(gxLoadProfileData), &row);
     //Update how many entries is used until buffer is full.
     if (profileGeneric.entriesInUse != profileGeneric.profileEntries)
     {
       ++profileGeneric.entriesInUse;
     }
-    //MIKKO meterData.loadProfile.rowIndex = meterData.loadProfile.rowIndex % profileGeneric.profileEntries;
-    //MIKKO saveSettings(BASE(profileGeneric), GET_ATTRIBUTE(7));
+    loadProfileRowIndex = loadProfileRowIndex % profileGeneric.profileEntries;
+    saveSettings(BASE(profileGeneric), GET_ATTRIBUTE(7));
   }
 }
 
@@ -1674,6 +1758,7 @@ void handleEventLogActions(
   {
     // Profile generic clear is called. Clear data.
     eventLog.entriesInUse = 0;
+     eventLogRowIndex = 0;
   }
   else if (it->index == 2)
   {

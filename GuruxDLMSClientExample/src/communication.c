@@ -863,7 +863,8 @@ int com_close(
     {
         reply_init(&reply);
         mes_init(&msg);
-        if ((ret = cl_releaseRequest(&connection->settings, &msg)) != 0 ||
+        if ((ret = cl_releaseRequest2(&connection->settings, &msg,
+            connection->settings.cipher.security != DLMS_SECURITY_NONE)) != 0 ||
             (ret = com_readDataBlock(connection, &msg, &reply)) != 0)
         {
             //Show error but continue close.

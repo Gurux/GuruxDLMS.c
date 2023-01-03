@@ -1396,9 +1396,8 @@ int cl_releaseRequest2(dlmsSettings* settings, message* packets, unsigned char u
     mes_clear(packets);
     // If connection is not established, there is no need to send
     // DisconnectRequest.
-    if (settings->connected != DLMS_CONNECTION_STATE_DLMS)
+    if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0)
     {
-        settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
         return 0;
     }
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;

@@ -65,18 +65,25 @@ const char* hlp_getErrorMessage(int error)
         {
         case DLMS_EXCEPTION_SERVICE_ERROR_OPERATION_NOT_POSSIBLE:
             str = GET_STR_FROM_EEPROM("OperationNotPossible");
+            break;
         case DLMS_EXCEPTION_SERVICE_ERROR_SERVICE_NOT_SUPPORTED:
             str = GET_STR_FROM_EEPROM("ServiceNotSupported");
+            break;
         case DLMS_EXCEPTION_SERVICE_ERROR_OTHER_REASON:
             str = GET_STR_FROM_EEPROM("OtherReason");
+            break;
         case DLMS_EXCEPTION_SERVICE_ERROR_PDU_TOO_LONG:
             str = GET_STR_FROM_EEPROM("PduTooLong");
+            break;
         case DLMS_EXCEPTION_SERVICE_ERROR_DECIPHERING_ERROR:
             str = GET_STR_FROM_EEPROM("DecipheringError");
+            break;
         case DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR:
             str = GET_STR_FROM_EEPROM("InvocationCounterError");
+            break;
         default:
             str = GET_STR_FROM_EEPROM("Unknown Exception response.");
+            break;
         }
     }
     else if ((error & DLMS_ERROR_TYPE_CONFIRMED_SERVICE_ERROR) != 0)

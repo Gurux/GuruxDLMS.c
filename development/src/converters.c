@@ -711,10 +711,12 @@ int obj_DataToString(gxData* object, char** buff)
     int ret;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value: ");
-    ret = var_toString(&object->value, &ba);
-    bb_addString(&ba, "\n");
-    *buff = bb_toString(&ba);
+    if ((ret = bb_addString(&ba, GET_STR_FROM_EEPROM("Index: 2 Value: "))) == 0 &&
+        (ret = var_toString(&object->value, &ba)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\n"))) != 0)
+    {
+        *buff = bb_toString(&ba);
+    }
     bb_clear(&ba);
     return ret;
 }
@@ -725,14 +727,16 @@ int obj_RegisterToString(gxRegister* object, char** buff)
     int ret;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 3 Value: Scaler: ");
-    bb_addDoubleAsString(&ba, hlp_getScaler(object->scaler));
-    bb_addString(&ba, " Unit: ");
-    bb_addString(&ba, obj_getUnitAsString(object->unit));
-    bb_addString(&ba, "\nIndex: 2 Value: ");
-    ret = var_toString(&object->value, &ba);
-    bb_addString(&ba, "\n");
-    *buff = bb_toString(&ba);
+    if ((ret = bb_addString(&ba, GET_STR_FROM_EEPROM("Index: 3 Value: Scaler: "))) == 0 &&
+        (ret = bb_addDoubleAsString(&ba, hlp_getScaler(object->scaler))) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM(" Unit: "))) == 0 &&
+        (ret = bb_addString(&ba, obj_getUnitAsString(object->unit))) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 2 Value: "))) == 0 &&
+        (ret = var_toString(&object->value, &ba)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\n"))) == 0)
+    {
+        *buff = bb_toString(&ba);
+    }
     bb_clear(&ba);
     return ret;
 }
@@ -743,36 +747,26 @@ int obj_clockToString(gxClock* object, char** buff)
     int ret;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
-    bb_addString(&ba, "Index: 2 Value: ");
-    ret = time_toString(&object->time, &ba);
-    if (ret != 0)
+    if ((ret = bb_addString(&ba, GET_STR_FROM_EEPROM("Index: 2 Value: "))) == 0 &&
+        (ret = time_toString(&object->time, &ba)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 3 Value: "))) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->timeZone)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 4 Value: "))) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->status)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 5 Value: "))) == 0 &&
+        (ret = time_toString(&object->begin, &ba)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 6 Value: "))) == 0 &&
+        (ret = time_toString(&object->end, &ba)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 7 Value: "))) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->deviation)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 8 Value: "))) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->enabled)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 9 Value: "))) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->clockBase)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\n"))) == 0)
     {
-        return ret;
+        *buff = bb_toString(&ba);
     }
-    bb_addString(&ba, "\nIndex: 3 Value: ");
-    bb_addIntAsString(&ba, object->timeZone);
-    bb_addString(&ba, "\nIndex: 4 Value: ");
-    bb_addIntAsString(&ba, object->status);
-    bb_addString(&ba, "\nIndex: 5 Value: ");
-    ret = time_toString(&object->begin, &ba);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    bb_addString(&ba, "\nIndex: 6 Value: ");
-    ret = time_toString(&object->end, &ba);
-    if (ret != 0)
-    {
-        return ret;
-    }
-    bb_addString(&ba, "\nIndex: 7 Value: ");
-    bb_addIntAsString(&ba, object->deviation);
-    bb_addString(&ba, "\nIndex: 8 Value: ");
-    bb_addIntAsString(&ba, object->enabled);
-    bb_addString(&ba, "\nIndex: 9 Value: ");
-    bb_addIntAsString(&ba, object->clockBase);
-    bb_addString(&ba, "\n");
-    *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
 }
@@ -846,7 +840,7 @@ int obj_ScriptTableToString(gxScriptTable* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-            }
+}
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 #ifndef DLMS_IGNORE_SPECIAL_DAYS_TABLE
 int obj_specialDaysTableToString(gxSpecialDaysTable* object, char** buff)
@@ -1064,7 +1058,7 @@ int obj_autoConnectToString(gxAutoConnect* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_AUTO_CONNECT
 #ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
 int obj_seasonProfileToString(gxArray* arr, gxByteBuffer* ba)
@@ -1334,14 +1328,14 @@ int obj_IecTwistedPairSetupToString(gxIecTwistedPairSetup* object, char** buff)
                 ret = bb_addString(&ba, "]\n");
             }
         }
-            }
+    }
     if (ret == 0)
     {
         *buff = bb_toString(&ba);
     }
     bb_clear(&ba);
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_IEC_TWISTED_PAIR_SETUP
 
 #ifndef DLMS_IGNORE_DEMAND_REGISTER
@@ -1432,7 +1426,7 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
                 if (pos != 0)
                 {
                     bb_addString(&ba, ", ");
-            }
+                }
 #if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
                 bb_attachString(&ba, bb_toString((gxByteBuffer*)it->key));
                 bb_addString(&ba, " ");
@@ -1445,14 +1439,14 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
                     break;
                 }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        }
+            }
             bb_addString(&ba, "]\n");
             *buff = bb_toString(&ba);
+        }
     }
-}
     bb_clear(&ba);
     return ret;
-        }
+}
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
 void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
@@ -1534,12 +1528,12 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
         actionItemToString(&as->actionUp, &ba);
         bb_addString(&ba, " ");
         actionItemToString(&as->actionDown, &ba);
-        }
+    }
     bb_addString(&ba, "]\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
 int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
@@ -1554,7 +1548,7 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
     if (object->executedScript == NULL)
     {
         hlp_appendLogicalName(&ba, EMPTY_LN);
-}
+    }
     else
     {
         hlp_appendLogicalName(&ba, object->executedScript->base.logicalName);
@@ -1690,7 +1684,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
         if (pos != 0)
         {
             bb_addString(&ba, ", ");
-    }
+        }
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         ret = bb_addIntAsString(&ba, *tmp);
 #else
@@ -1700,7 +1694,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
         {
             return ret;
         }
-}
+    }
     bb_addString(&ba, "]\nIndex: 5 Value: [");
     for (pos = 0; pos != object->ipOptions.size; ++pos)
     {
@@ -1733,7 +1727,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_IP4_SETUP
 
 #ifndef DLMS_IGNORE_IP6_SETUP
@@ -2205,9 +2199,9 @@ int obj_objectsToString(gxByteBuffer* ba, objectArray* objects)
 #endif
         bb_addString(ba, " ");
         hlp_appendLogicalName(ba, it->logicalName);
-        }
-    return ret;
     }
+    return ret;
+}
 
 int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
 {
@@ -2238,11 +2232,11 @@ int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
             {
                 return ret;
             }
-            }
-        bb_addString(ba, "\n");
         }
-    return 0;
+        bb_addString(ba, "\n");
     }
+    return 0;
+}
 
 #ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 void obj_applicationContextNameToString(gxByteBuffer* ba, gxApplicationContextName* object)

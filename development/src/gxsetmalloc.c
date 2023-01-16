@@ -5454,7 +5454,7 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                memcpy(object->operatorName, value->strVal, value->byteArr->size);
+                memcpy(object->operatorName, value->strVal->data, value->byteArr->size);
                 object->operatorName[value->byteArr->size] = '\0';
             }
         }
@@ -5473,7 +5473,7 @@ int cosem_setGsmDiagnostic(gxGsmDiagnostic* object, unsigned char index, dlmsVAR
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                memcpy(object->operatorName, value->strVal, value->strVal->size);
+                memcpy(object->operatorName, value->strVal->data, value->strVal->size);
                 object->operatorName[value->strVal->size] = '\0';
             }
         }

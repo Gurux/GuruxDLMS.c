@@ -1422,12 +1422,6 @@ int cl_releaseRequest2(dlmsSettings* settings, message* packets, unsigned char u
         {
             return ret;
         }
-#ifndef DLMS_IGNORE_HIGH_GMAC
-        if (isCiphered(&settings->cipher))
-        {
-            ++settings->cipher.invocationCounter;
-        }
-#endif //DLMS_IGNORE_HIGH_GMAC
         apdu_generateUserInformation(settings, &bb);
         bb.data[0] = (unsigned char)(bb.size - 1);
     }
@@ -1439,19 +1433,19 @@ int cl_releaseRequest2(dlmsSettings* settings, message* packets, unsigned char u
             &bb, NULL, 0xff, DLMS_COMMAND_NONE, 0, 0);
         ret = dlms_getLnMessages(&p, packets);
     }
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     else
     {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
         gxSNParameters p;
         params_initSN(&p, settings,
             DLMS_COMMAND_RELEASE_REQUEST, 1,
             DLMS_VARIABLE_ACCESS_SPECIFICATION_VARIABLE_NAME,
             NULL, &bb, DLMS_COMMAND_NONE);
         ret = dlms_getSnMessages(&p, packets);
-    }
 #else
-    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+    }
     bb_clear(&bb);
     return ret;
 }

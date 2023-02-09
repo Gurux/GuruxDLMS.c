@@ -1022,7 +1022,8 @@ int cosem_setAssociationLogicalName(
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
                         //If unknown object.
-                        if (ret == DLMS_ERROR_CODE_INVALID_PARAMETER)
+                        if (ret == DLMS_ERROR_CODE_UNAVAILABLE_OBJECT ||
+                            ret == DLMS_ERROR_CODE_INVALID_PARAMETER)
                         {
                             continue;
                         }

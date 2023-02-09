@@ -428,7 +428,12 @@ int notify_parsePush(
                 return ret;
             }
             index = (unsigned char)var_toInteger(tmp);
+#if defined(_WIN64) || defined(__LP64__) || defined(_LP64)
             arr_push(items, key_init(obj, (void*)(uint64_t)index));
+#else
+            arr_push(items, key_init(obj, (void*)(uint32_t)index));
+#endif //DLMS_IGNORE_MALLOC
+
 #endif //DLMS_IGNORE_MALLOC
         }
     }

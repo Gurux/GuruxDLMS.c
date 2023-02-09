@@ -713,7 +713,7 @@ int obj_DataToString(gxData* object, char** buff)
     BYTE_BUFFER_INIT(&ba);
     if ((ret = bb_addString(&ba, GET_STR_FROM_EEPROM("Index: 2 Value: "))) == 0 &&
         (ret = var_toString(&object->value, &ba)) == 0 &&
-        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\n"))) != 0)
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\n"))) == 0)
     {
         *buff = bb_toString(&ba);
     }

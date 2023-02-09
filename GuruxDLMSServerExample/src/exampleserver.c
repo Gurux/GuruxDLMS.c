@@ -2936,7 +2936,7 @@ int sendPush(
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    pos = (int)(p - push->destination.data);
+    pos = (int)(p - (char*)push->destination.data);
     host = (char*)malloc(pos + 1);
     memcpy(host, push->destination.data, pos);
     host[pos] = '\0';

@@ -207,6 +207,7 @@ gxPrimeNbOfdmPlcMacCounters primeNbOfdmPlcMacCounters;
 static gxScriptTable tarifficationScriptTable;
 gxRegisterActivation registerActivation;
 gxData currentlyActiveTariff;
+gxLimiter limiter;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
@@ -221,7 +222,7 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData),
                                    BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff),
                                    BASE(primeNbOfdmPlcMacCounters),
-                                   BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter)
+                                   BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter), BASE(limiter)
 };
 
 //List of COSEM objects that are removed from association view(s).
@@ -1730,6 +1731,27 @@ int addRegisterActivation()
     return ret;
 }
 
+
+///////////////////////////////////////////////////////////////////////
+//Add limiter object.
+///////////////////////////////////////////////////////////////////////
+int addLimiter()
+{
+    int ret;
+    static uint16_t GROUPS[10] = { 0 };
+    const unsigned char ln[6] = { 0,0,17,0,0,255 };
+    if ((ret = INIT_OBJECT(limiter, DLMS_OBJECT_TYPE_LIMITER, ln)) == 0)
+    {
+        limiter.monitoredValue = BASE(activePowerL1);
+        limiter.selectedAttributeIndex = 2;
+        //Add emergency profile group IDs.
+        GROUPS[0] = 1;
+        GROUPS[1] = 2;
+        VA_ATTACH(limiter.emergencyProfileGroupIDs, GROUPS, 2);
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //Add script table object for meter reset. This will erase the EEPROM.
 ///////////////////////////////////////////////////////////////////////
@@ -1953,6 +1975,23 @@ int addIecHdlcSetup()
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// This method is used to test object serialization.
+// Object is first save and then load.
+/////////////////////////////////////////////////////////////////////////////
+int testobjectSerialization(gxObject* obj)
+{
+    gxSerializerSettings serializerSettings;
+    ser_init(&serializerSettings);
+    int ret = ser_saveObject(&serializerSettings, obj);
+    serializerSettings.position = 0;
+    ret = ser_loadObject(&settings.base, &serializerSettings, obj);
+    if (ret != 0)
+    {
+        return ret;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // Load data from the EEPROM.
 // This example uses the hex format so it's easier to handle.
 // Returns serialization version or zero if data is not saved.
@@ -2070,6 +2109,7 @@ int createObjects()
         (ret = addPrimeNbOfdmPlcMacFunctionalParameters()) != 0 ||
         (ret = addPrimeNbOfdmPlcMacNetworkAdministrationData()) != 0 ||
         (ret = addTwistedPairSetup()) != 0 ||
+        (ret = addLimiter()) != 0 ||       
         (ret = oa_verify(&settings.base.objects)) != 0 ||
         (ret = svr_initialize(&settings)) != 0)
     {

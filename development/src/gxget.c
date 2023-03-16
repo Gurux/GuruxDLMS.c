@@ -2586,6 +2586,7 @@ int cosem_getLimiter(
             {
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
                 if ((ret = arr_getByIndex2(&object->emergencyProfileGroupIDs, pos, (void**)&it, sizeof(uint16_t))) != 0 ||
+                    (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
                     (ret = bb_setUInt16(data, *it)) != 0)
                 {
                     break;

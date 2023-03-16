@@ -6062,7 +6062,8 @@ int dlms_getLnMessages(
             {
                 ++p->settings->blockIndex;
             }
-        } while (ret == 0 && pdu->position != pdu->size)
+        } 
+        while (ret == 0 && pdu->position != pdu->size)
         {
 #ifdef DLMS_IGNORE_MALLOC
             if (!(messages->size < messages->capacity))

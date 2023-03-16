@@ -153,7 +153,7 @@ gxGPRSSetup gprsSetup;
 gxScriptTable tarifficationScriptTable;
 gxRegisterActivation registerActivation;
 gxCompactData compactData;
-
+gxLimiter limiter;
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
 static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
@@ -163,7 +163,7 @@ static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), 
                                    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
                                    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
                                    BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
-                                   BASE(tarifficationScriptTable), BASE(registerActivation)
+                                   BASE(tarifficationScriptTable), BASE(registerActivation), BASE(limiter)
 };
 
 ////////////////////////////////////////////////////
@@ -884,6 +884,30 @@ int addRegisterActivation(dlmsServerSettings* settings)
         bb_setUInt8(indexes, 1);
         bb_setUInt8(indexes, 2);
         arr_push(&registerActivation.maskList, key_init(name, indexes));
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add limiter object.
+///////////////////////////////////////////////////////////////////////
+int addLimiter()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,17,0,0,255 };
+    if ((ret = INIT_OBJECT(limiter, DLMS_OBJECT_TYPE_LIMITER, ln)) == 0)
+    {
+        limiter.monitoredValue = BASE(activePowerL1);
+        limiter.selectedAttributeIndex = 2;       
+        //Add emergency profile group IDs.
+        dlmsVARIANT*  tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        var_init(tmp);
+        var_setUInt16(tmp, 1);
+        va_push(&limiter.emergencyProfileGroupIDs, tmp);
+        tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        var_init(tmp);
+        var_setUInt16(tmp, 2);
+        va_push(&limiter.emergencyProfileGroupIDs, tmp);
     }
     return ret;
 }
@@ -1836,6 +1860,7 @@ int svr_InitObjects(
         (ret = addGprsSetup()) != 0 ||
         (ret = addImageTransfer()) != 0 ||
         (ret = addCompactData(&settings->base, &settings->base.objects)) != 0 ||
+        (ret = addLimiter()) != 0 ||        
         (ret = oa_verify(&settings->base.objects)) != 0 ||
         (ret = svr_initialize(settings)) != 0)
     {

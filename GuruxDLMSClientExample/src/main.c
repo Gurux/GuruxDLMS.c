@@ -120,6 +120,23 @@ int disconnect(connection* connection)
 
 
 /**
+* Calls capture of the profile generic object..
+*/
+int CaptureProfileGeneric(connection* connection)
+{
+    int ret;
+    gxProfileGeneric pg;
+    unsigned char ln[] = { 1,0,99,1,0,255 };
+    INIT_OBJECT(pg, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln);
+    //Invokes capture action.
+    dlmsVARIANT param;
+    GX_INT8(param) = 0;
+    ret = com_method(connection, BASE(pg), 2, &param);
+    return ret;
+}
+
+
+/**
 * Executes selected script.
 * params:
 * ln: Logical name of the script table object.

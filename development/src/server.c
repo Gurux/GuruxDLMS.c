@@ -1290,15 +1290,12 @@ int svr_getRequestNormal(
             vec_clear(arr);
             return ret;
         }
-        bb_clear(data);
 #endif //DLMS_IGNORE_MALLOC
     }
-    else
+    ret = oa_findByLN(&settings->base.objects, (DLMS_OBJECT_TYPE)ci, ln, &e->target);
+    if (ret != 0)
     {
         bb_clear(data);
-    }
-    if ((ret = oa_findByLN(&settings->base.objects, (DLMS_OBJECT_TYPE)ci, ln, &e->target)) != 0)
-    {
 #ifdef DLMS_IGNORE_MALLOC
         vec_clear(arr);
 #endif //DLMS_IGNORE_MALLOC
@@ -1308,6 +1305,7 @@ int svr_getRequestNormal(
     {
         ret = svr_findObject(&settings->base, (DLMS_OBJECT_TYPE)ci, 0, ln, e);
     }
+    bb_clear(data);
     if (e->target == NULL)
     {
         // Access Error : Device reports a undefined object.

@@ -2300,6 +2300,20 @@ int dlms_getHDLCAddress(
     return DLMS_ERROR_CODE_OK;
 }
 
+void dlms_getServerAddress(uint32_t address, uint32_t* logical, uint32_t* physical)
+{
+    if (address < 0x4000)
+    {
+        *logical = address >> 7;
+        *physical = address & 0x7F;
+    }
+    else
+    {
+        *logical = address >> 14;
+        *physical = address & 0x3FFF;
+    }
+}
+
 /**
 * Check that client and server address match.
 *
@@ -2388,7 +2402,16 @@ int dlms_checkHdlcAddress(
             // If All-station (Broadcast).
             (settings->serverAddress & 0x7F) != 0x7F && (settings->serverAddress & 0x3FFF) != 0x3FFF)
         {
-            return DLMS_ERROR_CODE_FALSE;
+            //Check logical and physical address separately.
+            //This is done because some meters might send four bytes
+            //when only two bytes are needed.
+            uint32_t readLogical, readPhysical, logical, physical;
+            dlms_getServerAddress(source, &readLogical, &readPhysical);
+            dlms_getServerAddress(settings->serverAddress, &logical, &physical);
+            if (readLogical != logical || readPhysical != physical)
+            {
+                return DLMS_ERROR_CODE_FALSE;
+            }
         }
     }
     return DLMS_ERROR_CODE_OK;

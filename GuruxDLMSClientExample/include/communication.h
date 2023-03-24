@@ -101,6 +101,19 @@ int com_method(
     unsigned char attributeOrdinal,
     dlmsVARIANT* params);
 
+int com_method2(
+    connection* connection,
+    gxObject* object,
+    unsigned char attributeOrdinal,
+    unsigned char* value,
+    uint32_t length);
+
+int com_method3(
+    connection* connection,
+    gxObject* object,
+    unsigned char attributeOrdinal,
+    gxByteBuffer* value);
+
 /**
 * Read objects.
 */

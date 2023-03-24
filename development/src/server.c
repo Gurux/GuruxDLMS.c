@@ -3297,7 +3297,7 @@ int svr_handleRequest2(
             bb_attach(&data, tmp, 0, sizeof(tmp));
             if ((ret = svr_generateConfirmedServiceError(
                 settings,
-                DLMS_SERVICE_ERROR_INITIATE,
+                DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
                 DLMS_SERVICE_ERROR_APPLICATION_REFERENCE,
                 DLMS_APPLICATION_REFERENCE_DECIPHERING_ERROR,
                 &data)) != 0)
@@ -3689,7 +3689,7 @@ int svr_handleProfileGeneric(
         tm = time % object->capturePeriod;
         if (tm == 0)
         {
-            if (*next == -1 || *next > time + object->capturePeriod)
+            if (*next == (uint32_t) - 1 || *next > time + object->capturePeriod)
             {
                 *next = time + object->capturePeriod;
             }
@@ -4143,7 +4143,7 @@ int svr_run(
     uint16_t pos;
     int ret = 0;
     gxObject* obj;
-    *next = -1;
+    *next = (uint32_t) - 1;
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
     //profile Generic objects.
     for (pos = 0; pos != settings->base.objects.size; ++pos)

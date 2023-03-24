@@ -176,7 +176,6 @@ int imageUpdate(connection* connection, const unsigned char* identification, uin
     gxByteBuffer bb;
     bb_init(&bb);
     dlmsVARIANT param;
-    var_init(&param);
     gxImageTransfer im;
     unsigned char ln[] = { 0,0,44,0,0,255 };
     INIT_OBJECT(im, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln);
@@ -195,8 +194,7 @@ int imageUpdate(connection* connection, const unsigned char* identification, uin
         (ret = bb_set(&bb, identification, identificationSize)) == 0 &&
         (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_UINT32)) == 0 &&
         (ret = bb_setInt32(&bb, imageSize)) == 0 &&
-        (ret = var_addOctetString(&param, &bb)) == 0 &&
-        (ret = com_method(connection, BASE(im), 1, &param)) == 0)
+        (ret = com_method3(connection, BASE(im), 1, &bb)) == 0)
     {
         //5. image_transfer_status is read.
         if ((ret = com_read(connection, BASE(im), 6)) == 0)
@@ -218,8 +216,7 @@ int imageUpdate(connection* connection, const unsigned char* identification, uin
                     (ret = bb_setInt8(&bb, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
                     (ret = hlp_setObjectCount(count, &bb)) != 0 ||
                     (ret = bb_set(&bb, image, count)) != 0 ||
-                    (ret = var_addOctetString(&param, &bb)) != 0 ||
-                    (ret = com_method(connection, BASE(im), 2, &param)) != 0)
+                    (ret = com_method3(connection, BASE(im), 2, &bb)) != 0)
                 {
                     break;
                 }
@@ -233,7 +230,6 @@ int imageUpdate(connection* connection, const unsigned char* identification, uin
                 if (ret == 0)
                 {
                     //9. image_verify is called.
-                    var_clear(&param);
                     GX_INT8(param) = 0;
                     if ((ret = com_method(connection, BASE(im), 3, &param)) == 0 ||
                         ret == DLMS_ERROR_CODE_TEMPORARY_FAILURE)
@@ -271,7 +267,6 @@ int imageUpdate(connection* connection, const unsigned char* identification, uin
         }
     }
     bb_clear(&bb);
-    var_clear(&param);
     return ret;
 }
 

@@ -1362,6 +1362,38 @@ int com_method(
     return ret;
 }
 
+int com_method2(
+    connection* connection,
+    gxObject* object,
+    unsigned char attributeOrdinal,
+    unsigned char* value,
+    uint32_t length)
+{
+    int ret;
+    message messages;
+    gxReplyData reply;
+    mes_init(&messages);
+    reply_init(&reply);
+    if ((ret = cl_method2(&connection->settings, object, attributeOrdinal, value, length, &messages)) != 0 ||
+        (ret = com_readDataBlock(connection, &messages, &reply)) != 0)
+    {
+        printf("Method failed %s\r\n", hlp_getErrorMessage(ret));
+    }
+    mes_clear(&messages);
+    reply_clear(&reply);
+    return ret;
+}
+
+
+int com_method3(
+    connection* connection,
+    gxObject* object,
+    unsigned char attributeOrdinal,
+    gxByteBuffer* value)
+{
+    return com_method2(connection, object, attributeOrdinal,value->data, value->size);
+}
+
 int com_updateHighLevelPassword(
     connection* connection,
     gxAssociationLogicalName* object)

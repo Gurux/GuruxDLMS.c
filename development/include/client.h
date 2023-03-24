@@ -288,21 +288,40 @@ extern "C" {
     /**
         * Generate Method (Action) request.
         *
-        * @param item
+        * @param object
         *            Method object.
         * @param index
         *            Method index.
         * @param data
         *            Method data.
-        * @param type
-        *            Data type.
-        * @return DLMS action message.
+        * @param messages DLMS action messages.
         */
     int cl_method(
         dlmsSettings* settings,
         gxObject* object,
         unsigned char index,
         dlmsVARIANT* data,
+        message* messages);
+
+    /**
+    * Generate Method (Action) request.
+    *
+    * @param object
+    *            Method object.
+    * @param index
+    *            Method index.
+    * @param data
+    *            Method data.
+    * @param bytearray
+    *            Is data bytearray.
+    * @param messages DLMS action messages.
+    */
+    int cl_method2(
+        dlmsSettings* settings,
+        gxObject* object,
+        unsigned char index,
+        unsigned char* value,
+        uint32_t length,
         message* messages);
 
     /**
@@ -328,10 +347,33 @@ extern "C" {
         dlmsVARIANT* data,
         message* messages);
 
+    /**
+        * Generate Method (Action) request..
+        *
+        * @param name
+        *            Method object short name or Logical Name.
+        * @param objectType
+        *            Object type.
+        * @param index
+        *            Method index.
+        * @param value
+        *            byte array.
+        * @param length
+        *            Length of byte array.
+        * @return DLMS action message.
+        */
+    int cl_methodLN2(
+        dlmsSettings* settings,
+        unsigned char* name,
+        DLMS_OBJECT_TYPE objectType,
+        unsigned char index,
+        unsigned char* value,
+        uint32_t length,
+        message* messages);
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     /**
-        * Generate Method (Action) request..
+        * Generate Method (Action) request.
         *
         * @param name
         *            Method object short name or Logical Name.
@@ -351,6 +393,31 @@ extern "C" {
         DLMS_OBJECT_TYPE objectType,
         int index,
         dlmsVARIANT* data,
+        message* messages);
+
+
+    /**
+        * Generate Method (Action) request.
+        *
+        * @param name
+        *            Method object short name or Logical Name.
+        * @param objectType
+        *            Object type.
+        * @param index
+        *            Method index.
+        * @param value
+        *            byte array.
+        * @param lenght
+        *            Length of the byte array.
+        * @return DLMS action message.
+        */
+    int cl_methodSN2(
+        dlmsSettings* settings,
+        uint16_t address,
+        DLMS_OBJECT_TYPE objectType,
+        int index,
+        unsigned char* value,
+        uint32_t length,
         message* messages);
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 

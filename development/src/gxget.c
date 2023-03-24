@@ -179,7 +179,7 @@ int cosem_getClock(
     }
     else if (e->index == 4)
     {
-        ret = cosem_setEnum(e->value.byteArr, ((gxClock*)e->target)->status);
+        ret = cosem_setUInt8(e->value.byteArr, ((gxClock*)e->target)->status);
     }
     else if (e->index == 5)
     {

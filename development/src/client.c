@@ -1726,6 +1726,30 @@ int cl_method(
     return ret;
 }
 
+int cl_method2(
+    dlmsSettings* settings,
+    gxObject* object,
+    unsigned char index,
+    unsigned char* value,
+    uint32_t length,
+    message* messages)
+{
+    int ret;
+    if (settings->useLogicalNameReferencing)
+    {
+        ret = cl_methodLN2(settings, object->logicalName, object->objectType, index, value, length, messages);
+    }
+    else
+    {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+        ret = cl_methodSN2(settings, object->shortName, object->objectType, index, value, length, messages);
+#else
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+    }
+    return ret;
+}
+
 int cl_methodLN(
     dlmsSettings* settings,
     unsigned char* name,
@@ -1795,6 +1819,64 @@ int cl_methodLN(
             }
         }
 #endif //DLMS_IGNORE_MALLOC
+    }
+    if (ret == 0)
+    {
+        params_initLN(&p, settings, 0,
+            DLMS_COMMAND_METHOD_REQUEST, DLMS_ACTION_COMMAND_TYPE_NORMAL,
+            pdu, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
+        ret = dlms_getLnMessages(&p, messages);
+    }
+    bb_clear(&data);
+    bb_clear(pdu);
+    return ret;
+}
+
+int cl_methodLN2(
+    dlmsSettings* settings,
+    unsigned char* name,
+    DLMS_OBJECT_TYPE objectType,
+    unsigned char index,
+    unsigned char* value,
+    uint32_t length,
+    message* messages)
+{
+    int ret = 0;
+    gxLNParameters p;
+    gxByteBuffer* pdu;
+    gxByteBuffer data;
+    if (index < 1)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+#ifdef DLMS_IGNORE_MALLOC
+    if (settings->serializedPdu == NULL)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    pdu = settings->serializedPdu;
+    //Use same buffer for header and data. Header size is 10 bytes.
+    BYTE_BUFFER_INIT(&data);
+    bb_clear(pdu);
+#else
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    pdu = &bb;
+    BYTE_BUFFER_INIT(&data);
+#endif //DLMS_IGNORE_MALLOC
+    resetBlockIndex(settings);
+    // CI
+    if ((ret = bb_setUInt16(pdu, objectType)) == 0 &&
+        // Add LN
+        (ret = bb_set(pdu, name, 6)) == 0 &&
+        // Attribute ID.
+        (ret = bb_setUInt8(pdu, index)) == 0 &&
+        // Is Method Invocation Parameters used.
+        (ret = bb_setUInt8(pdu, 1)) == 0)
+    {
+        ret = bb_set(pdu, value, length);
     }
     if (ret == 0)
     {
@@ -1879,6 +1961,56 @@ int cl_methodSN(
     }
     params_initSN(&p, settings, DLMS_COMMAND_READ_REQUEST, 1,
         requestType, &bb, &data, DLMS_COMMAND_NONE);
+    ret = dlms_getSnMessages(&p, messages);
+    bb_clear(&data);
+    bb_clear(&bb);
+    return ret;
+}
+
+int cl_methodSN2(
+    dlmsSettings* settings,
+    uint16_t address,
+    DLMS_OBJECT_TYPE objectType,
+    int index,
+    unsigned char* value,
+    uint32_t length,
+    message* messages)
+{
+    int ret;
+    unsigned char v, count;
+    gxSNParameters p;
+    gxByteBuffer bb, data;
+    if (index < 1)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    resetBlockIndex(settings);
+    BYTE_BUFFER_INIT(&data);
+    ret = bb_set(&data, value, length);
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = dlms_getActionInfo(objectType, &v, &count)) != 0)
+    {
+        return ret;
+    }
+    if (index > count)
+    {
+        //Invalid parameter
+        bb_clear(&data);
+        bb_clear(&bb);
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    index = (v + (index - 1) * 0x8);
+    address += (uint16_t)index;
+    // Add SN count.
+    bb_setUInt8(&bb, 1);
+    // Add name length.
+    bb_setUInt8(&bb, 4);
+    // Add name.
+    bb_setUInt16(&bb, address);
+    bb_setUInt8(&bb, 1);
+    params_initSN(&p, settings, DLMS_COMMAND_READ_REQUEST, 1,
+        DLMS_VARIABLE_ACCESS_SPECIFICATION_PARAMETERISED_ACCESS, &bb, &data, DLMS_COMMAND_NONE);
     ret = dlms_getSnMessages(&p, messages);
     bb_clear(&data);
     bb_clear(&bb);

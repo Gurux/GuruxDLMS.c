@@ -1285,7 +1285,7 @@ uint32_t bb_indexOf(
 
 #ifndef GX_DLMS_MICROCONTROLLER
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-void bb_print(gxByteBuffer* bb)
+int bb_print(gxByteBuffer* bb)
 {
     const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
     uint32_t pos;
@@ -1298,6 +1298,7 @@ void bb_print(gxByteBuffer* bb)
         hexChars[1] = hexArray[bb->data[pos] & 0x0F];
         printf("%s", hexChars);
     }
+    return 0;
 }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #endif //GX_DLMS_MICROCONTROLLER

@@ -54,7 +54,11 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 //Get error message directly from EEPROM to save RAM.
 #if defined(ARDUINO) || defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
 //If AVR is used.
-#include <avr/pgmspace.h>
+   #ifdef IDF_VER//espressif is using the different folder.
+      #include <pgmspace.h>
+   #else
+      #include <avr/pgmspace.h>
+   #endif//ESP_PLATFORM
 #define GET_STR_FROM_EEPROM(x) PSTR(x)
 #else
 #define GET_STR_FROM_EEPROM(x) (const char*)x

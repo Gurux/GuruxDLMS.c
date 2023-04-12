@@ -6671,8 +6671,9 @@ int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,
     gxByteBuffer* data)
 {
-    dlmsVARIANT value;
+    uint32_t value;
     unsigned char ch, id, len;
+    uint16_t tmp;
     int ret;
     //If default settings are used.
     if (data->size - data->position == 0)
@@ -6696,70 +6697,46 @@ int dlms_parseSnrmUaResponse(
     }
     while (data->position < data->size)
     {
-        if ((ret = bb_getUInt8(data, &id)) != 0)
-        {
-            return ret;
-        }
-        if ((ret = bb_getUInt8(data, &len)) != 0)
+        if ((ret = bb_getUInt8(data, &id)) != 0 ||
+            (ret = bb_getUInt8(data, &len)) != 0)
         {
             return ret;
         }
         switch (len)
         {
         case 1:
-            ret = bb_getUInt8(data, &value.bVal);
-            if (ret != DLMS_ERROR_CODE_OK)
-            {
-                return ret;
-            }
-            value.vt = DLMS_DATA_TYPE_UINT8;
+            ret = bb_getUInt8(data, &ch);
+            value = ch;
             break;
         case 2:
-            ret = bb_getUInt16(data, &value.uiVal);
-            if (ret != DLMS_ERROR_CODE_OK)
-            {
-                return ret;
-            }
-            value.vt = DLMS_DATA_TYPE_UINT16;
+            ret = bb_getUInt16(data, &tmp);
+            value = tmp;
             break;
         case 4:
-            ret = bb_getUInt32(data, &value.ulVal);
-            if (ret != DLMS_ERROR_CODE_OK)
-            {
-                return ret;
-            }
-            value.vt = DLMS_DATA_TYPE_UINT32;
+            ret = bb_getUInt32(data, &value);
             break;
         default:
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
         }
         // RX / TX are delivered from the partner's point of view =>
         // reversed to ours
         switch (id)
         {
         case HDLC_INFO_MAX_INFO_TX:
-            if (var_toInteger(&value) < settings->maxInfoRX)
-            {
-                settings->maxInfoRX = (uint16_t)var_toInteger(&value);
-            }
+            settings->maxInfoRX = (uint16_t)value;
             break;
         case HDLC_INFO_MAX_INFO_RX:
-            if (var_toInteger(&value) < settings->maxInfoTX)
-            {
-                settings->maxInfoTX = (uint16_t)var_toInteger(&value);
-            }
+            settings->maxInfoTX = (uint16_t)value;
             break;
         case HDLC_INFO_WINDOW_SIZE_TX:
-            if (var_toInteger(&value) < settings->windowSizeRX)
-            {
-                settings->windowSizeRX = (unsigned char)var_toInteger(&value);
-            }
+            settings->windowSizeRX = (unsigned char)value;
             break;
         case HDLC_INFO_WINDOW_SIZE_RX:
-            if (var_toInteger(&value) < settings->windowSizeTX)
-            {
-                settings->windowSizeTX = (unsigned char)var_toInteger(&value);
-            }
+            settings->windowSizeTX = (unsigned char)value;
             break;
         default:
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

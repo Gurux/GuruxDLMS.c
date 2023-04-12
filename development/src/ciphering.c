@@ -735,7 +735,14 @@ int cip_crypt(
             //Encrypt the data.
             aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
         }
-        //Count authentication.
+        else
+        {
+            //Check authentication tag.
+            if (memcmp(NONSE, input->data + input->size, 12) != 0)
+            {
+                ret = DLMS_ERROR_CODE_INVALID_TAG;
+            }
+        }
         if ((ret = bb_move(input, input->position, 17, bb_available(input))) == 0)
         {
             input->position = 0;
@@ -757,13 +764,6 @@ int cip_crypt(
                 if (encrypt)
                 {
                     input->size += 12;
-                }
-                else
-                {
-                    if (memcmp(NONSE, input->data + input->size, 12) != 0)
-                    {
-                        ret = DLMS_ERROR_CODE_INVALID_TAG;
-                    }
                 }
             }
         }

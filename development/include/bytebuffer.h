@@ -527,7 +527,7 @@ extern "C" {
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     //Print content of byte buffer to cout.
-    void bb_print(gxByteBuffer* bb);
+    int bb_print(gxByteBuffer* bb);
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 #define BB_ATTACH(X, V, S) bb_attach(&X, V, S, sizeof(V))

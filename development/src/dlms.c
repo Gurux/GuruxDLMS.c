@@ -687,7 +687,7 @@ int getUtfString(
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
         // If there is not enough data available.
-        if (buff->size - buff->position < (uint16_t)(2 * len))
+        if (buff->size - buff->position < len)
         {
             info->complete = 0;
             return 0;
@@ -5135,7 +5135,7 @@ int dlms_getPdu(
 #if !defined(DLMS_IGNORE_CLIENT)
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_READ_RESPONSE:
-            if ((ret = dlms_handleReadResponse(settings, data, (uint16_t) index)) != 0)
+            if ((ret = dlms_handleReadResponse(settings, data, (uint16_t)index)) != 0)
             {
                 if (ret == DLMS_ERROR_CODE_FALSE)
                 {
@@ -5146,7 +5146,7 @@ int dlms_getPdu(
             break;
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_GET_RESPONSE:
-            if ((ret = dlms_handleGetResponse(settings, data, (uint16_t) index)) != 0)
+            if ((ret = dlms_handleGetResponse(settings, data, (uint16_t)index)) != 0)
             {
                 if (ret == DLMS_ERROR_CODE_FALSE)
                 {
@@ -6085,7 +6085,7 @@ int dlms_getLnMessages(
             {
                 ++p->settings->blockIndex;
             }
-        } 
+        }
         while (ret == 0 && pdu->position != pdu->size)
         {
 #ifdef DLMS_IGNORE_MALLOC

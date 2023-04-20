@@ -270,6 +270,39 @@ int imageUpdate(connection* connection, const unsigned char* identification, uin
     return ret;
 }
 
+/*
+* This method can be used to update firmware from the hex file.
+*/
+int imageUpdateFromFile(
+    connection* connection,
+    const char* identifier, 
+    const char* fileName)
+{
+#if _MSC_VER > 1400
+    FILE* f = NULL;
+    fopen_s(&f, fileName, "r");
+#else
+    FILE* f = fopen(fileName, "r");
+#endif
+    int ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    if (f != NULL)
+    {
+        size_t imagesize;
+        char image[101];
+        gxByteBuffer bb;
+        bb_init(&bb);
+        while (feof(f) == 0)
+        {
+            imagesize = fread(image, sizeof(char), sizeof(image) - 1, f);
+            image[imagesize] = 0;
+            bb_addHexString(&bb, image);
+        }
+        fclose(f);
+        ret = imageUpdate(connection, identifier, (uint16_t)strlen(identifier), bb.data, bb.size);
+        bb_clear(&bb);
+    }
+    return ret;
+}
 
 /*Read DLMS meter using TCP/IP connection.*/
 int readTcpIpConnection(
@@ -493,9 +526,6 @@ int connectMeter(int argc, char* argv[])
     {
         switch (opt)
         {
-        case 'w':
-            con.settings.interfaceType = DLMS_INTERFACE_TYPE_WRAPPER;
-            break;
         case 'r':
             if (strcasecmp("sn", optarg) == 0)
             {

@@ -1936,7 +1936,7 @@ int getCompactArray(
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                var_clear(tmp);
+                var_init(tmp);
                 tmp->Arr = row;
                 tmp->vt = DLMS_DATA_TYPE_ARRAY;
                 va_push(value->Arr, tmp);

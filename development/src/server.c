@@ -2998,6 +2998,11 @@ int svr_handleCommand(
 {
     int ret = 0;
     unsigned char frame = 0;
+    if (dlms_useHdlc(settings->base.interfaceType) && bb_size(&settings->transaction.data) != 0)
+    {
+        //Get next frame.
+        frame = getNextSend(&settings->base, 0);
+    }
     switch (cmd)
     {
 #ifndef DLMS_IGNORE_SET
@@ -3186,6 +3191,12 @@ int svr_handleCommand(
     if (ret != 0)
     {
         return ret;
+    }
+    if ((settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC ||
+        settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E) &&
+        bb_available(data) > settings->hdlc->maximumInfoLengthTransmit)
+    {
+        settings->info.moreData |= DLMS_DATA_REQUEST_TYPES_FRAME;
     }
     ret = dlms_addFrame(&settings->base, frame, data, reply);
     if (cmd == DLMS_COMMAND_DISC ||
@@ -3550,7 +3561,15 @@ int svr_handleRequest2(
             ret = svr_reportError(settings, settings->info.command, DLMS_ERROR_CODE_OTHER_REASON, reply);
         }
     }
+    DLMS_COMMAND cmd = settings->info.command;
+    DLMS_DATA_REQUEST_TYPES moreData = settings->info.moreData;
     reply_clear2(&settings->info, 0);
+    // Save command if there is more data available.
+    // This is needed when Windows size is bigger than one.
+    if ((moreData & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
+    {
+        settings->transaction.command = cmd;
+    }
     settings->dataReceived = time_elapsed();
     return ret;
 }
@@ -3623,7 +3642,7 @@ int svr_invoke(
         if (end == NULL)
         {
             //Ignore deviation and status for single action script.
-            exec = *executed < time&& time_compareWithDiff(start, time, 0) == 0;
+            exec = *executed < time && time_compareWithDiff(start, time, 0) == 0;
         }
         else if (*executed < time)
         {
@@ -3689,7 +3708,7 @@ int svr_handleProfileGeneric(
         tm = time % object->capturePeriod;
         if (tm == 0)
         {
-            if (*next == (uint32_t) - 1 || *next > time + object->capturePeriod)
+            if (*next == (uint32_t)-1 || *next > time + object->capturePeriod)
             {
                 *next = time + object->capturePeriod;
             }
@@ -4143,7 +4162,7 @@ int svr_run(
     uint16_t pos;
     int ret = 0;
     gxObject* obj;
-    *next = (uint32_t) - 1;
+    *next = (uint32_t)-1;
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
     //profile Generic objects.
     for (pos = 0; pos != settings->base.objects.size; ++pos)

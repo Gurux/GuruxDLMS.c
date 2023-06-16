@@ -302,17 +302,25 @@ unsigned char checkFrame(
     // If U frame.
     if ((frame & 0x3) == 3)
     {
-        if (frame == 0x73 || frame == 0x93)
+        if (frame == 0x93)
         {
+            unsigned char isEcho = !settings->server && frame == 0x93 &&
+                (settings->senderFrame == 0x10 || settings->senderFrame == 0xfe) &&
+                settings->receiverFrame == 0xE;
             resetFrameSequence(settings);
+            return !isEcho;
+        }
+        if (frame == 0x73 && !settings->server)
+        {
+            return settings->senderFrame == 0xFE && settings->receiverFrame == 0xE;
         }
         return 1;
     }
     // If S -frame
-    if ((frame & 0x3) == 1)
+    if ((frame & 0x1) == 1)
     {
-        unsigned char ch = increaseReceiverSequence(settings->receiverFrame);
-        if ((frame & 0xE0) != (ch & 0xE0))
+        //If echo.
+        if (frame == (settings->senderFrame & 0xF1))
         {
             return 0;
         }
@@ -329,6 +337,28 @@ unsigned char checkFrame(
             settings->receiverFrame = frame;
             return 1;
         }
+        //If the final bit is not set.
+        if (frame == (expected & ~0x10) && settings->windowSizeRX != 1)
+        {
+            settings->receiverFrame = frame;
+            return 1;
+        }
+        //If Final bit is not set for the previous message.
+        if ((settings->receiverFrame & 0x10) == 0 && settings->windowSizeRX != 1)
+        {
+            expected = (unsigned char)(0x10 | increaseSendSequence(settings->receiverFrame));
+            if (frame == expected)
+            {
+                settings->receiverFrame = frame;
+                return 1;
+            }
+            //If the final bit is not set.
+            if (frame == (expected & ~0x10))
+            {
+                settings->receiverFrame = frame;
+                return 1;
+            }
+        }
     }
     //If answer for RR.
     else
@@ -338,6 +368,20 @@ unsigned char checkFrame(
         {
             settings->receiverFrame = frame;
             return 1;
+        }
+        if (frame == (expected & ~0x10))
+        {
+            settings->receiverFrame = frame;
+            return 1;
+        }
+        if (settings->windowSizeRX != 1)
+        {
+            //If HDLC window size is bigger than one.
+            if (frame == (expected | 0x10))
+            {
+                settings->receiverFrame = frame;
+                return 1;
+            }
         }
     }
     //Pre-established connections needs this.

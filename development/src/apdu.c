@@ -217,11 +217,11 @@ int apdu_generateApplicationContextName(
 #ifndef DLMS_IGNORE_HIGH_GMAC
 unsigned char useDedicatedKey(dlmsSettings* settings)
 {
+#ifndef DLMS_IGNORE_MALLOC
     if (settings->cipher.dedicatedKey == NULL)
     {
         return 0;
     }
-#ifndef DLMS_IGNORE_MALLOC
     return settings->cipher.dedicatedKey->size == 16;
 #else
     return memcmp(settings->cipher.dedicatedKey, EMPTY_KEY, sizeof(EMPTY_KEY)) != 0;

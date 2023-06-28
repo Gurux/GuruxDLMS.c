@@ -1536,7 +1536,7 @@ int obj_getAttributeIndexToRead(gxObject* object, gxByteBuffer* ba)
     else if (object->objectType == DLMS_OBJECT_TYPE_EXTENDED_REGISTER)
     {
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
-        if (!((gxExtendedRegister*)object)->unit == 0)
+        if (((gxExtendedRegister*)object)->unit != 0)
         {
             ret = bb_setUInt8(ba, 3);
         }

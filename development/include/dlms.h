@@ -55,7 +55,7 @@ extern "C" {
 
 #ifndef DLMS_IGNORE_HDLC
     //Is HDLC framing used.
-    unsigned char dlms_UseHdlc(DLMS_INTERFACE_TYPE type);
+    unsigned char dlms_useHdlc(DLMS_INTERFACE_TYPE type);
 
     /**
     * Get PDU as HDLC frame.

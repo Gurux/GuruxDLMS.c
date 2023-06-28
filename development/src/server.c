@@ -46,6 +46,7 @@
 #include "../include/gxmem.h"
 #include "../include/apdu.h"
 #include "../include/server.h"
+#include "../include/dlms.h"
 #include "../include/cosem.h"
 #include "../include/enums.h"
 #include "../include/gxset.h"
@@ -2998,11 +2999,19 @@ int svr_handleCommand(
 {
     int ret = 0;
     unsigned char frame = 0;
+#ifndef DLMS_IGNORE_MALLOC
     if (dlms_useHdlc(settings->base.interfaceType) && bb_size(&settings->transaction.data) != 0)
     {
         //Get next frame.
         frame = getNextSend(&settings->base, 0);
     }
+#else
+    if (dlms_useHdlc(settings->base.interfaceType))
+    {
+        //Get next frame.
+        frame = getNextSend(&settings->base, 0);
+    }
+#endif //DLMS_IGNORE_MALLOC
     switch (cmd)
     {
 #ifndef DLMS_IGNORE_SET

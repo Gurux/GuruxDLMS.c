@@ -61,6 +61,11 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     gxByteBuffer* reply;
     gxByteBuffer* pData;
     mes_clear(messages);
+    //Save default values.
+    settings->initializeMaxInfoTX = settings->maxInfoTX;
+    settings->initializeMaxInfoRX = settings->maxInfoRX;
+    settings->initializeWindowSizeTX = settings->windowSizeTX;
+    settings->initializeWindowSizeRX = settings->windowSizeRX;
     settings->connected = DLMS_CONNECTION_STATE_NONE;
     settings->isAuthenticationRequired = 0;
 #ifndef DLMS_IGNORE_PLC
@@ -272,6 +277,13 @@ int cl_aarqRequest(
     dlmsSettings* settings,
     message* messages)
 {
+    if (settings->proposedConformance == 0)
+    {
+        //Invalid conformance.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    //Save default values.
+    settings->initializePduSize = settings->maxPduSize;
     int ret;
     gxByteBuffer* pdu;
 #ifdef DLMS_IGNORE_MALLOC
@@ -1447,6 +1459,8 @@ int cl_releaseRequest2(dlmsSettings* settings, message* packets, unsigned char u
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }
     bb_clear(&bb);
+    //Restore default values.
+    settings->maxPduSize = settings->initializePduSize;
     return ret;
 }
 
@@ -1540,6 +1554,17 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
     }
+    if (dlms_useHdlc(settings->interfaceType))
+    {
+        //Restore default HDLC values.
+        settings->maxInfoTX = settings->initializeMaxInfoTX;
+        settings->maxInfoRX = settings->initializeMaxInfoRX;
+        settings->windowSizeTX = settings->initializeWindowSizeTX;
+        settings->windowSizeRX = settings->initializeWindowSizeRX;
+    }
+    //Restore default values.
+    settings->maxPduSize = settings->initializePduSize;
+    resetFrameSequence(settings);
     return ret;
 }
 

@@ -187,6 +187,16 @@ extern "C" {
         //Used max window size in RX.
         unsigned char windowSizeRX;
 
+        // Initialize PDU size that is restored after the connection is closed.
+        uint16_t initializePduSize;
+        //Initialized max info TX.
+        uint16_t initializeMaxInfoTX;
+        //Initialized max info RX.
+        uint16_t initializeMaxInfoRX;
+        //Initialized max window size in TX.
+        unsigned char initializeWindowSizeTX;
+        //Initialized max window size in RX.
+        unsigned char initializeWindowSizeRX;
 #ifndef DLMS_IGNORE_PLC
         //PLC settings.
         gxPlcSettings plcSettings;

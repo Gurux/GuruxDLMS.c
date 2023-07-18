@@ -86,7 +86,5 @@ void params_initLN(
     target->multipleBlocks = multipleBlocks;
     target->lastBlock = lastBlock;
     //Serialize data to this PDU.
-#ifdef DLMS_IGNORE_MALLOC
     target->serializedPdu = settings->serializedPdu;
-#endif //DLMS_IGNORE_MALLOC
 }

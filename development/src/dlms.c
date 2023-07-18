@@ -2986,7 +2986,11 @@ int dlms_getHdlcData(
         data->moreData = ((DLMS_DATA_REQUEST_TYPES)(data->moreData & ~DLMS_DATA_REQUEST_TYPES_FRAME));
     }
 
-    if (!preEstablished && !checkFrame(settings, *frame))
+    if (!preEstablished 
+#ifndef DLMS_IGNORE_HDLC_CHECK
+        && !checkFrame(settings, *frame)
+#endif //DLMS_IGNORE_HDLC_CHECK
+        )
     {
         reply->position = eopPos + 1;
         if (settings->server)
@@ -6058,23 +6062,22 @@ int dlms_getLnMessages(
     if (p->command == DLMS_COMMAND_DATA_NOTIFICATION ||
         p->command == DLMS_COMMAND_EVENT_NOTIFICATION)
     {
-        if ((p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
-        {
-            //If connection is established.
-            frame = 0x13;
-        }
-        else
-        {
-            frame = 0x3;
-        }
+        frame = 0x13;
     }
 #endif //DLMS_IGNORE_HDLC
 #ifdef DLMS_IGNORE_MALLOC
     pdu = p->serializedPdu;
 #else
     gxByteBuffer reply;
-    BYTE_BUFFER_INIT(&reply);
-    pdu = &reply;
+    if (p->serializedPdu == NULL)
+    {
+        BYTE_BUFFER_INIT(&reply);
+        pdu = &reply;
+    }
+    else
+    {
+        pdu = p->serializedPdu;
+    }
 #endif //DLMS_IGNORE_MALLOC
     do
     {
@@ -6099,6 +6102,10 @@ int dlms_getLnMessages(
             bb_clear(it);
 #else
             it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+            if (it == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
             BYTE_BUFFER_INIT(it);
 #endif //DLMS_IGNORE_MALLOC
             switch (p->settings->interfaceType)

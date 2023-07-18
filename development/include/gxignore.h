@@ -161,6 +161,13 @@ extern "C" {
 //GENERAL_CIPHERING is not used.
 //#define DLMS_IGNORE_GENERAL_CIPHERING
 
+/**
+*  Ignore HDLC Control field check.
+Some meters are sending invalid control field.
+Note! It's not recommended to use this.
+*/
+//#define DLMS_IGNORE_HDLC_CHECK
+
 // #define DLMS_ITALIAN_STANDARD
 // #define DLMS_INDONESIA_STANDARD
 

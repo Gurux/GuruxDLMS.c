@@ -1554,6 +1554,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
     }
+#ifndef DLMS_IGNORE_HDLC
     if (dlms_useHdlc(settings->interfaceType))
     {
         //Restore default HDLC values.
@@ -1562,6 +1563,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
         settings->windowSizeTX = settings->initializeWindowSizeTX;
         settings->windowSizeRX = settings->initializeWindowSizeRX;
     }
+#endif //DLMS_IGNORE_HDLC
     //Restore default values.
     settings->maxPduSize = settings->initializePduSize;
     resetFrameSequence(settings);

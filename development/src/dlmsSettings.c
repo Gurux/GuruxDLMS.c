@@ -152,9 +152,7 @@ void cl_init(
 #endif //DLMS_IGNORE_HIGH_GMAC
     settings->userId = -1;
     resetFrameSequence(settings);
-#ifdef DLMS_IGNORE_MALLOC
     settings->serializedPdu = NULL;
-#endif //DLMS_IGNORE_MALLOC
     oa_init(&settings->releasedObjects);
     settings->expectedSecurityPolicy = 0xFF;
     settings->expectedSecuritySuite = 0xFF;
@@ -290,6 +288,7 @@ unsigned char increaseSendSequence(
     return (unsigned char)((value & 0xF0) | ((value + 0x2) & 0xE));
 }
 
+#ifndef DLMS_IGNORE_HDLC_CHECK
 unsigned char checkFrame(
     dlmsSettings* settings,
     unsigned char frame)
@@ -396,6 +395,7 @@ unsigned char checkFrame(
 #endif
     return 0;
 }
+#endif //DLMS_IGNORE_HDLC_CHECK
 
 unsigned char getNextSend(
     dlmsSettings* settings, unsigned char first)

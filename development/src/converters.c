@@ -1448,7 +1448,7 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
     return ret;
 }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
-#ifndef DLMS_IGNORE_REGISTER_MONITOR
+#if !(defined(DLMS_IGNORE_REGISTER_MONITOR) && defined(DLMS_IGNORE_LIMITER))
 void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
 {
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -1466,6 +1466,9 @@ void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
     bb_addString(ba, " ");
     bb_addIntAsString(ba, item->scriptSelector);
 }
+#endif //!(defined(DLMS_IGNORE_REGISTER_MONITOR) && defined(DLMS_IGNORE_LIMITER))
+
+#ifndef DLMS_IGNORE_REGISTER_MONITOR
 int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
 {
     int ret;

@@ -235,10 +235,8 @@ extern "C" {
         unsigned char preEstablishedSystemTitle[8];
 #endif //DLMS_IGNORE_MALLOC
 
-        //Client serializes data to this PDU when malloc is not used.
-#ifdef DLMS_IGNORE_MALLOC
+        //Client serializes data to this PDU when malloc is not used or heap size is limited.
         gxByteBuffer* serializedPdu;
-#endif //DLMS_IGNORE_MALLOC
         //Auto increase Invoke ID.
         unsigned char autoIncreaseInvokeID;
         //Client adds objects that are not found from the association view here so they are released when client is clear.
@@ -370,9 +368,11 @@ extern "C" {
     void resetFrameSequence(
         dlmsSettings* settings);
 
+#ifndef DLMS_IGNORE_HDLC_CHECK
     unsigned char checkFrame(
         dlmsSettings* settings,
         unsigned char frame);
+#endif //DLMS_IGNORE_HDLC_CHECK
 
     void updateInvokeId(
         dlmsServerSettings* settings, unsigned char value);

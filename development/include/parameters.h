@@ -171,9 +171,7 @@ extern "C" {
         */
         unsigned char invokeId;
         //Serialize data to this PDU.
-#ifdef DLMS_IGNORE_MALLOC
         gxByteBuffer* serializedPdu;
-#endif //DLMS_IGNORE_MALLOC
     } gxLNParameters;
 
     void params_initLN(

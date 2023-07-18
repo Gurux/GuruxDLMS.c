@@ -634,11 +634,19 @@ int cip_crypt(
 #endif //DLMS_IGNORE_MALLOC
 {
     int ret;
+#ifdef GX_DLMS_MICROCONTROLLER
+    static uint32_t aes[61] = { 0 };
+    static unsigned char H[16] = { 0 };
+    static unsigned char J0[16] = { 0 };
+    static unsigned char S[16] = { 0 };
+    static unsigned char NONSE[18] = { 0 };
+#else
     uint32_t aes[61] = { 0 };
     unsigned char H[16] = { 0 };
     unsigned char J0[16] = { 0 };
     unsigned char S[16] = { 0 };
     unsigned char NONSE[18] = { 0 };
+#endif //GX_DLMS_MICROCONTROLLER
     gxByteBuffer nonse;
     if (memcmp(systemTitle, EMPTY_SYSTEM_TITLE, 8) == 0)
     {
@@ -760,7 +768,9 @@ int cip_crypt(
                     //Decrypt the data.
                     aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
                 }
-                cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
+                unsigned char* p = input->data;
+                p += input->size;
+                cip_gctr(aes, J0, S, sizeof(S), p);
                 if (encrypt)
                 {
                     input->size += 12;
@@ -845,12 +855,16 @@ int cip_decrypt(
     uint64_t* invocationCounter)
 #endif //DLMS_IGNORE_MALLOC
 {
+#ifdef GX_DLMS_MICROCONTROLLER
+    static unsigned char systemTitle[8];
+#else
+    unsigned char systemTitle[8];
+#endif //GX_DLMS_MICROCONTROLLER
     uint16_t length;
     int ret;
     unsigned char ch;
     uint32_t frameCounter;
     DLMS_COMMAND cmd;
-    unsigned char systemTitle[8];
     if (data == NULL || data->size - data->position < 2)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;

@@ -1507,7 +1507,7 @@ int readProfileGeneric(
     gxArray captureObjects;
     gxTarget CAPTURE_OBJECT[10] = { 0 };
     ARR_ATTACH(captureObjects, CAPTURE_OBJECT, 0);
-    char fileName[20];
+    char fileName[30];
     getProfileGenericFileName(pg, fileName);
     if (ret == DLMS_ERROR_CODE_OK)
     {

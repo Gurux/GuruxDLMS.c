@@ -1531,7 +1531,7 @@ int readProfileGeneric(
     int ret = 0;
     gxArray captureObjects;
     arr_init(&captureObjects);
-    char fileName[20];
+    char fileName[30];
     getProfileGenericFileName(pg, fileName);
     if (ret == DLMS_ERROR_CODE_OK)
     {

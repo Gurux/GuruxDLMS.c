@@ -1747,7 +1747,7 @@ int addLimiter()
         //Add emergency profile group IDs.
         GROUPS[0] = 1;
         GROUPS[1] = 2;
-        VA_ATTACH(limiter.emergencyProfileGroupIDs, GROUPS, 2);
+        ARR_ATTACH(limiter.emergencyProfileGroupIDs, GROUPS, 2);
     }
     return ret;
 }
@@ -1985,10 +1985,7 @@ int testobjectSerialization(gxObject* obj)
     int ret = ser_saveObject(&serializerSettings, obj);
     serializerSettings.position = 0;
     ret = ser_loadObject(&settings.base, &serializerSettings, obj);
-    if (ret != 0)
-    {
-        return ret;
-    }
+    return ret;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2370,7 +2367,7 @@ int readProfileGeneric(
     gxArray captureObjects;
     gxTarget CAPTURE_OBJECT[10] = { 0 };
     ARR_ATTACH(captureObjects, CAPTURE_OBJECT, 0);
-    char fileName[20];
+    char fileName[30];
     ret = getProfileGenericFileName(pg, fileName);
     if (ret == DLMS_ERROR_CODE_OK)
     {

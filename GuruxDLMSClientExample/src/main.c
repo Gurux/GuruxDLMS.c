@@ -522,7 +522,7 @@ int connectMeter(int argc, char* argv[])
     char* p, * readObjects = NULL, * outputFile = NULL;
     int index, a, b, c, d, e, f;
     char* invocationCounter = NULL;
-    while ((opt = getopt(argc, argv, "h:p:c:s:r:i:It:a:p:wP:g:S:C:v:T:A:B:D:l:F:o:")) != -1)
+    while ((opt = getopt(argc, argv, "h:p:c:s:r:i:It:a:p:wP:g:S:C:v:T:A:B:D:l:F:o:V:")) != -1)
     {
         switch (opt)
         {
@@ -624,6 +624,25 @@ int connectMeter(int argc, char* argv[])
                 return 1;
             }
             break;
+        case 'V':
+            if (strcasecmp("Suite0", optarg) == 0)
+            {
+                con.settings.cipher.suite = DLMS_SECURITY_SUITE_V0;
+            }
+            else if (strcasecmp("Suite1", optarg) == 0)
+            {
+                con.settings.cipher.suite = DLMS_SECURITY_SUITE_V1;
+            }
+            else if (strcasecmp("Suite2", optarg) == 0)
+            {
+                con.settings.cipher.suite = DLMS_SECURITY_SUITE_V2;
+            }
+            else
+            {
+                printf("Invalid Security suite option '%s'. (Suite0, Suite1, Suite2)", optarg);
+                return 1;
+            }
+            break;
         case 'T':
             bb_clear(&con.settings.cipher.systemTitle);
             bb_addHexString(&con.settings.cipher.systemTitle, optarg);
@@ -636,7 +655,8 @@ int connectMeter(int argc, char* argv[])
         case 'A':
             bb_clear(&con.settings.cipher.authenticationKey);
             bb_addHexString(&con.settings.cipher.authenticationKey, optarg);
-            if (con.settings.cipher.authenticationKey.size != 16)
+            if (con.settings.cipher.authenticationKey.size != 16 &&
+                con.settings.cipher.authenticationKey.size != 32)
             {
                 printf("Invalid authentication key '%s'.", optarg);
                 return 1;
@@ -645,7 +665,8 @@ int connectMeter(int argc, char* argv[])
         case 'B':
             bb_clear(&con.settings.cipher.blockCipherKey);
             bb_addHexString(&con.settings.cipher.blockCipherKey, optarg);
-            if (con.settings.cipher.blockCipherKey.size != 16)
+            if (con.settings.cipher.blockCipherKey.size != 16 &&
+                con.settings.cipher.blockCipherKey.size != 32)
             {
                 printf("Invalid block cipher key '%s'.", optarg);
                 return 1;

@@ -307,9 +307,9 @@ void allocateProfileGenericBuffer(const char* fileName, uint32_t size)
                     break;
                 }
             }
-    }
+        }
         fclose(f);
-}
+    }
 }
 
 int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
@@ -425,9 +425,9 @@ uint16_t getProfileGenericBufferMaxRowCount(
             //Decrease current index and total amount of the entries.
             count -= 4;
             count /= rowSize;
-    }
+        }
         fclose(f);
-}
+    }
     return count;
 }
 
@@ -898,9 +898,9 @@ int addLimiter()
     if ((ret = INIT_OBJECT(limiter, DLMS_OBJECT_TYPE_LIMITER, ln)) == 0)
     {
         limiter.monitoredValue = BASE(activePowerL1);
-        limiter.selectedAttributeIndex = 2;       
+        limiter.selectedAttributeIndex = 2;
         //Add emergency profile group IDs.
-        dlmsVARIANT*  tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        dlmsVARIANT* tmp = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         var_init(tmp);
         var_setUInt16(tmp, 1);
         va_push(&limiter.emergencyProfileGroupIDs, tmp);
@@ -1860,7 +1860,7 @@ int svr_InitObjects(
         (ret = addGprsSetup()) != 0 ||
         (ret = addImageTransfer()) != 0 ||
         (ret = addCompactData(&settings->base, &settings->base.objects)) != 0 ||
-        (ret = addLimiter()) != 0 ||        
+        (ret = addLimiter()) != 0 ||
         (ret = oa_verify(&settings->base.objects)) != 0 ||
         (ret = svr_initialize(settings)) != 0)
     {
@@ -2125,8 +2125,8 @@ int getProfileGenericDataByRangeFromRingBuffer(
                 }
             }
             fclose(f);
+        }
     }
-}
     return ret;
 }
 
@@ -2140,7 +2140,7 @@ int readProfileGeneric(
     int ret = 0;
     gxArray captureObjects;
     arr_init(&captureObjects);
-    char fileName[20];
+    char fileName[30];
     getProfileGenericFileName(pg, fileName);
     if (ret == DLMS_ERROR_CODE_OK)
     {
@@ -2232,8 +2232,8 @@ int readProfileGeneric(
             DLMS_DATA_TYPE dataTypes[10];
             if (f != NULL)
             {
-                getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
-        }
+               ret = getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
+            }
             //Append data.
             if (ret == 0 && dataSize != 0)
             {
@@ -2309,8 +2309,8 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
+        }
     }
-}
     return ret;
 }
 
@@ -2531,9 +2531,9 @@ void allocateImageTransfer(const char* fileName, uint32_t size)
                     break;
                 }
             }
-    }
+        }
         fclose(f);
-}
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

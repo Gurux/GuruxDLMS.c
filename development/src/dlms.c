@@ -4977,7 +4977,6 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
             }
         }
         data->data.size = bb.size + index;
-        data->data.position += bb.position;
         //If target is sending data ciphered using different security policy.
         if (settings->cipher.security != security)
         {
@@ -5627,7 +5626,7 @@ int dlms_getSNPdu(
             &p->settings->cipher,
             p->settings->cipher.security,
             DLMS_COUNT_TYPE_PACKET,
-            p->settings->cipher.invocationCounter + 1,
+            p->settings->cipher.invocationCounter,
             dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
 #ifndef DLMS_IGNORE_MALLOC
             p->settings->cipher.systemTitle.data,
@@ -6012,7 +6011,6 @@ int dlms_getLNPdu(
 #endif //DLMS_IGNORE_MALLOC
                 key,
                 reply);
-            ++p->settings->cipher.invocationCounter;
         }
 #endif //DLMS_IGNORE_HIGH_GMAC1
 
@@ -6660,9 +6658,9 @@ int dlms_secure(
             data);
         if (ret == 0)
         {
-            if ((ret = bb_setUInt8(reply, DLMS_SECURITY_AUTHENTICATION)) != 0 ||
+            if ((ret = bb_setUInt8(reply, DLMS_SECURITY_AUTHENTICATION | settings->cipher.suite)) != 0 ||
                 (ret = bb_setUInt32(reply, ic)) != 0 ||
-                (ret = bb_set2(reply, data, 0, data->size)) != 0)
+                (ret = bb_set2(reply, data, data->size - 12, 12)) != 0)
             {
 
             }

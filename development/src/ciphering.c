@@ -290,53 +290,35 @@ int cip_int(uint32_t* rk,
         }
         return 0;
     }
-
+    if (keyBits != 256)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
     rk[4] = GETU32(cipherKey + 16);
     rk[5] = GETU32(cipherKey + 20);
-
-    if (keyBits == 192)
-    {
-        for (i = 0; i < 8; i++)
-        {
-            temp = rk[5];
-            rk[6] = rk[0] ^ TE421(temp) ^ TE432(temp) ^
-                TE443(temp) ^ TE414(temp) ^ RCON(i);
-            rk[7] = rk[1] ^ rk[6];
-            rk[8] = rk[2] ^ rk[7];
-            rk[9] = rk[3] ^ rk[8];
-            if (i == 7)
-                return 12;
-            rk[10] = rk[4] ^ rk[9];
-            rk[11] = rk[5] ^ rk[10];
-            rk += 6;
-        }
-    }
-
     rk[6] = GETU32(cipherKey + 24);
     rk[7] = GETU32(cipherKey + 28);
-
-    if (keyBits == 256)
+    for (i = 0; i < 7; i++)
     {
-        for (i = 0; i < 7; i++)
+        temp = rk[7];
+        rk[8] = rk[0] ^ TE421(temp) ^ TE432(temp) ^
+            TE443(temp) ^ TE414(temp) ^ RCON(i);
+        rk[9] = rk[1] ^ rk[8];
+        rk[10] = rk[2] ^ rk[9];
+        rk[11] = rk[3] ^ rk[10];
+        if (i == 6)
         {
-            temp = rk[7];
-            rk[8] = rk[0] ^ TE421(temp) ^ TE432(temp) ^
-                TE443(temp) ^ TE414(temp) ^ RCON(i);
-            rk[9] = rk[1] ^ rk[8];
-            rk[10] = rk[2] ^ rk[9];
-            rk[11] = rk[3] ^ rk[10];
-            if (i == 6)
-                return 14;
-            temp = rk[11];
-            rk[12] = rk[4] ^ TE411(temp) ^ TE422(temp) ^
-                TE433(temp) ^ TE444(temp);
-            rk[13] = rk[5] ^ rk[12];
-            rk[14] = rk[6] ^ rk[13];
-            rk[15] = rk[7] ^ rk[14];
-            rk += 8;
+            return 0;
         }
+        temp = rk[11];
+        rk[12] = rk[4] ^ TE411(temp) ^ TE422(temp) ^
+            TE433(temp) ^ TE444(temp);
+        rk[13] = rk[5] ^ rk[12];
+        rk[14] = rk[6] ^ rk[13];
+        rk[15] = rk[7] ^ rk[14];
+        rk += 8;        
     }
-    return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    return DLMS_ERROR_CODE_OK;
 }
 
 //Arduino DOIT ESP32 uses aes_encrypt. For that reason aes_Encrypt is used.
@@ -600,7 +582,7 @@ static void aes_gcm_ghash(const unsigned char* H, const unsigned char* aad, int 
     unsigned char len_buf[16];
     cip_getGHash(H, aad, aad_len, S);
     cip_getGHash(H, crypt, crypt_len, S);
-    //Here is expected that data is newer longger than 32 bit.
+    //Here is expected that data is never longer than 32 bit.
     //This is done because microcontrollers show warning here.
     PUT32(len_buf, (uint32_t)0);
     PUT32(len_buf + 4, (uint32_t)(aad_len * 8));
@@ -639,13 +621,15 @@ int cip_crypt(
     static unsigned char H[16] = { 0 };
     static unsigned char J0[16] = { 0 };
     static unsigned char S[16] = { 0 };
-    static unsigned char NONSE[18] = { 0 };
+    static unsigned char NONSE[16] = { 0 };
+    memset(H, 0, sizeof(H));
+    memset(S, 0, sizeof(S));
 #else
     uint32_t aes[61] = { 0 };
     unsigned char H[16] = { 0 };
     unsigned char J0[16] = { 0 };
     unsigned char S[16] = { 0 };
-    unsigned char NONSE[18] = { 0 };
+    unsigned char NONSE[16] = { 0 };
 #endif //GX_DLMS_MICROCONTROLLER
     gxByteBuffer nonse;
     if (memcmp(systemTitle, EMPTY_SYSTEM_TITLE, 8) == 0)
@@ -664,12 +648,18 @@ int cip_crypt(
 #else
         key,
 #endif //DLMS_IGNORE_MALLOC
-        16 * 8)) != 0)
+        settings->suite == DLMS_SECURITY_SUITE_V2 ? 32 * 8 : 16 * 8)) != 0)
     {
         return ret;
     }
-    aes[60] = 10;
-
+    if (settings->suite == DLMS_SECURITY_SUITE_V2)
+    {
+        aes[60] = 14;
+    }
+    else
+    {
+        aes[60] = 10;
+    }
     //Hash subkey.
     aes_Encrypt(aes, aes[60], H, H);
     cip_init_j0(nonse.data, (unsigned char)nonse.size, H, J0);
@@ -681,40 +671,33 @@ int cip_crypt(
         ret = bb_set(&nonse, input->data + input->size - 12, 12);
         input->size -= 12;
     }
-
+    unsigned char offset;
+    if (settings->suite == DLMS_SECURITY_SUITE_V2)
+    {
+        offset = 33;
+    }
+    else
+    {
+        offset = 17;
+    }
     if (security == DLMS_SECURITY_AUTHENTICATION)
     {
-        if ((ret = bb_move(input, input->position, 17, bb_available(input))) == 0)
+        if ((ret = bb_move(input, input->position, offset, bb_available(input))) == 0)
         {
             input->position = 0;
-            bb_setUInt8ByIndex(input, 0, security);
+            bb_setUInt8ByIndex(input, 0, security | settings->suite);
 #ifndef DLMS_IGNORE_MALLOC
-            memcpy(input->data + 1, settings->authenticationKey.data, 16);
+            memcpy(input->data + 1, settings->authenticationKey.data, settings->authenticationKey.size);
 #else
-            memcpy(input->data + 1, settings->authenticationKey, 16);
+            memcpy(input->data + 1, settings->authenticationKey, offset - 1);
 #endif //DLMS_IGNORE_MALLOC
             aes_gcm_ghash(H, input->data, input->size, input->data, 0, S);
-            if ((ret = bb_move(input, 17, 0, input->size - 17)) == 0)
+            if ((ret = bb_move(input, offset, 0, input->size - offset)) == 0)
             {
                 cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
                 if (encrypt)
                 {
-                    if (type == DLMS_COUNT_TYPE_TAG)
-                    {
-                        if (input->size == 8)
-                        {
-                            input->size += 8;
-                            ret = bb_move(input, 8, 0, 12);
-                        }
-                        else
-                        {
-                            ret = bb_move(input, input->size, 0, 12);
-                        }
-                    }
-                    else
-                    {
-                        input->size += 12;
-                    }
+                    input->size += 12;                    
                 }
                 else
                 {
@@ -742,6 +725,29 @@ int cip_crypt(
         {
             //Encrypt the data.
             aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+            if ((ret = bb_move(input, input->position, offset, bb_available(input))) == 0)
+            {
+                input->position = 0;
+                ret = bb_setUInt8ByIndex(input, 0, security | settings->suite);
+#ifndef DLMS_IGNORE_MALLOC
+                memcpy(input->data + 1, settings->authenticationKey.data, settings->authenticationKey.size);
+#else
+                memcpy(input->data + 1, settings->authenticationKey, offset - 1);
+#endif //DLMS_IGNORE_MALLOC
+                aes_gcm_ghash(H, input->data, offset, input->data + offset, input->size - offset, S);
+                if ((ret = bb_move(input, offset, 0, input->size - offset)) == 0)
+                {
+                    if (!encrypt)
+                    {
+                        //Decrypt the data.
+                        aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+                    }
+                    unsigned char* p = input->data;
+                    p += input->size;
+                    cip_gctr(aes, J0, S, sizeof(S), p);
+                    input->size += 12;
+                }
+            }
         }
         else
         {
@@ -750,33 +756,15 @@ int cip_crypt(
             {
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
             }
-        }
-        if ((ret = bb_move(input, input->position, 17, bb_available(input))) == 0)
-        {
+            //Decrypt the data.
+            aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+            ret = bb_move(input, input->position, 0, bb_available(input));
             input->position = 0;
-            ret = bb_setUInt8ByIndex(input, 0, security);
-#ifndef DLMS_IGNORE_MALLOC
-            memcpy(input->data + 1, settings->authenticationKey.data, 16);
-#else
-            memcpy(input->data + 1, settings->authenticationKey, 16);
-#endif //DLMS_IGNORE_MALLOC
-            aes_gcm_ghash(H, input->data, 17, input->data + 17, input->size - 17, S);
-            if ((ret = bb_move(input, 17, 0, input->size - 17)) == 0)
-            {
-                if (!encrypt)
-                {
-                    //Decrypt the data.
-                    aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
-                }
-                unsigned char* p = input->data;
-                p += input->size;
-                cip_gctr(aes, J0, S, sizeof(S), p);
-                if (encrypt)
-                {
-                    input->size += 12;
-                }
-            }
         }
+    }
+    if (ret == 0 && encrypt)
+    {
+        ++settings->invocationCounter;
     }
     if (ret == 0 && encrypt && type == DLMS_COUNT_TYPE_PACKET)
     {
@@ -790,7 +778,7 @@ int cip_crypt(
                 bb_set(&nonse, systemTitle, 8);
             }
             if ((ret = hlp_setObjectCount(5 + input->size, &nonse)) == 0 &&
-                (ret = bb_setUInt8(&nonse, security)) == 0 &&
+                (ret = bb_setUInt8(&nonse, security | settings->suite)) == 0 &&
                 (ret = bb_setUInt32(&nonse, frameCounter)) == 0 &&
                 (ret = bb_insert(nonse.data, nonse.size, input, 0)) == 0)
             {

@@ -366,7 +366,6 @@ int svr_generateExceptionResponse(
 #endif //DLMS_IGNORE_MALLOC
             key,
             data);
-        ++settings->cipher.invocationCounter;
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
 #ifndef DLMS_IGNORE_HDLC
@@ -1291,7 +1290,12 @@ int svr_getRequestNormal(
             vec_clear(arr);
             return ret;
         }
+        bb_clear(data);
 #endif //DLMS_IGNORE_MALLOC
+    }
+    else
+    {
+        bb_clear(data);
     }
     ret = oa_findByLN(&settings->base.objects, (DLMS_OBJECT_TYPE)ci, ln, &e->target);
     if (ret != 0)
@@ -1306,7 +1310,6 @@ int svr_getRequestNormal(
     {
         ret = svr_findObject(&settings->base, (DLMS_OBJECT_TYPE)ci, 0, ln, e);
     }
-    bb_clear(data);
     if (e->target == NULL)
     {
         // Access Error : Device reports a undefined object.
@@ -3006,7 +3009,7 @@ int svr_handleCommand(
         frame = getNextSend(&settings->base, 0);
     }
 #else
-    if (dlms_useHdlc(settings->base.interfaceType))
+    if (dlms_useHdlc(settings->base.interfaceType) && bb_size(reply) != 0)
     {
         //Get next frame.
         frame = getNextSend(&settings->base, 0);

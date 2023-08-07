@@ -61,7 +61,7 @@ typedef struct
 #ifndef DLMS_IGNORE_MALLOC
     gxByteBuffer blockCipherKey;
 #else
-    unsigned char blockCipherKey[16];
+    unsigned char blockCipherKey[32];
 #endif //DLMS_IGNORE_MALLOC
 
     /**
@@ -80,14 +80,14 @@ typedef struct
 #ifndef DLMS_IGNORE_MALLOC
     gxByteBuffer authenticationKey;
 #else
-    unsigned char authenticationKey[16];
+    unsigned char authenticationKey[32];
 #endif //DLMS_IGNORE_MALLOC
 
     //Dedicated key.
 #ifndef DLMS_IGNORE_MALLOC
     gxByteBuffer* dedicatedKey;
 #else
-    unsigned char dedicatedKey[16];
+    unsigned char dedicatedKey[32];
 #endif //DLMS_IGNORE_MALLOC
 
 } ciphering;

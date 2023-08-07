@@ -2925,7 +2925,7 @@ int ser_saveLimiter(
     uint16_t pos, count;
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
-    dlmsVARIANT* it;
+    uint16_t* it;
     if (!isAttributeSet(serializeSettings, ignored, 2))
     {
         if ((ret = ser_set(serializeSettings, obj_getLogicalName(object->monitoredValue), 6
@@ -2964,8 +2964,8 @@ int ser_saveLimiter(
             for (pos = 0; pos != object->emergencyProfileGroupIDs.size; ++pos)
             {
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
-                if ((ret = arr_getByIndex4(&object->emergencyProfileGroupIDs, pos, (void**)&it, sizeof(dlmsVARIANT), 0)) != 0 ||
-                    (ret = ser_saveBytes(it, serializeSettings)) != 0)
+                if ((ret = arr_getByIndex4(&object->emergencyProfileGroupIDs, pos, (void**)&it, sizeof(uint16_t), 0)) != 0 ||
+                    (ret = ser_saveUInt16(serializeSettings, it)) != 0)
                 {
                     break;
                 }

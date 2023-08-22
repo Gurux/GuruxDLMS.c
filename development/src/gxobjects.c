@@ -679,7 +679,7 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_DATA
 #ifndef DLMS_IGNORE_REGISTER
         case DLMS_OBJECT_TYPE_REGISTER:
-            var_clear(&((gxData*)object)->value);
+            var_clear(&((gxRegister*)object)->value);
             break;
 #endif //DLMS_IGNORE_REGISTER
 #ifndef DLMS_IGNORE_CLOCK

@@ -57,6 +57,11 @@ extern "C" {
         gxReplyData* notify,
         unsigned char* isNotify);
 
+// Get size of the frame.
+// size: Size of received bytes on the frame.
+// Returns: Zero if succeeded, or rccurred error code.
+    int cl_getFrameSize(dlmsSettings* settings, gxByteBuffer* data, uint32_t* size);
+
 #ifndef DLMS_IGNORE_HDLC
     int cl_snrmRequest(
         dlmsSettings* settings,
@@ -65,11 +70,6 @@ extern "C" {
     int cl_parseUAResponse(
         dlmsSettings* settings,
         gxByteBuffer* data);
-
-    // Get size of the frame.
-    // size: Size of received bytes on the frame.
-    // Returns: Zero if succeeded, or rccurred error code.
-    int cl_getFrameSize(dlmsSettings* settings, gxByteBuffer* data, uint32_t* size);
 
     // Returns the number of bytes to read before the frame is complete.
     // When WRAPPER is used this method can be used to check how many bytes we need to read.
@@ -130,7 +130,7 @@ extern "C" {
 
     int cl_readLN(
         dlmsSettings* settings,
-        unsigned char* name,
+        const unsigned char* name,
         DLMS_OBJECT_TYPE interfaceClass,
         unsigned char attributeOrdinal,
         gxByteBuffer* data,
@@ -217,7 +217,7 @@ extern "C" {
 
     int cl_writeLN(
         dlmsSettings* settings,
-        unsigned char* name,
+        const unsigned char* name,
         DLMS_OBJECT_TYPE interfaceClass,
         unsigned char index,
         dlmsVARIANT* data,
@@ -341,7 +341,7 @@ extern "C" {
         */
     int cl_methodLN(
         dlmsSettings* settings,
-        unsigned char* name,
+        const unsigned char* name,
         DLMS_OBJECT_TYPE objectType,
         unsigned char index,
         dlmsVARIANT* data,

@@ -299,8 +299,21 @@ int cl_aarqRequest(
     bb_clear(pdu);
 #else
     gxByteBuffer buff;
-    BYTE_BUFFER_INIT(&buff);
+#ifdef GX_DLMS_MICROCONTROLLER
+    static unsigned char GX_AARQ_PDU[100];
+    if ((ret = bb_attach(&buff, GX_AARQ_PDU, 0, sizeof(GX_AARQ_PDU))) != 0)
+    {
+        return ret;
+    }
     pdu = &buff;
+#else
+    BYTE_BUFFER_INIT(&buff);
+    if ((ret = bb_capacity(&buff, 100)) != 0)
+    {
+        return ret;
+    }
+    pdu = &buff;
+#endif
 #endif //DLMS_IGNORE_MALLOC
 
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
@@ -391,16 +404,15 @@ int cl_getApplicationAssociationRequest(
     gxByteBuffer challenge;
     gxByteBuffer* pw;
     dlmsVARIANT data;
-#ifdef DLMS_IGNORE_MALLOC
 #ifndef DLMS_IGNORE_HIGH_GMAC
     gxByteBuffer pw2;
 #endif //DLMS_IGNORE_HIGH_GMAC
-    unsigned char tmp[MAX_CHALLENGE_SIZE];
-    bb_attach(&challenge, tmp, 0, sizeof(tmp));
+#ifndef GX_DLMS_MICROCONTROLLER
+    unsigned char APPLICATION_ASSOCIATION_REQUEST[32];
 #else
-    BYTE_BUFFER_INIT(&challenge);
-#endif //DLMS_IGNORE_MALLOC
-
+    static unsigned char APPLICATION_ASSOCIATION_REQUEST[32];
+#endif //DLMS_IGNORE_HIGH_GMAC
+    bb_attach(&challenge, APPLICATION_ASSOCIATION_REQUEST, 0, sizeof(APPLICATION_ASSOCIATION_REQUEST));
     if (settings->authentication != DLMS_AUTHENTICATION_HIGH_ECDSA &&
 #ifndef DLMS_IGNORE_HIGH_GMAC
         settings->authentication != DLMS_AUTHENTICATION_HIGH_GMAC &&
@@ -439,22 +451,11 @@ int cl_getApplicationAssociationRequest(
     {
         var_init(&data);
         data.vt = DLMS_DATA_TYPE_OCTET_STRING;
-#ifdef DLMS_IGNORE_MALLOC
         data.byteArr = &challenge;
-        if ((ret = bb_move(data.byteArr, 0, 2, data.byteArr->size)) == 0 &&
-            (ret = bb_setUInt8ByIndex(data.byteArr, 0, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
-            (ret = bb_setUInt8ByIndex(data.byteArr, 1, (unsigned char)(data.byteArr->size - 2))) == 0)
-
-#else
-        data.byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-        BYTE_BUFFER_INIT(data.byteArr);
-        if ((ret = bb_set2(data.byteArr, &challenge, 0, challenge.size)) == 0 &&
-            (ret = bb_clear(&challenge)) == 0)
-#endif //DLMS_IGNORE_MALLOC
         {
             if (settings->useLogicalNameReferencing)
             {
-                unsigned char LN[6] = { 0, 0, 40, 0, 0, 255 };
+                static const unsigned char LN[6] = { 0, 0, 40, 0, 0, 255 };
                 ret = cl_methodLN(settings, LN, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME,
                     1, &data, messages);
             }
@@ -488,12 +489,11 @@ int cl_parseApplicationAssociationResponse(
 #endif //DLMS_IGNORE_HIGH_GMAC
     int ret;
     uint32_t ic = 0;
-#ifdef DLMS_IGNORE_MALLOC
     gxByteBuffer value;
-    unsigned char tmp[MAX_CHALLENGE_SIZE];
-    unsigned char tmp2[MAX_CHALLENGE_SIZE];
+    static unsigned char tmp[MAX_CHALLENGE_SIZE];
+    static unsigned char CHALLENGE_BUFF[MAX_CHALLENGE_SIZE];
     bb_attach(&value, tmp, 0, sizeof(tmp));
-    bb_attach(&challenge, tmp2, 0, sizeof(tmp2));
+    bb_attach(&challenge, CHALLENGE_BUFF, 0, sizeof(CHALLENGE_BUFF));
     if ((ret = cosem_getOctetString(reply, &value)) != 0)
     {
         settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
@@ -501,20 +501,6 @@ int cl_parseApplicationAssociationResponse(
         return DLMS_ERROR_CODE_AUTHENTICATION_FAILURE;
     }
     empty = value.size == 0;
-#else
-    gxDataInfo info;
-    dlmsVARIANT value;
-    var_init(&value);
-    di_init(&info);
-    if ((ret = dlms_getData(reply,
-        &info,
-        &value)) != 0)
-    {
-        return ret;
-    }
-    empty = value.vt == DLMS_DATA_TYPE_NONE;
-    BYTE_BUFFER_INIT(&challenge);
-#endif //DLMS_IGNORE_MALLOC
     if (!empty)
     {
 #ifndef DLMS_IGNORE_HIGH_GMAC
@@ -523,18 +509,10 @@ int cl_parseApplicationAssociationResponse(
             unsigned char ch;
             bb_attach(&bb2, settings->sourceSystemTitle, sizeof(settings->sourceSystemTitle), sizeof(settings->sourceSystemTitle));
             secret = &bb2;
-#ifdef DLMS_IGNORE_MALLOC
             if ((ret = bb_set(&challenge, value.data, value.size)) != 0 ||
-#else
-            if ((ret = bb_set(&challenge, value.byteArr->data, value.byteArr->size)) != 0 ||
-#endif //DLMS_IGNORE_MALLOC
                 (ret = bb_getUInt8(&challenge, &ch)) != 0 ||
                 (ret = bb_getUInt32(&challenge, &ic)) != 0)
             {
-#ifndef DLMS_IGNORE_MALLOC
-                var_clear(&value);
-#endif //DLMS_IGNORE_MALLOC
-                bb_clear(&challenge);
                 return ret;
             }
             bb_clear(&challenge);
@@ -551,32 +529,17 @@ int cl_parseApplicationAssociationResponse(
             secret,
             &challenge)) != 0)
         {
-#ifndef DLMS_IGNORE_MALLOC
-            var_clear(&value);
-#endif //DLMS_IGNORE_MALLOC
-            bb_clear(&challenge);
             return ret;
         }
-#ifdef DLMS_IGNORE_MALLOC
         equals = bb_compare(
             &challenge,
             value.data,
             value.size);
-#else
-        equals = bb_compare(
-            &challenge,
-            value.byteArr->data,
-            value.byteArr->size);
-#endif //DLMS_IGNORE_MALLOC
     }
     else
     {
         // Server did not accept CtoS.
     }
-#ifndef DLMS_IGNORE_MALLOC
-    var_clear(&value);
-    bb_clear(&challenge);
-#endif //DLMS_IGNORE_MALLOC
     if (!equals)
     {
         settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
@@ -592,7 +555,7 @@ int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
     int ret;
     if (settings->useLogicalNameReferencing)
     {
-        static unsigned char ln[] = { 0, 0, 40, 0, 0, 0xFF };
+        static const unsigned char ln[] = { 0, 0, 40, 0, 0, 0xFF };
         ret = cl_readLN(settings, ln, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, 2, NULL, messages);
     }
     else
@@ -797,7 +760,7 @@ int cl_readSN(
 
 int cl_readLN(
     dlmsSettings* settings,
-    unsigned char* name,
+    const unsigned char* name,
     DLMS_OBJECT_TYPE objectType,
     unsigned char attributeOrdinal,
     gxByteBuffer* data,
@@ -1005,7 +968,7 @@ int cl_getKeepAlive(
     int ret;
     if (settings->useLogicalNameReferencing)
     {
-        unsigned char ln[6] = { 0, 0, 40, 0, 0, 255 };
+        static const unsigned char ln[6] = { 0, 0, 40, 0, 0, 255 };
         ret = cl_readLN(settings, ln, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, 1, NULL, messages);
     }
     else
@@ -1613,7 +1576,7 @@ int cl_write(
 
 int cl_writeLN(
     dlmsSettings* settings,
-    unsigned char* name,
+    const unsigned char* name,
     DLMS_OBJECT_TYPE objectType,
     unsigned char index,
     dlmsVARIANT* value,
@@ -1779,7 +1742,7 @@ int cl_method2(
 
 int cl_methodLN(
     dlmsSettings* settings,
-    unsigned char* name,
+    const unsigned char* name,
     DLMS_OBJECT_TYPE objectType,
     unsigned char index,
     dlmsVARIANT* value,
@@ -1806,7 +1769,8 @@ int cl_methodLN(
     bb_clear(pdu);
 #else
     gxByteBuffer bb;
-    BYTE_BUFFER_INIT(&bb);
+    unsigned char GX_METHOD_PDU[10];
+    bb_attach(&bb, GX_METHOD_PDU, 0, sizeof(GX_METHOD_PDU));
     pdu = &bb;
     BYTE_BUFFER_INIT(&data);
 #endif //DLMS_IGNORE_MALLOC
@@ -1842,6 +1806,11 @@ int cl_methodLN(
             }
             else
             {
+                if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+                {
+                    //Space is allocated for type and size
+                    bb_capacity(&data, 5 + bb_size(value->byteArr));
+                }
                 ret = dlms_setData(&data, value->vt, value);
             }
         }

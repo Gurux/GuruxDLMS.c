@@ -915,7 +915,7 @@ int apdu_validateAare(
             | BER_TYPE_CONSTRUCTED
             | PDU_TYPE_PROTOCOL_VERSION))
         {
-            return DLMS_ERROR_CODE_INVALID_TAG;
+            ret = DLMS_ERROR_CODE_INVALID_TAG;
         }
     }
     else
@@ -924,10 +924,10 @@ int apdu_validateAare(
             | BER_TYPE_CONSTRUCTED
             | PDU_TYPE_APPLICATION_CONTEXT_NAME))
         {
-            return DLMS_ERROR_CODE_INVALID_TAG;
+            ret = DLMS_ERROR_CODE_INVALID_TAG;
         }
     }
-    return 0;
+    return ret;
 }
 
 int apdu_updatePassword(
@@ -1871,7 +1871,7 @@ int apdu_parsePDU(
     if (ret == 0)
     {
 #ifndef DLMS_IGNORE_SERVER
-        if (settings->server && afu != 0 && 
+        if (settings->server && afu != 0 &&
             *result == DLMS_ASSOCIATION_RESULT_ACCEPTED &&
             !(
                 afu == DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE &&

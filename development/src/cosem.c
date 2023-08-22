@@ -417,7 +417,7 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
 int cosem_createObject(DLMS_OBJECT_TYPE type, gxObject** object)
 {
     int ret;
-    unsigned char ln[] = { 0,0,40,0,0,255 };
+    static const unsigned char ln[] = { 0,0,40,0,0,255 };
     uint16_t size = cosem_getObjectSize(type);
     if (size == 0)
     {

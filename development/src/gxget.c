@@ -549,7 +549,7 @@ int getLNObjects(
     uint16_t pos;
     unsigned char found = 0;
     gxObject* it, * it2;
-    unsigned char ln[] = { 0, 0, 40, 0, 0, 255 };
+    static const unsigned char ln[] = { 0, 0, 40, 0, 0, 255 };
     if ((ret = bb_capacity(data, settings->maxPduSize)) != 0)
     {
         return ret;

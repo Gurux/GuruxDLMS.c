@@ -47,21 +47,21 @@ typedef struct
     gxByteBuffer** data;
     unsigned char capacity;
     unsigned char size;
+#ifndef DLMS_IGNORE_MALLOC
+    unsigned char attached;
+#endif //DLMS_IGNORE_MALLOC
 } message;
 
 #ifndef DLMS_IGNORE_MALLOC
 //Initialize gxByteBuffer.
 void mes_init(message* mes);
-#else
-void mes_attach(message* mes, gxByteBuffer** data, unsigned char capacity);
-#endif //DLMS_IGNORE_MALLOC
-
-#ifndef DLMS_IGNORE_MALLOC
 //Push new message.
 int mes_push(
-    message * mes,
+    message* mes,
     gxByteBuffer* item);
 #endif //DLMS_IGNORE_MALLOC
+
+void mes_attach(message* mes, gxByteBuffer** data, unsigned char capacity);
 
 //Clear message list.
 void mes_clear(

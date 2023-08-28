@@ -2986,7 +2986,7 @@ int dlms_getHdlcData(
         data->moreData = ((DLMS_DATA_REQUEST_TYPES)(data->moreData & ~DLMS_DATA_REQUEST_TYPES_FRAME));
     }
 
-    if (!preEstablished 
+    if (!preEstablished
 #ifndef DLMS_IGNORE_HDLC_CHECK
         && !checkFrame(settings, *frame)
 #endif //DLMS_IGNORE_HDLC_CHECK
@@ -6099,12 +6099,29 @@ int dlms_getLnMessages(
             ++messages->size;
             bb_clear(it);
 #else
-            it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            if (it == NULL)
+            if (messages->attached)
             {
-                return DLMS_ERROR_CODE_OUTOFMEMORY;
+                if (messages->size < messages->capacity)
+                {
+                    it = messages->data[messages->size];
+                    ++messages->size;
+                    bb_clear(it);
+                }
+                else
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
             }
-            BYTE_BUFFER_INIT(it);
+            else
+            {
+                it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+                if (it == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                BYTE_BUFFER_INIT(it);
+                mes_push(messages, it);
+            }
 #endif //DLMS_IGNORE_MALLOC
             switch (p->settings->interfaceType)
             {
@@ -6141,9 +6158,6 @@ int dlms_getLnMessages(
             {
                 break;
             }
-#ifndef DLMS_IGNORE_MALLOC
-            mes_push(messages, it);
-#endif //DLMS_IGNORE_MALLOC
         }
         bb_clear(pdu);
 #ifndef DLMS_IGNORE_HDLC

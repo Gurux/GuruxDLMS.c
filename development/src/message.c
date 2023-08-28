@@ -47,48 +47,63 @@
 void mes_init(message* mes)
 {
     mes->capacity = MESSAGE_CAPACITY;
-    mes->data = (gxByteBuffer**) gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
+    mes->data = (gxByteBuffer**)gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
     mes->size = 0;
+    mes->attached = 0;
 }
-#else
-void mes_attach(message* mes, gxByteBuffer **data, unsigned char capacity)
+#endif //DLMS_IGNORE_MALLOC
+
+void mes_attach(message* mes, gxByteBuffer** data, unsigned char capacity)
 {
     mes->capacity = capacity;
     mes->data = data;
     mes->size = 0;
-}
+#ifndef DLMS_IGNORE_MALLOC
+    mes->attached = 1;
 #endif //DLMS_IGNORE_MALLOC
+}
 
 #ifndef DLMS_IGNORE_MALLOC
 //Push new message.
-int mes_push(message * mes, gxByteBuffer* item)
+int mes_push(message* mes, gxByteBuffer* item)
 {
-
-    if(mes->size == mes->capacity)
+    if (mes->size == mes->capacity)
     {
+        if (mes->attached)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
         mes->capacity += MESSAGE_CAPACITY;
         if (mes->data == NULL)
         {
-            mes->data = (gxByteBuffer**) gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
+            mes->data = (gxByteBuffer**)gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
+            if (mes->data == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
         }
         else
         {
 #ifdef gxrealloc
-                //If compiler supports realloc.
-                mes->data = (gxByteBuffer**) gxrealloc(mes->data, mes->capacity * sizeof(gxByteBuffer*));
- #else
-                //If compiler doesn't support realloc.
-                gxByteBuffer** old = mes->data;
-                mes->data = (gxByteBuffer**) gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
-                //If not enought memory available.
-                if (mes->data == NULL)
-                {
-                    mes->data = old;
-                    return DLMS_ERROR_CODE_OUTOFMEMORY;
-                }
-                memcpy(mes->data, old, sizeof(gxByteBuffer*) * mes->size);
-                gxfree(old);
- #endif // gxrealloc      
+            //If compiler supports realloc.
+            mes->data = (gxByteBuffer**)gxrealloc(mes->data, mes->capacity * sizeof(gxByteBuffer*));
+            if (mes->data == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+#else
+            //If compiler doesn't support realloc.
+            gxByteBuffer** old = mes->data;
+            mes->data = (gxByteBuffer**)gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
+            //If not enought memory available.
+            if (mes->data == NULL)
+            {
+                mes->data = old;
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            memcpy(mes->data, old, sizeof(gxByteBuffer*) * mes->size);
+            gxfree(old);
+#endif // gxrealloc      
         }
     }
     mes->data[mes->size] = item;
@@ -106,20 +121,23 @@ void mes_clear(message* mes)
         mes->data[pos]->size = mes->data[pos]->position = 0;
     }
 #else
-    if (mes->size != 0)
+    if (!mes->attached)
     {
-        for(pos = 0; pos != mes->size; ++pos)
+        if (mes->size != 0)
         {
-            gxfree(mes->data[pos]->data);
-            gxfree(mes->data[pos]);
+            for (pos = 0; pos != mes->size; ++pos)
+            {
+                gxfree(mes->data[pos]->data);
+                gxfree(mes->data[pos]);
+            }
         }
+        if (mes->data != NULL)
+        {
+            gxfree(mes->data);
+            mes->data = NULL;
+        }
+        mes->capacity = 0;
     }
-    if (mes->data != NULL)
-    {
-        gxfree(mes->data);
-        mes->data = NULL;
-    }
-    mes->capacity = 0;
 #endif //DLMS_IGNORE_MALLOC
     mes->size = 0;
 }

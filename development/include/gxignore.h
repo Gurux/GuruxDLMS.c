@@ -41,6 +41,7 @@ extern "C" {
 // #define DLMS_IGNORE_HDLC
 // #define DLMS_IGNORE_WRAPPER
 // #define DLMS_IGNORE_PLC
+// #define DLMS_IGNORE_IEC
 // #define DLMS_IGNORE_NOTIFY
 // #define DLMS_IGNORE_SERVER
 // #define DLMS_IGNORE_CLIENT

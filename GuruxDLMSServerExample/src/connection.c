@@ -46,7 +46,7 @@
 #endif
 
 //Initialize connection buffers.
-void con_initializeBuffers(connection * connection, int size)
+void con_initializeBuffers(connection* connection, int size)
 {
     if (size == 0)
     {
@@ -72,7 +72,7 @@ void appendLog(unsigned char send, gxByteBuffer* reply)
 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #if _MSC_VER > 1400
-    FILE * f = NULL;
+    FILE* f = NULL;
     fopen_s(&f, "trace.txt", "a");
 #else
     FILE* f = fopen("trace.txt", "a");
@@ -114,6 +114,7 @@ void ListenerThread(void* pVoid)
     int pos;
     char* info;
     gxByteBuffer bb, reply, senderInfo;
+    gxServerReply sr;
     struct sockaddr_in client;
     //Get buffer data
     bb_init(&senderInfo);
@@ -121,14 +122,15 @@ void ListenerThread(void* pVoid)
     bb_init(&reply);
     bb_capacity(&bb, 2048);
     memset(&client, 0, sizeof(client));
+    sr_initialize(&sr, bb.data, bb.size, &reply);
     while (isConnected(con))
     {
         len = sizeof(client);
         bb_clear(&senderInfo);
-        socket = accept(con->socket, (struct sockaddr*) & client, &len);
+        socket = accept(con->socket, (struct sockaddr*)&client, &len);
         if (isConnected(con))
         {
-            if ((ret = getpeername(socket, (struct sockaddr*) & add, &AddrLen)) == -1)
+            if ((ret = getpeername(socket, (struct sockaddr*)&add, &AddrLen)) == -1)
             {
 #if defined(_WIN32) || defined(_WIN64)//If Windows
                 closesocket(socket);
@@ -187,9 +189,9 @@ void ListenerThread(void* pVoid)
                     printf("\r\n");
                 }
 #endif //OS
-                bb.size = bb.size + ret;
+                sr.dataSize = bb.size = bb.size + ret;
                 appendLog(0, &bb);
-                if (svr_handleRequest(&con->settings, &bb, &reply) != 0)
+                if (svr_handleRequest4(&con->settings, &sr) != 0)
                 {
 #if defined(_WIN32) || defined(_WIN64)//If Windows
                     closesocket(socket);
@@ -200,21 +202,21 @@ void ListenerThread(void* pVoid)
 #endif
                 }
                 bb.size = 0;
-                if (reply.size != 0)
+                if (bb_size(sr.reply) != 0)
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
                     if (con->trace > GX_TRACE_LEVEL_WARNING)
                     {
-                        printf("\r\nTX %u:\t", (unsigned int)reply.size);
-                        for (pos = 0; pos != reply.size; ++pos)
+                        printf("\r\nTX %u:\t", (unsigned int)sr.reply->size);
+                        for (pos = 0; pos != sr.reply->size; ++pos)
                         {
-                            printf("%.2X ", reply.data[pos]);
+                            printf("%.2X ", sr.reply->data[pos]);
                         }
                         printf("\r\n");
                     }
-                    appendLog(1, &reply);
+                    appendLog(1, sr.reply);
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-                    if (send(socket, (const char*)reply.data, reply.size - reply.position, 0) == -1)
+                    if (send(socket, (const char*)sr.reply->data, bb_available(sr.reply), 0) == -1)
                     {
                         //If error has occured
                         svr_reset(&con->settings);
@@ -225,6 +227,19 @@ void ListenerThread(void* pVoid)
                         close(socket);
                         socket = -1;
 #endif
+                    }
+                    if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E && sr.newBaudRate != 0)
+                    {
+                        if (con->settings.base.connected == DLMS_CONNECTION_STATE_IEC)
+                        {
+                            /*Change baud rate settings if optical probe is used.*/
+                            printf("%s %d","Connected with optical probe. The new baudrate is:", sr.newBaudRate);
+                        }
+                        else if (con->settings.base.connected == DLMS_CONNECTION_STATE_NONE)
+                        {
+                            int baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
+                            printf("%s %d", "Disconnected with optical probe. The new baudrate is:" , baudRate);
+                        }
                     }
                     bb_clear(&reply);
                 }
@@ -278,7 +293,7 @@ int svr_listen(
         //socket creation.
         return -1;
     }
-    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char*)& fFlag, sizeof(fFlag)) == -1)
+    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char*)&fFlag, sizeof(fFlag)) == -1)
     {
         //setsockopt.
         return -1;
@@ -290,7 +305,7 @@ int svr_listen(
 #else
     add.sin_family = AF_INET;
 #endif
-    if ((ret = bind(con->socket, (struct sockaddr*) & add, sizeof(add))) == -1)
+    if ((ret = bind(con->socket, (struct sockaddr*)&add, sizeof(add))) == -1)
     {
         //bind;
         return -1;
@@ -326,7 +341,7 @@ int con_close(
         close(con->socket);
         con->socket = -1;
         void* res;
-        pthread_join(con->receiverThread, (void**)& res);
+        pthread_join(con->receiverThread, (void**)&res);
         free(res);
 #endif
 

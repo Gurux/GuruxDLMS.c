@@ -5113,7 +5113,9 @@ int dlms_getPdu(
     unsigned char first)
 {
     int ret = DLMS_ERROR_CODE_OK;
+#if !defined(DLMS_IGNORE_CLIENT)
     uint32_t index;
+#endif //!defined(DLMS_IGNORE_CLIENT)
     unsigned char ch;
     DLMS_COMMAND cmd = data->command;
     // If header is not read yet or GBT message.
@@ -5125,7 +5127,9 @@ int dlms_getPdu(
             // Invalid PDU.
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
+#if !defined(DLMS_IGNORE_CLIENT)
         index = data->data.position;
+#endif //!defined(DLMS_IGNORE_CLIENT)
         // Get command.
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
         {
@@ -6746,16 +6750,28 @@ int dlms_parseSnrmUaResponse(
         switch (id)
         {
         case HDLC_INFO_MAX_INFO_TX:
-            settings->maxInfoRX = (uint16_t)value;
+            if (value < settings->maxInfoRX)
+            {
+                settings->maxInfoRX = (uint16_t)value;
+            }
             break;
         case HDLC_INFO_MAX_INFO_RX:
-            settings->maxInfoTX = (uint16_t)value;
+            if (value < settings->maxInfoTX)
+            {
+                settings->maxInfoTX = (uint16_t)value;
+            }
             break;
         case HDLC_INFO_WINDOW_SIZE_TX:
-            settings->windowSizeRX = (unsigned char)value;
+            if (value < settings->windowSizeRX)
+            {
+                settings->windowSizeRX = (unsigned char)value;
+            }
             break;
         case HDLC_INFO_WINDOW_SIZE_RX:
-            settings->windowSizeTX = (unsigned char)value;
+            if (value < settings->windowSizeTX)
+            {
+                settings->windowSizeTX = (unsigned char)value;
+            }
             break;
         default:
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

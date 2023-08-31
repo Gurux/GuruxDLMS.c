@@ -111,6 +111,33 @@ void svr_copyAssociationView(objectArray* target, objectArray* source)
 }
 #endif //!defined(DLMS_IGNORE_MALLOC)
 
+int sr_initialize(
+    gxServerReply* sr,
+    unsigned char* data,
+    uint16_t dataSize,
+    gxByteBuffer* reply)
+{
+    /*Received data from the client.*/
+    sr->data = data;
+    /*Data size.*/
+    sr->dataSize = dataSize;
+    /*Server reply for the client.*/
+    sr->reply = reply;
+    /*Is GBT streaming in progress.*/
+    sr->moreData = DLMS_DATA_REQUEST_TYPES_NONE;
+    /*GBT Message count to send.*/
+    sr->gbtCount = 0;
+    /*HDLC window count to send.*/
+    sr->hdlcWindowCount = 0;
+    /*Received command.*/
+    sr->command = DLMS_COMMAND_NONE;
+#ifndef DLMS_IGNORE_IEC
+    /*Baudrate is changed when optical probe is used.*/
+    sr->newBaudRate = 0;
+#endif //DLMS_IGNORE_IEC
+    return 0;
+}
+
 int svr_initialize(
     dlmsServerSettings* settings)
 {
@@ -3251,10 +3278,84 @@ int svr_handleRequest2(
     uint16_t size,
     gxByteBuffer* reply)
 {
-    unsigned char first;
+    gxServerReply sr;
+    sr.data = buff;
+    sr.dataSize = size;
+    sr.reply = reply;
+    return svr_handleRequest4(settings, &sr);
+}
+
+/* Find IEC frame.Sometimes there are extra bytes or multiple packets on the data so they are removed.*/
+int svr_getIecPacket(dlmsServerSettings* settings)
+{
+    if (settings->receivedData.size < 5)
+    {
+        return DLMS_ERROR_CODE_FALSE;
+    }
     int ret;
-    bb_clear(reply);
-    if (buff == NULL || size == 0)
+    uint32_t pos;
+    unsigned char ch;
+    int eop = -1;
+    int bop = -1;
+    //Find EOP.
+    for (pos = settings->receivedData.size - 2; pos != 2; --pos)
+    {
+        if ((ret = bb_getUInt8ByIndex(&settings->receivedData, pos, &ch) == 0) &&
+            ch == 0x0D &&
+            (ret = bb_getUInt8ByIndex(&settings->receivedData, pos + 1, &ch) == 0) &&
+            ch == 0x0A)
+        {
+            eop = pos;
+            break;
+        }
+        if (ret != 0)
+        {
+            break;
+        }
+    }
+    if (eop == -1)
+    {
+        return DLMS_ERROR_CODE_FALSE;
+    }
+    //Find BOP
+    for (pos = eop - 1; pos >= 0; --pos)
+    {
+        if ((ret = bb_getUInt8ByIndex(&settings->receivedData, pos, &ch) != 0))
+        {
+            break;
+        }
+        if (ch == 6 ||
+            (pos + 2 < settings->receivedData.size &&
+                ch == '/' &&
+                (ret = bb_getUInt8ByIndex(&settings->receivedData, pos + 1, &ch)) == 0 &&
+                ch == (unsigned char)'?' &&
+                (ret = bb_getUInt8ByIndex(&settings->receivedData, pos + 2, &ch)) == 0 &&
+                ch == (unsigned char)'!'))
+        {
+            bop = pos;
+            break;
+        }
+    }
+    if (bop == -1)
+    {
+        return DLMS_ERROR_CODE_FALSE;
+    }
+    settings->receivedData.position = bop;
+    return ret;
+}
+
+int svr_handleRequest4(
+    dlmsServerSettings* settings,
+    gxServerReply* sr)
+{
+    if (sr == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    int ret;
+    unsigned char first, ch;
+    bb_clear(sr->reply);
+    if (sr->data == NULL || sr->dataSize == 0)
     {
         return 0;
     }
@@ -3280,7 +3381,8 @@ int svr_handleRequest2(
         settings->frameReceived = now;
     }
 #endif //!defined(DLMS_IGNORE_HDLC) || !defined(DLMS_IGNORE_IEC_HDLC_SETUP)
-    if (bb_isAttached(&settings->receivedData) && settings->receivedData.size + size > bb_getCapacity(&settings->receivedData))
+    if (bb_isAttached(&settings->receivedData) &&
+        settings->receivedData.size + sr->dataSize > bb_getCapacity(&settings->receivedData))
     {
 #ifdef DLMS_DEBUG
         svr_notifyTrace("svr_handleRequest2 bb_isAttached failed. ", -1);
@@ -3289,7 +3391,7 @@ int svr_handleRequest2(
         //Send U-Frame Frame Reject if we have received more data that can fit to one HDLC frame.
         if (IS_HDLC(settings->base.interfaceType))
         {
-            ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, reply);
+            ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, sr->reply);
             settings->receivedData.position = settings->receivedData.size = 0;
             reply_clear2(&settings->info, 1);
         }
@@ -3302,9 +3404,99 @@ int svr_handleRequest2(
 #endif //DLMS_IGNORE_HDLC
         return ret;
     }
-    bb_set(&settings->receivedData, buff, size);
+    if (bb_set(&settings->receivedData, sr->data, sr->dataSize) != 0)
+    {
+        //If client is sending junk data.
+        bb_clear(&settings->receivedData);
+        return 0;
+    }
     first = settings->base.serverAddress == 0
         && settings->base.clientAddress == 0;
+#ifndef DLMS_IGNORE_IEC
+    //If using optical probe.
+    if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
+    {
+        if (settings->base.connected == DLMS_CONNECTION_STATE_NONE)
+        {
+            //If IEC packet not found or it's not fully received.
+            if (svr_getIecPacket(settings) != 0)
+            {
+                return 0;
+            }
+            if (bb_getUInt8ByIndex(&settings->receivedData, settings->receivedData.position, &ch) != 0)
+            {
+                return 0;
+            }
+            sr->newBaudRate = 0;
+            if (ch == 6)
+            {
+                //User changes the baud rate.
+                //Only Mode E is allowed.
+                if (bb_getUInt8ByIndex(&settings->receivedData, settings->receivedData.position + 1, &ch) != 0 ||
+                    ch != 0x32 ||
+                    bb_getUInt8ByIndex(&settings->receivedData, settings->receivedData.position + 3, &ch) != 0 ||
+                    ch != 0x32)
+                {
+                    return 0;
+                }
+                if (bb_getUInt8ByIndex(&settings->receivedData, settings->receivedData.position + 2, &ch) != 0)
+                {
+                    return 0;
+                }
+                DLMS_BAUD_RATE baudrate = (DLMS_BAUD_RATE)ch - '0';
+                if (baudrate > settings->localPortSetup->proposedBaudrate)
+                {
+                    baudrate = settings->localPortSetup->proposedBaudrate;
+                }
+                bb_clear(&settings->receivedData);
+                //Return used baud rate.
+                settings->base.connected = DLMS_CONNECTION_STATE_IEC;
+                //"2" //(HDLC protocol procedure) (Binary mode)
+                //Set mode E.
+                unsigned char tmp[] = { 0x06,
+                    //"2" HDLC protocol procedure (Mode E)
+                    (unsigned char)'2',
+                    //Send Baud rate character
+                    (unsigned char)('0' + baudrate),
+                    //Mode control character
+                    (unsigned char)'2', 13, 10 };
+                if ((ret = bb_set(sr->reply, tmp, sizeof(tmp))) != 0)
+                {
+                    return 0;
+                }
+                //Change the baud rate.
+                sr->newBaudRate = 300 << (uint16_t)baudrate;
+            }
+            else if (bb_getUInt8ByIndex(&settings->receivedData, settings->receivedData.position, &ch) == 0 &&
+                ch == '/')
+            {
+                gxByteBuffer meterAddress;
+                bb_attach(&meterAddress, settings->receivedData.data, settings->receivedData.position + 3, bb_available(&settings->receivedData) - 5);
+                //If meter address is wrong.
+                if (bb_size(&meterAddress) != 0 && bb_compare(&settings->localPortSetup->deviceAddress, meterAddress.data, meterAddress.size) != 0)
+                {
+                    bb_clear(&settings->receivedData);
+                    return 0;
+                }
+                bb_clear(&settings->receivedData);
+                bb_clear(sr->reply);
+                if (bb_setUInt8(sr->reply, '/') != 0 ||
+                    //Add flag ID.
+                    bb_set(sr->reply, settings->flagId, 3) != 0 ||
+                    //Add proposed baud rate.
+                    bb_setUInt8(sr->reply, '0' + settings->localPortSetup->proposedBaudrate) != 0 ||
+                    //Add device address.
+                    bb_set(sr->reply, settings->localPortSetup->deviceAddress.data, settings->localPortSetup->deviceAddress.size) != 0 ||
+                    bb_setUInt8(sr->reply, '\r') != 0 ||
+                    bb_setUInt8(sr->reply, '\n') != 0)
+                {
+                    return 0;
+                }
+            }
+            return 0;
+        }
+    }
+#endif //DLMS_IGNORE_IEC
     if ((ret = dlms_getData2(&settings->base, &settings->receivedData, &settings->info, first)) != 0)
     {
 #ifdef DLMS_DEBUG
@@ -3314,7 +3506,7 @@ int svr_handleRequest2(
             ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
             ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE)
         {
-            bb_clear(reply);
+            bb_clear(sr->reply);
             gxByteBuffer data;
             unsigned char tmp[10];
             bb_attach(&data, tmp, 0, sizeof(tmp));
@@ -3328,7 +3520,7 @@ int svr_handleRequest2(
                 settings->receivedData.position = settings->receivedData.size = 0;
                 return ret;
             }
-            return dlms_addFrame(&settings->base, 0, &data, reply);
+            return dlms_addFrame(&settings->base, 0, &data, sr->reply);
         }
         else if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS)
         {
@@ -3358,7 +3550,7 @@ int svr_handleRequest2(
             else if (IS_HDLC(settings->base.interfaceType) &&
                 (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) != 0)
             {
-                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, reply);
+                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, sr->reply);
                 settings->receivedData.position = settings->receivedData.size = 0;
                 return ret;
             }
@@ -3376,7 +3568,7 @@ int svr_handleRequest2(
             if ((settings->base.connected & DLMS_CONNECTION_STATE_HDLC) != 0)
             {
                 settings->dataReceived = time_elapsed();
-                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, reply);
+                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, sr->reply);
                 settings->receivedData.position = settings->receivedData.size = 0;
                 return ret;
             }
@@ -3391,7 +3583,7 @@ int svr_handleRequest2(
             if (ret != DLMS_ERROR_CODE_WRONG_CRC && IS_HDLC(settings->base.interfaceType) &&
                 (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) != 0)
             {
-                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, reply);
+                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, sr->reply);
                 settings->receivedData.position = settings->receivedData.size = 0;
                 return ret;
             }
@@ -3413,7 +3605,7 @@ int svr_handleRequest2(
         svr_notifyTrace("Disconnecting from the meter. ", -1);
 #endif //DLMS_DEBUG
 #ifndef DLMS_IGNORE_HDLC
-        ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_DISCONNECT_MODE, NULL, reply);
+        ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_DISCONNECT_MODE, NULL, sr->reply);
 #endif //DLMS_IGNORE_HDLC
         reply_clear2(&settings->info, 1);
         return ret;
@@ -3455,7 +3647,7 @@ int svr_handleRequest2(
     if ((settings->info.moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == DLMS_DATA_REQUEST_TYPES_FRAME)
     {
         settings->dataReceived = time_elapsed();
-        return dlms_getHdlcFrame(&settings->base, getReceiverReady(&settings->base), NULL, reply);
+        return dlms_getHdlcFrame(&settings->base, getReceiverReady(&settings->base), NULL, sr->reply);
     }
 #endif //DLMS_IGNORE_HDLC
     // Update command if transaction and next frame is asked.
@@ -3473,7 +3665,7 @@ int svr_handleRequest2(
                 settings->info.data.position = 0;
 #ifndef DLMS_IGNORE_HDLC
                 //Return rest of frame.
-                return dlms_getHdlcFrame(&settings->base, getNextSend(&settings->base, 0), &settings->info.data, reply);
+                return dlms_getHdlcFrame(&settings->base, getNextSend(&settings->base, 0), &settings->info.data, sr->reply);
 #endif //DLMS_IGNORE_HDLC
             }
         }
@@ -3481,7 +3673,7 @@ int svr_handleRequest2(
         {
             settings->dataReceived = time_elapsed();
 #ifndef DLMS_IGNORE_HDLC
-            return dlms_getHdlcFrame(&settings->base, getKeepAlive(&settings->base), NULL, reply);
+            return dlms_getHdlcFrame(&settings->base, getKeepAlive(&settings->base), NULL, sr->reply);
 #endif //DLMS_IGNORE_HDLC
         }
     }
@@ -3505,7 +3697,7 @@ int svr_handleRequest2(
                 {
                     if (settings->info.command == DLMS_COMMAND_DISC)
                     {
-                        dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_DISCONNECT_MODE, NULL, reply);
+                        dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_DISCONNECT_MODE, NULL, sr->reply);
                     }
                     svr_disconnected(settings);
                     svr_reset(settings);
@@ -3550,27 +3742,27 @@ int svr_handleRequest2(
     }
 #endif // DLMS_IGNORE_TCP_UDP_SETUP
 #endif //DLMS_IGNORE_WRAPPER
-    ret = svr_handleCommand(settings, settings->info.command, &settings->info.data, reply);
+    ret = svr_handleCommand(settings, settings->info.command, &settings->info.data, sr->reply);
     if (ret != 0)
     {
-        bb_clear(reply);
+        bb_clear(sr->reply);
 #ifndef DLMS_IGNORE_HDLC
         if (IS_HDLC(settings->base.interfaceType))
         {
             if (ret == DLMS_ERROR_CODE_REJECTED)
             {
-                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_DISCONNECT_MODE, NULL, reply);
+                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_DISCONNECT_MODE, NULL, sr->reply);
             }
             else
             {
-                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, reply);
+                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, sr->reply);
             }
             settings->receivedData.position = settings->receivedData.size = 0;
         }
         else
 #endif //DLMS_IGNORE_HDLC
         {
-            ret = svr_reportError(settings, settings->info.command, DLMS_ERROR_CODE_OTHER_REASON, reply);
+            ret = svr_reportError(settings, settings->info.command, DLMS_ERROR_CODE_OTHER_REASON, sr->reply);
         }
     }
     DLMS_COMMAND cmd = settings->info.command;

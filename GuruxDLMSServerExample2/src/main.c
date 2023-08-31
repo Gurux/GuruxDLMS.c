@@ -16,6 +16,9 @@
 #include <stdio.h>
 
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
+//Windows doesn't implement strcasecmp. It uses strcmpi.
+#define strcasecmp _strcmpi
+
 #if _MSC_VER > 1400
 #include <crtdbg.h>
 #endif
@@ -52,7 +55,14 @@
 #include "../dlms/include/gxserializer.h"
 #include "../dlms/include/gxset.h"
 
-static unsigned char SERIALIZE_BUFFER[25000] = { 0 };
+//Serial port handlers.
+#if defined(_WIN32) || defined(_WIN64)// If Windows
+HANDLE comPort = INVALID_HANDLE_VALUE;
+#else //If Linux
+int comPort = -1;
+#endif
+
+static unsigned char SERIALIZE_BUFFER[30000] = { 0 };
 
 uint32_t SERIALIZER_SIZE()
 {
@@ -60,14 +70,14 @@ uint32_t SERIALIZER_SIZE()
 }
 
 //Read byte
-extern int SERIALIZER_LOAD(uint32_t index, uint32_t count, const void* value)
+extern int SERIALIZER_LOAD(uint32_t index, uint32_t count, void* value)
 {
     uint16_t pos;
     if (value == NULL)
     {
         return DLMS_ERROR_CODE_SERIALIZATION_LOAD_FAILURE;
     }
-    unsigned char* p = (unsigned char*) value;
+    unsigned char* p = (unsigned char*)value;
     for (pos = 0; pos != count; ++pos)
     {
         *p = SERIALIZE_BUFFER[index + pos];
@@ -509,7 +519,6 @@ uint16_t getProfileGenericBufferMaxRowCount(gxProfileGeneric* pg)
 uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
 {
     uint16_t index = 0;
-    int ret = 0;
     char fileName[30];
     getProfileGenericFileName(pg, fileName);
     FILE* f = NULL;
@@ -520,7 +529,6 @@ uint16_t getProfileGenericBufferEntriesInUse(gxProfileGeneric* pg)
 #endif
     if (f != NULL)
     {
-        uint16_t dataSize = 0;
         //Load current entry index from the begin of the data.
         unsigned char pduBuff[2];
         gxByteBuffer pdu;
@@ -747,7 +755,7 @@ int addAssociationLow()
             DLMS_CONFORMANCE_ACTION |
             DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
             DLMS_CONFORMANCE_GET);
-        BB_ATTACH(associationLow.secret, SECRET, (uint16_t)strlen(SECRET));
+        BB_ATTACH(associationLow.secret, (unsigned char*)SECRET, (uint16_t)strlen(SECRET));
         associationLow.securitySetup = NULL;
     }
     return ret;
@@ -883,7 +891,7 @@ int addSapAssignment()
     const unsigned char ln[6] = { 0, 0, 41, 0, 0, 255 };
     if ((ret = INIT_OBJECT(sapAssignment, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, ln)) == 0)
     {
-        sprintf(SAP_ITEMS[0].name.value, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
+        sprintf((char*) SAP_ITEMS[0].name.value, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
         SAP_ITEMS[0].name.size = 16;
         SAP_ITEMS[0].id = 1;
         ARR_ATTACH(sapAssignment.sapAssignmentList, SAP_ITEMS, 1);
@@ -1255,7 +1263,6 @@ int addCurrentlyActiveTariff()
 int addPrimeNbOfdmPlcMacCounters()
 {
     int ret;
-    static unsigned char TARIFF[10];
     const unsigned char ln[6] = { 0,0,28,4,0,255 };
     if ((ret = INIT_OBJECT(primeNbOfdmPlcMacCounters, DLMS_OBJECT_TYPE_PRIME_NB_OFDM_PLC_MAC_COUNTERS, ln)) == 0)
     {
@@ -1287,13 +1294,16 @@ int addOpticalPortSetup()
         localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
         localPortSetup.responseTime = DLMS_LOCAL_PORT_RESPONSE_TIME_200_MS;
         BB_ATTACH(localPortSetup.deviceAddress, DEVICE_ADDRESS, 0);
-        bb_addString(&localPortSetup.deviceAddress, "Gurux");
+        bb_addString(&localPortSetup.deviceAddress, "1234567");
         BB_ATTACH(localPortSetup.password1, PASSWORD1, 0);
         bb_addString(&localPortSetup.password1, "Gurux1");
         BB_ATTACH(localPortSetup.password2, PASSWORD2, 0);
         bb_addString(&localPortSetup.password2, "Gurux2");
         BB_ATTACH(localPortSetup.password5, PASSWORD5, 0);
         ret = bb_addString(&localPortSetup.password5, "Gurux5");
+        settings.localPortSetup = &localPortSetup;
+        //Set flag id.
+        memcpy(settings.flagId, "GRX", 3);
     }
     return ret;
 }
@@ -1548,7 +1558,7 @@ int addTwistedPairSetup()
 {
     int ret;
     static unsigned char PRIMARY_ADDRESSES[5] = { 0 };
-    static char TABIS[5] = { 0 };
+    static unsigned char TABIS[5] = { 0 };
     const unsigned char ln[6] = { 0, 0, 23, 0, 0, 255 };
     if ((ret = INIT_OBJECT(twistedPairSetup, DLMS_OBJECT_TYPE_IEC_TWISTED_PAIR_SETUP, ln)) == 0)
     {
@@ -1569,7 +1579,7 @@ int addPushSetup()
 {
     int ret;
     static gxTimePair COMMUNICATION_WINDOW[10];
-    static char DESTINATION[20] = { 0 };
+    static unsigned char DESTINATION[20] = { 0 };
     //Push objects are added here.
     static gxTarget PUSH_OBJECTS[6];
     const unsigned char ln[6] = { 0, 0, 25, 9, 0, 255 };
@@ -1673,28 +1683,28 @@ int addTarifficationScriptTable()
         ACTIONS1[0].target = BASE(registerActivation);
         ACTIONS1[0].index = 4;
         //Action data is register activation mask name (RATE1).
-        strcat(MASK1, "RATE1");
+        strcat((char*)MASK1, "RATE1");
         GX_OCTET_STRING(ACTIONS1[0].parameter, MASK1, 5);
 
         ACTIONS1[1].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
         ACTIONS1[1].target = BASE(currentlyActiveTariff);
         ACTIONS1[1].index = 2;
         //Action data is register activation mask name (RATE1).
-        GX_OCTET_STRING(ACTIONS1[1].parameter, MASK1, (uint16_t)strlen(MASK1));
+        GX_OCTET_STRING(ACTIONS1[1].parameter, MASK1, (uint16_t)strlen((char*)MASK1));
 
         ARR_ATTACH(SCRIPTS[1].actions, ACTIONS2, 2);
         ACTIONS2[0].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
         ACTIONS2[0].target = BASE(registerActivation);
         ACTIONS2[0].index = 4;
         //Action data is register activation mask name (RATE2).
-        strcat(MASK2, "RATE2");
+        strcat((char*)MASK2, "RATE2");
         GX_OCTET_STRING(ACTIONS2[0].parameter, MASK2, 5);
 
         ACTIONS2[1].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
         ACTIONS2[1].target = BASE(currentlyActiveTariff);
         ACTIONS2[1].index = 2;
         //Action data is register activation mask name (RATE2).
-        GX_OCTET_STRING(ACTIONS2[1].parameter, MASK2, (uint16_t)strlen(MASK2));
+        GX_OCTET_STRING(ACTIONS2[1].parameter, MASK2, (uint16_t)strlen((char*)MASK2));
     }
     return ret;
 }
@@ -1718,12 +1728,12 @@ int addRegisterActivation()
         ARR_ATTACH(registerActivation.registerAssignment, REGISTER_ASSIGNMENT, 2);
         ARR_ATTACH(registerActivation.maskList, MASK_LIST, 2);
         strcpy((char*)MASK_LIST[0].name, "RATE1");
-        MASK_LIST[0].length = (unsigned char)strlen(MASK_LIST[0].name);
+        MASK_LIST[0].length = (unsigned char)strlen((char*)MASK_LIST[0].name);
         MASK_LIST[0].count = 2;
         MASK_LIST[0].indexes[0] = 1;
         MASK_LIST[0].indexes[1] = 2;
         strcpy((char*)MASK_LIST[1].name, "RATE2");
-        MASK_LIST[1].length = (unsigned char)strlen(MASK_LIST[1].name);
+        MASK_LIST[1].length = (unsigned char)strlen((char*)MASK_LIST[1].name);
         MASK_LIST[1].count = 2;
         MASK_LIST[1].indexes[0] = 1;
         MASK_LIST[1].indexes[1] = 2;
@@ -1983,7 +1993,9 @@ int testobjectSerialization(gxObject* obj)
     gxSerializerSettings serializerSettings;
     ser_init(&serializerSettings);
     int ret = ser_saveObject(&serializerSettings, obj);
+#ifndef DLMS_IGNORE_MALLOC
     serializerSettings.position = 0;
+#endif
     ret = ser_loadObject(&settings.base, &serializerSettings, obj);
     return ret;
 }
@@ -2011,12 +2023,14 @@ int loadSettings()
         uint16_t size = (uint16_t)ftell(f);
         if (size != 0)
         {
-            if (size > sizeof(SERIALIZE_BUFFER))
+            //Data is saved in hex format.
+            if (size / 3 > sizeof(SERIALIZE_BUFFER))
             {
+                printf("load failed buffer is too small (%d/%ld).\n", size, sizeof(SERIALIZE_BUFFER));
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
             fseek(f, 0L, SEEK_SET);
-            unsigned char buffer[3];
+            char buffer[3];
             uint16_t count;
             unsigned char* pBuffer = SERIALIZE_BUFFER;
             while (size != 0)
@@ -2043,7 +2057,7 @@ int loadSettings()
             ret = ser_loadObjects(&settings.base, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
             return ret;
         }
-        fclose(f);       
+        fclose(f);
     }
     return saveSettings(NULL, 0xFF);
 }
@@ -2106,7 +2120,7 @@ int createObjects()
         (ret = addPrimeNbOfdmPlcMacFunctionalParameters()) != 0 ||
         (ret = addPrimeNbOfdmPlcMacNetworkAdministrationData()) != 0 ||
         (ret = addTwistedPairSetup()) != 0 ||
-        (ret = addLimiter()) != 0 ||       
+        (ret = addLimiter()) != 0 ||
         (ret = oa_verify(&settings.base.objects)) != 0 ||
         (ret = svr_initialize(&settings)) != 0)
     {
@@ -2376,7 +2390,6 @@ int readProfileGeneric(
         // If reading first time.
         if (first)
         {
-            uint16_t offset = getProfileGenericBufferEntriesInUse(pg);
             //Read all.
             if (e->selector == 0)
             {
@@ -2960,7 +2973,7 @@ void svr_preAction(
                     return;
                 }
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                printf("Updating image %s Size: %d\r\n", imageFile, info->size);
+                printf("Updating image %s Size: %ld\r\n", imageFile, info->size);
 #endif
                 allocateImageTransfer(imageFile, info->size);
                 ba_clear(&i->imageTransferredBlocksStatus);
@@ -3701,13 +3714,143 @@ void svr_postGet(
 
 }
 
+
+#if !defined(_WIN32) && !defined(_WIN64)//Windows
+
+static uint16_t GetLinuxBaudRate(uint16_t baudRate)
+{
+    uint16_t br;
+    switch (baudRate) {
+    case 110:
+        br = B110;
+        break;
+    case 300:
+        br = B300;
+        break;
+    case 600:
+        br = B600;
+        break;
+    case 1200:
+        br = B1200;
+        break;
+    case 2400:
+        br = B2400;
+        break;
+    case 4800:
+        br = B4800;
+        break;
+    case 9600:
+        br = B9600;
+        break;
+    case 19200:
+        br = B19200;
+        break;
+    case 38400:
+        br = B38400;
+        break;
+    case 57600:
+        br = B57600;
+        break;
+    default:
+        return B9600;
+    }
+    return br;
+}
+#endif //!defined(_WIN32) && !defined(_WIN64)//Windows
+
+int com_updateSerialportSettings(
+    unsigned char iec,
+    uint16_t baudRate)
+{
+    int ret;
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+    DCB dcb = { 0 };
+    unsigned long sendSize = 0;
+    if (comPort == INVALID_HANDLE_VALUE)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    dcb.DCBlength = sizeof(DCB);
+    if (!GetCommState(comPort, &dcb))
+    {
+        ret = GetLastError();
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+    }
+    dcb.fBinary = 1;
+    dcb.fOutX = dcb.fInX = 0;
+    //Abort all reads and writes on Error.
+    dcb.fAbortOnError = 1;
+    if (iec)
+    {
+        dcb.BaudRate = 300;
+        dcb.ByteSize = 7;
+        dcb.StopBits = ONESTOPBIT;
+        dcb.Parity = EVENPARITY;
+    }
+    else
+    {
+        dcb.BaudRate = baudRate;
+        dcb.ByteSize = 8;
+        dcb.StopBits = ONESTOPBIT;
+        dcb.Parity = NOPARITY;
+    }
+    if ((ret = com_setCommState(comPort, &dcb)) != 0)
+    {
+        return ret;
+    }
+#else
+    struct termios options;
+    memset(&options, 0, sizeof(options));
+    options.c_iflag = 0;
+    options.c_oflag = 0;
+    if (iec)
+    {
+        options.c_cflag |= PARENB;
+        options.c_cflag &= ~PARODD;
+        options.c_cflag &= ~CSTOPB;
+        options.c_cflag &= ~CSIZE;
+        options.c_cflag |= CS7;
+        //Set Baud Rates
+        cfsetospeed(&options, B300);
+        cfsetispeed(&options, B300);
+    }
+    else
+    {
+        // 8n1, see termios.h for more information
+        options.c_cflag = CS8 | CREAD | CLOCAL;
+        /*
+        options.c_cflag &= ~PARENB
+        options.c_cflag &= ~CSTOPB
+        options.c_cflag &= ~CSIZE;
+        options.c_cflag |= CS8;
+        */
+        //Set Baud Rates
+        cfsetospeed(&options, GetLinuxBaudRate(baudRate));
+        cfsetispeed(&options, GetLinuxBaudRate(baudRate));
+    }
+    options.c_lflag = 0;
+    options.c_cc[VMIN] = 1;
+    //How long we are waiting reply charachter from serial port.
+    options.c_cc[VTIME] = 5;
+
+    //hardware flow control is used as default.
+    //options.c_cflag |= CRTSCTS;
+    if (tcsetattr(comPort, TCSAFLUSH, &options) != 0)
+    {
+        ret = errno;
+        printf("Failed to Open port. tcsetattr failed.\r");
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+    }
+    return 0;
+#endif
+}
+
 #if defined(_WIN32) || defined(_WIN64)//If Windows
 void serialPortThread(void* pVoid)
 {
     int ret;
     unsigned char data;
     DWORD bytesHandled = 0;
-    HANDLE comPort = *((HANDLE*)pVoid);
     OVERLAPPED		osWrite;
     OVERLAPPED		osReader;
     memset(&osReader, 0, sizeof(OVERLAPPED));
@@ -3715,6 +3858,8 @@ void serialPortThread(void* pVoid)
     osReader.hEvent = CreateEvent(NULL, 1, FALSE, NULL);
     osWrite.hEvent = CreateEvent(NULL, 1, FALSE, NULL);
     unsigned char first = 1;
+    gxServerReply sr;
+    sr_initialize(&sr, &data, 1, &reply);
     while (1)
     {
         if (!ReadFile(comPort, &data, 1, &bytesHandled, &osReader))
@@ -3743,7 +3888,7 @@ void serialPortThread(void* pVoid)
             }
             printf("%.2X ", data);
         }
-        if (svr_handleRequest3(&settings, data, &reply) != 0)
+        if (svr_handleRequest4(&settings, &sr) != 0)
         {
             first = 1;
             break;
@@ -3773,6 +3918,29 @@ void serialPortThread(void* pVoid)
                 //Wait until data is actually sent
                 WaitForSingleObject(osWrite.hEvent, 5000);
             }
+            if (settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E && sr.newBaudRate != 0)
+            {
+                if (settings.base.connected == DLMS_CONNECTION_STATE_IEC)
+                {
+                    /*Change baud rate settings if optical probe is used.*/
+                    printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
+                    com_updateSerialportSettings(0, sr.newBaudRate);
+                }
+                else if (settings.base.connected == DLMS_CONNECTION_STATE_NONE)
+                {
+                    //Wait until reply message is send before baud rate is updated.
+                    //Without this delay, disconnect message might be cleared before send.
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+                    Sleep(100);
+#else
+                    usleep(100000);
+#endif
+                    int baudRate = 300 << (int)settings.localPortSetup->defaultBaudrate;
+                    printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
+                    com_updateSerialportSettings(1, 300);
+                }
+            }
+            bb_clear(&reply);
         }
     }
     CloseHandle(osReader.hEvent);
@@ -3788,6 +3956,8 @@ void ListenerThread(void* pVoid)
     socklen_t len;
 #endif
     unsigned char data;
+    gxServerReply sr;
+    sr_initialize(&sr, &data, 1, &reply);
     int ret;
     int ls = *((int*)pVoid);
     struct sockaddr_in client;
@@ -3839,7 +4009,7 @@ void ListenerThread(void* pVoid)
                 printf("%.2X ", data);
             }
 #endif //OS
-            if (svr_handleRequest3(&settings, data, &reply) != 0)
+            if (svr_handleRequest4(&settings, &sr) != 0)
             {
 #if defined(_WIN32) || defined(_WIN64)//If Windows
                 closesocket(socket1);
@@ -3875,6 +4045,21 @@ void ListenerThread(void* pVoid)
 #endif
                     break;
                 }
+                if (settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E && sr.newBaudRate != 0)
+                {
+                    if (settings.base.connected == DLMS_CONNECTION_STATE_IEC)
+                    {
+                        /*Change baud rate settings if optical probe is used.*/
+                        printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
+                        com_updateSerialportSettings(0, sr.newBaudRate);
+                    }
+                    else if (settings.base.connected == DLMS_CONNECTION_STATE_NONE)
+                    {
+                        int baudRate = 300 << (int)settings.localPortSetup->defaultBaudrate;
+                        printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
+                        com_updateSerialportSettings(1, 300);
+                    }
+                }
                 bb_clear(&reply);
             }
         }
@@ -3886,11 +4071,12 @@ void ListenerThread(void* pVoid)
 void* UnixSerialPortThread(void* pVoid)
 {
     int ret;
-    int comPort = *((int*)pVoid);
     unsigned char data;
     unsigned char first = 1;
     uint16_t pos;
     int bytesRead;
+    gxServerReply sr;
+    sr_initialize(&sr, &data, 1, &reply);
     while (1)
     {
         bytesRead = read(comPort, &data, 1);
@@ -3913,7 +4099,7 @@ void* UnixSerialPortThread(void* pVoid)
                 }
                 printf("%.2X ", data);
             }
-            if (svr_handleRequest3(&settings, data, &reply) != 0)
+            if (svr_handleRequest4(&settings, &sr) != 0)
             {
                 break;
             }
@@ -3934,6 +4120,29 @@ void* UnixSerialPortThread(void* pVoid)
                 {
                     printf("Write failed\n");
                 }
+                if (settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E && sr.newBaudRate != 0)
+                {
+                    if (settings.base.connected == DLMS_CONNECTION_STATE_IEC)
+                    {
+                        /*Change baud rate settings if optical probe is used.*/
+                        printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
+                        com_updateSerialportSettings(0, sr.newBaudRate);
+                    }
+                    else if (settings.base.connected == DLMS_CONNECTION_STATE_NONE)
+                    {
+                        //Wait until reply message is send before baud rate is updated.
+                        //Without this delay, disconnect message might be cleared before send.
+#if defined(_WIN32) || defined(_WIN64)//Windows includes
+                        Sleep(100);
+#else
+                        usleep(100000);
+#endif
+                        int baudRate = 300 << (int)settings.localPortSetup->defaultBaudrate;
+                        printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
+                        com_updateSerialportSettings(1, 300);
+                    }
+                }
+                bb_clear(&reply);
             }
         }
     }
@@ -4013,7 +4222,6 @@ int com_setCommState(HANDLE hWnd, LPDCB DCB)
 }
 
 int com_initializeSerialPort(
-    HANDLE* comPort,
     char* serialPort,
     unsigned char iec)
 {
@@ -4025,115 +4233,38 @@ int com_initializeSerialPort(
     sprintf(buff, "\\\\.\\%s", serialPort);
 #endif
     //Open serial port for read / write. Port can't share.
-    * comPort = CreateFileA(buff,
+    comPort = CreateFileA(buff,
         GENERIC_READ | GENERIC_WRITE, 0, NULL,
         OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-    if (*comPort == INVALID_HANDLE_VALUE)
+    if (comPort == INVALID_HANDLE_VALUE)
     {
         ret = GetLastError();
         printf("Failed to open serial port: \"%s\"\n", buff);
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
-    DCB dcb = { 0 };
-    unsigned long sendSize = 0;
-    if (*comPort == INVALID_HANDLE_VALUE)
-    {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
-    dcb.DCBlength = sizeof(DCB);
-    if (!GetCommState(*comPort, &dcb))
-    {
-        ret = GetLastError();
-        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
-    }
-    dcb.fBinary = 1;
-    dcb.fOutX = dcb.fInX = 0;
-    //Abort all reads and writes on Error.
-    dcb.fAbortOnError = 1;
-    if (iec)
-    {
-        dcb.BaudRate = 300;
-        dcb.ByteSize = 7;
-        dcb.StopBits = ONESTOPBIT;
-        dcb.Parity = EVENPARITY;
-    }
-    else
-    {
-        dcb.BaudRate = 9600;
-        dcb.ByteSize = 8;
-        dcb.StopBits = ONESTOPBIT;
-        dcb.Parity = NOPARITY;
-    }
-    if ((ret = com_setCommState(*comPort, &dcb)) != 0)
-    {
-        return ret;
-    }
-    return 0;
+    return com_updateSerialportSettings(iec, 9600);
 }
 #else //#if defined(__LINUX__)
 int com_initializeSerialPort(
-    int* comPort,
     char* serialPort,
     unsigned char iec)
 {
     int ret;
     // read/write | not controlling term | don't wait for DCD line signal.
-    *comPort = open(serialPort, O_RDWR | O_NOCTTY | O_NONBLOCK);
-    if (*comPort == -1) // if open is unsuccessful.
+    comPort = open(serialPort, O_RDWR | O_NOCTTY | O_NONBLOCK);
+    if (comPort == -1) // if open is unsuccessful.
     {
         ret = errno;
         printf("Failed to open serial port: %s\n", serialPort);
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
-    if (!isatty(*comPort))
+    if (!isatty(comPort))
     {
         ret = errno;
         printf("Failed to Open port %s. This is not a serial port.\n", serialPort);
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
-    struct termios options;
-    memset(&options, 0, sizeof(options));
-    options.c_iflag = 0;
-    options.c_oflag = 0;
-    if (iec)
-    {
-        options.c_cflag |= PARENB;
-        options.c_cflag &= ~PARODD;
-        options.c_cflag &= ~CSTOPB;
-        options.c_cflag &= ~CSIZE;
-        options.c_cflag |= CS7;
-        //Set Baud Rates
-        cfsetospeed(&options, B300);
-        cfsetispeed(&options, B300);
-    }
-    else
-    {
-        // 8n1, see termios.h for more information
-        options.c_cflag = CS8 | CREAD | CLOCAL;
-        /*
-        options.c_cflag &= ~PARENB
-        options.c_cflag &= ~CSTOPB
-        options.c_cflag &= ~CSIZE;
-        options.c_cflag |= CS8;
-        */
-        //Set Baud Rates
-        cfsetospeed(&options, B9600);
-        cfsetispeed(&options, B9600);
-    }
-    options.c_lflag = 0;
-    options.c_cc[VMIN] = 1;
-    //How long we are waiting reply charachter from serial port.
-    options.c_cc[VTIME] = 5;
-
-    //hardware flow control is used as default.
-    //options.c_cflag |= CRTSCTS;
-    if (tcsetattr(*comPort, TCSAFLUSH, &options) != 0)
-    {
-        ret = errno;
-        printf("Failed to Open port. tcsetattr failed.\r");
-        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
-    }
-    return 0;
+    return com_updateSerialportSettings(iec, 9600);
 }
 #endif
 
@@ -4152,17 +4283,11 @@ int main(int argc, char* argv[])
     pthread_t receiverThread;
 #endif
 
-    //Serial port handlers.
-#if defined(_WIN32) || defined(_WIN64)// If Windows
-    HANDLE comPort = INVALID_HANDLE_VALUE;
-#else //If Linux
-    int comPort = -1;
-#endif
-
     int ret, ls = 0;
     struct sockaddr_in add = { 0 };
     char* serialPort = NULL;
-    while ((opt = getopt(argc, argv, "t:p:S:")) != -1)
+    DLMS_INTERFACE_TYPE interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+    while ((opt = getopt(argc, argv, "t:p:S:i:")) != -1)
     {
         switch (opt)
         {
@@ -4190,6 +4315,28 @@ int main(int argc, char* argv[])
             break;
         case 'S':
             serialPort = optarg;
+            break;
+        case 'i':
+            //Interface
+            if (strcasecmp("HDLC", optarg) == 0)
+                interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+            else  if (strcasecmp("WRAPPER", optarg) == 0)
+                interfaceType = DLMS_INTERFACE_TYPE_WRAPPER;
+            else  if (strcasecmp("HdlcModeE", optarg) == 0)
+                interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
+            else  if (strcasecmp("Plc", optarg) == 0)
+                interfaceType = DLMS_INTERFACE_TYPE_PLC;
+            else if (strcasecmp("PlcHdlc", optarg) == 0)
+                interfaceType = DLMS_INTERFACE_TYPE_PLC_HDLC;
+            else if (strcasecmp("PlcPrime", optarg) == 0)
+                interfaceType = DLMS_INTERFACE_TYPE_PLC_PRIME;
+            else if (strcasecmp("Pdu", optarg) == 0)
+                interfaceType = DLMS_INTERFACE_TYPE_PDU;
+            else
+            {
+                printf("Invalid interface option '%s'. (HDLC, WRAPPER, HdlcModeE, Plc, PlcHdlc)", optarg);
+                return 1;
+            }
             break;
         case '?':
         {
@@ -4232,7 +4379,7 @@ int main(int argc, char* argv[])
 
     bb_attach(&reply, replyFrame, 0, sizeof(replyFrame));
     //Start server using logical name referencing and HDLC framing.
-    svr_init(&settings, 1, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, frameBuff, sizeof(frameBuff), pduBuff, sizeof(pduBuff));
+    svr_init(&settings, 1, interfaceType, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, frameBuff, sizeof(frameBuff), pduBuff, sizeof(pduBuff));
     //Allocate space for read list.
     vec_attach(&settings.transaction.targets, events, 0, sizeof(events) / sizeof(events[0]));
     //Allocate space for client password.
@@ -4256,9 +4403,8 @@ int main(int argc, char* argv[])
     {
         printf("Serial port server started in port: %s\n", serialPort);
         if ((ret = com_initializeSerialPort(
-            &comPort,
             serialPort,
-            0)) != 0)
+            interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)) != 0)
         {
             return ret;
         }

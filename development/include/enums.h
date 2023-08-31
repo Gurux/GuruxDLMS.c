@@ -2851,7 +2851,9 @@ extern "C" {
         //Connection is made for HDLC level.
         DLMS_CONNECTION_STATE_HDLC = 1,
         //Connection is made for DLMS level.
-        DLMS_CONNECTION_STATE_DLMS = 2
+        DLMS_CONNECTION_STATE_DLMS = 2,
+        //Connection is made for optical IEC 62056-21 level.
+        DLMS_CONNECTION_STATE_IEC = 4
     }DLMS_CONNECTION_STATE;
 
     typedef enum {

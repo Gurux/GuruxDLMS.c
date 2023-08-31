@@ -43,25 +43,60 @@ extern "C" {
 #include "serverevents.h"
 #include "dlms.h"
 
+    typedef struct
+    {
+        /*Received data from the client.*/
+        unsigned char* data;
+        /*Data size.*/
+        uint16_t dataSize;
+        /*Server reply for the client.*/
+        gxByteBuffer* reply;
+        /*Is GBT streaming in progress.*/
+        DLMS_DATA_REQUEST_TYPES moreData;
+        /*GBT Message count to send.*/
+        unsigned char gbtCount;
+        /*HDLC window count to send.*/
+        unsigned char hdlcWindowCount;
+        /*Received command.*/
+        DLMS_COMMAND command;
+#ifndef DLMS_IGNORE_IEC
+        /*Baudrate is changed when optical probe is used.*/
+        uint16_t newBaudRate;
+#endif //DLMS_IGNORE_IEC
+    }gxServerReply;
+
+    int sr_initialize(
+        gxServerReply* sr,
+        unsigned char* data,
+        uint16_t dataSize,
+        gxByteBuffer* reply);
+
     int svr_initialize(
         dlmsServerSettings* settings);
 
+    /*Server handles received bytes from the client.*/
     int svr_handleRequest(
         dlmsServerSettings* settings,
         gxByteBuffer* data,
         gxByteBuffer* reply);
 
+    /*Server handles received bytes from the client.*/
     int svr_handleRequest2(
         dlmsServerSettings* settings,
         unsigned char* buff,
         uint16_t size,
         gxByteBuffer* reply);
 
-    //Handle only one received byte.
+    /*Server handles received byte from the client.*/
     int svr_handleRequest3(
         dlmsServerSettings* settings,
         unsigned char data,
         gxByteBuffer* reply);
+
+    /*Server handles received bytes from the client.*/
+    int svr_handleRequest4(
+        dlmsServerSettings* settings,
+        gxServerReply* sr);
 
     void svr_reset(
         dlmsServerSettings* settings);

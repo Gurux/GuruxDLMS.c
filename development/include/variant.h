@@ -129,7 +129,7 @@ extern "C" {
 /*Get double value from variant.*/
 #define GX_GET_DOUBLE(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.dblVal : *X.pdblVal
 /*Get boolean value from variant.*/
-#define GX_GET_BOOL(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.bVal != 0 : *X.pbVal != 0
+#define GX_GET_BOOL(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? (X.bVal != 0) : (*X.pbVal != 0)
 
     typedef struct
     {

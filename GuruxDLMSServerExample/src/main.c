@@ -64,7 +64,7 @@ unsigned char ln47pduBuff[PDU_BUFFER_SIZE];
 int startServers(int port, int trace)
 {
     int ret;
-    connection snHdlc, lnHdlc, snWrapper, lnWrapper;
+    connection snHdlc, lnHdlc, snWrapper, lnWrapper, lniec;
     //Initialize DLMS settings.
     svr_init(&snHdlc.settings, 0, DLMS_INTERFACE_TYPE_HDLC, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, snframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, snpduBuff, PDU_BUFFER_SIZE);
     //Set master key (KEK) to 1111111111111111.
@@ -104,7 +104,7 @@ int startServers(int port, int trace)
     }
     printf("Short Name DLMS Server with IEC 62056-47 in port %d.\n", port + 2);
     printf("Example connection settings:\n");
-    printf("GuruxDLMSClientExample -r sn -h localhost -p %d -w\n", port + 2);
+    printf("GuruxDLMSClientExample -r sn -h localhost -p %d -i WRAPPER\n", port + 2);
     printf("----------------------------------------------------------\n");
     //Initialize DLMS settings.
     svr_init(&lnWrapper.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, ln47frameBuff, WRAPPER_BUFFER_SIZE, ln47pduBuff, PDU_BUFFER_SIZE);
@@ -118,7 +118,23 @@ int startServers(int port, int trace)
     snHdlc.trace = lnHdlc.trace = snWrapper.trace = lnWrapper.trace = trace;
     printf("Logical Name DLMS Server with IEC 62056-47 in port %d.\n", port + 3);
     printf("Example connection settings:\n");
-    printf("GuruxDLMSClientExample -h localhost -p %d -w\n", port + 3);
+    printf("GuruxDLMSClientExample -h localhost -p %d -i WRAPPER\n", port + 3);
+
+    //Initialize DLMS settings.
+    svr_init(&lniec.settings, 1, DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, lnframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, lnpduBuff, PDU_BUFFER_SIZE);
+    //Set flag id.
+    memcpy(lniec.settings.flagId, "GRX", 3);
+    //We have several server that are using same objects. Just copy them.
+    oa_copy(&lniec.settings.base.objects, &snHdlc.settings.base.objects);
+    //Start server
+    if ((ret = svr_start(&lniec, port + 4)) != 0)
+    {
+        return ret;
+    }
+    printf("Hdlc With Mode E Logical Name DLMS Server in port %d.\n", port + 4);
+    printf("Example connection settings:\n");
+    printf("GuruxDLMSClientExample -h localhost -p %d -i HdlcWithModeE\n", port + 4);
+    printf("----------------------------------------------------------\n");
 
     printf("----------------------------------------------------------\n");
     printf("Authentication levels:\n");

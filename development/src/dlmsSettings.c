@@ -74,6 +74,9 @@ void svr_init(
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     settings->hdlc = NULL;
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
+#ifndef DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
+    settings->localPortSetup = NULL;
+#endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
 #ifndef DLMS_IGNORE_CLOCK
     settings->defaultClock = NULL;
 #endif //DLMS_IGNORE_CLOCK

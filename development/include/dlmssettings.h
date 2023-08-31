@@ -305,6 +305,10 @@ extern "C" {
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
         gxIecHdlcSetup* hdlc;
 #endif //DLMS_IGNORE_IEC_HDLC_SETUP
+#ifndef DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
+        gxLocalPortSetup* localPortSetup;
+#endif //DLMS_IGNORE_IEC_LOCAL_PORT_SETUP
+
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
         gxTcpUdpSetup* wrapper;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
@@ -318,6 +322,10 @@ extern "C" {
         uint32_t frameReceived;
         //Server is using push client address when sending push messages. Client address is used if PushAddress is zero.
         uint16_t pushClientAddress;
+#ifndef DLMS_IGNORE_IEC
+        /*Flag ID is used when server is operating using optical probe.*/
+        unsigned char flagId[3];
+#endif //DLMS_IGNORE_IEC
     } dlmsServerSettings;
 
     //Initialize server.

@@ -405,7 +405,9 @@ int cl_getApplicationAssociationRequest(
     gxByteBuffer* pw;
     dlmsVARIANT data;
 #ifndef DLMS_IGNORE_HIGH_GMAC
+#ifdef DLMS_IGNORE_MALLOC
     gxByteBuffer pw2;
+#endif //DLMS_IGNORE_MALLOC
 #endif //DLMS_IGNORE_HIGH_GMAC
 #ifndef GX_DLMS_MICROCONTROLLER
     unsigned char APPLICATION_ASSOCIATION_REQUEST[32];

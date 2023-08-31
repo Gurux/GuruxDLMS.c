@@ -1228,7 +1228,7 @@ int addOpticalPortSetup()
     localPortSetup.proposedBaudrate = DLMS_BAUD_RATE_9600;
     localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
     localPortSetup.responseTime = DLMS_LOCAL_PORT_RESPONSE_TIME_200_MS;
-    bb_addString(&localPortSetup.deviceAddress, "Gurux");
+    bb_addString(&localPortSetup.deviceAddress, "12345678");
     bb_addString(&localPortSetup.password1, "Gurux1");
     bb_addString(&localPortSetup.password2, "Gurux2");
     bb_addString(&localPortSetup.password5, "Gurux5");
@@ -1907,6 +1907,11 @@ int svr_start(
     {
         con->settings.wrapper = &udpSetup;
     }
+    else if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
+    {
+        con->settings.hdlc = &hdlc;
+        con->settings.localPortSetup = &localPortSetup;
+    }
     else
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -2126,7 +2131,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
             }
             fclose(f);
         }
-    }
+}
     return ret;
 }
 
@@ -2232,7 +2237,7 @@ int readProfileGeneric(
             DLMS_DATA_TYPE dataTypes[10];
             if (f != NULL)
             {
-               ret = getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
+                ret = getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
             }
             //Append data.
             if (ret == 0 && dataSize != 0)
@@ -2980,17 +2985,17 @@ int sendPush(
                     break;
                 }
             }
-        }
+                }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         closesocket(s);
 #else
         close(s);
 #endif
-    }
+            }
     mes_clear(&messages);
     free(host);
     return 0;
-}
+        }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 unsigned char svr_isTarget(

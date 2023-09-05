@@ -238,6 +238,11 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
         ret = GET_STR_FROM_EEPROM("MBusDiagnostic");
         break;
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+    case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+        ret = GET_STR_FROM_EEPROM("MBusPortSetup");
+        break;
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = GET_STR_FROM_EEPROM("UtilityTables");
         break;
@@ -1891,7 +1896,7 @@ int obj_MBusDiagnosticToString(gxMbusDiagnostic* object, char** buff)
     bb_addIntAsString(&ba, object->receivedFrames);
     bb_addString(&ba, "\nIndex: 8 Value: ");
     bb_addIntAsString(&ba, object->failedReceivedFrames);
-    bb_addString(&ba, "\nIndex: 8 Value: ");
+    bb_addString(&ba, "\nIndex: 9 Value: ");
     bb_addIntAsString(&ba, object->captureTime.attributeId);
     bb_addString(&ba, ":");
     time_toString(&object->captureTime.timeStamp, &ba);
@@ -1899,6 +1904,41 @@ int obj_MBusDiagnosticToString(gxMbusDiagnostic* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
+}
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+int obj_MBusPortSetupToString(gxMBusPortSetup* object, char** buff)
+{
+    int ret;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    if ((ret = bb_addString(&ba, "Index: 2 Value: ")) == 0 &&
+        (ret = hlp_appendLogicalName(&ba, object->profileSelection)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 3 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->portCommunicationStatus)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 4 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->dataHeaderType)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 5 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->primaryAddress)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 6 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->identificationNumber)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 7 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->manufacturerId)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 8 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->mBusVersion)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 9 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->deviceType)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 10 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->maxPduSize)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 11 Value: ")) == 0 &&
+        (ret = obj_timeWindowToString(&object->listeningWindow, &ba)) == 0)
+    {
+        bb_addString(&ba, "\n");
+        *buff = bb_toString(&ba);
+    }
+    bb_clear(&ba);
+    return ret;
 }
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 #ifndef DLMS_IGNORE_UTILITY_TABLES
@@ -3353,7 +3393,11 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_MBusDiagnosticToString((gxMbusDiagnostic*)object, buff);
         break;
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
-
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+    case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+        ret = obj_MBusPortSetupToString((gxMBusPortSetup*)object, buff);
+        break;
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = obj_UtilityTablesToString((gxUtilityTables*)object, buff);

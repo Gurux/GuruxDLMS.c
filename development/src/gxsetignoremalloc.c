@@ -2975,6 +2975,85 @@ int cosem_setMbusDiagnostic(gxMbusDiagnostic* object, unsigned char index, dlmsV
 }
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 
+
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+int cosem_setMbusPortSetup(gxMBusPortSetup* object, unsigned char index, dlmsVARIANT* value)
+{
+    int ret;
+    unsigned char ch;
+    if (index == 2)
+    {
+        ret = cosem_getOctetString2(value->byteArr, object->profileSelection, 6, NULL);
+    }
+    else if (index == 3)
+    {
+        if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+        {
+            object->portCommunicationStatus = ch;
+        }
+    }
+    else if (index == 4)
+    {
+        if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+        {
+            object->dataHeaderType = ch;
+        }
+    }
+    else if (index == 5)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->primaryAddress);
+    }
+    else if (index == 6)
+    {
+        ret = cosem_getUInt32(value->byteArr, &object->identificationNumber);
+    }
+    else if (index == 7)
+    {
+        ret = cosem_getUInt16(value->byteArr, &object->manufacturerId);
+    }
+    else if (index == 8)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->mBusVersion);
+    }
+    else if (index == 9)
+    {
+        if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+        {
+            object->deviceType = ch;
+        }
+    }
+    else if (index == 10)
+    {
+        ret = cosem_getUInt16(value->byteArr, &object->maxPduSize);
+    }
+    else if (index == 11)
+    {
+        gxTimePair* it;
+        uint16_t count;
+        int pos;
+        arr_clearKeyValuePair(&object->listeningWindow);
+        if ((ret = cosem_verifyArray(value->byteArr, &object->listeningWindow, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_getArrayItem(&object->listeningWindow, pos, (void**)&it, sizeof(gxTimePair))) != 0 ||
+                    (ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
+                    (ret = cosem_getDateTimeFromOctetString(value->byteArr, &it->first)) != 0 ||
+                    (ret = cosem_getDateTimeFromOctetString(value->byteArr, &it->second)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
+
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char index, dlmsVARIANT* value)
 {

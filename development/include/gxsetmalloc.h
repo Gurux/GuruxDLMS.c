@@ -175,6 +175,9 @@ extern "C" {
 #ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
     int cosem_setMbusDiagnostic(gxMbusDiagnostic* object, unsigned char index, dlmsVARIANT* value);
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+    int cosem_setMbusPortSetup(gxMBusPortSetup* object, unsigned char index, dlmsVARIANT* value);
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
     int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char index, dlmsVARIANT* value);
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP

@@ -4431,6 +4431,102 @@ int cosem_setMbusDiagnostic(gxMbusDiagnostic* object, unsigned char index, dlmsV
 }
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 
+
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+int cosem_setMbusPortSetup(gxMBusPortSetup* object, unsigned char index, dlmsVARIANT* value)
+{
+    int pos, ret = 0;
+    dlmsVARIANT* tmp, * tmp3;
+    if (index == 2)
+    {
+        memcpy(object->profileSelection, value->byteArr->data, value->byteArr->size);
+    }
+    else if (index == 3)
+    {
+        object->portCommunicationStatus = (DLMS_MBUS_PORT_COMMUNICATION_STATE)var_toInteger(value);
+    }
+    else if (index == 4)
+    {
+        object->dataHeaderType = (DLMS_MBUS_DATA_HEADER_TYPE)var_toInteger(value);
+    }
+    else if (index == 5)
+    {
+        object->primaryAddress = (unsigned char) var_toInteger(value);
+    }
+    else if (index == 6)
+    {
+        object->identificationNumber = (uint32_t) var_toInteger(value);
+    }
+    else if (index == 7)
+    {
+        object->manufacturerId = (uint16_t)var_toInteger(value);
+    }
+    else if (index == 8)
+    {
+        object->mBusVersion = (unsigned char)var_toInteger(value);
+    }
+    else if (index == 9)
+    {
+        object->deviceType = (DLMS_MBUS_METER_TYPE)var_toInteger(value);
+    }
+    else if (index == 10)
+    {
+        object->maxPduSize = (uint16_t)var_toInteger(value);
+    }
+    else if (index == 11)
+    {
+        arr_clearKeyValuePair(&object->listeningWindow);
+        dlmsVARIANT start, end;
+        gxtime* s, * e;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                ret = va_getByIndex(tmp->Arr, 0, &tmp3);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                var_init(&start);
+                var_init(&end);
+                ret = dlms_changeType2(tmp3, DLMS_DATA_TYPE_DATETIME, &start);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                ret = va_getByIndex(tmp->Arr, 1, &tmp3);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                ret = dlms_changeType2(tmp3, DLMS_DATA_TYPE_DATETIME, &end);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                s = (gxtime*)gxmalloc(sizeof(gxtime));
+                e = (gxtime*)gxmalloc(sizeof(gxtime));
+                time_copy(s, start.dateTime);
+                time_copy(e, end.dateTime);
+                arr_push(&object->listeningWindow, key_init(s, e));
+                var_clear(&start);
+                var_clear(&end);
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
+
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char index, dlmsVARIANT* value)
 {

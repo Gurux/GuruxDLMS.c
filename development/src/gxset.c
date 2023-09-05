@@ -284,6 +284,11 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
         ret = cosem_setMbusDiagnostic((gxMbusDiagnostic*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+    case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+        ret = cosem_setMbusPortSetup((gxMBusPortSetup*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = cosem_setUtilityTables((gxUtilityTables*)e->target, e->index, &e->value);

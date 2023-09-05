@@ -2882,6 +2882,103 @@ int ser_saveMbusDiagnostic(
 }
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 
+int ser_loadArray(gxSerializerSettings* serializeSettings, gxArray* arr, uint16_t* count)
+{
+    int ret = ser_loadObjectCount(serializeSettings, count);
+    if (ret == 0)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        arr->size = *count;
+        ret = ser_loadObjectCount(serializeSettings, count);
+        if (arr_getCapacity(arr) != *count)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+#else
+        arr_clear(arr);
+        arr_capacity(arr, *count);
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int loadTimeWindow(
+    gxSerializerSettings* serializeSettings,
+    gxArray* arr)
+{
+    int ret;
+    uint16_t pos;
+    gxtime* start, * end;
+    uint16_t count;
+#ifdef DLMS_IGNORE_MALLOC
+    gxTimePair* k;
+#endif //DLMS_IGNORE_MALLOC
+    arr_clearKeyValuePair(arr);
+    if ((ret = ser_loadArray(serializeSettings, arr, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex3(arr, pos, (void**)&k, sizeof(gxTimePair), 0)) != 0)
+            {
+                break;
+            }
+            start = &k->first;
+            end = &k->second;
+#else
+            start = (gxtime*)gxmalloc(sizeof(gxtime));
+            if (start == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            end = (gxtime*)gxmalloc(sizeof(gxtime));
+            if (end == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            if ((ret = arr_push(arr, key_init(start, end))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = ser_loadDateTime(start, serializeSettings, DLMS_DATA_TYPE_DATETIME)) != 0 ||
+                (ret = ser_loadDateTime(end, serializeSettings, DLMS_DATA_TYPE_DATETIME)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+int ser_saveMbusPortSetup(
+    gxSerializerSettings* serializeSettings,
+    gxMBusPortSetup* object)
+{
+    int ret = 0;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_set(serializeSettings, object->profileSelection, 6
+#ifdef DLMS_IGNORE_MALLOC
+        , 6
+#endif //DLMS_IGNORE_MALLOC
+    )) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 3) && (ret = ser_saveUInt8(serializeSettings, object->portCommunicationStatus)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_saveUInt8(serializeSettings, object->dataHeaderType)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_saveUInt8(serializeSettings, object->primaryAddress)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 6) && (ret = ser_saveUInt32(serializeSettings, object->identificationNumber)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 7) && (ret = ser_saveUInt16(serializeSettings, object->manufacturerId)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 8) && (ret = ser_saveUInt8(serializeSettings, object->mBusVersion)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_saveUInt8(serializeSettings, object->deviceType)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 10) && (ret = ser_saveUInt16(serializeSettings, object->maxPduSize)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 11) && (ret = saveTimeWindow(serializeSettings, &object->listeningWindow)) != 0))
+
+    {
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
+
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 int ser_saveMbusSlavePortSetup(
     gxSerializerSettings* serializeSettings,
@@ -4062,6 +4159,11 @@ int ser_saveObject(
         ret = ser_saveMbusDiagnostic(serializeSettings, (gxMbusDiagnostic*)object);
         break;
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+    case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+        ret = ser_saveMbusPortSetup(serializeSettings, (gxMBusPortSetup*)object);
+        break;
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         ret = ser_saveMbusSlavePortSetup(serializeSettings, (gxMbusSlavePortSetup*)object);
@@ -4555,26 +4657,6 @@ int ser_getArrayItem(gxArray* arr, uint16_t index, void** value, uint16_t itemSi
 #endif //DLMS_COSEM_EXACT_DATA_TYPES
 }
 
-int ser_loadArray(gxSerializerSettings* serializeSettings, gxArray* arr, uint16_t* count)
-{
-    int ret = ser_loadObjectCount(serializeSettings, count);
-    if (ret == 0)
-    {
-#ifdef DLMS_IGNORE_MALLOC
-        arr->size = *count;
-        ret = ser_loadObjectCount(serializeSettings, count);
-        if (arr_getCapacity(arr) != *count)
-        {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-#else
-        arr_clear(arr);
-        arr_capacity(arr, *count);
-#endif //DLMS_IGNORE_MALLOC
-    }
-    return ret;
-}
-
 int ser_verifyObjectArray(gxSerializerSettings* serializeSettings, objectArray* arr, uint16_t* count)
 {
     oa_empty(arr);
@@ -4885,55 +4967,6 @@ int ser_loadObjectsInternal(
                 break;
             }
 #endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
-        }
-    }
-    return ret;
-}
-
-int loadTimeWindow(
-    gxSerializerSettings* serializeSettings,
-    gxArray* arr)
-{
-    int ret;
-    uint16_t pos;
-    gxtime* start, * end;
-    uint16_t count;
-#ifdef DLMS_IGNORE_MALLOC
-    gxTimePair* k;
-#endif //DLMS_IGNORE_MALLOC
-    arr_clearKeyValuePair(arr);
-    if ((ret = ser_loadArray(serializeSettings, arr, &count)) == 0)
-    {
-        for (pos = 0; pos != count; ++pos)
-        {
-#ifdef DLMS_IGNORE_MALLOC
-            if ((ret = arr_getByIndex3(arr, pos, (void**)&k, sizeof(gxTimePair), 0)) != 0)
-            {
-                break;
-            }
-            start = &k->first;
-            end = &k->second;
-#else
-            start = (gxtime*)gxmalloc(sizeof(gxtime));
-            if (start == NULL)
-            {
-                return DLMS_ERROR_CODE_OUTOFMEMORY;
-            }
-            end = (gxtime*)gxmalloc(sizeof(gxtime));
-            if (end == NULL)
-            {
-                return DLMS_ERROR_CODE_OUTOFMEMORY;
-            }
-            if ((ret = arr_push(arr, key_init(start, end))) != 0)
-            {
-                break;
-            }
-#endif //DLMS_IGNORE_MALLOC
-            if ((ret = ser_loadDateTime(start, serializeSettings, DLMS_DATA_TYPE_DATETIME)) != 0 ||
-                (ret = ser_loadDateTime(end, serializeSettings, DLMS_DATA_TYPE_DATETIME)) != 0)
-            {
-                break;
-            }
         }
     }
     return ret;
@@ -6277,6 +6310,41 @@ int ser_loadMBusDiagnostic(
 }
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+int ser_loadMBusPortSetup(
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxMBusPortSetup * object)
+{
+    int ret = 0;
+    unsigned char ht, st, dt;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_get(serializeSettings, object->profileSelection, 6
+#ifdef DLMS_IGNORE_MALLOC
+        , 6
+#endif //DLMS_IGNORE_MALLOC
+    )) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 3) && (ret = ser_loadUInt8(serializeSettings, &st)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_loadUInt8(serializeSettings, &ht)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_loadUInt8(serializeSettings, &object->primaryAddress)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 6) && (ret = ser_loadUInt32(serializeSettings, &object->identificationNumber)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 7) && (ret = ser_loadUInt16(serializeSettings, &object->manufacturerId)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 8) && (ret = ser_loadUInt8(serializeSettings, &object->mBusVersion)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_loadUInt8(serializeSettings, &dt)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 10) && (ret = ser_loadUInt16(serializeSettings, &object->maxPduSize)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 10) && (ret = loadTimeWindow(serializeSettings, &object->listeningWindow)) != 0))
+    {
+    }
+    if (ret == 0)
+    {
+        object->portCommunicationStatus = st;
+        object->dataHeaderType = ht;
+        object->deviceType = dt;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
+
 #ifndef DLMS_IGNORE_MBUS_CLIENT
 int ser_loadMBusClient(
     gxSerializerSettings * serializeSettings,
@@ -7550,6 +7618,11 @@ int ser_loadObject(
         ret = ser_loadMBusDiagnostic(serializeSettings, settings, (gxMbusDiagnostic*)object);
         break;
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+    case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+        ret = ser_loadMBusPortSetup(serializeSettings, settings, (gxMBusPortSetup*)object);
+        break;
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
 #ifndef DLMS_IGNORE_MBUS_CLIENT
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
         ret = ser_loadMBusClient(serializeSettings, settings, (gxMBusClient*)object);

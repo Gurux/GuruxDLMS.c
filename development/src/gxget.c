@@ -3630,6 +3630,92 @@ int cosem_getMbusDiagnostic(
 }
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 
+
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+int cosem_getMbusPortSetup(
+    gxValueEventArg* e)
+{
+    int pos, ret;
+    gxMBusPortSetup* object = (gxMBusPortSetup*)e->target;
+    if (e->index == 2)
+    {
+        ret = cosem_setOctetString2(e->value.byteArr, object->profileSelection, 6);
+    }
+    else if (e->index == 3)
+    {
+        ret = cosem_setEnum(e->value.byteArr, object->portCommunicationStatus);
+    }
+    else if (e->index == 4)
+    {
+        ret = cosem_setEnum(e->value.byteArr, object->dataHeaderType);
+    }
+    else if (e->index == 5)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->primaryAddress);
+    }
+    else if (e->index == 6)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->identificationNumber);
+    }
+    else if (e->index == 7)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->manufacturerId);
+    }
+    else if (e->index == 8)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->mBusVersion);
+    }
+    else if (e->index == 9)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->deviceType);
+    }
+    else if (e->index == 10)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->maxPduSize);
+    }
+    else if (e->index == 11)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        gxKey* kv;
+#else
+        gxTimePair* kv;
+#endif //DLMS_IGNORE_MALLOC
+        if ((ret = cosem_setArray(e->value.byteArr, object->listeningWindow.size)) == 0)
+        {
+            for (pos = 0; pos != object->listeningWindow.size; ++pos)
+            {
+                if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0)
+                {
+                    break;
+                }
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&kv)) != 0 ||
+                    (ret = cosem_setDateTimeAsOctetString(e->value.byteArr, (gxtime*)kv->key)) != 0 ||
+                    (ret = cosem_setDateTimeAsOctetString(e->value.byteArr, (gxtime*)kv->value)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->listeningWindow, pos, (void**)&kv, sizeof(gxTimePair))) != 0 ||
+                    //start_time
+                    (ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &kv->first)) != 0 ||
+                    //end_time
+                    (ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &kv->second)) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int cosem_getUtilityTables(
     gxValueEventArg* e)
@@ -4621,6 +4707,11 @@ int cosem_getValue(
         ret = cosem_getMbusDiagnostic(e);
         break;
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+    case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+        ret = cosem_getMbusPortSetup(e);
+        break;
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = cosem_getUtilityTables(e);

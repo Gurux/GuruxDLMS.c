@@ -175,7 +175,10 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
 int cl_parseUAResponse(dlmsSettings* settings, gxByteBuffer* data)
 {
     int ret = dlms_parseSnrmUaResponse(settings, data);
-    settings->connected = DLMS_CONNECTION_STATE_HDLC;
+    if (ret == 0 && bb_size(data) != 0)
+    {
+        settings->connected = DLMS_CONNECTION_STATE_HDLC;
+    }
     return ret;
 }
 

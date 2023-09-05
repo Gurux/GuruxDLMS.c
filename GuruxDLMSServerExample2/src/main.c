@@ -189,6 +189,7 @@ static gxActionSchedule actionScheduleDisconnectOpen;
 static gxActionSchedule actionScheduleDisconnectClose;
 static gxPushSetup pushSetup;
 static gxMbusDiagnostic mbusDiagnostic;
+static gxMBusPortSetup mbusPortSetup;
 static gxDisconnectControl disconnectControl;
 static gxProfileGeneric loadProfile;
 static gxSapAssignment sapAssignment;
@@ -235,7 +236,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff),
     BASE(primeNbOfdmPlcMacCounters),
     BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter), BASE(limiter),
-    BASE(mbusDiagnostic),
+    BASE(mbusDiagnostic), BASE(mbusPortSetup)
 };
 
 //List of COSEM objects that are removed from association view(s).
@@ -1605,6 +1606,37 @@ int addMbusDiagnostic()
     return ret;
 }
 
+
+///////////////////////////////////////////////////////////////////////
+//Add Mbus port setup object.
+///////////////////////////////////////////////////////////////////////
+int addMbusPortSetup()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,24,8,0,255 };
+    const unsigned char PROFILE_SELECTION[6] = { 0,0,24,0,0,255 };
+    static gxTimePair LISTENING_WINDOW[10] = { 0 };
+    if ((ret = INIT_OBJECT(mbusPortSetup, DLMS_OBJECT_TYPE_MBUS_PORT_SETUP, ln)) == 0)
+    {
+        memcpy(mbusPortSetup.profileSelection, PROFILE_SELECTION, sizeof(PROFILE_SELECTION));
+        mbusPortSetup.portCommunicationStatus = DLMS_MBUS_PORT_COMMUNICATION_STATE_LIMITED_ACCESS;
+        mbusPortSetup.dataHeaderType = DLMS_MBUS_DATA_HEADER_TYPE_SHORT;
+        mbusPortSetup.primaryAddress = 1;
+        mbusPortSetup.identificationNumber = 2;
+        mbusPortSetup.manufacturerId = 3;
+        mbusPortSetup.mBusVersion = 1;
+        mbusPortSetup.deviceType = DLMS_MBUS_METER_TYPE_ENERGY;
+        mbusPortSetup.maxPduSize = 320;
+        //Add listening window.
+        ARR_ATTACH(mbusPortSetup.listeningWindow, LISTENING_WINDOW, 1);
+        //Set start time.
+        time_init(&LISTENING_WINDOW[0].first, -1, -1, -1, 0, 0, 0, -1, -clock1.timeZone);
+        //Set end time.
+        time_init(&LISTENING_WINDOW[0].second, -1, -1, -1, 12, 0, 0, -1, -clock1.timeZone);
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //Add push setup object. (On Connectivity)
 ///////////////////////////////////////////////////////////////////////
@@ -2121,6 +2153,7 @@ int createObjects()
         (ret = addSecuritySetupHigh()) != 0 ||
         (ret = addSecuritySetupHighGMac()) != 0 ||
         (ret = addMbusDiagnostic()) != 0 ||
+        (ret = addMbusPortSetup()) != 0 ||
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||

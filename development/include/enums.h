@@ -3240,17 +3240,63 @@ extern "C" {
     // M-Bus meter type.
     typedef enum
     {
+        // Other meter.
+        DLMS_MBUS_METER_TYPE_OTHER = 0,
         // Oil meter.
         DLMS_MBUS_METER_TYPE_OIL = 1,
         // Energy meter.
         DLMS_MBUS_METER_TYPE_ENERGY = 2,
         // Gas meter.
         DLMS_MBUS_METER_TYPE_GAS = 3,
+        // Heat meter.
+        DLMS_MBUS_METER_TYPE_HEAT = 4,
+        // Steam meter.
+        DLMS_MBUS_METER_TYPE_STEAM = 5,
+        // Hot water meter.
+        DLMS_MBUS_METER_TYPE_HOT_WATER = 6,
         // Water meter.
         DLMS_MBUS_METER_TYPE_WATER = 7,
+        // Heat cost allocator meter.
+        DLMS_MBUS_METER_TYPE_HEAT_COST_ALLOCATOR = 8,
+        // Gas mode 2 meter.
+        DLMS_MBUS_METER_TYPE_GAS_MODE2 = 10,
+        // Heat mode 2 meter.
+        DLMS_MBUS_METER_TYPE_HEAT_MODE2 = 11,
+        /// Hot water mode 2 meter.
+        DLMS_MBUS_METER_TYPE_HOT_WATER_MODE2 = 12,
+        /// Water mode 2 meter.
+        DLMS_MBUS_METER_TYPE_WATER_MODE2 = 13,
+        // Heat cost allocator mode 2 meter.
+        DLMS_MBUS_METER_TYPE_HEAT_COST_ALLOCATOR_MODE2 = 14,
         // Unknown meter type.
         DLMS_MBUS_METER_TYPE_UNKNOWN = 0x0F
     }DLMS_MBUS_METER_TYPE;
+
+    // Defines the M-Bus port communication status.
+    typedef enum
+    {
+        // No access.
+        DLMS_MBUS_PORT_COMMUNICATION_STATE_NO_ACCESS = 0,
+        // Temporary no access
+        DLMS_MBUS_PORT_COMMUNICATION_STATE_TEMPORARY_NO_ACCESS,
+        // Limited access
+        DLMS_MBUS_PORT_COMMUNICATION_STATE_LIMITED_ACCESS,
+        // Unlimited access.
+        DLMS_MBUS_PORT_COMMUNICATION_STATE_UNLIMITED_ACCESS,
+        // wM-Bus.
+        DLMS_MBUS_PORT_COMMUNICATION_STATE_WMBUS,
+    }DLMS_MBUS_PORT_COMMUNICATION_STATE;
+
+    // Defines the M-Bus data header types.
+    typedef enum
+    {
+        // M-Bus data header is not used.
+        DLMS_MBUS_DATA_HEADER_TYPE_NONE = 0,
+        // Short data header is used.
+        DLMS_MBUS_DATA_HEADER_TYPE_SHORT,
+        // Long data header is used.
+        DLMS_MBUS_DATA_HEADER_TYPE_LONG
+    }DLMS_MBUS_DATA_HEADER_TYPE;
 
     // M-Bus control info.
     typedef enum

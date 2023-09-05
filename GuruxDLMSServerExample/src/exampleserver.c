@@ -130,6 +130,7 @@ static gxActionSchedule actionScheduleDisconnectOpen;
 static gxActionSchedule actionScheduleDisconnectClose;
 static gxPushSetup pushSetup;
 static gxMbusDiagnostic mbusDiagnostic;
+static gxMBusPortSetup mbusPortSetup;
 static gxDisconnectControl disconnectControl;
 static gxProfileGeneric loadProfile;
 static gxSapAssignment sapAssignment;
@@ -166,7 +167,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
     BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
     BASE(tarifficationScriptTable), BASE(registerActivation), BASE(limiter),
-    BASE(mbusDiagnostic),
+    BASE(mbusDiagnostic), BASE(mbusPortSetup)
 };
 
 ////////////////////////////////////////////////////
@@ -1691,6 +1692,37 @@ int addMbusDiagnostic()
     return ret;
 }
 
+///////////////////////////////////////////////////////////////////////
+//Add Mbus port setup object.
+///////////////////////////////////////////////////////////////////////
+int addMbusPortSetup()
+{
+    int ret;
+    gxBroadcastFrameCounter* item;
+    const unsigned char ln[6] = { 0,0,24,8,0,255 };
+    const unsigned char PROFILE_SELECTION[6] = { 0,0,24,0,0,255 };
+    if ((ret = INIT_OBJECT(mbusPortSetup, DLMS_OBJECT_TYPE_MBUS_PORT_SETUP, ln)) == 0)
+    {
+        memcpy(mbusPortSetup.profileSelection, PROFILE_SELECTION, sizeof(PROFILE_SELECTION));
+        mbusPortSetup.portCommunicationStatus = DLMS_MBUS_PORT_COMMUNICATION_STATE_LIMITED_ACCESS;
+        mbusPortSetup.dataHeaderType = DLMS_MBUS_DATA_HEADER_TYPE_SHORT;
+        mbusPortSetup.primaryAddress = 1;
+        mbusPortSetup.identificationNumber = 2;
+        mbusPortSetup.manufacturerId = 3;
+        mbusPortSetup.mBusVersion = 1;
+        mbusPortSetup.deviceType = DLMS_MBUS_METER_TYPE_ENERGY;
+        mbusPortSetup.maxPduSize = 320;
+        //Add listening window.
+        gxtime* start, * end;
+        start = (gxtime*)malloc(sizeof(gxtime));
+        time_init(start, -1, -1, -1, 0, 0, 0, 0, -1);
+        end = (gxtime*)malloc(sizeof(gxtime));
+        time_init(end, -1, -1, -1, 12, 0, 0, 0, -1);
+        arr_push(&mbusPortSetup.listeningWindow, key_init(start, end));
+    }
+    return ret;
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 //Add push setup object. (On Connectivity)
@@ -1872,6 +1904,7 @@ int svr_InitObjects(
         (ret = addSecuritySetupHigh()) != 0 ||
         (ret = addSecuritySetupHighGMac()) != 0 ||
         (ret = addMbusDiagnostic()) != 0 ||
+        (ret = addMbusPortSetup()) != 0 ||
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
@@ -2113,7 +2146,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
         }
         l = time_toUnixTime2(tmp.dateTime);
         var_clear(&tmp);
-        }
+    }
 
     uint32_t t;
     gxProfileGeneric* pg = (gxProfileGeneric*)e->target;
@@ -2172,7 +2205,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
         }
     }
     return ret;
-    }
+}
 
 
 int readProfileGeneric(
@@ -2549,7 +2582,7 @@ void handleProfileGenericActions(
         captureProfileGeneric(settings, ((gxProfileGeneric*)it->target));
     }
     saveSettings();
-    }
+}
 
 
 //Allocate space for image tranfer.
@@ -3023,14 +3056,14 @@ int sendPush(
                     mes_clear(&messages);
                     break;
                 }
+            }
         }
-    }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         closesocket(s);
 #else
         close(s);
 #endif
-}
+    }
     mes_clear(&messages);
     free(host);
     return 0;
@@ -3492,7 +3525,7 @@ int svr_connected(
             {
                 settings->base.preEstablishedSystemTitle = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
                 bb_init(settings->base.preEstablishedSystemTitle);
-}
+            }
             bb_addString(settings->base.preEstablishedSystemTitle, "ABCDEFGH");
             settings->base.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
         }
@@ -3505,7 +3538,7 @@ int svr_connected(
 #else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;
-    }
+}
 
 /**
     * Client has try to made invalid connection. Password is incorrect.

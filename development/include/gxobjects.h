@@ -1419,6 +1419,40 @@ extern "C" {
     } gxMbusDiagnostic;
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSMBusPortSetup
+    */
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /*References an M-Bus communication port setup object describing 
+        the physical capabilities for wired or wireless communication.*/
+        unsigned char profileSelection[6];
+        /*Communication status of the M-Bus node.*/
+        DLMS_MBUS_PORT_COMMUNICATION_STATE portCommunicationStatus;
+        /*M-Bus data header type.*/
+        DLMS_MBUS_DATA_HEADER_TYPE dataHeaderType;
+        /*he primary address of the M-Bus slave device.*/
+        unsigned char primaryAddress;
+        /*Identification Number element of the data header.*/
+        uint32_t identificationNumber;
+        /*Manufacturer Identification element.*/
+        uint16_t manufacturerId;
+        /*M-Bus version.*/
+        unsigned char mBusVersion;
+        /*Device type.*/
+        DLMS_MBUS_METER_TYPE deviceType;
+        uint16_t maxPduSize;
+        gxArray listeningWindow;
+    } gxMBusPortSetup;
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     /*
     ---------------------------------------------------------------------------

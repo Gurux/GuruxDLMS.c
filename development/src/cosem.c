@@ -265,6 +265,11 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxMbusDiagnostic);
         break;
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+    case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+        size = sizeof(gxMBusPortSetup);
+        break;
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         size = sizeof(gxUtilityTables);

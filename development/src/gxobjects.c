@@ -1011,6 +1011,11 @@ void obj_clear(gxObject* object)
             arr_clear(&((gxMbusDiagnostic*)object)->broadcastFrames);
             break;
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+#ifndef DLMS_IGNORE_MBUS_PORT_SETUP
+        case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+            arr_clearKeyValuePair(&((gxMBusPortSetup*)object)->listeningWindow);
+            break;
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
         case DLMS_OBJECT_TYPE_UTILITY_TABLES:
             bb_clear(&((gxUtilityTables*)object)->buffer);
@@ -1370,6 +1375,9 @@ unsigned char obj_attributeCount(gxObject* object)
         break;
     case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
         ret = 9;
+        break;
+    case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+        ret = 11;
         break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = 4;
@@ -1759,6 +1767,9 @@ unsigned char obj_methodCount(gxObject* object)
         break;
     case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
         ret = 1;
+        break;
+    case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
+        ret = 0;
         break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = 1;

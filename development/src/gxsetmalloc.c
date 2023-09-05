@@ -4341,6 +4341,96 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
     return ret;
 }
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
+
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+int cosem_setMbusDiagnostic(gxMbusDiagnostic* object, unsigned char index, dlmsVARIANT* value)
+{
+    int pos, ret = 0;
+    dlmsVARIANT* tmp, * tmp3;
+    gxBroadcastFrameCounter* item;
+    if (index == 2)
+    {
+        object->receivedSignalStrength = (unsigned char)var_toInteger(value);
+    }
+    else if (index == 3)
+    {
+        object->channelId = (unsigned char)var_toInteger(value);
+    }
+    else if (index == 4)
+    {
+        object->linkStatus = (DLMS_MBUS_LINK_STATUS)var_toInteger(value);
+    }
+    else if (index == 5)
+    {
+        for (pos = 0; pos != value->Arr->size; ++pos)
+        {
+            item = NULL;
+            ret = va_getByIndex(value->Arr, pos, &tmp);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            item = (gxBroadcastFrameCounter*)gxmalloc(sizeof(gxBroadcastFrameCounter));
+            if (item == NULL)
+            {
+                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                break;
+            }
+            ret = va_getByIndex(tmp->Arr, 0, &tmp3);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                gxfree(item);
+                break;
+            }
+            item->clientId = (unsigned char)var_toInteger(tmp3);
+            ret = va_getByIndex(tmp->Arr, 1, &tmp3);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                gxfree(item);
+                break;
+            }
+            item->counter = tmp3->ulVal;
+            ret = va_getByIndex(tmp->Arr, 2, &tmp3);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                gxfree(item);
+                break;
+            }
+            item->timeStamp = *tmp3->dateTime;
+            arr_push(&object->broadcastFrames, item);
+        }
+    }
+    else if (index == 6)
+    {
+        object->transmissions = value->ulVal;
+    }
+    else if (index == 7)
+    {
+        object->receivedFrames = value->ulVal;
+    }
+    else if (index == 8)
+    {
+        object->failedReceivedFrames = value->ulVal;
+    }
+    else if (index == 9)
+    {
+        if ((ret = va_getByIndex(value->Arr, 0, &tmp)) == DLMS_ERROR_CODE_OK)
+        {
+            object->captureTime.attributeId = tmp->bVal;
+            if ((ret = va_getByIndex(value->Arr, 1, &tmp)) == DLMS_ERROR_CODE_OK)
+            {
+                object->captureTime.timeStamp = *tmp->dateTime;
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -4624,7 +4714,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
         ct->chargePerUnit = (short)var_toInteger(tmp);
     }
     return ret;
-}
+    }
 
 int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -6071,7 +6161,7 @@ int cosem_setParameterMonitor(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-    }
+}
     return ret;
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
@@ -6625,8 +6715,8 @@ int cosem_setArbitrator(
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
                         return ret;
-                    }
                 }
+            }
 #else
                 memcpy(it->scriptLogicalName, tmp2->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -6636,8 +6726,8 @@ int cosem_setArbitrator(
                 }
                 it->scriptSelector = (uint16_t)var_toInteger(tmp2);
                 arr_push(&object->actions, it);
-            }
         }
+    }
     }
     break;
     case 3:
@@ -6717,7 +6807,7 @@ int cosem_setArbitrator(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-    }
+}
     return ret;
 }
 #endif //DLMS_IGNORE_ARBITRATOR
@@ -7355,7 +7445,7 @@ int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT* 
     break;
     default:
         return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-    }
+}
     return DLMS_ERROR_CODE_OK;
 }
 #endif //DLMS_ITALIAN_STANDARD

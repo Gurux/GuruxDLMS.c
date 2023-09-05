@@ -233,6 +233,11 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
     case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
         ret = GET_STR_FROM_EEPROM("TCPUDPSetup");
         break;
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+    case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
+        ret = GET_STR_FROM_EEPROM("MBusDiagnostic");
+        break;
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = GET_STR_FROM_EEPROM("UtilityTables");
         break;
@@ -1847,6 +1852,55 @@ int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
 }
 #endif //DLMS_IGNORE_IP6_SETUP
 
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+int obj_MBusDiagnosticToString(gxMbusDiagnostic* object, char** buff)
+{
+    int ret, pos;
+    gxBroadcastFrameCounter* it;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    bb_addString(&ba, "Index: 2 Value: ");
+    bb_addIntAsString(&ba, object->receivedSignalStrength);
+    bb_addString(&ba, "\nIndex: 3 Value: ");
+    bb_addIntAsString(&ba, object->channelId);
+    bb_addString(&ba, "\nIndex: 4 Value: ");
+    bb_addIntAsString(&ba, object->linkStatus);
+    bb_addString(&ba, "\nIndex: 5 Value: {");
+    for (pos = 0; pos != object->broadcastFrames.size; ++pos)
+    {
+        ret = arr_getByIndex(&object->broadcastFrames, pos, (void**)&it);
+        if (ret != 0)
+        {
+            return ret;
+        }
+        if (pos != 0)
+        {
+            bb_addString(&ba, ", ");
+        }
+        bb_addString(&ba, "[");
+        bb_addIntAsString(&ba, it->clientId);
+        bb_addString(&ba, ", ");
+        bb_addIntAsString(&ba, it->counter);
+        bb_addString(&ba, ", ");
+        time_toString(&it->timeStamp, &ba);
+        bb_addString(&ba, "]");
+    }
+    bb_addString(&ba, "}\nIndex: 6 Value: ");
+    bb_addIntAsString(&ba, object->transmissions);
+    bb_addString(&ba, "\nIndex: 7 Value: ");
+    bb_addIntAsString(&ba, object->receivedFrames);
+    bb_addString(&ba, "\nIndex: 8 Value: ");
+    bb_addIntAsString(&ba, object->failedReceivedFrames);
+    bb_addString(&ba, "\nIndex: 8 Value: ");
+    bb_addIntAsString(&ba, object->captureTime.attributeId);
+    bb_addString(&ba, ":");
+    time_toString(&object->captureTime.timeStamp, &ba);
+    bb_addString(&ba, "\n");
+    *buff = bb_toString(&ba);
+    bb_clear(&ba);
+    return 0;
+}
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int obj_UtilityTablesToString(gxUtilityTables* object, char** buff)
 {
@@ -3294,6 +3348,12 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_TcpUdpSetupToString((gxTcpUdpSetup*)object, buff);
         break;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+    case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
+        ret = obj_MBusDiagnosticToString((gxMbusDiagnostic*)object, buff);
+        break;
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = obj_UtilityTablesToString((gxUtilityTables*)object, buff);

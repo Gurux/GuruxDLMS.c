@@ -83,7 +83,7 @@ int ser_loadUInt16(gxSerializerSettings* serializeSettings, uint16_t* value)
 #if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     return fread(value, sizeof(uint16_t), 1, serializeSettings->stream) != 1;
 #else
-    int ret = SERIALIZER_LOAD(serializeSettings->position, sizeof(uint16_t), (void*) value);
+    int ret = SERIALIZER_LOAD(serializeSettings->position, sizeof(uint16_t), (void*)value);
     if (ret == 0)
     {
         serializeSettings->position += sizeof(uint16_t);
@@ -111,7 +111,7 @@ int ser_loadUInt64(gxSerializerSettings* serializeSettings, uint64_t* value)
 #if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     return fread(value, sizeof(uint64_t), 1, serializeSettings->stream) != 1;
 #else
-    int ret = SERIALIZER_LOAD(serializeSettings->position, sizeof(uint64_t), (void*) value);
+    int ret = SERIALIZER_LOAD(serializeSettings->position, sizeof(uint64_t), (void*)value);
     if (ret == 0)
     {
         serializeSettings->position += sizeof(uint64_t);
@@ -2832,6 +2832,56 @@ int ser_saveUtilityTables(
 }
 #endif //DLMS_IGNORE_UTILITY_TABLES
 
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+int ser_saveMbusDiagnostic(
+    gxSerializerSettings* serializeSettings,
+    gxMbusDiagnostic* object)
+{
+    gxBroadcastFrameCounter* it;
+    int ret = 0;
+    uint16_t pos, count;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_saveUInt8(serializeSettings, object->receivedSignalStrength)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 3) && (ret = ser_saveUInt8(serializeSettings, object->channelId)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_saveUInt8(serializeSettings, object->linkStatus)) != 0))
+    {
+    }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 5))
+    {
+        if ((ret = ser_saveArrayCount(serializeSettings, &object->broadcastFrames, &count)) == 0)
+        {
+            for (pos = 0; pos != object->broadcastFrames.size; ++pos)
+            {
+                if ((ret = arr_getByIndex4(&object->broadcastFrames, pos, (void**)&it, sizeof(gxBroadcastFrameCounter), 0)) != 0)
+                {
+                    break;
+                }
+                if ((ret = ser_saveUInt8(serializeSettings, it->clientId)) != 0 ||
+                    (ret = ser_saveUInt32(serializeSettings, it->counter)) != 0 ||
+                    (ret = ser_saveDateTime(&it->timeStamp, serializeSettings)) != 0)
+                {
+                    break;
+                }
+            }
+#ifdef DLMS_IGNORE_MALLOC
+            object->broadcastFrames.size = count;
+#endif //DLMS_IGNORE_MALLOC
+        }
+        if (ret == 0)
+        {
+            if ((!isAttributeSet(serializeSettings, ignored, 6) && (ret = ser_saveUInt32(serializeSettings, object->transmissions)) != 0) ||
+                (!isAttributeSet(serializeSettings, ignored, 7) && (ret = ser_saveUInt32(serializeSettings, object->receivedFrames)) != 0) ||
+                (!isAttributeSet(serializeSettings, ignored, 8) && (ret = ser_saveUInt32(serializeSettings, object->failedReceivedFrames)) != 0) ||
+                (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_saveUInt8(serializeSettings, object->captureTime.attributeId)) != 0) ||
+                (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_saveDateTime(&object->captureTime.timeStamp, serializeSettings)) != 0))
+            {
+            }
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 int ser_saveMbusSlavePortSetup(
     gxSerializerSettings* serializeSettings,
@@ -4007,6 +4057,11 @@ int ser_saveObject(
         ret = ser_saveIp6Setup(serializeSettings, (gxIp6Setup*)object);
         break;
 #endif //DLMS_IGNORE_IP6_SETUP
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+    case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
+        ret = ser_saveMbusDiagnostic(serializeSettings, (gxMbusDiagnostic*)object);
+        break;
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         ret = ser_saveMbusSlavePortSetup(serializeSettings, (gxMbusSlavePortSetup*)object);
@@ -5446,9 +5501,9 @@ int ser_loadRegisterActivation(
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
 int ser_loadActionItem(
-    dlmsSettings* settings,
-    gxActionItem* item,
-    gxSerializerSettings* serializeSettings)
+    dlmsSettings * settings,
+    gxActionItem * item,
+    gxSerializerSettings * serializeSettings)
 {
     int ret;
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -5476,9 +5531,9 @@ int ser_loadActionItem(
 }
 
 int ser_loadRegisterMonitor(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxRegisterMonitor* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxRegisterMonitor * object)
 {
     int pos, ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -5537,9 +5592,9 @@ int ser_loadRegisterMonitor(
 #endif //DLMS_IGNORE_MALLOC
             )) != 0 ||
             (ret = ser_loadInt8(serializeSettings, &object->monitoredValue.attributeIndex)) != 0)
-    {
+            {
 
-        }
+            }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 4))
@@ -5563,9 +5618,9 @@ int ser_loadRegisterMonitor(
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
 int ser_loadActionSchedule(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxActionSchedule* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxActionSchedule * object)
 {
     int pos, ret = 0;
     unsigned char ch;
@@ -5623,8 +5678,8 @@ int ser_loadActionSchedule(
 #endif //DLMS_IGNORE_ACTION_SCHEDULE
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
 int ser_loadSapAssignment(
-    gxSerializerSettings* serializeSettings,
-    gxSapAssignment* object)
+    gxSerializerSettings * serializeSettings,
+    gxSapAssignment * object)
 {
     int ret = 0, pos;
     gxSapItem* it;
@@ -5663,8 +5718,8 @@ int ser_loadSapAssignment(
 
 #ifndef DLMS_IGNORE_AUTO_ANSWER
 int ser_loadAutoAnswer(
-    gxSerializerSettings* serializeSettings,
-    gxAutoAnswer* object)
+    gxSerializerSettings * serializeSettings,
+    gxAutoAnswer * object)
 {
     int ret = 0;
     unsigned char ch;
@@ -5701,9 +5756,9 @@ int ser_loadAutoAnswer(
 #endif //DLMS_IGNORE_AUTO_ANSWER
 #ifndef DLMS_IGNORE_IP4_SETUP
 int ser_loadIp4Setup(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxIp4Setup* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxIp4Setup * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -5822,9 +5877,9 @@ return ret;
 
 #ifndef DLMS_IGNORE_IP6_SETUP
 int ser_loadIp6Setup(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxIp6Setup* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxIp6Setup * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -5967,8 +6022,8 @@ int ser_loadIp6Setup(
 
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int ser_loadUtilityTables(
-    gxSerializerSettings* serializeSettings,
-    gxUtilityTables* object)
+    gxSerializerSettings * serializeSettings,
+    gxUtilityTables * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -5982,8 +6037,8 @@ int ser_loadUtilityTables(
 
 #ifndef DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 int ser_loadMbusSlavePortSetup(
-    gxSerializerSettings* serializeSettings,
-    gxMbusSlavePortSetup* object)
+    gxSerializerSettings * serializeSettings,
+    gxMbusSlavePortSetup * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -5998,8 +6053,8 @@ int ser_loadMbusSlavePortSetup(
 #endif //DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
 int ser_loadImageTransfer(
-    gxSerializerSettings* serializeSettings,
-    gxImageTransfer* object)
+    gxSerializerSettings * serializeSettings,
+    gxImageTransfer * object)
 {
     uint16_t count;
     int pos, ret = 0;
@@ -6046,8 +6101,8 @@ int ser_loadImageTransfer(
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
 #ifndef DLMS_IGNORE_DISCONNECT_CONTROL
 int ser_loadDisconnectControl(
-    gxSerializerSettings* serializeSettings,
-    gxDisconnectControl* object)
+    gxSerializerSettings * serializeSettings,
+    gxDisconnectControl * object)
 {
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
     unsigned char v;
@@ -6075,9 +6130,9 @@ int ser_loadDisconnectControl(
 #endif //DLMS_IGNORE_DISCONNECT_CONTROL
 #ifndef DLMS_IGNORE_LIMITER
 int ser_loadLimiter(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxLimiter* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxLimiter * object)
 {
     int pos, ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -6174,11 +6229,59 @@ int ser_loadLimiter(
     return ret;
 }
 #endif //DLMS_IGNORE_LIMITER
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+int ser_loadMBusDiagnostic(
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxMbusDiagnostic * object)
+{
+    int ret = 0;
+    uint16_t pos, count;
+    unsigned char status = 0;
+    gxBroadcastFrameCounter* it;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_loadUInt8(serializeSettings, &object->receivedSignalStrength)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 3) && (ret = ser_loadUInt8(serializeSettings, &object->channelId)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_loadUInt8(serializeSettings, &status)) != 0))
+    {
+    }
+    if (ret == 0)
+    {
+        object->linkStatus = status;
+    }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 5))
+    {
+        arr_clear(&object->broadcastFrames);
+        if ((ret = ser_loadArray(serializeSettings, &object->broadcastFrames, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = ser_getArrayItem(&object->broadcastFrames, pos, (void**)&it, sizeof(gxBroadcastFrameCounter))) != 0 ||
+                    (ret = ser_loadUInt8(serializeSettings, &it->clientId)) != 0 ||
+                    (ret = ser_loadUInt32(serializeSettings, &it->counter)) != 0 ||
+                    (ret = ser_loadDateTime(&it->timeStamp, serializeSettings, DLMS_DATA_TYPE_DATETIME)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    if ((!isAttributeSet(serializeSettings, ignored, 6) && (ret = ser_loadUInt32(serializeSettings, &object->transmissions)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 7) && (ret = ser_loadUInt32(serializeSettings, &object->receivedFrames)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 8) && (ret = ser_loadUInt32(serializeSettings, &object->failedReceivedFrames)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_loadUInt8(serializeSettings, &object->captureTime.attributeId)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_loadDateTime(&object->captureTime.timeStamp, serializeSettings, DLMS_DATA_TYPE_DATETIME)) != 0))
+    {
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+
 #ifndef DLMS_IGNORE_MBUS_CLIENT
 int ser_loadMBusClient(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxMBusClient* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxMBusClient * object)
 {
     int ret = 0;
     unsigned char ch;
@@ -6230,8 +6333,8 @@ int ser_loadMBusClient(
 #endif //DLMS_IGNORE_MBUS_CLIENT
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
 int ser_loadModemConfiguration(
-    gxSerializerSettings* serializeSettings,
-    gxModemConfiguration* object)
+    gxSerializerSettings * serializeSettings,
+    gxModemConfiguration * object)
 {
     unsigned char ch;
     int pos, ret = 0;
@@ -6319,8 +6422,8 @@ int ser_loadModemConfiguration(
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP
 int ser_loadMacAddressSetup(
-    gxSerializerSettings* serializeSettings,
-    gxMacAddressSetup* object)
+    gxSerializerSettings * serializeSettings,
+    gxMacAddressSetup * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -6336,8 +6439,8 @@ int ser_loadMacAddressSetup(
 
 #ifndef DLMS_IGNORE_GPRS_SETUP
 int ser_loadQualityOfService(
-    gxQualityOfService* object,
-    gxSerializerSettings* serializeSettings)
+    gxQualityOfService * object,
+    gxSerializerSettings * serializeSettings)
 {
     int ret;
     if ((ret = ser_loadUInt8(serializeSettings, &object->precedence)) != 0 ||
@@ -6352,8 +6455,8 @@ int ser_loadQualityOfService(
 }
 
 int ser_loadGPRSSetup(
-    gxSerializerSettings* serializeSettings,
-    gxGPRSSetup* object)
+    gxSerializerSettings * serializeSettings,
+    gxGPRSSetup * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -6374,8 +6477,8 @@ int ser_loadGPRSSetup(
 #endif //DLMS_IGNORE_GPRS_SETUP
 #ifndef DLMS_IGNORE_EXTENDED_REGISTER
 int ser_loadExtendedRegister(
-    gxSerializerSettings* serializeSettings,
-    gxExtendedRegister* object)
+    gxSerializerSettings * serializeSettings,
+    gxExtendedRegister * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -6400,8 +6503,8 @@ int ser_loadExtendedRegister(
 
 #ifndef DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
 int ser_loadApplicationContextName(
-    gxSerializerSettings* serializeSettings,
-    gxApplicationContextName* object)
+    gxSerializerSettings * serializeSettings,
+    gxApplicationContextName * object)
 {
     int ret;
     if ((ret = ser_get(serializeSettings, object->logicalName, 6
@@ -6422,7 +6525,7 @@ int ser_loadApplicationContextName(
     return ret;
 }
 
-int ser_loadxDLMSContextType(gxSerializerSettings* serializeSettings, gxXDLMSContextType* object)
+int ser_loadxDLMSContextType(gxSerializerSettings * serializeSettings, gxXDLMSContextType * object)
 {
     int ret;
     if ((ret = ser_loadUInt32(serializeSettings, (uint32_t*)&object->conformance)) != 0 ||
@@ -6436,7 +6539,7 @@ int ser_loadxDLMSContextType(gxSerializerSettings* serializeSettings, gxXDLMSCon
     return ret;
 }
 
-int ser_loadAuthenticationMechanismName(gxSerializerSettings* serializeSettings, gxAuthenticationMechanismName* object)
+int ser_loadAuthenticationMechanismName(gxSerializerSettings * serializeSettings, gxAuthenticationMechanismName * object)
 {
     unsigned char ch;
     int ret;
@@ -6454,9 +6557,9 @@ int ser_loadAuthenticationMechanismName(gxSerializerSettings* serializeSettings,
 }
 
 int ser_loadAssociationLogicalName(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxAssociationLogicalName* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxAssociationLogicalName * object)
 {
 #ifdef DLMS_IGNORE_MALLOC
     gxUser* it;
@@ -6614,9 +6717,9 @@ int ser_loadAssociationLogicalName(
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int ser_loadAssociationShortName(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxAssociationShortName* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxAssociationShortName * object)
 {
 #ifdef DLMS_IGNORE_MALLOC
     gxUser* it;
@@ -6768,9 +6871,9 @@ int ser_loadAssociationShortName(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #ifndef DLMS_IGNORE_PPP_SETUP
 int ser_loadPppSetup(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxPppSetup* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxPppSetup * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -6813,9 +6916,9 @@ int ser_loadPppSetup(
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 
 int ser_loadProfileGeneric(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxProfileGeneric* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxProfileGeneric * object)
 {
     unsigned char ch;
     int ret = 0;
@@ -6847,8 +6950,8 @@ int ser_loadProfileGeneric(
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 #ifndef DLMS_IGNORE_ACCOUNT
 int ser_loadAccount(
-    gxSerializerSettings* serializeSettings,
-    gxAccount* object)
+    gxSerializerSettings * serializeSettings,
+    gxAccount * object)
 {
     unsigned char ch;
     int ret = 0;
@@ -6889,8 +6992,8 @@ int ser_loadAccount(
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_CREDIT
 int ser_loadCredit(
-    gxSerializerSettings* serializeSettings,
-    gxCredit* object)
+    gxSerializerSettings * serializeSettings,
+    gxCredit * object)
 {
     unsigned char ch;
     int ret = 0;
@@ -6947,9 +7050,9 @@ int ser_loadCredit(
 #ifndef DLMS_IGNORE_CHARGE
 
 int ser_loadUnitCharge(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxUnitCharge* target)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxUnitCharge * target)
 {
     gxChargeTable* ct;
     int ret, pos;
@@ -7002,9 +7105,9 @@ int ser_loadUnitCharge(
 }
 
 int ser_loadCharge(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxCharge* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxCharge * object)
 {
     unsigned char ch;
     int ret = 0;
@@ -7068,16 +7171,16 @@ int ser_loadCharge(
 #endif //DLMS_IGNORE_CHARGE
 #ifndef DLMS_IGNORE_TOKEN_GATEWAY
 int ser_loadTokenGateway(
-    gxSerializerSettings* serializeSettings,
-    gxTokenGateway* object)
+    gxSerializerSettings * serializeSettings,
+    gxTokenGateway * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_TOKEN_GATEWAY
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
 int ser_loadGsmDiagnostic(
-    gxSerializerSettings* serializeSettings,
-    gxGsmDiagnostic* object)
+    gxSerializerSettings * serializeSettings,
+    gxGsmDiagnostic * object)
 {
     int ret = 0, pos;
     gxAdjacentCell* it;
@@ -7134,9 +7237,9 @@ int ser_loadGsmDiagnostic(
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
 int ser_loadCompactData(
-    gxSerializerSettings* serializeSettings,
-    dlmsSettings* settings,
-    gxCompactData* object)
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxCompactData * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -7154,8 +7257,8 @@ int ser_loadCompactData(
 
 #ifndef DLMS_IGNORE_LLC_SSCS_SETUP
 int ser_loadLlcSscsSetup(
-    gxSerializerSettings* serializeSettings,
-    gxLlcSscsSetup* object)
+    gxSerializerSettings * serializeSettings,
+    gxLlcSscsSetup * object)
 {
     int ret = 0;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
@@ -7168,48 +7271,48 @@ int ser_loadLlcSscsSetup(
 #endif //DLMS_IGNORE_LLC_SSCS_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
 int ser_loadPrimeNbOfdmPlcPhysicalLayerCounters(
-    gxSerializerSettings* serializeSettings,
-    gxPrimeNbOfdmPlcPhysicalLayerCounters* object)
+    gxSerializerSettings * serializeSettings,
+    gxPrimeNbOfdmPlcPhysicalLayerCounters * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_PHYSICAL_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
 int ser_loadPrimeNbOfdmPlcMacSetup(
-    gxSerializerSettings* serializeSettings,
-    gxPrimeNbOfdmPlcMacSetup* object)
+    gxSerializerSettings * serializeSettings,
+    gxPrimeNbOfdmPlcMacSetup * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
 int ser_loadPrimeNbOfdmPlcMacFunctionalParameters(
-    gxSerializerSettings* serializeSettings,
-    gxPrimeNbOfdmPlcMacFunctionalParameters* object)
+    gxSerializerSettings * serializeSettings,
+    gxPrimeNbOfdmPlcMacFunctionalParameters * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_FUNCTIONAL_PARAMETERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 int ser_loadPrimeNbOfdmPlcMacCounters(
-    gxSerializerSettings* serializeSettings,
-    gxPrimeNbOfdmPlcMacCounters* object)
+    gxSerializerSettings * serializeSettings,
+    gxPrimeNbOfdmPlcMacCounters * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_COUNTERS
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 int  ser_loadPrimeNbOfdmPlcMacNetworkAdministrationData(
-    gxSerializerSettings* serializeSettings,
-    gxPrimeNbOfdmPlcMacNetworkAdministrationData* object)
+    gxSerializerSettings * serializeSettings,
+    gxPrimeNbOfdmPlcMacNetworkAdministrationData * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_MAC_NETWORK_ADMINISTRATION_DATA
 #ifndef DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 int  ser_loadPrimeNbOfdmPlcApplicationsIdentification(
-    gxSerializerSettings* serializeSettings,
-    gxPrimeNbOfdmPlcApplicationsIdentification* object)
+    gxSerializerSettings * serializeSettings,
+    gxPrimeNbOfdmPlcApplicationsIdentification * object)
 {
     return 0;
 }
@@ -7217,72 +7320,72 @@ int  ser_loadPrimeNbOfdmPlcApplicationsIdentification(
 
 #ifndef DLMS_IGNORE_ARBITRATOR
 int ser_loadArbitrator(
-    gxSerializerSettings* serializeSettings,
-    gxArbitrator* object)
+    gxSerializerSettings * serializeSettings,
+    gxArbitrator * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_ARBITRATOR
 #ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
 int ser_loadIec8802LlcType1Setup(
-    gxSerializerSettings* serializeSettings,
-    gxIec8802LlcType1Setup* object)
+    gxSerializerSettings * serializeSettings,
+    gxIec8802LlcType1Setup * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
 #ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
 int ser_loadIec8802LlcType2Setup(
-    gxSerializerSettings* serializeSettings,
-    gxIec8802LlcType2Setup* object)
+    gxSerializerSettings * serializeSettings,
+    gxIec8802LlcType2Setup * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
 #ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
 int ser_loadIec8802LlcType3Setup(
-    gxSerializerSettings* serializeSettings,
-    gxIec8802LlcType3Setup* object)
+    gxSerializerSettings * serializeSettings,
+    gxIec8802LlcType3Setup * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
 #ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
 int ser_loadSFSKActiveInitiator(
-    gxSerializerSettings* serializeSettings,
-    gxSFSKActiveInitiator* object)
+    gxSerializerSettings * serializeSettings,
+    gxSFSKActiveInitiator * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
 #ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
 int ser_loadFSKMacCounters(
-    gxSerializerSettings* serializeSettings,
-    gxFSKMacCounters* object)
+    gxSerializerSettings * serializeSettings,
+    gxFSKMacCounters * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
 #ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
 int ser_loadSFSKMacSynchronizationTimeouts(
-    gxSerializerSettings* serializeSettings,
-    gxSFSKMacSynchronizationTimeouts* object)
+    gxSerializerSettings * serializeSettings,
+    gxSFSKMacSynchronizationTimeouts * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
 #ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
 int ser_loadSFSKPhyMacSetUp(
-    gxSerializerSettings* serializeSettings,
-    gxSFSKPhyMacSetUp* object)
+    gxSerializerSettings * serializeSettings,
+    gxSFSKPhyMacSetUp * object)
 {
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
 #ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 int ser_loadSFSKReportingSystemList(
-    gxSerializerSettings* serializeSettings,
-    gxSFSKReportingSystemList* object)
+    gxSerializerSettings * serializeSettings,
+    gxSFSKReportingSystemList * object)
 {
     return 0;
 }
@@ -7290,8 +7393,8 @@ int ser_loadSFSKReportingSystemList(
 
 #ifndef DLMS_IGNORE_SCHEDULE
 int ser_loadSchedule(
-    gxSerializerSettings* serializeSettings,
-    gxSchedule* object)
+    gxSerializerSettings * serializeSettings,
+    gxSchedule * object)
 {
     return 0;
 }
@@ -7299,8 +7402,8 @@ int ser_loadSchedule(
 
 #ifdef DLMS_ITALIAN_STANDARD
 int ser_loadTariffPlan(
-    gxSerializerSettings* serializeSettings,
-    gxTariffPlan* object)
+    gxSerializerSettings * serializeSettings,
+    gxTariffPlan * object)
 {
     int ret;
     if ((ret = bb_addString(serializeSettings, object->calendarName)) != 0 ||
@@ -7313,9 +7416,9 @@ int ser_loadTariffPlan(
 #endif //DLMS_ITALIAN_STANDARD
 
 int ser_loadObject(
-    dlmsSettings* settings,
-    gxSerializerSettings* serializeSettings,
-    gxObject* object)
+    dlmsSettings * settings,
+    gxSerializerSettings * serializeSettings,
+    gxObject * object)
 {
     int ret = 0;
     switch (object->objectType)
@@ -7442,6 +7545,11 @@ int ser_loadObject(
         ret = ser_loadLimiter(serializeSettings, settings, (gxLimiter*)object);
         break;
 #endif //DLMS_IGNORE_LIMITER
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+    case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
+        ret = ser_loadMBusDiagnostic(serializeSettings, settings, (gxMbusDiagnostic*)object);
+        break;
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 #ifndef DLMS_IGNORE_MBUS_CLIENT
     case DLMS_OBJECT_TYPE_MBUS_CLIENT:
         ret = ser_loadMBusClient(serializeSettings, settings, (gxMBusClient*)object);
@@ -7691,7 +7799,7 @@ int ser_loadObject(
     return ret;
 }
 
-int ser_getDataSize(gxSerializerSettings* serializeSettings, void* size)
+int ser_getDataSize(gxSerializerSettings * serializeSettings, void* size)
 {
     int ret;
     //Serializer version number.
@@ -7715,9 +7823,9 @@ int ser_getDataSize(gxSerializerSettings* serializeSettings, void* size)
 
 //Serialize objects to bytebuffer.
 int ser_loadObjects(
-    dlmsSettings* settings,
-    gxSerializerSettings* serializeSettings,
-    gxObject** object,
+    dlmsSettings * settings,
+    gxSerializerSettings * serializeSettings,
+    gxObject * *object,
     uint16_t count)
 {
     uint16_t pos;
@@ -7756,9 +7864,9 @@ int ser_loadObjects(
 
 //Serialize objects to bytebuffer.
 int ser_loadObjects2(
-    dlmsSettings* settings,
-    gxSerializerSettings* serializeSettings,
-    objectArray* objects)
+    dlmsSettings * settings,
+    gxSerializerSettings * serializeSettings,
+    objectArray * objects)
 {
     gxObject* obj;
     uint32_t size;

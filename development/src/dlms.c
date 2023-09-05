@@ -6432,8 +6432,12 @@ int dlms_getActionInfo(
     case DLMS_OBJECT_TYPE_STATUS_MAPPING:
     case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
-        *value = 00;
+        *value = 0;
         *count = 0;
+        break;
+    case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
+        *value = 48;
+        *count = 1;
         break;
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
         *value = 0x40;

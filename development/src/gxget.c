@@ -3559,6 +3559,77 @@ int cosem_getTcpUdpSetup(
 }
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 
+
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+int cosem_getMbusDiagnostic(
+    gxValueEventArg* e)
+{
+    int pos, ret;
+    dlmsVARIANT tmp;
+    gxBroadcastFrameCounter* item;
+    gxMbusDiagnostic* object = (gxMbusDiagnostic*)e->target;
+    if (e->index == 2)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->receivedSignalStrength);
+    }
+    else if (e->index == 3)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->channelId);
+    }
+    else if (e->index == 4)
+    {
+        ret = cosem_setEnum(e->value.byteArr, object->linkStatus);
+    }
+    else if (e->index == 5)
+    {
+        if ((ret = var_init(&tmp)) != 0 ||
+            (ret = cosem_setArray(e->value.byteArr, object->broadcastFrames.size)) == 0)
+        {
+            for (pos = 0; pos != object->broadcastFrames.size; ++pos)
+            {
+#ifdef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->broadcastFrames, pos, (void**)&item, sizeof(gxBroadcastFrameCounter))) != 0 ||
+#else
+                if ((ret = arr_getByIndex(&object->broadcastFrames, pos, (void**)&item)) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
+                    (ret = cosem_setStructure(e->value.byteArr, 3)) != 0 ||
+                    (ret = cosem_setUInt8(e->value.byteArr, item->clientId)) != 0 ||
+                    (ret = cosem_setUInt32(e->value.byteArr, item->counter)) != 0 ||
+                    (ret = cosem_setDateTime(e->value.byteArr, &item->timeStamp)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else if (e->index == 6)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->transmissions);
+    }
+    else if (e->index == 7)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->receivedFrames);
+    }
+    else if (e->index == 8)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->failedReceivedFrames);
+    }
+    else if (e->index == 9)
+    {
+        if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
+            (ret = cosem_setUInt8(e->value.byteArr, object->captureTime.attributeId)) != 0 ||
+            (ret = cosem_setDateTime(e->value.byteArr, &object->captureTime.timeStamp)) != 0)
+        {
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int cosem_getUtilityTables(
     gxValueEventArg* e)
@@ -4138,9 +4209,9 @@ int cosem_getAccount(
                         (ret = cosem_setOctetString2(data, ccc->chargeReference, 6)) != 0 ||
                         //collection configuration
                         (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
-                {
-                    break;
-                }
+                    {
+                        break;
+                    }
         }
     }
     else if (e->index == 12)
@@ -4545,6 +4616,11 @@ int cosem_getValue(
         ret = cosem_getTcpUdpSetup(e);
         break;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+    case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
+        ret = cosem_getMbusDiagnostic(e);
+        break;
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = cosem_getUtilityTables(e);

@@ -587,7 +587,7 @@ extern "C" {
         */
         gxObject base;
 
-        DLMS_CLOCK_BASE clockBase: 8;
+        DLMS_CLOCK_BASE clockBase : 8;
         signed char deviation;
         unsigned char enabled;
         gxtime end;
@@ -1368,6 +1368,57 @@ extern "C" {
 
 #endif //DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
 
+
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+    /*Last changed value.*/
+    typedef struct
+    {
+        /*Attribute ID.*/
+        unsigned char attributeId;
+        gxtime timeStamp;
+    }gxCaptureTime;
+
+    typedef struct
+    {
+        /*Client ID.*/
+        unsigned char clientId;
+        /*Counter.*/
+        uint32_t counter;
+        /*Time stamp.*/
+        gxtime timeStamp;
+    }gxBroadcastFrameCounter;
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSMbusDiagnostic
+    */
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        /*Received signal strength in dBm.*/
+        unsigned char receivedSignalStrength;
+        /*Currently used channel ID.*/
+        unsigned char channelId;
+        /*Link status.*/
+        DLMS_MBUS_LINK_STATUS linkStatus;
+        /*Broadcast frame counters*/
+        gxArray broadcastFrames;
+        /*Transmitted frames.*/
+        uint32_t transmissions;
+        /*Received frames with a correct checksum.*/
+        uint32_t receivedFrames;
+        /*Received frames with a incorrect checksum.*/
+        uint32_t failedReceivedFrames;
+        /* Last time when receivedSignalStrength, linkStatus, transmissions,
+        receivedFrames or failedReceivedFrames was changed.*/
+        gxCaptureTime captureTime;
+    } gxMbusDiagnostic;
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     /*
     ---------------------------------------------------------------------------
@@ -1610,23 +1661,23 @@ extern "C" {
     */
     typedef struct
     {
-    /*
-    * Base class where class is derived.
-    */
-    gxObject base;
-    #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    gxObject* dataLinkLayer;
-    #else
-    unsigned char dataLinkLayerReference[6];
-    #endif //DLMS_IGNORE_OBJECT_POINTERS
-    DLMS_IP6_ADDRESS_CONFIG_MODE addressConfigMode;
-    gxArray unicastIPAddress; //List<IN6_ADDR>
-    gxArray multicastIPAddress; //List<IN6_ADDR>
-    gxArray gatewayIPAddress; //List<IN6_ADDR>
-    IN6_ADDR primaryDNSAddress;
-    IN6_ADDR secondaryDNSAddress;
-    unsigned char trafficClass;
-    gxArray neighborDiscoverySetup;//List<gxNeighborDiscoverySetup>
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        gxObject* dataLinkLayer;
+#else
+        unsigned char dataLinkLayerReference[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        DLMS_IP6_ADDRESS_CONFIG_MODE addressConfigMode;
+        gxArray unicastIPAddress; //List<IN6_ADDR>
+        gxArray multicastIPAddress; //List<IN6_ADDR>
+        gxArray gatewayIPAddress; //List<IN6_ADDR>
+        IN6_ADDR primaryDNSAddress;
+        IN6_ADDR secondaryDNSAddress;
+        unsigned char trafficClass;
+        gxArray neighborDiscoverySetup;//List<gxNeighborDiscoverySetup>
     } gxIp6Setup;
 #endif //DLMS_IGNORE_IP6_SETUP
 

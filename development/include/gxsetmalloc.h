@@ -172,7 +172,9 @@ extern "C" {
 #ifndef DLMS_IGNORE_TCP_UDP_SETUP
     int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned char index, dlmsVARIANT* value);
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
-
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+    int cosem_setMbusDiagnostic(gxMbusDiagnostic* object, unsigned char index, dlmsVARIANT* value);
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
     int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char index, dlmsVARIANT* value);
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP

@@ -188,6 +188,7 @@ static gxProfileGeneric eventLog;
 static gxActionSchedule actionScheduleDisconnectOpen;
 static gxActionSchedule actionScheduleDisconnectClose;
 static gxPushSetup pushSetup;
+static gxMbusDiagnostic mbusDiagnostic;
 static gxDisconnectControl disconnectControl;
 static gxProfileGeneric loadProfile;
 static gxSapAssignment sapAssignment;
@@ -222,17 +223,19 @@ gxLimiter limiter;
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
 //Append new COSEM object to the end so serialization will work correctly.
-static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
-                                   BASE(ldn), BASE(eeprom), BASE(testMode), BASE(sapAssignment), BASE(eventCode),
-                                   BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
-                                   BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
-                                   BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
-                                   BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
-                                   BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
-                                   BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData),
-                                   BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff),
-                                   BASE(primeNbOfdmPlcMacCounters),
-                                   BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter), BASE(limiter)
+static gxObject* ALL_OBJECTS[] = {
+    BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
+    BASE(ldn), BASE(eeprom), BASE(testMode), BASE(sapAssignment), BASE(eventCode),
+    BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
+    BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
+    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
+    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
+    BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
+    BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData),
+    BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff),
+    BASE(primeNbOfdmPlcMacCounters),
+    BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter), BASE(limiter),
+    BASE(mbusDiagnostic),
 };
 
 //List of COSEM objects that are removed from association view(s).
@@ -891,7 +894,7 @@ int addSapAssignment()
     const unsigned char ln[6] = { 0, 0, 41, 0, 0, 255 };
     if ((ret = INIT_OBJECT(sapAssignment, DLMS_OBJECT_TYPE_SAP_ASSIGNMENT, ln)) == 0)
     {
-        sprintf((char*) SAP_ITEMS[0].name.value, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
+        sprintf((char*)SAP_ITEMS[0].name.value, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
         SAP_ITEMS[0].name.size = 16;
         SAP_ITEMS[0].id = 1;
         ARR_ATTACH(sapAssignment.sapAssignmentList, SAP_ITEMS, 1);
@@ -1453,7 +1456,7 @@ unsigned long getIpAddress()
     //If no OS get IP.
 #endif
     return ret;
-}
+    }
 
 ///////////////////////////////////////////////////////////////////////
 //Add IP4 Setup object.
@@ -1568,6 +1571,36 @@ int addTwistedPairSetup()
         BB_ATTACH(twistedPairSetup.primaryAddresses, PRIMARY_ADDRESSES, 1);
         TABIS[0] = 1;
         BB_ATTACH(twistedPairSetup.tabis, TABIS, 1);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Mbus diagnostic object.
+///////////////////////////////////////////////////////////////////////
+int addMbusDiagnostic()
+{
+    int ret;
+    static gxBroadcastFrameCounter BROADCAST_FRAME_COUNTERS[5] = { 0 };
+    const unsigned char ln[6] = { 0,0,24,9,0,255 };
+    if ((ret = INIT_OBJECT(mbusDiagnostic, DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC, ln)) == 0)
+    {
+        mbusDiagnostic.receivedSignalStrength = 50;
+        mbusDiagnostic.channelId = 1;
+        mbusDiagnostic.linkStatus = DLMS_MBUS_LINK_STATUS_NORMAL;
+        ARR_ATTACH(mbusDiagnostic.broadcastFrames, BROADCAST_FRAME_COUNTERS, 2);
+
+        BROADCAST_FRAME_COUNTERS[0].clientId = 1;
+        BROADCAST_FRAME_COUNTERS[0].counter = 1;
+        time_now(&BROADCAST_FRAME_COUNTERS[0].timeStamp, 1);
+        BROADCAST_FRAME_COUNTERS[1].clientId = 1;
+        BROADCAST_FRAME_COUNTERS[1].counter = 2;
+        time_now(&BROADCAST_FRAME_COUNTERS[1].timeStamp, 1);
+        mbusDiagnostic.transmissions = 1000;
+        mbusDiagnostic.receivedFrames = 1000;
+        mbusDiagnostic.failedReceivedFrames = 1;
+        mbusDiagnostic.captureTime.attributeId = 2;
+        time_now(&mbusDiagnostic.captureTime.timeStamp, 1);
     }
     return ret;
 }
@@ -2087,6 +2120,7 @@ int createObjects()
         (ret = addAssociationHighGMac()) != 0 ||
         (ret = addSecuritySetupHigh()) != 0 ||
         (ret = addSecuritySetupHighGMac()) != 0 ||
+        (ret = addMbusDiagnostic()) != 0 ||
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
@@ -3841,8 +3875,8 @@ int com_updateSerialportSettings(
         printf("Failed to Open port. tcsetattr failed.\r");
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
-    return 0;
 #endif
+    return 0;
 }
 
 #if defined(_WIN32) || defined(_WIN64)//If Windows

@@ -2906,6 +2906,75 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
     return ret;
 }
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
+
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+int cosem_setMbusDiagnostic(gxMbusDiagnostic* object, unsigned char index, dlmsVARIANT* value)
+{
+    int ret;
+    gxBroadcastFrameCounter* it;
+    if (index == 2)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->receivedSignalStrength);
+    }
+    else if (index == 3)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->channelId);
+    }
+    else if (index == 4)
+    {
+        unsigned char ch;
+        if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+        {
+            object->linkStatus = (DLMS_MBUS_LINK_STATUS) ch;
+        }
+    }
+    else if (index == 5)
+    {
+        uint16_t pos, count;
+        if ((ret = cosem_verifyArray(value->byteArr, &object->broadcastFrames, &count)) == 0) {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_getArrayItem(&object->broadcastFrames, pos, (void**)&it, sizeof(gxBroadcastFrameCounter))) == 0)
+                {
+                    if ((ret = cosem_checkStructure(value->byteArr, 3)) != 0 ||
+                        (ret = cosem_getUInt8(value->byteArr, &it->clientId)) != 0 ||
+                        (ret = cosem_getUInt32(value->byteArr, &it->counter)) != 0 ||
+                        (ret = cosem_getDateTime(value->byteArr, &it->timeStamp)) != 0)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    else if (index == 6)
+    {
+        ret = cosem_getUInt32(value->byteArr, &object->transmissions);
+    }
+    else if (index == 7)
+    {
+        ret = cosem_getUInt32(value->byteArr, &object->receivedFrames);
+    }
+    else if (index == 8)
+    {
+        ret = cosem_getUInt32(value->byteArr, &object->failedReceivedFrames);
+    }
+    else if (index == 9)
+    {
+        if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
+            (ret = cosem_getUInt8(value->byteArr, &object->captureTime.attributeId)) != 0 ||
+            (ret = cosem_getDateTime(value->byteArr, &object->captureTime.timeStamp)) != 0)
+        {
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char index, dlmsVARIANT* value)
 {

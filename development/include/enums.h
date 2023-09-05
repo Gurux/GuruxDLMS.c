@@ -282,6 +282,7 @@ extern "C" {
         DLMS_OBJECT_TYPE_DISCONNECT_CONTROL = 70,
         DLMS_OBJECT_TYPE_LIMITER = 71,
         DLMS_OBJECT_TYPE_MBUS_CLIENT = 72,
+
         DLMS_OBJECT_TYPE_PUSH_SETUP = 40,
         /**
         * S-FSK Phy MAC Setup
@@ -328,6 +329,8 @@ extern "C" {
 
         DLMS_OBJECT_TYPE_WIRELESS_MODE_Q_CHANNEL = 73,
         DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP = 74,
+        DLMS_OBJECT_TYPE_MBUS_PORT_SETUP = 76,
+        DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC = 77,
         DLMS_OBJECT_TYPE_PARAMETER_MONITOR = 65,
         /*
         * Arbitrator
@@ -3265,6 +3268,19 @@ extern "C" {
         // M-Bus long Header.
         DLMS_MBUS_CONTROL_INFO_LONG_HEADER = 0x72
     }DLMS_MBUS_CONTROL_INFO;
+
+    /*M-Bus link status.*/
+    typedef enum
+    {
+        /*Data never received.*/
+        DLMS_MBUS_LINK_STATUS_NONE,
+        /* Normal operation.*/
+        DLMS_MBUS_LINK_STATUS_NORMAL,
+        /* Link temporarily interrupted.*/
+        DLMS_MBUS_LINK_STATUS_TEMPORARILY_INTERRUPTED,
+        /*Link permanently interrupted.*/
+        DLMS_MBUS_LINK_STATUS_PERMANENTLY_INTERRUPTED,
+    }DLMS_MBUS_LINK_STATUS;
 
     // Encryption modes.
     typedef enum

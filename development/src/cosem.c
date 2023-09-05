@@ -260,6 +260,11 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxTcpUdpSetup);
         break;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
+#ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
+    case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
+        size = sizeof(gxMbusDiagnostic);
+        break;
+#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         size = sizeof(gxUtilityTables);
@@ -667,6 +672,8 @@ int cosem_init4(
         ((gxTcpUdpSetup*)object)->inactivityTimeout = 180;
         break;
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
+    case DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC:
+        break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         break;
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:

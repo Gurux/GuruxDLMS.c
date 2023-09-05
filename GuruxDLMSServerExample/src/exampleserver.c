@@ -129,6 +129,7 @@ static gxProfileGeneric eventLog;
 static gxActionSchedule actionScheduleDisconnectOpen;
 static gxActionSchedule actionScheduleDisconnectClose;
 static gxPushSetup pushSetup;
+static gxMbusDiagnostic mbusDiagnostic;
 static gxDisconnectControl disconnectControl;
 static gxProfileGeneric loadProfile;
 static gxSapAssignment sapAssignment;
@@ -156,14 +157,16 @@ gxCompactData compactData;
 gxLimiter limiter;
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
-static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
-                                   BASE(ldn), BASE(sapAssignment), BASE(eventCode),
-                                   BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
-                                   BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
-                                   BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
-                                   BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
-                                   BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
-                                   BASE(tarifficationScriptTable), BASE(registerActivation), BASE(limiter)
+static gxObject* ALL_OBJECTS[] = {
+    BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
+    BASE(ldn), BASE(sapAssignment), BASE(eventCode),
+    BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
+    BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
+    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
+    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
+    BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
+    BASE(tarifficationScriptTable), BASE(registerActivation), BASE(limiter),
+    BASE(mbusDiagnostic),
 };
 
 ////////////////////////////////////////////////////
@@ -1655,6 +1658,40 @@ int addGprsSetup()
     }
     return ret;
 }
+
+///////////////////////////////////////////////////////////////////////
+//Add Mbus diagnostic object.
+///////////////////////////////////////////////////////////////////////
+int addMbusDiagnostic()
+{
+    int ret;
+    gxBroadcastFrameCounter* item;
+    const unsigned char ln[6] = { 0,0,24,9,0,255 };
+    if ((ret = INIT_OBJECT(mbusDiagnostic, DLMS_OBJECT_TYPE_MBUS_DIAGNOSTIC, ln)) == 0)
+    {
+        mbusDiagnostic.receivedSignalStrength = 50;
+        mbusDiagnostic.channelId = 1;
+        mbusDiagnostic.linkStatus = DLMS_MBUS_LINK_STATUS_NORMAL;
+        item = (gxBroadcastFrameCounter*)malloc(sizeof(gxBroadcastFrameCounter));
+        item->clientId = 1;
+        item->counter = 1;
+        time_now(&item->timeStamp, 1);
+        arr_push(&mbusDiagnostic.broadcastFrames, item);
+        item = (gxBroadcastFrameCounter*)malloc(sizeof(gxBroadcastFrameCounter));
+        item->clientId = 1;
+        item->counter = 2;
+        time_now(&item->timeStamp, 1);
+        arr_push(&mbusDiagnostic.broadcastFrames, item);
+        mbusDiagnostic.transmissions = 1000;
+        mbusDiagnostic.receivedFrames = 1000;
+        mbusDiagnostic.failedReceivedFrames = 1;
+        mbusDiagnostic.captureTime.attributeId = 2;
+        time_now(&mbusDiagnostic.captureTime.timeStamp, 1);
+    }
+    return ret;
+}
+
+
 ///////////////////////////////////////////////////////////////////////
 //Add push setup object. (On Connectivity)
 ///////////////////////////////////////////////////////////////////////
@@ -1763,6 +1800,7 @@ int loadSettings(dlmsSettings* settings)
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
             ret = ser_loadObjects(settings, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
+            fclose(f);
             return ret;
         }
         fclose(f);
@@ -1833,6 +1871,7 @@ int svr_InitObjects(
         (ret = addAssociationHighGMac()) != 0 ||
         (ret = addSecuritySetupHigh()) != 0 ||
         (ret = addSecuritySetupHighGMac()) != 0 ||
+        (ret = addMbusDiagnostic()) != 0 ||
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
@@ -2074,7 +2113,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
         }
         l = time_toUnixTime2(tmp.dateTime);
         var_clear(&tmp);
-    }
+        }
 
     uint32_t t;
     gxProfileGeneric* pg = (gxProfileGeneric*)e->target;
@@ -2131,9 +2170,9 @@ int getProfileGenericDataByRangeFromRingBuffer(
             }
             fclose(f);
         }
-}
+    }
     return ret;
-}
+    }
 
 
 int readProfileGeneric(
@@ -2314,8 +2353,8 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
-        }
     }
+}
     return ret;
 }
 
@@ -2510,7 +2549,7 @@ void handleProfileGenericActions(
         captureProfileGeneric(settings, ((gxProfileGeneric*)it->target));
     }
     saveSettings();
-}
+    }
 
 
 //Allocate space for image tranfer.
@@ -2984,18 +3023,18 @@ int sendPush(
                     mes_clear(&messages);
                     break;
                 }
-            }
-                }
+        }
+    }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         closesocket(s);
 #else
         close(s);
 #endif
-            }
+}
     mes_clear(&messages);
     free(host);
     return 0;
-        }
+}
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 unsigned char svr_isTarget(
@@ -3453,7 +3492,7 @@ int svr_connected(
             {
                 settings->base.preEstablishedSystemTitle = (gxByteBuffer*)malloc(sizeof(gxByteBuffer));
                 bb_init(settings->base.preEstablishedSystemTitle);
-            }
+}
             bb_addString(settings->base.preEstablishedSystemTitle, "ABCDEFGH");
             settings->base.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
         }
@@ -3466,7 +3505,7 @@ int svr_connected(
 #else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;
-}
+    }
 
 /**
     * Client has try to made invalid connection. Password is incorrect.

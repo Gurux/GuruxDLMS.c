@@ -61,6 +61,10 @@ unsigned char sn47pduBuff[PDU_BUFFER_SIZE];
 unsigned char ln47frameBuff[WRAPPER_BUFFER_SIZE];
 unsigned char ln47pduBuff[PDU_BUFFER_SIZE];
 
+char DATAFILE[FILENAME_MAX];
+char IMAGEFILE[FILENAME_MAX];
+char TRACEFILE[FILENAME_MAX];
+
 int startServers(int port, int trace)
 {
     int ret;
@@ -183,7 +187,7 @@ int startServers(int port, int trace)
             }
         }
 #else
-        char ch = _getch();
+        char ch = getchar();
         if (ch == '\n')
         {
             printf("Closing the server.\n");

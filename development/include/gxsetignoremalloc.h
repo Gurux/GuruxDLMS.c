@@ -182,6 +182,10 @@ extern "C" {
     int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+    int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned char index, dlmsVARIANT* value);
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
 #ifndef DLMS_IGNORE_PUSH_SETUP
     int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT *value);
 #endif //DLMS_IGNORE_PUSH_SETUP

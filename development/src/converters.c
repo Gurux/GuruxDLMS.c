@@ -243,6 +243,11 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
         ret = GET_STR_FROM_EEPROM("MBusPortSetup");
         break;
 #endif //DLMS_IGNORE_MBUS_PORT_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS:
+        ret = GET_STR_FROM_EEPROM("G3PlcMacLayerCounters");
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = GET_STR_FROM_EEPROM("UtilityTables");
         break;
@@ -1940,7 +1945,39 @@ int obj_MBusPortSetupToString(gxMBusPortSetup* object, char** buff)
     bb_clear(&ba);
     return ret;
 }
-#endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
+#endif //DLMS_IGNORE_MBUS_PORT_SETUP
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+int obj_G3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, char** buff)
+{
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    bb_addString(&ba, "Index: 2 Value: ");
+    bb_addIntAsString(&ba, object->txDataPacketCount);
+    bb_addString(&ba, "\nIndex: 3 Value: ");
+    bb_addIntAsString(&ba, object->rxDataPacketCount);
+    bb_addString(&ba, "\nIndex: 4 Value: ");
+    bb_addIntAsString(&ba, object->txCmdPacketCount);
+    bb_addString(&ba, "\nIndex: 5 Value: ");
+    bb_addIntAsString(&ba, object->rxCmdPacketCount);
+    bb_addString(&ba, "\nIndex: 6 Value: ");
+    bb_addIntAsString(&ba, object->cSMAFailCount);
+    bb_addString(&ba, "\nIndex: 7 Value: ");
+    bb_addIntAsString(&ba, object->cSMANoAckCount);
+    bb_addString(&ba, "\nIndex: 8 Value: ");
+    bb_addIntAsString(&ba, object->badCrcCount);
+    bb_addString(&ba, "\nIndex: 9 Value: ");
+    bb_addIntAsString(&ba, object->txDataBroadcastCount);
+    bb_addString(&ba, "\nIndex: 10 Value: ");
+    bb_addIntAsString(&ba, object->rxDataBroadcastCount);
+    bb_addString(&ba, "\n");
+    *buff = bb_toString(&ba);
+    bb_clear(&ba);
+    return 0;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int obj_UtilityTablesToString(gxUtilityTables* object, char** buff)
 {
@@ -3398,6 +3435,11 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_MBusPortSetupToString((gxMBusPortSetup*)object, buff);
         break;
 #endif //DLMS_IGNORE_MBUS_PORT_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS:
+        ret = obj_G3PlcMacLayerCounters((gxG3PlcMacLayerCounters*)object, buff);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = obj_UtilityTablesToString((gxUtilityTables*)object, buff);

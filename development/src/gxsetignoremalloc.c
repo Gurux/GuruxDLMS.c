@@ -3074,6 +3074,55 @@ int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char in
 }
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned char index, dlmsVARIANT* value)
+{
+    int ret = 0;
+    if (index == 2)
+    {
+        object->txDataPacketCount = value->ulVal;
+    }
+    else if (index == 3)
+    {
+        object->rxDataPacketCount = value->ulVal;
+    }
+    else if (index == 4)
+    {
+        object->txCmdPacketCount = value->ulVal;
+    }
+    else if (index == 5)
+    {
+        object->rxCmdPacketCount = value->ulVal;
+    }
+    else if (index == 6)
+    {
+        object->cSMAFailCount = value->ulVal;
+    }
+    else if (index == 7)
+    {
+        object->cSMANoAckCount = value->ulVal;
+    }
+    else if (index == 8)
+    {
+        object->badCrcCount = value->ulVal;
+    }
+    else if (index == 9)
+    {
+        object->txDataBroadcastCount = value->ulVal;
+    }
+    else if (index == 10)
+    {
+        object->rxDataBroadcastCount = value->ulVal;
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT* value)
 {

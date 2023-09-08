@@ -3831,8 +3831,10 @@ int svr_handleInactivityTimeout(
 
 int svr_invoke(
     dlmsServerSettings* settings,
+    unsigned char isAction,
     gxObject* target,
     unsigned char index,
+    dlmsVARIANT* value,
     uint32_t time,
     gxtime* start,
     gxtime* end,
@@ -3840,6 +3842,7 @@ int svr_invoke(
     uint32_t* next)
 {
     unsigned char exec = start == NULL;
+    int ret = 0;
     if (!exec)
     {
         //Execute in exact time if end time is not given.
@@ -3871,11 +3874,27 @@ int svr_invoke(
 #endif //DLMS_IGNORE_MALLOC
         e->target = target;
         e->index = index;
-        svr_preAction(&settings->base, &args);
-        if (!e->handled)
+        if (value != NULL)
         {
-            cosem_invoke(settings, e);
-            svr_postAction(&settings->base, &args);
+            e->value = *value;
+        }
+        if (isAction)
+        {
+            svr_preAction(&settings->base, &args);
+            if (!e->handled)
+            {
+                ret = cosem_invoke(settings, e);
+                svr_postAction(&settings->base, &args);
+            }
+        }
+        else
+        {
+            svr_preWrite(&settings->base, &args);
+            if (!e->handled)
+            {
+                ret = cosem_setValue(&settings->base, e);
+                svr_postWrite(&settings->base, &args);
+            }
         }
 #ifndef DLMS_IGNORE_MALLOC
         vec_clear(&args);
@@ -3891,7 +3910,7 @@ int svr_invoke(
             *next = tmp;
         }
     }
-    return 0;
+    return ret;
 }
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
@@ -3918,8 +3937,10 @@ int svr_handleProfileGeneric(
             }
             ret = svr_invoke(
                 settings,
+                1,
                 (gxObject*)object,
                 2,
+                NULL,
                 time,
                 NULL,
                 NULL,
@@ -4009,8 +4030,10 @@ int svr_handleSingleActionSchedule(
                         object->executedTime = originalExecutedTime;
                         if ((ret = svr_invoke(
                             settings,
+                            a->type == DLMS_SCRIPT_ACTION_TYPE_EXECUTE,
                             (gxObject*)a->target,
                             a->index,
+                            &a->parameter,
                             time,
                             s,
                             NULL,
@@ -4123,8 +4146,10 @@ int svr_handleActivityCalendar(
             uint32_t executed;
             if ((ret = svr_invoke(
                 settings,
+                1,
                 (gxObject*)object,
                 1,
+                NULL,
                 time,
                 NULL,
                 NULL,
@@ -4294,8 +4319,10 @@ int svr_handlePushSetup(
 #endif //DLMS_IGNORE_MALLOC
         if ((ret = svr_invoke(
             settings,
+            1,
             (gxObject*)object,
             1,
+            NULL,
             time,
             s,
             e,
@@ -4343,8 +4370,10 @@ int svr_handleAutoConnect(
 #endif //DLMS_IGNORE_MALLOC
         if ((ret = svr_invoke(
             settings,
+            1,
             (gxObject*)object,
             1,
+            NULL,
             time,
             s,
             e,

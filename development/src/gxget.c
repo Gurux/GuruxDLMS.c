@@ -3559,7 +3559,6 @@ int cosem_getTcpUdpSetup(
 }
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 
-
 #ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
 int cosem_getMbusDiagnostic(
     gxValueEventArg* e)
@@ -3629,7 +3628,6 @@ int cosem_getMbusDiagnostic(
     return ret;
 }
 #endif //DLMS_IGNORE_MBUS_DIAGNOSTIC
-
 
 #ifndef DLMS_IGNORE_MBUS_PORT_SETUP
 int cosem_getMbusPortSetup(
@@ -3715,6 +3713,57 @@ int cosem_getMbusPortSetup(
     return ret;
 }
 #endif //DLMS_IGNORE_MBUS_PORT_SETUP
+
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+int cosem_getG3PlcMacLayerCounters(
+    gxValueEventArg* e)
+{
+    int ret;
+    gxG3PlcMacLayerCounters* object = (gxG3PlcMacLayerCounters*)e->target;
+    if (e->index == 2)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->txDataPacketCount);
+    }
+    else if (e->index == 3)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->rxDataPacketCount);
+    }
+    else if (e->index == 4)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->txCmdPacketCount);
+    }
+    else if (e->index == 5)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->rxCmdPacketCount);
+    }
+    else if (e->index == 6)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->cSMAFailCount);
+    }
+    else if (e->index == 7)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->cSMANoAckCount);
+    }
+    else if (e->index == 8)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->badCrcCount);
+    }
+    else if (e->index == 9)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->txDataBroadcastCount);
+    }
+    else if (e->index == 10)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->rxDataBroadcastCount);
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int cosem_getUtilityTables(
@@ -4712,6 +4761,11 @@ int cosem_getValue(
         ret = cosem_getMbusPortSetup(e);
         break;
 #endif //DLMS_IGNORE_MBUS_PORT_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS:
+        ret = cosem_getG3PlcMacLayerCounters(e);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = cosem_getUtilityTables(e);

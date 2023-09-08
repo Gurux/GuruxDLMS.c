@@ -3166,6 +3166,39 @@ extern "C" {
 
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSG3PlcMacLayerCounters
+    */
+    typedef struct
+    {
+        /*Base class where class is derived.*/
+        gxObject base;
+        /*Successfully transmitted data packets.*/
+        uint32_t txDataPacketCount;
+        /*Successfully received data packets.*/
+        uint32_t rxDataPacketCount;
+        /*Successfully transmitted command packets.*/
+        uint32_t txCmdPacketCount;
+        /*Successfully received command packets.*/
+        uint32_t rxCmdPacketCount;
+        /*Counts the number of times when CSMA backoffs reach macMaxCSMABackoffs.*/
+        uint32_t cSMAFailCount;
+        /*Counts the number of times when an ACK is not received while transmitting a unicast data frame.*/
+        uint32_t cSMANoAckCount;
+        /*Number of frames received with bad CRC.*/
+        uint32_t badCrcCount;
+        /*The number of broadcast frames sent.*/
+        uint32_t txDataBroadcastCount;
+        /*Successfully received broadcast packets.*/
+        uint32_t rxDataBroadcastCount;
+    }gxG3PlcMacLayerCounters;
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
 #ifndef DLMS_IGNORE_COMPACT_DATA
 
     /*

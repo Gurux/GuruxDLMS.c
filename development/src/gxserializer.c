@@ -2817,6 +2817,29 @@ int ser_saveIp6Setup(
 }
 #endif //DLMS_IGNORE_IP6_SETUP
 
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+int ser_saveG3PlcMacLayerCounters(
+    gxSerializerSettings* serializeSettings,
+    gxG3PlcMacLayerCounters* object)
+{
+    int ret = 0;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_saveUInt32(serializeSettings, object->txDataPacketCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 3) && (ret = ser_saveUInt32(serializeSettings, object->rxDataPacketCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_saveUInt32(serializeSettings, object->txCmdPacketCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_saveUInt32(serializeSettings, object->rxCmdPacketCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 6) && (ret = ser_saveUInt32(serializeSettings, object->cSMAFailCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 7) && (ret = ser_saveUInt32(serializeSettings, object->cSMANoAckCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 8) && (ret = ser_saveUInt32(serializeSettings, object->badCrcCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_saveUInt32(serializeSettings, object->txDataBroadcastCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 10) && (ret = ser_saveUInt32(serializeSettings, object->rxDataBroadcastCount)) != 0))
+    {
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int ser_saveUtilityTables(
     gxSerializerSettings* serializeSettings,
@@ -4169,6 +4192,11 @@ int ser_saveObject(
         ret = ser_saveMbusSlavePortSetup(serializeSettings, (gxMbusSlavePortSetup*)object);
         break;
 #endif //DLMS_IGNORE_MBUS_SLAVE_PORT_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS:
+        ret = ser_saveG3PlcMacLayerCounters(serializeSettings, (gxG3PlcMacLayerCounters*)object);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
         ret = ser_saveImageTransfer(serializeSettings, (gxImageTransfer*)object);
@@ -6399,6 +6427,31 @@ int ser_loadMBusClient(
     return ret;
 }
 #endif //DLMS_IGNORE_MBUS_CLIENT
+
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+int ser_loadG3PlcMacLayerCounters(
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxG3PlcMacLayerCounters * object)
+{
+    int ret = 0;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_loadUInt32(serializeSettings, &object->txDataPacketCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 3) && (ret = ser_loadUInt32(serializeSettings, &object->rxDataPacketCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_loadUInt32(serializeSettings, &object->txCmdPacketCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_loadUInt32(serializeSettings, &object->rxCmdPacketCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 6) && (ret = ser_loadUInt32(serializeSettings, &object->cSMAFailCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 7) && (ret = ser_loadUInt32(serializeSettings, &object->cSMANoAckCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 8) && (ret = ser_loadUInt32(serializeSettings, &object->badCrcCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_loadUInt32(serializeSettings, &object->txDataBroadcastCount)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 10) && (ret = ser_loadUInt32(serializeSettings, &object->rxDataBroadcastCount)) != 0))
+    {
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
 int ser_loadModemConfiguration(
     gxSerializerSettings * serializeSettings,
@@ -6486,7 +6539,7 @@ int ser_loadModemConfiguration(
         }
     }
     return ret;
-}
+                }
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP
 int ser_loadMacAddressSetup(
@@ -6591,7 +6644,7 @@ int ser_loadApplicationContextName(
 
     }
     return ret;
-}
+    }
 
 int ser_loadxDLMSContextType(gxSerializerSettings * serializeSettings, gxXDLMSContextType * object)
 {
@@ -6689,9 +6742,9 @@ int ser_loadAssociationLogicalName(
                     obj->version = version;
                     oa_push(&object->objectList, obj);
 #endif //DLMS_IGNORE_MALLOC
+                    }
                 }
             }
-        }
         if (ret != 0)
         {
             return ret;
@@ -6741,7 +6794,7 @@ int ser_loadAssociationLogicalName(
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         }
 #endif //DLMS_IGNORE_SECURITY_SETUP
-    }
+        }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 10))
     {
         obj_clearUserList(&object->userList);
@@ -6775,9 +6828,9 @@ int ser_loadAssociationLogicalName(
                         break;
                     }
 #endif //DLMS_IGNORE_MALLOC
+                    }
                 }
-            }
-        }
+    }
     }
     return ret;
 }
@@ -6860,18 +6913,18 @@ int ser_loadAssociationShortName(
                         return ret;
                     }
 #endif //DLMS_IGNORE_MALLOC
-                }
+                    }
 #ifndef DLMS_IGNORE_MALLOC
                 oa_push(&object->objectList, obj);
 #endif //DLMS_IGNORE_MALLOC
                 // obj->version = (unsigned char)version;
+                }
             }
-        }
         if (ret != 0)
         {
             return ret;
         }
-    }
+        }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 9))
     {
 #ifndef DLMS_IGNORE_SECURITY_SETUP
@@ -6895,7 +6948,7 @@ int ser_loadAssociationShortName(
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         }
 #endif //DLMS_IGNORE_SECURITY_SETUP
-    }
+        }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 10))
     {
         obj_clearUserList(&object->userList);
@@ -6929,12 +6982,12 @@ int ser_loadAssociationShortName(
                         break;
                     }
 #endif //DLMS_IGNORE_MALLOC
+                    }
                 }
-            }
-        }
+    }
     }
     return ret;
-}
+    }
 
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #ifndef DLMS_IGNORE_PPP_SETUP
@@ -7168,7 +7221,7 @@ int ser_loadUnitCharge(
                 break;
             }
         }
-    }
+        }
     return ret;
 }
 
@@ -7300,7 +7353,7 @@ int ser_loadGsmDiagnostic(
         ret = ser_loadDateTime(&object->captureTime, serializeSettings, DLMS_DATA_TYPE_DATETIME);
     }
     return ret;
-}
+        }
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
@@ -7628,6 +7681,11 @@ int ser_loadObject(
         ret = ser_loadMBusClient(serializeSettings, settings, (gxMBusClient*)object);
         break;
 #endif //DLMS_IGNORE_MBUS_CLIENT
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS:
+        ret = ser_loadG3PlcMacLayerCounters(serializeSettings, settings, (gxG3PlcMacLayerCounters*)object);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS        
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
         ret = ser_loadModemConfiguration(serializeSettings, (gxModemConfiguration*)object);
@@ -7868,9 +7926,9 @@ int ser_loadObject(
 #endif //DLMS_ITALIAN_STANDARD
     default: //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
-    return ret;
 }
+    return ret;
+    }
 
 int ser_getDataSize(gxSerializerSettings * serializeSettings, void* size)
 {
@@ -7892,7 +7950,7 @@ int ser_getDataSize(gxSerializerSettings * serializeSettings, void* size)
         ret = ser_loadUInt32(serializeSettings, size);
     }
     return ret;
-}
+    }
 
 //Serialize objects to bytebuffer.
 int ser_loadObjects(
@@ -7929,7 +7987,7 @@ int ser_loadObjects(
         if (ret == 0 && serializeSettings->position - 5 != size)
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
+    }
 #endif //!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     }
     return ret;
@@ -7975,5 +8033,5 @@ int ser_loadObjects2(
 #endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_SERIALIZER

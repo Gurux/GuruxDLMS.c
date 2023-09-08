@@ -4451,11 +4451,11 @@ int cosem_setMbusPortSetup(gxMBusPortSetup* object, unsigned char index, dlmsVAR
     }
     else if (index == 5)
     {
-        object->primaryAddress = (unsigned char) var_toInteger(value);
+        object->primaryAddress = (unsigned char)var_toInteger(value);
     }
     else if (index == 6)
     {
-        object->identificationNumber = (uint32_t) var_toInteger(value);
+        object->identificationNumber = (uint32_t)var_toInteger(value);
     }
     else if (index == 7)
     {
@@ -4541,6 +4541,55 @@ int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char in
     return DLMS_ERROR_CODE_OK;
 }
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
+
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned char index, dlmsVARIANT* value)
+{
+    int ret = 0;
+    if (index == 2)
+    {
+        object->txDataPacketCount = value->ulVal;
+    }
+    else if (index == 3)
+    {
+        object->rxDataPacketCount = value->ulVal;
+    }
+    else if (index == 4)
+    {
+        object->txCmdPacketCount = value->ulVal;
+    }
+    else if (index == 5)
+    {
+        object->rxCmdPacketCount = value->ulVal;
+    }
+    else if (index == 6)
+    {
+        object->cSMAFailCount = value->ulVal;
+    }
+    else if (index == 7)
+    {
+        object->cSMANoAckCount = value->ulVal;
+    }
+    else if (index == 8)
+    {
+        object->badCrcCount = value->ulVal;
+    }
+    else if (index == 9)
+    {
+        object->txDataBroadcastCount = value->ulVal;
+    }
+    else if (index == 10)
+    {
+        object->rxDataBroadcastCount = value->ulVal;
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT* value)
@@ -4778,7 +4827,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
     if (ret != 0)
     {
         return ret;
-    }
+}
     for (pos = 0; pos != it->Arr->size; ++pos)
     {
         ret = va_getByIndex(it->Arr, pos, &it2);
@@ -6163,13 +6212,13 @@ int cosem_setParameterMonitor(
                         if ((ret = va_getByIndex(value->Arr, 3, &tmp3)) == DLMS_ERROR_CODE_OK)
                         {
                             ret = var_copy(&object->changedParameter.value, tmp3);
-                        }
                     }
+                }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
-                }
             }
         }
+    }
         break;
     }
     case 3:
@@ -6811,8 +6860,8 @@ int cosem_setArbitrator(
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
                         return ret;
+                    }
                 }
-            }
 #else
                 memcpy(it->scriptLogicalName, tmp2->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -6822,8 +6871,8 @@ int cosem_setArbitrator(
                 }
                 it->scriptSelector = (uint16_t)var_toInteger(tmp2);
                 arr_push(&object->actions, it);
+            }
         }
-    }
     }
     break;
     case 3:
@@ -6871,7 +6920,7 @@ int cosem_setArbitrator(
                 }
                 arr_push(&object->weightingsTable, tmp2);
             }
-        }
+    }
     }
     break;
     case 5:
@@ -7541,7 +7590,7 @@ int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT* 
     break;
     default:
         return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-}
+    }
     return DLMS_ERROR_CODE_OK;
 }
 #endif //DLMS_ITALIAN_STANDARD

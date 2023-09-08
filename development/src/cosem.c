@@ -270,6 +270,11 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxMBusPortSetup);
         break;
 #endif //DLMS_IGNORE_MBUS_PORT_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS:
+        size = sizeof(gxG3PlcMacLayerCounters);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         size = sizeof(gxUtilityTables);

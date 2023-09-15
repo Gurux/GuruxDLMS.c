@@ -1431,7 +1431,7 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        /*References an M-Bus communication port setup object describing 
+        /*References an M-Bus communication port setup object describing
         the physical capabilities for wired or wireless communication.*/
         unsigned char profileSelection[6];
         /*Communication status of the M-Bus node.*/
@@ -2060,6 +2060,12 @@ extern "C" {
         unsigned char emergencyProfileActive;
         gxActionItem actionOverThreshold;
         gxActionItem actionUnderThreshold;
+        /*Threshold activation time in seconds. 
+        This is internally used and it's not serialized.*/
+        uint32_t activationTime;
+        /*Is threshold over or under.
+        This is internally used and it's not serialized.*/
+        unsigned char overThreshold;
     } gxLimiter;
 #endif //DLMS_IGNORE_LIMITER
 
@@ -3166,7 +3172,6 @@ extern "C" {
 
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 
-
 #ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 
     /*
@@ -3198,6 +3203,124 @@ extern "C" {
         uint32_t rxDataBroadcastCount;
     }gxG3PlcMacLayerCounters;
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+
+    typedef struct
+    {
+        //Transmitter gain size.
+        unsigned char size;
+        //Gain
+        unsigned char value[MAX_G3_MAC_NEIGHBOUR_TABLE_GAIN_ITEM_SIZE];
+    }gxNeighbourTableTransmitterGain;    
+
+    typedef struct
+    {
+        //Transmitter tone map.
+        unsigned char size;
+        //Tone map
+        unsigned char value[MAX_G3_MAC_NEIGHBOUR_TABLE_TONE_MAP_ITEM_SIZE];
+    }gxNeighbourTableToneMap;
+
+    typedef struct
+    {
+        /*
+        MAC Short Address of the node.
+        */
+        uint16_t shortAddress;
+        /*
+        Is Payload Modulation scheme used.
+        */
+        unsigned char payloadModulationScheme;
+
+        /*Frequency sub-band can be used for communication with the device.*/
+#ifdef DLMS_IGNORE_MALLOC
+        gxNeighbourTableToneMap toneMap[MAX_G3_MAC_NEIGHBOUR_TABLE_TONE_MAP_SIZE];
+#else
+        bitArray toneMap;
+#endif //DLMS_IGNORE_MALLOC
+        /*Modulation type.*/
+        DLMS_G3_PLC_MODULATION modulation;
+        /*Tx Gain.*/
+        signed char txGain;
+        /*Tx Gain resolution.*/
+        DLMS_G3_PLC_GAIN_RESOLUTION txRes;
+        /*Transmitter gain for each group of tones represented by one valid bit of the tone map.*/
+#ifdef DLMS_IGNORE_MALLOC
+        gxNeighbourTableTransmitterGain txCoeff[MAX_G3_MAC_NEIGHBOUR_TABLE_GAIN_SIZE];
+#else
+        bitArray txCoeff;
+#endif //DLMS_IGNORE_MALLOC
+
+        /*Link Quality Indicator.*/
+        unsigned char lqi;
+        /*Phase difference in multiples of 60 degrees between the mains phase of the local node
+        and the neighbour node. */
+        signed char phaseDifferential;
+        /*Remaining time in minutes until which the tone map response parameters in the neighbour table are considered valid.*/
+        unsigned char tmrValidTime;
+        /*Optinal data.*/
+        unsigned char noData;
+    }gxNeighbourTable;
+
+    typedef struct
+    {
+        // The 16-bit address the device is using to communicate through the PAN.
+        uint16_t shortAddress;
+        // Link Quality Indicator.
+        unsigned char lqi;
+        // Valid time.
+        unsigned char validTime;
+    }gxMacPosTable;
+
+    typedef struct
+    {
+        //Key ID.
+        unsigned char id;
+        //Key
+        unsigned char key[MAX_G3_MAC_KEY_TABLE_KEY_SIZE];
+    }gxG3MacKeyTable;
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSG3PlcMacSetup
+    */
+    typedef struct
+    {
+        /*Base class where class is derived.*/
+        gxObject base;
+        uint16_t shortAddress;
+        uint16_t rcCoord;
+        uint16_t panId;
+        gxArray keyTable;
+        uint32_t frameCounter;
+        bitArray toneMask;
+        uint8_t tmrTtl;
+        uint8_t maxFrameRetries;
+        uint8_t neighbourTableEntryTtl;
+        gxArray neighbourTable;
+        uint8_t highPriorityWindowSize;
+        uint8_t cscmFairnessLimit;
+        uint8_t beaconRandomizationWindowLength;
+        uint8_t macA;
+        uint8_t macK;
+        uint8_t minCwAttempts;
+        uint8_t cenelecLegacyMode;
+        uint8_t fccLegacyMode;
+        uint8_t maxBe;
+        uint8_t maxCsmaBackoffs;
+        uint8_t minBe;
+        /*If true, MAC uses maximum contention window.*/
+        unsigned char macBroadcastMaxCwEnabled;
+        /*Attenuation of the output level in dB.*/
+        unsigned char macTransmitAtten;
+        /*The neighbour table contains some information
+          about all the devices within the POS of the device.
+        */
+        gxArray macPosTable;
+    }gxG3PlcMacSetup;
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
 
@@ -3785,6 +3908,10 @@ extern "C" {
 
     //Clear user list.
     int obj_clearUserList(
+        gxArray* list);    
+
+    //Clear neighbour table.
+    int obj_clearNeighbourTable(
         gxArray* list);
 
     //Clear available switches.

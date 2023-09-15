@@ -3714,7 +3714,6 @@ int cosem_getMbusPortSetup(
 }
 #endif //DLMS_IGNORE_MBUS_PORT_SETUP
 
-
 #ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 int cosem_getG3PlcMacLayerCounters(
     gxValueEventArg* e)
@@ -3764,6 +3763,225 @@ int cosem_getG3PlcMacLayerCounters(
     return ret;
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+int cosem_getG3PlcMacSetup(
+    gxValueEventArg* e)
+{
+    int ret;
+    uint16_t pos;
+    gxG3PlcMacSetup* object = (gxG3PlcMacSetup*)e->target;
+    if (e->index == 2)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->shortAddress);
+    }
+    else if (e->index == 3)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->rcCoord);
+    }
+    else if (e->index == 4)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->panId);
+    }
+    else if (e->index == 5)
+    {
+        gxG3MacKeyTable* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->keyTable.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->keyTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->keyTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->keyTable, pos, (void**)&it, sizeof(gxG3MacKeyTable))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            // Count
+            if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
+                // Id
+                (ret = cosem_setUInt8(e->value.byteArr, (unsigned char)it->id)) != 0 ||
+                // Key
+                (ret = cosem_setOctetString2(e->value.byteArr, it->key, MAX_G3_MAC_KEY_TABLE_KEY_SIZE)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else if (e->index == 6)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->frameCounter);
+    }
+    else if (e->index == 7)
+    {
+        if ((ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_BIT_STRING)) == 0 &&
+            (ret = hlp_setObjectCount(ba_size(&object->toneMask), e->value.byteArr)) == 0 &&
+            (ret = bb_set(e->value.byteArr, object->toneMask.data, ba_getByteCount(object->toneMask.size))) == 0)
+        {
+        }
+    }
+    else if (e->index == 8)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->tmrTtl);
+    }
+    else if (e->index == 9)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->maxFrameRetries);
+    }
+    else if (e->index == 10)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->neighbourTableEntryTtl);
+    }
+    else if (e->index == 11)
+    {
+        gxNeighbourTable* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->neighbourTable.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->neighbourTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->neighbourTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->neighbourTable, pos, (void**)&it, sizeof(gxNeighbourTable))) != 0)
+            {
+                break;
+            }
+            gxNeighbourTableTransmitterGain* txCoeff = &it->txCoeff[pos];
+            gxNeighbourTableToneMap* toneMap = &it->toneMap[pos];
+#endif //DLMS_IGNORE_MALLOC
+            // Count
+            if ((ret = cosem_setStructure(e->value.byteArr, 11)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->shortAddress)) != 0 ||
+                (ret = cosem_setBoolean(e->value.byteArr, it->payloadModulationScheme)) != 0 ||
+                (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
+#ifndef DLMS_IGNORE_MALLOC
+                (ret = hlp_setObjectCount(it->toneMap.size, e->value.byteArr)) != 0 ||
+                (ret = bb_set(e->value.byteArr, it->toneMap.data, ba_getByteCount(it->toneMap.size))) != 0 ||
+#else
+                (ret = hlp_setObjectCount(toneMap->size, e->value.byteArr)) != 0 ||
+                (ret = bb_set(e->value.byteArr, toneMap->value, ba_getByteCount(toneMap->size))) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
+                (ret = cosem_setEnum(e->value.byteArr, it->modulation)) != 0 ||
+                (ret = cosem_setInt8(e->value.byteArr, it->txGain)) != 0 ||
+                (ret = cosem_setEnum(e->value.byteArr, it->txRes)) != 0 ||
+                (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
+#ifndef DLMS_IGNORE_MALLOC
+                (ret = hlp_setObjectCount(it->txCoeff.size, e->value.byteArr)) != 0 ||
+                (ret = bb_set(e->value.byteArr, it->txCoeff.data, ba_getByteCount(it->txCoeff.size))) != 0 ||
+#else
+                (ret = hlp_setObjectCount(txCoeff->size, e->value.byteArr)) != 0 ||
+                (ret = bb_set(e->value.byteArr, txCoeff->value, ba_getByteCount(txCoeff->size))) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
+                (ret = cosem_setUInt8(e->value.byteArr, it->lqi)) != 0 ||
+                (ret = cosem_setInt8(e->value.byteArr, it->phaseDifferential)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->tmrValidTime)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->noData)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else if (e->index == 12)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->highPriorityWindowSize);
+    }
+    else if (e->index == 13)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->cscmFairnessLimit);
+    }
+    else if (e->index == 14)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->beaconRandomizationWindowLength);
+    }
+    else if (e->index == 15)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->macA);
+    }
+    else if (e->index == 16)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->macK);
+    }
+    else if (e->index == 17)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->minCwAttempts);
+    }
+    else if (e->index == 18)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->cenelecLegacyMode);
+    }
+    else if (e->index == 19)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->fccLegacyMode);
+    }
+    else if (e->index == 20)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->maxBe);
+    }
+    else if (e->index == 21)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->maxCsmaBackoffs);
+    }
+    else if (e->index == 22)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->minBe);
+    }
+    else if (e->index == 23)
+    {
+        ret = cosem_setBoolean(e->value.byteArr, object->macBroadcastMaxCwEnabled);
+    }
+    else if (e->index == 24)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->macTransmitAtten);
+    }
+    else if (e->index == 25)
+    {
+        gxMacPosTable* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->macPosTable.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->macPosTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->macPosTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->keyTable, pos, (void**)&it, sizeof(gxMacPosTable))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            // Count
+            if ((ret = cosem_setStructure(e->value.byteArr, 3)) != 0 ||
+                // Id
+                (ret = cosem_setUInt16(e->value.byteArr, it->shortAddress)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->lqi)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int cosem_getUtilityTables(
@@ -4766,6 +4984,11 @@ int cosem_getValue(
         ret = cosem_getG3PlcMacLayerCounters(e);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
+        ret = cosem_getG3PlcMacSetup(e);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = cosem_getUtilityTables(e);

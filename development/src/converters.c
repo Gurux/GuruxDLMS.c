@@ -248,6 +248,11 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
         ret = GET_STR_FROM_EEPROM("G3PlcMacLayerCounters");
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
+        ret = GET_STR_FROM_EEPROM("G3PlcMacSetup");
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = GET_STR_FROM_EEPROM("UtilityTables");
         break;
@@ -1977,6 +1982,156 @@ int obj_G3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, char** buff)
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+
+int obj_G3PlcMacSetupKeyTableToString(gxG3PlcMacSetup* object, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    gxG3MacKeyTable* it;
+    bb_addString(ba, "\nIndex: 5 Value: [\r\n");
+    for (pos = 0; pos != object->keyTable.size; ++pos)
+    {
+        if ((ret = arr_getByIndex(&object->keyTable, pos, (void**)&it)) != 0)
+        {
+            return ret;
+        }
+        bb_addString(ba, "{ ");
+        bb_addIntAsString(ba, it->id);
+        bb_addString(ba, ",");
+        //Add MAC keys as a hex string.
+        if (bb_getCapacity(ba) - ba->size < 3 * MAX_G3_MAC_KEY_TABLE_KEY_SIZE)
+        {
+            bb_capacity(ba, bb_size(ba) + 3 * MAX_G3_MAC_KEY_TABLE_KEY_SIZE);
+        }
+        if ((ret = hlp_bytesToHex2(it->key, MAX_G3_MAC_KEY_TABLE_KEY_SIZE,
+            (char*)ba->data + ba->size, (uint16_t)bb_available(ba))) != 0)
+        {
+            return ret;
+        }
+        ba->size += 3 * MAX_G3_MAC_KEY_TABLE_KEY_SIZE;
+        --ba->size;
+        bb_addString(ba, "}\n");
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+int obj_G3PlcMacSetupNeighbourTableToString(gxG3PlcMacSetup* object, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    gxNeighbourTable* it;
+    bb_addString(ba, "\nIndex: 11 Value: [\r");
+    for (pos = 0; pos != object->neighbourTable.size; ++pos)
+    {
+        if ((ret = arr_getByIndex(&object->neighbourTable, pos, (void**)&it)) != 0)
+        {
+            return ret;
+        }
+        bb_addString(ba, "{shortAddress: ");
+        bb_addIntAsString(ba, it->shortAddress);
+        bb_addString(ba, ", scheme: ");
+        bb_addIntAsString(ba, it->payloadModulationScheme);
+        bb_addString(ba, ", tone map: ");
+        ba_toString2(ba, &it->toneMap);
+        bb_addString(ba, ", modulation: ");
+        bb_addIntAsString(ba, it->modulation);
+        bb_addString(ba, ", txGain: ");
+        bb_addIntAsString(ba, it->txGain);
+        bb_addString(ba, ", txRes: ");
+        bb_addIntAsString(ba, it->txRes);
+        bb_addString(ba, ", txCoeff: ");
+        ba_toString2(ba, &it->txCoeff);
+        bb_addString(ba, ", lqi: ");
+        bb_addIntAsString(ba, it->lqi);
+        bb_addString(ba, ", phaseDifferential: ");
+        bb_addIntAsString(ba, it->phaseDifferential);
+        bb_addString(ba, ", tmrValidTime: ");
+        bb_addIntAsString(ba, it->tmrValidTime);
+        bb_addString(ba, ", noData: ");
+        bb_addIntAsString(ba, it->noData);
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+
+int obj_G3PlcMacSetupMacPosTableToString(gxG3PlcMacSetup* object, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    gxMacPosTable* it;
+    bb_addString(ba, "\nIndex: 25 Value: [\r");
+    for (pos = 0; pos != object->macPosTable.size; ++pos)
+    {
+        if ((ret = arr_getByIndex(&object->macPosTable, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_addString(ba, "{shortAddress: ");
+        bb_addIntAsString(ba, it->shortAddress);
+        bb_addString(ba, ", lqi: ");
+        bb_addIntAsString(ba, it->lqi);
+        bb_addString(ba, ", validTime: ");
+        bb_addIntAsString(ba, it->validTime);
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+int obj_G3PlcMacSetup(gxG3PlcMacSetup* object, char** buff)
+{
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    bb_addString(&ba, "Index: 2 Value: ");
+    bb_addIntAsString(&ba, object->shortAddress);
+    bb_addString(&ba, "\nIndex: 3 Value: ");
+    bb_addIntAsString(&ba, object->rcCoord);
+    bb_addString(&ba, "\nIndex: 4 Value: ");
+    bb_addIntAsString(&ba, object->panId);
+    obj_G3PlcMacSetupKeyTableToString(object, &ba);
+    bb_addString(&ba, "Index: 6 Value: ");
+    bb_addIntAsString(&ba, object->frameCounter);
+    bb_addString(&ba, "\nIndex: 7 Value: ");
+    ba_toString2(&ba, &object->toneMask);
+    bb_addString(&ba, "\nIndex: 8 Value: ");
+    bb_addIntAsString(&ba, object->tmrTtl);
+    bb_addString(&ba, "\nIndex: 9 Value: ");
+    bb_addIntAsString(&ba, object->maxFrameRetries);
+    bb_addString(&ba, "\nIndex: 10 Value: ");
+    bb_addIntAsString(&ba, object->neighbourTableEntryTtl);
+    obj_G3PlcMacSetupNeighbourTableToString(object, &ba);
+    bb_addString(&ba, "\nIndex: 12 Value: ");
+    bb_addIntAsString(&ba, object->highPriorityWindowSize);
+    bb_addString(&ba, "\nIndex: 13 Value: ");
+    bb_addIntAsString(&ba, object->cscmFairnessLimit);
+    bb_addString(&ba, "\nIndex: 14 Value: ");
+    bb_addIntAsString(&ba, object->beaconRandomizationWindowLength);
+    bb_addString(&ba, "\nIndex: 15 Value: ");
+    bb_addIntAsString(&ba, object->macA);
+    bb_addString(&ba, "\nIndex: 16 Value: ");
+    bb_addIntAsString(&ba, object->macK);
+    bb_addString(&ba, "\nIndex: 17 Value: ");
+    bb_addIntAsString(&ba, object->minCwAttempts);
+    bb_addString(&ba, "\nIndex: 18 Value: ");
+    bb_addIntAsString(&ba, object->cenelecLegacyMode);
+    bb_addString(&ba, "\nIndex: 19 Value: ");
+    bb_addIntAsString(&ba, object->fccLegacyMode);
+    bb_addString(&ba, "\nIndex: 20 Value: ");
+    bb_addIntAsString(&ba, object->maxBe);
+    bb_addString(&ba, "\nIndex: 21 Value: ");
+    bb_addIntAsString(&ba, object->maxCsmaBackoffs);
+    bb_addString(&ba, "\nIndex: 22 Value: ");
+    bb_addIntAsString(&ba, object->minBe);
+    bb_addString(&ba, "\nIndex: 23 Value: ");
+    bb_addIntAsString(&ba, object->macBroadcastMaxCwEnabled);
+    bb_addString(&ba, "\nIndex: 24 Value: ");
+    bb_addIntAsString(&ba, object->macTransmitAtten);
+    obj_G3PlcMacSetupMacPosTableToString(object, &ba);
+    bb_addString(&ba, "\n");
+    *buff = bb_toString(&ba);
+    bb_clear(&ba);
+    return 0;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int obj_UtilityTablesToString(gxUtilityTables* object, char** buff)
@@ -3440,6 +3595,11 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_G3PlcMacLayerCounters((gxG3PlcMacLayerCounters*)object, buff);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
+        ret = obj_G3PlcMacSetup((gxG3PlcMacSetup*)object, buff);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = obj_UtilityTablesToString((gxUtilityTables*)object, buff);

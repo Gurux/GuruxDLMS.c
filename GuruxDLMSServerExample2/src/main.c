@@ -136,7 +136,7 @@ uint32_t SERIAL_NUMBER = 123456;
 static unsigned char frameBuff[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Buffer where PDUs are saved. Add 3 bytes for LLC bytes.
 static unsigned char pduBuff[3 + PDU_BUFFER_SIZE];
-static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
+static unsigned char replyFrame[PDU_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Define server system title.
 static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
 time_t imageActionStartTime = 0;
@@ -215,11 +215,12 @@ gxGPRSSetup gprsSetup;
 gxPrimeNbOfdmPlcMacFunctionalParameters primeNbOfdmPlcMacFunctionalParameters;
 gxPrimeNbOfdmPlcMacNetworkAdministrationData primeNbOfdmPlcMacNetworkAdministrationData;
 gxPrimeNbOfdmPlcMacCounters primeNbOfdmPlcMacCounters;
-
 static gxScriptTable tarifficationScriptTable;
 gxRegisterActivation registerActivation;
 gxData currentlyActiveTariff;
 gxLimiter limiter;
+static gxG3PlcMacLayerCounters g3plcMacLayerCounters;
+static gxG3PlcMacSetup g3PlcMacSetup;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
@@ -236,7 +237,8 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff),
     BASE(primeNbOfdmPlcMacCounters),
     BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter), BASE(limiter),
-    BASE(mbusDiagnostic), BASE(mbusPortSetup)
+    BASE(mbusDiagnostic), BASE(mbusPortSetup),
+    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup)
 };
 
 //List of COSEM objects that are removed from association view(s).
@@ -1078,7 +1080,7 @@ int addTcpUdpSetup()
     const unsigned char ln[6] = { 0,0,25,0,0,255 };
     if ((ret = INIT_OBJECT(udpSetup, DLMS_OBJECT_TYPE_TCP_UDP_SETUP, ln)) == 0)
     {
-        udpSetup.port = 4061;
+        udpSetup.port = 4063;
         udpSetup.maximumSimultaneousConnections = 1;
         udpSetup.maximumSegmentSize = 40;
         udpSetup.inactivityTimeout = 180;
@@ -1637,6 +1639,108 @@ int addMbusPortSetup()
     return ret;
 }
 
+
+///////////////////////////////////////////////////////////////////////
+//Add G3 PLC MAC layer counters object.
+///////////////////////////////////////////////////////////////////////
+int addG3PlcMacLayerCounters()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,29,0,0,255 };
+    if ((ret = INIT_OBJECT(g3plcMacLayerCounters, DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS, ln)) == 0)
+    {
+        g3plcMacLayerCounters.txDataPacketCount = 1;
+        g3plcMacLayerCounters.rxDataPacketCount = 2;
+        g3plcMacLayerCounters.txCmdPacketCount = 3;
+        g3plcMacLayerCounters.rxCmdPacketCount = 4;
+        g3plcMacLayerCounters.cSMAFailCount = 5;
+        g3plcMacLayerCounters.cSMANoAckCount = 6;
+        g3plcMacLayerCounters.badCrcCount = 7;
+        g3plcMacLayerCounters.txDataBroadcastCount = 8;
+        g3plcMacLayerCounters.rxDataBroadcastCount = 9;
+    }
+    return ret;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+//Add G3 PLC MAC setup object.
+///////////////////////////////////////////////////////////////////////
+int addG3PlcMacSetup()
+{
+    int ret;
+    //CENELEC-A        
+    static unsigned char TONE_MASK_CENELEC_A[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0x00, 0x00, 0x00, 0x00 };
+    static unsigned char TX_COEF_CENELEC_A[] = { 0xFF, 0xFF, 0xFF };
+    static const unsigned char GMK_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    static gxG3MacKeyTable KEY_TABLE[2];
+    static gxNeighbourTable NEIGHBOUR_TABLE[2];
+    static gxMacPosTable POS_TABLE[2];    
+
+    const unsigned char ln[6] = { 0,0,29,1,0,255 };
+    if ((ret = INIT_OBJECT(g3PlcMacSetup, DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP, ln)) == 0)
+    {
+        g3PlcMacSetup.shortAddress = 1;
+        g3PlcMacSetup.rcCoord = 2;
+        g3PlcMacSetup.panId = 3;
+        ARR_ATTACH(g3PlcMacSetup.keyTable, KEY_TABLE, 2);
+        KEY_TABLE[0].id = 1;
+        memcpy(KEY_TABLE[0].key, GMK_KEY, sizeof(GMK_KEY));
+        KEY_TABLE[1].id = 2;
+        memcpy(KEY_TABLE[1].key, GMK_KEY, sizeof(GMK_KEY));
+        g3PlcMacSetup.frameCounter = 4;
+        BIT_ATTACH(g3PlcMacSetup.toneMask, TONE_MASK_CENELEC_A, 8 * sizeof(TONE_MASK_CENELEC_A));
+        g3PlcMacSetup.tmrTtl = 5;
+        g3PlcMacSetup.maxFrameRetries = 6;
+        g3PlcMacSetup.neighbourTableEntryTtl = 7;
+        ARR_ATTACH(g3PlcMacSetup.neighbourTable, NEIGHBOUR_TABLE, 1);
+        NEIGHBOUR_TABLE[0].shortAddress = 2;
+        NEIGHBOUR_TABLE[0].payloadModulationScheme = 3;
+        bitArray ba;
+        //MAX_G3_MAC_NEIGHBOUR_TABLE_TONE_MAP_ITEM_SIZE
+        BIT_ATTACH(ba, NEIGHBOUR_TABLE[0].toneMap[0].value, 0);
+        NEIGHBOUR_TABLE[0].toneMap[0].size = 6;
+        ba_set(&ba, 1);
+        ba_set(&ba, 1);
+        ba_set(&ba, 1);
+        ba_set(&ba, 1);
+        ba_set(&ba, 1);
+        ba_set(&ba, 1);
+        NEIGHBOUR_TABLE[0].modulation = DLMS_G3_PLC_MODULATION_QAM16;
+        NEIGHBOUR_TABLE[0].txGain = 4;
+        NEIGHBOUR_TABLE[0].txRes = 5;
+        //There are 24 bits (3 bytes) in txCoeff table.
+        memcpy(NEIGHBOUR_TABLE[0].txCoeff[0].value, TX_COEF_CENELEC_A, 3);
+        NEIGHBOUR_TABLE[0].txCoeff[0].size = 24;
+
+        NEIGHBOUR_TABLE[0].lqi = 6;
+        NEIGHBOUR_TABLE[0].phaseDifferential = 7;
+        NEIGHBOUR_TABLE[0].tmrValidTime = 8;
+        NEIGHBOUR_TABLE[0].noData = 9;
+        g3PlcMacSetup.highPriorityWindowSize = 10;
+        g3PlcMacSetup.cscmFairnessLimit = 11;
+        g3PlcMacSetup.beaconRandomizationWindowLength = 12;
+        g3PlcMacSetup.macA = 13;
+        g3PlcMacSetup.macK = 14;
+        g3PlcMacSetup.minCwAttempts = 15;
+        g3PlcMacSetup.cenelecLegacyMode = 16;
+        g3PlcMacSetup.fccLegacyMode = 17;
+        g3PlcMacSetup.maxBe = 18;
+        g3PlcMacSetup.maxCsmaBackoffs = 19;
+        g3PlcMacSetup.minBe = 20;
+        g3PlcMacSetup.macBroadcastMaxCwEnabled = 1;
+        g3PlcMacSetup.macTransmitAtten = 22;
+        ARR_ATTACH(g3PlcMacSetup.macPosTable, POS_TABLE, 2);
+        POS_TABLE[0].shortAddress = 1;
+        POS_TABLE[0].lqi = 2;
+        POS_TABLE[0].validTime = 3;
+        POS_TABLE[1].shortAddress = 2;
+        POS_TABLE[1].lqi = 3;
+        POS_TABLE[1].validTime = 4;
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //Add push setup object. (On Connectivity)
 ///////////////////////////////////////////////////////////////////////
@@ -2154,6 +2258,8 @@ int createObjects()
         (ret = addSecuritySetupHighGMac()) != 0 ||
         (ret = addMbusDiagnostic()) != 0 ||
         (ret = addMbusPortSetup()) != 0 ||
+        (ret = addG3PlcMacLayerCounters()) != 0 ||
+        (ret = addG3PlcMacSetup()) != 0 ||        
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||

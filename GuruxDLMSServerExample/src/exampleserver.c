@@ -156,6 +156,9 @@ gxScriptTable tarifficationScriptTable;
 gxRegisterActivation registerActivation;
 gxCompactData compactData;
 gxLimiter limiter;
+gxG3PlcMacLayerCounters g3plcMacLayerCounters;
+gxG3PlcMacSetup g3PlcMacSetup;
+
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
 static gxObject* ALL_OBJECTS[] = {
@@ -167,7 +170,8 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
     BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
     BASE(tarifficationScriptTable), BASE(registerActivation), BASE(limiter),
-    BASE(mbusDiagnostic), BASE(mbusPortSetup)
+    BASE(mbusDiagnostic), BASE(mbusPortSetup),
+    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup)
 };
 
 ////////////////////////////////////////////////////
@@ -912,6 +916,21 @@ int addLimiter()
         var_init(tmp);
         var_setUInt16(tmp, 2);
         va_push(&limiter.emergencyProfileGroupIDs, tmp);
+        //Energy profile is active for 5 seconds.
+        limiter.emergencyProfile.duration = 5;
+
+        GX_UINT16(limiter.thresholdActive) = 1000;
+        GX_UINT16(limiter.thresholdEmergency) = 2000;
+        GX_UINT16(limiter.thresholdNormal) = 1000;        
+        limiter.minOverThresholdDuration = 60;
+        limiter.minUnderThresholdDuration = 60;
+        //////////////////////
+        //Add under action. Turn LED OFF.
+        limiter.actionUnderThreshold.script = &scriptTableDisconnectControl;
+        limiter.actionUnderThreshold.scriptSelector = 1;
+        //Add over action. Turn LED ON.
+        limiter.actionOverThreshold.script = &scriptTableDisconnectControl;
+        limiter.actionOverThreshold.scriptSelector = 2;
     }
     return ret;
 }
@@ -1723,6 +1742,102 @@ int addMbusPortSetup()
     return ret;
 }
 
+///////////////////////////////////////////////////////////////////////
+//Add G3 PLC MAC layer counters object.
+///////////////////////////////////////////////////////////////////////
+int addG3PlcMacLayerCounters()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,29,0,0,255 };
+    if ((ret = INIT_OBJECT(g3plcMacLayerCounters, DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS, ln)) == 0)
+    {
+        g3plcMacLayerCounters.txDataPacketCount = 1;
+        g3plcMacLayerCounters.rxDataPacketCount = 2;
+        g3plcMacLayerCounters.txCmdPacketCount = 3;
+        g3plcMacLayerCounters.rxCmdPacketCount = 4;
+        g3plcMacLayerCounters.cSMAFailCount = 5;
+        g3plcMacLayerCounters.cSMANoAckCount = 6;
+        g3plcMacLayerCounters.badCrcCount = 7;
+        g3plcMacLayerCounters.txDataBroadcastCount = 8;
+        g3plcMacLayerCounters.rxDataBroadcastCount = 9;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add G3 PLC MAC setup object.
+///////////////////////////////////////////////////////////////////////
+int addG3PlcMacSetup()
+{
+    int ret;
+    //CENELEC-A        
+    static unsigned char TONE_MASK_CENELEC_A[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0x00, 0x00, 0x00, 0x00 };
+    static unsigned char TX_COEF_CENELEC_A[] = { 0xFF, 0xFF, 0xFF };
+    static const unsigned char GMK_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    const unsigned char ln[6] = { 0,0,29,1,0,255 };
+    if ((ret = INIT_OBJECT(g3PlcMacSetup, DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP, ln)) == 0)
+    {
+        g3PlcMacSetup.shortAddress = 1;
+        g3PlcMacSetup.rcCoord = 2;
+        g3PlcMacSetup.panId = 3;
+        gxG3MacKeyTable* key = (gxG3MacKeyTable*) malloc(sizeof(gxG3MacKeyTable));
+        key->id = 1;
+        memcpy(key->key, GMK_KEY, sizeof(GMK_KEY));
+        arr_push(&g3PlcMacSetup.keyTable, key);
+        key = (gxG3MacKeyTable*)malloc(sizeof(gxG3MacKeyTable));
+        key->id = 2;
+        memcpy(key->key, GMK_KEY, sizeof(GMK_KEY));
+        arr_push(&g3PlcMacSetup.keyTable, key);
+        g3PlcMacSetup.frameCounter = 4;
+        BIT_ATTACH(g3PlcMacSetup.toneMask, TONE_MASK_CENELEC_A, 8 * sizeof(TONE_MASK_CENELEC_A));
+        g3PlcMacSetup.tmrTtl = 5;
+        g3PlcMacSetup.maxFrameRetries = 6;
+        g3PlcMacSetup.neighbourTableEntryTtl = 7;
+        gxNeighbourTable* nt = (gxNeighbourTable*)malloc(sizeof(gxNeighbourTable));
+        nt->shortAddress = 2;
+        nt->payloadModulationScheme = 3;
+        ba_init(&nt->toneMap);
+        ba_set(&nt->toneMap, 1);
+        ba_set(&nt->toneMap, 1);
+        ba_set(&nt->toneMap, 1);
+        ba_set(&nt->toneMap, 1);
+        ba_set(&nt->toneMap, 1);
+        ba_set(&nt->toneMap, 1);
+        nt->modulation = DLMS_G3_PLC_MODULATION_QAM16;
+        nt->txGain = 4;
+        nt->txRes = 5;
+        BIT_ATTACH(nt->txCoeff, TX_COEF_CENELEC_A, 8 * sizeof(TX_COEF_CENELEC_A));
+        nt->lqi = 6;
+        nt->phaseDifferential = 7;
+        nt->tmrValidTime = 8;
+        nt->noData = 9;
+        arr_push(&g3PlcMacSetup.neighbourTable, nt);
+        g3PlcMacSetup.highPriorityWindowSize = 10;
+        g3PlcMacSetup.cscmFairnessLimit = 11;
+        g3PlcMacSetup.beaconRandomizationWindowLength = 12;
+        g3PlcMacSetup.macA = 13;
+        g3PlcMacSetup.macK = 14;
+        g3PlcMacSetup.minCwAttempts = 15;
+        g3PlcMacSetup.cenelecLegacyMode = 16;
+        g3PlcMacSetup.fccLegacyMode = 17;
+        g3PlcMacSetup.maxBe = 18;
+        g3PlcMacSetup.maxCsmaBackoffs = 19;
+        g3PlcMacSetup.minBe = 20;
+        g3PlcMacSetup.macBroadcastMaxCwEnabled = 1;
+        g3PlcMacSetup.macTransmitAtten = 22;
+        gxMacPosTable* mpt = (gxMacPosTable*)malloc(sizeof(gxMacPosTable));
+        mpt->shortAddress = 1;
+        mpt->lqi = 2;
+        mpt->validTime = 3;
+        arr_push(&g3PlcMacSetup.macPosTable, mpt);
+        mpt = (gxMacPosTable*)malloc(sizeof(gxMacPosTable));
+        mpt->shortAddress = 2;
+        mpt->lqi = 3;
+        mpt->validTime = 4;
+        arr_push(&g3PlcMacSetup.macPosTable, mpt);
+    }
+    return ret;
+}
 
 ///////////////////////////////////////////////////////////////////////
 //Add push setup object. (On Connectivity)
@@ -1810,7 +1925,7 @@ int loadSecurity(dlmsSettings* settings)
 int loadSettings(dlmsSettings* settings)
 {
     const char* fileName = "settings.raw";
-    int ret = 0;
+    int ret;
     //Update keys.
 #if _MSC_VER > 1400
     FILE* f = NULL;
@@ -1905,6 +2020,8 @@ int svr_InitObjects(
         (ret = addSecuritySetupHighGMac()) != 0 ||
         (ret = addMbusDiagnostic()) != 0 ||
         (ret = addMbusPortSetup()) != 0 ||
+        (ret = addG3PlcMacLayerCounters()) != 0 ||
+        (ret = addG3PlcMacSetup()) != 0 ||
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
@@ -2386,8 +2503,8 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
+        }
     }
-}
     return ret;
 }
 

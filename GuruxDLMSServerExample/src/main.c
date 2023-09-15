@@ -156,6 +156,22 @@ int startServers(int port, int trace)
         if (time_current() - lastMonitor > 1)
         {
             lastMonitor = time_current();
+            if ((ret = svr_limiterAll(&snHdlc.settings, lastMonitor)) != 0)
+            {
+                printf("snHdlc limiter failed.\r\n");
+            }
+            if ((ret = svr_limiterAll(&lnHdlc.settings, lastMonitor)) != 0)
+            {
+                printf("lnHdlc limiter failed.\r\n");
+            }
+            if ((ret = svr_limiterAll(&snWrapper.settings, lastMonitor)) != 0)
+            {
+                printf("snWrapper limiter failed.\r\n");
+            }
+            if ((ret = svr_limiterAll(&lnWrapper.settings, lastMonitor)) != 0)
+            {
+                printf("lnWrapper limiter failed.\r\n");
+            }
             if ((ret = svr_monitorAll(&snHdlc.settings)) != 0)
             {
                 printf("snHdlc monitor failed.\r\n");

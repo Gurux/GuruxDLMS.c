@@ -184,7 +184,10 @@ extern "C" {
 
 #ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
     int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned char index, dlmsVARIANT* value);
-#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+#endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS    
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+        int cosem_setG3PlcMacSetup(gxG3PlcMacSetup* object, unsigned char index, dlmsVARIANT* value);
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
     int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT *value);

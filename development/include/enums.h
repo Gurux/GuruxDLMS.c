@@ -3347,6 +3347,30 @@ extern "C" {
         DLMS_MBUS_ENCRYPTION_MODE_TLS = 13
     }DLMS_MBUS_ENCRYPTION_MODE;
 
+    // Enumerates modulation types.
+    typedef enum
+    {
+        // Robust Mode.
+        DLMS_G3_PLC_MODULATION_ROBUST_MODE,
+        // DBPSK.
+        DLMS_G3_PLC_MODULATION_DBPSK,
+        //  DQPSK.
+        DLMS_G3_PLC_MODULATION_DQPSK,
+        // D8PSK.
+        DLMS_G3_PLC_MODULATION_D8PSK,
+        // 16-QAM.
+        DLMS_G3_PLC_MODULATION_QAM16
+    } DLMS_G3_PLC_MODULATION;
+
+    // Enumerates gain resolution steps.
+    typedef enum
+    {
+        // Step is 6 dB.
+        DLMS_G3_PLC_GAIN_RESOLUTION_DB6,
+        // Step is 3 dB.
+        DLMS_G3_PLC_GAIN_RESOLUTION_DB3
+    }DLMS_G3_PLC_GAIN_RESOLUTION;
+
     // Defines the ZigBee status enumeration values.
     typedef enum
     {

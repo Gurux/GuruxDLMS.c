@@ -2925,7 +2925,7 @@ int cosem_setMbusDiagnostic(gxMbusDiagnostic* object, unsigned char index, dlmsV
         unsigned char ch;
         if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
         {
-            object->linkStatus = (DLMS_MBUS_LINK_STATUS) ch;
+            object->linkStatus = (DLMS_MBUS_LINK_STATUS)ch;
         }
     }
     else if (index == 5)
@@ -3074,46 +3074,45 @@ int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char in
 }
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 
-
 #ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret = 0;
     if (index == 2)
     {
-        object->txDataPacketCount = value->ulVal;
+        ret = cosem_getUInt32(value->byteArr, &object->txDataPacketCount);
     }
     else if (index == 3)
     {
-        object->rxDataPacketCount = value->ulVal;
+        ret = cosem_getUInt32(value->byteArr, &object->rxDataPacketCount);
     }
     else if (index == 4)
     {
-        object->txCmdPacketCount = value->ulVal;
+        ret = cosem_getUInt32(value->byteArr, &object->txCmdPacketCount);
     }
     else if (index == 5)
     {
-        object->rxCmdPacketCount = value->ulVal;
+        ret = cosem_getUInt32(value->byteArr, &object->rxCmdPacketCount);
     }
     else if (index == 6)
     {
-        object->cSMAFailCount = value->ulVal;
+        ret = cosem_getUInt32(value->byteArr, &object->cSMAFailCount);
     }
     else if (index == 7)
     {
-        object->cSMANoAckCount = value->ulVal;
+        ret = cosem_getUInt32(value->byteArr, &object->cSMANoAckCount);
     }
     else if (index == 8)
     {
-        object->badCrcCount = value->ulVal;
+        ret = cosem_getUInt32(value->byteArr, &object->badCrcCount);
     }
     else if (index == 9)
     {
-        object->txDataBroadcastCount = value->ulVal;
+        ret = cosem_getUInt32(value->byteArr, &object->txDataBroadcastCount);
     }
     else if (index == 10)
     {
-        object->rxDataBroadcastCount = value->ulVal;
+        ret = cosem_getUInt32(value->byteArr, &object->rxDataBroadcastCount);
     }
     else
     {
@@ -3122,6 +3121,177 @@ int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned cha
     return ret;
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+int cosem_setG3PlcMacSetup(gxG3PlcMacSetup* object, unsigned char index, dlmsVARIANT* value)
+{
+    uint16_t count;
+    int pos, ret = 0;
+    if (index == 2)
+    {
+        ret = cosem_getUInt16(value->byteArr, &object->shortAddress);
+    }
+    else if (index == 3)
+    {
+        ret = cosem_getUInt16(value->byteArr, &object->rcCoord);
+    }
+    else if (index == 4)
+    {
+        ret = cosem_getUInt16(value->byteArr, &object->panId);
+    }
+    else if (index == 5)
+    {
+        arr_clear(&object->keyTable);
+        gxG3MacKeyTable* it;
+        if (value->Arr != NULL)
+        {
+            if ((ret = cosem_verifyArray(value->byteArr, &object->keyTable, &count)) == 0)
+            {
+                for (pos = 0; pos != count; ++pos)
+                {
+                    if ((ret = cosem_getArrayItem(&object->keyTable, pos, (void**)&it, sizeof(gxG3MacKeyTable))) != 0 ||
+                        (ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
+                        (ret = cosem_getUInt8(value->byteArr, &it->id)) != 0 ||
+                        (ret = cosem_getOctetString2(value->byteArr, it->key, MAX_G3_MAC_KEY_TABLE_KEY_SIZE, NULL)) != 0)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    else if (index == 6)
+    {
+        ret = cosem_getUInt32(value->byteArr, &object->frameCounter);
+    }
+    else if (index == 7)
+    {
+        ba_clear(&object->toneMask);
+        ret = cosem_getBitString(value->byteArr, &object->toneMask);
+    }
+    else if (index == 8)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->tmrTtl);
+    }
+    else if (index == 9)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->maxFrameRetries);
+    }
+    else if (index == 10)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->neighbourTableEntryTtl);
+    }
+    else if (index == 11)
+    {
+        gxNeighbourTable* it;
+        unsigned char txRes, modulation;
+        obj_clearNeighbourTable(&object->neighbourTable);
+        if ((ret = cosem_verifyArray(value->byteArr, &object->neighbourTable, &count)) == 0)
+        {
+            uint16_t toneMapSize, txCoeffSize;
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_getArrayItem(&object->neighbourTable, pos, (void**)&it, sizeof(gxNeighbourTable))) != 0 ||
+                    (ret = cosem_checkStructure(value->byteArr, 11)) != 0 ||
+                    (ret = cosem_getUInt16(value->byteArr, &it->shortAddress)) != 0 ||
+                    (ret = cosem_getUInt8(value->byteArr, &it->payloadModulationScheme)) != 0 ||
+                    (ret = cosem_getBitString2(value->byteArr, it->toneMap[pos].value, MAX_G3_MAC_NEIGHBOUR_TABLE_TONE_MAP_ITEM_SIZE, &toneMapSize)) != 0 ||
+                    (ret = cosem_getEnum(value->byteArr, &modulation)) != 0 ||
+                    (ret = cosem_getInt8(value->byteArr, &it->txGain)) != 0 ||
+                    (ret = cosem_getEnum(value->byteArr, &txRes)) != 0 ||
+                    (ret = cosem_getBitString2(value->byteArr, it->txCoeff[pos].value, MAX_G3_MAC_NEIGHBOUR_TABLE_GAIN_ITEM_SIZE, &txCoeffSize)) != 0 ||
+                    (ret = cosem_getUInt8(value->byteArr, &it->lqi)) != 0 ||
+                    (ret = cosem_getInt8(value->byteArr, &it->phaseDifferential)) != 0 ||
+                    (ret = cosem_getUInt8(value->byteArr, &it->tmrValidTime)) != 0 ||
+                    (ret = cosem_getUInt8(value->byteArr, &it->noData)) != 0)
+                {
+                    break;
+                }
+                it->modulation = modulation;
+                it->txRes = txRes;
+                it->toneMap[pos].size = (unsigned char)toneMapSize;
+                it->txCoeff[pos].size = (unsigned char)txCoeffSize;
+            }
+        }
+    }
+    else if (index == 12)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->highPriorityWindowSize);
+    }
+    else if (index == 13)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->cscmFairnessLimit);
+    }
+    else if (index == 14)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->beaconRandomizationWindowLength);
+    }
+    else if (index == 15)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->macA);
+    }
+    else if (index == 16)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->macK);
+    }
+    else if (index == 17)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->minCwAttempts);
+    }
+    else if (index == 18)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->cenelecLegacyMode);
+    }
+    else if (index == 19)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->fccLegacyMode);
+    }
+    else if (index == 20)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->maxBe);
+    }
+    else if (index == 21)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->maxCsmaBackoffs);
+    }
+    else if (index == 22)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->minBe);
+    }
+    else if (index == 23)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->macBroadcastMaxCwEnabled);
+    }
+    else if (index == 24)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->macTransmitAtten);
+    }
+    else if (index == 25)
+    {
+        gxMacPosTable* it;
+        arr_clear(&object->macPosTable);
+        if ((ret = cosem_verifyArray(value->byteArr, &object->macPosTable, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_getArrayItem(&object->macPosTable, pos, (void**)&it, sizeof(gxMacPosTable))) != 0 ||
+                    (ret = cosem_checkStructure(value->byteArr, 3)) != 0 ||
+                    (ret = cosem_getUInt16(value->byteArr, &it->shortAddress)) != 0 ||
+                    (ret = cosem_getUInt8(value->byteArr, &it->lqi)) != 0 ||
+                    (ret = cosem_getUInt8(value->byteArr, &it->validTime)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT* value)
@@ -3847,19 +4017,11 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
         {
             for (pos = 0; pos != count; ++pos)
             {
-#ifdef DLMS_IGNORE_MALLOC
                 if ((ret = cosem_getArrayItem(&object->descriptions, pos, (void**)&it, sizeof(gxTokenGatewayDescription))) != 0 ||
                     (ret = cosem_getOctetString2(value->byteArr, it->value, sizeof(it->value), &it->size)) != 0)
                 {
                     break;
                 }
-#else
-                if ((ret = cosem_getArrayItem(&object->descriptions, pos, (void**)&it, sizeof(gxByteBuffer))) != 0 ||
-                    (ret = cosem_getOctetString(value->byteArr, it)) != 0)
-                {
-                    break;
-                }
-#endif //DLMS_IGNORE_MALLOC
             }
         }
         break;
@@ -5039,7 +5201,6 @@ int cosem_setSFSKReportingSystemList(
         uint16_t count;
         if ((ret = cosem_verifyArray(value->byteArr, &object->reportingSystemList, &count)) == 0)
         {
-#ifndef DLMS_COSEM_EXACT_DATA_TYPES
             gxReportingSystemItem* v;
             for (pos = 0; pos != count; ++pos)
             {
@@ -5049,19 +5210,6 @@ int cosem_setSFSKReportingSystemList(
                     break;
                 }
             }
-#else
-            gxByteBuffer* it;
-            for (pos = 0; pos != count; ++pos)
-            {
-                it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                BYTE_BUFFER_INIT(it);
-                if ((ret = cosem_getOctetString(value->byteArr, it)) != 0 ||
-                    (ret = arr_push(&object->reportingSystemList, it)) != 0)
-                {
-                    break;
-                }
-            }
-#endif //DLMS_COSEM_EXACT_DATA_TYPES
         }
     }
     else

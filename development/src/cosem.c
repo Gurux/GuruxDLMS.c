@@ -275,6 +275,11 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxG3PlcMacLayerCounters);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
+        size = sizeof(gxG3PlcMacSetup);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         size = sizeof(gxUtilityTables);
@@ -517,7 +522,7 @@ int cosem_init3(
     DLMS_OBJECT_TYPE type,
     const unsigned char* ln)
 {
-	return cosem_init4((void*) object, expectedSize, type, ln);
+    return cosem_init4((void*)object, expectedSize, type, ln);
 }
 
 int cosem_init4(
@@ -702,6 +707,12 @@ int cosem_init4(
         break;
     case DLMS_OBJECT_TYPE_GSM_DIAGNOSTIC:
         ((gxObject*)object)->version = 1;
+        break;
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_LAYER_COUNTERS:
+        ((gxObject*)object)->version = 1;
+        break;
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
+        ((gxObject*)object)->version = 2;
         break;
     default:
         break;
@@ -1111,6 +1122,33 @@ int cosem_getDateFromOctetString2(gxByteBuffer* bb, gxtime* value, unsigned char
 int cosem_getTimeFromOctetString2(gxByteBuffer* bb, gxtime* value, unsigned char checkDataType)
 {
     return cosem_getDateTimeFromOctetStringBase(bb, value, DLMS_DATA_TYPE_TIME, checkDataType);
+}
+
+int cosem_getBitString2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size)
+{
+    int ret;
+    unsigned char ch;
+    uint16_t count;
+    bitArray tmp;
+    ba_attach(&tmp, value, 0, capacity);
+    if ((ret = bb_getUInt8(bb, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != DLMS_DATA_TYPE_BIT_STRING)
+    {
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
+    }
+    if ((ret = hlp_getObjectCount2(bb, &count)) != 0)
+    {
+        return ret;
+    }
+    ret = hlp_add(&tmp, bb, count);
+    if (ret == 0)
+    {
+        *size = bb->size;
+    }
+    return ret;
 }
 
 int cosem_getBitString(gxByteBuffer* bb, bitArray* value)
@@ -1606,7 +1644,7 @@ int getSelectedColumns(
     unsigned char* ln;
     DLMS_OBJECT_TYPE ot;
     int ret, dataIndex;
-	uint16_t pos, pos2;
+    uint16_t pos, pos2;
     unsigned char attributeIndex;
     for (pos = 0; pos != cols->size; ++pos)
     {

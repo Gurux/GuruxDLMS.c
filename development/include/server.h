@@ -124,6 +124,18 @@ extern "C" {
     int svr_monitorAll(dlmsServerSettings* settings);
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 
+#ifndef DLMS_IGNORE_LIMITER
+    /*
+   The server verifies that value of monitored object don't cross the thresholds.
+   Selected script is invoked if value is passed.
+   */
+    int svr_limiter(dlmsServerSettings* settings, gxLimiter* object, uint32_t now);
+    /*
+   The server verifies that values of monitored objects don't cross the thresholds.
+   Selected script is invoked if value is passed.
+   */
+    int svr_limiterAll(dlmsServerSettings* settings, uint32_t now);
+#endif //DLMS_IGNORE_LIMITER
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     /**

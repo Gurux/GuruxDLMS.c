@@ -4542,7 +4542,6 @@ int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char in
 }
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 
-
 #ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -4590,6 +4589,264 @@ int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned cha
     return ret;
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+int cosem_setG3PlcMacSetup(gxG3PlcMacSetup* object, unsigned char index, dlmsVARIANT* value)
+{
+    int pos, ret = 0;
+    if (index == 2)
+    {
+        object->shortAddress = value->uiVal;
+    }
+    else if (index == 3)
+    {
+        object->rcCoord = value->uiVal;
+    }
+    else if (index == 4)
+    {
+        object->panId = value->uiVal;
+    }
+    else if (index == 5)
+    {
+        arr_clear(&object->keyTable);
+        gxG3MacKeyTable* it;
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxG3MacKeyTable*)gxmalloc(sizeof(gxG3MacKeyTable));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->id = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                memcpy(it->key, tmp2->byteArr->data, bb_size(tmp2->byteArr));
+                arr_push(&object->keyTable, it);
+            }
+        }
+    }
+    else if (index == 6)
+    {
+        object->frameCounter = value->ulVal;
+    }
+    else if (index == 7)
+    {
+        ba_clear(&object->toneMask);
+        if (value->bitArr != NULL)
+        {
+            ba_copy(&object->toneMask, value->bitArr->data, ba_size(value->bitArr));
+        }
+    }
+    else if (index == 8)
+    {
+        object->tmrTtl = value->bVal;
+    }
+    else if (index == 9)
+    {
+        object->maxFrameRetries = value->bVal;
+    }
+    else if (index == 10)
+    {
+        object->neighbourTableEntryTtl = value->bVal;
+    }
+    else if (index == 11)
+    {
+        gxNeighbourTable* it;
+        obj_clearNeighbourTable(&object->neighbourTable);
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxNeighbourTable*)gxmalloc(sizeof(gxNeighbourTable));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                ba_init(&it->txCoeff);
+                ba_init(&it->toneMap);
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->shortAddress = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->payloadModulationScheme = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if (tmp2->bitArr != NULL)
+                {
+                    ba_copy(&it->toneMap, tmp2->bitArr->data, ba_size(tmp2->bitArr));
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->modulation = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 4, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->txGain = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 5, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->txRes = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 6, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if (tmp2->bitArr != NULL)
+                {
+                    ba_copy(&it->txCoeff, tmp2->bitArr->data, ba_size(tmp2->bitArr));
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 7, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->lqi = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 8, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->phaseDifferential = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 9, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->tmrValidTime = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 10, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                arr_push(&object->neighbourTable, it);
+            }
+        }
+    }
+    else if (index == 12)
+    {
+        object->highPriorityWindowSize = value->bVal;
+    }
+    else if (index == 13)
+    {
+        object->cscmFairnessLimit = value->bVal;
+    }
+    else if (index == 14)
+    {
+        object->beaconRandomizationWindowLength = value->bVal;
+    }
+    else if (index == 15)
+    {
+        object->macA = value->bVal;
+    }
+    else if (index == 16)
+    {
+        object->macK = value->bVal;
+    }
+    else if (index == 17)
+    {
+        object->minCwAttempts = value->bVal;
+    }
+    else if (index == 18)
+    {
+        object->cenelecLegacyMode = value->bVal;
+    }
+    else if (index == 19)
+    {
+        object->fccLegacyMode = value->bVal;
+    }
+    else if (index == 20)
+    {
+        object->maxBe = value->bVal;
+    }
+    else if (index == 21)
+    {
+        object->maxCsmaBackoffs = value->bVal;
+    }
+    else if (index == 22)
+    {
+        object->minBe = value->bVal;
+    }
+    else if (index == 23)
+    {
+        object->macBroadcastMaxCwEnabled = value->bVal;
+    }
+    else if (index == 24)
+    {
+        object->macTransmitAtten = value->bVal;
+    }
+    else if (index == 25)
+    {
+        arr_clear(&object->macPosTable);
+        gxMacPosTable* it;
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    return ret;
+                }
+                it = (gxMacPosTable*)gxmalloc(sizeof(gxMacPosTable));
+                if (it == NULL)
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->shortAddress = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->lqi = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->validTime = tmp2->cVal;
+                arr_push(&object->macPosTable, it);
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT* value)
@@ -4827,7 +5084,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
     if (ret != 0)
     {
         return ret;
-}
+    }
     for (pos = 0; pos != it->Arr->size; ++pos)
     {
         ret = va_getByIndex(it->Arr, pos, &it2);
@@ -4859,7 +5116,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
         ct->chargePerUnit = (short)var_toInteger(tmp);
     }
     return ret;
-    }
+}
 
 int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -6212,13 +6469,13 @@ int cosem_setParameterMonitor(
                         if ((ret = va_getByIndex(value->Arr, 3, &tmp3)) == DLMS_ERROR_CODE_OK)
                         {
                             ret = var_copy(&object->changedParameter.value, tmp3);
+                        }
                     }
-                }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
+                }
             }
         }
-    }
         break;
     }
     case 3:
@@ -6306,7 +6563,7 @@ int cosem_setParameterMonitor(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
@@ -6920,7 +7177,7 @@ int cosem_setArbitrator(
                 }
                 arr_push(&object->weightingsTable, tmp2);
             }
-    }
+        }
     }
     break;
     case 5:
@@ -6952,7 +7209,7 @@ int cosem_setArbitrator(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_ARBITRATOR

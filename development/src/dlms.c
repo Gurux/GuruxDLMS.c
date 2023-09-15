@@ -5511,7 +5511,6 @@ int dlms_getSNPdu(
             int pos = reply->size;
             dlmsVARIANT tmp;
             gxtime t;
-
 #ifndef DLMS_IGNORE_MALLOC
             tmp.dateTime = &t;
             tmp.vt = DLMS_DATA_TYPE_DATETIME;
@@ -5519,8 +5518,9 @@ int dlms_getSNPdu(
             GX_DATETIME(tmp) = &t;
 #endif // DLMS_IGNORE_MALLOC
 #ifdef DLMS_USE_EPOCH_TIME
-            t.value = p->time;
+            time_initUnix(&t, p->time);
 #else
+            time_initUnix(&t, 0);
             t.value = *p->time;
 #endif //DLMS_USE_EPOCH_TIME
             if ((ret = dlms_setData(reply, DLMS_DATA_TYPE_OCTET_STRING, &tmp)) != 0)

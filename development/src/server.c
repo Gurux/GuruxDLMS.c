@@ -3952,7 +3952,10 @@ int svr_handleProfileGeneric(
             tm = time - tm2;
             tm %= object->capturePeriod;
             uint32_t offset = object->capturePeriod - tm;
-            *next = time + offset;
+            if (time + offset < *next)
+            {
+                *next = time + offset;
+            }
         }
     }
     return ret;
@@ -4066,7 +4069,8 @@ int svr_invokeScript(
     dlmsServerSettings* settings,
     gxArray* dayProfiles,
     uint16_t id,
-    uint32_t time)
+    uint32_t time,
+    uint32_t* next)
 {
     uint16_t pos, pos2;
     int ret = 0;
@@ -4091,24 +4095,27 @@ int svr_invokeScript(
         {
             break;
         }
-        if (dp->dayId == id)
+        for (pos2 = 0; pos2 != dp->daySchedules.size; ++pos2)
         {
-            for (pos2 = 0; pos2 != dp->daySchedules.size; ++pos2)
+            if ((ret = arr_getByIndex2(&dp->daySchedules, pos2, (void**)&da, sizeof(gxDayProfileAction))) != 0)
             {
-                if ((ret = arr_getByIndex2(&dp->daySchedules, pos2, (void**)&da, sizeof(gxDayProfileAction))) != 0)
+                break;
+            }
+            if (dp->dayId == id && time_compare2(&da->startTime, time) == 0)
+            {
+                e->target = da->script;
+                e->index = 1;
+                if ((ret = var_setInt8(&e->parameters, (unsigned char)da->scriptSelector)) != 0 ||
+                    (ret = invoke_ScriptTable(settings, e)) != 0)
                 {
                     break;
                 }
-                if (time_compare2(&da->startTime, time) == 0)
-                {
-                    e->target = da->script;
-                    e->index = 1;
-                    if ((ret = var_setInt8(&e->parameters, (unsigned char)da->scriptSelector)) != 0 ||
-                        (ret = invoke_ScriptTable(settings, e)) != 0)
-                    {
-                        break;
-                    }
-                }
+            }
+            //Update next execution time.
+            uint32_t tmp = time_getNextScheduledDate(time, &da->startTime);
+            if (tmp < *next)
+            {
+                *next = tmp;
             }
         }
         if (ret != 0)
@@ -4172,14 +4179,16 @@ int svr_handleActivityCalendar(
         {
             for (pos2 = 0; pos2 != ((gxSpecialDaysTable*)obj)->entries.size; ++pos2)
             {
-                if ((ret = arr_getByIndex2(&((gxSpecialDaysTable*)obj)->entries, pos2, (void**)&sd, sizeof(gxSpecialDay))) != 0)
+                if ((ret = arr_getByIndex2(&((gxSpecialDaysTable*)obj)->entries, 
+                    pos2, (void**)&sd, sizeof(gxSpecialDay))) != 0)
                 {
                     break;
                 }
                 if (time_compare2(&sd->date, time) == 0)
                 {
                     //Invoke day profile
-                    if ((ret = svr_invokeScript(settings, &object->dayProfileTableActive, sd->dayId, time)) != 0)
+                    if ((ret = svr_invokeScript(settings, 
+                        &object->dayProfileTableActive, sd->dayId, time, next)) != 0)
                     {
                         break;
                     }
@@ -4196,7 +4205,8 @@ int svr_handleActivityCalendar(
         //Find active season.
         for (pos = 0; pos != object->seasonProfileActive.size; ++pos)
         {
-            if ((ret = arr_getByIndex2(&object->seasonProfileActive, pos, (void**)&sp, sizeof(gxSeasonProfile))) != 0)
+            if ((ret = arr_getByIndex2(&object->seasonProfileActive, 
+                pos, (void**)&sp, sizeof(gxSeasonProfile))) != 0)
             {
                 break;
             }
@@ -4222,11 +4232,13 @@ int svr_handleActivityCalendar(
                 end = &sp->start;
             }
         }
-        if ((ret = arr_getByIndex2(&object->seasonProfileActive, activeSeason, (void**)&sp, sizeof(gxSeasonProfile))) == 0)
+        if ((ret = arr_getByIndex2(&object->seasonProfileActive, 
+            activeSeason, (void**)&sp, sizeof(gxSeasonProfile))) == 0)
         {
             for (pos2 = 0; pos2 != object->weekProfileTableActive.size; ++pos2)
             {
-                if ((ret = arr_getByIndex2(&object->weekProfileTableActive, pos2, (void**)&wp, sizeof(gxWeekProfile))) != 0)
+                if ((ret = arr_getByIndex2(&object->weekProfileTableActive, 
+                    pos2, (void**)&wp, sizeof(gxWeekProfile))) != 0)
                 {
                     break;
                 }
@@ -4269,7 +4281,8 @@ int svr_handleActivityCalendar(
                     {
                         break;
                     }
-                    ret = svr_invokeScript(settings, &object->dayProfileTableActive, dayId, time);
+                    ret = svr_invokeScript(settings, &object->dayProfileTableActive, 
+                        dayId, time, next);
                     //If week name matches.
                     break;
                 }
@@ -4651,6 +4664,9 @@ int svr_monitor(dlmsServerSettings* settings, gxRegisterMonitor* object)
             }
         }
     }
+#ifndef DLMS_IGNORE_MALLOC
+    vec_clear(&args);
+#endif //DLMS_IGNORE_MALLOC
     return ret;
 }
 
@@ -4676,5 +4692,164 @@ int svr_monitorAll(dlmsServerSettings* settings)
     return ret;
 }
 #endif //DLMS_IGNORE_REGISTER_MONITOR
+
+
+#ifndef DLMS_IGNORE_LIMITER
+
+int svr_invokeLimiterAction(
+    dlmsServerSettings* settings, 
+    gxValueEventArg* e,
+    gxActionItem* action)
+{
+    int pos, ret = 0;
+    gxObject* obj;
+    for (pos = 0; pos != settings->base.objects.size; ++pos)
+    {
+        if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
+        {
+            break;
+        }
+        if (obj->objectType == DLMS_OBJECT_TYPE_SCRIPT_TABLE &&
+            memcmp(obj->logicalName, action->script->base.logicalName, 6) == 0)
+        {
+            e->target = (gxObject*) action->script;
+            e->index = 1;
+            if ((ret = var_setInt8(&e->parameters, action->scriptSelector)) != 0 ||
+                (ret = invoke_ScriptTable(settings, e)) != 0)
+            {
+                break;
+            }
+            break;
+        }
+    }
+    return ret;
+}
+
+int svr_limiter(dlmsServerSettings* settings, 
+    gxLimiter* object,
+    uint32_t now)
+{
+    int ret;
+    gxValueEventCollection args;
+    gxValueEventArg* e;
+#ifdef DLMS_IGNORE_MALLOC
+    gxValueEventArg tmp[1];
+    ve_init(&tmp[0]);
+    vec_attach(&args, tmp, 1, 1);
+    e = &tmp[0];
+#else
+    e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+    ve_init(e);
+    vec_init(&args);
+    vec_push(&args, e);
+#endif //DLMS_IGNORE_MALLOC
+    e->target = object->monitoredValue;
+    e->index = object->selectedAttributeIndex;
+    e->action = 1;
+    svr_preRead(&settings->base, &args);
+    ret = e->error;
+    if (!e->handled && ret == 0)
+    {
+        if ((ret = cosem_getValue(&settings->base, e)) == 0)
+        {
+            svr_postRead(&settings->base, &args);
+            ret = e->error;
+        }
+    }
+    if (ret == 0)
+    {
+        //Save value.
+        double currentValue = var_toDouble(&e->value);
+        double activeValue = var_toDouble(&object->thresholdActive);
+        double normalValue = var_toDouble(&object->thresholdNormal);
+        double emergencyValue = var_toDouble(&object->thresholdEmergency);
+        if (currentValue < activeValue)
+        {
+            //If active value is under threshold or it changes from over to under.
+            if (object->activationTime == 0 || (object->overThreshold & 0x1) == 1)
+            {
+                object->activationTime = now;
+                object->overThreshold = 0;
+            }
+            else if (now - object->activationTime >= object->minUnderThresholdDuration)
+            {                
+                if (object->actionOverThreshold.script != NULL)
+                {
+                    ret = svr_invokeLimiterAction(settings, e, &object->actionUnderThreshold);
+                    // Threshold is invoked only once. 
+                    // The highest bit is set to indicate that the action has been completed.
+                    object->overThreshold = 0x80;
+                }
+            }
+        }
+        else if (currentValue > activeValue)
+        {
+            //If active value is over threshold or it changes from under to over.
+            if (object->activationTime == 0 || (object->overThreshold & 0x1) == 0)
+            {
+                object->activationTime = now;
+                object->overThreshold = 1;
+            }
+            else if (now - object->activationTime >= object->minOverThresholdDuration)
+            {
+                if (object->actionOverThreshold.script != NULL)
+                {
+                    ret = svr_invokeLimiterAction(settings, e, &object->actionOverThreshold);
+                    //Threshold is invoked only once.
+                    // The highest bit is set to indicate that the action has been completed.
+                    object->overThreshold = 0x81;
+                }
+            }
+        }
+        if (ret == 0)
+        {
+            //Activate the emergency.
+            if (object->emergencyProfileActive == 0 &&
+                ((normalValue < emergencyValue && currentValue > emergencyValue) ||
+                (normalValue > emergencyValue && currentValue < emergencyValue)))
+            {
+                time_initUnix(&object->emergencyProfile.activationTime, now);
+                object->emergencyProfileActive = 1;
+            }
+            else
+            {
+                uint32_t activationTime = time_toUnixTime2(&object->emergencyProfile.activationTime);
+                if (object->emergencyProfileActive &&
+                    activationTime != (uint32_t)-1 && now - activationTime > object->emergencyProfile.duration)
+                {
+                    //If the emergency is over.
+                    time_initUnix(&object->emergencyProfile.activationTime, 0);
+                    object->emergencyProfileActive = 0;
+                }
+            }
+        }
+    }
+#ifndef DLMS_IGNORE_MALLOC
+    vec_clear(&args);
+#endif //DLMS_IGNORE_MALLOC
+    return ret;
+}
+
+int svr_limiterAll(dlmsServerSettings* settings, uint32_t now)
+{
+    int ret = 0, pos;
+    gxObject* obj;
+    for (pos = 0; pos != settings->base.objects.size; ++pos)
+    {
+        if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
+        {
+            break;
+        }
+        if (obj->objectType == DLMS_OBJECT_TYPE_LIMITER)
+        {
+            if ((ret = svr_limiter(settings, (gxLimiter*)obj, now)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_LIMITER
 
 #endif //DLMS_IGNORE_SERVER

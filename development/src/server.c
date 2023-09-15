@@ -3353,7 +3353,7 @@ int svr_handleRequest4(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     int ret;
-    unsigned char first, ch;
+    unsigned char first;
     bb_clear(sr->reply);
     if (sr->data == NULL || sr->dataSize == 0)
     {
@@ -3412,10 +3412,11 @@ int svr_handleRequest4(
     }
     first = settings->base.serverAddress == 0
         && settings->base.clientAddress == 0;
-#ifndef DLMS_IGNORE_IEC
+#if !defined(DLMS_IGNORE_IEC) && !defined(DLMS_IGNORE_IEC_LOCAL_PORT_SETUP)
     //If using optical probe.
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
     {
+        unsigned char ch;
         if (settings->base.connected == DLMS_CONNECTION_STATE_NONE)
         {
             //If IEC packet not found or it's not fully received.
@@ -3496,7 +3497,7 @@ int svr_handleRequest4(
             return 0;
         }
     }
-#endif //DLMS_IGNORE_IEC
+#endif// !defined(DLMS_IGNORE_IEC) && !defined(DLMS_IGNORE_IEC_LOCAL_PORT_SETUP)
     if ((ret = dlms_getData2(&settings->base, &settings->receivedData, &settings->info, first)) != 0)
     {
 #ifdef DLMS_DEBUG
@@ -4714,7 +4715,7 @@ int svr_invokeLimiterAction(
         {
             e->target = (gxObject*) action->script;
             e->index = 1;
-            if ((ret = var_setInt8(&e->parameters, action->scriptSelector)) != 0 ||
+            if ((ret = var_setInt16(&e->parameters, action->scriptSelector)) != 0 ||
                 (ret = invoke_ScriptTable(settings, e)) != 0)
             {
                 break;

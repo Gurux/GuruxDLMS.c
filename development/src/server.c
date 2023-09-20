@@ -3293,7 +3293,7 @@ int svr_getIecPacket(dlmsServerSettings* settings)
         return DLMS_ERROR_CODE_FALSE;
     }
     int ret;
-    uint32_t pos;
+    int pos;
     unsigned char ch;
     int eop = -1;
     int bop = -1;

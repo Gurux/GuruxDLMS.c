@@ -5404,6 +5404,46 @@ int dlms_addLLCBytes(
 }
 #endif //DLMS_IGNORE_HDLC
 
+
+#ifdef DLMS_USE_EPOCH_TIME
+int dlms_updateSendTime(uint32_t value, gxByteBuffer* reply)
+#else
+int dlms_updateSendTime(struct tm* value, gxByteBuffer* reply)
+#endif // DLMS_USE_EPOCH_TIME
+{
+#ifdef DLMS_USE_EPOCH_TIME
+    if (value == 0)
+#else
+    if (value == NULL)
+#endif // DLMS_USE_EPOCH_TIME
+    {
+        return bb_setUInt8(reply, (unsigned char)DLMS_DATA_TYPE_NONE);
+    }
+    // Data is send in octet string. Remove data type.
+    int ret;
+    uint16_t pos = (uint16_t)reply->size;
+    dlmsVARIANT tmp;
+    gxtime t;
+#ifndef DLMS_IGNORE_MALLOC
+    tmp.dateTime = &t;
+    tmp.vt = DLMS_DATA_TYPE_DATETIME;
+#else
+    GX_DATETIME(tmp) = &t;
+#endif // DLMS_IGNORE_MALLOC
+#ifdef DLMS_USE_EPOCH_TIME
+    time_initUnix(&t, value);
+#else
+    time_initUnix(&t, 0);
+    t.value = *value;
+#endif //DLMS_USE_EPOCH_TIME
+    if ((ret = dlms_setData(reply, DLMS_DATA_TYPE_OCTET_STRING, &tmp)) != 0)
+    {
+        return ret;
+    }
+    //Remove data type.
+    return bb_move(reply, pos + 1, pos, reply->size - pos - 1);
+}
+
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 int dlms_appendMultipleSNBlocks(
     gxSNParameters* p,
@@ -5497,38 +5537,9 @@ int dlms_getSNPdu(
     {
         bb_setUInt8(h, (unsigned char)p->command);
         // Add date time.
-#ifdef DLMS_USE_EPOCH_TIME
-        if (p->time == 0)
-#else
-        if (p->time == NULL)
-#endif // DLMS_USE_EPOCH_TIME
+        if ((ret = dlms_updateSendTime(p->time, reply)) != 0)
         {
-            bb_setUInt8(h, (unsigned char)DLMS_DATA_TYPE_NONE);
-        }
-        else
-        {
-            // Data is send in octet string. Remove data type.
-            int pos = reply->size;
-            dlmsVARIANT tmp;
-            gxtime t;
-#ifndef DLMS_IGNORE_MALLOC
-            tmp.dateTime = &t;
-            tmp.vt = DLMS_DATA_TYPE_DATETIME;
-#else
-            GX_DATETIME(tmp) = &t;
-#endif // DLMS_IGNORE_MALLOC
-#ifdef DLMS_USE_EPOCH_TIME
-            time_initUnix(&t, p->time);
-#else
-            time_initUnix(&t, 0);
-            t.value = *p->time;
-#endif //DLMS_USE_EPOCH_TIME
-            if ((ret = dlms_setData(reply, DLMS_DATA_TYPE_OCTET_STRING, &tmp)) != 0)
-            {
-                return ret;
-            }
-            //Remove data type.
-            bb_move(reply, pos + 1, pos, reply->size - pos - 1);
+            return ret;
         }
         hlp_setObjectCount(p->count, reply);
         bb_set2(reply, p->attributeDescriptor, 0, p->attributeDescriptor->size);
@@ -5760,41 +5771,7 @@ int dlms_getLNPdu(
                 }
             }
             // Add date time.
-#ifdef DLMS_USE_EPOCH_TIME
-            if (p->time == 0)
-#else
-            if (p->time == NULL)
-#endif // DLMS_USE_EPOCH_TIME
-            {
-                ret = bb_setUInt8(h, DLMS_DATA_TYPE_NONE);
-            }
-            else
-            {
-                // Data is send in octet string. Remove data type.
-                uint16_t pos = (uint16_t)h->size;
-                dlmsVARIANT tmp;
-                gxtime t;
-#ifndef DLMS_IGNORE_MALLOC
-                tmp.dateTime = &t;
-                tmp.vt = DLMS_DATA_TYPE_DATETIME;
-#else
-                GX_DATETIME(tmp) = &t;
-#endif // DLMS_IGNORE_MALLOC
-#ifdef DLMS_USE_EPOCH_TIME
-                t.value = p->time;
-#else
-                t.value = *p->time;
-#endif // DLMS_USE_EPOCH_TIME
-                if ((ret = dlms_setData(h, DLMS_DATA_TYPE_OCTET_STRING, &tmp)) != 0)
-                {
-                    return ret;
-                }
-                //Remove data type.
-                if (p->command != DLMS_COMMAND_EVENT_NOTIFICATION)
-                {
-                    bb_move(h, pos + 1, pos, reply->size - pos - 1);
-                }
-            }
+            ret = dlms_updateSendTime(p->time, h);
         }
         else if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {

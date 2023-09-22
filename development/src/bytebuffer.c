@@ -235,6 +235,11 @@ int bb_insertUInt8(
     int ret;
     if ((ret = bb_move(arr, index, index + 1, arr->size)) == 0)
     {
+        if (index == 0 && arr->size == 0)
+        {
+            //If buffer is empty and there is no data to move.
+            ++arr->size;
+        }
         ret = bb_setUInt8ByIndex(arr, index, item);
     }
     return ret;

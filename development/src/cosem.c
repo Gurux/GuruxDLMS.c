@@ -280,6 +280,16 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxG3PlcMacSetup);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        size = sizeof(gxG3Plc6LoWPAN);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        size = sizeof(gxArrayManager);
+        break;
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         size = sizeof(gxUtilityTables);
@@ -714,6 +724,9 @@ int cosem_init4(
     case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
         ((gxObject*)object)->version = 2;
         break;
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        ((gxObject*)object)->version = 2;
+        break;
     default:
         break;
     }
@@ -1146,7 +1159,7 @@ int cosem_getBitString2(gxByteBuffer* bb, unsigned char* value, uint16_t capacit
     ret = hlp_add(&tmp, bb, count);
     if (ret == 0)
     {
-        *size = bb->size;
+        *size = (unsigned short)bb->size;
     }
     return ret;
 }

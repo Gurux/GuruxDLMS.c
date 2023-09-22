@@ -389,7 +389,7 @@ extern "C" {
         /*
         * G3-PLC 6LoWPAN.
         */
-        DLMS_OBJECT_TYPE_G3_PLC6_LO_WPAN = 92,
+        DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN = 92,
 
         /*
         * Configure a ZigBee PRO device with information necessary to create or
@@ -413,7 +413,7 @@ extern "C" {
         DLMS_OBJECT_TYPE_CREDIT = 112,
         DLMS_OBJECT_TYPE_CHARGE = 113,
         DLMS_OBJECT_TYPE_TOKEN_GATEWAY = 115,
-
+        DLMS_OBJECT_TYPE_ARRAY_MANAGER = 123,
         // Tariff Plan (Piano Tariffario) is used in Italian standard UNI/TS 11291-11.
         DLMS_OBJECT_TYPE_TARIFF_PLAN = 8192,
     } DLMS_OBJECT_TYPE;
@@ -3370,6 +3370,18 @@ extern "C" {
         // Step is 3 dB.
         DLMS_G3_PLC_GAIN_RESOLUTION_DB3
     }DLMS_G3_PLC_GAIN_RESOLUTION;
+
+    // Enumerates the type of the device connected to the modem.
+    typedef enum
+    {
+        // PAN device.
+        DLMS_PAN_DEVICE_TYPE_DEVICE,
+        //  PAN coordinator.
+        DLMS_PAN_DEVICE_TYPE_COORDINATOR,
+        // Not Defined.
+        DLMS_PAN_DEVICE_TYPE_NOT_DEFINED
+    }DLMS_PAN_DEVICE_TYPE;
+    
 
     // Defines the ZigBee status enumeration values.
     typedef enum

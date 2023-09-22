@@ -70,6 +70,7 @@ int obj_typeToString(DLMS_OBJECT_TYPE type, char* buff)
     return 0;
 }
 
+#ifdef DLMS_IGNORE_MALLOC
 int obj_UInt16ArrayToString(gxByteBuffer* bb, gxArray* arr)
 {
     int ret = 0;
@@ -97,6 +98,35 @@ int obj_UInt16ArrayToString(gxByteBuffer* bb, gxArray* arr)
     }
     return ret;
 }
+#else
+int obj_UInt16ArrayToString(gxByteBuffer* bb, gxArray* arr)
+{
+    int ret = 0;
+    uint16_t pos;
+    uint16_t* it;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+        if (pos != 0)
+        {
+            bb_addString(bb, ", ");
+        }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        if ((ret = arr_getByIndex2(arr, pos, (void**)&it, sizeof(uint16_t))) != 0 ||
+            (ret = bb_addIntAsString(bb, *it)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0 ||
+            (ret = bb_addIntAsString(bb, *it)) != 0)
+        {
+            break;
+        }
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MALLOC
 
 const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
 {
@@ -253,6 +283,16 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
         ret = GET_STR_FROM_EEPROM("G3PlcMacSetup");
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        ret = GET_STR_FROM_EEPROM("G3Plc6LoWPAN");
+        break;
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        ret = GET_STR_FROM_EEPROM("ArrayManager");
+        break;
+#endif //DLMS_IGNORE_ARRAY_MANAGER
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = GET_STR_FROM_EEPROM("UtilityTables");
         break;
@@ -2054,7 +2094,6 @@ int obj_G3PlcMacSetupNeighbourTableToString(gxG3PlcMacSetup* object, gxByteBuffe
     return ret;
 }
 
-
 int obj_G3PlcMacSetupMacPosTableToString(gxG3PlcMacSetup* object, gxByteBuffer* ba)
 {
     int pos, ret = 0;
@@ -2077,7 +2116,7 @@ int obj_G3PlcMacSetupMacPosTableToString(gxG3PlcMacSetup* object, gxByteBuffer* 
     return ret;
 }
 
-int obj_G3PlcMacSetup(gxG3PlcMacSetup* object, char** buff)
+int obj_G3PlcMacSetupToString(gxG3PlcMacSetup* object, char** buff)
 {
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -2132,6 +2171,244 @@ int obj_G3PlcMacSetup(gxG3PlcMacSetup* object, char** buff)
     return 0;
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+
+int obj_G3Plc6RoutingConfigurationToString(gxArray* table, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    gxRoutingConfiguration* it;
+    bb_addString(ba, "\nIndex: 6 Value: [\r");
+    for (pos = 0; pos != table->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(table, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_addString(ba, "{netTraversalTime: ");
+        bb_addIntAsString(ba, it->netTraversalTime);
+        bb_addString(ba, ", routingTableEntryTtl: ");
+        bb_addIntAsString(ba, it->routingTableEntryTtl);
+        bb_addString(ba, ", kr: ");
+        bb_addIntAsString(ba, it->kr);
+        bb_addString(ba, ", km: ");
+        bb_addIntAsString(ba, it->km);
+        bb_addString(ba, ", kc: ");
+        bb_addIntAsString(ba, it->kc);
+        bb_addString(ba, ", kq: ");
+        bb_addIntAsString(ba, it->kq);
+        bb_addString(ba, ", kh: ");
+        bb_addIntAsString(ba, it->kh);
+        bb_addString(ba, ", krt: ");
+        bb_addIntAsString(ba, it->krt);
+        bb_addString(ba, ", rReqRetries: ");
+        bb_addIntAsString(ba, it->rReqRetries);
+        bb_addString(ba, ", rReqReqWait: ");
+        bb_addIntAsString(ba, it->rReqReqWait);
+        bb_addString(ba, ", blacklistTableEntryTtl: ");
+        bb_addIntAsString(ba, it->blacklistTableEntryTtl);
+        bb_addString(ba, ", unicastRreqGenEnable: ");
+        bb_addIntAsString(ba, it->unicastRreqGenEnable);
+        bb_addString(ba, ", rlcEnabled: ");
+        bb_addIntAsString(ba, it->rlcEnabled);
+        bb_addString(ba, ", addRevLinkCost: ");
+        bb_addIntAsString(ba, it->addRevLinkCost);
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+int obj_G3Plc6RoutingTableToString(gxArray* table, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    gxRoutingTable* it;
+    bb_addString(ba, "\nIndex: 8 Value: [\r");
+    for (pos = 0; pos != table->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(table, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_addString(ba, "{destination address: ");
+        bb_addIntAsString(ba, it->destinationAddress);
+        bb_addString(ba, ", next hop address: ");
+        bb_addIntAsString(ba, it->nextHopAddress);
+        bb_addString(ba, ", route cost: ");
+        bb_addIntAsString(ba, it->routeCost);
+        bb_addString(ba, ", hop count: ");
+        bb_addIntAsString(ba, it->hopCount);
+        bb_addString(ba, ", weak link count: ");
+        bb_addIntAsString(ba, it->weakLinkCount);
+        bb_addString(ba, ", valid time: ");
+        bb_addIntAsString(ba, it->validTime);
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+int obj_G3Plc6ContextInformationTableToString(gxArray* table, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    gxContextInformationTable* it;
+    bb_addString(ba, "\nIndex: 9 Value: [\r");
+    for (pos = 0; pos != table->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(table, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_addString(ba, "{CID: ");
+        bb_addIntAsString(ba, it->cid);
+        bb_addString(ba, ", context: ");
+        bb_attachString(ba, hlp_bytesToHex(it->context, 16));
+        bb_addString(ba, ", compression: ");
+        bb_addIntAsString(ba, it->compression);
+        bb_addString(ba, ", valid life time: ");
+        bb_addIntAsString(ba, it->validLifetime);
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+int obj_G3Plc6BlacklistTableToString(gxArray* table, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    gxBlacklistTable* it;
+    bb_addString(ba, "\nIndex: 10 Value: [\r");
+    for (pos = 0; pos != table->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(table, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_addString(ba, "{neighbour address: ");
+        bb_addIntAsString(ba, it->neighbourAddress);
+        bb_addString(ba, ", valid time: ");
+        bb_addIntAsString(ba, it->validTime);
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+int obj_G3Plc6BroadcastLogTableToString(gxArray* table, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    gxBroadcastLogTable* it;
+    bb_addString(ba, "\nIndex: 11 Value: [\r");
+    for (pos = 0; pos != table->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(table, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_addString(ba, "{sourceAddress: ");
+        bb_addIntAsString(ba, it->sourceAddress);
+        bb_addString(ba, ", sequenceNumber: ");
+        bb_addIntAsString(ba, it->sequenceNumber);
+        bb_addString(ba, ", validTime: ");
+        bb_addIntAsString(ba, it->validTime);
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+int obj_G3Plc6LoWPANToString(gxG3Plc6LoWPAN* object, char** buff)
+{
+    int ret;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    bb_addString(&ba, "Index: 2 Value: ");
+    bb_addIntAsString(&ba, object->maxHops);
+    bb_addString(&ba, "\nIndex: 3 Value: ");
+    bb_addIntAsString(&ba, object->weakLqiValue);
+    bb_addString(&ba, "\nIndex: 4 Value: ");
+    bb_addIntAsString(&ba, object->securityLevel);
+    obj_G3Plc6RoutingConfigurationToString(&object->routingConfiguration, &ba);
+    bb_addString(&ba, "\nIndex: 7 Value: ");
+    bb_addIntAsString(&ba, object->broadcastLogTableEntryTtl);
+    obj_G3Plc6RoutingTableToString(&object->routingTable, &ba);
+    obj_G3Plc6ContextInformationTableToString(&object->contextInformationTable, &ba);
+    obj_G3Plc6BlacklistTableToString(&object->blacklistTable, &ba);
+    obj_G3Plc6BroadcastLogTableToString(&object->broadcastLogTable, &ba);
+    bb_addString(&ba, "\nIndex: 12 Value: ");
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    if ((ret = obj_UInt16ArrayToString(&ba, &object->groupTable)) != 0)
+    {
+        return ret;
+    }
+#else
+    if ((ret = va_toString(&object->groupTable, &ba)) != 0)
+    {
+        return ret;
+    }
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    bb_addString(&ba, "\nIndex: 13 Value: ");
+    bb_addIntAsString(&ba, object->maxJoinWaitTime);
+    bb_addString(&ba, "\nIndex: 14 Value: ");
+    bb_addIntAsString(&ba, object->pathDiscoveryTime);
+    bb_addString(&ba, "\nIndex: 15 Value: ");
+    bb_addIntAsString(&ba, object->activeKeyIndex);
+    bb_addString(&ba, "\nIndex: 16 Value: ");
+    bb_addIntAsString(&ba, object->metricType);
+    bb_addString(&ba, "\nIndex: 17 Value: ");
+    bb_addIntAsString(&ba, object->coordShortAddress);
+    bb_addString(&ba, "\nIndex: 18 Value: ");
+    bb_addIntAsString(&ba, object->disableDefaultRouting);
+    bb_addString(&ba, "\nIndex: 19 Value: ");
+    bb_addIntAsString(&ba, object->deviceType);
+    bb_addString(&ba, "\nIndex: 20 Value: ");
+    bb_addIntAsString(&ba, object->defaultCoordRouteEnabled);
+    bb_addString(&ba, "\nIndex: 21 Value: ");
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    if ((ret = obj_UInt16ArrayToString(&ba, &object->destinationAddress)) != 0)
+    {
+        bb_clear(&ba);
+        return ret;
+    }
+#else
+    if ((ret = va_toString(&object->destinationAddress, &ba)) != 0)
+    {
+        bb_clear(&ba);
+        return ret;
+    }
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    bb_addString(&ba, "\n");
+    *buff = bb_toString(&ba);
+    bb_clear(&ba);
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+
+int obj_ArrayManagerToString(gxArrayManager* object, char** buff)
+{
+    int pos, ret = 0;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    bb_addString(&ba, "Index: 2 Value:[ ");
+    gxArrayManagerItem* it;
+    for (pos = 0; pos != object->elements.size; ++pos)
+    {
+        if ((ret = arr_getByIndex(&object->elements, pos, (void**)&it)) != 0 ||
+            (ret = bb_addString(&ba, "{ID: ")) != 0 ||
+            (ret = bb_addIntAsString(&ba, it->id)) != 0 ||
+            (ret = bb_addString(&ba, ", Target: ")) != 0 ||
+            (ret = hlp_appendLogicalName(&ba, it->element.target->logicalName)) != 0 ||
+            (ret = bb_addString(&ba, ":")) != 0 ||
+            (ret = bb_addIntAsString(&ba, it->element.attributeIndex)) != 0 ||
+            (ret = bb_addString(&ba, "}")) != 0)
+        {
+            break;
+        }
+    }
+    bb_addString(&ba, "]\n");
+    *buff = bb_toString(&ba);
+    bb_clear(&ba);
+    return ret;
+}
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int obj_UtilityTablesToString(gxUtilityTables* object, char** buff)
@@ -3597,9 +3874,19 @@ int obj_toString(gxObject* object, char** buff)
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 #ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
     case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
-        ret = obj_G3PlcMacSetup((gxG3PlcMacSetup*)object, buff);
+        ret = obj_G3PlcMacSetupToString((gxG3PlcMacSetup*)object, buff);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        ret = obj_G3Plc6LoWPANToString((gxG3Plc6LoWPAN*)object, buff);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        ret = obj_ArrayManagerToString((gxArrayManager*)object, buff);
+        break;
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = obj_UtilityTablesToString((gxUtilityTables*)object, buff);

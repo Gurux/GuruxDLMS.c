@@ -299,6 +299,16 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
         ret = cosem_setG3PlcMacSetup((gxG3PlcMacSetup*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        ret = cosem_setG3Plc6LoWPAN((gxG3Plc6LoWPAN*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        ret = cosem_setArrayManager(settings, (gxArrayManager*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = cosem_setUtilityTables((gxUtilityTables*)e->target, e->index, &e->value);

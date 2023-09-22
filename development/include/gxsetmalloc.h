@@ -188,6 +188,12 @@ extern "C" {
 #ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
     int cosem_setG3PlcMacSetup(gxG3PlcMacSetup* object, unsigned char index, dlmsVARIANT* value);
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+    int cosem_setG3Plc6LoWPAN(gxG3Plc6LoWPAN* object, unsigned char index, dlmsVARIANT* value);
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    int cosem_setArrayManager(dlmsSettings* settings, gxArrayManager* object, unsigned char index, dlmsVARIANT* value);
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
     int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT* value);

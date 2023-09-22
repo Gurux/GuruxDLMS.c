@@ -202,7 +202,6 @@ gxImageTransfer imageTransfer;
 gxAutoConnect autoConnect;
 gxActivityCalendar activityCalendar;
 gxSpecialDaysTable specialDaysTable;
-gxLocalPortSetup localPortSetup;
 gxDemandRegister demandRegister;
 gxRegisterMonitor registerMonitor;
 gxAutoAnswer autoAnswer;
@@ -221,6 +220,8 @@ gxData currentlyActiveTariff;
 gxLimiter limiter;
 static gxG3PlcMacLayerCounters g3plcMacLayerCounters;
 static gxG3PlcMacSetup g3PlcMacSetup;
+static gxG3Plc6LoWPAN g3Plc6LoWPAN;
+static gxArrayManager arrayManager;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
@@ -231,14 +232,14 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
     BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
     BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
-    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
+    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(demandRegister),
     BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
     BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData),
     BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff),
     BASE(primeNbOfdmPlcMacCounters),
     BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter), BASE(limiter),
     BASE(mbusDiagnostic), BASE(mbusPortSetup),
-    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup)
+    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager)
 };
 
 //List of COSEM objects that are removed from association view(s).
@@ -1287,31 +1288,7 @@ int addPrimeNbOfdmPlcMacCounters()
 ///////////////////////////////////////////////////////////////////////
 int addOpticalPortSetup()
 {
-    int ret;
-    static unsigned char DEVICE_ADDRESS[10];
-    static unsigned char PASSWORD1[10];
-    static unsigned char PASSWORD2[10];
-    static unsigned char PASSWORD5[10];
-    const unsigned char ln[6] = { 0,0,20,0,0,255 };
-    if ((ret = INIT_OBJECT(localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln)) == 0)
-    {
-        localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_DEFAULT;
-        localPortSetup.proposedBaudrate = DLMS_BAUD_RATE_9600;
-        localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
-        localPortSetup.responseTime = DLMS_LOCAL_PORT_RESPONSE_TIME_200_MS;
-        BB_ATTACH(localPortSetup.deviceAddress, DEVICE_ADDRESS, 0);
-        bb_addString(&localPortSetup.deviceAddress, "1234567");
-        BB_ATTACH(localPortSetup.password1, PASSWORD1, 0);
-        bb_addString(&localPortSetup.password1, "Gurux1");
-        BB_ATTACH(localPortSetup.password2, PASSWORD2, 0);
-        bb_addString(&localPortSetup.password2, "Gurux2");
-        BB_ATTACH(localPortSetup.password5, PASSWORD5, 0);
-        ret = bb_addString(&localPortSetup.password5, "Gurux5");
-        settings.localPortSetup = &localPortSetup;
-        //Set flag id.
-        memcpy(settings.flagId, "GRX", 3);
-    }
-    return ret;
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1459,7 +1436,7 @@ unsigned long getIpAddress()
     //If no OS get IP.
 #endif
     return ret;
-    }
+}
 
 ///////////////////////////////////////////////////////////////////////
 //Add IP4 Setup object.
@@ -1675,7 +1652,7 @@ int addG3PlcMacSetup()
     static const unsigned char GMK_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
     static gxG3MacKeyTable KEY_TABLE[2];
     static gxNeighbourTable NEIGHBOUR_TABLE[2];
-    static gxMacPosTable POS_TABLE[2];    
+    static gxMacPosTable POS_TABLE[2];
 
     const unsigned char ln[6] = { 0,0,29,1,0,255 };
     if ((ret = INIT_OBJECT(g3PlcMacSetup, DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP, ln)) == 0)
@@ -1737,6 +1714,113 @@ int addG3PlcMacSetup()
         POS_TABLE[1].shortAddress = 2;
         POS_TABLE[1].lqi = 3;
         POS_TABLE[1].validTime = 4;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add G3 PLC 6LoWPAN object.
+///////////////////////////////////////////////////////////////////////
+int addG3Plc6LoWPAN()
+{
+    int ret;
+    //The maximum Context field length is 16 bytes (128 bits).
+    static unsigned char PREFIX_TABLE[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    static gxRoutingConfiguration ROUTING_CONFIGURATION[2];
+    static gxRoutingTable ROUTING_TABLE[2];
+    static gxBlacklistTable BLACK_LIST_TABLE[10];
+
+    static gxContextInformationTable CONTEXT_INFORMATION_TABLE[2];
+    static uint16_t GROUP_TABLE[10];
+    static uint16_t DESTINATION_ADDRESS[10];
+
+
+    const unsigned char ln[6] = { 0,0,29,2,0,255 };
+    if ((ret = INIT_OBJECT(g3Plc6LoWPAN, DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN, ln)) == 0)
+    {
+        g3Plc6LoWPAN.maxHops = 1;
+        g3Plc6LoWPAN.weakLqiValue = 2;
+        g3Plc6LoWPAN.securityLevel = 3;
+        BB_ATTACH(g3Plc6LoWPAN.prefixTable, PREFIX_TABLE, 16);
+        ARR_ATTACH(g3Plc6LoWPAN.routingConfiguration, ROUTING_CONFIGURATION, 1);
+        ROUTING_CONFIGURATION[0].netTraversalTime = 1;
+        ROUTING_CONFIGURATION[0].routingTableEntryTtl = 2;
+        ROUTING_CONFIGURATION[0].kr = 3;
+        ROUTING_CONFIGURATION[0].km = 4;
+        ROUTING_CONFIGURATION[0].kc = 5;
+        ROUTING_CONFIGURATION[0].kq = 6;
+        ROUTING_CONFIGURATION[0].kh = 7;
+        ROUTING_CONFIGURATION[0].krt = 8;
+        ROUTING_CONFIGURATION[0].rReqRetries = 9;
+        ROUTING_CONFIGURATION[0].rReqReqWait = 10;
+        ROUTING_CONFIGURATION[0].blacklistTableEntryTtl = 11;
+        ROUTING_CONFIGURATION[0].unicastRreqGenEnable = 1;
+        ROUTING_CONFIGURATION[0].rlcEnabled = 1;
+        ROUTING_CONFIGURATION[0].addRevLinkCost = 14;
+
+        ARR_ATTACH(g3Plc6LoWPAN.routingTable, ROUTING_TABLE, 1);
+        ROUTING_TABLE[0].destinationAddress = 1;
+        ROUTING_TABLE[0].nextHopAddress = 2;
+        ROUTING_TABLE[0].routeCost = 3;
+        ROUTING_TABLE[0].hopCount = 4;
+        ROUTING_TABLE[0].weakLinkCount = 5;
+        ROUTING_TABLE[0].validTime = 6;
+
+        ARR_ATTACH(g3Plc6LoWPAN.contextInformationTable, CONTEXT_INFORMATION_TABLE, 1);
+        CONTEXT_INFORMATION_TABLE[0].cid = 0xF;
+        CONTEXT_INFORMATION_TABLE[0].context[0] = 0xFF;
+        CONTEXT_INFORMATION_TABLE[0].contextLength = 8;
+        CONTEXT_INFORMATION_TABLE[0].compression = 1;
+        CONTEXT_INFORMATION_TABLE[0].validLifetime = 4;
+
+        BLACK_LIST_TABLE[0].neighbourAddress = 1;
+        BLACK_LIST_TABLE[0].validTime = 2;
+
+        BLACK_LIST_TABLE[1].neighbourAddress = 3;
+        BLACK_LIST_TABLE[1].validTime = 4;
+        ARR_ATTACH(g3Plc6LoWPAN.blacklistTable, BLACK_LIST_TABLE, 2);
+
+        GROUP_TABLE[0] = 1;
+        GROUP_TABLE[1] = 2;
+        GROUP_TABLE[2] = 3;
+        GROUP_TABLE[3] = 4;
+        ARR_ATTACH(g3Plc6LoWPAN.groupTable, GROUP_TABLE, 4);
+
+        g3Plc6LoWPAN.broadcastLogTableEntryTtl = 6;
+        g3Plc6LoWPAN.maxJoinWaitTime = 12;
+        g3Plc6LoWPAN.pathDiscoveryTime = 13;
+        g3Plc6LoWPAN.activeKeyIndex = 14;
+        g3Plc6LoWPAN.metricType = 15;
+        g3Plc6LoWPAN.coordShortAddress = 16;
+        g3Plc6LoWPAN.disableDefaultRouting = 1;
+        g3Plc6LoWPAN.deviceType = DLMS_PAN_DEVICE_TYPE_NOT_DEFINED;
+        g3Plc6LoWPAN.defaultCoordRouteEnabled = 1;
+        DESTINATION_ADDRESS[0] = 1;
+        DESTINATION_ADDRESS[1] = 2;
+        DESTINATION_ADDRESS[2] = 3;
+        DESTINATION_ADDRESS[3] = 4;
+        ARR_ATTACH(g3Plc6LoWPAN.destinationAddress, DESTINATION_ADDRESS, 4);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add array manager object.
+///////////////////////////////////////////////////////////////////////
+int addArrayManager()
+{
+    int ret;
+    static gxArrayManagerItem ELEMENTS[10];
+    const unsigned char ln[6] = { 0,0,18,0,0,255 };
+    if ((ret = INIT_OBJECT(arrayManager, DLMS_OBJECT_TYPE_ARRAY_MANAGER, ln)) == 0)
+    {
+        ELEMENTS[0].id = 1;
+        ELEMENTS[0].element.target = BASE(loadProfile);
+        ELEMENTS[0].element.attributeIndex = 2;
+        ELEMENTS[1].id = 2;
+        ELEMENTS[1].element.target = BASE(loadProfile);
+        ELEMENTS[1].element.attributeIndex = 3;
+        ARR_ATTACH(arrayManager.elements, ELEMENTS, 2);
     }
     return ret;
 }
@@ -2259,7 +2343,9 @@ int createObjects()
         (ret = addMbusDiagnostic()) != 0 ||
         (ret = addMbusPortSetup()) != 0 ||
         (ret = addG3PlcMacLayerCounters()) != 0 ||
-        (ret = addG3PlcMacSetup()) != 0 ||        
+        (ret = addG3PlcMacSetup()) != 0 ||
+        (ret = addG3Plc6LoWPAN()) != 0 ||
+        (ret = addArrayManager()) != 0 ||
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
@@ -4632,6 +4718,11 @@ int main(int argc, char* argv[])
         if (start - lastMonitor > 1)
         {
             lastMonitor = start;
+            if ((ret = svr_limiterAll(&settings, start)) != 0)
+            {
+                printf("Monitor failed.\r\n");
+            }
+
             if ((ret = svr_monitorAll(&settings)) != 0)
             {
                 printf("Monitor failed.\r\n");

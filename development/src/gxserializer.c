@@ -3018,6 +3018,285 @@ int ser_saveG3PlcMacSetup(
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+int ser_saveRoutingConfiguration(gxSerializerSettings* serializeSettings, gxArray* table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxRoutingConfiguration* it;
+    if ((ret = ser_saveArrayCount(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != table->size; ++pos)
+        {
+            if ((ret = arr_getByIndex4(table, pos, (void**)&it, sizeof(gxRoutingConfiguration), 0)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_saveUInt8(serializeSettings, it->netTraversalTime)) != 0 ||
+                (ret = ser_saveUInt16(serializeSettings, it->routingTableEntryTtl)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->kr)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->km)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->kc)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->kq)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->kh)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->krt)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->rReqRetries)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->rReqReqWait)) != 0 ||
+                (ret = ser_saveUInt16(serializeSettings, it->blacklistTableEntryTtl)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->unicastRreqGenEnable)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->rlcEnabled)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->addRevLinkCost)) != 0)
+            {
+                break;
+            }
+        }
+#ifdef DLMS_IGNORE_MALLOC
+        table->size = count;
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int ser_saveRoutingTable(gxSerializerSettings* serializeSettings, gxArray* table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxRoutingTable* it;
+    if ((ret = ser_saveArrayCount(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != table->size; ++pos)
+        {
+            if ((ret = arr_getByIndex4(table, pos, (void**)&it, sizeof(gxRoutingTable), 0)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_saveUInt16(serializeSettings, it->destinationAddress)) != 0 ||
+                (ret = ser_saveUInt16(serializeSettings, it->nextHopAddress)) != 0 ||
+                (ret = ser_saveUInt16(serializeSettings, it->routeCost)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->hopCount)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->weakLinkCount)) != 0 ||
+                (ret = ser_saveUInt16(serializeSettings, it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+#ifdef DLMS_IGNORE_MALLOC
+        table->size = count;
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int ser_saveContextInformationTable(gxSerializerSettings* serializeSettings, gxArray* table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxContextInformationTable* it;
+    if ((ret = ser_saveArrayCount(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != table->size; ++pos)
+        {
+            if ((ret = arr_getByIndex4(table, pos, (void**)&it, sizeof(gxContextInformationTable), 0)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_saveUInt8(serializeSettings, it->cid)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->contextLength)) != 0 ||
+                (ret = ser_saveOctetString3(serializeSettings, (char*)it->context, 16, 16)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->compression)) != 0 ||
+                (ret = ser_saveUInt16(serializeSettings, it->validLifetime)) != 0)
+            {
+                break;
+            }
+        }
+#ifdef DLMS_IGNORE_MALLOC
+        table->size = count;
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int ser_saveBlacklistTable(gxSerializerSettings* serializeSettings, gxArray* table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxBlacklistTable* it;
+    if ((ret = ser_saveArrayCount(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != table->size; ++pos)
+        {
+            if ((ret = arr_getByIndex4(table, pos, (void**)&it, sizeof(gxBlacklistTable), 0)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_saveUInt16(serializeSettings, it->neighbourAddress)) != 0 ||
+                (ret = ser_saveUInt16(serializeSettings, it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+#ifdef DLMS_IGNORE_MALLOC
+        table->size = count;
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int ser_saveBroadcastLogTable(gxSerializerSettings* serializeSettings, gxArray* table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxBroadcastLogTable* it;
+    if ((ret = ser_saveArrayCount(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != table->size; ++pos)
+        {
+            if ((ret = arr_getByIndex4(table, pos, (void**)&it, sizeof(gxBroadcastLogTable), 0)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_saveUInt16(serializeSettings, it->sourceAddress)) != 0 ||
+                (ret = ser_saveUInt8(serializeSettings, it->sequenceNumber)) != 0 ||
+                (ret = ser_saveUInt16(serializeSettings, it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+#ifdef DLMS_IGNORE_MALLOC
+        table->size = count;
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+int ser_saveUInt16Array(gxSerializerSettings* serializeSettings, gxArray* table)
+{
+    int ret;
+    uint16_t pos, count;
+    uint16_t* it;
+    if ((ret = ser_saveArrayCount(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != table->size; ++pos)
+        {
+            if ((ret = arr_getByIndex4(table, pos, (void**)&it, sizeof(uint16_t), 0)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_saveUInt16(serializeSettings, *it)) != 0)
+            {
+                break;
+            }
+        }
+        table->size = count;
+    }
+    return ret;
+}
+#else
+int ser_saveUInt16Array(gxSerializerSettings* serializeSettings, variantArray* table)
+{
+    int ret;
+    uint16_t pos, count;
+    dlmsVARIANT* it;
+    if ((ret = ser_saveVariantArrayCount(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != table->size; ++pos)
+        {
+            if ((ret = va_getByIndex(table, pos, &it)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_saveUInt16(serializeSettings, it->uiVal)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+
+int ser_saveG3Plc6LoWPAN(
+    gxSerializerSettings* serializeSettings,
+    gxG3Plc6LoWPAN* object)
+{
+    int ret = 0;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_saveUInt8(serializeSettings, object->maxHops)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 3) && (ret = ser_saveUInt8(serializeSettings, object->weakLqiValue)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_saveUInt8(serializeSettings, object->securityLevel)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_saveOctetString(serializeSettings, &object->prefixTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 6) && (ret = ser_saveRoutingConfiguration(serializeSettings, &object->routingConfiguration)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 7) && (ret = ser_saveUInt16(serializeSettings, object->broadcastLogTableEntryTtl)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 8) && (ret = ser_saveRoutingTable(serializeSettings, &object->routingTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_saveContextInformationTable(serializeSettings, &object->contextInformationTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 10) && (ret = ser_saveBlacklistTable(serializeSettings, &object->blacklistTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 11) && (ret = ser_saveBroadcastLogTable(serializeSettings, &object->broadcastLogTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 12) && (ret = ser_saveUInt16Array(serializeSettings, &object->groupTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 13) && (ret = ser_saveUInt16(serializeSettings, object->maxJoinWaitTime)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 14) && (ret = ser_saveUInt8(serializeSettings, object->pathDiscoveryTime)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 15) && (ret = ser_saveUInt8(serializeSettings, object->activeKeyIndex)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 16) && (ret = ser_saveUInt8(serializeSettings, object->metricType)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 17) && (ret = ser_saveUInt16(serializeSettings, object->coordShortAddress)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 18) && (ret = ser_saveUInt8(serializeSettings, object->disableDefaultRouting)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 19) && (ret = ser_saveUInt8(serializeSettings, object->deviceType)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 20) && (ret = ser_saveUInt8(serializeSettings, object->defaultCoordRouteEnabled)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 21) && (ret = ser_saveUInt16Array(serializeSettings, &object->destinationAddress)) != 0))
+    {
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+
+
+int ser_saveArrayManagerElements(gxSerializerSettings* serializeSettings, gxArray* table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxArrayManagerItem* it;
+    if ((ret = ser_saveArrayCount(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != table->size; ++pos)
+        {
+            if ((ret = arr_getByIndex4(table, pos, (void**)&it, sizeof(gxArrayManagerItem), 0)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_saveUInt8(serializeSettings, it->id)) != 0 ||
+                (ret = ser_saveUInt16(serializeSettings, it->element.target != NULL ? it->element.target->objectType : 0)) != 0 ||
+                (ret = ser_set(serializeSettings, obj_getLogicalName(it->element.target), 6
+#ifdef DLMS_IGNORE_MALLOC
+                    , 6
+#endif //DLMS_IGNORE_MALLOC
+                )) != 0 ||
+                (ret = ser_saveInt8(serializeSettings, it->element.attributeIndex)) != 0)
+            {
+                break;
+            }
+        }
+#ifdef DLMS_IGNORE_MALLOC
+        table->size = count;
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int ser_saveArrayManager(
+    gxSerializerSettings* serializeSettings,
+    gxArrayManager* object)
+{
+    int ret = 0;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_saveArrayManagerElements(serializeSettings, &object->elements)) != 0))
+    {
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_ARRAY_MANAGER
+
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int ser_saveUtilityTables(
     gxSerializerSettings* serializeSettings,
@@ -4380,6 +4659,16 @@ int ser_saveObject(
         ret = ser_saveG3PlcMacSetup(serializeSettings, (gxG3PlcMacSetup*)object);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        ret = ser_saveG3Plc6LoWPAN(serializeSettings, (gxG3Plc6LoWPAN*)object);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        ret = ser_saveArrayManager(serializeSettings, (gxArrayManager*)object);
+        break;
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
         ret = ser_saveImageTransfer(serializeSettings, (gxImageTransfer*)object);
@@ -6696,8 +6985,8 @@ int ser_loadNeighbourTable(gxSerializerSettings * serializeSettings, gxArray * t
             it->modulation = modulation;
             it->txRes = txRes;
 #ifdef DLMS_IGNORE_MALLOC
-            it->toneMap[pos].size = (unsigned char) toneMapSize;
-            it->txCoeff[pos].size = (unsigned char) txCoeffSize;
+            it->toneMap[pos].size = (unsigned char)toneMapSize;
+            it->txCoeff[pos].size = (unsigned char)txCoeffSize;
 #endif //DLMS_IGNORE_MALLOC
         }
     }
@@ -6725,7 +7014,6 @@ int ser_loadPosTable(gxSerializerSettings * serializeSettings, gxArray * table)
     }
     return ret;
 }
-
 
 int ser_loadG3PlcMacSetup(
     gxSerializerSettings * serializeSettings,
@@ -6764,6 +7052,294 @@ int ser_loadG3PlcMacSetup(
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+int ser_loadRoutingConfiguration(gxSerializerSettings * serializeSettings, gxArray * table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxRoutingConfiguration* it;
+    arr_clear(table);
+    if ((ret = ser_loadArray(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = ser_getArrayItem(table, pos, (void**)&it, sizeof(gxRoutingConfiguration))) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->netTraversalTime)) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->routingTableEntryTtl)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->kr)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->km)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->kc)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->kq)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->kh)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->krt)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->rReqRetries)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->rReqReqWait)) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->blacklistTableEntryTtl)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->unicastRreqGenEnable)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->rlcEnabled)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->addRevLinkCost)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+int ser_loadRoutingTable(gxSerializerSettings * serializeSettings, gxArray * table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxRoutingTable* it;
+    arr_clear(table);
+    if ((ret = ser_loadArray(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = ser_getArrayItem(table, pos, (void**)&it, sizeof(gxRoutingTable))) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->destinationAddress)) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->nextHopAddress)) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->routeCost)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->hopCount)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->weakLinkCount)) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+int ser_loadContextInformationTable(gxSerializerSettings * serializeSettings, gxArray * table)
+{
+    int ret;
+    uint16_t pos, count, count2;
+    gxContextInformationTable* it;
+    arr_clear(table);
+    if ((ret = ser_loadArray(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = ser_getArrayItem(table, pos, (void**)&it, sizeof(gxContextInformationTable))) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->cid)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->contextLength)) != 0 ||
+                (ret = ser_loadOctetString3(serializeSettings, it->context, &count2)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->compression)) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->validLifetime)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+int ser_loadBlacklistTable(gxSerializerSettings * serializeSettings, gxArray * table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxBlacklistTable* it;
+    arr_clear(table);
+    if ((ret = ser_loadArray(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = ser_getArrayItem(table, pos, (void**)&it, sizeof(gxBlacklistTable))) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->neighbourAddress)) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+int ser_loadBroadcastLogTable(gxSerializerSettings * serializeSettings, gxArray * table)
+{
+    int ret;
+    uint16_t pos, count;
+    gxBroadcastLogTable* it;
+    arr_clear(table);
+    if ((ret = ser_loadArray(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = ser_getArrayItem(table, pos, (void**)&it, sizeof(gxBroadcastLogTable))) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->sourceAddress)) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->sequenceNumber)) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+int ser_loadUInt16Array(gxSerializerSettings * serializeSettings, gxArray * table)
+{
+    int ret;
+    uint16_t pos, count;
+    uint16_t* it;
+    if ((ret = ser_loadArray(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = arr_getByIndex4(table, pos, (void**)&it, sizeof(uint16_t), 0)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_loadUInt16(serializeSettings, it)) != 0)
+            {
+                break;
+            }
+        }
+        table->size = count;
+    }
+    return ret;
+}
+#else
+int ser_loadUInt16Array(gxSerializerSettings * serializeSettings, variantArray * table)
+{
+    int ret;
+    uint16_t tmp, pos, count;
+    dlmsVARIANT* it;
+    if ((ret = ser_loadVariantArray(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = ser_loadUInt16(serializeSettings, &tmp)) != 0)
+            {
+                break;
+            }
+            if ((ret = ser_getVariantArrayItem(table, pos, &it)) != 0)
+            {
+                break;
+            }
+            it->vt = DLMS_DATA_TYPE_UINT16;
+            it->uiVal = tmp;
+        }
+    }
+    return ret;
+}
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+
+
+int ser_loadG3Plc6LoWPAN(
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxG3Plc6LoWPAN * object)
+{
+    int ret = 0;
+    unsigned char deviceType = 0;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_loadUInt8(serializeSettings, &object->maxHops)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 3) && (ret = ser_loadUInt8(serializeSettings, &object->weakLqiValue)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_loadUInt8(serializeSettings, &object->securityLevel)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_loadOctetString(serializeSettings, &object->prefixTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 6) && (ret = ser_loadRoutingConfiguration(serializeSettings, &object->routingConfiguration)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 7) && (ret = ser_loadUInt16(serializeSettings, &object->broadcastLogTableEntryTtl)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 8) && (ret = ser_loadRoutingTable(serializeSettings, &object->routingTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 9) && (ret = ser_loadContextInformationTable(serializeSettings, &object->contextInformationTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 10) && (ret = ser_loadBlacklistTable(serializeSettings, &object->blacklistTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 11) && (ret = ser_loadBroadcastLogTable(serializeSettings, &object->broadcastLogTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 12) && (ret = ser_loadUInt16Array(serializeSettings, &object->groupTable)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 13) && (ret = ser_loadUInt16(serializeSettings, &object->maxJoinWaitTime)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 14) && (ret = ser_loadUInt8(serializeSettings, &object->pathDiscoveryTime)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 15) && (ret = ser_loadUInt8(serializeSettings, &object->activeKeyIndex)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 16) && (ret = ser_loadUInt8(serializeSettings, &object->metricType)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 17) && (ret = ser_loadUInt16(serializeSettings, &object->coordShortAddress)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 18) && (ret = ser_loadUInt8(serializeSettings, &object->disableDefaultRouting)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 19) && (ret = ser_loadUInt8(serializeSettings, &deviceType)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 20) && (ret = ser_loadUInt8(serializeSettings, &object->defaultCoordRouteEnabled)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 21) && (ret = ser_loadUInt16Array(serializeSettings, &object->destinationAddress)) != 0))
+    {
+    }
+    if (ret == 0)
+    {
+        object->deviceType = (DLMS_PAN_DEVICE_TYPE)deviceType;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+
+int ser_loadArrayManagerElements(
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxArray * table)
+{
+    int ret;
+    uint16_t pos, count, ot;
+    unsigned char ln[6];
+    gxArrayManagerItem* it;
+    arr_clear(table);
+    if ((ret = ser_loadArray(serializeSettings, table, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = ser_getArrayItem(table, pos, (void**)&it, sizeof(gxArrayManagerItem))) != 0 ||
+                (ret = ser_loadUInt8(serializeSettings, &it->id)) != 0 ||
+                (ret = ser_loadUInt16(serializeSettings, &ot)) != 0 ||
+                (ret = ser_get(serializeSettings, ln, 6
+#ifdef DLMS_IGNORE_MALLOC
+                    , 6
+#endif //DLMS_IGNORE_MALLOC
+                )) != 0 ||
+                (ret = ser_loadInt8(serializeSettings, &it->element.attributeIndex)) != 0)
+            {
+                break;
+            }
+            if (pos < table->size)
+            {
+                if ((ret = oa_findByLN(&settings->objects, ot, ln, &it->element.target)) != 0)
+                {
+                    break;
+                }
+                if (it->element.target == NULL)
+                {
+#ifdef DLMS_IGNORE_MALLOC
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
+#else
+                    if ((ret = cosem_createObject(ot, &it->element.target)) != DLMS_ERROR_CODE_OK)
+                    {
+                        //If unknown object.
+                        break;
+                    }
+                    if ((ret = cosem_setLogicalName(it->element.target, ln)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+#endif //DLMS_IGNORE_MALLOC
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+int ser_loadArrayManager(
+    gxSerializerSettings * serializeSettings,
+    dlmsSettings * settings,
+    gxArrayManager * object)
+{
+    int ret = 0;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && 
+        (ret = ser_loadArrayManagerElements(serializeSettings, settings, &object->elements)) != 0))
+    {
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_ARRAY_MANAGER
+
+
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
 int ser_loadModemConfiguration(
     gxSerializerSettings * serializeSettings,
@@ -6785,7 +7361,7 @@ int ser_loadModemConfiguration(
         {
             object->communicationSpeed = (DLMS_BAUD_RATE)ch;
         }
-    }
+}
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 3))
     {
         obj_clearModemConfigurationInitialisationStrings(&object->initialisationStrings);
@@ -6847,11 +7423,11 @@ int ser_loadModemConfiguration(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
+                }
             }
         }
-    }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_MODEM_CONFIGURATION
 #ifndef DLMS_IGNORE_MAC_ADDRESS_SETUP
 int ser_loadMacAddressSetup(
@@ -7044,9 +7620,9 @@ int ser_loadAssociationLogicalName(
                         {
                             ret = 0;
                             continue;
-                        }
-                        break;
                     }
+                        break;
+                }
                     if ((ret = cosem_setLogicalName(obj, ln)) != DLMS_ERROR_CODE_OK)
                     {
                         break;
@@ -7209,9 +7785,9 @@ int ser_loadAssociationShortName(
                         {
                             ret = 0;
                             continue;
-                        }
-                        break;
                     }
+                        break;
+                }
                     if ((ret = cosem_setLogicalName(obj, ln)) != DLMS_ERROR_CODE_OK)
                     {
                         break;
@@ -7341,9 +7917,9 @@ int ser_loadPppSetup(
             (ret = ser_loadUInt8(serializeSettings, (unsigned char*)&object->authentication)) != 0)
         {
         }
-    }
+        }
     return ret;
-}
+        }
 #endif //DLMS_IGNORE_PPP_SETUP
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
@@ -7532,10 +8108,10 @@ int ser_loadUnitCharge(
             {
                 break;
             }
+            }
         }
-    }
     return ret;
-}
+        }
 
 int ser_loadCharge(
     gxSerializerSettings * serializeSettings,
@@ -7634,7 +8210,7 @@ int ser_loadGsmDiagnostic(
             (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_loadUInt8(serializeSettings, (unsigned char*)&object->packetSwitchStatus)) != 0))
         {
         }
-    }
+}
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 6))
     {
         if ((ret = ser_loadUInt32(serializeSettings, &object->cellInfo.cellId)) == 0 &&
@@ -7665,7 +8241,7 @@ int ser_loadGsmDiagnostic(
         ret = ser_loadDateTime(&object->captureTime, serializeSettings, DLMS_DATA_TYPE_DATETIME);
     }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
@@ -8003,6 +8579,16 @@ int ser_loadObject(
         ret = ser_loadG3PlcMacSetup(serializeSettings, settings, (gxG3PlcMacSetup*)object);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        ret = ser_loadG3Plc6LoWPAN(serializeSettings, settings, (gxG3Plc6LoWPAN*)object);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        ret = ser_loadArrayManager(serializeSettings, settings, (gxArrayManager*)object);
+        break;
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
     case DLMS_OBJECT_TYPE_MODEM_CONFIGURATION:
         ret = ser_loadModemConfiguration(serializeSettings, (gxModemConfiguration*)object);
@@ -8303,15 +8889,15 @@ int ser_loadObjects(
                     ret = 0;
                 }
                 break;
+                }
             }
-        }
 #if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
         if (ret == 0 && serializeSettings->position - 5 != size)
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
 #endif //!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    }
+        }
     return ret;
 }
 
@@ -8351,9 +8937,9 @@ int ser_loadObjects2(
         if (serializeSettings->position - 5 != size)
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
-        }
-#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     }
+#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+}
     return ret;
 }
 #endif //DLMS_IGNORE_SERIALIZER

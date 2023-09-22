@@ -294,9 +294,9 @@ int invoke_AssociationLogicalName(
         ret = cosem_getOctetString(e->parameters.byteArr, &object->secret);
 #else
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-    uint32_t size = bb_available(e->parameters.byteArr);
+        uint32_t size = bb_available(e->parameters.byteArr);
 #else
-    uint16_t size = bb_available(e->parameters.byteArr);
+        uint16_t size = bb_available(e->parameters.byteArr);
 #endif
         if (size == 0)
         {
@@ -1103,7 +1103,7 @@ int invoke_zigbeeNetworkControl(gxZigBeeNetworkControl* object, unsigned char in
         {
             ++object->activeDevices.size;
             BYTE_BUFFER_INIT(&ad->macAddress);
-            if ((ret = cosem_getOctetString(value->byteArr, &ad->macAddress)) == 0 ||
+            if ((ret = cosem_getOctetString(value->byteArr, &ad->macAddress)) == 0 &&
                 (ret = cosem_getIntegerFromBitString(value->byteArr, &v)) == 0)
             {
                 ad->status = (DLMS_ZIG_BEE_STATUS)v;
@@ -2320,8 +2320,562 @@ int invoke_ActivityCalendar(gxValueEventArg* e)
     }
     return ret;
 }
-#endif ////DLMS_IGNORE_ACTIVITY_CALENDAR
+#endif //DLMS_IGNORE_ACTIVITY_CALENDAR
 
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+
+int invoke_ArrayManagerInsertEntry(
+    dlmsServerSettings* settings,
+    gxValueEventArg* e, uint16_t index)
+{
+    int ret;
+    uint16_t count, pos, totalCount;
+    uint16_t origPos = 0;
+    unsigned char ch;
+    dlmsVARIANT value;
+    gxDataInfo info;
+    di_init(&info);
+    var_init(&value);
+    //Move new data to the begin of the buffer.
+    ret = bb_move(e->value.byteArr, e->value.byteArr->position, 0, bb_available(e->value.byteArr));
+    uint16_t newDataSize = e->value.byteArr->size;
+    if ((ret = cosem_getValue(&settings->base, e)) == 0 && bb_size(e->value.byteArr) != 0)
+    {
+        if ((ret = bb_getUInt8(e->value.byteArr, &ch)) != 0 ||
+            ch != DLMS_DATA_TYPE_ARRAY)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        if ((ret = hlp_getObjectCount2(e->value.byteArr, &totalCount)) != 0)
+        {
+            return ret;
+        }
+        //Change index to zero-based.
+        count = e->value.byteArr->size;
+        e->value.byteArr->size = newDataSize + 1;
+        if ((ret = hlp_setObjectCount(1 + totalCount, e->value.byteArr)) != 0)
+        {
+            return ret;
+        }
+        totalCount = 0;
+        //Return original size.
+        e->value.byteArr->size = count;
+        for (pos = e->value.byteArr->position; pos != bb_size(e->value.byteArr); ++pos)
+        {
+            //Get data type.
+            if ((ret = bb_getUInt8ByIndex(e->value.byteArr, e->value.byteArr->position, &ch)) != 0)
+            {
+                break;
+            }
+            if (ch == DLMS_DATA_TYPE_ARRAY || ch == DLMS_DATA_TYPE_STRUCTURE)
+            {
+                if (index == 0)
+                {
+                    //Save start position.
+                    origPos = e->value.byteArr->position;
+                }
+                ++e->value.byteArr->position;
+                if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
+                {
+                    break;
+                }
+                totalCount += 1 + count;
+            }
+            else
+            {
+                if ((ret = dlms_getData(e->value.byteArr, &info, &value)) != 0)
+                {
+                    var_clear(&value);
+                    break;
+                }
+#ifdef DLMS_IGNORE_MALLOC
+                if (value.vt == DLMS_DATA_TYPE_OCTET_STRING)
+                {
+                    ++e->value.byteArr->position;
+                    if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
+                    {
+                        var_clear(&value);
+                        break;
+                    }
+                    if (e->value.byteArr->size < e->value.byteArr->position + count)
+                    {
+                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                        var_clear(&value);
+                        break;
+                    }
+                    e->value.byteArr->position += count;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                di_init(&info);
+                var_clear(&value);
+            }
+            --totalCount;
+            if (index == 0 && totalCount == 0) //MIKKO || totalCount == 0
+            {
+                if (bb_available(e->value.byteArr) == 0)
+                {
+                    //Move first item to last.
+                    ret = bb_move(e->value.byteArr, 0, e->value.byteArr->size, newDataSize);
+                    //Move all items to begin.
+                    ret = bb_move(e->value.byteArr, newDataSize, 0, e->value.byteArr->size - newDataSize);
+                    e->value.byteArr->position = 0;
+                    ret = cosem_setValue(&settings->base, e);
+                    bb_clear(e->value.byteArr);
+                    break;
+                }
+                else if (index == 0)
+                {
+                    //Make space for the new item.                   
+                    ret = bb_move(e->value.byteArr, origPos,
+                        origPos + newDataSize, e->value.byteArr->size - newDataSize);
+                    //Move new item to new location.
+                    totalCount = e->value.byteArr->size;
+                    ret = bb_move(e->value.byteArr, 0, origPos, newDataSize);
+                    e->value.byteArr->size = totalCount;
+                    //Move all items to first.
+                    ret = bb_move(e->value.byteArr, newDataSize, 0, e->value.byteArr->size - newDataSize);
+                    e->value.byteArr->position = 0;
+#ifdef DLMS_IGNORE_MALLOC
+                    ret = cosem_setValue(&settings->base, e);
+                    bb_clear(e->value.byteArr);
+#else
+                    gxByteBuffer* bb = e->value.byteArr;
+                    e->value.vt = DLMS_DATA_TYPE_NONE;
+                    if ((ret = dlms_getData(e->value.byteArr, &info, &e->value)))
+                    {
+                        bb_clear(bb);
+                        var_clear(&value);
+                        break;
+                    }
+                    bb_clear(bb);
+                    if ((ret = cosem_setValue(&settings->base, e)) != 0)
+                    {
+                        var_clear(&value);
+                        break;
+                    }
+#endif //DLMS_IGNORE_MALLOC
+                    break;
+                }
+                --index;
+            }
+        }
+    }
+    return ret;
+}
+
+int invoke_ArrayManagerDeleteEntry(
+    dlmsServerSettings* settings,
+    gxValueEventArg* e,
+    uint16_t from, uint16_t to)
+{
+    int ret;
+    uint16_t count, pos, totalCount;
+    uint16_t origPos = 0;
+    unsigned char ch;
+    dlmsVARIANT value;
+    gxDataInfo info;
+    di_init(&info);
+    var_init(&value);
+    if ((ret = cosem_getValue(&settings->base, e)) == 0 && bb_size(e->value.byteArr) != 0)
+    {
+        if ((ret = bb_getUInt8(e->value.byteArr, &ch)) != 0 ||
+            ch != DLMS_DATA_TYPE_ARRAY)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        if ((ret = hlp_getObjectCount2(e->value.byteArr, &totalCount)) != 0)
+        {
+            return ret;
+        }
+        //Change from to zero-based.
+        --from;
+        if (to - from < totalCount)
+        {
+            totalCount -= to - from;
+        }
+        else
+        {
+            totalCount = from;
+            to = from + 1;
+        }
+        count = e->value.byteArr->size;
+        e->value.byteArr->size = 1;
+        if ((ret = hlp_setObjectCount(totalCount, e->value.byteArr)) != 0)
+        {
+            return ret;
+        }
+        totalCount = 0;
+        //Return original size.
+        e->value.byteArr->size = count;
+        for (pos = e->value.byteArr->position; pos != bb_size(e->value.byteArr); ++pos)
+        {
+            //Get data type.
+            if ((ret = bb_getUInt8ByIndex(e->value.byteArr, e->value.byteArr->position, &ch)) != 0)
+            {
+                break;
+            }
+            if (ch == DLMS_DATA_TYPE_ARRAY || ch == DLMS_DATA_TYPE_STRUCTURE)
+            {
+                if (from == 0)
+                {
+                    //Save start position.
+                    origPos = e->value.byteArr->position;
+                }
+                ++e->value.byteArr->position;
+                if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
+                {
+                    break;
+                }
+                totalCount += 1 + count;
+            }
+            else
+            {
+                if ((ret = dlms_getData(e->value.byteArr, &info, &value)) != 0)
+                {
+                    var_clear(&value);
+                    break;
+                }
+#ifdef DLMS_IGNORE_MALLOC
+                if (value.vt == DLMS_DATA_TYPE_OCTET_STRING)
+                {
+                    ++e->value.byteArr->position;
+                    if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
+                    {
+                        break;
+                    }
+                    if (e->value.byteArr->size < e->value.byteArr->position + count)
+                    {
+                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                        break;
+                    }
+                    e->value.byteArr->position += count;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                di_init(&info);
+                var_clear(&value);
+            }
+            --totalCount;
+            if (totalCount == 0)
+            {
+                --to;
+                if (to == 0)
+                {
+                    ret = bb_move(e->value.byteArr, e->value.byteArr->position, origPos,
+                        bb_available(e->value.byteArr));
+                    e->value.byteArr->position = 0;
+                    ret = cosem_setValue(&settings->base, e);
+                    bb_clear(e->value.byteArr);
+                    break;
+                }
+                --from;
+            }
+        }
+    }
+    return ret;
+}
+
+int invoke_ArrayManager(
+    dlmsServerSettings* settings,
+    gxValueEventArg* e)
+{
+    int pos, ret = 0;
+    gxArrayManagerItem* it;
+    gxArrayManager* object = (gxArrayManager*)e->target;
+    unsigned char ch, found = 0;
+    uint16_t count, totalCount;
+    dlmsVARIANT tmp;
+    dlmsVARIANT value;
+    gxDataInfo info;
+#ifndef DLMS_IGNORE_MALLOC
+    dlmsVARIANT* tmp2, * tmp3;
+    e->value.byteArr = &settings->info.data;
+#endif//DLMS_IGNORE_MALLOC
+    e->byteArray = 1;
+    unsigned char id;
+    uint16_t index = 0, from, to, origSize, origPos = 0;
+    if (e->index == 1)
+    {
+        id = e->parameters.bVal;
+        bb_clear(e->value.byteArr);
+    }
+    else if (e->index == 3 || e->index == 4)
+    {
+        //Insert or update entry.
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = cosem_getStructure(e->parameters.byteArr, &count)) != 0 ||
+            (ret = cosem_getUInt8(e->parameters.byteArr, &id)) != 0 ||
+            (ret = cosem_getStructure(e->parameters.byteArr, &count)) != 0 ||
+            (ret = cosem_getUInt16(e->parameters.byteArr, &index)) != 0)
+        {
+            return ret;
+    }
+#else
+        if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp2)) != 0)
+        {
+            return ret;
+        }
+        id = tmp2->bVal;
+        if ((ret = va_getByIndex(e->parameters.Arr, 1, &tmp3)) != 0)
+        {
+            return ret;
+        }
+        if ((ret = va_getByIndex(tmp3->Arr, 0, &tmp2)) != 0)
+        {
+            return ret;
+        }
+        from = tmp2->uiVal;
+        if ((ret = va_getByIndex(tmp3->Arr, 1, &tmp2)) != 0)
+        {
+            return ret;
+        }
+        to = tmp2->uiVal;
+#endif //DLMS_IGNORE_MALLOC
+}
+    else
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = cosem_getStructure(e->parameters.byteArr, &count)) != 0 ||
+            (ret = cosem_getUInt8(e->parameters.byteArr, &id)) != 0 ||
+            (ret = cosem_getStructure(e->parameters.byteArr, &count)) != 0 ||
+            (ret = cosem_getUInt16(e->parameters.byteArr, &from)) != 0 ||
+            (ret = cosem_getUInt16(e->parameters.byteArr, &to)) != 0)
+        {
+            return ret;
+        }
+#else
+        if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp2)) != 0)
+        {
+            return ret;
+        }
+        id = tmp2->bVal;
+        if ((ret = va_getByIndex(e->parameters.Arr, 1, &tmp3)) != 0)
+        {
+            return ret;
+        }
+        if ((ret = va_getByIndex(tmp3->Arr, 0, &tmp2)) != 0)
+        {
+            return ret;
+        }
+        from = tmp2->uiVal;
+        if ((ret = va_getByIndex(tmp3->Arr, 1, &tmp2)) != 0)
+        {
+            return ret;
+        }
+        to = tmp2->uiVal;
+#endif //DLMS_IGNORE_MALLOC
+        bb_clear(e->value.byteArr);
+    }
+    for (pos = 0; pos != object->elements.size; ++pos)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        ret = arr_getByIndex(&object->elements, pos, (void**)&it, sizeof(gxArrayManagerItem));
+#else
+        ret = arr_getByIndex(&object->elements, pos, (void**)&it);
+#endif //DLMS_IGNORE_MALLOC
+        if (ret != 0)
+        {
+            break;
+        }
+        if (it->id == id)
+        {
+            if (e->index == 1)
+            {
+                //Number Of Entries.
+                if (it->element.target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC
+                    && it->element.attributeIndex == 2)
+                {
+                    //Entries in use is returned when buffer size is asked.
+                    GX_UINT32(tmp) = ((gxProfileGeneric*)it->element.target)->entriesInUse;
+                }
+                else
+                {
+                    e->index = it->element.attributeIndex;
+                    e->target = it->element.target;
+                    if ((ret = cosem_getValue(&settings->base, e)) != 0 ||
+                        (ret = bb_getUInt8(e->value.byteArr, &ch)) != 0)
+                    {
+                        break;
+                    }
+                    if (ch != DLMS_DATA_TYPE_ARRAY)
+                    {
+                        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                        break;
+                    }
+                    if (hlp_getObjectCount2(e->value.byteArr, &count) != 0)
+                    {
+                        break;
+                    }
+                    if (count < 0x100)
+                    {
+                        GX_UINT8(tmp) = (unsigned char)count;
+                    }
+                    else
+                    {
+                        GX_UINT16(tmp) = count;
+                    }
+                }
+                bb_clear(e->value.byteArr);
+                if ((ret = dlms_setData(e->value.byteArr, tmp.vt, &tmp)) != 0)
+                {
+                    break;
+                }
+                found = 1;
+                break;
+            }
+            else if (e->index == 2)
+            {
+                //Retrieve entries.
+                if (it->element.target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
+                {
+
+                }
+                if (!found)
+                {
+                    di_init(&info);
+                    var_init(&value);
+                    e->index = it->element.attributeIndex;
+                    e->target = it->element.target;
+                    if ((ret = cosem_getValue(&settings->base, e)) == 0 && bb_size(e->value.byteArr) != 0)
+                    {
+                        if ((ret = bb_getUInt8(e->value.byteArr, &ch)) != 0 ||
+                            ch != DLMS_DATA_TYPE_ARRAY)
+                        {
+                            break;
+                        }
+                        if ((ret = hlp_getObjectCount2(e->value.byteArr, &totalCount)) != 0)
+                        {
+                            break;
+                        }
+                        //Change from to zero-based.
+                        --from;
+                        if (to - from < totalCount)
+                        {
+                            totalCount = to - from;
+                        }
+                        else if (totalCount < to)
+                        {
+                            if (totalCount == 0)
+                            {
+                                to = 1;
+                            }
+                            else
+                            {
+                                to = totalCount;
+                            }
+                        }
+                        count = e->value.byteArr->size;
+                        e->value.byteArr->size = 1;
+                        if ((ret = hlp_setObjectCount(totalCount, e->value.byteArr)) != 0)
+                        {
+                            break;
+                        }
+                        totalCount = 0;
+                        origSize = e->value.byteArr->size;
+                        //Return original size.
+                        e->value.byteArr->size = count;
+                        for (pos = e->value.byteArr->position; pos != bb_size(e->value.byteArr); ++pos)
+                        {
+                            //Get data type.
+                            if ((ret = bb_getUInt8ByIndex(e->value.byteArr, e->value.byteArr->position, &ch)) != 0)
+                            {
+                                break;
+                            }
+                            if (ch == DLMS_DATA_TYPE_ARRAY || ch == DLMS_DATA_TYPE_STRUCTURE)
+                            {
+                                if (from == 0)
+                                {
+                                    //Save start position.
+                                    origPos = e->value.byteArr->position;
+                                }
+                                ++e->value.byteArr->position;
+                                if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
+                                {
+                                    break;
+                                }
+                                totalCount += 1 + count;
+                            }
+                            else
+                            {
+                                if ((ret = dlms_getData(e->value.byteArr, &info, &value)) != 0)
+                                {
+                                    var_clear(&value);
+                                    break;
+                                }
+#ifdef DLMS_IGNORE_MALLOC
+                                if (value.vt == DLMS_DATA_TYPE_OCTET_STRING)
+                                {
+                                    ++e->value.byteArr->position;
+                                    if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
+                                    {
+                                        break;
+                                    }
+                                    if (e->value.byteArr->size < e->value.byteArr->position + count)
+                                    {
+                                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                                        break;
+                                    }
+                                    e->value.byteArr->position += count;
+                                }
+#endif //DLMS_IGNORE_MALLOC
+
+                                di_init(&info);
+                                var_clear(&value);
+                            }
+                            --totalCount;
+                            if (totalCount == 0)
+                            {
+                                --to;
+                                if (to == 0)
+                                {
+                                    ret = bb_move(e->value.byteArr, origPos,
+                                        origSize, e->value.byteArr->position - origPos);
+                                    e->value.byteArr->position = 0;
+                                    break;
+                                }
+                                --from;
+                            }
+                        }
+                        found = 1;
+                        break;
+                    }
+                }
+                break;
+            }
+            else if (e->index == 3)
+            {
+                e->index = it->element.attributeIndex;
+                e->target = it->element.target;
+                ret = invoke_ArrayManagerInsertEntry(settings, e, index);
+                found = 1;
+                break;
+            }
+            else if (e->index == 4)
+            {
+                e->index = it->element.attributeIndex;
+                e->target = it->element.target;
+                ret = invoke_ArrayManagerDeleteEntry(settings, e, index, index);
+                ret = invoke_ArrayManagerInsertEntry(settings, e, index);
+                found = 1;
+                break;
+            }
+            else if (e->index == 5)
+            {
+                e->index = it->element.attributeIndex;
+                e->target = it->element.target;
+                ret = invoke_ArrayManagerDeleteEntry(settings, e, from, to);
+                found = 1;
+                break;
+            }
+        }
+    }
+    if (!found)
+    {
+        bb_clear(e->value.byteArr);
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 
 int cosem_invoke(
     dlmsServerSettings* settings,
@@ -2480,6 +3034,12 @@ int cosem_invoke(
         ret = invoke_ActivityCalendar(e);
         break;
 #endif //DLMS_IGNORE_ACTIVITY_CALENDAR
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        ret = invoke_ArrayManager(settings, e);
+        break;
+#endif //DLMS_IGNORE_ARRAY_MANAGER
+
     default:
         //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

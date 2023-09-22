@@ -1043,6 +1043,28 @@ void obj_clear(gxObject* object)
             arr_clear(&((gxG3PlcMacSetup*)object)->macPosTable);
             break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+        case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+            bb_clear(&((gxG3Plc6LoWPAN*)object)->prefixTable);
+            arr_clear(&((gxG3Plc6LoWPAN*)object)->routingConfiguration);
+            arr_clear(&((gxG3Plc6LoWPAN*)object)->routingTable);
+            arr_clear(&((gxG3Plc6LoWPAN*)object)->contextInformationTable);
+            arr_clear(&((gxG3Plc6LoWPAN*)object)->blacklistTable);
+            arr_clear(&((gxG3Plc6LoWPAN*)object)->broadcastLogTable);
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+            arr_clear(&((gxG3Plc6LoWPAN*)object)->groupTable);
+            arr_clear(&((gxG3Plc6LoWPAN*)object)->destinationAddress);
+#else
+            va_clear(&((gxG3Plc6LoWPAN*)object)->groupTable);
+            va_clear(&((gxG3Plc6LoWPAN*)object)->destinationAddress);
+#endif //DLMS_IGNORE_MALLOC            
+            break;
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+        case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+            arr_clear(&((gxArrayManager*)object)->elements);
+            break;
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 #ifndef DLMS_IGNORE_MBUS_PORT_SETUP
         case DLMS_OBJECT_TYPE_MBUS_PORT_SETUP:
             arr_clearKeyValuePair(&((gxMBusPortSetup*)object)->listeningWindow);
@@ -1230,13 +1252,13 @@ void obj_clear(gxObject* object)
             assert(0);
 #endif
             break;
-    }
+        }
     }
 #if !(defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     if (ret == 0)
     {
         //Remove warning.
-}
+    }
 #endif
 
 }
@@ -1416,6 +1438,12 @@ unsigned char obj_attributeCount(gxObject* object)
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
         ret = 25;
+        break;
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        ret = 21;
+        break;
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        ret = 2;
         break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = 4;
@@ -1815,6 +1843,12 @@ unsigned char obj_methodCount(gxObject* object)
     case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
         ret = 1;
         break;
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        ret = 0;
+        break;
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        ret = 5;
+        break;
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = 1;
         break;
@@ -2026,7 +2060,7 @@ int clock_utcToMeterTime(gxClock* object, gxtime* value)
         time_addMinutes(value, -object->timeZone);
 #endif //DLMS_USE_UTC_TIME_ZONE
         value->deviation = object->timeZone;
-}
+    }
     //If DST is enabled for the meter and it's not set for the time.
     if ((object->status & DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE) != 0)
     {

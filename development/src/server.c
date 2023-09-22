@@ -2603,6 +2603,8 @@ int svr_handleMethodRequest(
     list->size = 1;
     e = &list->data[0];
     ve_clear(e);
+    e->value.byteArr = &settings->info.data;
+    e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
 #else
     list = &arr;
     vec_init(list);
@@ -2690,9 +2692,9 @@ int svr_handleMethodRequest(
         if (e->error == DLMS_ERROR_CODE_OK)
         {
             if (// Add return parameters
-                (ret = bb_insertUInt8(data, 0, 1)) != 0 ||
+                (ret = bb_insertUInt8(data, 0, 0)) != 0 ||
                 //Add parameters error code.
-                (ret = bb_insertUInt8(data, 1, 0)) != 0)
+                (ret = bb_insertUInt8(data, 0, 1)) != 0)
             {
                 error = DLMS_ERROR_CODE_HARDWARE_FAULT;
             }
@@ -3325,7 +3327,7 @@ int svr_getIecPacket(dlmsServerSettings* settings)
             break;
         }
         if (ch == 6 ||
-            (pos + 2 < settings->receivedData.size &&
+            (pos + 2 < (int) settings->receivedData.size &&
                 ch == '/' &&
                 (ret = bb_getUInt8ByIndex(&settings->receivedData, pos + 1, &ch)) == 0 &&
                 ch == (unsigned char)'?' &&

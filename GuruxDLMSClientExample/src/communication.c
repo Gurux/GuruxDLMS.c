@@ -1341,6 +1341,58 @@ int com_write(
     return ret;
 }
 
+int com_writeList(
+    connection* connection,
+    gxArray* list)
+{
+    int pos, ret = DLMS_ERROR_CODE_OK;
+    gxByteBuffer bb, rr;
+    message messages;
+    gxReplyData reply;
+    if (list->size != 0)
+    {
+        mes_init(&messages);
+        if ((ret = cl_writeList(&connection->settings, list, &messages)) != 0)
+        {
+            printf("writeList failed %s\r\n", hlp_getErrorMessage(ret));
+        }
+        else
+        {
+            reply_init(&reply);
+            bb_init(&rr);
+            bb_init(&bb);
+            //Send data.
+            for (pos = 0; pos != messages.size; ++pos)
+            {
+                //Send data.
+                reply_clear(&reply);
+                if ((ret = readDLMSPacket(connection, messages.data[pos], &reply)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                //Check is there errors or more data from server
+                while (reply_isMoreData(&reply))
+                {
+                    //NOTE! Set ignore value to true because list is parsed differently than normal read.
+                    reply.ignoreValue = 1;
+                    if ((ret = cl_receiverReady(&connection->settings, reply.moreData, &rr)) != DLMS_ERROR_CODE_OK ||
+                        (ret = readDLMSPacket(connection, &rr, &reply)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+                    bb_clear(&rr);
+                }
+                bb_set2(&bb, &reply.data, reply.data.position, -1);
+            }
+            bb_clear(&bb);
+            bb_clear(&rr);
+            reply_clear(&reply);
+        }
+        mes_clear(&messages);
+    }
+    return ret;
+}
+
 int com_method(
     connection* connection,
     gxObject* object,

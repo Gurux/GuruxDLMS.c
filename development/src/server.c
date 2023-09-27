@@ -1075,6 +1075,155 @@ int svr_handleSetRequest2(
 #endif //DLMS_IGNORE_MALLOC
     return ret;
 }
+
+int svr_handleSetRequestWithList(
+    dlmsServerSettings* settings,
+    gxByteBuffer* data,
+    unsigned char type,
+    gxLNParameters* p)
+{
+    gxValueEventArg* e;
+    gxValueEventCollection list;
+    int ret;
+    DLMS_OBJECT_TYPE ci;
+    unsigned char ch;
+    uint16_t pos, count, tmp;
+    unsigned char* ln = NULL;
+    gxByteBuffer status;
+    bb_init(&status);
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned char STATUS_BUFF[20];
+    bb_attach(&status, STATUS_BUFF, 0, sizeof(STATUS_BUFF));
+    list = settings->transaction.targets;
+    e = &list.data[0];
+    ve_clear(e);
+#else
+    e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+    ve_init(e);
+    vec_init(&list);
+    vec_push(&list, e);
+#endif //DLMS_IGNORE_MALLOC    
+    if ((ret = hlp_getObjectCount2(data, &count)) == 0)
+    {
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = bb_getUInt16(data, &tmp)) != 0)
+            {
+                break;
+            }
+            ci = (DLMS_OBJECT_TYPE)tmp;
+            ln = data->data + data->position;
+            data->position += 6;
+            // Attribute index.
+            if ((ret = bb_getUInt8(data, &e->index)) != 0)
+            {
+                break;
+            }
+            // Get Access Selection.
+            if ((ret = bb_getUInt8(data, &ch)) != 0)
+            {
+                break;
+            }
+            if ((ret = oa_findByLN(&settings->base.objects, ci, ln, &e->target)) == 0)
+            {
+                if (e->target == NULL)
+                {
+                    ret = svr_findObject(&settings->base, ci, 0, ln, e);
+                }
+                if (ret == 0)
+                {
+                    // If target is unknown.
+                    if (e->target == NULL)
+                    {
+                        // Device reports a undefined object.
+                        bb_setUInt8(&status, DLMS_ERROR_CODE_UNAVAILABLE_OBJECT);
+                    }
+                    else
+                    {
+                        DLMS_ACCESS_MODE am = svr_getAttributeAccess(&settings->base, e->target, e->index);
+                        // If write is denied.
+                        if (am != DLMS_ACCESS_MODE_WRITE && am != DLMS_ACCESS_MODE_READ_WRITE)
+                        {
+                            //Read Write denied.
+                            bb_setUInt8(&status, DLMS_ERROR_CODE_READ_WRITE_DENIED);
+                        }
+                        else
+                        {
+                            bb_setUInt8(&status, DLMS_ERROR_CODE_OK);
+                        }
+                    }
+                }
+            }
+        }
+        if (ret == 0 &&
+            (ret = hlp_getObjectCount2(data, &count)) == 0)
+        {
+            gxDataInfo di;
+            for (pos = 0; pos != count; ++pos)
+            {
+                di_init(&di);
+                resetBlockIndex(&settings->base);
+                if ((ret = dlms_getData(data, &di, &e->value)) != 0)
+                {
+                    bb_setUInt8ByIndex(&status, pos, ret);
+                }
+                else
+                {
+                    svr_preWrite(&settings->base, &list);
+                    if (p->multipleBlocks)
+                    {
+#ifdef DLMS_IGNORE_MALLOC
+                        settings->transaction.targets.size = 1;
+#else
+                        bb_clear(&settings->transaction.data);
+                        vec_clear(&settings->transaction.targets);
+                        settings->transaction.targets = list;
+                        var_clear(&e->value);
+                        vec_init(&list);
+                        if (!bb_isAttached(data))
+                        {
+                            ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
+                        }
+#endif //DLMS_IGNORE_MALLOC
+                        settings->transaction.command = DLMS_COMMAND_SET_REQUEST;
+                    }
+                    if (ret == 0)
+                    {
+                        if (e->error != 0)
+                        {
+                            bb_setUInt8ByIndex(&status, pos, e->error);
+                        }
+                        else if (!e->handled && !p->multipleBlocks)
+                        {
+                            ret = cosem_setValue(&settings->base, e);
+                            if (ret != 0 && e->error == 0)
+                            {
+                                bb_setUInt8ByIndex(&status, pos, ret);
+                            }
+                            svr_postWrite(&settings->base, &list);
+                            if (e->error != 0)
+                            {
+                                bb_setUInt8ByIndex(&status, pos, e->error);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+#ifndef DLMS_IGNORE_MALLOC
+    vec_clear(&list);
+#endif //DLMS_IGNORE_MALLOC
+    bb_clear(data);
+    p->status = 0xFF;
+    hlp_setObjectCount(status.size, data);
+    for (pos = 0; pos != status.size; ++pos)
+    {
+        bb_setUInt8(data, status.data[pos]);
+    }
+    p->requestType = DLMS_SET_RESPONSE_TYPE_WITH_LIST;
+    return ret;
+}
 #endif //DLMS_IGNORE_SET
 
 #ifndef DLMS_IGNORE_MALLOC
@@ -1193,12 +1342,13 @@ int svr_handleSetRequest(
     }
     updateInvokeId(settings, invokeId);
     params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_SET_RESPONSE, type, NULL, data, 0, settings->info.encryptedCommand, 0, 0);
-    if (type == DLMS_SET_COMMAND_TYPE_NORMAL || type == DLMS_SET_COMMAND_TYPE_FIRST_DATABLOCK)
+    switch (type)
     {
+    case DLMS_SET_COMMAND_TYPE_NORMAL:
+    case DLMS_SET_COMMAND_TYPE_FIRST_DATABLOCK:
         ret = svr_handleSetRequest2(settings, data, type, &p);
-    }
-    else if (type == DLMS_SET_COMMAND_TYPE_WITH_DATABLOCK)
-    {
+        break;
+    case DLMS_SET_COMMAND_TYPE_WITH_DATABLOCK:
 #ifdef DLMS_IGNORE_MALLOC
         //All data must fit to one PDU at the moment if malloc is not used.
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
@@ -1206,11 +1356,14 @@ int svr_handleSetRequest(
         // Set Request With Data Block
         ret = svr_hanleSetRequestWithDataBlock(settings, data, &p);
 #endif //DLMS_IGNORE_MALLOC
-    }
-    else
-    {
+        break;
+    case DLMS_SET_COMMAND_TYPE_WITH_LIST:
+        ret = svr_handleSetRequestWithList(settings, data, type, &p);
+        break;
+    default:
         p.requestType = 1;
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        break;
     }
     if (ret != 0)
     {
@@ -1226,7 +1379,6 @@ int svr_handleSetRequest(
         {
             p.status = DLMS_ERROR_CODE_READ_WRITE_DENIED;
         }
-        p.requestType = 0;
         p.multipleBlocks = 0;
         p.requestType = 1;
     }
@@ -3327,7 +3479,7 @@ int svr_getIecPacket(dlmsServerSettings* settings)
             break;
         }
         if (ch == 6 ||
-            (pos + 2 < (int) settings->receivedData.size &&
+            (pos + 2 < (int)settings->receivedData.size &&
                 ch == '/' &&
                 (ret = bb_getUInt8ByIndex(&settings->receivedData, pos + 1, &ch)) == 0 &&
                 ch == (unsigned char)'?' &&
@@ -4182,7 +4334,7 @@ int svr_handleActivityCalendar(
         {
             for (pos2 = 0; pos2 != ((gxSpecialDaysTable*)obj)->entries.size; ++pos2)
             {
-                if ((ret = arr_getByIndex2(&((gxSpecialDaysTable*)obj)->entries, 
+                if ((ret = arr_getByIndex2(&((gxSpecialDaysTable*)obj)->entries,
                     pos2, (void**)&sd, sizeof(gxSpecialDay))) != 0)
                 {
                     break;
@@ -4190,7 +4342,7 @@ int svr_handleActivityCalendar(
                 if (time_compare2(&sd->date, time) == 0)
                 {
                     //Invoke day profile
-                    if ((ret = svr_invokeScript(settings, 
+                    if ((ret = svr_invokeScript(settings,
                         &object->dayProfileTableActive, sd->dayId, time, next)) != 0)
                     {
                         break;
@@ -4208,7 +4360,7 @@ int svr_handleActivityCalendar(
         //Find active season.
         for (pos = 0; pos != object->seasonProfileActive.size; ++pos)
         {
-            if ((ret = arr_getByIndex2(&object->seasonProfileActive, 
+            if ((ret = arr_getByIndex2(&object->seasonProfileActive,
                 pos, (void**)&sp, sizeof(gxSeasonProfile))) != 0)
             {
                 break;
@@ -4235,12 +4387,12 @@ int svr_handleActivityCalendar(
                 end = &sp->start;
             }
         }
-        if ((ret = arr_getByIndex2(&object->seasonProfileActive, 
+        if ((ret = arr_getByIndex2(&object->seasonProfileActive,
             activeSeason, (void**)&sp, sizeof(gxSeasonProfile))) == 0)
         {
             for (pos2 = 0; pos2 != object->weekProfileTableActive.size; ++pos2)
             {
-                if ((ret = arr_getByIndex2(&object->weekProfileTableActive, 
+                if ((ret = arr_getByIndex2(&object->weekProfileTableActive,
                     pos2, (void**)&wp, sizeof(gxWeekProfile))) != 0)
                 {
                     break;
@@ -4284,7 +4436,7 @@ int svr_handleActivityCalendar(
                     {
                         break;
                     }
-                    ret = svr_invokeScript(settings, &object->dayProfileTableActive, 
+                    ret = svr_invokeScript(settings, &object->dayProfileTableActive,
                         dayId, time, next);
                     //If week name matches.
                     break;
@@ -4700,7 +4852,7 @@ int svr_monitorAll(dlmsServerSettings* settings)
 #ifndef DLMS_IGNORE_LIMITER
 
 int svr_invokeLimiterAction(
-    dlmsServerSettings* settings, 
+    dlmsServerSettings* settings,
     gxValueEventArg* e,
     gxActionItem* action)
 {
@@ -4715,7 +4867,7 @@ int svr_invokeLimiterAction(
         if (obj->objectType == DLMS_OBJECT_TYPE_SCRIPT_TABLE &&
             memcmp(obj->logicalName, action->script->base.logicalName, 6) == 0)
         {
-            e->target = (gxObject*) action->script;
+            e->target = (gxObject*)action->script;
             e->index = 1;
             if ((ret = var_setInt16(&e->parameters, action->scriptSelector)) != 0 ||
                 (ret = invoke_ScriptTable(settings, e)) != 0)
@@ -4728,7 +4880,7 @@ int svr_invokeLimiterAction(
     return ret;
 }
 
-int svr_limiter(dlmsServerSettings* settings, 
+int svr_limiter(dlmsServerSettings* settings,
     gxLimiter* object,
     uint32_t now)
 {
@@ -4775,7 +4927,7 @@ int svr_limiter(dlmsServerSettings* settings,
                 object->overThreshold = 0;
             }
             else if (now - object->activationTime >= object->minUnderThresholdDuration)
-            {                
+            {
                 if (object->actionOverThreshold.script != NULL)
                 {
                     ret = svr_invokeLimiterAction(settings, e, &object->actionUnderThreshold);
@@ -4809,7 +4961,7 @@ int svr_limiter(dlmsServerSettings* settings,
             //Activate the emergency.
             if (object->emergencyProfileActive == 0 &&
                 ((normalValue < emergencyValue && currentValue > emergencyValue) ||
-                (normalValue > emergencyValue && currentValue < emergencyValue)))
+                    (normalValue > emergencyValue && currentValue < emergencyValue)))
             {
                 time_initUnix(&object->emergencyProfile.activationTime, now);
                 object->emergencyProfileActive = 1;

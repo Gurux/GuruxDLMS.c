@@ -4540,11 +4540,8 @@ int dlms_handleSetResponse(
     // SetResponseNormal
     if (type == DLMS_SET_RESPONSE_TYPE_NORMAL)
     {
-        if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
-        {
-            return ret;
-        }
-        if (ch != 0)
+        ret = bb_getUInt8(&data->data, &ch);
+        if (ret == 0 && ch != 0)
         {
             return ch;
         }
@@ -4552,17 +4549,33 @@ int dlms_handleSetResponse(
     else if (type == DLMS_SET_RESPONSE_TYPE_DATA_BLOCK || type == DLMS_SET_RESPONSE_TYPE_LAST_DATA_BLOCK)
     {
         uint32_t  tmp;
-        if ((ret = bb_getUInt32(&data->data, &tmp)) != 0)
+        ret = bb_getUInt32(&data->data, &tmp);
+    }
+    else if (type == DLMS_SET_RESPONSE_TYPE_WITH_LIST)
+    {
+        uint16_t pos, cnt;
+        if (hlp_getObjectCount2(&data->data, &cnt) != 0)
         {
-            return ret;
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        for (pos = 0; pos != cnt; ++pos)
+        {
+            if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
+            {
+                break;
+            }
+            if (ch != 0)
+            {
+                ret = ch;
+            }
         }
     }
     else
     {
         //Invalid data type.
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    return DLMS_ERROR_CODE_OK;
+    return ret;
 }
 
 

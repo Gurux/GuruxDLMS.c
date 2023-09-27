@@ -939,7 +939,6 @@ int cl_readList(
     return ret;
 }
 
-
 int cl_read(
     dlmsSettings* settings,
     gxObject* object,
@@ -1576,6 +1575,210 @@ int cl_write(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }
     ve_clear(&e);
+    return ret;
+}
+
+int cl_writeList(
+    dlmsSettings* settings,
+    gxArray* list,
+    message* reply)
+{
+    gxListItem* it;
+    uint16_t pos;
+    gxValueEventArg e;
+    gxByteBuffer data;
+    ve_init(&e);
+    int ret;
+#ifdef DLMS_IGNORE_MALLOC
+    if (settings->serializedPdu == NULL)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    bb = settings->serializedPdu;
+    //Use same buffer for header and data. Header size is 10 bytes.
+    BYTE_BUFFER_INIT(&data);
+    bb_clear(bb);
+#else
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    BYTE_BUFFER_INIT(&data);
+#endif //DLMS_IGNORE_MALLOC
+    if (list->size == 0)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    resetBlockIndex(settings);
+    if (settings->useLogicalNameReferencing)
+    {
+        gxLNParameters p;
+        params_initLN(&p, settings, 0, DLMS_COMMAND_SET_REQUEST, DLMS_SET_COMMAND_TYPE_WITH_LIST,
+            &bb, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
+        // Add length.
+        hlp_setObjectCount(list->size, &bb);
+        for (pos = 0; pos != list->size; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxListItem*))) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            // CI.
+            bb_setUInt16(&bb, it->key->objectType);
+            bb_set(&bb, it->key->logicalName, 6);
+            // Attribute ID.
+            bb_setUInt8(&bb, it->value);
+            // Attribute selector is not used.
+            bb_setUInt8(&bb, 0);
+        }
+        // Add length.
+        if (ret == 0)
+        {
+            hlp_setObjectCount(list->size, &bb);
+            for (pos = 0; pos != list->size; ++pos)
+            {
+#ifdef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxListItem*))) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                e.target = it->key;
+                e.index = it->value;
+                if ((ret = cosem_getValue(settings, &e)) != 0)
+                {
+                    break;
+                }
+#ifdef DLMS_IGNORE_MALLOC
+                if (e.byteArray != 0)
+                {
+                    bb_set2(pdu, value->byteArr, 0, value->byteArr->size);
+                }
+                else
+                {
+                    if ((ret = dlms_setData(pdu, value->vt, value)) != 0)
+                    {
+                        return ret;
+                    }
+                }
+#else
+                if (e.byteArray != 0)
+                {
+                    bb_set2(&data, e.value.byteArr, 0, e.value.byteArr->size);
+                }
+                else
+                {
+                    if ((ret = dlms_setData(&data, e.value.vt, &e.value)) != 0)
+                    {
+                        return ret;
+                    }
+                }
+#endif //DLMS_IGNORE_MALLOC
+            }
+            if (ret == 0)
+            {
+                ret = dlms_getLnMessages(&p, reply);
+            }
+        }
+    }
+    else
+    {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+        uint16_t sn;
+        gxSNParameters p;
+        for (pos = 0; pos != list->size; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxListItem))) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            // Add variable type.
+            bb_setUInt8(&bb, 2);
+            sn = ((gxObject*)it->key)->shortName;
+            sn += ((uint16_t)it->value - 1) * 8;
+            bb_setUInt16(&bb, sn);
+        }
+        if (ret == 0)
+        {
+            // Add length.
+            hlp_setObjectCount(list->size, &bb);
+            for (pos = 0; pos != list->size; ++pos)
+            {
+#ifdef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxListItem*))) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                e.target = it->key;
+                e.index = it->value;
+                if ((ret = cosem_getValue(settings, &e)) != 0)
+                {
+                    break;
+                }
+#ifdef DLMS_IGNORE_MALLOC
+                if (e.byteArray != 0)
+                {
+                    bb_set2(pdu, value->byteArr, 0, value->byteArr->size);
+                }
+                else
+                {
+                    if ((ret = dlms_setData(pdu, value->vt, value)) != 0)
+                    {
+                        break;
+                    }
+                }
+#else
+                if (e.byteArray != 0)
+                {
+                    bb_set2(&data, e.value.byteArr, 0, e.value.byteArr->size);
+                }
+                else
+                {
+                    if ((ret = dlms_setData(&data, e.value.vt, &e.value)) != 0)
+                    {
+                        break;
+                    }
+                }
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if (ret == 0)
+            {
+                params_initSN(&p, settings, DLMS_COMMAND_WRITE_REQUEST, list->size, 0xFF, &bb, &data, DLMS_COMMAND_NONE);
+                ret = dlms_getSnMessages(&p, reply);
+            }
+        }
+#else
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+    }
+    ve_clear(&e);
+    bb_clear(&bb);
+    bb_clear(&data);
     return ret;
 }
 

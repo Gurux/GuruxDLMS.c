@@ -2410,7 +2410,7 @@ int invoke_ArrayManagerInsertEntry(
                 var_clear(&value);
             }
             --totalCount;
-            if (index == 0 && totalCount == 0) //MIKKO || totalCount == 0
+            if (index == 0 && totalCount == 0)
             {
                 if (bb_available(e->value.byteArr) == 0)
                 {

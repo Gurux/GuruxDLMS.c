@@ -1588,6 +1588,7 @@ int cl_writeList(
     gxValueEventArg e;
     gxByteBuffer data;
     ve_init(&e);
+    gxByteBuffer* pdu;
     int ret;
 #ifdef DLMS_IGNORE_MALLOC
     if (settings->serializedPdu == NULL)
@@ -1595,13 +1596,14 @@ int cl_writeList(
         //Invalid parameter
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    bb = settings->serializedPdu;
+    pdu = settings->serializedPdu;
     //Use same buffer for header and data. Header size is 10 bytes.
     BYTE_BUFFER_INIT(&data);
-    bb_clear(bb);
+    bb_clear(pdu);
 #else
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);
+    pdu = &bb;
     BYTE_BUFFER_INIT(&data);
 #endif //DLMS_IGNORE_MALLOC
     if (list->size == 0)
@@ -1614,9 +1616,9 @@ int cl_writeList(
     {
         gxLNParameters p;
         params_initLN(&p, settings, 0, DLMS_COMMAND_SET_REQUEST, DLMS_SET_COMMAND_TYPE_WITH_LIST,
-            &bb, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
+            pdu, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
         // Add length.
-        hlp_setObjectCount(list->size, &bb);
+        hlp_setObjectCount(list->size, pdu);
         for (pos = 0; pos != list->size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
@@ -1631,17 +1633,17 @@ int cl_writeList(
             }
 #endif //DLMS_IGNORE_MALLOC
             // CI.
-            bb_setUInt16(&bb, it->key->objectType);
-            bb_set(&bb, it->key->logicalName, 6);
+            bb_setUInt16(pdu, it->key->objectType);
+            bb_set(pdu, it->key->logicalName, 6);
             // Attribute ID.
-            bb_setUInt8(&bb, it->value);
+            bb_setUInt8(pdu, it->value);
             // Attribute selector is not used.
-            bb_setUInt8(&bb, 0);
+            bb_setUInt8(pdu, 0);
         }
         // Add length.
         if (ret == 0)
         {
-            hlp_setObjectCount(list->size, &bb);
+            hlp_setObjectCount(list->size, pdu);
             for (pos = 0; pos != list->size; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
@@ -1664,11 +1666,11 @@ int cl_writeList(
 #ifdef DLMS_IGNORE_MALLOC
                 if (e.byteArray != 0)
                 {
-                    bb_set2(pdu, value->byteArr, 0, value->byteArr->size);
+                    bb_set2(pdu, e.value.byteArr, 0, bb_size(e.value.byteArr));
                 }
                 else
                 {
-                    if ((ret = dlms_setData(pdu, value->vt, value)) != 0)
+                    if ((ret = dlms_setData(pdu, e.value.vt, &e.value)) != 0)
                     {
                         return ret;
                     }
@@ -1712,15 +1714,15 @@ int cl_writeList(
             }
 #endif //DLMS_IGNORE_MALLOC
             // Add variable type.
-            bb_setUInt8(&bb, 2);
+            bb_setUInt8(pdu, 2);
             sn = ((gxObject*)it->key)->shortName;
             sn += ((uint16_t)it->value - 1) * 8;
-            bb_setUInt16(&bb, sn);
+            bb_setUInt16(pdu, sn);
         }
         if (ret == 0)
         {
             // Add length.
-            hlp_setObjectCount(list->size, &bb);
+            hlp_setObjectCount(list->size, pdu);
             for (pos = 0; pos != list->size; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
@@ -1768,7 +1770,7 @@ int cl_writeList(
 #endif //DLMS_IGNORE_MALLOC
             if (ret == 0)
             {
-                params_initSN(&p, settings, DLMS_COMMAND_WRITE_REQUEST, list->size, 0xFF, &bb, &data, DLMS_COMMAND_NONE);
+                params_initSN(&p, settings, DLMS_COMMAND_WRITE_REQUEST, list->size, 0xFF, pdu, &data, DLMS_COMMAND_NONE);
                 ret = dlms_getSnMessages(&p, reply);
             }
         }
@@ -1777,7 +1779,7 @@ int cl_writeList(
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     }
     ve_clear(&e);
-    bb_clear(&bb);
+    bb_clear(pdu);
     bb_clear(&data);
     return ret;
 }

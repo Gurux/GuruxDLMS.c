@@ -563,6 +563,7 @@ int obj_clearUserList(gxArray* list)
     return ret;
 }
 
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
 int obj_clearNeighbourTable(gxArray* list)
 {
     int ret = 0;
@@ -582,6 +583,7 @@ int obj_clearNeighbourTable(gxArray* list)
     arr_clear(list);
     return ret;
 }
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 int obj_clearBitArrayList(
     gxArray* list)

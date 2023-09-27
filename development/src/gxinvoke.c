@@ -2592,7 +2592,7 @@ int invoke_ArrayManager(
 #endif//DLMS_IGNORE_MALLOC
     e->byteArray = 1;
     unsigned char id;
-    uint16_t index = 0, from, to, origSize, origPos = 0;
+    uint16_t index = 0, from = 0, to = 0, origSize, origPos = 0;
     if (e->index == 1)
     {
         id = e->parameters.bVal;

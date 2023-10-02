@@ -1095,18 +1095,21 @@ int svr_handleSetRequestWithList(
     unsigned char STATUS_BUFF[20];
     bb_attach(&status, STATUS_BUFF, 0, sizeof(STATUS_BUFF));
     list = settings->transaction.targets;
-    e = &list.data[0];
-    ve_clear(e);
 #else
-    e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
-    ve_init(e);
     vec_init(&list);
-    vec_push(&list, e);
 #endif //DLMS_IGNORE_MALLOC    
     if ((ret = hlp_getObjectCount2(data, &count)) == 0)
     {
         for (pos = 0; pos != count; ++pos)
         {
+#ifdef DLMS_IGNORE_MALLOC
+            e = &list.data[pos];
+            ve_clear(e);
+#else
+            e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+            ve_init(e);
+            vec_push(&list, e);
+#endif //DLMS_IGNORE_MALLOC    
             if ((ret = bb_getUInt16(data, &tmp)) != 0)
             {
                 break;
@@ -1163,6 +1166,10 @@ int svr_handleSetRequestWithList(
             {
                 di_init(&di);
                 resetBlockIndex(&settings->base);
+                if ((ret = vec_getByIndex(&list, pos, &e)) != 0)
+                {
+                    break;
+                }
                 if ((ret = dlms_getData(data, &di, &e->value)) != 0)
                 {
                     bb_setUInt8ByIndex(&status, pos, ret);

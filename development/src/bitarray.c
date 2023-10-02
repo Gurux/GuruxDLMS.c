@@ -241,12 +241,15 @@ int ba_copy(
 void ba_clear(bitArray* arr)
 {
 #ifndef DLMS_IGNORE_MALLOC
-    if (arr->data != NULL)
+    if (!ba_isAttached(arr))
     {
-        gxfree(arr->data);
-        arr->data = NULL;
+        if (arr->data != NULL)
+        {
+            gxfree(arr->data);
+            arr->data = NULL;
+        }
+        arr->capacity = 0;
     }
-    arr->capacity = 0;
 #endif //DLMS_IGNORE_MALLOC
     arr->size = 0;
 #ifndef GX_DLMS_MICROCONTROLLER

@@ -1076,70 +1076,45 @@ int svr_handleSetRequest2(
     return ret;
 }
 
-int svr_handleSetRequestWithList(
+int svr_getTarget(
     dlmsServerSettings* settings,
     gxByteBuffer* data,
-    unsigned char type,
-    gxLNParameters* p)
+    gxByteBuffer* status,
+    gxValueEventArg* e,
+    unsigned char seek)
 {
-    gxValueEventArg* e;
-    gxValueEventCollection list;
     int ret;
     DLMS_OBJECT_TYPE ci;
     unsigned char ch;
-    uint16_t pos, count, tmp;
+    uint16_t tmp;
     unsigned char* ln = NULL;
-    gxByteBuffer status;
-    bb_init(&status);
-#ifdef DLMS_IGNORE_MALLOC
-    unsigned char STATUS_BUFF[20];
-    bb_attach(&status, STATUS_BUFF, 0, sizeof(STATUS_BUFF));
-    list = settings->transaction.targets;
-#else
-    vec_init(&list);
-#endif //DLMS_IGNORE_MALLOC    
-    if ((ret = hlp_getObjectCount2(data, &count)) == 0)
+    if ((ret = bb_getUInt16(data, &tmp)) != 0)
     {
-        for (pos = 0; pos != count; ++pos)
+        return ret;
+    }
+    ci = (DLMS_OBJECT_TYPE)tmp;
+    ln = data->data + data->position;
+    data->position += 6;
+    // Attribute index.
+    if ((ret = bb_getUInt8(data, &e->index)) == 0 &&
+        // Get Access Selection.
+        (ret = bb_getUInt8(data, &ch)) == 0)
+    {
+        if ((ret = oa_findByLN(&settings->base.objects, ci, ln, &e->target)) == 0)
         {
-#ifdef DLMS_IGNORE_MALLOC
-            e = &list.data[pos];
-            ve_clear(e);
-#else
-            e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
-            ve_init(e);
-            vec_push(&list, e);
-#endif //DLMS_IGNORE_MALLOC    
-            if ((ret = bb_getUInt16(data, &tmp)) != 0)
+            if (e->target == NULL)
             {
-                break;
+                ret = svr_findObject(&settings->base, ci, 0, ln, e);
             }
-            ci = (DLMS_OBJECT_TYPE)tmp;
-            ln = data->data + data->position;
-            data->position += 6;
-            // Attribute index.
-            if ((ret = bb_getUInt8(data, &e->index)) != 0)
+            if (!seek)
             {
-                break;
-            }
-            // Get Access Selection.
-            if ((ret = bb_getUInt8(data, &ch)) != 0)
-            {
-                break;
-            }
-            if ((ret = oa_findByLN(&settings->base.objects, ci, ln, &e->target)) == 0)
-            {
-                if (e->target == NULL)
-                {
-                    ret = svr_findObject(&settings->base, ci, 0, ln, e);
-                }
                 if (ret == 0)
                 {
                     // If target is unknown.
                     if (e->target == NULL)
                     {
                         // Device reports a undefined object.
-                        bb_setUInt8(&status, DLMS_ERROR_CODE_UNAVAILABLE_OBJECT);
+                        bb_setUInt8(status, DLMS_ERROR_CODE_UNAVAILABLE_OBJECT);
                     }
                     else
                     {
@@ -1148,14 +1123,57 @@ int svr_handleSetRequestWithList(
                         if (am != DLMS_ACCESS_MODE_WRITE && am != DLMS_ACCESS_MODE_READ_WRITE)
                         {
                             //Read Write denied.
-                            bb_setUInt8(&status, DLMS_ERROR_CODE_READ_WRITE_DENIED);
+                            bb_setUInt8(status, DLMS_ERROR_CODE_READ_WRITE_DENIED);
                         }
                         else
                         {
-                            bb_setUInt8(&status, DLMS_ERROR_CODE_OK);
+                            bb_setUInt8(status, DLMS_ERROR_CODE_OK);
                         }
                     }
                 }
+                else
+                {
+                    bb_setUInt8(status, DLMS_ERROR_CODE_UNAVAILABLE_OBJECT);
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+int svr_handleSetRequestWithList(
+    dlmsServerSettings* settings,
+    gxByteBuffer* data,
+    gxLNParameters* p)
+{
+    gxValueEventArg* e;
+    gxValueEventCollection list;
+    int ret;
+    unsigned char ch;
+    uint16_t pos, count, targetPos, tmp;
+    gxByteBuffer status;
+    bb_init(&status);
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned char STATUS_BUFF[20];
+    bb_attach(&status, STATUS_BUFF, 0, sizeof(STATUS_BUFF));
+    list = settings->transaction.targets;
+    list.size = 1;
+    e = &list.data[0];
+    ve_clear(e);
+#else
+    vec_init(&list);
+    e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+    ve_init(e);
+    vec_push(&list, e);
+#endif //DLMS_IGNORE_MALLOC    
+    if ((ret = hlp_getObjectCount2(data, &count)) == 0)
+    {
+        targetPos = data->position;
+        for (pos = 0; pos != count; ++pos)
+        {
+            if ((ret = svr_getTarget(settings, data, &status, e, 0)) != 0)
+            {
+                break;
             }
         }
         if (ret == 0 &&
@@ -1166,7 +1184,12 @@ int svr_handleSetRequestWithList(
             {
                 di_init(&di);
                 resetBlockIndex(&settings->base);
-                if ((ret = vec_getByIndex(&list, pos, &e)) != 0)
+                tmp = data->position;
+                //Target must seek from the byte buffer.
+                data->position = targetPos;
+                ret = svr_getTarget(settings, data, &status, e, 1);
+                data->position = tmp;
+                if (ret != 0)
                 {
                     break;
                 }
@@ -1174,48 +1197,55 @@ int svr_handleSetRequestWithList(
                 {
                     bb_setUInt8ByIndex(&status, pos, ret);
                 }
-                else
+                if (bb_getUInt8(&status, &ch) != 0 ||
+                    ch != 0)
                 {
-                    svr_preWrite(&settings->base, &list);
-                    if (p->multipleBlocks)
-                    {
+                    continue;
+                }
+                //Objects are invoked one at the time when malloc is not used.
+                //This must be done because octet-strings cause problems.
+                svr_preWrite(&settings->base, &list);
+                if (p->multipleBlocks)
+                {
 #ifdef DLMS_IGNORE_MALLOC
-                        settings->transaction.targets.size = 1;
+                    settings->transaction.targets.size = 1;
 #else
-                        bb_clear(&settings->transaction.data);
-                        vec_clear(&settings->transaction.targets);
-                        settings->transaction.targets = list;
-                        var_clear(&e->value);
-                        vec_init(&list);
-                        if (!bb_isAttached(data))
-                        {
-                            ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
-                        }
-#endif //DLMS_IGNORE_MALLOC
-                        settings->transaction.command = DLMS_COMMAND_SET_REQUEST;
-                    }
-                    if (ret == 0)
+                    bb_clear(&settings->transaction.data);
+                    vec_clear(&settings->transaction.targets);
+                    settings->transaction.targets = list;
+                    var_clear(&e->value);
+                    vec_init(&list);
+                    if (!bb_isAttached(data))
                     {
+                        ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
+                    }
+#endif //DLMS_IGNORE_MALLOC
+                    settings->transaction.command = DLMS_COMMAND_SET_REQUEST;
+                }
+                if (ret == 0)
+                {
+                    if (e->error != 0)
+                    {
+                        bb_setUInt8ByIndex(&status, pos, e->error);
+                    }
+                    else if (!e->handled && !p->multipleBlocks)
+                    {
+                        ret = cosem_setValue(&settings->base, e);
+                        if (ret != 0 && e->error == 0)
+                        {
+                            bb_setUInt8ByIndex(&status, pos, ret);
+                        }
+                        svr_postWrite(&settings->base, &list);
                         if (e->error != 0)
                         {
                             bb_setUInt8ByIndex(&status, pos, e->error);
                         }
-                        else if (!e->handled && !p->multipleBlocks)
-                        {
-                            ret = cosem_setValue(&settings->base, e);
-                            if (ret != 0 && e->error == 0)
-                            {
-                                bb_setUInt8ByIndex(&status, pos, ret);
-                            }
-                            svr_postWrite(&settings->base, &list);
-                            if (e->error != 0)
-                            {
-                                bb_setUInt8ByIndex(&status, pos, e->error);
-                            }
-                        }
                     }
                 }
-            }
+#ifndef DLMS_IGNORE_MALLOC
+                var_clear(&e->value);
+#endif //DLMS_IGNORE_MALLOC
+            }           
         }
     }
 #ifndef DLMS_IGNORE_MALLOC
@@ -1365,7 +1395,7 @@ int svr_handleSetRequest(
 #endif //DLMS_IGNORE_MALLOC
         break;
     case DLMS_SET_COMMAND_TYPE_WITH_LIST:
-        ret = svr_handleSetRequestWithList(settings, data, type, &p);
+        ret = svr_handleSetRequestWithList(settings, data, &p);
         break;
     default:
         p.requestType = 1;

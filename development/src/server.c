@@ -1188,6 +1188,7 @@ int svr_handleSetRequestWithList(
                 //Target must seek from the byte buffer.
                 data->position = targetPos;
                 ret = svr_getTarget(settings, data, &status, e, 1);
+                targetPos = data->position;
                 data->position = tmp;
                 if (ret != 0)
                 {

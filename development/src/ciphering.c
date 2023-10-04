@@ -621,7 +621,8 @@ int cip_crypt(
     static unsigned char H[16] = { 0 };
     static unsigned char J0[16] = { 0 };
     static unsigned char S[16] = { 0 };
-    static unsigned char NONSE[16] = { 0 };
+    //Nonse must be 20 bytes because it's used later.
+    static unsigned char NONSE[20] = { 0 };
     memset(H, 0, sizeof(H));
     memset(S, 0, sizeof(S));
 #else
@@ -629,7 +630,8 @@ int cip_crypt(
     unsigned char H[16] = { 0 };
     unsigned char J0[16] = { 0 };
     unsigned char S[16] = { 0 };
-    unsigned char NONSE[16] = { 0 };
+    //Nonse must be 20 bytes because it's used later.
+    unsigned char NONSE[20] = { 0 };
 #endif //GX_DLMS_MICROCONTROLLER
     gxByteBuffer nonse;
     if (memcmp(systemTitle, EMPTY_SYSTEM_TITLE, 8) == 0)

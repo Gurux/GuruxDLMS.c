@@ -2411,7 +2411,8 @@ int ser_saveRegisterActivation(
     return ret;
 }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
-#ifndef DLMS_IGNORE_REGISTER_MONITOR
+
+#if !(defined(DLMS_IGNORE_REGISTER_MONITOR) && defined(DLMS_IGNORE_LIMITER))
 int ser_saveActionItem(
     gxActionItem* item,
     gxSerializerSettings* serializeSettings)
@@ -2431,7 +2432,9 @@ int ser_saveActionItem(
     }
     return ret;
 }
+#endif //!defined(DLMS_IGNORE_REGISTER_MONITOR) && !defined(DLMS_IGNORE_LIMITER)
 
+#ifndef DLMS_IGNORE_REGISTER_MONITOR
 int ser_saveRegisterMonitor(
     gxSerializerSettings* serializeSettings,
     gxRegisterMonitor* object)
@@ -6032,7 +6035,8 @@ int ser_loadRegisterActivation(
     return ret;
 }
 #endif //DLMS_IGNORE_REGISTER_ACTIVATION
-#ifndef DLMS_IGNORE_REGISTER_MONITOR
+#if !(defined(DLMS_IGNORE_REGISTER_MONITOR) && defined(DLMS_IGNORE_LIMITER))
+
 int ser_loadActionItem(
     dlmsSettings * settings,
     gxActionItem * item,
@@ -6062,7 +6066,9 @@ int ser_loadActionItem(
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     return ret;
 }
+#endif //!(defined(DLMS_IGNORE_REGISTER_MONITOR) && defined(DLMS_IGNORE_LIMITER))
 
+#ifndef DLMS_IGNORE_REGISTER_MONITOR
 int ser_loadRegisterMonitor(
     gxSerializerSettings * serializeSettings,
     dlmsSettings * settings,

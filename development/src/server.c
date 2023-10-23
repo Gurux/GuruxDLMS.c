@@ -1161,6 +1161,7 @@ int svr_handleSetRequestWithList(
     e = &list.data[0];
     ve_clear(e);
 #else
+    bb_capacity(&status, 10);
     vec_init(&list);
     e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
     ve_init(e);
@@ -1246,7 +1247,7 @@ int svr_handleSetRequestWithList(
 #ifndef DLMS_IGNORE_MALLOC
                 var_clear(&e->value);
 #endif //DLMS_IGNORE_MALLOC
-            }           
+            }
         }
     }
 #ifndef DLMS_IGNORE_MALLOC
@@ -1259,6 +1260,7 @@ int svr_handleSetRequestWithList(
     {
         bb_setUInt8(data, status.data[pos]);
     }
+    bb_clear(&status);
     p->requestType = DLMS_SET_RESPONSE_TYPE_WITH_LIST;
     return ret;
 }

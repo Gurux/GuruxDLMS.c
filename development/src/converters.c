@@ -2373,6 +2373,10 @@ int obj_G3Plc6LoWPANToString(gxG3Plc6LoWPAN* object, char** buff)
         return ret;
     }
 #endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    bb_addString(&ba, "\nIndex: 22 Value: ");
+    bb_addIntAsString(&ba, object->lowLQI);
+    bb_addString(&ba, "\nIndex: 23 Value: ");
+    bb_addIntAsString(&ba, object->highLQI);    
     bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);

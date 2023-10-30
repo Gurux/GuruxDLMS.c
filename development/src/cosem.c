@@ -725,7 +725,7 @@ int cosem_init4(
         ((gxObject*)object)->version = 3;
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
-        ((gxObject*)object)->version = 2;
+        ((gxObject*)object)->version = 3;
         break;
     default:
         break;

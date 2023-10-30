@@ -5254,6 +5254,14 @@ int cosem_setG3Plc6LoWPAN(gxG3Plc6LoWPAN* object, unsigned char index, dlmsVARIA
     {
         ret = cosem_getUint16Array(&object->destinationAddress, value);
     }
+    else if (index == 22)
+    {
+        object->lowLQI = value->bVal;
+    }
+    else if (index == 23)
+    {
+        object->highLQI = value->bVal;
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

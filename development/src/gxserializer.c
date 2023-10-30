@@ -3245,7 +3245,9 @@ int ser_saveG3Plc6LoWPAN(
         (!isAttributeSet(serializeSettings, ignored, 18) && (ret = ser_saveUInt8(serializeSettings, object->disableDefaultRouting)) != 0) ||
         (!isAttributeSet(serializeSettings, ignored, 19) && (ret = ser_saveUInt8(serializeSettings, object->deviceType)) != 0) ||
         (!isAttributeSet(serializeSettings, ignored, 20) && (ret = ser_saveUInt8(serializeSettings, object->defaultCoordRouteEnabled)) != 0) ||
-        (!isAttributeSet(serializeSettings, ignored, 21) && (ret = ser_saveUInt16Array(serializeSettings, &object->destinationAddress)) != 0))
+        (!isAttributeSet(serializeSettings, ignored, 21) && (ret = ser_saveUInt16Array(serializeSettings, &object->destinationAddress)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 22) && (ret = ser_saveUInt8(serializeSettings, object->lowLQI)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 23) && (ret = ser_saveUInt8(serializeSettings, object->highLQI)) != 0))
     {
     }
     return ret;
@@ -7262,7 +7264,9 @@ int ser_loadG3Plc6LoWPAN(
         (!isAttributeSet(serializeSettings, ignored, 18) && (ret = ser_loadUInt8(serializeSettings, &object->disableDefaultRouting)) != 0) ||
         (!isAttributeSet(serializeSettings, ignored, 19) && (ret = ser_loadUInt8(serializeSettings, &deviceType)) != 0) ||
         (!isAttributeSet(serializeSettings, ignored, 20) && (ret = ser_loadUInt8(serializeSettings, &object->defaultCoordRouteEnabled)) != 0) ||
-        (!isAttributeSet(serializeSettings, ignored, 21) && (ret = ser_loadUInt16Array(serializeSettings, &object->destinationAddress)) != 0))
+        (!isAttributeSet(serializeSettings, ignored, 21) && (ret = ser_loadUInt16Array(serializeSettings, &object->destinationAddress)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 22) && (ret = ser_loadUInt8(serializeSettings, &object->lowLQI)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 23) && (ret = ser_loadUInt8(serializeSettings, &object->highLQI)) != 0))
     {
     }
     if (ret == 0)

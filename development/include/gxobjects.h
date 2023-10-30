@@ -3578,6 +3578,10 @@ extern "C" {
 #else
         variantArray destinationAddress;
 #endif //DLMS_IGNORE_MALLOC
+        //  PIB attribute 0x04.
+        unsigned char lowLQI;
+        //  PIB attribute 0x04.
+        unsigned char highLQI;
     }gxG3Plc6LoWPAN;
 
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN

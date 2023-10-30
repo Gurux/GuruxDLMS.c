@@ -4841,6 +4841,10 @@ int cosem_setG3PlcMacSetup(gxG3PlcMacSetup* object, unsigned char index, dlmsVAR
             }
         }
     }
+    else if (object->base.version > 2 && index == 26)
+    {
+        object->macDuplicateDetectionTTL = value->bVal;
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -5261,9 +5265,9 @@ int cosem_setG3Plc6LoWPAN(gxG3Plc6LoWPAN* object, unsigned char index, dlmsVARIA
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
 
 int cosem_setArrayManager(
-    dlmsSettings* settings, 
-    gxArrayManager* object, 
-    unsigned char index, 
+    dlmsSettings* settings,
+    gxArrayManager* object,
+    unsigned char index,
     dlmsVARIANT* value)
 {
     int pos, ret = 0;

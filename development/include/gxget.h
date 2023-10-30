@@ -166,6 +166,21 @@ extern "C" {
         dlmsSettings* settings,
         gxValueEventArg* e);
 
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+    int cosem_getG3PlcMacSetupNeighbourTables(
+        gxArray* tables,
+        uint16_t address, 
+        uint16_t count,
+        gxValueEventArg* e);
+
+    int cosem_getG3PlcMacSetupPosTables(
+        gxArray* tables,
+        uint16_t address,
+        uint16_t count,
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+
 #ifndef DLMS_IGNORE_MALLOC
     int cosem_getRow(
         gxArray* table,

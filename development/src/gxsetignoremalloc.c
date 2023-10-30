@@ -3285,6 +3285,10 @@ int cosem_setG3PlcMacSetup(gxG3PlcMacSetup* object, unsigned char index, dlmsVAR
             }
         }
     }
+    else if (object->base.version > 2 && index == 26)
+    {
+        ret = cosem_getUInt8(value->byteArr, &object->macDuplicateDetectionTTL);
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

@@ -2338,7 +2338,7 @@ int invoke_ArrayManagerInsertEntry(
     var_init(&value);
     //Move new data to the begin of the buffer.
     ret = bb_move(e->value.byteArr, e->value.byteArr->position, 0, bb_available(e->value.byteArr));
-    uint16_t newDataSize = e->value.byteArr->size;
+    uint16_t newDataSize = (uint16_t)e->value.byteArr->size;
     if ((ret = cosem_getValue(&settings->base, e)) == 0 && bb_size(e->value.byteArr) != 0)
     {
         if ((ret = bb_getUInt8(e->value.byteArr, &ch)) != 0 ||
@@ -2351,7 +2351,7 @@ int invoke_ArrayManagerInsertEntry(
             return ret;
         }
         //Change index to zero-based.
-        count = e->value.byteArr->size;
+        count = (uint16_t)e->value.byteArr->size;
         e->value.byteArr->size = newDataSize + 1;
         if ((ret = hlp_setObjectCount(1 + totalCount, e->value.byteArr)) != 0)
         {
@@ -2360,7 +2360,7 @@ int invoke_ArrayManagerInsertEntry(
         totalCount = 0;
         //Return original size.
         e->value.byteArr->size = count;
-        for (pos = e->value.byteArr->position; pos != bb_size(e->value.byteArr); ++pos)
+        for (pos = (uint16_t)e->value.byteArr->position; pos != bb_size(e->value.byteArr); ++pos)
         {
             //Get data type.
             if ((ret = bb_getUInt8ByIndex(e->value.byteArr, e->value.byteArr->position, &ch)) != 0)
@@ -2372,7 +2372,7 @@ int invoke_ArrayManagerInsertEntry(
                 if (index == 0)
                 {
                     //Save start position.
-                    origPos = e->value.byteArr->position;
+                    origPos = (uint16_t)e->value.byteArr->position;
                 }
                 ++e->value.byteArr->position;
                 if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
@@ -2429,7 +2429,7 @@ int invoke_ArrayManagerInsertEntry(
                     ret = bb_move(e->value.byteArr, origPos,
                         origPos + newDataSize, e->value.byteArr->size - newDataSize);
                     //Move new item to new location.
-                    totalCount = e->value.byteArr->size;
+                    totalCount = (uint16_t)e->value.byteArr->size;
                     ret = bb_move(e->value.byteArr, 0, origPos, newDataSize);
                     e->value.byteArr->size = totalCount;
                     //Move all items to first.
@@ -2498,7 +2498,7 @@ int invoke_ArrayManagerDeleteEntry(
             totalCount = from;
             to = from + 1;
         }
-        count = e->value.byteArr->size;
+        count = (uint16_t)e->value.byteArr->size;
         e->value.byteArr->size = 1;
         if ((ret = hlp_setObjectCount(totalCount, e->value.byteArr)) != 0)
         {
@@ -2507,7 +2507,7 @@ int invoke_ArrayManagerDeleteEntry(
         totalCount = 0;
         //Return original size.
         e->value.byteArr->size = count;
-        for (pos = e->value.byteArr->position; pos != bb_size(e->value.byteArr); ++pos)
+        for (pos = (uint16_t)e->value.byteArr->position; pos != bb_size(e->value.byteArr); ++pos)
         {
             //Get data type.
             if ((ret = bb_getUInt8ByIndex(e->value.byteArr, e->value.byteArr->position, &ch)) != 0)
@@ -2519,7 +2519,7 @@ int invoke_ArrayManagerDeleteEntry(
                 if (from == 0)
                 {
                     //Save start position.
-                    origPos = e->value.byteArr->position;
+                    origPos = (uint16_t)e->value.byteArr->position;
                 }
                 ++e->value.byteArr->position;
                 if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
@@ -2608,7 +2608,7 @@ int invoke_ArrayManager(
             (ret = cosem_getUInt16(e->parameters.byteArr, &index)) != 0)
         {
             return ret;
-    }
+        }
 #else
         if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp2)) != 0)
         {
@@ -2630,7 +2630,7 @@ int invoke_ArrayManager(
         }
         to = tmp2->uiVal;
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     else
     {
 #ifdef DLMS_IGNORE_MALLOC
@@ -2763,14 +2763,14 @@ int invoke_ArrayManager(
                                 to = totalCount;
                             }
                         }
-                        count = e->value.byteArr->size;
+                        count = (uint16_t)e->value.byteArr->size;
                         e->value.byteArr->size = 1;
                         if ((ret = hlp_setObjectCount(totalCount, e->value.byteArr)) != 0)
                         {
                             break;
                         }
                         totalCount = 0;
-                        origSize = e->value.byteArr->size;
+                        origSize = (uint16_t)e->value.byteArr->size;
                         //Return original size.
                         e->value.byteArr->size = count;
                         for (pos = e->value.byteArr->position; pos != bb_size(e->value.byteArr); ++pos)
@@ -2785,7 +2785,7 @@ int invoke_ArrayManager(
                                 if (from == 0)
                                 {
                                     //Save start position.
-                                    origPos = e->value.byteArr->position;
+                                    origPos = (uint16_t)e->value.byteArr->position;
                                 }
                                 ++e->value.byteArr->position;
                                 if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
@@ -2876,6 +2876,82 @@ int invoke_ArrayManager(
     return ret;
 }
 #endif //DLMS_IGNORE_ARRAY_MANAGER
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+int invoke_G3_PLC_MAC_Setup(
+    dlmsServerSettings* settings,
+    gxG3PlcMacSetup* object,
+    gxValueEventArg* e)
+{
+    uint16_t address, pos, count = 0;
+    int ret = 0;
+    e->byteArray = 1;
+    bb_clear(&settings->info.data);
+    e->value.byteArr = &settings->info.data;
+    if (e->parameters.vt != DLMS_DATA_TYPE_UINT16)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    address = e->parameters.uiVal;
+    if (e->index == 1)
+    {
+        //Get amount of neighbour tables. 
+        gxNeighbourTable* it;
+        for (pos = 0; pos < (uint16_t)object->neighbourTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->neighbourTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->neighbourTable, pos,
+                (void**)&it, sizeof(gxNeighbourTable))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC        
+            if (it->shortAddress == address)
+            {
+                ++count;
+            }
+        }
+        if (ret == 0)
+        {
+            return cosem_getG3PlcMacSetupNeighbourTables(&object->neighbourTable, address, count, e);
+        }
+    }
+    else if (e->index == 2)
+    {
+        gxMacPosTable* it;
+        //Get amount of MAC POS tables. 
+        for (pos = 0; pos < object->macPosTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->macPosTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->macPosTable, pos, (void**)&it, sizeof(gxMacPosTable))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if (it->shortAddress == address)
+            {
+                ++count;
+            }
+        }
+        if (ret == 0)
+        {
+            return cosem_getG3PlcMacSetupPosTables(&object->macPosTable, address, count, e);
+        }
+    }
+    bb_clear(e->value.byteArr);
+    return DLMS_ERROR_CODE_READ_WRITE_DENIED;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 int cosem_invoke(
     dlmsServerSettings* settings,
@@ -3039,7 +3115,11 @@ int cosem_invoke(
         ret = invoke_ArrayManager(settings, e);
         break;
 #endif //DLMS_IGNORE_ARRAY_MANAGER
-
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
+        ret = invoke_G3_PLC_MAC_Setup(settings, (gxG3PlcMacSetup*)e->target, e);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
     default:
         //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

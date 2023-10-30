@@ -1169,7 +1169,7 @@ int svr_handleSetRequestWithList(
 #endif //DLMS_IGNORE_MALLOC    
     if ((ret = hlp_getObjectCount2(data, &count)) == 0)
     {
-        targetPos = data->position;
+        targetPos = (uint16_t)data->position;
         for (pos = 0; pos != count; ++pos)
         {
             if ((ret = svr_getTarget(settings, data, &status, e, 0)) != 0)
@@ -1185,11 +1185,11 @@ int svr_handleSetRequestWithList(
             {
                 di_init(&di);
                 resetBlockIndex(&settings->base);
-                tmp = data->position;
+                tmp = (uint16_t)data->position;
                 //Target must seek from the byte buffer.
                 data->position = targetPos;
                 ret = svr_getTarget(settings, data, &status, e, 1);
-                targetPos = data->position;
+                targetPos = (uint16_t)data->position;
                 data->position = tmp;
                 if (ret != 0)
                 {
@@ -4924,15 +4924,18 @@ int svr_limiter(dlmsServerSettings* settings,
     gxLimiter* object,
     uint32_t now)
 {
+    uint16_t pos;
     int ret;
     gxValueEventCollection args;
     gxValueEventArg* e;
 #ifdef DLMS_IGNORE_MALLOC
+    uint16_t* id;
     gxValueEventArg tmp[1];
     ve_init(&tmp[0]);
     vec_attach(&args, tmp, 1, 1);
     e = &tmp[0];
 #else
+    dlmsVARIANT* id;
     e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
     ve_init(e);
     vec_init(&args);
@@ -4955,9 +4958,20 @@ int svr_limiter(dlmsServerSettings* settings,
     {
         //Save value.
         double currentValue = var_toDouble(&e->value);
-        double activeValue = var_toDouble(&object->thresholdActive);
+        double activeValue;
         double normalValue = var_toDouble(&object->thresholdNormal);
         double emergencyValue = var_toDouble(&object->thresholdEmergency);
+        if (!object->emergencyProfileActive)
+        {
+            //Use normal threshold in normal mode.
+            activeValue = normalValue;
+        }
+        else
+        {
+            //Use emergency threshold in emergency mode.
+            activeValue = emergencyValue;
+        }
+
         if (currentValue < activeValue)
         {
             //If active value is under threshold or it changes from over to under.
@@ -4968,7 +4982,7 @@ int svr_limiter(dlmsServerSettings* settings,
             }
             else if (now - object->activationTime >= object->minUnderThresholdDuration)
             {
-                if (object->actionOverThreshold.script != NULL)
+                if ((object->actionUnderThreshold.script != NULL) && (0 == object->overThreshold))
                 {
                     ret = svr_invokeLimiterAction(settings, e, &object->actionUnderThreshold);
                     // Threshold is invoked only once. 
@@ -4987,7 +5001,7 @@ int svr_limiter(dlmsServerSettings* settings,
             }
             else if (now - object->activationTime >= object->minOverThresholdDuration)
             {
-                if (object->actionOverThreshold.script != NULL)
+                if ((object->actionOverThreshold.script != NULL) && (1 == object->overThreshold))
                 {
                     ret = svr_invokeLimiterAction(settings, e, &object->actionOverThreshold);
                     //Threshold is invoked only once.
@@ -4998,22 +5012,46 @@ int svr_limiter(dlmsServerSettings* settings,
         }
         if (ret == 0)
         {
-            //Activate the emergency.
-            if (object->emergencyProfileActive == 0 &&
-                ((normalValue < emergencyValue && currentValue > emergencyValue) ||
-                    (normalValue > emergencyValue && currentValue < emergencyValue)))
+            if (!object->emergencyProfileActive)
             {
-                time_initUnix(&object->emergencyProfile.activationTime, now);
-                object->emergencyProfileActive = 1;
+                //Limiter is in normal mode.
+                if ((now >= time_toUnixTime2(&object->emergencyProfile.activationTime)) &&
+                    (now < (time_toUnixTime2(&object->emergencyProfile.activationTime) + (object->emergencyProfile.duration))))
+                {
+                    //Search emergency profile group ID and activate the emergency if it is found.
+                    for (pos = 0; pos != object->emergencyProfileGroupIDs.size; ++pos)
+                    {
+#ifndef DLMS_IGNORE_MALLOC
+                        if (va_getByIndex(&object->emergencyProfileGroupIDs, pos, &id) != 0)
+                        {
+                            break;
+                        }
+#else
+                        if (arr_getByIndex(&object->emergencyProfileGroupIDs, pos, (void**)&id, sizeof(uint16_t)) != 0)
+                        {
+                            break;
+                        }
+#endif //DLMS_IGNORE_MALLOC
+#ifndef DLMS_IGNORE_MALLOC
+                        if (object->emergencyProfile.id == id->iVal)
+#else
+                        if (object->emergencyProfile.id == *id)
+#endif //DLMS_IGNORE_MALLOC
+                        {
+                            //Activate emergency mode.
+                            object->emergencyProfileActive = 1;
+                            break;
+                        }
+                    }
+                }
             }
             else
             {
-                uint32_t activationTime = time_toUnixTime2(&object->emergencyProfile.activationTime);
-                if (object->emergencyProfileActive &&
-                    activationTime != (uint32_t)-1 && now - activationTime > object->emergencyProfile.duration)
+                //Limiter is in emergency mode.
+                if ((now - time_toUnixTime2(&object->emergencyProfile.activationTime)) >
+                    (object->emergencyProfile.duration))
                 {
-                    //If the emergency is over.
-                    time_initUnix(&object->emergencyProfile.activationTime, 0);
+                    //The emergency duration elapsed and emergency is over.
                     object->emergencyProfileActive = 0;
                 }
             }

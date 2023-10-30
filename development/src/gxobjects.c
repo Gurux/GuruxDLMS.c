@@ -1439,7 +1439,14 @@ unsigned char obj_attributeCount(gxObject* object)
         ret = 10;
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
-        ret = 25;
+        if (object->version < 3)
+        {
+            ret = 25;
+        }
+        else
+        {
+            ret = 26;
+        }
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
         ret = 21;
@@ -1843,7 +1850,14 @@ unsigned char obj_methodCount(gxObject* object)
         ret = 1;
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
-        ret = 1;
+        if (object->version < 3)
+        {
+            ret = 1;
+        }
+        else
+        {
+            ret = 2;
+        }
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
         ret = 0;

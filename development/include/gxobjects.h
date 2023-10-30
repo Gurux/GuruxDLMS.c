@@ -3319,6 +3319,8 @@ extern "C" {
           about all the devices within the POS of the device.
         */
         gxArray macPosTable;
+        /*Duplicate frame detection time in seconds.*/
+        unsigned char macDuplicateDetectionTTL;
     }gxG3PlcMacSetup;
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 

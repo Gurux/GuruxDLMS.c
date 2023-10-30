@@ -195,7 +195,7 @@ void cl_clear(
     bb_clear(&settings->ctoSChallenge);
     bb_clear(&settings->stoCChallenge);
     settings->priority = DLMS_PRIORITY_HIGH;
-    settings->serviceClass = DLMS_SERVICE_CLASS_UN_CONFIRMED;
+    settings->serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     cip_clear(&settings->cipher);
 #endif //DLMS_IGNORE_HIGH_GMAC

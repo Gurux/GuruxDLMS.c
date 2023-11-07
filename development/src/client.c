@@ -285,6 +285,12 @@ int cl_aarqRequest(
         //Invalid conformance.
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
+    if (dlms_usePreEstablishedConnection(settings))
+    {
+        //Invalid conformance.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+
     //Save default values.
     settings->initializePduSize = settings->maxPduSize;
     int ret;
@@ -303,7 +309,7 @@ int cl_aarqRequest(
 #else
     gxByteBuffer buff;
 #ifdef GX_DLMS_MICROCONTROLLER
-    static unsigned char GX_AARQ_PDU[100];
+    static unsigned char GX_AARQ_PDU[130];
     if ((ret = bb_attach(&buff, GX_AARQ_PDU, 0, sizeof(GX_AARQ_PDU))) != 0)
     {
         return ret;

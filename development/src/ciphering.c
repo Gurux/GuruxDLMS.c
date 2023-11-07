@@ -53,13 +53,15 @@
 #include "../include/helpers.h"
 #include "../include/gxaes.h"
 
+static const unsigned char DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY[] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
+static const unsigned char DEFAUlT_BLOCK_CIPHER_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+static const unsigned char DEFAULT_SYSTEM_TITLE[] = { 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48 };
+static const unsigned char DEFAUlT_AUTHENTICATION_KEY[] = { 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7,
+                                                            0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF
+};
+
 void cip_init(ciphering* target)
 {
-    static const unsigned char DEFAUlT_BLOCK_CIPHER_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-    static const unsigned char DEFAULT_SYSTEM_TITLE[] = { 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48 };
-    static const unsigned char DEFAUlT_AUTHENTICATION_KEY[] = { 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7,
-                                                                0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF
-    };
     target->invocationCounter = 0;
     target->suite = DLMS_SECURITY_SUITE_V0;
     target->security = DLMS_SECURITY_NONE;
@@ -67,6 +69,8 @@ void cip_init(ciphering* target)
 #ifndef DLMS_IGNORE_MALLOC
     BYTE_BUFFER_INIT(&target->blockCipherKey);
     bb_set(&target->blockCipherKey, DEFAUlT_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
+    BYTE_BUFFER_INIT(&target->broadcastBlockCipherKey);
+    bb_set(&target->broadcastBlockCipherKey, DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY));
     BYTE_BUFFER_INIT(&target->systemTitle);
     bb_set(&target->systemTitle, DEFAULT_SYSTEM_TITLE, sizeof(DEFAULT_SYSTEM_TITLE));
     BYTE_BUFFER_INIT(&target->authenticationKey);
@@ -74,10 +78,12 @@ void cip_init(ciphering* target)
     target->dedicatedKey = NULL;
 #else
     memcpy(target->blockCipherKey, DEFAUlT_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
+    memcpy(target->broadcastBlockCipherKey, DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY));
     memcpy(target->systemTitle, DEFAULT_SYSTEM_TITLE, sizeof(DEFAULT_SYSTEM_TITLE));
     memcpy(target->authenticationKey, DEFAUlT_AUTHENTICATION_KEY, sizeof(DEFAUlT_AUTHENTICATION_KEY));
     memset(target->dedicatedKey, 0, 16);
 #endif //DLMS_IGNORE_MALLOC
+    target->broacast = 0;
 }
 
 void cip_clear(ciphering* target)
@@ -87,6 +93,7 @@ void cip_clear(ciphering* target)
     target->encrypt = 0;
 #ifndef DLMS_IGNORE_MALLOC
     bb_clear(&target->blockCipherKey);
+    bb_clear(&target->broadcastBlockCipherKey);
     bb_clear(&target->systemTitle);
     bb_clear(&target->authenticationKey);
     if (target->dedicatedKey != NULL)
@@ -96,10 +103,11 @@ void cip_clear(ciphering* target)
         target->dedicatedKey = NULL;
     }
 #else
-    memset(target->blockCipherKey, 0, 16);
+    memset(target->blockCipherKey, 0, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
+    memset(target->broadcastBlockCipherKey, 0, sizeof(DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY));
     memset(target->systemTitle, 0, 8);
-    memset(target->authenticationKey, 0, 16);
-    memset(target->dedicatedKey, 0, 16);
+    memset(target->authenticationKey, 0, sizeof(DEFAUlT_AUTHENTICATION_KEY));
+    memset(target->dedicatedKey, 0, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
 #endif //DLMS_IGNORE_MALLOC
 }
 
@@ -779,8 +787,13 @@ int cip_crypt(
                 hlp_setObjectCount(8, &nonse);
                 bb_set(&nonse, systemTitle, 8);
             }
+            tag = security | settings->suite;
+            if (settings->broacast)
+            {
+                tag |= 0x40;
+            }
             if ((ret = hlp_setObjectCount(5 + input->size, &nonse)) == 0 &&
-                (ret = bb_setUInt8(&nonse, security | settings->suite)) == 0 &&
+                (ret = bb_setUInt8(&nonse, tag)) == 0 &&
                 (ret = bb_setUInt32(&nonse, frameCounter)) == 0 &&
                 (ret = bb_insert(nonse.data, nonse.size, input, 0)) == 0)
             {

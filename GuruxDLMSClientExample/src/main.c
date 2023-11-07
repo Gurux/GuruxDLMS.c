@@ -275,7 +275,7 @@ int imageUpdate(connection* connection, const unsigned char* identification, uin
 */
 int imageUpdateFromFile(
     connection* connection,
-    const char* identifier, 
+    const char* identifier,
     const char* fileName)
 {
 #if _MSC_VER > 1400
@@ -478,6 +478,7 @@ static void ShowHelp()
     printf("GuruxDlmsSample -h [Meter IP Address] -p [Meter Port No] -c 16 -s 1 -r SN\n");
     printf(" -h \t host name or IP address.\n");
     printf(" -p \t port number or name (Example: 1000).\n");
+    printf(" -u \t UDP is used.");
     printf(" -S \t serial port.\n");
     printf(" -a \t Authentication (None, Low, High, HighMd5, HighSha1, HighGmac, HighSha256).\n");
     printf(" -P \t Password for authentication.\n");
@@ -495,9 +496,11 @@ static void ShowHelp()
     printf(" -T \t System title that is used with chiphering. Ex -T 4775727578313233\n");
     printf(" -A \t Authentication key that is used with chiphering. Ex -A D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF\n");
     printf(" -B \t Block cipher key that is used with chiphering. Ex -B 000102030405060708090A0B0C0D0E0F\n");
+    printf(" -b \t Broadcast Block cipher key that is used with chiphering. Ex -b 000102030405060708090A0B0C0D0E0F");
     printf(" -D \t Dedicated key that is used with chiphering. Ex -D 00112233445566778899AABBCCDDEEFF\n");
     printf(" -i \t Used communication interface. Ex. -i WRAPPER.");
     printf(" -m \t Used PLC MAC address. Ex. -m 1.");
+    printf(" -R \t Data is send as a broadcast (UnConfirmed, Confirmed).");
     printf("Example:\n");
     printf("Read LG device using TCP/IP connection.\n");
     printf("GuruxDlmsSample -r SN -c 16 -s 1 -h [Meter IP Address] -p [Meter Port No]\n");
@@ -522,7 +525,7 @@ int connectMeter(int argc, char* argv[])
     char* p, * readObjects = NULL, * outputFile = NULL;
     int index, a, b, c, d, e, f;
     char* invocationCounter = NULL;
-    while ((opt = getopt(argc, argv, "h:p:c:s:r:i:It:a:p:wP:g:S:C:v:T:A:B:D:l:F:o:V:")) != -1)
+    while ((opt = getopt(argc, argv, "h:p:c:s:r:i:It:a:p:wP:g:S:C:v:T:A:B:D:l:F:o:V:M:b:R:")) != -1)
     {
         switch (opt)
         {
@@ -652,6 +655,20 @@ int connectMeter(int argc, char* argv[])
                 return 1;
             }
             break;
+        case 'M':
+            if (con.settings.preEstablishedSystemTitle == NULL)
+            {
+                con.settings.preEstablishedSystemTitle = malloc(sizeof(gxByteBuffer));
+                bb_init(con.settings.preEstablishedSystemTitle);
+            }
+            bb_clear(con.settings.preEstablishedSystemTitle);
+            bb_addHexString(con.settings.preEstablishedSystemTitle, optarg);
+            if (con.settings.preEstablishedSystemTitle->size != 8)
+            {
+                printf("Invalid pre-established system title '%s'.", optarg);
+                return 1;
+            }
+            break;
         case 'A':
             bb_clear(&con.settings.cipher.authenticationKey);
             bb_addHexString(&con.settings.cipher.authenticationKey, optarg);
@@ -669,6 +686,16 @@ int connectMeter(int argc, char* argv[])
                 con.settings.cipher.blockCipherKey.size != 32)
             {
                 printf("Invalid block cipher key '%s'.", optarg);
+                return 1;
+            }
+            break;
+        case 'b':
+            bb_clear(&con.settings.cipher.broadcastBlockCipherKey);
+            bb_addHexString(&con.settings.cipher.broadcastBlockCipherKey, optarg);
+            if (con.settings.cipher.broadcastBlockCipherKey.size != 16 &&
+                con.settings.cipher.broadcastBlockCipherKey.size != 32)
+            {
+                printf("Invalid broadcast block cipher key '%s'.", optarg);
                 return 1;
             }
             break;
@@ -718,9 +745,9 @@ int connectMeter(int argc, char* argv[])
                     ShowHelp();
                     return 1;
                 }
-                } while ((p = strchr(p, ',')) != NULL);
-                readObjects = optarg;
-                break;
+            } while ((p = strchr(p, ',')) != NULL);
+            readObjects = optarg;
+            break;
         case 'S':
             serialPort = optarg;
             break;
@@ -773,6 +800,22 @@ int connectMeter(int argc, char* argv[])
             break;
         case 'm':
             con.settings.plcSettings.macDestinationAddress = atoi(optarg);
+            break;
+        case 'R':
+            con.settings.cipher.broacast = 1;
+            if (strcasecmp("UnConfirmed", optarg) == 0)
+            {
+                con.settings.serviceClass = DLMS_SERVICE_CLASS_UN_CONFIRMED;
+            }
+            else if (strcasecmp("Confirmed", optarg) == 0)
+            {
+                con.settings.serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
+            }
+            else
+            {
+                printf("Invalid Broadcast type option. (UnConfirmed or Confirmed)\n");
+                return 1;
+            }
             break;
         case '?':
         {
@@ -833,8 +876,8 @@ int connectMeter(int argc, char* argv[])
         break;
         default:
             return 1;
-            }
         }
+    }
 
     if (port != 0 || address != NULL)
     {
@@ -871,7 +914,7 @@ int connectMeter(int argc, char* argv[])
     }
     cl_clear(&con.settings);
     return 0;
-    }
+}
 
 int main(int argc, char* argv[])
 {

@@ -106,7 +106,7 @@ unsigned char dlms_useDedicatedKey(dlmsSettings* settings)
 #endif //DLMS_IGNORE_MALLOC
 }
 
-unsigned char dlms_usePreEstablishedSystemTitle(dlmsSettings* settings)
+unsigned char dlms_usePreEstablishedConnection(dlmsSettings* settings)
 {
 #ifndef DLMS_IGNORE_MALLOC
     return settings->preEstablishedSystemTitle != NULL;
@@ -126,7 +126,8 @@ unsigned char dlms_usePreEstablishedSystemTitle(dlmsSettings* settings)
 unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, DLMS_COMMAND encryptedCommand)
 {
     unsigned char cmd;
-    unsigned glo = settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION;
+    unsigned glo = settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION ||
+        dlms_usePreEstablishedConnection(settings);
     unsigned ded = dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0;
     if (encryptedCommand == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
         encryptedCommand == DLMS_COMMAND_GENERAL_DED_CIPHERING)
@@ -4853,7 +4854,7 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
             }
         }
         //If pre-set connection is made.
-        else if (dlms_usePreEstablishedSystemTitle(settings) && emptySourceSystemTile)
+        else if (dlms_usePreEstablishedConnection(settings) && emptySourceSystemTile)
         {
 #ifndef DLMS_IGNORE_SERVER
             if (settings->server && settings->connected == DLMS_CONNECTION_STATE_NONE && !data->preEstablished)
@@ -5980,7 +5981,15 @@ int dlms_getLNPdu(
 #else
             unsigned char* key;
 #endif //DLMS_IGNORE_MALLOC
-            if (dlms_useDedicatedKey(p->settings) && (p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+            if (p->settings->cipher.broacast)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                key = &p->settings->cipher.broadcastBlockCipherKey;
+#else
+                key = p->settings->cipher.broadcastBlockCipherKey;
+#endif //DLMS_IGNORE_MALLOC
+            }
+            else if (dlms_useDedicatedKey(p->settings) && (p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
             {
                 key = p->settings->cipher.dedicatedKey;
             }

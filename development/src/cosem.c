@@ -285,6 +285,11 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxG3Plc6LoWPAN);
         break;
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        size = sizeof(gxFunctionControl);
+        break;
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
     case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
         size = sizeof(gxArrayManager);
@@ -726,6 +731,8 @@ int cosem_init4(
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
         ((gxObject*)object)->version = 3;
+        break;
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
         break;
     default:
         break;

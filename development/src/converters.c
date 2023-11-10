@@ -288,6 +288,11 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
         ret = GET_STR_FROM_EEPROM("G3Plc6LoWPAN");
         break;
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        ret = GET_STR_FROM_EEPROM("FunctionControl");
+        break;
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
     case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
         ret = GET_STR_FROM_EEPROM("ArrayManager");
@@ -2174,7 +2179,6 @@ int obj_G3PlcMacSetupToString(gxG3PlcMacSetup* object, char** buff)
 
 #ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
 
-
 int obj_G3Plc6RoutingConfigurationToString(gxArray* table, gxByteBuffer* ba)
 {
     int pos, ret = 0;
@@ -2376,13 +2380,101 @@ int obj_G3Plc6LoWPANToString(gxG3Plc6LoWPAN* object, char** buff)
     bb_addString(&ba, "\nIndex: 22 Value: ");
     bb_addIntAsString(&ba, object->lowLQI);
     bb_addString(&ba, "\nIndex: 23 Value: ");
-    bb_addIntAsString(&ba, object->highLQI);    
+    bb_addIntAsString(&ba, object->highLQI);
     bb_addString(&ba, "\n");
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
 }
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+
+int obj_objectsToString(gxByteBuffer* ba, objectArray* objects)
+{
+    uint16_t pos;
+    int ret = DLMS_ERROR_CODE_OK;
+    gxObject* it;
+    for (pos = 0; pos != objects->size; ++pos)
+    {
+        ret = oa_getByIndex(objects, pos, &it);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        if (pos != 0)
+        {
+            bb_addString(ba, ", ");
+        }
+        bb_addString(ba, obj_typeToString2((DLMS_OBJECT_TYPE)it->objectType));
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+        assert(ret == 0);
+#endif
+        bb_addString(ba, " ");
+        hlp_appendLogicalName(ba, it->logicalName);
+    }
+    return ret;
+}
+
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+
+int obj_FunctionControlActivationStatusToString(gxArray* table, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    functionStatus* it;
+    bb_addString(ba, "\nIndex: 1 Value: [\r");
+    for (pos = 0; pos != table->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(table, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_addString(ba, "{Name: ");
+        bb_attachString(ba, bb_toHexString(&it->name));
+        bb_addString(ba, ", Status: ");
+        bb_addIntAsString(ba, it->status);
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+
+int obj_FunctionControlFunctionsToString(gxArray* table, gxByteBuffer* ba)
+{
+    int pos, ret = 0;
+    functionalBlock* it;
+    bb_addString(ba, "\nIndex: 1 Value: [\r");
+    for (pos = 0; pos != table->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(table, pos, (void**)&it)) != 0 ||
+            (ret = bb_addString(ba, "{Name: ")) != 0 ||
+            (ret = bb_attachString(ba, bb_toHexString(&it->name))) != 0 ||
+            (ret = bb_addString(ba, ", specifications: ")) != 0 ||
+            (ret = obj_objectsToString(ba, &it->functionSpecifications)) != 0)
+        {
+            break;
+        }
+    }
+    bb_addString(ba, "]\n");
+    return ret;
+}
+
+int obj_FunctionControlToString(gxFunctionControl* object, char** buff)
+{
+    int ret;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    if ((ret = obj_FunctionControlActivationStatusToString(&object->activationStatus, &ba)) == 0 &&
+        (ret = obj_FunctionControlFunctionsToString(&object->functions, &ba)) == 0)
+    {
+
+    }
+    bb_addString(&ba, "\n");
+    *buff = bb_toString(&ba);
+    bb_clear(&ba);
+    return ret;
+}
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
+
 
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
 
@@ -2746,32 +2838,6 @@ int obj_extendedRegisterToString(gxExtendedRegister* object, char** buff)
     return 0;
 }
 #endif //DLMS_IGNORE_EXTENDED_REGISTER
-
-int obj_objectsToString(gxByteBuffer* ba, objectArray* objects)
-{
-    uint16_t pos;
-    int ret = DLMS_ERROR_CODE_OK;
-    gxObject* it;
-    for (pos = 0; pos != objects->size; ++pos)
-    {
-        ret = oa_getByIndex(objects, pos, &it);
-        if (ret != DLMS_ERROR_CODE_OK)
-        {
-            return ret;
-        }
-        if (pos != 0)
-        {
-            bb_addString(ba, ", ");
-        }
-        bb_addString(ba, obj_typeToString2((DLMS_OBJECT_TYPE)it->objectType));
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(ret == 0);
-#endif
-        bb_addString(ba, " ");
-        hlp_appendLogicalName(ba, it->logicalName);
-    }
-    return ret;
-}
 
 int obj_rowsToString(gxByteBuffer* ba, gxArray* buffer)
 {
@@ -3886,6 +3952,11 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_G3Plc6LoWPANToString((gxG3Plc6LoWPAN*)object, buff);
         break;
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        ret = obj_FunctionControlToString((gxFunctionControl*)object, buff);
+        break;
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
     case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
         ret = obj_ArrayManagerToString((gxArrayManager*)object, buff);

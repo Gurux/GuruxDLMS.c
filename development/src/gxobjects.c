@@ -585,6 +585,49 @@ int obj_clearNeighbourTable(gxArray* list)
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+
+int obj_clearActivationStatus(gxArray* list)
+{
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    functionStatus* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_clear(&it->name);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(list);
+    return ret;
+}
+
+int obj_clearFunctionList(gxArray* list)
+{
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    int pos;
+    functionalBlock* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_clear(&it->name);
+        oa_empty(&it->functionSpecifications);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(list);
+    return ret;
+}
+
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
+
 int obj_clearBitArrayList(
     gxArray* list)
 {
@@ -1062,6 +1105,12 @@ void obj_clear(gxObject* object)
 #endif //DLMS_IGNORE_MALLOC            
             break;
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+        case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+            obj_clearActivationStatus(&((gxFunctionControl*)object)->activationStatus);
+            obj_clearFunctionList(&((gxFunctionControl*)object)->functions);
+            break;
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
         case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
             arr_clear(&((gxArrayManager*)object)->elements);
@@ -1450,6 +1499,9 @@ unsigned char obj_attributeCount(gxObject* object)
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
         ret = 21;
+        break;
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        ret = 3;
         break;
     case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
         ret = 2;
@@ -1861,6 +1913,9 @@ unsigned char obj_methodCount(gxObject* object)
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
         ret = 0;
+        break;
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        ret = 3;
         break;
     case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
         ret = 5;

@@ -3534,6 +3534,111 @@ int cosem_setG3Plc6LoWPAN(gxG3Plc6LoWPAN* object, unsigned char index, dlmsVARIA
 }
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
 
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+int cosem_setFunctionControl(
+    dlmsSettings* settings,
+    gxFunctionControl* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int pos, ret = 0;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+    unsigned char ln[6];
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    if (index == 2)
+    {
+        functionStatus* it;
+        obj_clearActivationStatus(&object->activationStatus);
+        uint16_t count;
+        if ((ret = cosem_verifyArray(value->byteArr, &object->activationStatus, &count)) == 0) {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_getArrayItem(&object->activationStatus, pos, (void**)&it, sizeof(functionStatus))) == 0)
+                {
+                    if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0)
+                    {
+                        break;
+                    }
+#ifdef DLMS_IGNORE_MALLOC
+                    if ((ret = cosem_getOctetString2(value->byteArr, it->name, sizeof(it->name), &it->size)) != 0)
+                    {
+                        break;
+                    }
+#else
+                    if ((ret = cosem_getOctetString(value->byteArr, &it->name)) != 0)
+                    {
+                        break;
+                    }
+#endif //DLMS_IGNORE_MALLOC
+                    if ((ret = cosem_getUInt8(value->byteArr, &it->status)) != 0)
+                    {
+                        break;
+                    }
+
+                }
+            }
+        }
+    }
+    else if (index == 3)
+    {
+        functionalBlock* it;
+        gxObject* obj;
+        obj_clearFunctionList(&object->functions);
+        uint16_t ot, count;
+        if ((ret = cosem_verifyArray(value->byteArr, &object->functions, &count)) == 0) {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_getArrayItem(&object->functions, pos, (void**)&it, sizeof(functionalBlock))) == 0)
+                {
+                    if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0)
+                    {
+                        break;
+                    }
+                    if ((ret = cosem_getOctetString2(value->byteArr, it->name, sizeof(it->name), &it->nameSize)) != 0)
+                    {
+                        break;
+                    }
+                    if ((ret = cosem_checkArray(value->byteArr, &count)) == 0)
+                    {
+                        if (MAX_FUNCTION_TARGET_LENGTH < count)
+                        {
+                            return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                        }
+                        for (pos = 0; pos != count; ++pos)
+                        {
+                            if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
+                                (ret = cosem_getUInt16(value->byteArr, &ot)) != 0 ||
+                                (ret = cosem_getOctetString2(value->byteArr, ln, 6, NULL)) != 0)
+                            {
+                                break;
+                            }
+                            obj = NULL;
+                            if ((ret = cosem_findObjectByLN(settings, ot, ln, &obj)) != 0)
+                            {
+                                break;
+                            }
+                            if (obj == NULL)
+                            {
+                                ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                            }
+                            it->functionSpecifications[pos] = obj;
+                        }
+                    }
+                }
+                if (ret != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
 
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
 
@@ -5097,9 +5202,9 @@ int cosem_setArbitrator(
 #else
                 memcpy(it->scriptLogicalName, ln, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+                }
             }
         }
-    }
     break;
     case 3:
     {
@@ -5149,7 +5254,7 @@ int cosem_setArbitrator(
         break;
     }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_ARBITRATOR
 #ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
 int cosem_setIec8802LlcType1Setup(

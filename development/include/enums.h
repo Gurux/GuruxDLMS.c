@@ -392,6 +392,11 @@ extern "C" {
         DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN = 92,
 
         /*
+        * Function control.
+        */
+        DLMS_OBJECT_TYPE_FUNCTION_CONTROL = 122,
+            
+        /*
         * Configure a ZigBee PRO device with information necessary to create or
         * join the network.
         */

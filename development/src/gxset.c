@@ -301,27 +301,38 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 #ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
     case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
-        ret = cosem_setG3Plc6LoWPAN((gxG3Plc6LoWPAN*)e->target, e->index, &e->value);
+        ret = cosem_setG3Plc6LoWPAN((gxG3Plc6LoWPAN*)e->target, 
+            e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        ret = cosem_setFunctionControl(settings, 
+            (gxFunctionControl*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
     case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
-        ret = cosem_setArrayManager(settings, (gxArrayManager*)e->target, e->index, &e->value);
+        ret = cosem_setArrayManager(settings, 
+            (gxArrayManager*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_ARRAY_MANAGER
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
-        ret = cosem_setUtilityTables((gxUtilityTables*)e->target, e->index, &e->value);
+        ret = cosem_setUtilityTables((gxUtilityTables*)e->target, 
+            e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_UTILITY_TABLES
 #ifndef DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
     case DLMS_OBJECT_TYPE_MBUS_MASTER_PORT_SETUP:
-        ret = cosem_setMbusMasterPortSetup((gxMBusMasterPortSetup*)e->target, e->index, &e->value);
+        ret = cosem_setMbusMasterPortSetup((gxMBusMasterPortSetup*)e->target, 
+            e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 #ifndef DLMS_IGNORE_PUSH_SETUP
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
-        ret = cosem_setPushSetup(settings, (gxPushSetup*)e->target, e->index, &e->value);
+        ret = cosem_setPushSetup(settings, (gxPushSetup*)e->target, 
+            e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_PUSH_SETUP
 #ifndef DLMS_IGNORE_DATA_PROTECTION

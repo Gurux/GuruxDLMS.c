@@ -5270,6 +5270,125 @@ int cosem_setG3Plc6LoWPAN(gxG3Plc6LoWPAN* object, unsigned char index, dlmsVARIA
 }
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
 
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+int cosem_setFunctionControl(
+    dlmsSettings* settings,
+    gxFunctionControl* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int pos, pos2, ret = 0;
+    if (index == 2)
+    {
+        functionStatus* it;
+        obj_clearActivationStatus(&object->activationStatus);
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (functionStatus*)gxmalloc(sizeof(functionStatus));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                bb_init(&it->name);
+                bb_set2(&it->name, tmp2->byteArr, 0, bb_size(tmp2->byteArr));
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->status = tmp2->bVal;
+                arr_push(&object->activationStatus, it);
+            }
+        }
+    }
+    else if (index == 3)
+    {
+        functionalBlock* it;
+        gxObject* target;
+        obj_clearFunctionList(&object->functions);
+        dlmsVARIANT* tmp, * tmp2, * tmp3, * tmp4;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (functionalBlock*)gxmalloc(sizeof(functionalBlock));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                oa_init(&it->functionSpecifications);
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                bb_init(&it->name);
+                bb_set2(&it->name, tmp2->byteArr, 0, bb_size(tmp2->byteArr));
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                for (pos2 = 0; pos2 != tmp2->Arr->size; ++pos2)
+                {
+                    if ((ret = va_getByIndex(tmp2->Arr, pos, &tmp3)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+                    if ((ret = va_getByIndex(tmp3->Arr, 0, &tmp4)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+                    uint16_t ot = tmp4->uiVal;
+                    //Get LN.
+                    if ((ret = va_getByIndex(tmp3->Arr, 1, &tmp4)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+                    if ((ret = oa_findByLN(&settings->objects, ot, tmp4->byteArr->data, &target)) != 0)
+                    {
+                        return ret;
+                    }
+                    if (target == NULL)
+                    {
+                        if ((ret = cosem_createObject(ot, &target)) != 0)
+                        {
+                            return ret;
+                        }
+                        oa_push(&settings->releasedObjects, target);
+                        memcpy(target->logicalName, tmp4->byteArr->data, bb_size(tmp4->byteArr));
+                    }
+                    oa_push(&it->functionSpecifications, target);
+                }
+                arr_push(&object->functions, it);
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
+
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
 
 int cosem_setArrayManager(
@@ -5619,7 +5738,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
         ct->chargePerUnit = (short)var_toInteger(tmp);
     }
     return ret;
-    }
+}
 
 int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -7066,7 +7185,7 @@ int cosem_setParameterMonitor(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
@@ -7620,8 +7739,8 @@ int cosem_setArbitrator(
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
                         return ret;
+                    }
                 }
-            }
 #else
                 memcpy(it->scriptLogicalName, tmp2->byteArr->data, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -7631,8 +7750,8 @@ int cosem_setArbitrator(
                 }
                 it->scriptSelector = (uint16_t)var_toInteger(tmp2);
                 arr_push(&object->actions, it);
+            }
         }
-    }
     }
     break;
     case 3:
@@ -7712,7 +7831,7 @@ int cosem_setArbitrator(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_ARBITRATOR
@@ -8350,7 +8469,7 @@ int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT* 
     break;
     default:
         return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-}
+    }
     return DLMS_ERROR_CODE_OK;
 }
 #endif //DLMS_ITALIAN_STANDARD

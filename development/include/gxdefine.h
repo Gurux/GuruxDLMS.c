@@ -78,6 +78,12 @@ extern "C" {
 //Define max certificate subject length.
 #define MAX_CERTIFICATE_SUBJECT_LENGTH 20
 
+//Define max function name length.
+#define MAX_FUNCTION_NAME_LENGTH 10
+
+//Define max function target length.
+#define MAX_FUNCTION_TARGET_LENGTH 10
+
 //Define max certificate subject alt length.
 #define MAX_CERTIFICATE_SUBJECT_ALT_LENGTH 40
 

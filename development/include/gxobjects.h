@@ -3586,6 +3586,66 @@ extern "C" {
 
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
 
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+
+    typedef struct
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        // Function name.
+        unsigned char name[MAX_FUNCTION_NAME_LENGTH];
+        // Function name size.
+        uint16_t size;
+#else
+        //function name.
+        gxByteBuffer name;
+#endif //DLMS_IGNORE_MALLOC
+        /*Function status.*/
+        uint8_t status;
+    }functionStatus;
+
+    typedef struct
+    {        
+#ifdef DLMS_IGNORE_MALLOC
+        // Function name.
+        unsigned char name[MAX_FUNCTION_NAME_LENGTH];
+        // Function name size.
+        uint16_t nameSize;
+#else
+        //function name.
+        gxByteBuffer name;
+#endif //DLMS_IGNORE_MALLOC
+        /*Target objects.*/
+
+#if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        objectArray functionSpecifications;
+#else        
+        gxObject* functionSpecifications[MAX_FUNCTION_TARGET_LENGTH];
+        // Function specifications size.
+        uint16_t functionSpecificationsSize;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }functionalBlock;
+    /*
+       ---------------------------------------------------------------------------
+       Online help:
+       http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSG3Plc6LoWPAN
+    */
+    typedef struct
+    {
+        gxObject base;
+        /*The current status of each functional block.*/
+        gxArray activationStatus;
+        /*Function list.*/
+        gxArray functions;
+    }gxFunctionControl;
+
+    //Clear activation status of the function control.
+    int obj_clearActivationStatus(gxArray* list);
+
+    //Clear function list of the function control.
+    int obj_clearFunctionList(gxArray* list);
+
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
+
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
     typedef struct
     {
@@ -3989,7 +4049,7 @@ extern "C" {
         * Contains the system titles of the server systems which have made a
         * DiscoverReport request and which have not already been registered.
         */
-        gxArray reportingSystemList;//List<gxByteBuffer>
+        gxArray reportingSystemList;
     } gxSFSKReportingSystemList;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 

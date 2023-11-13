@@ -4416,7 +4416,7 @@ int cosem_getFunctionControl(
                 {
                     break;
                 }
-                count = (uint16_t)block->functionSpecifications.size;
+                count = (uint16_t)block->functionSpecificationsSize;
 #endif //DLMS_IGNORE_MALLOC
                 for (pos2 = 0; pos2 < count; ++pos2)
                 {

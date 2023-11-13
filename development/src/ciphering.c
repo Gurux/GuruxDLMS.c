@@ -722,12 +722,13 @@ int cip_crypt(
     else if (security == DLMS_SECURITY_ENCRYPTION)
     {
         //Encrypt the data.
-        aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+        aes_gcm_ghash(H, input->data, input->size, input->data, 0, S);
         if (!encrypt)
         {
             ret = bb_move(input, input->position, 0, bb_available(input));
             input->position = 0;
         }
+        aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
     }
     else if (security == DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
     {
@@ -735,41 +736,44 @@ int cip_crypt(
         {
             //Encrypt the data.
             aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
-            if ((ret = bb_move(input, input->position, offset, bb_available(input))) == 0)
-            {
-                input->position = 0;
-                ret = bb_setUInt8ByIndex(input, 0, security | settings->suite);
+        }
+        if ((ret = bb_move(input, input->position, offset, bb_available(input))) == 0)
+        {
+            input->position = 0;
+            ret = bb_setUInt8ByIndex(input, 0, security | settings->suite);
 #ifndef DLMS_IGNORE_MALLOC
-                memcpy(input->data + 1, settings->authenticationKey.data, settings->authenticationKey.size);
+            memcpy(input->data + 1, settings->authenticationKey.data, settings->authenticationKey.size);
 #else
-                memcpy(input->data + 1, settings->authenticationKey, offset - 1);
+            memcpy(input->data + 1, settings->authenticationKey, offset - 1);
 #endif //DLMS_IGNORE_MALLOC
-                aes_gcm_ghash(H, input->data, offset, input->data + offset, input->size - offset, S);
-                if ((ret = bb_move(input, offset, 0, input->size - offset)) == 0)
+            aes_gcm_ghash(H, input->data, offset, input->data + offset, input->size - offset, S);
+            if ((ret = bb_move(input, offset, 0, input->size - offset)) == 0)
+            {
+                if (!encrypt)
                 {
-                    if (!encrypt)
-                    {
-                        //Decrypt the data.
-                        aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
-                    }
-                    unsigned char* p = input->data;
-                    p += input->size;
-                    cip_gctr(aes, J0, S, sizeof(S), p);
+                    cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
+                    //Decrypt the data.
+                    aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+                }
+                cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
+                if (encrypt)
+                {
                     input->size += 12;
                 }
+                else
+                {
+                    //Check authentication tag.
+                    if (memcmp(NONSE, input->data + input->size, 12) != 0)
+                    {
+                        ret = DLMS_ERROR_CODE_INVALID_TAG;
+                    }
+                    else
+                    {
+                        ret = bb_move(input, input->position, 0, bb_available(input));
+                    }
+                    input->position = 0;
+                }
             }
-        }
-        else
-        {
-            //Check authentication tag.
-            if (memcmp(NONSE, input->data + input->size, 12) != 0)
-            {
-                ret = DLMS_ERROR_CODE_INVALID_TAG;
-            }
-            //Decrypt the data.
-            aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
-            ret = bb_move(input, input->position, 0, bb_available(input));
-            input->position = 0;
         }
     }
     if (ret == 0 && encrypt)

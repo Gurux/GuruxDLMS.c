@@ -919,7 +919,10 @@ int com_updateInvocationCounter(
     {
         message messages;
         gxReplyData reply;
-        connection->settings.negotiatedConformance |= DLMS_CONFORMANCE_GENERAL_PROTECTION;
+        if (dlms_usePreEstablishedConnection(&connection->settings) != NULL)
+        {
+            connection->settings.negotiatedConformance |= DLMS_CONFORMANCE_GENERAL_PROTECTION;
+        }
         unsigned short add = connection->settings.clientAddress;
         DLMS_AUTHENTICATION auth = connection->settings.authentication;
         DLMS_SECURITY security = connection->settings.cipher.security;
@@ -1228,7 +1231,7 @@ int com_getAssociationView(connection* connection, const char* outputFile)
                 gxAssociationLogicalName* ln = (gxAssociationLogicalName*)malloc(sizeof(gxAssociationLogicalName));
                 INIT_OBJECT((*ln), obj.objectType, obj.logicalName);
                 ln->base.shortName = obj.shortName;
-                oa_push(&connection->settings.objects, (gxObject*) ln);
+                oa_push(&connection->settings.objects, (gxObject*)ln);
                 CURRENT_ASSOCIATION[0] = (gxObject*)ln;
             }
             else if (!connection->settings.useLogicalNameReferencing && obj.objectType == DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME && memcmp(obj.logicalName, CURRENT_LN, sizeof(CURRENT_LN)) == 0)
@@ -1455,7 +1458,7 @@ int com_method3(
     unsigned char attributeOrdinal,
     gxByteBuffer* value)
 {
-    return com_method2(connection, object, attributeOrdinal,value->data, value->size);
+    return com_method2(connection, object, attributeOrdinal, value->data, value->size);
 }
 
 int com_updateHighLevelPassword(

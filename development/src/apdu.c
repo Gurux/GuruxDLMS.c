@@ -374,7 +374,6 @@ int apdu_generateUserInformation(
 #ifndef DLMS_IGNORE_HIGH_GMAC
     else
     {
-        unsigned char cmd = DLMS_COMMAND_GLO_INITIATE_REQUEST;
         gxByteBuffer crypted;
 #ifndef DLMS_IGNORE_MALLOC
         BYTE_BUFFER_INIT(&crypted);
@@ -386,25 +385,14 @@ int apdu_generateUserInformation(
         if ((ret = apdu_getInitiateRequest(settings, &crypted)) != 0)
         {
             return ret;
-        }
-        if ((settings->proposedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
-        {
-            if (!useDedicatedKey(settings))
-            {
-                cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
-            }
-            else
-            {
-                cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
-            }
-        }
+        }        
 #ifndef DLMS_IGNORE_MALLOC
         ret = cip_encrypt(
             &settings->cipher,
             settings->cipher.security,
             DLMS_COUNT_TYPE_PACKET,
             settings->cipher.invocationCounter,
-            cmd,
+            DLMS_COMMAND_GLO_INITIATE_REQUEST,
             settings->cipher.systemTitle.data,
             &settings->cipher.blockCipherKey,
             &crypted);
@@ -414,7 +402,7 @@ int apdu_generateUserInformation(
             settings->cipher.security,
             DLMS_COUNT_TYPE_PACKET,
             settings->cipher.invocationCounter,
-            cmd,
+            DLMS_COMMAND_GLO_INITIATE_REQUEST,
             settings->cipher.systemTitle,
             settings->cipher.blockCipherKey,
             &crypted);

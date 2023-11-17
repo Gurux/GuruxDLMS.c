@@ -1431,7 +1431,7 @@ extern "C" {
         * Base class where class is derived.
         */
         gxObject base;
-        /*References an M-Bus communication port setup object describing 
+        /*References an M-Bus communication port setup object describing
         the physical capabilities for wired or wireless communication.*/
         unsigned char profileSelection[6];
         /*Communication status of the M-Bus node.*/
@@ -2060,6 +2060,12 @@ extern "C" {
         unsigned char emergencyProfileActive;
         gxActionItem actionOverThreshold;
         gxActionItem actionUnderThreshold;
+        /*Threshold activation time in seconds.
+        This is internally used and it's not serialized.*/
+        uint32_t activationTime;
+        /*Is threshold over or under.
+        This is internally used and it's not serialized.*/
+        unsigned char overThreshold;
     } gxLimiter;
 #endif //DLMS_IGNORE_LIMITER
 
@@ -3166,7 +3172,6 @@ extern "C" {
 
 #endif //DLMS_IGNORE_PRIME_NB_OFDM_PLC_APPLICATIONS_IDENTIFICATION
 
-
 #ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 
     /*
@@ -3198,6 +3203,483 @@ extern "C" {
         uint32_t rxDataBroadcastCount;
     }gxG3PlcMacLayerCounters;
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+
+    typedef struct
+    {
+        //Transmitter gain size.
+        unsigned char size;
+        //Gain
+        unsigned char value[MAX_G3_MAC_NEIGHBOUR_TABLE_GAIN_ITEM_SIZE];
+    }gxNeighbourTableTransmitterGain;
+
+    typedef struct
+    {
+        //Transmitter tone map.
+        unsigned char size;
+        //Tone map
+        unsigned char value[MAX_G3_MAC_NEIGHBOUR_TABLE_TONE_MAP_ITEM_SIZE];
+    }gxNeighbourTableToneMap;
+
+    typedef struct
+    {
+        /*
+        MAC Short Address of the node.
+        */
+        uint16_t shortAddress;
+        /*
+        Is Payload Modulation scheme used.
+        */
+        unsigned char payloadModulationScheme;
+
+        /*Frequency sub-band can be used for communication with the device.*/
+#ifdef DLMS_IGNORE_MALLOC
+        gxNeighbourTableToneMap toneMap[MAX_G3_MAC_NEIGHBOUR_TABLE_TONE_MAP_SIZE];
+#else
+        bitArray toneMap;
+#endif //DLMS_IGNORE_MALLOC
+        /*Modulation type.*/
+        DLMS_G3_PLC_MODULATION modulation;
+        /*Tx Gain.*/
+        signed char txGain;
+        /*Tx Gain resolution.*/
+        DLMS_G3_PLC_GAIN_RESOLUTION txRes;
+        /*Transmitter gain for each group of tones represented by one valid bit of the tone map.*/
+#ifdef DLMS_IGNORE_MALLOC
+        gxNeighbourTableTransmitterGain txCoeff[MAX_G3_MAC_NEIGHBOUR_TABLE_GAIN_SIZE];
+#else
+        bitArray txCoeff;
+#endif //DLMS_IGNORE_MALLOC
+
+        /*Link Quality Indicator.*/
+        unsigned char lqi;
+        /*Phase difference in multiples of 60 degrees between the mains phase of the local node
+        and the neighbour node. */
+        signed char phaseDifferential;
+        /*Remaining time in minutes until which the tone map response parameters in the neighbour table are considered valid.*/
+        unsigned char tmrValidTime;
+        /*Optinal data.*/
+        unsigned char noData;
+    }gxNeighbourTable;
+
+    typedef struct
+    {
+        // The 16-bit address the device is using to communicate through the PAN.
+        uint16_t shortAddress;
+        // Link Quality Indicator.
+        unsigned char lqi;
+        // Valid time.
+        unsigned char validTime;
+    }gxMacPosTable;
+
+    typedef struct
+    {
+        //Key ID.
+        unsigned char id;
+        //Key
+        unsigned char key[MAX_G3_MAC_KEY_TABLE_KEY_SIZE];
+    }gxG3MacKeyTable;
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSG3PlcMacSetup
+    */
+    typedef struct
+    {
+        /*Base class where class is derived.*/
+        gxObject base;
+        uint16_t shortAddress;
+        uint16_t rcCoord;
+        uint16_t panId;
+        gxArray keyTable;
+        uint32_t frameCounter;
+        bitArray toneMask;
+        uint8_t tmrTtl;
+        uint8_t maxFrameRetries;
+        uint8_t neighbourTableEntryTtl;
+        gxArray neighbourTable;
+        uint8_t highPriorityWindowSize;
+        uint8_t cscmFairnessLimit;
+        uint8_t beaconRandomizationWindowLength;
+        uint8_t macA;
+        uint8_t macK;
+        uint8_t minCwAttempts;
+        uint8_t cenelecLegacyMode;
+        uint8_t fccLegacyMode;
+        uint8_t maxBe;
+        uint8_t maxCsmaBackoffs;
+        uint8_t minBe;
+        /*If true, MAC uses maximum contention window.*/
+        unsigned char macBroadcastMaxCwEnabled;
+        /*Attenuation of the output level in dB.*/
+        unsigned char macTransmitAtten;
+        /*The neighbour table contains some information
+          about all the devices within the POS of the device.
+        */
+        gxArray macPosTable;
+        /*Duplicate frame detection time in seconds.*/
+        unsigned char macDuplicateDetectionTTL;
+    }gxG3PlcMacSetup;
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+    // The routing configuration element specifies all parameters linked to the routing mechanism described in ITU-T G.9903:2014.
+    typedef struct
+    {
+        // Maximum time that a packet is expected to take to reach any node from any node in seconds. 
+        //
+        // PIB attribute: 0x11.     
+        unsigned char netTraversalTime;
+
+        // Maximum time-to-live of a routing table entry (in minutes). 
+        //
+        // PIB attribute: 0x12.
+        uint16_t routingTableEntryTtl;
+
+        // A weight factor for the Robust Mode to calculate link cost. 
+        //
+        // PIB attribute: 0x13.
+        unsigned char kr;
+
+        // A weight factor for modulation to calculate link cost.
+        //
+        // PIB attribute: 0x14.     
+        unsigned char km;
+
+        // A weight factor for number of active tones to calculate link cost. 
+        //
+        // PIB attribute: 0x15. 
+        unsigned char kc;
+
+        // A weight factor for LQI to calculate route cost.
+        //
+        // PIB attribute: 0x16. 
+        unsigned char kq;
+
+        //  A weight factor for hop to calculate link cost. 
+        //
+        // PIB attribute: 0x17.
+        unsigned char kh;
+
+        // A weight factor for the number of active routes in the routing table to calculate link cost. 
+        //
+        // PIB attribute: 0x1B. 
+        unsigned char krt;
+
+        // The number of RREQ retransmission in case of RREP reception time out. 
+        //
+        // PIB attribute: 0x18.
+        unsigned char rReqRetries;
+
+        // The number of seconds to wait between two consecutive RREQ – RERR generations.
+        //
+        // PIB attribute: 0x19.     
+        unsigned char rReqReqWait;
+
+        // Maximum time-to-live of a blacklisted neighbour entry (in minutes). 
+        //
+        // PIB attribute: 0x1F.
+        uint16_t blacklistTableEntryTtl;
+
+        //  If TRUE, the RREQ shall be generated with its 'unicast RREQ'.
+        //
+        // PIB attribute: 0x0D.     
+        unsigned char unicastRreqGenEnable;
+
+        // Enable the sending of RLCREQ frame by the device.
+        //
+        // PIB attribute: 0x09.     
+        unsigned char rlcEnabled;
+
+        // It represents an additional cost to take into account a possible asymmetry in the link.
+        //
+        // PIB attribute: 0x0A.     
+        unsigned char addRevLinkCost;
+    }gxRoutingConfiguration;
+
+    typedef struct
+    {
+        // Address of the destination.
+        uint16_t destinationAddress;
+
+        // Address of the next hop on the route towards the destination.
+        uint16_t nextHopAddress;
+
+        // Cumulative link cost along the route towards the destination.
+        uint16_t routeCost;
+
+        // Number of hops of the selected route to the destination.
+        unsigned char hopCount;
+
+        // Number of weak links to destination.
+        unsigned char weakLinkCount;
+
+        // Remaining time in minutes until when this entry in the routing table is considered valid.
+        uint16_t validTime;
+    } gxRoutingTable;
+
+    typedef struct
+    {
+
+        // Corresponds to the 4-bit context information used for source and destination addresses (SCI, DCI).
+        unsigned char cid;
+
+        //The length of the carried context
+        unsigned char contextLength;
+
+        // Context.
+        unsigned char context[16];
+
+        // Indicates if the context is valid for use in compression.
+        unsigned char compression;
+
+        // Remaining time in minutes during which the context information table is considered valid. It is updated upon reception of the advertised context. 
+        uint16_t validLifetime;
+    }gxContextInformationTable;
+
+    /*Contains the list of the blacklisted neighbours.*/
+    typedef struct
+    {
+        /*Blacklisted neighbour address.*/
+        uint16_t neighbourAddress;
+        /*Remaining time in minutes until which this entry in
+        the blacklisted neighbour table is considered valid.*/
+        uint16_t validTime;
+    }gxBlacklistTable;
+
+    typedef struct
+    {
+        //  Source address of a broadcast packet.
+        uint16_t sourceAddress;
+
+        //  The sequence number contained in the BC0 header
+        unsigned char sequenceNumber;
+
+        //  Remaining time in minutes until when this entry in the broadcast log table is considered valid.
+        uint16_t validTime;
+    }gxBroadcastLogTable;
+
+    /*
+       ---------------------------------------------------------------------------
+       Online help:
+       http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSG3Plc6LoWPAN
+       */
+    typedef struct
+    {
+        /*Base class where class is derived.*/
+        gxObject base;
+        // Defines the maximum number of hops to be used by the routing algorithm.
+
+        //
+        // PIB attribute 0x0F.
+        unsigned char maxHops;
+
+        // The weak link value defines the LQI value below which a link to a neighbour is considered as a weak link.
+        //
+        // PIB attribute 0x1A.
+        unsigned char weakLqiValue;
+
+        // The minimum security level to be used for incoming and outgoing adaptation frames.
+        //
+        // PIB attribute 0x00.
+        unsigned char securityLevel;
+
+        //  Contains the list of prefixes defined on this PAN
+        //
+        // PIB attribute 0x01.
+        gxByteBuffer prefixTable;
+
+        // The routing configuration element specifies all parameters linked to the routing mechanism described in ITU-T G.9903:2014.
+        gxArray routingConfiguration;
+
+        // Maximum time to live of an adpBroadcastLogTable entry (in minutes).
+        //
+        // PIB attribute 0x02.
+        uint16_t broadcastLogTableEntryTtl;
+
+        // Routing table
+        // PIB attribute 0x03.
+        gxArray routingTable;
+
+        //  Contains the context information associated to each CID extension field.
+        //
+        // PIB attribute 0x07.
+        gxArray contextInformationTable;
+
+        // Contains the list of the blacklisted neighbours.Key is 16-bit address of the blacklisted neighbour.
+        // Value is Remaining time in minutes until which this entry in the blacklisted neighbour table is considered valid.
+        //
+        // PIB attribute 0x1E.
+        gxArray blacklistTable;
+
+        //  Broadcast log table
+        //
+        // PIB attribute 0x0B.
+        gxArray broadcastLogTable;
+
+        // Contains the group addresses to which the device belongs.
+        //
+        // PIB attribute 0x0E.
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        gxArray groupTable;
+#else
+        variantArray groupTable;
+#endif //DLMS_IGNORE_MALLOC
+
+        //  Network join timeout in seconds for LBD
+        //
+        // PIB attribute 0x20.
+        uint16_t maxJoinWaitTime;
+
+        // Timeout for path discovery in seconds.
+        //
+        // PIB attribute 0x21.
+        unsigned char pathDiscoveryTime;
+
+        // Index of the active GMK to be used for data transmission.
+        //
+        // PIB attribute 0x22.
+        unsigned char activeKeyIndex;
+
+        // Metric Type to be used for routing purposes.
+        //
+        // PIB attribute 0x3.
+        unsigned char metricType;
+
+        // Defines the short address of the coordinator.
+        //
+        // PIB attribute 0x8.
+        uint16_t coordShortAddress;
+
+        // Is default routing (LOADng) disabled.
+        //
+        // PIB attribute 0xF0.
+        unsigned char disableDefaultRouting;
+
+        // Defines the type of the device connected to the modem.
+        //
+        // PIB attribute 0x10.
+        DLMS_PAN_DEVICE_TYPE deviceType;
+
+        // If true, the default route will be created.
+        //
+        // PIB attribute 0x24
+        unsigned char defaultCoordRouteEnabled;
+
+        // List of the addresses of the devices for which this LOADng 
+        // router is providing connectivity.
+        //
+        // PIB attribute 0x23.
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        gxArray destinationAddress;
+#else
+        variantArray destinationAddress;
+#endif //DLMS_IGNORE_MALLOC
+        //  PIB attribute 0x04.
+        unsigned char lowLQI;
+        //  PIB attribute 0x04.
+        unsigned char highLQI;
+    }gxG3Plc6LoWPAN;
+
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+
+    typedef struct
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        // Function name.
+        unsigned char name[MAX_FUNCTION_NAME_LENGTH];
+        // Function name size.
+        uint16_t size;
+#else
+        //function name.
+        gxByteBuffer name;
+#endif //DLMS_IGNORE_MALLOC
+        /*Function status.*/
+        uint8_t status;
+    }functionStatus;
+
+    typedef struct
+    {        
+#ifdef DLMS_IGNORE_MALLOC
+        // Function name.
+        unsigned char name[MAX_FUNCTION_NAME_LENGTH];
+        // Function name size.
+        uint16_t nameSize;
+#else
+        //function name.
+        gxByteBuffer name;
+#endif //DLMS_IGNORE_MALLOC
+        /*Target objects.*/
+
+#if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        objectArray functionSpecifications;
+#else        
+        gxObject* functionSpecifications[MAX_FUNCTION_TARGET_LENGTH];
+        // Function specifications size.
+        uint16_t functionSpecificationsSize;
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }functionalBlock;
+    /*
+       ---------------------------------------------------------------------------
+       Online help:
+       http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSG3Plc6LoWPAN
+    */
+    typedef struct
+    {
+        gxObject base;
+        /*The current status of each functional block.*/
+        gxArray activationStatus;
+        /*Function list.*/
+        gxArray functions;
+    }gxFunctionControl;
+
+    //Clear activation status of the function control.
+    int obj_clearActivationStatus(gxArray* list);
+
+    //Clear function list of the function control.
+    int obj_clearFunctionList(gxArray* list);
+
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
+
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    typedef struct
+    {
+        // Target object.
+        gxObject* target;
+        // Attribute Index of DLMS object.
+        signed char attributeIndex;
+    }gxTargetObject;
+
+    typedef struct
+    {
+        /// Array object ID.
+        unsigned char id;
+        /// <summary>
+        /// Array objects.
+        /// </summary>
+        gxTargetObject element;
+    }gxArrayManagerItem;
+
+    /*
+      ---------------------------------------------------------------------------
+      Online help:
+      http://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSArrayManager
+    */
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+        gxArray elements;
+    }gxArrayManager;
+
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
 
@@ -3567,7 +4049,7 @@ extern "C" {
         * Contains the system titles of the server systems which have made a
         * DiscoverReport request and which have not already been registered.
         */
-        gxArray reportingSystemList;//List<gxByteBuffer>
+        gxArray reportingSystemList;
     } gxSFSKReportingSystemList;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 
@@ -3785,6 +4267,10 @@ extern "C" {
 
     //Clear user list.
     int obj_clearUserList(
+        gxArray* list);
+
+    //Clear neighbour table.
+    int obj_clearNeighbourTable(
         gxArray* list);
 
     //Clear available switches.

@@ -78,6 +78,12 @@ extern "C" {
 //Define max certificate subject length.
 #define MAX_CERTIFICATE_SUBJECT_LENGTH 20
 
+//Define max function name length.
+#define MAX_FUNCTION_NAME_LENGTH 10
+
+//Define max function target length.
+#define MAX_FUNCTION_TARGET_LENGTH 10
+
 //Define max certificate subject alt length.
 #define MAX_CERTIFICATE_SUBJECT_ALT_LENGTH 40
 
@@ -119,6 +125,22 @@ extern "C" {
 
 //Define max SAP item count. This is used when data is serialized.
 #define MAX_SAP_ITEM_SERIALIZE_COUNT 5
+
+//Define key size for G3 MAC key table.
+#define MAX_G3_MAC_KEY_TABLE_KEY_SIZE 16
+
+//Define neighbour table gain item size for G3 MAC Setup object.
+#define MAX_G3_MAC_NEIGHBOUR_TABLE_GAIN_ITEM_SIZE 6
+
+//Define neighbour table gain size for G3 MAC Setup object.
+#define MAX_G3_MAC_NEIGHBOUR_TABLE_GAIN_SIZE 5
+
+//Define neighbour table tone map item size in bytes for G3 MAC Setup object.
+#define MAX_G3_MAC_NEIGHBOUR_TABLE_TONE_MAP_ITEM_SIZE 3
+
+//Define neighbour table tone map size for G3 MAC Setup object.
+#define MAX_G3_MAC_NEIGHBOUR_TABLE_TONE_MAP_SIZE 5
+
 #ifdef  __cplusplus
 }
 #endif

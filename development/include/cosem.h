@@ -148,7 +148,10 @@ extern "C" {
   //Get time value from the byte array.
   int cosem_getTime2(gxByteBuffer* bb, gxtime* value, unsigned char checkDataType);
 
+  //Get get bit string from the byte array.
   int cosem_getBitString(gxByteBuffer* bb, bitArray* value);
+  //Get get bit string from the byte array.
+  int cosem_getBitString2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size);
 
   //Get integer value from bit string.
   int cosem_getIntegerFromBitString(gxByteBuffer* bb, uint32_t* value);

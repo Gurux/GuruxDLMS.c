@@ -95,6 +95,13 @@ int com_write(
     gxObject* object,
     unsigned char attributeOrdinal);
 
+/**
+* write multiple objects with one message.
+*/
+int com_writeList(
+    connection* connection,
+    gxArray* list);
+
 int com_method(
     connection *connection,
     gxObject* object,

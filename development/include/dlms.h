@@ -301,6 +301,12 @@ extern "C" {
         gxByteBuffer* data,
         gxByteBuffer* reply);
 
+    /**
+    * This function returns true, if pre-established connection is used.
+    */
+    unsigned char dlms_usePreEstablishedConnection(dlmsSettings* settings);
+
+
 #ifdef  __cplusplus
 }
 #endif

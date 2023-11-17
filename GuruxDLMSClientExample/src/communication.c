@@ -919,13 +919,19 @@ int com_updateInvocationCounter(
     {
         message messages;
         gxReplyData reply;
+        if (dlms_usePreEstablishedConnection(&connection->settings) != NULL)
+        {
+            connection->settings.negotiatedConformance |= DLMS_CONFORMANCE_GENERAL_PROTECTION;
+        }
         unsigned short add = connection->settings.clientAddress;
         DLMS_AUTHENTICATION auth = connection->settings.authentication;
         DLMS_SECURITY security = connection->settings.cipher.security;
+        gxByteBuffer* preEstablishedSystemTitle = connection->settings.preEstablishedSystemTitle;
         gxByteBuffer challenge;
         bb_init(&challenge);
         bb_set(&challenge, connection->settings.ctoSChallenge.data, connection->settings.ctoSChallenge.size);
         connection->settings.clientAddress = 16;
+        connection->settings.preEstablishedSystemTitle = NULL;
         connection->settings.authentication = DLMS_AUTHENTICATION_NONE;
         connection->settings.cipher.security = DLMS_SECURITY_NONE;
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
@@ -1001,6 +1007,7 @@ int com_updateInvocationCounter(
             bb_clear(&connection->settings.ctoSChallenge);
             bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
             bb_clear(&challenge);
+            connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;
         }
     }
     return ret;
@@ -1035,51 +1042,59 @@ int com_initializeConnection(
     }
     mes_clear(&messages);
     reply_clear(&reply);
-    if ((ret = cl_aarqRequest(&connection->settings, &messages)) != 0 ||
-        (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
-        (ret = cl_parseAAREResponse(&connection->settings, &reply.data)) != 0)
+    if (connection->settings.preEstablishedSystemTitle == NULL)
     {
-        mes_clear(&messages);
-        reply_clear(&reply);
-        if (ret == DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED)
-        {
-            if (connection->trace > GX_TRACE_LEVEL_OFF)
-            {
-                printf("Use Logical Name referencing is wrong. Change it!\r\n");
-            }
-            return ret;
-        }
-        if (connection->trace > GX_TRACE_LEVEL_OFF)
-        {
-            printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
-        }
-        return ret;
-    }
-    mes_clear(&messages);
-    reply_clear(&reply);
-    if (connection->settings.maxPduSize == 0xFFFF)
-    {
-        con_initializeBuffers(connection, connection->settings.maxPduSize);
-    }
-    else
-    {
-        //Allocate 50 bytes more because some meters count this wrong and send few bytes too many.
-        con_initializeBuffers(connection, 50 + connection->settings.maxPduSize);
-    }
-
-    // Get challenge Is HLS authentication is used.
-    if (connection->settings.authentication > DLMS_AUTHENTICATION_LOW)
-    {
-        if ((ret = cl_getApplicationAssociationRequest(&connection->settings, &messages)) != 0 ||
+        if ((ret = cl_aarqRequest(&connection->settings, &messages)) != 0 ||
             (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
-            (ret = cl_parseApplicationAssociationResponse(&connection->settings, &reply.data)) != 0)
+            (ret = cl_parseAAREResponse(&connection->settings, &reply.data)) != 0)
         {
             mes_clear(&messages);
             reply_clear(&reply);
+            if (ret == DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED)
+            {
+                if (connection->trace > GX_TRACE_LEVEL_OFF)
+                {
+                    printf("Use Logical Name referencing is wrong. Change it!\r\n");
+                }
+                return ret;
+            }
+            if (connection->trace > GX_TRACE_LEVEL_OFF)
+            {
+                printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
+            }
             return ret;
         }
         mes_clear(&messages);
         reply_clear(&reply);
+        if (connection->settings.maxPduSize == 0xFFFF)
+        {
+            con_initializeBuffers(connection, connection->settings.maxPduSize);
+        }
+        else
+        {
+            //Allocate 50 bytes more because some meters count this wrong and send few bytes too many.
+            con_initializeBuffers(connection, 50 + connection->settings.maxPduSize);
+        }
+
+        // Get challenge Is HLS authentication is used.
+        if (connection->settings.authentication > DLMS_AUTHENTICATION_LOW)
+        {
+            if ((ret = cl_getApplicationAssociationRequest(&connection->settings, &messages)) != 0 ||
+                (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
+                (ret = cl_parseApplicationAssociationResponse(&connection->settings, &reply.data)) != 0)
+            {
+                mes_clear(&messages);
+                reply_clear(&reply);
+                return ret;
+            }
+            mes_clear(&messages);
+            reply_clear(&reply);
+        }
+    }
+    else
+    {
+        //Allocate buffers for pre-established connection.
+        con_initializeBuffers(connection, connection->settings.maxPduSize);
     }
     return DLMS_ERROR_CODE_OK;
 }
@@ -1216,7 +1231,7 @@ int com_getAssociationView(connection* connection, const char* outputFile)
                 gxAssociationLogicalName* ln = (gxAssociationLogicalName*)malloc(sizeof(gxAssociationLogicalName));
                 INIT_OBJECT((*ln), obj.objectType, obj.logicalName);
                 ln->base.shortName = obj.shortName;
-                oa_push(&connection->settings.objects, (gxObject*) ln);
+                oa_push(&connection->settings.objects, (gxObject*)ln);
                 CURRENT_ASSOCIATION[0] = (gxObject*)ln;
             }
             else if (!connection->settings.useLogicalNameReferencing && obj.objectType == DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME && memcmp(obj.logicalName, CURRENT_LN, sizeof(CURRENT_LN)) == 0)
@@ -1341,6 +1356,58 @@ int com_write(
     return ret;
 }
 
+int com_writeList(
+    connection* connection,
+    gxArray* list)
+{
+    int pos, ret = DLMS_ERROR_CODE_OK;
+    gxByteBuffer bb, rr;
+    message messages;
+    gxReplyData reply;
+    if (list->size != 0)
+    {
+        mes_init(&messages);
+        if ((ret = cl_writeList(&connection->settings, list, &messages)) != 0)
+        {
+            printf("writeList failed %s\r\n", hlp_getErrorMessage(ret));
+        }
+        else
+        {
+            reply_init(&reply);
+            bb_init(&rr);
+            bb_init(&bb);
+            //Send data.
+            for (pos = 0; pos != messages.size; ++pos)
+            {
+                //Send data.
+                reply_clear(&reply);
+                if ((ret = readDLMSPacket(connection, messages.data[pos], &reply)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                //Check is there errors or more data from server
+                while (reply_isMoreData(&reply))
+                {
+                    //NOTE! Set ignore value to true because list is parsed differently than normal read.
+                    reply.ignoreValue = 1;
+                    if ((ret = cl_receiverReady(&connection->settings, reply.moreData, &rr)) != DLMS_ERROR_CODE_OK ||
+                        (ret = readDLMSPacket(connection, &rr, &reply)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+                    bb_clear(&rr);
+                }
+                bb_set2(&bb, &reply.data, reply.data.position, -1);
+            }
+            bb_clear(&bb);
+            bb_clear(&rr);
+            reply_clear(&reply);
+        }
+        mes_clear(&messages);
+    }
+    return ret;
+}
+
 int com_method(
     connection* connection,
     gxObject* object,
@@ -1391,7 +1458,7 @@ int com_method3(
     unsigned char attributeOrdinal,
     gxByteBuffer* value)
 {
-    return com_method2(connection, object, attributeOrdinal,value->data, value->size);
+    return com_method2(connection, object, attributeOrdinal, value->data, value->size);
 }
 
 int com_updateHighLevelPassword(

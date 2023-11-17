@@ -136,6 +136,7 @@ extern "C" {
         gxByteBuffer* data,
         message* messages);
 
+    /*This method is used to read list of objects.*/
     int cl_readList(
         dlmsSettings* settings,
         gxArray* list,
@@ -209,10 +210,17 @@ extern "C" {
 
 #endif //DLMS_IGNORE_PROFILE_GENERIC
 
+    /*This method is used to write object.*/
     int cl_write(
         dlmsSettings* settings,
         gxObject* object,
         unsigned char index,
+        message* messages);
+
+    /*This method is used to write list of objects.*/
+    int cl_writeList(
+        dlmsSettings* settings,
+        gxArray* list,
         message* messages);
 
     int cl_writeLN(

@@ -4542,7 +4542,6 @@ int cosem_setMbusMasterPortSetup(gxMBusMasterPortSetup* object, unsigned char in
 }
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 
-
 #ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -4590,6 +4589,886 @@ int cosem_setG3PlcMacLayerCounters(gxG3PlcMacLayerCounters* object, unsigned cha
     return ret;
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+int cosem_setG3PlcMacSetup(gxG3PlcMacSetup* object, unsigned char index, dlmsVARIANT* value)
+{
+    int pos, ret = 0;
+    if (index == 2)
+    {
+        object->shortAddress = value->uiVal;
+    }
+    else if (index == 3)
+    {
+        object->rcCoord = value->uiVal;
+    }
+    else if (index == 4)
+    {
+        object->panId = value->uiVal;
+    }
+    else if (index == 5)
+    {
+        arr_clear(&object->keyTable);
+        gxG3MacKeyTable* it;
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxG3MacKeyTable*)gxmalloc(sizeof(gxG3MacKeyTable));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->id = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                memcpy(it->key, tmp2->byteArr->data, bb_size(tmp2->byteArr));
+                arr_push(&object->keyTable, it);
+            }
+        }
+    }
+    else if (index == 6)
+    {
+        object->frameCounter = value->ulVal;
+    }
+    else if (index == 7)
+    {
+        ba_clear(&object->toneMask);
+        if (value->bitArr != NULL)
+        {
+            ba_copy(&object->toneMask, value->bitArr->data, ba_size(value->bitArr));
+        }
+    }
+    else if (index == 8)
+    {
+        object->tmrTtl = value->bVal;
+    }
+    else if (index == 9)
+    {
+        object->maxFrameRetries = value->bVal;
+    }
+    else if (index == 10)
+    {
+        object->neighbourTableEntryTtl = value->bVal;
+    }
+    else if (index == 11)
+    {
+        gxNeighbourTable* it;
+        obj_clearNeighbourTable(&object->neighbourTable);
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxNeighbourTable*)gxmalloc(sizeof(gxNeighbourTable));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                ba_init(&it->txCoeff);
+                ba_init(&it->toneMap);
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->shortAddress = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->payloadModulationScheme = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if (tmp2->bitArr != NULL)
+                {
+                    ba_copy(&it->toneMap, tmp2->bitArr->data, ba_size(tmp2->bitArr));
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->modulation = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 4, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->txGain = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 5, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->txRes = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 6, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if (tmp2->bitArr != NULL)
+                {
+                    ba_copy(&it->txCoeff, tmp2->bitArr->data, ba_size(tmp2->bitArr));
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 7, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->lqi = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 8, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->phaseDifferential = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 9, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->tmrValidTime = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 10, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                arr_push(&object->neighbourTable, it);
+            }
+        }
+    }
+    else if (index == 12)
+    {
+        object->highPriorityWindowSize = value->bVal;
+    }
+    else if (index == 13)
+    {
+        object->cscmFairnessLimit = value->bVal;
+    }
+    else if (index == 14)
+    {
+        object->beaconRandomizationWindowLength = value->bVal;
+    }
+    else if (index == 15)
+    {
+        object->macA = value->bVal;
+    }
+    else if (index == 16)
+    {
+        object->macK = value->bVal;
+    }
+    else if (index == 17)
+    {
+        object->minCwAttempts = value->bVal;
+    }
+    else if (index == 18)
+    {
+        object->cenelecLegacyMode = value->bVal;
+    }
+    else if (index == 19)
+    {
+        object->fccLegacyMode = value->bVal;
+    }
+    else if (index == 20)
+    {
+        object->maxBe = value->bVal;
+    }
+    else if (index == 21)
+    {
+        object->maxCsmaBackoffs = value->bVal;
+    }
+    else if (index == 22)
+    {
+        object->minBe = value->bVal;
+    }
+    else if (index == 23)
+    {
+        object->macBroadcastMaxCwEnabled = value->bVal;
+    }
+    else if (index == 24)
+    {
+        object->macTransmitAtten = value->bVal;
+    }
+    else if (index == 25)
+    {
+        arr_clear(&object->macPosTable);
+        gxMacPosTable* it;
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxMacPosTable*)gxmalloc(sizeof(gxMacPosTable));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->shortAddress = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->lqi = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->validTime = tmp2->cVal;
+                arr_push(&object->macPosTable, it);
+            }
+        }
+    }
+    else if (object->base.version > 2 && index == 26)
+    {
+        object->macDuplicateDetectionTTL = value->bVal;
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+int cosem_getUint16Array(variantArray* arr, dlmsVARIANT* value)
+{
+    int pos, ret = 0;
+    dlmsVARIANT* it;
+    va_clear(arr);
+    dlmsVARIANT* tmp;
+    if (value->Arr != NULL)
+    {
+        for (pos = 0; pos != value->Arr->size; ++pos)
+        {
+            ret = va_getByIndex(value->Arr, pos, &tmp);
+            if (ret != DLMS_ERROR_CODE_OK)
+            {
+                break;
+            }
+            it = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
+            if (it == NULL)
+            {
+                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                break;
+            }
+            var_init(it);
+            ret = var_copy(it, tmp);
+            if (ret != 0)
+            {
+                break;
+            }
+            va_push(arr, it);
+        }
+    }
+    return ret;
+}
+
+int cosem_setG3Plc6LoWPAN(gxG3Plc6LoWPAN* object, unsigned char index, dlmsVARIANT* value)
+{
+    int pos, ret = 0;
+    if (index == 2)
+    {
+        object->maxHops = value->bVal;
+    }
+    else if (index == 3)
+    {
+        object->weakLqiValue = value->bVal;
+    }
+    else if (index == 4)
+    {
+        object->securityLevel = value->bVal;
+    }
+    else if (index == 5)
+    {
+        bb_clear(&object->prefixTable);
+        dlmsVARIANT* tmp;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                if ((ret = va_getByIndex(value->Arr, pos, &tmp)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if ((ret = bb_setUInt8(&object->prefixTable, tmp->bVal)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else if (index == 6)
+    {
+        arr_clear(&object->routingConfiguration);
+        gxRoutingConfiguration* it;
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxRoutingConfiguration*)gxmalloc(sizeof(gxRoutingConfiguration));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->netTraversalTime = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->routingTableEntryTtl = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->kr = tmp2->cVal;
+
+                if ((ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->km = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 4, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->kc = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 5, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->kq = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 6, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->kh = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 7, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->krt = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 8, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->rReqRetries = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 9, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->rReqReqWait = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 10, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->blacklistTableEntryTtl = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 11, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->unicastRreqGenEnable = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 12, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->rlcEnabled = tmp2->cVal;
+                if ((ret = va_getByIndex(tmp->Arr, 13, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->addRevLinkCost = tmp2->cVal;
+                arr_push(&object->routingConfiguration, it);
+            }
+        }
+    }
+    else if (index == 7)
+    {
+        object->broadcastLogTableEntryTtl = value->uiVal;
+    }
+    else if (index == 8)
+    {
+        arr_clear(&object->routingTable);
+        gxRoutingTable* it;
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxRoutingTable*)gxmalloc(sizeof(gxRoutingTable));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->destinationAddress = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->nextHopAddress = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->routeCost = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->hopCount = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 4, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->weakLinkCount = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 5, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->validTime = tmp2->uiVal;
+                arr_push(&object->routingTable, it);
+            }
+        }
+    }
+    else if (index == 9)
+    {
+        arr_clear(&object->contextInformationTable);
+        gxContextInformationTable* it;
+        uint32_t v;
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxContextInformationTable*)gxmalloc(sizeof(gxContextInformationTable));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if ((ret = ba_toInteger(tmp2->bitArr, &v)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->cid = (unsigned char)v;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->contextLength = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if (tmp2->byteArr != NULL)
+                {
+                    int size = bb_size(tmp2->byteArr);
+                    if (size > 16)
+                    {
+                        size = 16;
+                    }
+                    memcpy(it->context, tmp2->byteArr->data, size);
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->compression = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 4, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->validLifetime = tmp2->uiVal;
+                arr_push(&object->contextInformationTable, it);
+            }
+        }
+    }
+    else if (index == 10)
+    {
+        arr_clear(&object->blacklistTable);
+        gxBlacklistTable* it;
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxBlacklistTable*)gxmalloc(sizeof(gxBlacklistTable));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->neighbourAddress = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->validTime = tmp2->uiVal;
+                arr_push(&object->blacklistTable, it);
+            }
+        }
+    }
+    else if (index == 11)
+    {
+        gxBroadcastLogTable* it;
+        arr_clear(&object->broadcastLogTable);
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxBroadcastLogTable*)gxmalloc(sizeof(gxBroadcastLogTable));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->sourceAddress = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->sequenceNumber = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 2, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->validTime = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 4, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                arr_push(&object->broadcastLogTable, it);
+            }
+        }
+    }
+    else if (index == 12)
+    {
+        ret = cosem_getUint16Array(&object->groupTable, value);
+    }
+    else if (index == 13)
+    {
+        object->maxJoinWaitTime = value->uiVal;
+    }
+    else if (index == 14)
+    {
+        object->pathDiscoveryTime = value->bVal;
+    }
+    else if (index == 15)
+    {
+        object->activeKeyIndex = value->bVal;
+    }
+    else if (index == 16)
+    {
+        object->metricType = value->bVal;
+    }
+    else if (index == 17)
+    {
+        object->coordShortAddress = value->uiVal;
+    }
+    else if (index == 18)
+    {
+        object->disableDefaultRouting = value->bVal;
+    }
+    else if (index == 19)
+    {
+        object->deviceType = (DLMS_PAN_DEVICE_TYPE)value->bVal;
+    }
+    else if (index == 20)
+    {
+        object->defaultCoordRouteEnabled = value->bVal;
+    }
+    else if (index == 21)
+    {
+        ret = cosem_getUint16Array(&object->destinationAddress, value);
+    }
+    else if (index == 22)
+    {
+        object->lowLQI = value->bVal;
+    }
+    else if (index == 23)
+    {
+        object->highLQI = value->bVal;
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+int cosem_setFunctionControl(
+    dlmsSettings* settings,
+    gxFunctionControl* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int pos, pos2, ret = 0;
+    if (index == 2)
+    {
+        functionStatus* it;
+        obj_clearActivationStatus(&object->activationStatus);
+        dlmsVARIANT* tmp, * tmp2;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (functionStatus*)gxmalloc(sizeof(functionStatus));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                bb_init(&it->name);
+                bb_set2(&it->name, tmp2->byteArr, 0, bb_size(tmp2->byteArr));
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->status = tmp2->bVal;
+                arr_push(&object->activationStatus, it);
+            }
+        }
+    }
+    else if (index == 3)
+    {
+        functionalBlock* it;
+        gxObject* target;
+        obj_clearFunctionList(&object->functions);
+        dlmsVARIANT* tmp, * tmp2, * tmp3, * tmp4;
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (functionalBlock*)gxmalloc(sizeof(functionalBlock));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                oa_init(&it->functionSpecifications);
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                bb_init(&it->name);
+                bb_set2(&it->name, tmp2->byteArr, 0, bb_size(tmp2->byteArr));
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                for (pos2 = 0; pos2 != tmp2->Arr->size; ++pos2)
+                {
+                    if ((ret = va_getByIndex(tmp2->Arr, pos, &tmp3)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+                    if ((ret = va_getByIndex(tmp3->Arr, 0, &tmp4)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+                    uint16_t ot = tmp4->uiVal;
+                    //Get LN.
+                    if ((ret = va_getByIndex(tmp3->Arr, 1, &tmp4)) != DLMS_ERROR_CODE_OK)
+                    {
+                        break;
+                    }
+                    if ((ret = oa_findByLN(&settings->objects, ot, tmp4->byteArr->data, &target)) != 0)
+                    {
+                        return ret;
+                    }
+                    if (target == NULL)
+                    {
+                        if ((ret = cosem_createObject(ot, &target)) != 0)
+                        {
+                            return ret;
+                        }
+                        oa_push(&settings->releasedObjects, target);
+                        memcpy(target->logicalName, tmp4->byteArr->data, bb_size(tmp4->byteArr));
+                    }
+                    oa_push(&it->functionSpecifications, target);
+                }
+                arr_push(&object->functions, it);
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
+
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+
+int cosem_setArrayManager(
+    dlmsSettings* settings,
+    gxArrayManager* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int pos, ret = 0;
+    if (index == 2)
+    {
+        arr_clear(&object->elements);
+        gxArrayManagerItem* it;
+        dlmsVARIANT* tmp, * tmp2, * tmp3;
+        uint16_t ot;
+
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it = (gxArrayManagerItem*)gxmalloc(sizeof(gxArrayManagerItem));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->id = tmp2->bVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp2->Arr, 0, &tmp3)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                ot = tmp3->uiVal;
+                if ((ret = va_getByIndex(tmp2->Arr, 2, &tmp3)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->element.attributeIndex = tmp3->bVal;
+                //Get LN.
+                if ((ret = va_getByIndex(tmp2->Arr, 1, &tmp3)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                it->element.target = NULL;
+                if ((ret = oa_findByLN(&settings->objects, ot, tmp3->byteArr->data, &it->element.target)) != 0)
+                {
+                    return ret;
+                }
+                if (it->element.target == NULL)
+                {
+                    if ((ret = cosem_createObject(ot, &it->element.target)) != 0)
+                    {
+                        return ret;
+                    }
+                    oa_push(&settings->releasedObjects, it->element.target);
+                    memcpy(it->element.target->logicalName, tmp3->byteArr->data, tmp3->byteArr->size);
+                }
+                arr_push(&object->elements, it);
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT* value)
@@ -4827,7 +5706,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
     if (ret != 0)
     {
         return ret;
-}
+    }
     for (pos = 0; pos != it->Arr->size; ++pos)
     {
         ret = va_getByIndex(it->Arr, pos, &it2);
@@ -4859,7 +5738,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
         ct->chargePerUnit = (short)var_toInteger(tmp);
     }
     return ret;
-    }
+}
 
 int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -6212,13 +7091,13 @@ int cosem_setParameterMonitor(
                         if ((ret = va_getByIndex(value->Arr, 3, &tmp3)) == DLMS_ERROR_CODE_OK)
                         {
                             ret = var_copy(&object->changedParameter.value, tmp3);
+                        }
                     }
-                }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 
+                }
             }
         }
-    }
         break;
     }
     case 3:
@@ -6306,7 +7185,7 @@ int cosem_setParameterMonitor(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
@@ -6920,7 +7799,7 @@ int cosem_setArbitrator(
                 }
                 arr_push(&object->weightingsTable, tmp2);
             }
-    }
+        }
     }
     break;
     case 5:
@@ -6952,7 +7831,7 @@ int cosem_setArbitrator(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_ARBITRATOR

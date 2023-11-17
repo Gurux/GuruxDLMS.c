@@ -3714,7 +3714,6 @@ int cosem_getMbusPortSetup(
 }
 #endif //DLMS_IGNORE_MBUS_PORT_SETUP
 
-
 #ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 int cosem_getG3PlcMacLayerCounters(
     gxValueEventArg* e)
@@ -3764,6 +3763,738 @@ int cosem_getG3PlcMacLayerCounters(
     return ret;
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+int cosem_getG3PlcMacSetupNeighbourTables(
+    gxArray* tables,
+    uint16_t address,
+    uint16_t count,
+    gxValueEventArg* e)
+{
+    int ret;
+    uint16_t pos;
+    gxNeighbourTable* it;
+    if ((ret = cosem_setArray(e->value.byteArr, count)) != 0)
+    {
+        return ret;
+    }
+    for (pos = 0; pos < tables->size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(tables, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(tables, pos, (void**)&it, sizeof(gxNeighbourTable))) != 0)
+        {
+            break;
+        }
+        gxNeighbourTableTransmitterGain* txCoeff = &it->txCoeff[pos];
+        gxNeighbourTableToneMap* toneMap = &it->toneMap[pos];
+#endif //DLMS_IGNORE_MALLOC        
+        if (address != 0 && it->shortAddress != address)
+        {
+            //If values are read using the filter.
+            continue;
+        }
+        // Count
+        if ((ret = cosem_setStructure(e->value.byteArr, 11)) != 0 ||
+            (ret = cosem_setUInt16(e->value.byteArr, it->shortAddress)) != 0 ||
+            (ret = cosem_setBoolean(e->value.byteArr, it->payloadModulationScheme)) != 0 ||
+            (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
+#ifndef DLMS_IGNORE_MALLOC
+            (ret = hlp_setObjectCount(it->toneMap.size, e->value.byteArr)) != 0 ||
+            (ret = bb_set(e->value.byteArr, it->toneMap.data, ba_getByteCount(it->toneMap.size))) != 0 ||
+#else
+            (ret = hlp_setObjectCount(toneMap->size, e->value.byteArr)) != 0 ||
+            (ret = bb_set(e->value.byteArr, toneMap->value, ba_getByteCount(toneMap->size))) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
+            (ret = cosem_setEnum(e->value.byteArr, it->modulation)) != 0 ||
+            (ret = cosem_setInt8(e->value.byteArr, it->txGain)) != 0 ||
+            (ret = cosem_setEnum(e->value.byteArr, it->txRes)) != 0 ||
+            (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
+#ifndef DLMS_IGNORE_MALLOC
+            (ret = hlp_setObjectCount(it->txCoeff.size, e->value.byteArr)) != 0 ||
+            (ret = bb_set(e->value.byteArr, it->txCoeff.data, ba_getByteCount(it->txCoeff.size))) != 0 ||
+#else
+            (ret = hlp_setObjectCount(txCoeff->size, e->value.byteArr)) != 0 ||
+            (ret = bb_set(e->value.byteArr, txCoeff->value, ba_getByteCount(txCoeff->size))) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
+            (ret = cosem_setUInt8(e->value.byteArr, it->lqi)) != 0 ||
+            (ret = cosem_setInt8(e->value.byteArr, it->phaseDifferential)) != 0 ||
+            (ret = cosem_setUInt8(e->value.byteArr, it->tmrValidTime)) != 0 ||
+            (ret = cosem_setUInt8(e->value.byteArr, it->noData)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
+int cosem_getG3PlcMacSetupPosTables(
+    gxArray* tables,
+    uint16_t address,
+    uint16_t count,
+    gxValueEventArg* e)
+{
+    int ret;
+    uint16_t pos;
+    gxMacPosTable* it;
+    if ((ret = cosem_setArray(e->value.byteArr, count)) != 0)
+    {
+        return ret;
+    }
+    for (pos = 0; pos < tables->size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(tables, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(tables, pos, (void**)&it, sizeof(gxMacPosTable))) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+        if (address != 0 && it->shortAddress != address)
+        {
+            //If values are read using the filter.
+            continue;
+        }
+        // Count
+        if ((ret = cosem_setStructure(e->value.byteArr, 3)) != 0 ||
+            // Id
+            (ret = cosem_setUInt16(e->value.byteArr, it->shortAddress)) != 0 ||
+            (ret = cosem_setUInt8(e->value.byteArr, it->lqi)) != 0 ||
+            (ret = cosem_setUInt8(e->value.byteArr, it->validTime)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+
+int cosem_getG3PlcMacSetup(
+    gxValueEventArg* e)
+{
+    int ret;
+    uint16_t pos;
+    gxG3PlcMacSetup* object = (gxG3PlcMacSetup*)e->target;
+    if (e->index == 2)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->shortAddress);
+    }
+    else if (e->index == 3)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->rcCoord);
+    }
+    else if (e->index == 4)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->panId);
+    }
+    else if (e->index == 5)
+    {
+        gxG3MacKeyTable* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->keyTable.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->keyTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->keyTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->keyTable, pos, (void**)&it, sizeof(gxG3MacKeyTable))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            // Count
+            if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
+                // Id
+                (ret = cosem_setUInt8(e->value.byteArr, (unsigned char)it->id)) != 0 ||
+                // Key
+                (ret = cosem_setOctetString2(e->value.byteArr, it->key, MAX_G3_MAC_KEY_TABLE_KEY_SIZE)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else if (e->index == 6)
+    {
+        ret = cosem_setUInt32(e->value.byteArr, object->frameCounter);
+    }
+    else if (e->index == 7)
+    {
+        if ((ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_BIT_STRING)) == 0 &&
+            (ret = hlp_setObjectCount(ba_size(&object->toneMask), e->value.byteArr)) == 0 &&
+            (ret = bb_set(e->value.byteArr, object->toneMask.data, ba_getByteCount(object->toneMask.size))) == 0)
+        {
+        }
+    }
+    else if (e->index == 8)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->tmrTtl);
+    }
+    else if (e->index == 9)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->maxFrameRetries);
+    }
+    else if (e->index == 10)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->neighbourTableEntryTtl);
+    }
+    else if (e->index == 11)
+    {
+        ret = cosem_getG3PlcMacSetupNeighbourTables(&object->neighbourTable,
+            0, object->neighbourTable.size, e);
+    }
+    else if (e->index == 12)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->highPriorityWindowSize);
+    }
+    else if (e->index == 13)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->cscmFairnessLimit);
+    }
+    else if (e->index == 14)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->beaconRandomizationWindowLength);
+    }
+    else if (e->index == 15)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->macA);
+    }
+    else if (e->index == 16)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->macK);
+    }
+    else if (e->index == 17)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->minCwAttempts);
+    }
+    else if (e->index == 18)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->cenelecLegacyMode);
+    }
+    else if (e->index == 19)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->fccLegacyMode);
+    }
+    else if (e->index == 20)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->maxBe);
+    }
+    else if (e->index == 21)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->maxCsmaBackoffs);
+    }
+    else if (e->index == 22)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->minBe);
+    }
+    else if (e->index == 23)
+    {
+        ret = cosem_setBoolean(e->value.byteArr, object->macBroadcastMaxCwEnabled);
+    }
+    else if (e->index == 24)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->macTransmitAtten);
+    }
+    else if (e->index == 25)
+    {
+        ret = cosem_getG3PlcMacSetupPosTables(&object->macPosTable,
+            0, object->macPosTable.size, e);
+    }
+    else if (object->base.version > 2 && e->index == 26)
+    {
+        //macDuplicateDetectionTTL is added in version 3.
+        ret = cosem_setUInt8(e->value.byteArr, object->macDuplicateDetectionTTL);
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+int cosem_getUInt16Array(gxArray* arr, gxByteBuffer* byteArr)
+{
+    int ret;
+    uint16_t pos;
+    uint16_t* it;
+    if ((ret = cosem_setArray(byteArr, arr->size)) != 0)
+    {
+        return ret;
+    }
+    for (pos = 0; pos < arr->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it, sizeof(uint16_t))) != 0)
+        {
+            break;
+        }
+        if ((ret = cosem_setUInt16(byteArr, *it)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+#else
+int cosem_getUInt16Array(variantArray* arr, gxByteBuffer* byteArr)
+{
+    int ret;
+    uint16_t pos;
+    dlmsVARIANT* it;
+    if ((ret = cosem_setArray(byteArr, arr->size)) != 0)
+    {
+        return ret;
+    }
+    for (pos = 0; pos < arr->size; ++pos)
+    {
+        if ((ret = va_getByIndex(arr, pos, &it)) != 0)
+        {
+            break;
+        }
+        if ((ret = cosem_setUInt16(byteArr, it->uiVal)) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_MALLOC
+
+int cosem_getG3Plc6LoWPAN(
+    gxValueEventArg* e)
+{
+    uint16_t pos;
+    int ret = 0;
+    gxG3Plc6LoWPAN* object = (gxG3Plc6LoWPAN*)e->target;
+    if (e->index == 2)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->maxHops);
+    }
+    else if (e->index == 3)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->weakLqiValue);
+    }
+    else if (e->index == 4)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->securityLevel);
+    }
+    else if (e->index == 5)
+    {
+        unsigned char ch;
+        if ((ret = cosem_setArray(e->value.byteArr, (uint16_t)object->prefixTable.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->prefixTable.size; ++pos)
+        {
+            if ((ret = bb_getUInt8ByIndex(&object->prefixTable, pos, &ch)) != 0)
+            {
+                break;
+            }
+            if ((ret = cosem_setUInt8(e->value.byteArr, ch)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else if (e->index == 6)
+    {
+        gxRoutingConfiguration* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->routingConfiguration.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->routingConfiguration.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->routingConfiguration, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->routingConfiguration, pos, (void**)&it, sizeof(gxRoutingConfiguration))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = cosem_setStructure(e->value.byteArr, 14)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->netTraversalTime)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->routingTableEntryTtl)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->kr)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->km)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->kc)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->kq)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->kh)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->krt)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->rReqRetries)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->rReqReqWait)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->blacklistTableEntryTtl)) != 0 ||
+                (ret = cosem_setBoolean(e->value.byteArr, it->unicastRreqGenEnable)) != 0 ||
+                (ret = cosem_setBoolean(e->value.byteArr, it->rlcEnabled)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->addRevLinkCost)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else if (e->index == 7)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->broadcastLogTableEntryTtl);
+    }
+    else if (e->index == 8)
+    {
+        gxRoutingTable* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->routingTable.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->routingTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->routingTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->routingTable, pos, (void**)&it, sizeof(gxRoutingTable))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = cosem_setStructure(e->value.byteArr, 6)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->destinationAddress)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->nextHopAddress)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->routeCost)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->hopCount)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->weakLinkCount)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else if (e->index == 9)
+    {
+        gxContextInformationTable* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->contextInformationTable.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->contextInformationTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->contextInformationTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->contextInformationTable, pos, (void**)&it, sizeof(gxContextInformationTable))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = cosem_setStructure(e->value.byteArr, 5)) != 0 ||
+                (ret = cosem_setBitString(e->value.byteArr, it->cid, 4)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->contextLength)) != 0 ||
+                (ret = cosem_setOctetString2(e->value.byteArr, it->context, 16)) != 0 ||
+                (ret = cosem_setBoolean(e->value.byteArr, it->compression)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->validLifetime)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else if (e->index == 10)
+    {
+        gxBlacklistTable* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->blacklistTable.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->blacklistTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->blacklistTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->blacklistTable, pos, (void**)&it, sizeof(gxBlacklistTable))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->neighbourAddress)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else if (e->index == 11)
+    {
+        gxBroadcastLogTable* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->broadcastLogTable.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->broadcastLogTable.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->broadcastLogTable, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->broadcastLogTable, pos, (void**)&it, sizeof(gxBroadcastLogTable))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = cosem_setStructure(e->value.byteArr, 3)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->sourceAddress)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->sequenceNumber)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->validTime)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else if (e->index == 12)
+    {
+        ret = cosem_getUInt16Array(&object->groupTable, e->value.byteArr);
+    }
+    else if (e->index == 13)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->maxJoinWaitTime);
+    }
+    else if (e->index == 14)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->pathDiscoveryTime);
+    }
+    else if (e->index == 15)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->activeKeyIndex);
+    }
+    else if (e->index == 16)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->metricType);
+    }
+    else if (e->index == 17)
+    {
+        ret = cosem_setUInt16(e->value.byteArr, object->coordShortAddress);
+    }
+    else if (e->index == 18)
+    {
+        ret = cosem_setBoolean(e->value.byteArr, object->disableDefaultRouting);
+    }
+    else if (e->index == 19)
+    {
+        ret = cosem_setEnum(e->value.byteArr, object->deviceType);
+    }
+    else if (e->index == 20)
+    {
+        ret = cosem_setBoolean(e->value.byteArr, object->defaultCoordRouteEnabled);
+    }
+    else if (e->index == 21)
+    {
+        ret = cosem_getUInt16Array(&object->destinationAddress, e->value.byteArr);
+    }
+    else if (e->index == 22)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->lowLQI);
+    }
+    else if (e->index == 23)
+    {
+        ret = cosem_setUInt8(e->value.byteArr, object->highLQI);
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+int cosem_getFunctionControl(
+    gxValueEventArg* e)
+{
+    uint16_t pos, pos2, count;
+    int ret = 0;
+    gxFunctionControl* object = (gxFunctionControl*)e->target;
+    if (e->index == 2)
+    {
+        functionStatus* status;
+        if ((ret = cosem_setArray(e->value.byteArr, (uint16_t)object->activationStatus.size)) == 0)
+        {
+            for (pos = 0; pos < object->activationStatus.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->activationStatus, pos, (void**)&status)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->activationStatus, pos, (void**)&status, sizeof(functionStatus))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+
+                if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0)
+                {
+                    break;
+                }
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = cosem_setOctetString(e->value.byteArr, &status->name)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = cosem_setOctetString2(e->value.byteArr, status->name, status->size)) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = cosem_setBoolean(e->value.byteArr, status->status)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else if (e->index == 3)
+    {
+        functionalBlock* block;
+        gxObject* target;
+        if ((ret = cosem_setArray(e->value.byteArr, (uint16_t)object->functions.size)) == 0)
+        {
+            for (pos = 0; pos < object->functions.size; ++pos)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex(&object->functions, pos, (void**)&block)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex(&object->functions, pos, (void**)&block, sizeof(functionalBlock))) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+
+                if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0)
+                {
+                    break;
+                }
+#ifndef DLMS_IGNORE_MALLOC
+                if ((ret = cosem_setOctetString(e->value.byteArr, &block->name)) != 0 ||
+                    (ret = cosem_setArray(e->value.byteArr, (uint16_t)block->functionSpecifications.size)) != 0)
+                {
+                    break;
+                }
+                count = (uint16_t)block->functionSpecifications.size;
+#else
+                if ((ret = cosem_setOctetString2(e->value.byteArr, block->name, block->nameSize)) != 0 ||
+                    (ret = cosem_setArray(e->value.byteArr, (uint16_t)block->functionSpecificationsSize)) != 0)
+                {
+                    break;
+                }
+                count = (uint16_t)block->functionSpecificationsSize;
+#endif //DLMS_IGNORE_MALLOC
+                for (pos2 = 0; pos2 < count; ++pos2)
+                {
+#ifndef DLMS_IGNORE_MALLOC
+                    if ((ret = oa_getByIndex(&block->functionSpecifications, pos2, &target)) != 0)
+                    {
+                        break;
+                    }
+#else
+                    target = block->functionSpecifications[pos2];
+#endif //DLMS_IGNORE_MALLOC
+                    if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0)
+                    {
+                        break;
+                    }
+                    if ((ret = cosem_setUInt16(e->value.byteArr, target->objectType)) != 0 ||
+                        (ret = cosem_setOctetString2(e->value.byteArr, target->logicalName, 6)) != 0)
+                    {
+                        break;
+                    }
+                    }
+                }
+            }
+        }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+    }
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
+
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+int cosem_getArrayManager(
+    gxValueEventArg* e)
+{
+    uint16_t pos;
+    int ret = 0;
+    gxArrayManager* object = (gxArrayManager*)e->target;
+    if (e->index == 2)
+    {
+        gxArrayManagerItem* it;
+        if ((ret = cosem_setArray(e->value.byteArr, object->elements.size)) != 0)
+        {
+            return ret;
+        }
+        for (pos = 0; pos < object->elements.size; ++pos)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->elements, pos, (void**)&it)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->elements, pos, (void**)&it, sizeof(gxArrayManagerItem))) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            if ((ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
+                (ret = cosem_setUInt8(e->value.byteArr, it->id)) != 0 ||
+                (ret = cosem_setStructure(e->value.byteArr, 3)) != 0 ||
+                (ret = cosem_setUInt16(e->value.byteArr, it->element.target->objectType)) != 0 ||
+                (ret = cosem_setOctetString2(e->value.byteArr, it->element.target->logicalName, 6)) != 0 ||
+                (ret = cosem_setInt8(e->value.byteArr, it->element.attributeIndex)) != 0)
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_ARRAY_MANAGER
+
 
 #ifndef DLMS_IGNORE_UTILITY_TABLES
 int cosem_getUtilityTables(
@@ -3850,7 +4581,7 @@ int cosem_getPushSetup(
                     (ret = cosem_setUInt16(data, it->dataIndex)) != 0)
                 {
                     break;
-                }
+        }
 #else
                 if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)&it)) != 0 ||
                     (ret = cosem_setStructure(data, 4)) != 0 ||
@@ -3866,9 +4597,9 @@ int cosem_getPushSetup(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
-            }
-        }
     }
+}
+}
     else if (e->index == 3)
     {
         if ((ret = cosem_setStructure(data, 3)) != 0 ||
@@ -3899,7 +4630,7 @@ int cosem_getPushSetup(
                     (ret = cosem_setDateTimeAsOctetString(data, &d->second)) != 0)
                 {
                     break;
-                }
+        }
 #else
                 if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&it)) != 0 ||
                     (ret = cosem_setStructure(data, 2)) != 0 ||
@@ -3911,7 +4642,7 @@ int cosem_getPushSetup(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
-            }
+    }
         }
     }
     else if (e->index == 5)
@@ -3995,8 +4726,8 @@ int cosem_getZigbeeNetworkControl(
             {
                 break;
             }
-        }
     }
+}
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -4053,7 +4784,7 @@ int getUnitCharge(gxUnitCharge* target, gxValueEventArg* e)
             (ret = cosem_setInt16(data, it->chargePerUnit)) != 0)
         {
             break;
-        }
+}
 #else
         if ((ret = arr_getByIndex(&target->chargeTables, pos, (void**)&it)) != 0 ||
             (ret = cosem_setStructure(data, 2)) != 0 ||
@@ -4163,7 +4894,7 @@ int cosem_getTokenGateway(
                 if ((ret = cosem_setOctetString2(data, it->value, it->size)) != 0)
                 {
                     break;
-                }
+        }
 #else
                 if ((ret = arr_getByIndex(&object->descriptions, pos, (void**)&it)) != 0 ||
                     (ret = cosem_setOctetString(data, it)) != 0)
@@ -4171,8 +4902,8 @@ int cosem_getTokenGateway(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
-            }
-        }
+    }
+}
         break;
     case 5:
         ret = cosem_setEnum(e->value.byteArr, object->deliveryMethod);
@@ -4306,9 +5037,9 @@ int cosem_getAccount(
                 {
                     break;
                 }
-            }
         }
     }
+}
     else if (e->index == 10)
     {
         if ((ret = cosem_setArray(data, object->chargeReferences.size)) == 0)
@@ -4324,8 +5055,8 @@ int cosem_getAccount(
                 {
                     break;
                 }
-            }
         }
+    }
     }
     else if (e->index == 11)
     {
@@ -4368,8 +5099,8 @@ int cosem_getAccount(
                 {
                     break;
                 }
-            }
         }
+    }
     }
     else if (e->index == 13)
     {
@@ -4766,6 +5497,26 @@ int cosem_getValue(
         ret = cosem_getG3PlcMacLayerCounters(e);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
+#ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
+    case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
+        ret = cosem_getG3PlcMacSetup(e);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+    case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
+        ret = cosem_getG3Plc6LoWPAN(e);
+        break;
+#endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        ret = cosem_getFunctionControl(e);
+        break;
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
+#ifndef DLMS_IGNORE_ARRAY_MANAGER
+    case DLMS_OBJECT_TYPE_ARRAY_MANAGER:
+        ret = cosem_getArrayManager(e);
+        break;
+#endif //DLMS_IGNORE_ARRAY_MANAGER
 #ifndef DLMS_IGNORE_UTILITY_TABLES
     case DLMS_OBJECT_TYPE_UTILITY_TABLES:
         ret = cosem_getUtilityTables(e);
@@ -5149,15 +5900,15 @@ int cosem_getGsmDiagnostic(
                 {
                     break;
                 }
-            }
         }
+    }
         break;
     case 8:
         ret = cosem_setDateTime(e->value.byteArr, &object->captureTime);
         break;
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+}
     return ret;
 }
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
@@ -5249,7 +6000,7 @@ int cosem_getParameterMonitor(
                     (ret = bb_setUInt8(data, it->attributeIndex)) != 0)
                 {
                     break;
-                }
+        }
 #else
                 if ((ret = arr_getByIndex(&object->parameters, pos, (void**)&it)) != 0 ||
                     (ret = cosem_setStructure(data, 3)) != 0 ||
@@ -5263,8 +6014,8 @@ int cosem_getParameterMonitor(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
-            }
-        }
+    }
+}
     }
     break;
     default:
@@ -5272,7 +6023,7 @@ int cosem_getParameterMonitor(
         break;
     }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
 
 #ifndef DLMS_IGNORE_LLC_SSCS_SETUP

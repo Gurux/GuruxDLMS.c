@@ -53,13 +53,15 @@
 #include "../include/helpers.h"
 #include "../include/gxaes.h"
 
+static const unsigned char DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY[] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
+static const unsigned char DEFAUlT_BLOCK_CIPHER_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+static const unsigned char DEFAULT_SYSTEM_TITLE[] = { 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48 };
+static const unsigned char DEFAUlT_AUTHENTICATION_KEY[] = { 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7,
+                                                            0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF
+};
+
 void cip_init(ciphering* target)
 {
-    static const unsigned char DEFAUlT_BLOCK_CIPHER_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-    static const unsigned char DEFAULT_SYSTEM_TITLE[] = { 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48 };
-    static const unsigned char DEFAUlT_AUTHENTICATION_KEY[] = { 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7,
-                                                                0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF
-    };
     target->invocationCounter = 0;
     target->suite = DLMS_SECURITY_SUITE_V0;
     target->security = DLMS_SECURITY_NONE;
@@ -67,6 +69,8 @@ void cip_init(ciphering* target)
 #ifndef DLMS_IGNORE_MALLOC
     BYTE_BUFFER_INIT(&target->blockCipherKey);
     bb_set(&target->blockCipherKey, DEFAUlT_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
+    BYTE_BUFFER_INIT(&target->broadcastBlockCipherKey);
+    bb_set(&target->broadcastBlockCipherKey, DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY));
     BYTE_BUFFER_INIT(&target->systemTitle);
     bb_set(&target->systemTitle, DEFAULT_SYSTEM_TITLE, sizeof(DEFAULT_SYSTEM_TITLE));
     BYTE_BUFFER_INIT(&target->authenticationKey);
@@ -74,10 +78,12 @@ void cip_init(ciphering* target)
     target->dedicatedKey = NULL;
 #else
     memcpy(target->blockCipherKey, DEFAUlT_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
+    memcpy(target->broadcastBlockCipherKey, DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY, sizeof(DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY));
     memcpy(target->systemTitle, DEFAULT_SYSTEM_TITLE, sizeof(DEFAULT_SYSTEM_TITLE));
     memcpy(target->authenticationKey, DEFAUlT_AUTHENTICATION_KEY, sizeof(DEFAUlT_AUTHENTICATION_KEY));
     memset(target->dedicatedKey, 0, 16);
 #endif //DLMS_IGNORE_MALLOC
+    target->broacast = 0;
 }
 
 void cip_clear(ciphering* target)
@@ -87,6 +93,7 @@ void cip_clear(ciphering* target)
     target->encrypt = 0;
 #ifndef DLMS_IGNORE_MALLOC
     bb_clear(&target->blockCipherKey);
+    bb_clear(&target->broadcastBlockCipherKey);
     bb_clear(&target->systemTitle);
     bb_clear(&target->authenticationKey);
     if (target->dedicatedKey != NULL)
@@ -96,10 +103,11 @@ void cip_clear(ciphering* target)
         target->dedicatedKey = NULL;
     }
 #else
-    memset(target->blockCipherKey, 0, 16);
+    memset(target->blockCipherKey, 0, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
+    memset(target->broadcastBlockCipherKey, 0, sizeof(DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY));
     memset(target->systemTitle, 0, 8);
-    memset(target->authenticationKey, 0, 16);
-    memset(target->dedicatedKey, 0, 16);
+    memset(target->authenticationKey, 0, sizeof(DEFAUlT_AUTHENTICATION_KEY));
+    memset(target->dedicatedKey, 0, sizeof(DEFAUlT_BLOCK_CIPHER_KEY));
 #endif //DLMS_IGNORE_MALLOC
 }
 
@@ -621,7 +629,8 @@ int cip_crypt(
     static unsigned char H[16] = { 0 };
     static unsigned char J0[16] = { 0 };
     static unsigned char S[16] = { 0 };
-    static unsigned char NONSE[16] = { 0 };
+    //Nonse must be 20 bytes because it's used later.
+    static unsigned char NONSE[20] = { 0 };
     memset(H, 0, sizeof(H));
     memset(S, 0, sizeof(S));
 #else
@@ -629,7 +638,8 @@ int cip_crypt(
     unsigned char H[16] = { 0 };
     unsigned char J0[16] = { 0 };
     unsigned char S[16] = { 0 };
-    unsigned char NONSE[16] = { 0 };
+    //Nonse must be 20 bytes because it's used later.
+    unsigned char NONSE[20] = { 0 };
 #endif //GX_DLMS_MICROCONTROLLER
     gxByteBuffer nonse;
     if (memcmp(systemTitle, EMPTY_SYSTEM_TITLE, 8) == 0)
@@ -712,12 +722,13 @@ int cip_crypt(
     else if (security == DLMS_SECURITY_ENCRYPTION)
     {
         //Encrypt the data.
-        aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+        aes_gcm_ghash(H, input->data, input->size, input->data, 0, S);
         if (!encrypt)
         {
             ret = bb_move(input, input->position, 0, bb_available(input));
             input->position = 0;
         }
+        aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
     }
     else if (security == DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
     {
@@ -725,41 +736,44 @@ int cip_crypt(
         {
             //Encrypt the data.
             aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
-            if ((ret = bb_move(input, input->position, offset, bb_available(input))) == 0)
-            {
-                input->position = 0;
-                ret = bb_setUInt8ByIndex(input, 0, security | settings->suite);
+        }
+        if ((ret = bb_move(input, input->position, offset, bb_available(input))) == 0)
+        {
+            input->position = 0;
+            ret = bb_setUInt8ByIndex(input, 0, security | settings->suite);
 #ifndef DLMS_IGNORE_MALLOC
-                memcpy(input->data + 1, settings->authenticationKey.data, settings->authenticationKey.size);
+            memcpy(input->data + 1, settings->authenticationKey.data, settings->authenticationKey.size);
 #else
-                memcpy(input->data + 1, settings->authenticationKey, offset - 1);
+            memcpy(input->data + 1, settings->authenticationKey, offset - 1);
 #endif //DLMS_IGNORE_MALLOC
-                aes_gcm_ghash(H, input->data, offset, input->data + offset, input->size - offset, S);
-                if ((ret = bb_move(input, offset, 0, input->size - offset)) == 0)
+            aes_gcm_ghash(H, input->data, offset, input->data + offset, input->size - offset, S);
+            if ((ret = bb_move(input, offset, 0, input->size - offset)) == 0)
+            {
+                if (!encrypt)
                 {
-                    if (!encrypt)
-                    {
-                        //Decrypt the data.
-                        aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
-                    }
-                    unsigned char* p = input->data;
-                    p += input->size;
-                    cip_gctr(aes, J0, S, sizeof(S), p);
+                    cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
+                    //Decrypt the data.
+                    aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
+                }
+                cip_gctr(aes, J0, S, sizeof(S), input->data + input->size);
+                if (encrypt)
+                {
                     input->size += 12;
                 }
+                else
+                {
+                    //Check authentication tag.
+                    if (memcmp(NONSE, input->data + input->size, 12) != 0)
+                    {
+                        ret = DLMS_ERROR_CODE_INVALID_TAG;
+                    }
+                    else
+                    {
+                        ret = bb_move(input, input->position, 0, bb_available(input));
+                    }
+                    input->position = 0;
+                }
             }
-        }
-        else
-        {
-            //Check authentication tag.
-            if (memcmp(NONSE, input->data + input->size, 12) != 0)
-            {
-                ret = DLMS_ERROR_CODE_INVALID_TAG;
-            }
-            //Decrypt the data.
-            aes_gcm_gctr(aes, J0, input->data + input->position, bb_available(input), NULL);
-            ret = bb_move(input, input->position, 0, bb_available(input));
-            input->position = 0;
         }
     }
     if (ret == 0 && encrypt)
@@ -777,8 +791,13 @@ int cip_crypt(
                 hlp_setObjectCount(8, &nonse);
                 bb_set(&nonse, systemTitle, 8);
             }
+            tag = security | settings->suite;
+            if (settings->broacast)
+            {
+                tag |= 0x40;
+            }
             if ((ret = hlp_setObjectCount(5 + input->size, &nonse)) == 0 &&
-                (ret = bb_setUInt8(&nonse, security | settings->suite)) == 0 &&
+                (ret = bb_setUInt8(&nonse, tag)) == 0 &&
                 (ret = bb_setUInt32(&nonse, frameCounter)) == 0 &&
                 (ret = bb_insert(nonse.data, nonse.size, input, 0)) == 0)
             {

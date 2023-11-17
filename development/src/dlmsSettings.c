@@ -124,12 +124,16 @@ void cl_init(
     settings->server = 0;
     if (useLogicalNameReferencing)
     {
-        settings->proposedConformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+        settings->proposedConformance = (DLMS_CONFORMANCE)
+            (DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
-            DLMS_CONFORMANCE_SET | DLMS_CONFORMANCE_SELECTIVE_ACCESS |
-            DLMS_CONFORMANCE_ACTION | DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
-            DLMS_CONFORMANCE_GET);
+            DLMS_CONFORMANCE_SET | 
+            DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+            DLMS_CONFORMANCE_ACTION | 
+            DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+            DLMS_CONFORMANCE_GET |
+            DLMS_CONFORMANCE_GENERAL_PROTECTION);
     }
     else
     {
@@ -195,7 +199,7 @@ void cl_clear(
     bb_clear(&settings->ctoSChallenge);
     bb_clear(&settings->stoCChallenge);
     settings->priority = DLMS_PRIORITY_HIGH;
-    settings->serviceClass = DLMS_SERVICE_CLASS_UN_CONFIRMED;
+    settings->serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
 #ifndef DLMS_IGNORE_HIGH_GMAC
     cip_clear(&settings->cipher);
 #endif //DLMS_IGNORE_HIGH_GMAC

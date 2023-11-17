@@ -389,8 +389,13 @@ extern "C" {
         /*
         * G3-PLC 6LoWPAN.
         */
-        DLMS_OBJECT_TYPE_G3_PLC6_LO_WPAN = 92,
+        DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN = 92,
 
+        /*
+        * Function control.
+        */
+        DLMS_OBJECT_TYPE_FUNCTION_CONTROL = 122,
+            
         /*
         * Configure a ZigBee PRO device with information necessary to create or
         * join the network.
@@ -413,7 +418,7 @@ extern "C" {
         DLMS_OBJECT_TYPE_CREDIT = 112,
         DLMS_OBJECT_TYPE_CHARGE = 113,
         DLMS_OBJECT_TYPE_TOKEN_GATEWAY = 115,
-
+        DLMS_OBJECT_TYPE_ARRAY_MANAGER = 123,
         // Tariff Plan (Piano Tariffario) is used in Italian standard UNI/TS 11291-11.
         DLMS_OBJECT_TYPE_TARIFF_PLAN = 8192,
     } DLMS_OBJECT_TYPE;
@@ -3346,6 +3351,42 @@ extern "C" {
         // TLS
         DLMS_MBUS_ENCRYPTION_MODE_TLS = 13
     }DLMS_MBUS_ENCRYPTION_MODE;
+
+    // Enumerates modulation types.
+    typedef enum
+    {
+        // Robust Mode.
+        DLMS_G3_PLC_MODULATION_ROBUST_MODE,
+        // DBPSK.
+        DLMS_G3_PLC_MODULATION_DBPSK,
+        //  DQPSK.
+        DLMS_G3_PLC_MODULATION_DQPSK,
+        // D8PSK.
+        DLMS_G3_PLC_MODULATION_D8PSK,
+        // 16-QAM.
+        DLMS_G3_PLC_MODULATION_QAM16
+    } DLMS_G3_PLC_MODULATION;
+
+    // Enumerates gain resolution steps.
+    typedef enum
+    {
+        // Step is 6 dB.
+        DLMS_G3_PLC_GAIN_RESOLUTION_DB6,
+        // Step is 3 dB.
+        DLMS_G3_PLC_GAIN_RESOLUTION_DB3
+    }DLMS_G3_PLC_GAIN_RESOLUTION;
+
+    // Enumerates the type of the device connected to the modem.
+    typedef enum
+    {
+        // PAN device.
+        DLMS_PAN_DEVICE_TYPE_DEVICE,
+        //  PAN coordinator.
+        DLMS_PAN_DEVICE_TYPE_COORDINATOR,
+        // Not Defined.
+        DLMS_PAN_DEVICE_TYPE_NOT_DEFINED
+    }DLMS_PAN_DEVICE_TYPE;
+    
 
     // Defines the ZigBee status enumeration values.
     typedef enum

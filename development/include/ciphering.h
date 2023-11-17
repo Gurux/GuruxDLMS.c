@@ -64,6 +64,15 @@ typedef struct
     unsigned char blockCipherKey[32];
 #endif //DLMS_IGNORE_MALLOC
 
+/**
+* Broadcast block cipher key.
+*/
+#ifndef DLMS_IGNORE_MALLOC
+    gxByteBuffer broadcastBlockCipherKey;
+#else
+    unsigned char broadcastBlockCipherKey[32];
+#endif //DLMS_IGNORE_MALLOC
+
     /**
     * System title.
     */
@@ -89,7 +98,8 @@ typedef struct
 #else
     unsigned char dedicatedKey[32];
 #endif //DLMS_IGNORE_MALLOC
-
+    //Is data send as a broadcast or unicast.
+    unsigned char broacast;
 } ciphering;
 
 

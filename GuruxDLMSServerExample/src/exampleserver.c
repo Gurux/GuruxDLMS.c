@@ -676,7 +676,7 @@ int addAssociationLow()
         //Only Logical Device Name is add to this Association View.
         OA_ATTACH(associationLow.objectList, ALL_OBJECTS);
         associationLow.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_LOW;
-        associationLow.clientSAP = 0x11;
+        associationLow.clientSAP = 0x20;
         associationLow.xDLMSContextInfo.maxSendPduSize = associationLow.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
         associationLow.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
@@ -707,7 +707,7 @@ int addAssociationHigh()
         associationHigh.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH;
         OA_ATTACH(associationHigh.objectList, ALL_OBJECTS);
         BB_ATTACH(associationHigh.xDLMSContextInfo.cypheringInfo, CYPHERING_INFO, 0);
-        associationHigh.clientSAP = 0x12;
+        associationHigh.clientSAP = 0x30;
         associationHigh.xDLMSContextInfo.maxSendPduSize = associationHigh.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
         associationHigh.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
@@ -3513,7 +3513,7 @@ DLMS_ACCESS_MODE getActivityCalendarAttributeAccess(
     unsigned char index)
 {
     //Only Activate passive calendar date-time and passive calendar settings are writeble.
-    if (settings->authentication > DLMS_AUTHENTICATION_LOW && index > 5)
+    if (settings->authentication >= DLMS_AUTHENTICATION_LOW && index > 5)
     {
         return DLMS_ACCESS_MODE_READ_WRITE;
     }

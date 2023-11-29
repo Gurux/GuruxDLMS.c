@@ -2029,9 +2029,21 @@ int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index,
     }
     else if (index == 3)
     {
-        if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+        if (value->vt == DLMS_DATA_TYPE_ENUM)
         {
-            object->controlState = (DLMS_CONTROL_STATE)ch;
+            object->controlState = (DLMS_CONTROL_STATE)value->bVal;
+            ret = 0;
+        }
+        else if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+            {
+                object->controlState = (DLMS_CONTROL_STATE)ch;
+            }
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
     }
     else if (index == 4)

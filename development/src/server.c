@@ -4977,8 +4977,18 @@ int svr_limiter(dlmsServerSettings* settings,
             //If active value is under threshold or it changes from over to under.
             if (object->activationTime == 0 || (object->overThreshold & 0x1) == 1)
             {
-                object->activationTime = now;
-                object->overThreshold = 0;
+                if (object->activationTime == 0)
+                {
+                    //Server is started and limiter is set to IDLE mode.                    
+                    object->activationTime = now;
+                    // Threshold is NOT invoked when server is started. 
+                    object->overThreshold = 0x80;
+                }
+                else
+                {
+                    object->activationTime = now;
+                    object->overThreshold = 0;
+                }
             }
             else if (now - object->activationTime >= object->minUnderThresholdDuration)
             {
@@ -4996,8 +5006,18 @@ int svr_limiter(dlmsServerSettings* settings,
             //If active value is over threshold or it changes from under to over.
             if (object->activationTime == 0 || (object->overThreshold & 0x1) == 0)
             {
-                object->activationTime = now;
-                object->overThreshold = 1;
+                if (object->activationTime == 0)
+                {
+                    //Server is started and limiter is set to IDLE mode.                    
+                    object->activationTime = now;
+                    // Threshold is NOT invoked when server is started.
+                    object->overThreshold = 0x81;
+                }
+                else
+                {
+                    object->activationTime = now;
+                    object->overThreshold = 1;
+                }
             }
             else if (now - object->activationTime >= object->minOverThresholdDuration)
             {

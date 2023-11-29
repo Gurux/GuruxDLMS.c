@@ -222,6 +222,7 @@ static gxG3PlcMacLayerCounters g3plcMacLayerCounters;
 static gxG3PlcMacSetup g3PlcMacSetup;
 static gxG3Plc6LoWPAN g3Plc6LoWPAN;
 static gxArrayManager arrayManager;
+static gxFunctionControl functionControl;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
@@ -239,7 +240,8 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(primeNbOfdmPlcMacCounters),
     BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter), BASE(limiter),
     BASE(mbusDiagnostic), BASE(mbusPortSetup),
-    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager)
+    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager),
+    BASE(functionControl)
 };
 
 //List of COSEM objects that are removed from association view(s).
@@ -261,7 +263,8 @@ gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     //Profile generic buffer is never saved.
     IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_PROFILE_GENERIC, GET_ATTRIBUTE(2)),
     //EEPROM is not serialized.
-    IGNORE_ATTRIBUTE(BASE(eeprom) , GET_ATTRIBUTE_ALL()) };
+    IGNORE_ATTRIBUTE(BASE(eeprom) , GET_ATTRIBUTE_ALL()),
+};
 
 static uint32_t executeTime = 0;
 
@@ -762,7 +765,7 @@ int addAssociationLow()
             DLMS_CONFORMANCE_ACTION |
             DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
             DLMS_CONFORMANCE_GET);
-        BB_ATTACH(associationLow.secret, (unsigned char*)SECRET, (uint16_t)strlen(SECRET));
+        BB_ATTACH(associationLow.secret, SECRET, (uint16_t)strlen(SECRET));
         associationLow.securitySetup = NULL;
     }
     return ret;
@@ -1804,6 +1807,26 @@ int addG3Plc6LoWPAN()
     return ret;
 }
 
+
+///////////////////////////////////////////////////////////////////////
+//Add function control object.
+///////////////////////////////////////////////////////////////////////
+int addFunctionControl()
+{
+    int ret;
+    //Function statuc must initialize to zero.
+    static functionStatus FUNCTION_STATUS[2] = {0};
+    //Function block must initialize to zero.
+    static functionalBlock FUNCTION_BLOCKS[2] = { 0 };    
+    const unsigned char ln[6] = { 0,0,44,1,0,255 };
+    if ((ret = INIT_OBJECT(functionControl, DLMS_OBJECT_TYPE_FUNCTION_CONTROL, ln)) == 0)
+    {
+        ARR_ATTACH(functionControl.activationStatus, FUNCTION_STATUS, 0);
+        ARR_ATTACH(functionControl.functions, FUNCTION_BLOCKS, 0);
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //Add array manager object.
 ///////////////////////////////////////////////////////////////////////
@@ -2040,29 +2063,39 @@ int addscriptTableDisconnectControl()
 {
     int ret;
     static gxScript SCRIPTS[2] = { 0 };
-    static gxScriptAction ACTIONS1[1] = { 0 };
-    static gxScriptAction ACTIONS2[1] = { 0 };
+    static gxScriptAction ACTIONS1[2] = { 0 };
+    static gxScriptAction ACTIONS2[2] = { 0 };
     const unsigned char ln[6] = { 0, 0, 10, 0, 106, 255 };
     if ((ret = INIT_OBJECT(scriptTableDisconnectControl, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
     {
         SCRIPTS[0].id = 1;
         SCRIPTS[1].id = 2;
         ARR_ATTACH(scriptTableDisconnectControl.scripts, SCRIPTS, 2);
-        ARR_ATTACH(SCRIPTS[0].actions, ACTIONS1, 1);
+        ARR_ATTACH(SCRIPTS[0].actions, ACTIONS1, 2);
         ACTIONS1[0].type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
         ACTIONS1[0].target = BASE(disconnectControl);
         ACTIONS1[0].index = 1;
         var_init(&ACTIONS1[0].parameter);
         //Action data is Int8 zero.
         GX_INT8(ACTIONS1[0].parameter) = 0;
+        //Update control state.
+        ACTIONS1[1].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
+        ACTIONS1[1].target = BASE(disconnectControl);
+        ACTIONS1[1].index = 3;
+        var_setEnum(&ACTIONS1[1].parameter, DLMS_CONTROL_STATE_CONNECTED);
 
-        ARR_ATTACH(SCRIPTS[1].actions, ACTIONS2, 1);
+        ARR_ATTACH(SCRIPTS[1].actions, ACTIONS2, 2);
         ACTIONS2[0].type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
         ACTIONS2[0].target = BASE(disconnectControl);
         ACTIONS2[0].index = 2;
         var_init(&ACTIONS2[0].parameter);
         //Action data is Int8 zero.
         GX_INT8(ACTIONS2[0].parameter) = 0;
+        //Update control state.
+        ACTIONS2[1].type = DLMS_SCRIPT_ACTION_TYPE_WRITE;
+        ACTIONS2[1].target = BASE(disconnectControl);
+        ACTIONS2[1].index = 3;
+        var_setEnum(&ACTIONS2[1].parameter, DLMS_CONTROL_STATE_DISCONNECTED);
     }
     return ret;
 }
@@ -2346,6 +2379,7 @@ int createObjects()
         (ret = addG3PlcMacSetup()) != 0 ||
         (ret = addG3Plc6LoWPAN()) != 0 ||
         (ret = addArrayManager()) != 0 ||
+        (ret = addFunctionControl()) != 0 ||
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||

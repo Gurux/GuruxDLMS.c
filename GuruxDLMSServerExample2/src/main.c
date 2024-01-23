@@ -1870,16 +1870,20 @@ int addPushSetup()
         time_init(&COMMUNICATION_WINDOW[1].first, -1, -1, -1, -1, -1, 30, 0, 0);
         time_init(&COMMUNICATION_WINDOW[1].second, -1, -1, -1, -1, -1, 40, 0, 0);
 
-        ARR_ATTACH(pushSetup.pushObjectList, PUSH_OBJECTS, 2);
+        ARR_ATTACH(pushSetup.pushObjectList, PUSH_OBJECTS, 3);
         // Add logical device name.
         PUSH_OBJECTS[0].target = BASE(ldn);
         PUSH_OBJECTS[0].attributeIndex = 2;
         PUSH_OBJECTS[0].dataIndex = 0;
+
+        PUSH_OBJECTS[1].target = BASE(clock1);
+        PUSH_OBJECTS[1].attributeIndex = 2;
+        PUSH_OBJECTS[1].dataIndex = 0;
         // Add push object logical name. This is needed to tell structure of data to the Push listener.
         // Also capture object list can be used here.
-        PUSH_OBJECTS[1].target = BASE(pushSetup);
-        PUSH_OBJECTS[1].attributeIndex = 1;
-        PUSH_OBJECTS[1].dataIndex = 0;
+        PUSH_OBJECTS[2].target = BASE(pushSetup);
+        PUSH_OBJECTS[2].attributeIndex = 1;
+        PUSH_OBJECTS[2].dataIndex = 0;
     }
     return ret;
 }
@@ -3185,6 +3189,7 @@ void svr_preAction(
         {
             updateState(GURUX_EVENT_CODES_PUSH);
             sendPush(settings, (gxPushSetup*)e->target);
+            var_clear(&e->value);
             e->handled = 1;
         }
         //If client wants to clear EEPROM data using Global meter reset script.

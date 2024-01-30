@@ -301,6 +301,9 @@ int notify_generatePushSetupMessages(
 #ifdef DLMS_IGNORE_MALLOC
             p[0].target = it->target;
             p[0].index = it->attributeIndex;
+            //Allocate space for byte array where reply data can be saved.
+            p[0].value.byteArr = &pdu;
+            p[0].value.vt = DLMS_DATA_TYPE_OCTET_STRING;
             svr_preRead(settings, &args);
             if (p[0].error != 0)
             {

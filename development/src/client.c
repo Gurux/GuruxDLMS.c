@@ -460,6 +460,7 @@ int cl_getApplicationAssociationRequest(
         &challenge);
     if (ret == 0)
     {
+        ++settings->cipher.invocationCounter;
         var_init(&data);
         data.vt = DLMS_DATA_TYPE_OCTET_STRING;
         data.byteArr = &challenge;

@@ -1044,7 +1044,11 @@ int invoke_ScriptTable(
                     if (sa->type == DLMS_SCRIPT_ACTION_TYPE_WRITE)
                     {
                         svr_preWrite(&settings->base, &args);
-                        if (!e->handled)
+                        if (e1->error != 0)
+                        {
+                            ret = e1->error;
+                        }
+                        else if (!e1->handled)
                         {
                             //Set action to true to indicate that this is called from the action method.
                             e1->action = 1;
@@ -1053,23 +1057,38 @@ int invoke_ScriptTable(
                                 break;
                             }
                             svr_postWrite(&settings->base, &args);
+                            if (e1->error != 0)
+                            {
+                                ret = e1->error;
+                            }
                         }
                     }
                     else if (sa->type == DLMS_SCRIPT_ACTION_TYPE_EXECUTE)
                     {
                         svr_preAction(&settings->base, &args);
-                        if (!e->handled)
+                        if (e1->error != 0)
+                        {
+                            ret = e1->error;
+                        }
+                        else if (!e1->handled)
                         {
                             if ((ret = cosem_invoke(settings, e1)) != 0)
                             {
                                 break;
                             }
                             svr_postAction(&settings->base, &args);
+                            if (e1->error != 0)
+                            {
+                                ret = e1->error;
+                            }
                         }
                     }
                     else
                     {
                         ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    }
+                    if (ret != 0)
+                    {
                         break;
                     }
                 }

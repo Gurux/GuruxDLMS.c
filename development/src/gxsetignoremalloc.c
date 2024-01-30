@@ -2029,16 +2029,33 @@ int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index,
     }
     else if (index == 3)
     {
-        if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+        if (value->vt == DLMS_DATA_TYPE_ENUM)
         {
-            object->controlState = (DLMS_CONTROL_STATE)ch;
+            object->controlState = (DLMS_CONTROL_STATE)value->bVal;
+            ret = 0;
+        }
+        else if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+            {
+                object->controlState = (DLMS_CONTROL_STATE)ch;
+            }
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
     }
     else if (index == 4)
     {
-        if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+        if (value->vt == DLMS_DATA_TYPE_ENUM)
         {
-            object->controlMode = (DLMS_CONTROL_MODE)ch;
+            object->controlMode = (DLMS_CONTROL_MODE)value->bVal;
+            ret = 0;
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
     }
     else
@@ -5202,9 +5219,9 @@ int cosem_setArbitrator(
 #else
                 memcpy(it->scriptLogicalName, ln, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-                }
             }
         }
+    }
     break;
     case 3:
     {

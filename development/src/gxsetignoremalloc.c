@@ -2121,7 +2121,7 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
             for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = cosem_getArrayItem(&object->emergencyProfileGroupIDs, pos, (void**)&it, sizeof(uint16_t))) != 0 ||
-                    (ret = bb_getUInt16(value->byteArr, it)) != 0)
+                    (ret = cosem_getUInt16(value->byteArr, it)) != 0)
                 {
                     break;
                 }

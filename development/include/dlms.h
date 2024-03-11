@@ -48,7 +48,6 @@ extern "C" {
 #include "replydata.h"
 #include "datainfo.h"
 #include "parameters.h"
-
     //Makes sure that the basic settings are set.
     int dlms_checkInit(
         dlmsSettings* settings);
@@ -102,22 +101,22 @@ extern "C" {
     int dlms_setData(
         gxByteBuffer* data,
         DLMS_DATA_TYPE type,
-        dlmsVARIANT *value);
+        dlmsVARIANT* value);
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     //Set data from DLMS Varuant to DLMS byte stream.
     int dlms_setData2(
-        unsigned char *buff,
+        unsigned char* buff,
         uint32_t length,
         DLMS_DATA_TYPE type,
-        dlmsVARIANT *value);
+        dlmsVARIANT* value);
 #else
     //Set data from DLMS Varuant to DLMS byte stream.
     int dlms_setData2(
-        unsigned char *buff,
+        unsigned char* buff,
         uint16_t length,
         DLMS_DATA_TYPE type,
-        dlmsVARIANT *value);
+        dlmsVARIANT* value);
 #endif
 
     int dlms_receiverReady(
@@ -141,7 +140,7 @@ extern "C" {
     int dlms_getData(
         gxByteBuffer* data,
         gxDataInfo* info,
-        dlmsVARIANT *value);
+        dlmsVARIANT* value);
 
 #ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
     /**
@@ -181,14 +180,14 @@ extern "C" {
 #endif //DLMS_IGNORE_WRAPPER
 
     int dlms_changeType2(
-        dlmsVARIANT *value,
+        dlmsVARIANT* value,
         DLMS_DATA_TYPE type,
-        dlmsVARIANT *newValue);
+        dlmsVARIANT* newValue);
 
     int dlms_changeType(
         gxByteBuffer* value,
         DLMS_DATA_TYPE type,
-        dlmsVARIANT *newValue);
+        dlmsVARIANT* newValue);
 
 
     int dlms_getPdu(
@@ -220,7 +219,7 @@ extern "C" {
          * @return    Status code.
          */
     int dlms_getLnMessages(
-        gxLNParameters *p,
+        gxLNParameters* p,
         message* reply);
 
 #ifndef DLMS_IGNORE_HDLC
@@ -249,13 +248,13 @@ extern "C" {
     * @return    Status code.
     */
     int dlms_getSnMessages(
-        gxSNParameters *p,
+        gxSNParameters* p,
         message* reply);
 
     int dlms_getActionInfo(
         DLMS_OBJECT_TYPE objectType,
-        unsigned char *value,
-        unsigned char *count);
+        unsigned char* value,
+        unsigned char* count);
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
     int dlms_generateChallenge(

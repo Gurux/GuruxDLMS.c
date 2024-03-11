@@ -135,6 +135,35 @@ int CaptureProfileGeneric(connection* connection)
     return ret;
 }
 
+/**
+* Activates and strengthens the security policy
+  for the security setup object
+*/
+int SecurityActivate(connection* connection,
+    DLMS_SECURITY_POLICY policy)
+{
+    int ret;
+    gxSecuritySetup ss;
+    unsigned char ln[] = { 0,0,43,0,0,255 };
+    INIT_OBJECT(ss, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln);
+    //Invokes capture action.
+    dlmsVARIANT param;
+    var_setEnum(&param, policy);
+    GX_ENUM(param) = policy;
+    ret = com_method(connection, BASE(ss), 1, &param);
+    return ret;
+}
+
+// Show PDU before it's encrypted or 
+// after it's decrypted when DLMS_TRACE_PDU
+// is defined.
+void cip_tracePdu(
+    gxByteBuffer* pdu)
+{
+    char* str = bb_toHexString(pdu);
+    printf("PDU: %s\r\n", str);
+    free(str);
+}
 
 /**
 * Executes selected script.

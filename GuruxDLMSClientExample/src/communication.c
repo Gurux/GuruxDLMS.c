@@ -919,10 +919,6 @@ int com_updateInvocationCounter(
     {
         message messages;
         gxReplyData reply;
-        if (dlms_usePreEstablishedConnection(&connection->settings) != NULL)
-        {
-            connection->settings.negotiatedConformance |= DLMS_CONFORMANCE_GENERAL_PROTECTION;
-        }
         unsigned short add = connection->settings.clientAddress;
         DLMS_AUTHENTICATION auth = connection->settings.authentication;
         DLMS_SECURITY security = connection->settings.cipher.security;
@@ -1008,6 +1004,10 @@ int com_updateInvocationCounter(
             bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
             bb_clear(&challenge);
             connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;
+            if (dlms_usePreEstablishedConnection(&connection->settings) != NULL)
+            {
+                connection->settings.negotiatedConformance |= DLMS_CONFORMANCE_GENERAL_PROTECTION;
+            }
         }
     }
     return ret;

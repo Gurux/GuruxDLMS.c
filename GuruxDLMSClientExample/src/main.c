@@ -158,10 +158,12 @@ int SecurityActivate(connection* connection,
 // after it's decrypted when DLMS_TRACE_PDU
 // is defined.
 void cip_tracePdu(
+    unsigned char encrypt,
     gxByteBuffer* pdu)
 {
+    const char* direction = encrypt ? "TX" : "RX";
     char* str = bb_toHexString(pdu);
-    printf("PDU: %s\r\n", str);
+    printf("%s PDU: %s\r\n", direction, str);
     free(str);
 }
 

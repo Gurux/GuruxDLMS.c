@@ -179,7 +179,7 @@ extern "C" {
 
     // Show decoded PDU. 
     // This can be used to show decoded PDU.
-    // #define cip_tracePdu
+    // #define DLMS_TRACE_PDU
 
 #ifdef ARDUINO
 /////////////////////////////////////////////////////////////////////////////

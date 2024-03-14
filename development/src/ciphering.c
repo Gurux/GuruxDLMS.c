@@ -830,13 +830,6 @@ static const unsigned char __R_CON[11] PROGMEM = {
         gxByteBuffer* input)
 #endif //DLMS_IGNORE_MALLOC
     {
-#ifdef DLMS_TRACE_PDU
-        if (tag != DLMS_COMMAND_GLO_INITIATE_REQUEST &&
-            tag != DLMS_COMMAND_GLO_INITIATE_RESPONSE)
-        {
-            cip_tracePdu(1, input);
-        }
-#endif //DLMS_TRACE_PDU
         return cip_crypt(
             settings,
             security,
@@ -968,16 +961,6 @@ static const unsigned char __R_CON[11] PROGMEM = {
             key,
             data,
             0);
-#ifdef DLMS_TRACE_PDU
-        if (ret == 0)
-        {
-            if (cmd != DLMS_COMMAND_GLO_INITIATE_REQUEST &&
-                cmd != DLMS_COMMAND_GLO_INITIATE_RESPONSE)
-            {
-                cip_tracePdu(0, data);
-            }
-        }
-#endif //DLMS_TRACE_PDU
         return ret;
     }
 

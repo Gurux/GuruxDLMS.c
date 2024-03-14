@@ -4852,6 +4852,9 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
             {
                 return ret;
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(0, &data->data);
+#endif //DLMS_TRACE_PDU
         }
         //If pre-set connection is made.
         else if (dlms_usePreEstablishedConnection(settings) && emptySourceSystemTile)
@@ -4882,13 +4885,16 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
                 settings->preEstablishedSystemTitle,
                 settings->cipher.blockCipherKey,
 #endif //DLMS_IGNORE_MALLOC
-                & data->data,
+                &data->data,
                 &security,
                 &suite,
                 &invocationCounter)) != 0)
             {
                 return ret;
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(0, &data->data);
+#endif //DLMS_TRACE_PDU
             if (data->preEstablished == 0)
             {
                 data->preEstablished = 1;
@@ -4911,6 +4917,9 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
             {
                 return ret;
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(0, &data->data);
+#endif //DLMS_TRACE_PDU
         }
         //If IC value is wrong.
         if (settings->expectedInvocationCounter != NULL)
@@ -4972,6 +4981,9 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
             {
                 return ret;
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(0, &bb);
+#endif //DLMS_TRACE_PDU
         }
         else
         {
@@ -4989,7 +5001,16 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
             {
                 return ret;
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(0, &bb);
+#endif //DLMS_TRACE_PDU
         }
+#ifdef DLMS_TRACE_PDU
+        if (ret == 0)
+        {
+            cip_tracePdu(0, &bb);
+        }
+#endif //DLMS_TRACE_PDU
         data->data.size = bb.size + index;
         //If target is sending data ciphered using different security policy.
         if (settings->cipher.security != security)
@@ -5049,6 +5070,9 @@ int dlms_handleGeneralCiphering(
         {
             return ret;
         }
+#ifdef DLMS_TRACE_PDU
+        cip_tracePdu(0, &data->data);
+#endif //DLMS_TRACE_PDU
         // Get command
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
         {
@@ -5651,6 +5675,9 @@ int dlms_getSNPdu(
     if (ciphering && p->command != DLMS_COMMAND_AARQ
         && p->command != DLMS_COMMAND_AARE)
     {
+#ifdef DLMS_TRACE_PDU
+        cip_tracePdu(1, reply);
+#endif //DLMS_TRACE_PDU
         ret = cip_encrypt(
             &p->settings->cipher,
             p->settings->cipher.security,
@@ -6001,6 +6028,9 @@ int dlms_getLNPdu(
                 key = p->settings->cipher.blockCipherKey;
 #endif //DLMS_IGNORE_MALLOC
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(1, reply);
+#endif //DLMS_TRACE_PDU
             ret = cip_encrypt(
                 &p->settings->cipher,
                 p->settings->cipher.security,

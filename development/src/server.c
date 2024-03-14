@@ -380,6 +380,9 @@ int svr_generateExceptionResponse(
             key = settings->cipher.blockCipherKey;
 #endif //DLMS_IGNORE_MALLOC
         }
+#ifdef DLMS_TRACE_PDU
+        cip_tracePdu(1, data);
+#endif //DLMS_TRACE_PDU
         ret = cip_encrypt(
             &settings->cipher,
             settings->cipher.security,

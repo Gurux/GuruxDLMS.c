@@ -4981,9 +4981,6 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
             {
                 return ret;
             }
-#ifdef DLMS_TRACE_PDU
-            cip_tracePdu(0, &bb);
-#endif //DLMS_TRACE_PDU
         }
         else
         {
@@ -5001,9 +4998,6 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
             {
                 return ret;
             }
-#ifdef DLMS_TRACE_PDU
-            cip_tracePdu(0, &bb);
-#endif //DLMS_TRACE_PDU
         }
 #ifdef DLMS_TRACE_PDU
         if (ret == 0)

@@ -1256,6 +1256,7 @@ int com_getAssociationView(connection* connection, const char* outputFile)
                     (ret = cosem_init2(pObj, obj.objectType, obj.logicalName)) == 0)
                 {
                     pObj->shortName = obj.shortName;
+                    pObj->version = obj.version;
                     oa_push(&connection->settings.objects, pObj);
                 }
             }

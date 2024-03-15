@@ -3710,6 +3710,7 @@ int cosem_setArrayManager(dlmsSettings* settings, gxArrayManager* object, unsign
 int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret, pos;
+    unsigned char e1, e2;
     gxTarget* it;
     if (index == 2)
     {
@@ -3797,7 +3798,103 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
     }
     else if (index == 7)
     {
-        ret = cosem_getUInt16(value->byteArr, &object->repetitionDelay);
+        if (object->base.version < 2)
+        {
+            ret = cosem_getUInt16(value->byteArr, &object->repetitionDelay);
+        }
+        else
+        {
+            if ((ret = cosem_checkStructure(value->byteArr, 3)) != 0 ||
+                (ret = cosem_getUInt16(value->byteArr, &object->repetitionDelay2.min)) != 0 ||
+                (ret = cosem_getUInt16(value->byteArr, &object->repetitionDelay2.exponent)) != 0 ||
+                (ret = cosem_getUInt16(value->byteArr, &object->repetitionDelay2.max)) != 0)
+            {
+            }
+        }
+    }
+    else if (index == 8)
+    {
+        ret = cosem_getOctetString2(value->byteArr, object->portReference, 6, NULL);
+    }
+    else if (index == 9)
+    {
+        ret = cosem_getInt8(value->byteArr, &object->pushClientSAP);
+    }
+    else if (index == 10)
+    {
+        gxPushProtectionParameters* it;
+        arr_clear(&object->pushProtectionParameters);
+        uint16_t count;
+        if ((ret = cosem_verifyArray(value->byteArr, &object->pushProtectionParameters, &count)) == 0) {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_getArrayItem(&object->pushProtectionParameters, pos,
+                    (void**)&it, sizeof(gxPushProtectionParameters))) == 0)
+                {
+                    if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
+                        (ret = cosem_getEnum(value->byteArr, &e1)) != 0 ||
+                        (ret = cosem_checkStructure(value->byteArr, 5)) != 0 ||
+                        (ret = cosem_getOctetString(value->byteArr, &it->transactionId)) != 0 ||
+                        (ret = cosem_getOctetString2(value->byteArr, it->originatorSystemTitle, 6, NULL)) != 0 ||
+                        (ret = cosem_getOctetString2(value->byteArr, it->recipientSystemTitle, 6, NULL)) != 0 ||
+                        (ret = cosem_getOctetString(value->byteArr, &it->otherInformation)) != 0 ||
+                        (ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
+                        (ret = cosem_getEnum(value->byteArr, &e2)) != 0)
+                    {
+                        break;
+                    }
+                    it->protectionType = (DLMS_PROTECTION_TYPE) e1;
+                    it->keyInfo.dataProtectionKeyType = (DLMS_DATA_PROTECTION_KEY_TYPE)e2;
+                    if (it->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_IDENTIFIED)
+                    {
+                        if ((ret = cosem_checkStructure(value->byteArr, 1)) != 0 ||
+                            (ret = cosem_getEnum(value->byteArr, &e1)) != 0)
+                        {
+                            break;
+                        }
+                        it->keyInfo.identifiedKey.keyType = (DLMS_DATA_PROTECTION_IDENTIFIED_KEY_TYPE)e1;
+                    }
+                    else if (it->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_WRAPPED)
+                    {
+                        if ((ret = cosem_checkStructure(value->byteArr, 1)) != 0 ||
+                            (ret = cosem_getEnum(value->byteArr, &e1)) != 0)
+                        {
+                            break;
+                        }
+                        it->keyInfo.wrappedKey.keyType = (DLMS_DATA_PROTECTION_WRAPPED_KEY_TYPE) e1;
+                    }
+                    else if (it->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_AGREED)
+                    {
+                        if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
+                            (ret = cosem_getOctetString(value->byteArr, &it->keyInfo.agreedKey.parameters)) != 0 ||
+                            (ret = cosem_getOctetString(value->byteArr, &it->keyInfo.agreedKey.data)) != 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else if (index == 11)
+    {
+        ret = cosem_getEnum(value->byteArr, &e1);
+        if (ret == 0)
+        {
+            object->pushOperationMethod = (DLMS_PUSH_OPERATION_METHOD)e1;
+        }
+    }
+    else if (index == 12)
+    {
+        if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
+            (ret = cosem_getDateTime(value->byteArr, &object->confirmationParameters.startDate)) != 0 ||
+            (ret = cosem_getUInt32(value->byteArr, &object->confirmationParameters.interval)) != 0)
+        {
+        }
+    }
+    else if (index == 13)
+    {
+        ret = cosem_getDateTime(value->byteArr, &object->lastConfirmationDateTime);
     }
     else
     {
@@ -3864,7 +3961,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
         }
     }
     return ret;
-}
+    }
 
 int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -4153,7 +4250,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-}
+        }
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
 int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVARIANT* value)
@@ -4213,7 +4310,7 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-}
+            }
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
 
 #if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA))
@@ -4516,7 +4613,7 @@ int compactData_updateTemplateDescription(
             if ((ret = cosem_getValue(settings, &e)) != 0)
             {
                 break;
-            }
+        }
             if (e.byteArray)
             {
                 if (bb_size(e.value.byteArr) == 0)
@@ -4667,13 +4764,13 @@ int compactData_updateTemplateDescription(
             }
             var_clear(&e.value);
             ve_clear(&e);
-        }
     }
+}
     bb_clear(&tmp);
     //svr_postGet(settings, &args);
     vec_empty(&args);
     return 0;
-}
+        }
 
 int cosem_setCompactData(
     dlmsSettings* settings,
@@ -4786,10 +4883,10 @@ int cosem_setParameterMonitor(
                     break;
                 }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+                }
             }
-        }
         break;
-    }
+        }
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
@@ -5269,7 +5366,7 @@ int cosem_setArbitrator(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-    }
+}
     return ret;
     }
 #endif //DLMS_IGNORE_ARBITRATOR

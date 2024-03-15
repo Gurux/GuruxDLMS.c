@@ -251,3 +251,5 @@ NordicSemiconductor/GuruxDLMSSimpleServerExample2/src/dlms
 *.raw
 *.vsidx
 *.lock
+development/VS/.vs/
+GuruxDLMSClientExample/VS/.vs/

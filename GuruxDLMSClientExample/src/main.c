@@ -163,7 +163,7 @@ void cip_tracePdu(
 {
     const char* direction = encrypt ? "TX" : "RX";
     char* str = bb_toHexString(pdu);
-    printf("%s PDU: %s\r\n", direction, str);
+    printf("\r\n%s PDU: %s\r\n", direction, str);
     free(str);
 }
 

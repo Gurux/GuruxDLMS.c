@@ -8,7 +8,7 @@ CFLAGS   = -std=gnu99 -Wall -I. -DGX_DLMS_MICROCONTROLLER -DDLMS_USE_EPOCH_TIME 
 
 LINKER   = gcc -o
 
-DLMS_SRCDIR = dlms/src
+DLMS_SRCDIR = ../development/src
 SRCDIR      = src
 OBJDIR      = obj
 BINDIR      = bin

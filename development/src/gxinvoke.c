@@ -809,8 +809,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                         memcpy(settings->base.cipher.blockCipherKey, BUFF, bb.size);
                         break;
                     case DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION:
-                        //Invalid type
-                        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                        memcpy(settings->base.cipher.broadcastBlockCipherKey, BUFF, bb.size);
                         break;
                     case DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION:
                         memcpy(settings->base.cipher.authenticationKey, BUFF, bb.size);
@@ -858,8 +857,8 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     bb_set(&settings->base.cipher.blockCipherKey, bb.data, bb.size);
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION:
-                    //Invalid type
-                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    bb_clear(&settings->base.cipher.broadcastBlockCipherKey);
+                    bb_set(&settings->base.cipher.broadcastBlockCipherKey, bb.data, bb.size);                    
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION:
                     bb_clear(&settings->base.cipher.authenticationKey);

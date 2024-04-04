@@ -2034,7 +2034,8 @@ int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index,
             object->controlState = (DLMS_CONTROL_STATE)value->bVal;
             ret = 0;
         }
-        else if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+        else if ((value->vt == DLMS_DATA_TYPE_OCTET_STRING) ||
+            (value->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING)))
         {
             if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
             {
@@ -2052,6 +2053,14 @@ int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index,
         {
             object->controlMode = (DLMS_CONTROL_MODE)value->bVal;
             ret = 0;
+        }
+        else if ((value->vt == DLMS_DATA_TYPE_OCTET_STRING) ||
+            (value->vt == (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING)))
+        {
+            if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+            {
+                object->controlMode = (DLMS_CONTROL_MODE)ch;
+            }
         }
         else
         {
@@ -2190,7 +2199,7 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
 #else
         ret = cosem_getOctetString2(value->byteArr, object->mBusPortReference, 6, NULL);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    }
+            }
     else if (index == 3)
     {
 #if defined(DLMS_COSEM_EXACT_DATA_TYPES)
@@ -2212,8 +2221,8 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
                 {
                     break;
                 }
-            }
         }
+    }
 #else
         gxCaptureDefinition* it;
         uint16_t count = arr_getCapacity(&object->captureDefinition);
@@ -2231,7 +2240,7 @@ int cosem_setmMbusClient(dlmsSettings* settings, gxMBusClient* object, unsigned 
             }
         }
 #endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
-    }
+}
     else if (index == 4)
     {
         ret = cosem_getUInt32(value->byteArr, &object->capturePeriod);
@@ -2348,8 +2357,8 @@ int cosem_setModemConfiguration(gxModemConfiguration* object, unsigned char inde
                     (ret = arr_push(&object->modemProfile, it)) != 0)
                 {
                     break;
-                }
-            }
+    }
+}
 #else
             for (pos = 0; pos != count; ++pos)
             {
@@ -2390,7 +2399,7 @@ int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char 
 #else
         ret = cosem_getOctetString2(value->byteArr, object->PHYReference, 6, NULL);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    }
+            }
     else if (index == 3)
     {
         arr_clear(&object->lcpOptions);
@@ -2456,7 +2465,7 @@ int cosem_setPppSetup(dlmsSettings* settings, gxPppSetup* object, unsigned char 
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-}
+        }
 #endif //DLMS_IGNORE_PPP_SETUP
 #ifndef DLMS_IGNORE_REGISTER_ACTIVATION
 int cosem_setRegisterActivation(
@@ -2519,7 +2528,7 @@ int cosem_setRegisterActivation(
 #endif //DLMS_IGNORE_OBJECT_POINTERS
             }
         }
-    }
+}
     else if (index == 3)
     {
         obj_clearRegisterActivationMaskList(&object->maskList);
@@ -2554,8 +2563,8 @@ int cosem_setRegisterActivation(
                             (ret = bb_setUInt8(&k->indexes, ch)) != 0)
                         {
                             break;
-                        }
-                    }
+            }
+        }
 #else
                     k->count = (unsigned char)size;
                     for (pos2 = 0; pos2 != size; ++pos2)
@@ -2566,9 +2575,9 @@ int cosem_setRegisterActivation(
                         }
                     }
 #endif //DLMS_COSEM_EXACT_DATA_TYPES
-                }
-            }
-        }
+    }
+    }
+}
     }
     else if (index == 4 && (value->vt & DLMS_DATA_TYPE_OCTET_STRING) != 0)
     {
@@ -2902,8 +2911,8 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
 #else
             ret = bb_get(value->byteArr, object->ipReference, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+            }
         }
-    }
     else if (index == 4)
     {
         ret = cosem_getUInt16(value->byteArr, &object->maximumSegmentSize);
@@ -2921,7 +2930,7 @@ int cosem_setTcpUdpSetup(dlmsSettings* settings, gxTcpUdpSetup* object, unsigned
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_TCP_UDP_SETUP
 
 #ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
@@ -3755,10 +3764,10 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                     svr_notifyTrace2("Adding object ", type, ln, 0);
 #endif //DLMS_DEBUG
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-                }
             }
         }
     }
+}
     else if (index == 3)
     {
         if ((ret = bb_clear(&object->destination)) != 0 ||
@@ -3843,7 +3852,7 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                     {
                         break;
                     }
-                    it->protectionType = (DLMS_PROTECTION_TYPE) e1;
+                    it->protectionType = (DLMS_PROTECTION_TYPE)e1;
                     it->keyInfo.dataProtectionKeyType = (DLMS_DATA_PROTECTION_KEY_TYPE)e2;
                     if (it->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_IDENTIFIED)
                     {
@@ -3861,7 +3870,7 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                         {
                             break;
                         }
-                        it->keyInfo.wrappedKey.keyType = (DLMS_DATA_PROTECTION_WRAPPED_KEY_TYPE) e1;
+                        it->keyInfo.wrappedKey.keyType = (DLMS_DATA_PROTECTION_WRAPPED_KEY_TYPE)e1;
                     }
                     else if (it->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_AGREED)
                     {
@@ -3961,7 +3970,7 @@ int setUnitCharge(dlmsSettings* settings, gxUnitCharge* target, dlmsVARIANT* val
         }
     }
     return ret;
-    }
+}
 
 int cosem_setCharge(dlmsSettings* settings, gxCharge* object, unsigned char index, dlmsVARIANT* value)
 {
@@ -4250,7 +4259,7 @@ int cosem_setAccount(gxAccount* object, unsigned char index, dlmsVARIANT* value)
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-        }
+}
 #endif //DLMS_IGNORE_ACCOUNT
 #ifndef DLMS_IGNORE_IMAGE_TRANSFER
 int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVARIANT* value)
@@ -4310,7 +4319,7 @@ int cosem_setImageTransfer(gxImageTransfer* object, unsigned char index, dlmsVAR
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-            }
+}
 #endif //DLMS_IGNORE_IMAGE_TRANSFER
 
 #if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA))
@@ -4613,7 +4622,7 @@ int compactData_updateTemplateDescription(
             if ((ret = cosem_getValue(settings, &e)) != 0)
             {
                 break;
-        }
+            }
             if (e.byteArray)
             {
                 if (bb_size(e.value.byteArr) == 0)
@@ -4764,13 +4773,13 @@ int compactData_updateTemplateDescription(
             }
             var_clear(&e.value);
             ve_clear(&e);
+        }
     }
-}
     bb_clear(&tmp);
     //svr_postGet(settings, &args);
     vec_empty(&args);
     return 0;
-        }
+}
 
 int cosem_setCompactData(
     dlmsSettings* settings,
@@ -4883,10 +4892,10 @@ int cosem_setParameterMonitor(
                     break;
                 }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-                }
             }
-        break;
         }
+        break;
+    }
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
@@ -5316,9 +5325,9 @@ int cosem_setArbitrator(
 #else
                 memcpy(it->scriptLogicalName, ln, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+                }
             }
         }
-    }
     break;
     case 3:
     {
@@ -5366,7 +5375,7 @@ int cosem_setArbitrator(
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
     }
 #endif //DLMS_IGNORE_ARBITRATOR

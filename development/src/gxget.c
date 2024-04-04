@@ -4671,7 +4671,11 @@ int cosem_getPushSetup(
     }
     else if (e->index == 8)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        ret = cosem_setOctetString2(data, object->portReference, 6);
+#else
         ret = cosem_setOctetString2(data, obj_getLogicalName(object->portReference), 6);
+#endif //DLMS_IGNORE_MALLOC
     }
     else if (e->index == 9)
     {
@@ -4948,7 +4952,7 @@ int cosem_getCharge(
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_CHARGE
 #ifndef DLMS_IGNORE_TOKEN_GATEWAY
 int cosem_getTokenGateway(
@@ -5147,7 +5151,7 @@ int cosem_getAccount(
                 }
             }
         }
-}
+    }
     else if (e->index == 11)
     {
         if ((ret = cosem_setArray(data, object->creditChargeConfigurations.size)) == 0)
@@ -5165,9 +5169,9 @@ int cosem_getAccount(
                         (ret = cosem_setOctetString2(data, ccc->chargeReference, 6)) != 0 ||
                         //collection configuration
                         (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
-                    {
-                        break;
-                    }
+                {
+                    break;
+                }
         }
     }
     else if (e->index == 12)
@@ -5250,7 +5254,7 @@ int cosem_getAccount(
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_ACCOUNT
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
@@ -5262,35 +5266,35 @@ int compactData_getValues2(
     gxByteBuffer* buffer,
     variantArray* values,
     unsigned char appendAA)
-                {
-                    int ret;
-                    gxDataInfo info;
-                    dlmsVARIANT tmp;
-                    gxByteBuffer data;
-                    //If templateDescription or buffer is not given.
-                    if (values == NULL || bb_size(templateDescription) == 0 || bb_size(buffer) == 0)
-                    {
-                        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-                    }
-                    va_clear(values);
-                    BYTE_BUFFER_INIT(&data);
-                    bb_set(&data, templateDescription->data, templateDescription->size);
-                    hlp_setObjectCount(buffer->size, &data);
-                    bb_set(&data, buffer->data, buffer->size);
-                    var_init(&tmp);
-                    di_init(&info);
+{
+    int ret;
+    gxDataInfo info;
+    dlmsVARIANT tmp;
+    gxByteBuffer data;
+    //If templateDescription or buffer is not given.
+    if (values == NULL || bb_size(templateDescription) == 0 || bb_size(buffer) == 0)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    va_clear(values);
+    BYTE_BUFFER_INIT(&data);
+    bb_set(&data, templateDescription->data, templateDescription->size);
+    hlp_setObjectCount(buffer->size, &data);
+    bb_set(&data, buffer->data, buffer->size);
+    var_init(&tmp);
+    di_init(&info);
 #ifdef DLMS_ITALIAN_STANDARD
-                    info.appendAA = appendAA;
+    info.appendAA = appendAA;
 #endif //DLMS_ITALIAN_STANDARD
-                    info.type = DLMS_DATA_TYPE_COMPACT_ARRAY;
-                    if ((ret = dlms_getData(&data, &info, &tmp)) == 0 && tmp.Arr != NULL)
-                    {
-                        va_attach2(values, tmp.Arr);
-                    }
-                    var_clear(&tmp);
-                    bb_clear(&data);
-                    return ret;
-                }
+    info.type = DLMS_DATA_TYPE_COMPACT_ARRAY;
+    if ((ret = dlms_getData(&data, &info, &tmp)) == 0 && tmp.Arr != NULL)
+    {
+        va_attach2(values, tmp.Arr);
+    }
+    var_clear(&tmp);
+    bb_clear(&data);
+    return ret;
+}
 
 //Convert compact data buffer to array of values.
 int compactData_getValues(
@@ -5875,13 +5879,13 @@ int cosem_getTariffPlan(gxValueEventArg* e)
         {
             return ret;
         }
-        }
+    }
     break;
     default:
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
     }
     return ret;
-    }
+}
 #endif //DLMS_ITALIAN_STANDARD
 
 #ifndef DLMS_IGNORE_GSM_DIAGNOSTIC
@@ -6027,9 +6031,9 @@ int cosem_getParameterMonitor(
                 (ret = cosem_setOctetString2(data, EMPTY_LN, 6)) != 0 ||
                 (ret = cosem_setInt8(data, 0)) != 0 ||
                 (ret = bb_setUInt8(data, 0)) != 0)
-                {
-                    //Error code is returned at the end of the function.
-                }
+            {
+                //Error code is returned at the end of the function.
+            }
         }
         else
         {
@@ -6104,14 +6108,14 @@ int cosem_getParameterMonitor(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
+            }
+        }
     }
-    }
-}
     break;
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
@@ -6328,7 +6332,7 @@ int cosem_getMulticastEntries(gxValueEventArg* e)
         }
     }
     return ret;
-            }
+}
 
 int cosem_getSwitchTable(gxValueEventArg* e)
 {
@@ -6359,7 +6363,7 @@ int cosem_getSwitchTable(gxValueEventArg* e)
         }
     }
     return ret;
-            }
+}
 
 int cosem_getDirectTable(gxValueEventArg* e)
 {
@@ -6398,7 +6402,7 @@ int cosem_getDirectTable(gxValueEventArg* e)
         }
     }
     return ret;
-            }
+}
 
 int cosem_getAvailableSwitches(gxValueEventArg* e)
 {
@@ -6435,7 +6439,7 @@ int cosem_getAvailableSwitches(gxValueEventArg* e)
         }
     }
     return ret;
-            }
+}
 
 int cosem_getCommunications(gxValueEventArg* e)
 {
@@ -6572,10 +6576,10 @@ int cosem_getArbitrator(gxValueEventArg* e)
                     (ret = cosem_setUInt16(data, it->scriptSelector)) != 0)
                 {
                     break;
+                }
             }
         }
     }
-}
     break;
     case 3:
     {
@@ -6599,11 +6603,11 @@ int cosem_getArbitrator(gxValueEventArg* e)
                     (ret = hlp_setObjectCount(a->size, data)) != 0)
                 {
                     break;
-            }
+                }
                 ret = bb_set(e->value.byteArr, a->data, ba_getByteCount(a->size));
+            }
         }
     }
-        }
     break;
     case 4:
     {
@@ -6875,9 +6879,9 @@ int cosem_getFSKMacCounters(
         break;
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-    return ret;
     }
+    return ret;
+}
 #endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
 
 #ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS

@@ -2987,7 +2987,7 @@ int svr_handleReleaseRequest(
     bb_clear(data);
 #ifdef DLMS_IGNORE_MALLOC
     unsigned char offset = IS_HDLC(settings->base.interfaceType) ? 12 : 9;
-    bb_attach(&tmp, data->data + offset, 0, data->capacity - offset);
+    bb_attach(&tmp, data->data + offset, 0, bb_getCapacity(data) - offset);
 #else
     BYTE_BUFFER_INIT(&tmp);
 #endif //DLMS_IGNORE_MALLOC

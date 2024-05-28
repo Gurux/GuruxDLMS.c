@@ -62,13 +62,7 @@ const uint32_t sha256_k[64] =
 #define SHA256_F2(x) (SHA2_ROTR(x,  6) ^ SHA2_ROTR(x, 11) ^ SHA2_ROTR(x, 25))
 #define SHA256_F3(x) (SHA2_ROTR(x,  7) ^ SHA2_ROTR(x, 18) ^ SHA2_SHFR(x,  3))
 #define SHA256_F4(x) (SHA2_ROTR(x, 17) ^ SHA2_ROTR(x, 19) ^ SHA2_SHFR(x, 10))
-#define SHA2_UNPACK32(x, str)                 \
-{                                             \
-    *((str) + 3) = (unsigned char) ((x)      );       \
-    *((str) + 2) = (unsigned char) ((x) >>  8);       \
-    *((str) + 1) = (unsigned char) ((x) >> 16);       \
-    *((str) + 0) = (unsigned char) ((x) >> 24);       \
-}
+
 #define SHA2_PACK32(str, x)                   \
 {                                             \
     *(x) =   ((uint32_t) *((str) + 3)      )    \
@@ -77,104 +71,101 @@ const uint32_t sha256_k[64] =
            | ((uint32_t) *((str) + 0) << 24);   \
 }
 
+#define SHA2_UNPACK64(x, str)                 \
+{                                             \
+    *((str) + 7) = (unsigned char) ((x));       \
+    *((str) + 6) = (unsigned char) ((x) >>  8);       \
+    *((str) + 5) = (unsigned char) ((x) >> 16);       \
+    *((str) + 4) = (unsigned char) ((x) >> 24);       \
+    *((str) + 3) = (unsigned char) ((x) >> 32);       \
+    *((str) + 2) = (unsigned char) ((x) >> 40);       \
+    *((str) + 1) = (unsigned char) ((x) >> 48);       \
+    *((str) + 0) = (unsigned char) ((x) >> 56);       \
+}
 
-void gxsha256_transform(uint32_t *h, const unsigned char *message, unsigned int block_nb)
+void gxsha256_transform(uint32_t* h, const unsigned char* message, uint32_t messageLength)
 {
     uint32_t w[64];
     uint32_t wv[8];
     uint32_t t1, t2;
-    const unsigned char *sub_block;
-    unsigned int i;
-    int j;
-    for (i = 0; i < block_nb; i++)
+    unsigned char pos;
+    for (pos = 0; pos < 16; ++pos)
     {
-        sub_block = message + (i << 6);
-        for (j = 0; j < 16; j++)
-        {
-            SHA2_PACK32(&sub_block[j << 2], &w[j]);
-        }
-        for (j = 16; j < 64; j++)
-        {
-            w[j] = SHA256_F4(w[j - 2]) + w[j - 7] + SHA256_F3(w[j - 15]) + w[j - 16];
-        }
-        for (j = 0; j < 8; j++)
-        {
-            wv[j] = h[j];
-        }
-        for (j = 0; j < 64; j++) {
-            t1 = wv[7] + SHA256_F2(wv[4]) + SHA2_CH(wv[4], wv[5], wv[6])
-                + sha256_k[j] + w[j];
-            t2 = SHA256_F1(wv[0]) + SHA2_MAJ(wv[0], wv[1], wv[2]);
-            wv[7] = wv[6];
-            wv[6] = wv[5];
-            wv[5] = wv[4];
-            wv[4] = wv[3] + t1;
-            wv[3] = wv[2];
-            wv[2] = wv[1];
-            wv[1] = wv[0];
-            wv[0] = t1 + t2;
-        }
-        for (j = 0; j < 8; j++)
-        {
-            h[j] += wv[j];
-        }
+        SHA2_PACK32(&message[pos << 2], &w[pos]);
     }
-}
-
-int gxsha256_update(uint32_t *h, unsigned char *block, gxByteBuffer* data, unsigned int *len, unsigned int *totalLen)
-{
-    unsigned int block_nb;
-    unsigned int new_len, rem_len, tmp_len;
-    const unsigned char *shifted_message;
-    tmp_len = 64 - (data->size - data->position);
-    rem_len = data->size < tmp_len ? data->size : tmp_len;
-    memcpy(&block[data->position], data->data, rem_len);
-    if (data->size - data->position < 64)
+    for (pos = 16; pos < 64; pos++)
     {
-        data->position = data->size;
-        return 0;
+        w[pos] = SHA256_F4(w[pos - 2]) + w[pos - 7] + SHA256_F3(w[pos - 15]) + w[pos - 16];
     }
-    new_len = *len - rem_len;
-    block_nb = new_len / 64;
-    shifted_message = data->data + rem_len;
-    gxsha256_transform(h, block, 1);
-    gxsha256_transform(h, shifted_message, block_nb);
-    rem_len = new_len % 64;
-    memcpy(block, &shifted_message[block_nb << 6], rem_len);
-    *len = rem_len;
-    *totalLen += (block_nb + 1) << 6;
-    return 0;
-}
-
-int gxsha256_final(uint32_t *h, unsigned char *block, unsigned char *digest, unsigned int len, unsigned int totalLen)
-{
-    unsigned int block_nb;
-    unsigned int pm_len;
-    uint32_t len_b;
-    int i;
-    block_nb = (1 + ((64 - 9) < (len % 64)));
-    len_b = (totalLen + len) << 3;
-    pm_len = block_nb << 6;
-    memset(block + len, 0, pm_len - len);
-    block[len] = 0x80;
-    SHA2_UNPACK32(len_b, block + pm_len - 4);
-    gxsha256_transform(h, block, block_nb);
-    for (i = 0; i < 8; i++)
+    for (pos = 0; pos < 8; pos++)
     {
-        SHA2_UNPACK32(h[i], &digest[i << 2]);
+        wv[pos] = h[pos];
     }
-    return 0;
+    for (pos = 0; pos < 64; pos++) {
+        t1 = wv[7] + SHA256_F2(wv[4]) + SHA2_CH(wv[4], wv[5], wv[6])
+            + sha256_k[pos] + w[pos];
+        t2 = SHA256_F1(wv[0]) + SHA2_MAJ(wv[0], wv[1], wv[2]);
+        wv[7] = wv[6];
+        wv[6] = wv[5];
+        wv[5] = wv[4];
+        wv[4] = wv[3] + t1;
+        wv[3] = wv[2];
+        wv[2] = wv[1];
+        wv[1] = wv[0];
+        wv[0] = t1 + t2;
+    }
+    for (pos = 0; pos < 8; pos++)
+    {
+        h[pos] += wv[pos];
+    }
 }
 
 int gxsha256_encrypt(gxByteBuffer* data, gxByteBuffer* digest)
 {
-    unsigned int len = data->size, totalLen = 0;
-    uint32_t h[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 };
-    unsigned char block[128];
+    int ret = 0;
+    unsigned int len = data->size;
+    uint32_t h[8] = { 0x6a09e667, 0xbb67ae85,
+        0x3c6ef372, 0xa54ff53a,
+        0x510e527f, 0x9b05688c,
+        0x1f83d9ab, 0x5be0cd19 };
+
+    unsigned char block[64];
+    unsigned char pos, size = sizeof(block);
+    unsigned char bidsAdded = 0;
+    while (!bidsAdded)
+    {
+        if (bb_available(data) < 64)
+        {
+            size = (unsigned char)bb_available(data);
+        }
+        memcpy(block, data->data + data->position, size);
+        memset(block + size, 0, sizeof(block) - size);
+        if (bb_available(data) < 64 && size != 0)
+        {
+            // Append a bit 1
+            block[size] = 0x80;
+        }
+        if (bb_available(data) < 56)
+        {
+            bidsAdded = 1;
+            //Add bit length to the end of last block.
+            uint64_t len_b = (uint64_t)len;
+            len_b <<= 3;
+            SHA2_UNPACK64(len_b, block + sizeof(block) - 8);
+        }
+        gxsha256_transform(h, block, size);
+        data->position += size;
+    }
+    digest->size = 0;
     bb_capacity(digest, 32);
-    digest->size = 32;
-    gxsha256_update((uint32_t*)&h, block, data, &len, &totalLen);
-    return gxsha256_final(h, block, digest->data, len, totalLen);
+    for (pos = 0; pos < 8; ++pos)
+    {
+        if ((ret = bb_setUInt32(digest, h[pos])) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
 }
 
 #endif //DLMS_IGNORE_HIGH_SHA256

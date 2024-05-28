@@ -4885,7 +4885,7 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
                 settings->preEstablishedSystemTitle,
                 settings->cipher.blockCipherKey,
 #endif //DLMS_IGNORE_MALLOC
-                &data->data,
+                & data->data,
                 &security,
                 &suite,
                 &invocationCounter)) != 0)
@@ -5859,7 +5859,7 @@ int dlms_getLNPdu(
         // Add attribute descriptor.
         if (ret == 0 && p->attributeDescriptor != NULL)
         {
-            ret = bb_set(reply, p->attributeDescriptor->data, p->attributeDescriptor->size);
+            ret = bb_set2(reply, p->attributeDescriptor, p->attributeDescriptor->position, p->attributeDescriptor->size);
         }
 #endif //DLMS_IGNORE_MALLOC
         if (ret == 0 &&
@@ -6381,10 +6381,12 @@ int dlms_getData3(
         switch (data->command)
         {
         case DLMS_COMMAND_DATA_NOTIFICATION:
+#ifndef DLMS_IGNORE_HIGH_GMAC
         case DLMS_COMMAND_GLO_EVENT_NOTIFICATION_REQUEST:
+        case DLMS_COMMAND_DED_EVENT_NOTIFICATION:
+#endif //DLMS_IGNORE_HIGH_GMAC
         case DLMS_COMMAND_INFORMATION_REPORT:
         case DLMS_COMMAND_EVENT_NOTIFICATION:
-        case DLMS_COMMAND_DED_EVENT_NOTIFICATION:
             *isNotify = 1;
             notify->complete = data->complete;
             notify->moreData = data->moreData;
@@ -6602,40 +6604,6 @@ int dlms_secure(
             //If SHA256 is not used.
 #ifdef DLMS_IGNORE_HIGH_SHA256
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-#else
-#ifndef DLMS_IGNORE_HIGH_GMAC
-#ifdef DLMS_IGNORE_MALLOC
-            if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
-                (ret = bb_set(&challenge, settings->cipher.systemTitle, 8)) != 0 ||
-                (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
-            {
-                return ret;
-            }
-#else
-            if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
-                (ret = bb_set(&challenge, settings->cipher.systemTitle.data, settings->cipher.systemTitle.size)) != 0 ||
-                (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
-            {
-                return ret;
-            }
-#endif //DLMS_IGNORE_MALLOC
-            if (settings->server)
-            {
-                if ((ret = bb_set(&challenge, settings->ctoSChallenge.data, settings->ctoSChallenge.size)) != 0 ||
-                    (ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0)
-                {
-                    return ret;
-                }
-            }
-            else
-            {
-                if ((ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0 ||
-                    (ret = bb_set(&challenge, settings->ctoSChallenge.data, settings->ctoSChallenge.size)) != 0)
-                {
-                    return ret;
-                }
-            }
-#endif //DLMS_IGNORE_HIGH_GMAC
 #endif //DLMS_IGNORE_HIGH_SHA256
         }
         else
@@ -6675,7 +6643,7 @@ int dlms_secure(
 #ifdef DLMS_IGNORE_HIGH_SHA256
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #else
-        ret = gxsha256_encrypt(&challenge, reply);
+        ret = gxsha256_encrypt(secret, reply);
         bb_clear(&challenge);
         return ret;
 #endif //DLMS_IGNORE_HIGH_SHA256

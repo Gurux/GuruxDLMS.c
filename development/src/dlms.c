@@ -6414,9 +6414,10 @@ int dlms_generateChallenge(
     gxByteBuffer* challenge)
 {
     // Random challenge is 8 to 64 bytes.
-    // Texas Instruments accepts only 16 byte int32_t challenge.
+    // Texas Instruments accepts only 16 byte long challenge.
     // For this reason challenge size is 16 bytes at the moment.
-    int ret = 0, pos, len = 16;//hlp_rand() % 58 + 8;
+    int ret = 0, pos, len = 16;
+    srand((unsigned int)time(NULL));
     bb_clear(challenge);
     for (pos = 0; pos != len; ++pos)
     {

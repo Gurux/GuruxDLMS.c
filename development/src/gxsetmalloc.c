@@ -5471,12 +5471,15 @@ int cosem_setArrayManager(
 #endif //DLMS_IGNORE_ARRAY_MANAGER
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
-int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setPushSetup(dlmsSettings* settings,
+    gxPushSetup* object,
+    unsigned char index,
+    dlmsVARIANT* value)
 {
-    int ret, pos;
+    int ret = DLMS_ERROR_CODE_OK, pos;
     gxTarget* it;
     gxObject* obj;
-    dlmsVARIANT* tmp, * tmp3;
+    dlmsVARIANT* tmp, * tmp3, * options, * keyInfo, * data;
     gxtime* s, * e;
     if (index == 2)
     {
@@ -5489,12 +5492,12 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                 ret = va_getByIndex(value->Arr, pos, &tmp);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
-                    return ret;
+                    break;
                 }
                 ret = va_getByIndex(tmp->Arr, 0, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
-                    return ret;
+                    break;
                 }
                 type = (DLMS_OBJECT_TYPE)var_toInteger(tmp3);
                 //Get LN.
@@ -5502,18 +5505,18 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                 ret = va_getByIndex(tmp->Arr, 1, &tmp3);
                 if (ret != DLMS_ERROR_CODE_OK)
                 {
-                    return ret;
+                    break;
                 }
                 obj = NULL;
                 if ((ret = oa_findByLN(&settings->objects, type, tmp3->byteArr->data, &obj)) != 0)
                 {
-                    return ret;
+                    break;
                 }
                 if (obj == NULL)
                 {
                     if ((ret = cosem_createObject(type, &obj)) != 0)
                     {
-                        return ret;
+                        break;
                     }
                     oa_push(&settings->releasedObjects, obj);
                     memcpy(obj->logicalName, tmp3->byteArr->data, tmp3->byteArr->size);
@@ -5607,13 +5610,179 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
     }
     else if (index == 7)
     {
-        object->repetitionDelay = (uint16_t)var_toInteger(value);
+        if (object->base.version < 2 ||
+            value->vt == DLMS_DATA_TYPE_UINT16)
+        {
+            object->repetitionDelay = (uint16_t)var_toInteger(value);
+        }
+        else if (value->vt == DLMS_DATA_TYPE_STRUCTURE)
+        {
+            ret = va_getByIndex(value->Arr, 0, &tmp);
+            if (ret == DLMS_ERROR_CODE_OK)
+            {
+                object->repetitionDelay2.min = (uint16_t)var_toInteger(tmp);
+                ret = va_getByIndex(value->Arr, 1, &tmp);
+                if (ret == DLMS_ERROR_CODE_OK)
+                {
+                    object->repetitionDelay2.exponent = (uint16_t)var_toInteger(tmp);
+                    ret = va_getByIndex(value->Arr, 2, &tmp);
+                    if (ret == DLMS_ERROR_CODE_OK)
+                    {
+                        object->repetitionDelay2.max = (uint16_t)var_toInteger(tmp);
+                    }
+                }
+            }
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+    }
+    else if (index == 8)
+    {
+        object->portReference = NULL;
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        if (bb_size(value->byteArr) == 6)
+        {
+            ret = oa_findByLN(&settings->objects, DLMS_OBJECT_TYPE_NONE, value->byteArr->data, &object->portReference);
+        }
+#else
+        memset(object->portReference.logicalName, 0, 6);
+        if (it2->byteArr != NULL && it2->byteArr->size == 6)
+        {
+            memcpy(object->portReference.logicalName, it2->byteArr->data, 6);
+        }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }
+    else if (index == 9)
+    {
+        object->pushClientSAP = (signed char)var_toInteger(value);
+    }
+    else if (index == 10)
+    {
+        arr_clear(&object->pushProtectionParameters);
+        if (value->Arr != NULL)
+        {
+            gxPushProtectionParameters* p;
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                p = gxmalloc(sizeof(gxPushProtectionParameters));
+                if (p == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                if ((ret = va_getByIndex(value->Arr, pos, &tmp)) != 0 ||
+                    (ret = va_getByIndex(tmp->Arr, 0, &tmp3)) != 0 ||
+                    (ret = va_getByIndex(tmp->Arr, 1, &options)) != 0 ||
+                    (ret = va_getByIndex(options->Arr, 4, &keyInfo)) != 0 ||
+                    (ret = va_getByIndex(keyInfo->Arr, 1, &data)) != 0)
+                {
+                    gxfree(p);
+                    break;
+                }
+                bb_init(&p->transactionId);
+                bb_init(&p->otherInformation);
+                bb_init(&p->keyInfo.agreedKey.parameters);
+                bb_init(&p->keyInfo.agreedKey.data);
+
+                p->protectionType = (DLMS_PROTECTION_TYPE)var_toInteger(tmp3);
+
+                if ((ret = va_getByIndex(options->Arr, 0, &tmp)) != 0 ||
+                    (ret = bb_set(&p->transactionId, tmp->byteArr->data, bb_size(tmp->byteArr))) != 0)
+                {
+                    gxfree(p);
+                    break;
+                }
+                if ((ret = va_getByIndex(options->Arr, 1, &tmp)) != 0)
+                {
+                    gxfree(p);
+                    break;
+                }
+                memcpy(p->originatorSystemTitle, tmp->byteArr->data, bb_size(tmp->byteArr));
+                if ((ret = va_getByIndex(options->Arr, 2, &tmp)) != 0)
+                {
+                    gxfree(p);
+                    break;
+                }
+                memcpy(p->recipientSystemTitle, tmp->byteArr, bb_size(tmp->byteArr));
+                if ((ret = va_getByIndex(options->Arr, 3, &tmp)) != 0 ||
+                    (ret = bb_set(&p->otherInformation, tmp->byteArr->data, bb_size(tmp->byteArr))) != 0)
+                {
+                    gxfree(p);
+                    break;
+                }
+                if ((ret = va_getByIndex(keyInfo->Arr, 0, &tmp)) != 0)
+                {
+                    gxfree(p);
+                    break;
+                }
+                p->keyInfo.dataProtectionKeyType = (DLMS_DATA_PROTECTION_KEY_TYPE)var_toInteger(tmp);
+                if (p->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_IDENTIFIED)
+                {
+                    if ((ret = va_getByIndex(data->Arr, 0, &tmp)) != 0)
+                    {
+                        gxfree(p);
+                        break;
+                    }
+                    p->keyInfo.identifiedKey.keyType = (DLMS_DATA_PROTECTION_IDENTIFIED_KEY_TYPE)var_toInteger(tmp);
+                }
+                else if (p->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_WRAPPED)
+                {
+                    if ((ret = va_getByIndex(data->Arr, 0, &tmp)) != 0)
+                    {
+                        gxfree(p);
+                        break;
+                    }
+                    p->keyInfo.wrappedKey.keyType = (DLMS_DATA_PROTECTION_WRAPPED_KEY_TYPE)var_toInteger(tmp);
+                }
+                else if (p->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_AGREED)
+                {
+                    if ((ret = va_getByIndex(data->Arr, 0, &tmp)) != 0 ||
+                        (ret = bb_set(&p->keyInfo.agreedKey.parameters, tmp->byteArr->data, bb_size(tmp->byteArr))) != 0)
+                    {
+                        gxfree(p);
+                        break;
+                    }
+                    if ((ret = va_getByIndex(data->Arr, 1, &tmp)) != 0 ||
+                        (ret = bb_set(&p->keyInfo.agreedKey.data, tmp->byteArr->data, bb_size(tmp->byteArr))) != 0)
+                    {
+                        gxfree(p);
+                        break;
+                    }
+                }
+                arr_push(&object->pushProtectionParameters, p);
+            }
+        }
+    }
+    else if (index == 11)
+    {
+        object->pushOperationMethod = (DLMS_PUSH_OPERATION_METHOD)var_toInteger(value);
+    }
+    else if (index == 12)
+    {
+        ret = va_getByIndex(value->Arr, 0, &tmp);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        object->confirmationParameters.startDate = *tmp->dateTime;
+        ret = va_getByIndex(value->Arr, 1, &tmp);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        object->confirmationParameters.interval = (uint32_t)var_toInteger(tmp);
+    }
+    else if (index == 13)
+    {
+        object->lastConfirmationDateTime = *value->dateTime;
     }
     else
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    return DLMS_ERROR_CODE_OK;
+    return ret;
 }
 #endif //DLMS_IGNORE_PUSH_SETUP
 
@@ -7750,9 +7919,9 @@ int cosem_setArbitrator(
                 }
                 it->scriptSelector = (uint16_t)var_toInteger(tmp2);
                 arr_push(&object->actions, it);
+                }
             }
         }
-    }
     break;
     case 3:
     {
@@ -7833,7 +8002,7 @@ int cosem_setArbitrator(
         break;
     }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_ARBITRATOR
 #ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
 int cosem_setIec8802LlcType1Setup(

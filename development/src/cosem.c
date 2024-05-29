@@ -926,7 +926,10 @@ int cosem_getInt32(gxByteBuffer* bb, int32_t* value)
     return 0;
 }
 
-int cosem_getOctetStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned char type, unsigned char exact)
+int cosem_getOctetStringBase(gxByteBuffer* bb, 
+    gxByteBuffer* value, 
+    unsigned char type, 
+    unsigned char exact)
 {
     int ret;
     unsigned char tmp;
@@ -955,7 +958,11 @@ int cosem_getOctetStringBase(gxByteBuffer* bb, gxByteBuffer* value, unsigned cha
     return 0;
 }
 
-int cosem_getOctetStringBase2(gxByteBuffer* bb, unsigned char* value, uint16_t capacity, uint16_t* size, unsigned char type)
+int cosem_getOctetStringBase2(gxByteBuffer* bb, 
+    unsigned char* value, 
+    uint16_t capacity, 
+    uint16_t* size, 
+    unsigned char type)
 {
     int ret;
     unsigned char tmp;

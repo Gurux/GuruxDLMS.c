@@ -83,6 +83,8 @@ extern "C" {
 #else
         struct tm value;
 #endif
+        /*Milliseconds.*/
+        uint16_t millisecond;
         int16_t deviation;
         DATETIME_SKIPS skip : 16;
         DLMS_DATE_TIME_EXTRA_INFO extraInfo : 8;

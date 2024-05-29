@@ -191,6 +191,11 @@ void time_init(
         time->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2;
         day = 1;
     }
+    else if ((time->skip & DATETIME_SKIPS_MONTH) != 0)
+    {
+        //If month is skipped.
+        day += 2;
+    }
     tmp = month;
     tmp *= 30L;
     time->value += tmp;
@@ -238,12 +243,17 @@ void time_init(
     {
         time->skip |= DATETIME_SKIPS_SECOND;
     }
-    time->skip |= DATETIME_SKIPS_MS;
+    if (millisecond < 1000)
+    {
+        time->skip |= DATETIME_SKIPS_MS;
+        millisecond = 0;
+    }
     if (devitation == (short)0x8000)
     {
         time->skip |= DATETIME_SKIPS_DEVITATION;
     }
     time->deviation = devitation;
+    time->millisecond = millisecond;
 #else
     int skip = DATETIME_SKIPS_NONE;
     memset(&time->value, 0, sizeof(time->value));
@@ -317,6 +327,7 @@ void time_init(
     time->value.tm_min = minute;
     time->value.tm_sec = second;
     time->deviation = devitation;
+    time->millisecond = millisecond;
     if (gxmktime(&time->value) == (time_t)-1)
     {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -1163,6 +1174,17 @@ int time_toString(
             empty = 0;
         }
         bb_setUInt8(ba, '*');
+    }
+    //Add milliseconds.
+    if ((time->skip & DATETIME_SKIPS_MS) == 0 &&
+        time->millisecond != 0)
+    {
+        if (!empty)
+        {
+            bb_setUInt8(ba, '.');
+        }
+        empty = 0;
+        bb_addIntAsString2(ba, time->millisecond, 2);
     }
     if (time->deviation != (short)0x8000 && (time->skip & DATETIME_SKIPS_DEVITATION) == 0)
     {

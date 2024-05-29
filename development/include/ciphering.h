@@ -170,6 +170,21 @@ int cip_decryptKey(
     gxByteBuffer* data,
     gxByteBuffer* output);
 
+//Show decoded PDU. 
+// This can be used to show decoded PDU. 
+//In default this is not used.
+//It's used after DLMS_TRACE_PDU is defined.
+#ifdef DLMS_TRACE_PDU
+/*
+* Show send or received PDU without ciphering. This can be use in debugging.
+* encrypt: If true, the data is encrypt (send) and if false, it's decrypted (received).
+* pdu: decrypted Pdu.
+*/
+extern void cip_tracePdu(
+    unsigned char encrypt,
+    gxByteBuffer* pdu);
+#endif //DLMS_TRACE_PDU
+
 #ifdef  __cplusplus
 }
 #endif

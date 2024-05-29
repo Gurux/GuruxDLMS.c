@@ -1134,6 +1134,7 @@ void obj_clear(gxObject* object)
 #ifndef DLMS_IGNORE_PUSH_SETUP
         case DLMS_OBJECT_TYPE_PUSH_SETUP:
             obj_clearPushObjectList(&((gxPushSetup*)object)->pushObjectList);
+            arr_clear(&((gxPushSetup*)object)->pushProtectionParameters);
 #ifdef DLMS_IGNORE_MALLOC
             ((gxPushSetup*)object)->destination.size = 0;
 #else
@@ -1513,7 +1514,18 @@ unsigned char obj_attributeCount(gxObject* object)
         ret = 2;
         break;
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
-        ret = 7;
+        if (object->version == 0)
+        {
+            ret = 7;
+        }
+        else if (object->version == 1)
+        {
+            ret = 10;
+        }
+        else
+        {
+            ret = 13;
+        }
         break;
     case DLMS_OBJECT_TYPE_DATA_PROTECTION:
         ret = 6;
@@ -1927,7 +1939,14 @@ unsigned char obj_methodCount(gxObject* object)
         ret = 0;
         break;
     case DLMS_OBJECT_TYPE_PUSH_SETUP:
-        ret = 1;
+        if (object->version < 2)
+        {
+            ret = 1;
+        }
+        else
+        {
+            ret = 2;
+        }
         break;
     case DLMS_OBJECT_TYPE_DATA_PROTECTION:
         ret = 3;
@@ -2118,7 +2137,7 @@ void clock_updateDST(gxClock* object, gxtime* value)
         object->status &= ~DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
     }
     object->time.status = object->status;
-}
+    }
 #endif //DLMS_IGNORE_SERVER
 
 int clock_utcToMeterTime(gxClock* object, gxtime* value)

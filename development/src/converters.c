@@ -1047,6 +1047,47 @@ int obj_CaptureObjectsToString(gxByteBuffer* ba, gxArray* objects)
 }
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
+
+int obj_PushProtectionParametersToString(gxByteBuffer* ba, gxArray* objects)
+{
+    uint16_t pos;
+    int ret = DLMS_ERROR_CODE_OK;
+    gxPushProtectionParameters* it;
+    for (pos = 0; pos != objects->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(objects, pos, (void**)&it)) != DLMS_ERROR_CODE_OK)
+        {
+            break;
+        }
+        if (pos != 0)
+        {
+            bb_addString(ba, ", ");
+        }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        if ((ret = bb_addString(ba, obj_typeToString2((DLMS_OBJECT_TYPE)it->target->objectType))) != 0 ||
+            (ret = bb_addString(ba, " ")) != 0 ||
+            (ret = hlp_appendLogicalName(ba, it->target->logicalName)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = bb_addIntAsString(ba, it->protectionType)) != 0 ||
+            (ret = bb_addString(ba, " ")) != 0 ||
+            (ret = bb_set(ba, it->transactionId.data, bb_size(&it->transactionId))) != 0 ||
+            (ret = bb_addString(ba, " ")) != 0 ||
+            (ret = bb_set(ba, it->originatorSystemTitle, 8)) != 0 ||
+            (ret = bb_addString(ba, " ")) != 0 ||
+            (ret = bb_set(ba, it->recipientSystemTitle, 8)) != 0 ||
+            (ret = bb_addString(ba, " ")) != 0 ||
+            (ret = bb_set(ba, it->otherInformation.data, bb_size(&it->otherInformation))) != 0)
+        {
+            break;
+        }
+#endif //#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    }
+    return ret;
+}
+
 int obj_pushSetupToString(gxPushSetup* object, char** buff)
 {
     int ret;
@@ -1064,11 +1105,72 @@ int obj_pushSetupToString(gxPushSetup* object, char** buff)
         (ret = bb_addIntAsString(&ba, object->randomisationStartInterval)) == 0 &&
         (ret = bb_addString(&ba, "\nIndex: 6 Value: ")) == 0 &&
         (ret = bb_addIntAsString(&ba, object->numberOfRetries)) == 0 &&
-        (ret = bb_addString(&ba, "\nIndex: 7 Value: ")) == 0 &&
-        (ret = bb_addIntAsString(&ba, object->repetitionDelay)) == 0 &&
-        (ret = bb_addString(&ba, "\n")) == 0)
+        (ret = bb_addString(&ba, "\nIndex: 7 Value: ")) == 0)
     {
-        *buff = bb_toString(&ba);
+        if (object->base.version < 2)
+        {
+            ret = bb_addIntAsString(&ba, object->repetitionDelay);
+        }
+        else
+        {
+            if ((ret = bb_addIntAsString(&ba, object->repetitionDelay2.min)) == 0 &&
+                (ret = bb_addString(&ba, ", ")) == 0 &&
+                (ret = bb_addIntAsString(&ba, object->repetitionDelay2.exponent)) == 0 &&
+                (ret = bb_addString(&ba, ", ")) == 0 &&
+                (ret = bb_addIntAsString(&ba, object->repetitionDelay2.max)) == 0)
+            {
+
+            }
+        }
+        if (object->base.version > 0)
+        {
+            if ((ret = bb_addString(&ba, "\nIndex: 8 Value: ")) == 0)
+            {
+                if (object->portReference == NULL)
+                {
+                    ret = hlp_appendLogicalName(&ba, EMPTY_LN);
+                }
+                else
+                {
+                    ret = hlp_appendLogicalName(&ba, object->portReference->logicalName);
+                }
+            }
+
+            if (ret == 0 &&
+                (ret = bb_addString(&ba, "\nIndex: 9 Value: ")) == 0 &&
+                (ret = bb_addIntAsString(&ba, object->pushClientSAP)) == 0)
+            {
+
+            }
+
+            if (ret == 0 &&
+                (ret = bb_addString(&ba, "\nIndex: 10 Value: ")) == 0)
+            {
+                ret = obj_PushProtectionParametersToString(&ba, &object->pushProtectionParameters);
+            }
+            if (object->base.version > 1 && ret == 0)
+            {
+                if ((ret = bb_addString(&ba, "\nIndex: 11 Value: ")) == 0 &&
+                    (ret = bb_addIntAsString(&ba, object->pushOperationMethod)) == 0)
+                {
+                    if ((ret = bb_addString(&ba, "\nIndex: 12 Value: ")) == 0 &&
+                        (ret = time_toString(&object->confirmationParameters.startDate, &ba)) == 0 &&
+                        (ret = bb_addString(&ba, ", ")) == 0 &&
+                        (ret = bb_addIntAsString(&ba, object->confirmationParameters.interval)) == 0)
+                    {
+                        if ((ret = bb_addString(&ba, "\nIndex: 13 Value: ")) == 0 &&
+                            (ret = time_toString(&object->lastConfirmationDateTime, &ba)) == 0)
+                        {
+                        }
+                    }
+                }
+            }
+        }
+        if (ret == 0 &&
+            (ret = bb_addString(&ba, "\n")) == 0)
+        {
+            *buff = bb_toString(&ba);
+        }
     }
     bb_clear(&ba);
     return ret;
@@ -1238,12 +1340,12 @@ int obj_dayProfileToString(gxArray* arr, gxByteBuffer* ba)
             bb_addIntAsString(ba, it->scriptSelector);
             bb_addString(ba, " ");
             time_toString(&it->startTime, ba);
-        }
+            }
         bb_addString(ba, "]");
-    }
+        }
     bb_addString(ba, "]");
     return 0;
-}
+    }
 
 int obj_activityCalendarToString(gxActivityCalendar* object, char** buff)
 {
@@ -1502,13 +1604,13 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
                     (ret = bb_attachString(&ba, bb_toHexString(&it->indexes))) != 0)
                 {
                     break;
-                }
-#endif //DLMS_IGNORE_OBJECT_POINTERS
             }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+        }
             bb_addString(&ba, "]\n");
             *buff = bb_toString(&ba);
-        }
     }
+}
     bb_clear(&ba);
     return ret;
 }
@@ -1530,7 +1632,7 @@ void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     bb_addString(ba, " ");
     bb_addIntAsString(ba, item->scriptSelector);
-}
+    }
 #endif //!(defined(DLMS_IGNORE_REGISTER_MONITOR) && defined(DLMS_IGNORE_LIMITER))
 
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
@@ -1601,7 +1703,7 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
 int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
@@ -1655,7 +1757,7 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return DLMS_ERROR_CODE_OK;
-}
+    }
 #endif //DLMS_IGNORE_ACTION_SCHEDULE
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
 int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
@@ -1762,7 +1864,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
         {
             return ret;
         }
-    }
+        }
     bb_addString(&ba, "]\nIndex: 5 Value: [");
     for (pos = 0; pos != object->ipOptions.size; ++pos)
     {
@@ -1795,7 +1897,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_IP4_SETUP
 
 #ifndef DLMS_IGNORE_IP6_SETUP
@@ -1909,7 +2011,7 @@ int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
     }
     bb_clear(&ba);
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_IP6_SETUP
 
 #ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
@@ -2340,7 +2442,7 @@ int obj_G3Plc6LoWPANToString(gxG3Plc6LoWPAN* object, char** buff)
     if ((ret = obj_UInt16ArrayToString(&ba, &object->groupTable)) != 0)
     {
         return ret;
-    }
+}
 #else
     if ((ret = va_toString(&object->groupTable, &ba)) != 0)
     {
@@ -2369,7 +2471,7 @@ int obj_G3Plc6LoWPANToString(gxG3Plc6LoWPAN* object, char** buff)
     {
         bb_clear(&ba);
         return ret;
-    }
+}
 #else
     if ((ret = va_toString(&object->destinationAddress, &ba)) != 0)
     {
@@ -2385,7 +2487,7 @@ int obj_G3Plc6LoWPANToString(gxG3Plc6LoWPAN* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
 
 
@@ -2650,7 +2752,7 @@ int obj_limiterToString(gxLimiter* object, char** buff)
     if ((ret = obj_UInt16ArrayToString(&ba, &object->emergencyProfileGroupIDs)) != 0)
     {
         return ret;
-    }
+}
 #else
     if ((ret = va_toString(&object->emergencyProfileGroupIDs, &ba)) != 0)
     {
@@ -2711,7 +2813,7 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_MBUS_CLIENT
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
 int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
@@ -3034,7 +3136,7 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-}
+    }
 #endif //DLMS_IGNORE_PPP_SETUP
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
@@ -3088,7 +3190,7 @@ int obj_appendReferences(gxByteBuffer* ba, gxArray* list)
         {
             break;
         }
-    }
+}
     return ret;
 }
 int obj_accountToString(gxAccount* object, char** buff)

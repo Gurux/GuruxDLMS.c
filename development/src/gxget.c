@@ -4437,16 +4437,16 @@ int cosem_getFunctionControl(
                     {
                         break;
                     }
-                    }
                 }
             }
         }
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_FUNCTION_CONTROL
 
 #ifndef DLMS_IGNORE_ARRAY_MANAGER
@@ -4581,7 +4581,7 @@ int cosem_getPushSetup(
                     (ret = cosem_setUInt16(data, it->dataIndex)) != 0)
                 {
                     break;
-        }
+                }
 #else
                 if ((ret = arr_getByIndex(&object->pushObjectList, pos, (void**)&it)) != 0 ||
                     (ret = cosem_setStructure(data, 4)) != 0 ||
@@ -4597,9 +4597,9 @@ int cosem_getPushSetup(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
+            }
+        }
     }
-}
-}
     else if (e->index == 3)
     {
         if ((ret = cosem_setStructure(data, 3)) != 0 ||
@@ -4630,7 +4630,7 @@ int cosem_getPushSetup(
                     (ret = cosem_setDateTimeAsOctetString(data, &d->second)) != 0)
                 {
                     break;
-        }
+                }
 #else
                 if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&it)) != 0 ||
                     (ret = cosem_setStructure(data, 2)) != 0 ||
@@ -4642,7 +4642,7 @@ int cosem_getPushSetup(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
-    }
+            }
         }
     }
     else if (e->index == 5)
@@ -4655,7 +4655,101 @@ int cosem_getPushSetup(
     }
     else if (e->index == 7)
     {
-        ret = cosem_setUInt16(e->value.byteArr, object->repetitionDelay);
+        if (object->base.version < 2)
+        {
+            ret = cosem_setUInt16(e->value.byteArr, object->repetitionDelay);
+        }
+        else
+        {
+            if ((ret = cosem_setStructure(e->value.byteArr, 3)) == 0 &&
+                (ret = cosem_setUInt16(e->value.byteArr, object->repetitionDelay2.min)) == 0 &&
+                (ret = cosem_setUInt16(e->value.byteArr, object->repetitionDelay2.exponent)) == 0 &&
+                (ret = cosem_setUInt16(e->value.byteArr, object->repetitionDelay2.max)) == 0)
+            {
+            }
+        }
+    }
+    else if (e->index == 8)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        ret = cosem_setOctetString2(data, object->portReference, 6);
+#else
+        ret = cosem_setOctetString2(data, obj_getLogicalName(object->portReference), 6);
+#endif //DLMS_IGNORE_MALLOC
+    }
+    else if (e->index == 9)
+    {
+        ret = cosem_setInt8(e->value.byteArr, object->pushClientSAP);
+    }
+    else if (e->index == 10)
+    {
+        if ((ret = cosem_setArray(data, object->pushProtectionParameters.size)) != 0)
+        {
+            return ret;
+        }
+        gxPushProtectionParameters* it2;
+        for (pos = 0; pos != object->pushProtectionParameters.size; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(&object->pushProtectionParameters, pos, (void**)&it2, sizeof(gxPushProtectionParameters))) != 0 ||
+#else
+            if ((ret = arr_getByIndex(&object->pushProtectionParameters, pos, (void**)&it2)) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
+                (ret = cosem_setStructure(data, 2)) != 0 ||
+                (ret = cosem_setEnum(data, it2->protectionType)) != 0 ||
+                (ret = cosem_setStructure(data, 5)) != 0 ||
+                (ret = cosem_setOctetString(data, &it2->transactionId)) != 0 ||
+                (ret = cosem_setOctetString2(data, it2->originatorSystemTitle, 8)) != 0 ||
+                (ret = cosem_setOctetString2(data, it2->recipientSystemTitle, 8)) != 0 ||
+                (ret = cosem_setOctetString(data, &it2->otherInformation)) != 0 ||
+                (ret = cosem_setStructure(data, 2)) != 0 ||
+                (ret = cosem_setEnum(data, it2->keyInfo.dataProtectionKeyType)) != 0)
+            {
+                break;
+            }
+            if (it2->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_IDENTIFIED)
+            {
+                if ((ret = cosem_setStructure(data, 1)) != 0 ||
+                    (ret = cosem_setEnum(data, it2->keyInfo.identifiedKey.keyType)) != 0)
+                {
+                    break;
+                }
+            }
+            else if (it2->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_WRAPPED)
+            {
+                if ((ret = cosem_setStructure(data, 2)) != 0 ||
+                    (ret = cosem_setEnum(data, it2->keyInfo.wrappedKey.keyType)) != 0 ||
+                    (ret = cosem_setOctetString(data, &it2->keyInfo.wrappedKey.key)) != 0)
+                {
+                    break;
+                }
+            }
+            else if (it2->keyInfo.dataProtectionKeyType == DLMS_DATA_PROTECTION_KEY_TYPE_AGREED)
+            {
+                if ((ret = cosem_setStructure(data, 2)) != 0 ||
+                    (ret = cosem_setOctetString(data, &it2->keyInfo.agreedKey.parameters)) != 0 ||
+                    (ret = cosem_setOctetString(data, &it2->keyInfo.agreedKey.data)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else if (e->index == 11)
+    {
+        ret = cosem_setEnum(e->value.byteArr, object->pushOperationMethod);
+    }
+    else if (e->index == 12)
+    {
+        if ((ret = cosem_setStructure(e->value.byteArr, 2)) == 0 &&
+            (ret = cosem_setDateTime(e->value.byteArr, &object->confirmationParameters.startDate)) == 0 &&
+            (ret = cosem_setUInt32(e->value.byteArr, object->confirmationParameters.interval)) == 0)
+        {
+        }
+    }
+    else if (e->index == 13)
+    {
+        ret = cosem_setDateTime(e->value.byteArr, &object->lastConfirmationDateTime);
     }
     else
     {
@@ -4726,8 +4820,8 @@ int cosem_getZigbeeNetworkControl(
             {
                 break;
             }
+        }
     }
-}
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -4784,7 +4878,7 @@ int getUnitCharge(gxUnitCharge* target, gxValueEventArg* e)
             (ret = cosem_setInt16(data, it->chargePerUnit)) != 0)
         {
             break;
-}
+        }
 #else
         if ((ret = arr_getByIndex(&target->chargeTables, pos, (void**)&it)) != 0 ||
             (ret = cosem_setStructure(data, 2)) != 0 ||
@@ -4894,7 +4988,7 @@ int cosem_getTokenGateway(
                 if ((ret = cosem_setOctetString2(data, it->value, it->size)) != 0)
                 {
                     break;
-        }
+                }
 #else
                 if ((ret = arr_getByIndex(&object->descriptions, pos, (void**)&it)) != 0 ||
                     (ret = cosem_setOctetString(data, it)) != 0)
@@ -4902,8 +4996,8 @@ int cosem_getTokenGateway(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
-    }
-}
+            }
+        }
         break;
     case 5:
         ret = cosem_setEnum(e->value.byteArr, object->deliveryMethod);
@@ -5037,9 +5131,9 @@ int cosem_getAccount(
                 {
                     break;
                 }
+            }
         }
     }
-}
     else if (e->index == 10)
     {
         if ((ret = cosem_setArray(data, object->chargeReferences.size)) == 0)
@@ -5055,8 +5149,8 @@ int cosem_getAccount(
                 {
                     break;
                 }
+            }
         }
-    }
     }
     else if (e->index == 11)
     {
@@ -5075,9 +5169,9 @@ int cosem_getAccount(
                         (ret = cosem_setOctetString2(data, ccc->chargeReference, 6)) != 0 ||
                         //collection configuration
                         (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
-                    {
-                        break;
-                    }
+                {
+                    break;
+                }
         }
     }
     else if (e->index == 12)
@@ -5099,8 +5193,8 @@ int cosem_getAccount(
                 {
                     break;
                 }
+            }
         }
-    }
     }
     else if (e->index == 13)
     {
@@ -5900,15 +5994,15 @@ int cosem_getGsmDiagnostic(
                 {
                     break;
                 }
+            }
         }
-    }
         break;
     case 8:
         ret = cosem_setDateTime(e->value.byteArr, &object->captureTime);
         break;
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_GSM_DIAGNOSTIC
@@ -6000,7 +6094,7 @@ int cosem_getParameterMonitor(
                     (ret = bb_setUInt8(data, it->attributeIndex)) != 0)
                 {
                     break;
-        }
+                }
 #else
                 if ((ret = arr_getByIndex(&object->parameters, pos, (void**)&it)) != 0 ||
                     (ret = cosem_setStructure(data, 3)) != 0 ||
@@ -6014,8 +6108,8 @@ int cosem_getParameterMonitor(
                     break;
                 }
 #endif //DLMS_IGNORE_MALLOC
-    }
-}
+            }
+        }
     }
     break;
     default:
@@ -6023,7 +6117,7 @@ int cosem_getParameterMonitor(
         break;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_PARAMETER_MONITOR
 
 #ifndef DLMS_IGNORE_LLC_SSCS_SETUP

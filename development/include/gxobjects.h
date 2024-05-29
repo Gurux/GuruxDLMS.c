@@ -2125,7 +2125,120 @@ extern "C" {
     } gxMBusClient;
 #endif //DLMS_IGNORE_MBUS_CLIENT
 
+    typedef enum
+    {
+        DLMS_PROTECTION_TYPE_AUTHENTICATION = 1,
+        DLMS_PROTECTION_TYPE_ENCRYPTION = 2,
+        DLMS_PROTECTION_TYPE_AUTHENTICATION_ENCRYPTION = 3
+    } DLMS_PROTECTION_TYPE;
+
 #ifndef DLMS_IGNORE_PUSH_SETUP
+    /*This structure is used to count repetition delay for the next push message.*/
+    typedef struct
+    {
+        /**
+        * The minimum delay until a next push attempt is started in seconds.
+        */
+        uint16_t min;
+
+        /**
+         * Calculating the next delay.
+         */
+        uint16_t exponent;
+
+        /**
+         * The maximum delay until a next push attempt is started in seconds.
+         */
+        uint16_t max;
+
+    }gxRepetitionDelay;
+
+    /*Data protection identified key.*/
+    typedef struct
+    {
+        /*Data protection key type.*/
+        DLMS_DATA_PROTECTION_IDENTIFIED_KEY_TYPE keyType;
+    }gxDataProtectionIdentifiedKey;
+
+    /*Data protection wrapped key.*/
+    typedef struct
+    {
+        /*Data protectionKey type.*/
+        DLMS_DATA_PROTECTION_WRAPPED_KEY_TYPE keyType;
+
+        /*Key ciphered data.*/
+        gxByteBuffer key;
+    }gxDataProtectionWrappeddKey;
+
+    /*Data protection agreed key.*/
+    typedef struct
+    {
+        /*Key parameters.*/
+        gxByteBuffer parameters;
+
+        /*Key ciphered data.*/
+        gxByteBuffer data;
+    }gxDataProtectionAgreedKey;
+    
+    /*Data protection Key.*/
+    typedef struct
+    {
+        /*Data protectionKey type.*/
+        DLMS_DATA_PROTECTION_KEY_TYPE dataProtectionKeyType;
+
+        /*Identified key parameters.*/
+        gxDataProtectionIdentifiedKey identifiedKey;
+
+        /*Wrapped key parameters.*/
+        gxDataProtectionWrappeddKey wrappedKey;
+        /*Agreed key parameters.*/
+        gxDataProtectionAgreedKey agreedKey;
+    }gxDataProtectionKey;
+
+    typedef struct
+    {
+        /*Protection type.*/
+        DLMS_PROTECTION_TYPE protectionType;
+
+        /**
+         * Transaction Id.
+         */
+        gxByteBuffer transactionId;
+
+        /**
+         * Originator system title.
+         */
+        unsigned char originatorSystemTitle[8];
+
+        /**
+         * Recipient system title.
+         */
+        unsigned char recipientSystemTitle[8];
+
+        /**
+         * Other information.
+         */
+        gxByteBuffer otherInformation;
+
+        /**
+         * Key info.
+         */
+        gxDataProtectionKey keyInfo;
+    }gxPushProtectionParameters;
+
+    /*Push confirmation parameters.*/
+    typedef struct
+    {
+        /**
+     * Confirmation start date. Fields of date-time not specified are not used.
+     */
+        gxtime startDate;
+        /**
+         * Confirmation time interval in seconds. Disabled, if zero.
+         */
+        uint32_t interval;
+    }gxPushConfirmationParameter;
+
     /*
     ---------------------------------------------------------------------------
     Online help:
@@ -2149,7 +2262,25 @@ extern "C" {
         gxArray communicationWindow;
         uint16_t randomisationStartInterval;
         unsigned char numberOfRetries;
+        /* Repetition delay for version #0 and #1.*/
         uint16_t repetitionDelay;
+        /* Repetition delay for Version #2.*/
+        gxRepetitionDelay repetitionDelay2;
+        /*The logical name of a communication port setup object.*/
+#ifdef DLMS_IGNORE_MALLOC
+        unsigned char portReference[6];
+#else
+        gxObject* portReference;
+#endif //DLMS_IGNORE_MALLOC
+        /*Push client SAP.*/
+        signed char pushClientSAP;
+        /*Push protection parameters.*/
+        gxArray pushProtectionParameters;
+        /*Push operation method.*/
+        DLMS_PUSH_OPERATION_METHOD pushOperationMethod;
+        gxPushConfirmationParameter confirmationParameters;
+        /*Last confirmation date time.*/
+        gxtime lastConfirmationDateTime;
         //Executed time. This is for internal use.
         uint32_t executedTime;
     } gxPushSetup;
@@ -2225,12 +2356,6 @@ extern "C" {
     } gxMBusMasterPortSetup;
 
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
-    typedef enum
-    {
-        DLMS_PROTECTION_TYPE_AUTHENTICATION = 1,
-        DLMS_PROTECTION_TYPE_ENCRYPTION = 2,
-        DLMS_PROTECTION_TYPE_AUTHENTICATION_ENCRYPTION = 3
-    } DLMS_PROTECTION_TYPE;
 
     //Global key types.
     typedef enum
@@ -3604,7 +3729,7 @@ extern "C" {
     }functionStatus;
 
     typedef struct
-    {        
+    {
 #ifdef DLMS_IGNORE_MALLOC
         // Function name.
         unsigned char name[MAX_FUNCTION_NAME_LENGTH];

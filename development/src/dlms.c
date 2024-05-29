@@ -4852,6 +4852,9 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
             {
                 return ret;
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(0, &data->data);
+#endif //DLMS_TRACE_PDU
         }
         //If pre-set connection is made.
         else if (dlms_usePreEstablishedConnection(settings) && emptySourceSystemTile)
@@ -4889,6 +4892,9 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
             {
                 return ret;
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(0, &data->data);
+#endif //DLMS_TRACE_PDU
             if (data->preEstablished == 0)
             {
                 data->preEstablished = 1;
@@ -4911,6 +4917,9 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
             {
                 return ret;
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(0, &data->data);
+#endif //DLMS_TRACE_PDU
         }
         //If IC value is wrong.
         if (settings->expectedInvocationCounter != NULL)
@@ -4990,6 +4999,12 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
                 return ret;
             }
         }
+#ifdef DLMS_TRACE_PDU
+        if (ret == 0)
+        {
+            cip_tracePdu(0, &bb);
+        }
+#endif //DLMS_TRACE_PDU
         data->data.size = bb.size + index;
         //If target is sending data ciphered using different security policy.
         if (settings->cipher.security != security)
@@ -5049,6 +5064,9 @@ int dlms_handleGeneralCiphering(
         {
             return ret;
         }
+#ifdef DLMS_TRACE_PDU
+        cip_tracePdu(0, &data->data);
+#endif //DLMS_TRACE_PDU
         // Get command
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
         {
@@ -5651,6 +5669,9 @@ int dlms_getSNPdu(
     if (ciphering && p->command != DLMS_COMMAND_AARQ
         && p->command != DLMS_COMMAND_AARE)
     {
+#ifdef DLMS_TRACE_PDU
+        cip_tracePdu(1, reply);
+#endif //DLMS_TRACE_PDU
         ret = cip_encrypt(
             &p->settings->cipher,
             p->settings->cipher.security,
@@ -5838,7 +5859,7 @@ int dlms_getLNPdu(
         // Add attribute descriptor.
         if (ret == 0 && p->attributeDescriptor != NULL)
         {
-            ret = bb_set(reply, p->attributeDescriptor->data, p->attributeDescriptor->size);
+            ret = bb_set2(reply, p->attributeDescriptor, p->attributeDescriptor->position, p->attributeDescriptor->size);
         }
 #endif //DLMS_IGNORE_MALLOC
         if (ret == 0 &&
@@ -6001,6 +6022,9 @@ int dlms_getLNPdu(
                 key = p->settings->cipher.blockCipherKey;
 #endif //DLMS_IGNORE_MALLOC
             }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(1, reply);
+#endif //DLMS_TRACE_PDU
             ret = cip_encrypt(
                 &p->settings->cipher,
                 p->settings->cipher.security,
@@ -6357,10 +6381,12 @@ int dlms_getData3(
         switch (data->command)
         {
         case DLMS_COMMAND_DATA_NOTIFICATION:
+#ifndef DLMS_IGNORE_HIGH_GMAC
         case DLMS_COMMAND_GLO_EVENT_NOTIFICATION_REQUEST:
+        case DLMS_COMMAND_DED_EVENT_NOTIFICATION:
+#endif //DLMS_IGNORE_HIGH_GMAC
         case DLMS_COMMAND_INFORMATION_REPORT:
         case DLMS_COMMAND_EVENT_NOTIFICATION:
-        case DLMS_COMMAND_DED_EVENT_NOTIFICATION:
             *isNotify = 1;
             notify->complete = data->complete;
             notify->moreData = data->moreData;
@@ -6388,9 +6414,10 @@ int dlms_generateChallenge(
     gxByteBuffer* challenge)
 {
     // Random challenge is 8 to 64 bytes.
-    // Texas Instruments accepts only 16 byte int32_t challenge.
+    // Texas Instruments accepts only 16 byte long challenge.
     // For this reason challenge size is 16 bytes at the moment.
-    int ret = 0, pos, len = 16;//hlp_rand() % 58 + 8;
+    int ret = 0, pos, len = 16;
+    srand((unsigned int)time(NULL));
     bb_clear(challenge);
     for (pos = 0; pos != len; ++pos)
     {
@@ -6578,40 +6605,6 @@ int dlms_secure(
             //If SHA256 is not used.
 #ifdef DLMS_IGNORE_HIGH_SHA256
             return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
-#else
-#ifndef DLMS_IGNORE_HIGH_GMAC
-#ifdef DLMS_IGNORE_MALLOC
-            if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
-                (ret = bb_set(&challenge, settings->cipher.systemTitle, 8)) != 0 ||
-                (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
-            {
-                return ret;
-            }
-#else
-            if ((ret = bb_set(&challenge, secret->data, secret->size)) != 0 ||
-                (ret = bb_set(&challenge, settings->cipher.systemTitle.data, settings->cipher.systemTitle.size)) != 0 ||
-                (ret = bb_set(&challenge, settings->sourceSystemTitle, 8)) != 0)
-            {
-                return ret;
-            }
-#endif //DLMS_IGNORE_MALLOC
-            if (settings->server)
-            {
-                if ((ret = bb_set(&challenge, settings->ctoSChallenge.data, settings->ctoSChallenge.size)) != 0 ||
-                    (ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0)
-                {
-                    return ret;
-                }
-            }
-            else
-            {
-                if ((ret = bb_set(&challenge, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0 ||
-                    (ret = bb_set(&challenge, settings->ctoSChallenge.data, settings->ctoSChallenge.size)) != 0)
-                {
-                    return ret;
-                }
-            }
-#endif //DLMS_IGNORE_HIGH_GMAC
 #endif //DLMS_IGNORE_HIGH_SHA256
         }
         else
@@ -6651,7 +6644,7 @@ int dlms_secure(
 #ifdef DLMS_IGNORE_HIGH_SHA256
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #else
-        ret = gxsha256_encrypt(&challenge, reply);
+        ret = gxsha256_encrypt(secret, reply);
         bb_clear(&challenge);
         return ret;
 #endif //DLMS_IGNORE_HIGH_SHA256

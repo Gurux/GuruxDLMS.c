@@ -34,7 +34,7 @@
 #define GXINT_H
 
 #include <stdint.h>
-
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(__linux__)
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -42,7 +42,7 @@ extern "C" {
 #define uint16_t unsigned short
 #endif //!(defined uint16_t) && !(defined _UINT16_T_DECLARED)
 #if !(defined uint32_t) && !(defined _UINT32_T_DECLARED)
-#define uint32_t unsigned long
+#define uint32_t unsigned int
 #endif //!(defined uint32_t) && !(defined _UINT32_T_DECLARED)
 #if !(defined uint64_t) && !(defined _UINT64_T_DECLARED)
 #define uint64_t unsigned long long
@@ -52,7 +52,7 @@ extern "C" {
 #define int16_t short
 #endif //!(defined int16_t) && !(defined _INT16_T_DECLARED)
 #if !(defined int32_t) && !(defined _INT32_T_DECLARED)
-#define int32_t long
+#define int32_t int
 #endif //!(defined int32_t) && !(defined _INT32_T_DECLARED)
 #if !(defined int64_t) && !(defined _INT64_T_DECLARED)
 #define int64_t long long
@@ -61,5 +61,5 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
-
+#endif //!defined(_WIN32) && !defined(_WIN64) && !defined(__linux__)
 #endif //GXINT_H

@@ -3681,7 +3681,11 @@ unsigned char dlms_isPlcSfskData(gxByteBuffer* buff)
 }
 #endif //DLMS_IGNORE_PLC
 
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+int dlms_getDataFromBlock(gxByteBuffer* data, uint32_t index)
+#else
 int dlms_getDataFromBlock(gxByteBuffer* data, uint16_t index)
+#endif
 {
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     uint32_t pos, len = data->position - index;
@@ -3886,7 +3890,7 @@ int dlms_verifyInvokeId(dlmsSettings* settings, gxReplyData* reply)
 int dlms_handleGetResponse(
     dlmsSettings* settings,
     gxReplyData* reply,
-    uint16_t index)
+    uint32_t index)
 {
     int ret;
     uint16_t count;
@@ -5185,7 +5189,7 @@ int dlms_getPdu(
             break;
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_GET_RESPONSE:
-            if ((ret = dlms_handleGetResponse(settings, data, (uint16_t)index)) != 0)
+            if ((ret = dlms_handleGetResponse(settings, data, index)) != 0)
             {
                 if (ret == DLMS_ERROR_CODE_FALSE)
                 {

@@ -172,7 +172,10 @@ int apdu_generateApplicationContextName(
     }
     // Add system title.
 #ifndef DLMS_IGNORE_HIGH_GMAC
-    if (!settings->server && (ciphered || settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC))
+    if (!settings->server && (ciphered ||
+        settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC ||
+        settings->authentication == DLMS_AUTHENTICATION_HIGH_SHA256 ||
+        settings->authentication == DLMS_AUTHENTICATION_HIGH_ECDSA))
     {
 #ifndef DLMS_IGNORE_MALLOC
         if (settings->cipher.systemTitle.size == 0)
@@ -385,7 +388,7 @@ int apdu_generateUserInformation(
         if ((ret = apdu_getInitiateRequest(settings, &crypted)) != 0)
         {
             return ret;
-        }        
+        }
 #ifndef DLMS_IGNORE_MALLOC
         ret = cip_encrypt(
             &settings->cipher,

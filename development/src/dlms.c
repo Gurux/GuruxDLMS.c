@@ -3185,6 +3185,18 @@ int dlms_checkWrapperAddress(dlmsSettings* settings,
         {
             settings->serverAddress = value;
         }
+#ifndef DLMS_IGNORE_SERVER
+        if (settings->connected == DLMS_CONNECTION_STATE_NONE)
+        {
+            // Check is data send to this server.
+            if (!svr_isTarget(settings, settings->serverAddress, settings->clientAddress))
+            {
+                settings->serverAddress = 0;
+                settings->clientAddress = 0;
+                return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
+            }
+        }
+#endif //DLMS_IGNORE_SERVER
     }
     else
     {
@@ -5275,7 +5287,8 @@ int dlms_getPdu(
 #if !defined(DLMS_IGNORE_SERVER)
             if (settings->server)
             {
-                if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0)
+                if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0 &&
+                    dlms_usePreEstablishedConnection(settings) == 0)
                 {
                     return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
                 }

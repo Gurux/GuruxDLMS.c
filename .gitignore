@@ -253,3 +253,4 @@ NordicSemiconductor/GuruxDLMSSimpleServerExample2/src/dlms
 *.lock
 development/VS/.vs/
 GuruxDLMSClientExample/VS/.vs/
+*.json

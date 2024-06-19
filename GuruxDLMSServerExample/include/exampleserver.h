@@ -22,7 +22,7 @@
 
 #include "../../development/include/server.h"
 
-#if defined(_WIN32) | defined(_WIN64) || defined(__linux__)
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include "connection.h"
 char DATAFILE[FILENAME_MAX];
 char IMAGEFILE[FILENAME_MAX];

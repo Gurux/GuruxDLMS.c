@@ -317,7 +317,7 @@ void svr_reset(
 {
     svr_setInitialize(settings);
     resetFrameSequence(&settings->base);
-    reply_clear2(&settings->info, 1);
+    reply_clear2(&settings->info, 0);
     settings->base.serverAddress = 0;
     settings->base.clientAddress = 0;
     settings->dataReceived = 0;

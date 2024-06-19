@@ -120,6 +120,7 @@ static gxAssociationLogicalName associationNone;
 static gxAssociationLogicalName associationLow;
 static gxAssociationLogicalName associationHigh;
 static gxAssociationLogicalName associationHighGMac;
+static gxAssociationLogicalName associationHighGMacPreEstablished;
 static gxRegister activePowerL1;
 static gxScriptTable scriptTableGlobalMeterReset;
 static gxScriptTable scriptTableDisconnectControl;
@@ -138,6 +139,8 @@ static gxSapAssignment sapAssignment;
 static gxSecuritySetup securitySetupHigh;
 //Security Setup HighGMac is for GMac authentication.
 static gxSecuritySetup securitySetupHighGMac;
+//Security Setup HighGMac is for pre-established GMac authentication.
+static gxSecuritySetup securitySetupHighGMacPreEstablished;
 
 gxImageTransfer imageTransfer;
 gxAutoConnect autoConnect;
@@ -158,11 +161,16 @@ gxCompactData compactData;
 gxLimiter limiter;
 gxG3PlcMacLayerCounters g3plcMacLayerCounters;
 gxG3PlcMacSetup g3PlcMacSetup;
+gxG3Plc6LoWPAN g3Plc6LoWPAN;
+gxArrayManager arrayManager;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
 static gxObject* ALL_OBJECTS[] = {
-    BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
+    BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac),
+    BASE(associationHighGMacPreEstablished),
+    BASE(securitySetupHigh), BASE(securitySetupHighGMac),BASE(securitySetupHighGMacPreEstablished),
+
     BASE(ldn), BASE(sapAssignment), BASE(eventCode),
     BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
     BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
@@ -171,7 +179,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
     BASE(tarifficationScriptTable), BASE(registerActivation), BASE(limiter),
     BASE(mbusDiagnostic), BASE(mbusPortSetup),
-    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup)
+    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager)
 };
 
 ////////////////////////////////////////////////////
@@ -760,6 +768,38 @@ int addAssociationHighGMac()
 }
 
 ///////////////////////////////////////////////////////////////////////
+//This method adds pre-established example 
+// Logical Name Association object for GMAC High authentication.
+///////////////////////////////////////////////////////////////////////
+int addAssociationHighGMacPreEstablished()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 40, 0, 5, 255 };
+    if ((ret = INIT_OBJECT(associationHighGMacPreEstablished, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+    {
+        associationHighGMacPreEstablished.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH_GMAC;
+        OA_ATTACH(associationHighGMac.objectList, ALL_OBJECTS);
+        associationHighGMacPreEstablished.clientSAP = 0x2;
+        associationHighGMacPreEstablished.xDLMSContextInfo.maxSendPduSize = associationHighGMacPreEstablished.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
+        associationHighGMacPreEstablished.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+            DLMS_CONFORMANCE_SET |
+            DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+            DLMS_CONFORMANCE_ACTION |
+            DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+            DLMS_CONFORMANCE_GET);
+        //GMAC authentication don't need password.
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        associationHighGMacPreEstablished.securitySetup = &securitySetupHighGMacPreEstablished;
+#else
+        memcpy(associationHighGMacPreEstablished.securitySetupReference, securitySetupHigh.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
 //This method adds security setup object for High authentication.
 ///////////////////////////////////////////////////////////////////////
 int addSecuritySetupHigh()
@@ -794,6 +834,27 @@ int addSecuritySetupHighGMac()
         //Only Authenticated encrypted connections are allowed.
         securitySetupHighGMac.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
         securitySetupHighGMac.securitySuite = DLMS_SECURITY_SUITE_V0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds security setup object for pre-established GMAC authentication.
+///////////////////////////////////////////////////////////////////////
+int addSecuritySetupPreEstablishedHighGMac()
+{
+    int ret;
+    //Define client system title for the pre-established connection.
+    //Pre-establiched system title is Gurux123
+    static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0x47, 0x75, 0x72, 0x75, 0x78, 0x31, 0x32, 0x33 };
+    const unsigned char ln[6] = { 0, 0, 43, 0, 3, 255 };
+    if ((ret = INIT_OBJECT(securitySetupHighGMacPreEstablished, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(securitySetupHighGMacPreEstablished.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+        BB_ATTACH(securitySetupHighGMacPreEstablished.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
+        //Only Authenticated encrypted connections are allowed.
+        securitySetupHighGMacPreEstablished.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
+        securitySetupHighGMacPreEstablished.securitySuite = DLMS_SECURITY_SUITE_V0;
     }
     return ret;
 }
@@ -921,7 +982,7 @@ int addLimiter()
 
         GX_UINT16(limiter.thresholdActive) = 1000;
         GX_UINT16(limiter.thresholdEmergency) = 2000;
-        GX_UINT16(limiter.thresholdNormal) = 1000;        
+        GX_UINT16(limiter.thresholdNormal) = 1000;
         limiter.minOverThresholdDuration = 60;
         limiter.minUnderThresholdDuration = 60;
         //////////////////////
@@ -1624,7 +1685,7 @@ unsigned long getIpAddress()
     //If no OS get IP.
 #endif
     return ret;
-}
+    }
 
 ///////////////////////////////////////////////////////////////////////
 //Add IP4 Setup object.
@@ -1780,7 +1841,7 @@ int addG3PlcMacSetup()
         g3PlcMacSetup.shortAddress = 1;
         g3PlcMacSetup.rcCoord = 2;
         g3PlcMacSetup.panId = 3;
-        gxG3MacKeyTable* key = (gxG3MacKeyTable*) malloc(sizeof(gxG3MacKeyTable));
+        gxG3MacKeyTable* key = (gxG3MacKeyTable*)malloc(sizeof(gxG3MacKeyTable));
         key->id = 1;
         memcpy(key->key, GMK_KEY, sizeof(GMK_KEY));
         arr_push(&g3PlcMacSetup.keyTable, key);
@@ -1835,6 +1896,129 @@ int addG3PlcMacSetup()
         mpt->lqi = 3;
         mpt->validTime = 4;
         arr_push(&g3PlcMacSetup.macPosTable, mpt);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add G3 PLC 6LoWPAN object.
+///////////////////////////////////////////////////////////////////////
+int addG3Plc6LoWPAN()
+{
+    int ret;
+    //The maximum Context field length is 16 bytes (128 bits).
+    static unsigned char PREFIX_TABLE[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    const unsigned char ln[6] = { 0,0,29,2,0,255 };
+    if ((ret = INIT_OBJECT(g3Plc6LoWPAN, DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN, ln)) == 0)
+    {
+        g3Plc6LoWPAN.maxHops = 1;
+        g3Plc6LoWPAN.weakLqiValue = 2;
+        g3Plc6LoWPAN.securityLevel = 3;
+        bb_set(&g3Plc6LoWPAN.prefixTable, PREFIX_TABLE, 16);
+        gxRoutingConfiguration* rg = (gxRoutingConfiguration*)malloc(sizeof(gxRoutingConfiguration));
+        rg->netTraversalTime = 1;
+        rg->routingTableEntryTtl = 2;
+        rg->kr = 3;
+        rg->km = 4;
+        rg->kc = 5;
+        rg->kq = 6;
+        rg->kh = 7;
+        rg->krt = 8;
+        rg->rReqRetries = 9;
+        rg->rReqReqWait = 10;
+        rg->blacklistTableEntryTtl = 11;
+        rg->unicastRreqGenEnable = 1;
+        rg->rlcEnabled = 1;
+        rg->addRevLinkCost = 14;
+        arr_push(&g3Plc6LoWPAN.routingConfiguration, rg);
+
+        gxRoutingTable* rt = (gxRoutingTable*)malloc(sizeof(gxRoutingTable));
+        rt->destinationAddress = 1;
+        rt->nextHopAddress = 2;
+        rt->routeCost = 3;
+        rt->hopCount = 4;
+        rt->weakLinkCount = 5;
+        rt->validTime = 6;
+        arr_push(&g3Plc6LoWPAN.routingTable, rt);
+
+        gxContextInformationTable* cit = (gxContextInformationTable*)malloc(sizeof(gxContextInformationTable));
+        bb_init(&cit->context);
+        cit->cid = 0xF;
+        bb_setUInt8(&cit->context, 0xFF);
+        bb_setUInt8(&cit->context, 0);
+        bb_setUInt8(&cit->context, 0xFF);
+        bb_setUInt8(&cit->context, 0);
+        cit->compression = 1;
+        cit->validLifetime = 4;
+        arr_push(&g3Plc6LoWPAN.contextInformationTable, cit);
+
+        gxBlacklistTable* blt = (gxBlacklistTable*)malloc(sizeof(gxBlacklistTable));
+        blt->neighbourAddress = 1;
+        blt->validTime = 2;
+        arr_push(&g3Plc6LoWPAN.blacklistTable, blt);
+        blt = (gxBlacklistTable*)malloc(sizeof(gxBlacklistTable));
+        blt->neighbourAddress = 3;
+        blt->validTime = 4;
+        arr_push(&g3Plc6LoWPAN.blacklistTable, blt);
+
+        dlmsVARIANT* it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 1;
+        va_push(&g3Plc6LoWPAN.groupTable, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 2;
+        va_push(&g3Plc6LoWPAN.groupTable, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 3;
+        va_push(&g3Plc6LoWPAN.groupTable, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 4;
+        va_push(&g3Plc6LoWPAN.groupTable, it);
+
+        g3Plc6LoWPAN.broadcastLogTableEntryTtl = 6;
+        g3Plc6LoWPAN.maxJoinWaitTime = 12;
+        g3Plc6LoWPAN.pathDiscoveryTime = 13;
+        g3Plc6LoWPAN.activeKeyIndex = 14;
+        g3Plc6LoWPAN.metricType = 15;
+        g3Plc6LoWPAN.coordShortAddress = 16;
+        g3Plc6LoWPAN.disableDefaultRouting = 1;
+        g3Plc6LoWPAN.deviceType = DLMS_PAN_DEVICE_TYPE_NOT_DEFINED;
+        g3Plc6LoWPAN.defaultCoordRouteEnabled = 1;
+
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 1;
+        va_push(&g3Plc6LoWPAN.destinationAddress, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 2;
+        va_push(&g3Plc6LoWPAN.destinationAddress, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 3;
+        va_push(&g3Plc6LoWPAN.destinationAddress, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 4;
+        va_push(&g3Plc6LoWPAN.destinationAddress, it);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add array manager object.
+///////////////////////////////////////////////////////////////////////
+int addArrayManager()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,18,0,0,255 };
+    if ((ret = INIT_OBJECT(arrayManager, DLMS_OBJECT_TYPE_ARRAY_MANAGER, ln)) == 0)
+    {
+        gxArrayManagerItem* it = (gxArrayManagerItem*)malloc(sizeof(gxArrayManagerItem));
+        it->id = 1;
+        it->element.target = BASE(loadProfile);
+        it->element.attributeIndex = 2;
+        arr_push(&arrayManager.elements, it);
+        it = (gxArrayManagerItem*)malloc(sizeof(gxArrayManagerItem));
+        it->id = 2;
+        it->element.target = BASE(loadProfile);
+        it->element.attributeIndex = 3;
+        arr_push(&arrayManager.elements, it);
     }
     return ret;
 }
@@ -2018,10 +2202,14 @@ int svr_InitObjects(
         (ret = addAssociationHighGMac()) != 0 ||
         (ret = addSecuritySetupHigh()) != 0 ||
         (ret = addSecuritySetupHighGMac()) != 0 ||
+        (ret = addAssociationHighGMacPreEstablished()) != 0 ||
+        (ret = addSecuritySetupPreEstablishedHighGMac()) != 0 ||
         (ret = addMbusDiagnostic()) != 0 ||
         (ret = addMbusPortSetup()) != 0 ||
         (ret = addG3PlcMacLayerCounters()) != 0 ||
         (ret = addG3PlcMacSetup()) != 0 ||
+        (ret = addG3Plc6LoWPAN()) != 0 ||
+        (ret = addArrayManager()) != 0 ||
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
@@ -2442,6 +2630,11 @@ int readProfileGeneric(
                     pduSize = (uint16_t)e->value.byteArr->size;
                     if ((ret = cosem_setStructure(e->value.byteArr, pg->captureObjects.size)) != 0)
                     {
+                        //Don't set error if PDU is full.
+                        if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+                        {
+                            e->value.byteArr->size = pduSize;
+                        }
                         break;
                     }
                     uint8_t colIndex;
@@ -2471,28 +2664,41 @@ int readProfileGeneric(
                             else
                             {
                                 //Append data type.
+                                if ((ret = bb_setUInt8(e->value.byteArr, dataTypes[colIndex])) != 0)
+                                {
+                                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                                    break;
+                                }
+                                if (bb_getCapacity(e->value.byteArr) < bb_size(e->value.byteArr) + columnSizes[colIndex])
+                                {
+                                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                                    break;
+                                }
+                                //Read data.
+                                fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
+                                e->value.byteArr->size += columnSizes[colIndex];
+                                /*
                                 e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
                                 ++e->value.byteArr->size;
                                 //Read data.
                                 fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
                                 e->value.byteArr->size += columnSizes[colIndex];
+                                */
                             }
                         }
                         if (ret != 0)
                         {
-                            //Don't set error if PDU is full.
-                            if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
-                            {
-                                --e->transactionStartIndex;
-                                e->value.byteArr->size = pduSize;
-                                ret = 0;
-                            }
-                            else
-                            {
-                                break;
-                            }
                             break;
                         }
+                    }
+                    if (ret != 0)
+                    {
+                        //Don't set error if PDU is full.
+                        if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+                        {
+                            e->value.byteArr->size = pduSize;
+                        }
+                        break;
                     }
                     ++e->transactionStartIndex;
                 }
@@ -2504,6 +2710,10 @@ int readProfileGeneric(
                 return -1;
             }
         }
+    }
+    if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+    {
+        ret = 0;
     }
     return ret;
 }
@@ -3129,9 +3339,9 @@ int connectServer(
             close(*s);
 #endif
             return err;
-        };
-        add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
     };
+        add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
+};
 
     //Connect to the meter.
     ret = connect(*s, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
@@ -3180,11 +3390,11 @@ int sendPush(
 #else
         close(s);
 #endif
-    }
+        }
     mes_clear(&messages);
     free(host);
     return 0;
-}
+    }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 unsigned char svr_isTarget(
@@ -3235,10 +3445,17 @@ unsigned char svr_isTarget(
                     settings->expectedSecurityPolicy = 0xFF;
                     if (a->securitySetup != NULL)
                     {
-                        //Set expected client system title. If this is set only client that is using expected client system title can connect to the meter.
+                        //Set expected client system title. If this is set only client that is 
+                        // using expected client system title can connect to the meter.
                         if (a->securitySetup->clientSystemTitle.size == 8)
                         {
                             settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
+                            settings->preEstablishedSystemTitle = &a->securitySetup->clientSystemTitle;
+                            settings->cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
+                        }
+                        else
+                        {
+                            settings->preEstablishedSystemTitle = NULL;
                         }
                         //GMac authentication uses innocation counter.
                         if (a->securitySetup == &securitySetupHighGMac)
@@ -3506,14 +3723,25 @@ DLMS_ACCESS_MODE getSecuritySetupAttributeAccess(
     return DLMS_ACCESS_MODE_READ;
 }
 
-
-//Get attribute access level for security setup.
+//Get attribute access level for activity calendar.
 DLMS_ACCESS_MODE getActivityCalendarAttributeAccess(
     dlmsSettings* settings,
     unsigned char index)
 {
     //Only Activate passive calendar date-time and passive calendar settings are writeble.
     if (settings->authentication > DLMS_AUTHENTICATION_LOW && index > 5)
+    {
+        return DLMS_ACCESS_MODE_READ_WRITE;
+    }
+    return DLMS_ACCESS_MODE_READ;
+}
+
+//Get attribute access level for array manager.
+DLMS_ACCESS_MODE getArrayManagerAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW && index == 2)
     {
         return DLMS_ACCESS_MODE_READ_WRITE;
     }
@@ -3582,6 +3810,10 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     {
         return getActivityCalendarAttributeAccess(settings, index);
     }
+    if (obj->objectType == DLMS_OBJECT_TYPE_ARRAY_MANAGER)
+    {
+        return getArrayManagerAttributeAccess(settings, index);
+    }
     // Only clock write is allowed.
     if (settings->authentication == DLMS_AUTHENTICATION_LOW)
     {
@@ -3645,7 +3877,7 @@ int svr_connected(
             }
             bb_addString(settings->base.preEstablishedSystemTitle, "ABCDEFGH");
             settings->base.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
-        }
+}
         else
         {
             //Return error if client can connect only using pre-established connnection.

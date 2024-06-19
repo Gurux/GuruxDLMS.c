@@ -197,10 +197,14 @@ static gxSapAssignment sapAssignment;
 static gxSecuritySetup securitySetupHigh;
 //Security Setup HighGMac is for GMac authentication.
 static gxSecuritySetup securitySetupHighGMac;
+//Security Setup HighGMac is for pre-established GMac authentication.
+static gxSecuritySetup securitySetupHighGMacPreEstablished;
+static gxAssociationLogicalName associationHighGMacPreEstablished;
 
 gxImageTransfer imageTransfer;
 gxAutoConnect autoConnect;
 gxActivityCalendar activityCalendar;
+gxLocalPortSetup localPortSetup;
 gxSpecialDaysTable specialDaysTable;
 gxDemandRegister demandRegister;
 gxRegisterMonitor registerMonitor;
@@ -228,12 +232,14 @@ static gxFunctionControl functionControl;
 
 //Append new COSEM object to the end so serialization will work correctly.
 static gxObject* ALL_OBJECTS[] = {
-    BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHigh), BASE(securitySetupHighGMac),
+    BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac),
+    BASE(associationHighGMacPreEstablished),
+    BASE(securitySetupHigh), BASE(securitySetupHighGMac),BASE(securitySetupHighGMacPreEstablished),
     BASE(ldn), BASE(eeprom), BASE(testMode), BASE(sapAssignment), BASE(eventCode),
     BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
     BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
     BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
-    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(demandRegister),
+    BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
     BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
     BASE(tarifficationScriptTable), BASE(registerActivation), BASE(primeNbOfdmPlcMacFunctionalParameters), BASE(primeNbOfdmPlcMacNetworkAdministrationData),
     BASE(twistedPairSetup), BASE(specialDaysTable), BASE(currentlyActiveTariff),
@@ -852,6 +858,39 @@ int addAssociationHighGMac()
     return ret;
 }
 
+
+///////////////////////////////////////////////////////////////////////
+//This method adds pre-established example 
+// Logical Name Association object for GMAC High authentication.
+///////////////////////////////////////////////////////////////////////
+int addAssociationHighGMacPreEstablished()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 40, 0, 5, 255 };
+    if ((ret = INIT_OBJECT(associationHighGMacPreEstablished, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+    {
+        associationHighGMacPreEstablished.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH_GMAC;
+        OA_ATTACH(associationHighGMac.objectList, ALL_OBJECTS);
+        associationHighGMacPreEstablished.clientSAP = 0x2;
+        associationHighGMacPreEstablished.xDLMSContextInfo.maxSendPduSize = associationHighGMacPreEstablished.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
+        associationHighGMacPreEstablished.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+            DLMS_CONFORMANCE_SET |
+            DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+            DLMS_CONFORMANCE_ACTION |
+            DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+            DLMS_CONFORMANCE_GET);
+        //GMAC authentication don't need password.
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        associationHighGMacPreEstablished.securitySetup = &securitySetupHighGMacPreEstablished;
+#else
+        memcpy(associationHighGMacPreEstablished.securitySetupReference, securitySetupHigh.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //This method adds security setup object for High authentication.
 ///////////////////////////////////////////////////////////////////////
@@ -887,6 +926,28 @@ int addSecuritySetupHighGMac()
         //Only Authenticated encrypted connections are allowed.
         securitySetupHighGMac.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
         securitySetupHighGMac.securitySuite = DLMS_SECURITY_SUITE_V0;
+    }
+    return ret;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+//This method adds security setup object for pre-established GMAC authentication.
+///////////////////////////////////////////////////////////////////////
+int addSecuritySetupPreEstablishedHighGMac()
+{
+    int ret;
+    //Define client system title for the pre-established connection.
+    //Pre-establiched system title is Gurux123
+    static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0x47, 0x75, 0x72, 0x75, 0x78, 0x31, 0x32, 0x33 };
+    const unsigned char ln[6] = { 0, 0, 43, 0, 3, 255 };
+    if ((ret = INIT_OBJECT(securitySetupHighGMacPreEstablished, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(securitySetupHighGMacPreEstablished.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+        BB_ATTACH(securitySetupHighGMacPreEstablished.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
+        //Only Authenticated encrypted connections are allowed.
+        securitySetupHighGMacPreEstablished.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
+        securitySetupHighGMacPreEstablished.securitySuite = DLMS_SECURITY_SUITE_V0;
     }
     return ret;
 }
@@ -1236,6 +1297,39 @@ int addActivityCalendar()
 ///////////////////////////////////////////////////////////////////////
 //Add Optical Port Setup object.
 ///////////////////////////////////////////////////////////////////////
+int addOpticalPortSetup()
+{
+    const unsigned char ln[6] = { 0,0,20,0,0,255 };
+    //Define device address.
+    static unsigned char DEVICE_ADDRESS[10] = { 0 };
+    //Define password 1.
+    static unsigned char PASSWORD_1[10] = { 0 };
+    //Define password 2.
+    static unsigned char PASSWORD_2[10] = { 0 };
+    //Define password 5.
+    static unsigned char PASSWORD_5[10] = { 0 };
+    INIT_OBJECT(localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln);
+    localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_DEFAULT;
+    localPortSetup.proposedBaudrate = DLMS_BAUD_RATE_9600;
+    localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
+    localPortSetup.responseTime = DLMS_LOCAL_PORT_RESPONSE_TIME_200_MS;
+    BB_ATTACH(localPortSetup.deviceAddress, DEVICE_ADDRESS, 0);
+    bb_addString(&localPortSetup.deviceAddress, "12345678");
+    BB_ATTACH(localPortSetup.password1, PASSWORD_1, 0);
+    bb_addString(&localPortSetup.password1, "Gurux1");
+    BB_ATTACH(localPortSetup.password2, PASSWORD_2, 0);
+    bb_addString(&localPortSetup.password2, "Gurux2");
+    BB_ATTACH(localPortSetup.password5, PASSWORD_5, 0);
+    bb_addString(&localPortSetup.password5, "Gurux5");
+    //Set flag id.
+    memcpy(settings.flagId, "GRX", 3);
+    settings.localPortSetup = &localPortSetup;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Optical Port Setup object.
+///////////////////////////////////////////////////////////////////////
 int addSpecialDaysTable()
 {
     int ret;
@@ -1284,14 +1378,6 @@ int addPrimeNbOfdmPlcMacCounters()
         primeNbOfdmPlcMacCounters.csmaChBusyCount = 6;
     }
     return ret;
-}
-
-///////////////////////////////////////////////////////////////////////
-//Add Optical Port Setup object.
-///////////////////////////////////////////////////////////////////////
-int addOpticalPortSetup()
-{
-    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1815,9 +1901,9 @@ int addFunctionControl()
 {
     int ret;
     //Function statuc must initialize to zero.
-    static functionStatus FUNCTION_STATUS[2] = {0};
+    static functionStatus FUNCTION_STATUS[2] = { 0 };
     //Function block must initialize to zero.
-    static functionalBlock FUNCTION_BLOCKS[2] = { 0 };    
+    static functionalBlock FUNCTION_BLOCKS[2] = { 0 };
     const unsigned char ln[6] = { 0,0,44,1,0,255 };
     if ((ret = INIT_OBJECT(functionControl, DLMS_OBJECT_TYPE_FUNCTION_CONTROL, ln)) == 0)
     {
@@ -2375,6 +2461,8 @@ int createObjects()
         (ret = addAssociationLow()) != 0 ||
         (ret = addAssociationHigh()) != 0 ||
         (ret = addAssociationHighGMac()) != 0 ||
+        (ret = addAssociationHighGMacPreEstablished()) != 0 ||
+        (ret = addSecuritySetupPreEstablishedHighGMac()) != 0 ||
         (ret = addSecuritySetupHigh()) != 0 ||
         (ret = addSecuritySetupHighGMac()) != 0 ||
         (ret = addMbusDiagnostic()) != 0 ||
@@ -2402,10 +2490,10 @@ int createObjects()
         (ret = addTcpUdpSetup()) != 0 ||
         (ret = addAutoConnect()) != 0 ||
         (ret = addActivityCalendar()) != 0 ||
+        (ret = addOpticalPortSetup()) != 0 ||
         (ret = addSpecialDaysTable()) != 0 ||
         (ret = addCurrentlyActiveTariff()) != 0 ||
         (ret = addPrimeNbOfdmPlcMacCounters()) != 0 ||
-        (ret = addOpticalPortSetup()) != 0 ||
         (ret = addDemandRegister()) != 0 ||
         (ret = addRegisterMonitor()) != 0 ||
         (ret = addAutoAnswer()) != 0 ||
@@ -3559,6 +3647,8 @@ unsigned char svr_isTarget(
                         if (a->securitySetup->clientSystemTitle.size == 8)
                         {
                             settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
+                            memcpy(settings->preEstablishedSystemTitle, a->securitySetup->clientSystemTitle.data, 8);
+                            settings->cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
                         }
                         //GMac authentication uses innocation counter.
                         if (a->securitySetup == &securitySetupHighGMac)
@@ -4051,7 +4141,7 @@ static uint16_t GetLinuxBaudRate(uint16_t baudRate)
         break;
     default:
         return B9600;
-    }
+}
     return br;
 }
 #endif //!defined(_WIN32) && !defined(_WIN64)//Windows
@@ -4138,7 +4228,7 @@ int com_updateSerialportSettings(
         ret = errno;
         printf("Failed to Open port. tcsetattr failed.\r");
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
-    }
+}
 #endif
     return 0;
 }
@@ -4283,7 +4373,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-            }
+        }
             //If client closes the connection.
             if (ret == 0)
             {
@@ -4295,11 +4385,11 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-            }
+    }
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             if (trace > GX_TRACE_LEVEL_WARNING)
             {
-                if (first)
+                // if (first)
                 {
                     printf("\nRX:\t");
                     first = 0;
@@ -4342,7 +4432,7 @@ void ListenerThread(void* pVoid)
                     socket1 = -1;
 #endif
                     break;
-                }
+            }
                 if (settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E && sr.newBaudRate != 0)
                 {
                     if (settings.base.connected == DLMS_CONNECTION_STATE_IEC)
@@ -4712,7 +4802,7 @@ int main(int argc, char* argv[])
         ret = pthread_create(&receiverThread, NULL, UnixSerialPortThread, &comPort);
 #endif
 
-    }
+        }
     else
     {
         printf("TCP/IP server started in port: %d\n", port);
@@ -4831,5 +4921,5 @@ int main(int argc, char* argv[])
 #endif
 
     return 0;
-}
+    }
 

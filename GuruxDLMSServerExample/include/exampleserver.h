@@ -24,9 +24,9 @@
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include "connection.h"
-char DATAFILE[FILENAME_MAX];
-char IMAGEFILE[FILENAME_MAX];
-char TRACEFILE[FILENAME_MAX];
+extern char DATAFILE[FILENAME_MAX];
+extern char IMAGEFILE[FILENAME_MAX];
+extern char TRACEFILE[FILENAME_MAX];
 void println(char* desc, gxByteBuffer* data);
 
 int svr_start(

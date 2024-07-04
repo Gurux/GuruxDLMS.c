@@ -134,6 +134,8 @@ extern "C" {
 /*Get boolean value from variant.*/
 #define GX_GET_BOOL(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? (X.bVal != 0) : (*X.pbVal != 0)
 
+#define GX_ADD(X, VALUE_) GX_UNION(&X, pbVal += VALUE_, X.vt)
+
     typedef struct
     {
 #ifdef DLMS_IGNORE_MALLOC

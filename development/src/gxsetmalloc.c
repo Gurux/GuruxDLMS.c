@@ -2555,7 +2555,7 @@ int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char 
                 tmp3 = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
 
                 if ((ret = var_init(tmp3)) != 0 ||
-                    (ret = var_copy(tmp, tmp3)) != 0 ||
+                    (ret = var_copy(tmp3, tmp)) != 0 ||
                     (ret = va_push(&object->multicastIPAddress, tmp3)) != 0)
                 {
                     break;

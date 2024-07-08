@@ -140,7 +140,7 @@ static unsigned char replyFrame[PDU_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Define server system title.
 static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
 time_t imageActionStartTime = 0;
-gxImageActivateInfo IMAGE_ACTIVATE_INFO[1];
+gxImageActivateInfo IMAGE_ACTIVATE_INFO[1] = { 0 };
 static gxIecTwistedPairSetup twistedPairSetup;
 
 uint32_t time_current(void)
@@ -3344,24 +3344,19 @@ void svr_preAction(
             {
                 i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_NOT_INITIATED;
                 //There is only one image.
-                gxImageActivateInfo* info;
                 imageTransfer.imageActivateInfo.size = 1;
-                if ((e->error = arr_getByIndex(&imageTransfer.imageActivateInfo, 0, (void**)&info, sizeof(gxImageActivateInfo))) != 0)
-                {
-                    e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
-                    return;
-                }
                 if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
-                    (ret = cosem_getOctetString2(e->parameters.byteArr, info->identification.data, sizeof(info->identification.data), &info->identification.size)) != 0 ||
-                    (ret = cosem_getUInt32(e->parameters.byteArr, &info->size)) != 0)
+                    (ret = cosem_getOctetString2(e->parameters.byteArr, IMAGE_ACTIVATE_INFO[0].identification.data,
+                        sizeof(IMAGE_ACTIVATE_INFO[0].identification.data), &IMAGE_ACTIVATE_INFO[0].identification.size)) != 0 ||
+                    (ret = cosem_getUInt32(e->parameters.byteArr, &IMAGE_ACTIVATE_INFO[0].size)) != 0)
                 {
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     return;
                 }
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                printf("Updating image %s Size: %ld\r\n", imageFile, info->size);
+                printf("Updating image %s Size: %ld\r\n", imageFile, IMAGE_ACTIVATE_INFO[0].size);
 #endif
-                allocateImageTransfer(imageFile, info->size);
+                allocateImageTransfer(imageFile, IMAGE_ACTIVATE_INFO[0].size);
                 ba_clear(&i->imageTransferredBlocksStatus);
                 i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
             }
@@ -4141,7 +4136,7 @@ static uint16_t GetLinuxBaudRate(uint16_t baudRate)
         break;
     default:
         return B9600;
-}
+    }
     return br;
 }
 #endif //!defined(_WIN32) && !defined(_WIN64)//Windows
@@ -4228,7 +4223,7 @@ int com_updateSerialportSettings(
         ret = errno;
         printf("Failed to Open port. tcsetattr failed.\r");
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
-}
+    }
 #endif
     return 0;
 }
@@ -4373,7 +4368,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-        }
+            }
             //If client closes the connection.
             if (ret == 0)
             {
@@ -4385,7 +4380,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-    }
+            }
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             if (trace > GX_TRACE_LEVEL_WARNING)
             {
@@ -4432,7 +4427,7 @@ void ListenerThread(void* pVoid)
                     socket1 = -1;
 #endif
                     break;
-            }
+                }
                 if (settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E && sr.newBaudRate != 0)
                 {
                     if (settings.base.connected == DLMS_CONNECTION_STATE_IEC)
@@ -4802,7 +4797,7 @@ int main(int argc, char* argv[])
         ret = pthread_create(&receiverThread, NULL, UnixSerialPortThread, &comPort);
 #endif
 
-        }
+    }
     else
     {
         printf("TCP/IP server started in port: %d\n", port);
@@ -4921,5 +4916,5 @@ int main(int argc, char* argv[])
 #endif
 
     return 0;
-    }
+}
 

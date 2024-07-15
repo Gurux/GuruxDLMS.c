@@ -1425,7 +1425,7 @@ int svr_handleSetRequest(
         p.multipleBlocks = 0;
         p.requestType = 1;
     }
-    else if (settings->base.broadcast)
+    else if (settings->base.cipher.broadcast)
     {
         //ACK is not send with broadcast.
         return bb_clear(data);
@@ -2887,7 +2887,7 @@ int svr_handleMethodRequest(
             bb_clear(data);
         }
 #endif //DLMS_IGNORE_MALLOC
-        if (settings->base.broadcast)
+        if (settings->base.cipher.broadcast)
         {
             //ACK is not send with broadcast.
             return bb_clear(data);

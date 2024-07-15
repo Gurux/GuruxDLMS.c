@@ -132,8 +132,6 @@ extern "C" {
         uint16_t clientAddress;
         //Server address.
         uint32_t serverAddress;
-        /*Is broadcast used*/
-        unsigned char broadcast;
         unsigned char useLogicalNameReferencing;
         DLMS_INTERFACE_TYPE interfaceType;
         DLMS_AUTHENTICATION authentication;

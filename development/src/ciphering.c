@@ -83,7 +83,7 @@ void cip_init(ciphering* target)
     memcpy(target->authenticationKey, DEFAUlT_AUTHENTICATION_KEY, sizeof(DEFAUlT_AUTHENTICATION_KEY));
     memset(target->dedicatedKey, 0, 16);
 #endif //DLMS_IGNORE_MALLOC
-    target->broacast = 0;
+    target->broadcast = 0;
 }
 
 void cip_clear(ciphering* target)
@@ -792,7 +792,7 @@ static const unsigned char __R_CON[11] PROGMEM = {
                     bb_set(&nonse, systemTitle, 8);
                 }
                 tag = security | settings->suite;
-                if (settings->broacast)
+                if (settings->broadcast)
                 {
                     tag |= 0x40;
                 }
@@ -939,8 +939,8 @@ static const unsigned char __R_CON[11] PROGMEM = {
             *suite = (DLMS_SECURITY_SUITE)(ch & 0x3);
         }
         //If Key_Set or authentication or encryption is not used.
-        if ((settings->broacast && (ch & 0x40) == 0) || 
-            (!settings->broacast && (ch & 0x40) != 0) ||
+        if ((settings->broadcast && (ch & 0x40) == 0) || 
+            (!settings->broadcast && (ch & 0x40) != 0) ||
             *security == DLMS_SECURITY_NONE)
         {
             return DLMS_ERROR_CODE_INVALID_PARAMETER;

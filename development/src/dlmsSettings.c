@@ -104,7 +104,6 @@ void cl_init(
 #else
     memset(settings->preEstablishedSystemTitle, 0, 8);
 #endif //DLMS_IGNORE_MALLOC
-    settings->broadcast = 0;
     settings->blockIndex = 1;
     settings->clientAddress = clientAddress;
     settings->serverAddress = serverAddress;

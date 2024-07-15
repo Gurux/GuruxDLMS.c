@@ -99,7 +99,7 @@ typedef struct
     unsigned char dedicatedKey[32];
 #endif //DLMS_IGNORE_MALLOC
     //Is data send as a broadcast or unicast.
-    unsigned char broacast;
+    unsigned char broadcast;
 } ciphering;
 
 

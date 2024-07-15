@@ -6019,7 +6019,7 @@ int dlms_getLNPdu(
 #else
             unsigned char* key;
 #endif //DLMS_IGNORE_MALLOC
-            if (p->settings->cipher.broacast)
+            if (p->settings->cipher.broadcast)
             {
 #ifndef DLMS_IGNORE_MALLOC
                 key = &p->settings->cipher.broadcastBlockCipherKey;

@@ -337,6 +337,15 @@ void time_init(
 #endif //DLMS_USE_EPOCH_TIME
 }
 
+uint32_t time_getDate(uint32_t value)
+{
+    //Remove hours, minutes and seconds
+    value -= value % 60;
+    value -= value % 3600;
+    value -= value % 86400;
+    return value;
+}
+
 void time_clearDate(
     gxtime* value)
 {
@@ -360,6 +369,20 @@ void time_clearDate(
         value->value.tm_mday = value->value.tm_isdst = 0;
 #endif
     value->skip &= ~(DATETIME_SKIPS_YEAR | DATETIME_SKIPS_MONTH | DATETIME_SKIPS_DAY | DATETIME_SKIPS_DAYOFWEEK | DATETIME_SKIPS_DEVITATION);
+}
+
+uint32_t time_getTime(uint32_t value)
+{
+    unsigned char seconds = value % 60;
+    uint32_t t = value;
+    t /= 60;
+    unsigned char minutes = t % 60;
+    t /= 60;
+    unsigned char hours = t % 24;
+    value = seconds;
+    value += 60 * minutes;
+    value += 3600 * hours;
+    return value;
 }
 
 void time_clearTime(
@@ -494,6 +517,12 @@ unsigned char time_getHours(
 #endif // DLMS_USE_EPOCH_TIME
 }
 
+unsigned char time_getHours2(
+    uint32_t value)
+{
+    return (unsigned char)((value % 86400L) / 3600L);
+}
+
 unsigned char time_getMinutes(
     const gxtime* value)
 {
@@ -504,6 +533,12 @@ unsigned char time_getMinutes(
 #endif // DLMS_USE_EPOCH_TIME
 }
 
+unsigned char time_getMinutes2(
+    uint32_t value)
+{
+    return (unsigned char)((value % 3600L) / 60L);
+}
+
 unsigned char time_getSeconds(
     const gxtime* value)
 {
@@ -512,6 +547,12 @@ unsigned char time_getSeconds(
 #else
     return (unsigned char)value->value.tm_sec;
 #endif // DLMS_USE_EPOCH_TIME
+}
+
+unsigned char time_getSeconds2(
+    uint32_t value)
+{
+    return value % 60;
 }
 
 void time_addDays(

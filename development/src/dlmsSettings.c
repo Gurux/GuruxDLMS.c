@@ -104,6 +104,7 @@ void cl_init(
 #else
     memset(settings->preEstablishedSystemTitle, 0, 8);
 #endif //DLMS_IGNORE_MALLOC
+    settings->broadcast = 0;
     settings->blockIndex = 1;
     settings->clientAddress = clientAddress;
     settings->serverAddress = serverAddress;
@@ -126,14 +127,14 @@ void cl_init(
     {
         settings->proposedConformance = (DLMS_CONFORMANCE)
             (DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
-            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
-            DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
-            DLMS_CONFORMANCE_SET | 
-            DLMS_CONFORMANCE_SELECTIVE_ACCESS |
-            DLMS_CONFORMANCE_ACTION | 
-            DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
-            DLMS_CONFORMANCE_GET |
-            DLMS_CONFORMANCE_GENERAL_PROTECTION);
+                DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+                DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+                DLMS_CONFORMANCE_SET |
+                DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+                DLMS_CONFORMANCE_ACTION |
+                DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+                DLMS_CONFORMANCE_GET |
+                DLMS_CONFORMANCE_GENERAL_PROTECTION);
     }
     else
     {

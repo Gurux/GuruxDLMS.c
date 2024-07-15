@@ -1425,6 +1425,11 @@ int svr_handleSetRequest(
         p.multipleBlocks = 0;
         p.requestType = 1;
     }
+    else if (settings->base.broadcast)
+    {
+        //ACK is not send with broadcast.
+        return bb_clear(data);
+    }
     return dlms_getLNPdu(&p, data);
 }
 
@@ -2882,7 +2887,11 @@ int svr_handleMethodRequest(
             bb_clear(data);
         }
 #endif //DLMS_IGNORE_MALLOC
-
+        if (settings->base.broadcast)
+        {
+            //ACK is not send with broadcast.
+            return bb_clear(data);
+        }
         // Set default action reply if not given.
         if (e->error == DLMS_ERROR_CODE_OK)
         {

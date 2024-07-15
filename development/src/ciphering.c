@@ -939,7 +939,9 @@ static const unsigned char __R_CON[11] PROGMEM = {
             *suite = (DLMS_SECURITY_SUITE)(ch & 0x3);
         }
         //If Key_Set or authentication or encryption is not used.
-        if (ch & 0x40 || *security == DLMS_SECURITY_NONE)
+        if ((settings->broacast && (ch & 0x40) == 0) || 
+            (!settings->broacast && (ch & 0x40) != 0) ||
+            *security == DLMS_SECURITY_NONE)
         {
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }

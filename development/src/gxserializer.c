@@ -4650,7 +4650,11 @@ int ser_saveTariffPlan(
     gxTariffPlan* object)
 {
     int ret;
-    if ((ret = bb_addString(serializeSettings, object->calendarName)) != 0 ||
+#ifdef DLMS_IGNORE_MALLOC
+    if ((ret = ser_saveOctetString(serializeSettings, &object->calendarName) != 0) ||
+#else
+    if ((ret = ser_saveOctetString2(serializeSettings, object->calendarName, strlen(object->calendarName))) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
         (ret = ser_saveUInt8(serializeSettings, object->enabled)) != 0 ||
         (ret = ser_saveDateTime(&object->activationTime, serializeSettings)) != 0)
     {
@@ -7636,16 +7640,16 @@ int ser_loadArrayManagerElements(
                     {
                         //If unknown object.
                         break;
-                }
+                    }
                     if ((ret = cosem_setLogicalName(it->element.target, ln)) != DLMS_ERROR_CODE_OK)
                     {
                         break;
                     }
 #endif //DLMS_IGNORE_MALLOC
+                }
             }
         }
     }
-}
     return ret;
 }
 
@@ -8035,16 +8039,16 @@ int ser_loadAssociationLogicalName(
                         (ret = ser_loadOctetString(serializeSettings, value)) != 0)
                     {
                         break;
-                }
+                    }
                     if ((ret = arr_push(&object->userList, key_init2(id, value))) != 0)
                     {
                         break;
                     }
 #endif //DLMS_IGNORE_MALLOC
+                }
             }
         }
     }
-}
     return ret;
 }
 #endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
@@ -8082,9 +8086,9 @@ int ser_loadAssociationShortName(
                 if ((ret = ser_loadUInt16(serializeSettings, &shortName)) != 0 ||
                     (ret = ser_loadUInt8(serializeSettings, &version)) != 0 ||
                     (ret = ser_loadUInt16(serializeSettings, &value)) != 0)
-            {
-                break;
-            }
+                {
+                    break;
+                }
 #ifndef DLMS_IGNORE_MALLOC
                 type = value;
 #endif //DLMS_IGNORE_MALLOC
@@ -8124,20 +8128,20 @@ int ser_loadAssociationShortName(
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
                         return ret;
-                }
+                    }
 #endif //DLMS_IGNORE_MALLOC
-            }
+                }
 #ifndef DLMS_IGNORE_MALLOC
                 oa_push(&object->objectList, obj);
 #endif //DLMS_IGNORE_MALLOC
                 // obj->version = (unsigned char)version;
+            }
         }
-    }
         if (ret != 0)
         {
             return ret;
         }
-}
+    }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 9))
     {
 #ifndef DLMS_IGNORE_SECURITY_SETUP
@@ -8189,15 +8193,15 @@ int ser_loadAssociationShortName(
                         (ret = ser_loadOctetString(serializeSettings, value)) != 0)
                     {
                         break;
-                }
+                    }
                     if ((ret = arr_push(&object->userList, key_init2(id, value))) != 0)
                     {
                         break;
                     }
 #endif //DLMS_IGNORE_MALLOC
+                }
             }
         }
-    }
     }
     return ret;
 }
@@ -8740,11 +8744,15 @@ int ser_loadTariffPlan(
     gxTariffPlan * object)
 {
     int ret;
-    if ((ret = bb_addString(serializeSettings, object->calendarName)) != 0 ||
-        (ret = ser_loadUInt8(serializeSettings, object->enabled)) != 0 ||
+#ifdef DLMS_IGNORE_MALLOC
+    if ((ret = ser_loadOctetString(serializeSettings, &object->calendarName) != 0) ||
+#else
+    if ((ret = ser_loadOctetString2(serializeSettings, &object->calendarName)) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
+        (ret = ser_loadUInt8(serializeSettings, &object->enabled)) != 0 ||
         (ret = ser_loadDateTime(&object->activationTime, serializeSettings, DLMS_DATA_TYPE_DATETIME)) != 0)
-{
-}
+    {
+    }
     return ret;
 }
 #endif //DLMS_ITALIAN_STANDARD
@@ -9220,7 +9228,7 @@ int ser_loadObjects(
                 }
                 break;
             }
-            }
+        }
 #if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
         if (ret == 0 && serializeSettings->position - 5 != size)
         {
@@ -9262,14 +9270,14 @@ int ser_loadObjects2(
 #endif //DLMS_DEBUG
                 break;
             }
-    }
+        }
 #if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
         if (serializeSettings->position - 5 != size)
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
 #endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-}
+    }
     return ret;
 }
 #endif //DLMS_IGNORE_SERIALIZER

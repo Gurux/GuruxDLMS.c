@@ -1293,9 +1293,17 @@ void obj_clear(gxObject* object)
 #ifdef DLMS_ITALIAN_STANDARD
         case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         {
+#ifdef DLMS_IGNORE_MALLOC
+            bb_clear(&((gxTariffPlan*)object)->calendarName);
+#else
             gxfree(((gxTariffPlan*)object)->calendarName);
+#endif //DLMS_IGNORE_MALLOC
             ba_clear(&((gxTariffPlan*)object)->plan.weeklyActivation);
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             arr_clear(&((gxTariffPlan*)object)->plan.specialDays);
+#else
+            va_clear(&((gxTariffPlan*)object)->plan.specialDays);
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             break;
         }
 #endif //DLMS_ITALIAN_STANDARD
@@ -2137,7 +2145,7 @@ void clock_updateDST(gxClock* object, gxtime* value)
         object->status &= ~DLMS_CLOCK_STATUS_DAYLIGHT_SAVE_ACTIVE;
     }
     object->time.status = object->status;
-    }
+}
 #endif //DLMS_IGNORE_SERVER
 
 int clock_utcToMeterTime(gxClock* object, gxtime* value)

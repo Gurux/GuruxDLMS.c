@@ -227,6 +227,10 @@ static gxG3PlcMacSetup g3PlcMacSetup;
 static gxG3Plc6LoWPAN g3Plc6LoWPAN;
 static gxArrayManager arrayManager;
 static gxFunctionControl functionControl;
+#ifdef DLMS_ITALIAN_STANDARD
+static gxTariffPlan tariffPlan;
+#endif //DLMS_ITALIAN_STANDARD
+
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
@@ -247,7 +251,10 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(blockCipherKey), BASE(authenticationKey), BASE(kek),BASE(serverInvocationCounter), BASE(limiter),
     BASE(mbusDiagnostic), BASE(mbusPortSetup),
     BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager),
-    BASE(functionControl)
+    BASE(functionControl),
+#ifdef DLMS_ITALIAN_STANDARD
+    BASE(tariffPlan)
+#endif //DLMS_ITALIAN_STANDARD
 };
 
 //List of COSEM objects that are removed from association view(s).
@@ -1807,6 +1814,135 @@ int addG3PlcMacSetup()
     return ret;
 }
 
+#ifdef DLMS_ITALIAN_STANDARD
+///////////////////////////////////////////////////////////////////////
+//Add tariff plan object. Tariff plan is used only in Italy standard.
+///////////////////////////////////////////////////////////////////////
+int addTariffPlan()
+{
+    int ret;
+    static uint16_t SPECIAL_DAYS[10] = { 0x0, 0x00, 0x00, 0x00, 0x00, 0x0, 0x00, 0x00, 0x00, 0x00 };
+    static unsigned char CALENDAR_NAME[2] = { 0x0D, 0x01 };
+    static unsigned char WEEKLY_ACTIVATION[2] = { 0x7, 0xFF };
+    const unsigned char ln[6] = { 0, 0, 94, 39, 21, 101 };
+    if ((ret = INIT_OBJECT(tariffPlan, DLMS_OBJECT_TYPE_TARIFF_PLAN, ln)) == 0)
+    {
+        BB_ATTACH(tariffPlan.calendarName, CALENDAR_NAME, 2);
+        tariffPlan.enabled = 0;
+        time_init(&tariffPlan.activationTime, 2015, 1, 1, 0, 0, 0, 0, 120);
+        //General 
+        tariffPlan.plan.defaultTariffBand = 3;
+        BIT_ATTACH(tariffPlan.plan.weeklyActivation, WEEKLY_ACTIVATION, 2);
+
+        //////////////
+        //Get winter season.
+        tariffPlan.plan.winterSeason.dayOfMonth = 1;
+        tariffPlan.plan.winterSeason.month = 10;
+        //Working day interval #1.
+        tariffPlan.plan.winterSeason.workingDayIntervals[0].startHour = 21;
+        tariffPlan.plan.winterSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Working day interval #2.
+        tariffPlan.plan.winterSeason.workingDayIntervals[1].startHour = 24;
+        tariffPlan.plan.winterSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #3.
+        tariffPlan.plan.winterSeason.workingDayIntervals[2].startHour = 24;
+        tariffPlan.plan.winterSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #4.
+        tariffPlan.plan.winterSeason.workingDayIntervals[3].startHour = 24;
+        tariffPlan.plan.winterSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #5.
+        tariffPlan.plan.winterSeason.workingDayIntervals[4].startHour = 24;
+        tariffPlan.plan.winterSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Saturday interval #1.
+        tariffPlan.plan.winterSeason.saturdayIntervals[0].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Saturday interval #2.
+        tariffPlan.plan.winterSeason.saturdayIntervals[1].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #3.
+        tariffPlan.plan.winterSeason.saturdayIntervals[2].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #4.
+        tariffPlan.plan.winterSeason.saturdayIntervals[3].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #5.
+        tariffPlan.plan.winterSeason.saturdayIntervals[4].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Holiday interval #1.
+        tariffPlan.plan.winterSeason.holidayIntervals[0].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Holiday interval #2.
+        tariffPlan.plan.winterSeason.holidayIntervals[1].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #3.
+        tariffPlan.plan.winterSeason.holidayIntervals[2].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #4.
+        tariffPlan.plan.winterSeason.holidayIntervals[3].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #5.
+        tariffPlan.plan.winterSeason.holidayIntervals[4].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //////////////
+        // Get summer season.
+        tariffPlan.plan.summerSeason.dayOfMonth = 1;
+        tariffPlan.plan.summerSeason.month = 4;
+        //Working day interval #1.
+        tariffPlan.plan.summerSeason.workingDayIntervals[0].startHour = 21;
+        tariffPlan.plan.summerSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Working day interval #2.
+        tariffPlan.plan.summerSeason.workingDayIntervals[1].startHour = 24;
+        tariffPlan.plan.summerSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #3.
+        tariffPlan.plan.summerSeason.workingDayIntervals[2].startHour = 24;
+        tariffPlan.plan.summerSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #4.
+        tariffPlan.plan.summerSeason.workingDayIntervals[3].startHour = 24;
+        tariffPlan.plan.summerSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #5.
+        tariffPlan.plan.summerSeason.workingDayIntervals[4].startHour = 24;
+        tariffPlan.plan.summerSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Saturday interval #1.
+        tariffPlan.plan.summerSeason.saturdayIntervals[0].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Saturday interval #2.
+        tariffPlan.plan.summerSeason.saturdayIntervals[1].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #3.
+        tariffPlan.plan.summerSeason.saturdayIntervals[2].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #4.
+        tariffPlan.plan.summerSeason.saturdayIntervals[3].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #5.
+        tariffPlan.plan.summerSeason.saturdayIntervals[4].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Holiday interval #1.
+        tariffPlan.plan.summerSeason.holidayIntervals[0].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Holiday interval #2.
+        tariffPlan.plan.summerSeason.holidayIntervals[1].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #3.
+        tariffPlan.plan.summerSeason.holidayIntervals[2].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #4.
+        tariffPlan.plan.summerSeason.holidayIntervals[3].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #5.
+        tariffPlan.plan.summerSeason.holidayIntervals[4].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        ARR_ATTACH(tariffPlan.plan.specialDays, SPECIAL_DAYS, 10);
+    }
+    return ret;
+}
+#endif //DLMS_ITALIAN_STANDARD
+
 ///////////////////////////////////////////////////////////////////////
 //Add G3 PLC 6LoWPAN object.
 ///////////////////////////////////////////////////////////////////////
@@ -2506,6 +2642,9 @@ int createObjects()
         (ret = addPrimeNbOfdmPlcMacNetworkAdministrationData()) != 0 ||
         (ret = addTwistedPairSetup()) != 0 ||
         (ret = addLimiter()) != 0 ||
+#ifdef DLMS_ITALIAN_STANDARD
+        (ret = addTariffPlan()) != 0 ||
+#endif //DLMS_ITALIAN_STANDARD
         (ret = oa_verify(&settings.base.objects)) != 0 ||
         (ret = svr_initialize(&settings)) != 0)
     {
@@ -3674,8 +3813,8 @@ unsigned char svr_isTarget(
     {
         // If address is not broadcast or serial number.
         //Remove logical address from the server address.
-        unsigned char broadcast = (serverAddress & 0x3FFF) == 0x3FFF || (serverAddress & 0x7F) == 0x7F;
-        if (!(broadcast ||
+        settings->cipher.broadcast = (serverAddress & 0x3FFF) == 0x3FFF || (serverAddress & 0x7F) == 0x7F;
+        if (!(settings->cipher.broadcast ||
             (serverAddress & 0x3FFF) == SERIAL_NUMBER % 10000 + 1000))
         {
             ret = 0;
@@ -3712,7 +3851,7 @@ unsigned char svr_isTarget(
             }
         }
         //Set serial number as meter address if broadcast is used.
-        if (broadcast)
+        if (settings->cipher.broadcast)
         {
             settings->serverAddress = SERIAL_NUMBER % 10000 + 1000;
         }

@@ -7919,9 +7919,9 @@ int cosem_setArbitrator(
                 }
                 it->scriptSelector = (uint16_t)var_toInteger(tmp2);
                 arr_push(&object->actions, it);
-                }
             }
         }
+    }
     break;
     case 3:
     {
@@ -8002,7 +8002,7 @@ int cosem_setArbitrator(
         break;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_ARBITRATOR
 #ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
 int cosem_setIec8802LlcType1Setup(
@@ -8572,15 +8572,31 @@ int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT* 
             {
                 return ret;
             }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             arr_clear(&object->plan.specialDays);
             arr_capacity(&object->plan.specialDays, tmp->Arr->size);
+#else
+            va_clear(&object->plan.specialDays);
+            va_capacity(&object->plan.specialDays, tmp->Arr->size);
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             for (pos = 0; pos != tmp->Arr->size; ++pos)
             {
                 if ((ret = va_getByIndex(tmp->Arr, pos, &tmp2)) != 0)
                 {
                     return ret;
                 }
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
                 arr_push(&object->plan.specialDays, (void*)tmp2->ulVal);
+#else
+                dlmsVARIANT* tmp3 = (dlmsVARIANT*)gxmalloc(sizeof(dlmsVARIANT));
+                var_init(tmp3);
+                ret = var_copy(tmp3, tmp2);
+                if (ret != 0)
+                {
+                    break;
+                }
+                va_push(&object->plan.specialDays, tmp3);
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             }
         }
         break;

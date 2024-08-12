@@ -30,11 +30,11 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-#ifndef GXSHA_256
-#define GXSHA_256
+#ifndef GXSHA_384
+#define GXSHA_384
 
 #include "gxignore.h"
-#ifndef DLMS_IGNORE_HIGH_SHA256
+#ifndef DLMS_IGNORE_HIGH_SHA384
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -42,11 +42,11 @@ extern "C" {
 
 #include "bytebuffer.h"
 
-    int gxsha256_hash(gxByteBuffer* data, gxByteBuffer* digest);
+    int gxsha384_hash(gxByteBuffer* data, gxByteBuffer* digest);
     
 #ifdef  __cplusplus
 }
 #endif
-#endif //DLMS_IGNORE_HIGH_SHA256
+#endif //DLMS_IGNORE_HIGH_SHA384
 
-#endif //GXSHA_256
+#endif //GXSHA_384

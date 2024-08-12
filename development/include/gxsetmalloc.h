@@ -388,6 +388,9 @@ extern "C" {
         dlmsVARIANT* value);
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 
+#ifdef DLMS_ITALIAN_STANDARD
+    int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT* value);
+#endif //DLMS_ITALIAN_STANDARD
 #ifdef  __cplusplus
 }
 #endif

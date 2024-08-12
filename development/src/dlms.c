@@ -6434,7 +6434,6 @@ int dlms_generateChallenge(
     // Texas Instruments accepts only 16 byte long challenge.
     // For this reason challenge size is 16 bytes at the moment.
     int ret = 0, pos, len = 16;
-    srand((unsigned int)time(NULL));
     bb_clear(challenge);
     for (pos = 0; pos != len; ++pos)
     {
@@ -6661,7 +6660,7 @@ int dlms_secure(
 #ifdef DLMS_IGNORE_HIGH_SHA256
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #else
-        ret = gxsha256_encrypt(secret, reply);
+        ret = gxsha256_hash(secret, reply);
         bb_clear(&challenge);
         return ret;
 #endif //DLMS_IGNORE_HIGH_SHA256

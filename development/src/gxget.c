@@ -5169,9 +5169,9 @@ int cosem_getAccount(
                         (ret = cosem_setOctetString2(data, ccc->chargeReference, 6)) != 0 ||
                         //collection configuration
                         (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
-                {
-                    break;
-                }
+                    {
+                        break;
+                    }
         }
     }
     else if (e->index == 12)
@@ -5811,13 +5811,14 @@ int getSeason(gxBandDescriptor* season, gxByteBuffer* data)
 
 int cosem_getTariffPlan(gxValueEventArg* e)
 {
-    uint16_t it;
-    int pos, ret;
-    gxByteBuffer* data;
+    int ret;
     gxTariffPlan* object = (gxTariffPlan*)e->target;
     switch (e->index)
     {
     case 2:
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        ret = cosem_setString2(e->value.byteArr, &object->calendarName);
+#else
         if (object->calendarName == NULL)
         {
             ret = cosem_setString(e->value.byteArr, object->calendarName, 0);
@@ -5826,56 +5827,40 @@ int cosem_getTariffPlan(gxValueEventArg* e)
         {
             ret = cosem_setString(e->value.byteArr, object->calendarName, (uint16_t)strlen(object->calendarName));
         }
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         break;
     case 3:
         ret = cosem_setBoolean(e->value.byteArr, object->enabled);
         break;
     case 4:
     {
-        data = e->value.byteArr;
-        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
-            (ret = bb_setUInt8(data, 4)) != 0 ||
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
-            (ret = bb_setUInt8(data, object->plan.defaultTariffBand)) != 0 ||
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
-            (ret = bb_setUInt8(data, 2)) != 0 ||
-            (ret = getSeason(&object->plan.winterSeason, data)) != 0 ||
-            (ret = getSeason(&object->plan.summerSeason, data)) != 0 ||
-
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
-            (ret = hlp_setObjectCount(object->plan.weeklyActivation.size, data)) != 0 ||
-            (ret = bb_set(data, object->plan.weeklyActivation.data, ba_getByteCount(object->plan.weeklyActivation.size))) != 0 ||
-
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_ARRAY)) != 0 ||
-            (ret = bb_setUInt8(data, (unsigned char)object->plan.specialDays.size)) != 0)
+        if ((ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_STRUCTURE)) == 0 &&
+            (ret = bb_setUInt8(e->value.byteArr, 4)) == 0 &&
+            (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_UINT8)) == 0 &&
+            (ret = bb_setUInt8(e->value.byteArr, object->plan.defaultTariffBand)) == 0 &&
+            (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_ARRAY)) == 0 &&
+            (ret = bb_setUInt8(e->value.byteArr, 2)) == 0 &&
+            (ret = getSeason(&object->plan.winterSeason, e->value.byteArr)) == 0 &&
+            (ret = getSeason(&object->plan.summerSeason, e->value.byteArr)) == 0 &&
+            (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_BIT_STRING)) == 0 &&
+            (ret = hlp_setObjectCount(object->plan.weeklyActivation.size, e->value.byteArr)) == 0 &&
+            (ret = bb_set(e->value.byteArr, object->plan.weeklyActivation.data, ba_getByteCount(object->plan.weeklyActivation.size))) == 0)
         {
-            return ret;
-        }
-        for (pos = 0; pos != object->plan.specialDays.size; ++pos)
-        {
-            if ((ret = arr_getByIndex(&object->plan.specialDays, pos, (void**)&it)) != 0 ||
-                (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT16)) != 0 ||
-                (ret = bb_setUInt16(data, it)) != 0)
-            {
-                return ret;
-            }
+            ret = cosem_getUInt16Array(&object->plan.specialDays, e->value.byteArr);
         }
     }
     break;
     case 5:
     {
-        data = e->value.byteArr;
-        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+        if ((ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
             //Count
-            (ret = bb_setUInt8(data, 2)) != 0 ||
+            (ret = bb_setUInt8(e->value.byteArr, 2)) != 0 ||
             //Time
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-            (ret = bb_setUInt8(data, 4)) != 0 ||
-            (ret = var_getTime(&object->activationTime, data)) != 0 ||
+            (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_TIME)) != 0 ||
+            (ret = var_getTime(&object->activationTime, e->value.byteArr)) != 0 ||
             //Date
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-            (ret = bb_setUInt8(data, 5)) != 0 ||
-            (ret = var_getDate(&object->activationTime, data)) != 0)
+            (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_DATE)) != 0 ||
+            (ret = var_getDate(&object->activationTime, e->value.byteArr)) != 0)
         {
             return ret;
         }

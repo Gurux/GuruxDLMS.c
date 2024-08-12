@@ -120,7 +120,7 @@ void gxsha256_transform(uint32_t* h, const unsigned char* message, uint32_t mess
     }
 }
 
-int gxsha256_encrypt(gxByteBuffer* data, gxByteBuffer* digest)
+int gxsha256_hash(gxByteBuffer* data, gxByteBuffer* digest)
 {
     int ret = 0;
     unsigned int len = data->size;

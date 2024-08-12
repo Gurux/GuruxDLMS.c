@@ -433,8 +433,8 @@ extern "C" {
 
     //copy variant.
     int var_copy(
-        dlmsVARIANT* value,
-        dlmsVARIANT* copy);
+        dlmsVARIANT* target,
+        dlmsVARIANT* source);
 
     //Clear variant.
     int var_clear(

@@ -4280,7 +4280,11 @@ extern "C" {
         // Seasons.
         bitArray weeklyActivation;
         // Seasons.
+#ifdef DLMS_IGNORE_MALLOC
         gxArray specialDays; //UInt16[]
+#else 
+        variantArray specialDays; //UInt16[]
+#endif //DLMS_IGNORE_MALLOC
     } gxPlan;
 
     /*
@@ -4296,7 +4300,11 @@ extern "C" {
         gxObject base;
 
         // Calendar Name.
+#ifdef DLMS_IGNORE_MALLOC
+        gxByteBuffer calendarName;
+#else 
         char* calendarName;
+#endif //DLMS_IGNORE_MALLOC
         //Is tariff plan enabled.
         unsigned char enabled;
         // Tariff plan.

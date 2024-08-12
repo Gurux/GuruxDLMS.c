@@ -946,7 +946,9 @@ int cosem_getOctetStringBase(gxByteBuffer* bb,
     {
         return ret;
     }
-    if (exact && count != bb_getCapacity(value))
+    if ((exact && count != bb_getCapacity(value)) ||
+        //Octet-string is too big.
+        count > bb_getCapacity(value))
     {
         return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
     }

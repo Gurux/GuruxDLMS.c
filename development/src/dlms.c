@@ -4938,6 +4938,13 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
 #endif //DLMS_TRACE_PDU
         }
         //If IC value is wrong.
+#ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
+        settings->expectedInvocationCounter = svr_validInvocationCounter(settings, invocationCounter);
+        if (settings->expectedInvocationCounter != 0)
+        {
+            return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+        }
+#else
         if (settings->expectedInvocationCounter != NULL)
         {
             if (invocationCounter < *settings->expectedInvocationCounter)
@@ -4950,7 +4957,8 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
 #else
             * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-        }
+        }    
+#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
         // Get command.
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
         {
@@ -5027,19 +5035,27 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
         {
             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
+#ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
+        settings->expectedInvocationCounter = svr_validInvocationCounter(settings, invocationCounter);
+        if (settings->expectedInvocationCounter != 0)
+        {
+            return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+        }
+#else
         if (settings->expectedInvocationCounter != NULL)
         {
-            //If data is ciphered using invalid invocation counter value.
-            if (invocationCounter != *settings->expectedInvocationCounter)
+            if (invocationCounter < *settings->expectedInvocationCounter)
             {
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
+            //Update IC.
 #ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
             * settings->expectedInvocationCounter = (1 + invocationCounter);
 #else
             * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
         }
+#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
         data->command = DLMS_COMMAND_NONE;
         ret = dlms_getPdu(settings, data, 0);
         data->cipherIndex = (uint16_t)data->data.size;

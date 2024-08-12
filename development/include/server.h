@@ -158,6 +158,13 @@ extern "C" {
     //This can be used to check is meter data changed.
     //Return value is saved atribute index or zero if nothing hasn't change.
     uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex);
+
+#ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
+    //Some DLMS standard define that invocation counter must between given range.
+    //Returns expected invocation counter value or zero if the invocation counter is accepted.
+    extern uint32_t svr_validInvocationCounter(dlmsSettings* settings, uint32_t value);
+#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
+
 #ifdef  __cplusplus
 }
 #endif

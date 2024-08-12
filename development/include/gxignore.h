@@ -181,6 +181,10 @@ extern "C" {
     // This can be used to show decoded PDU.
     // #define DLMS_TRACE_PDU
 
+    // Some DLMS standard define that invocation counter must between given range.
+    // 
+    //#define DLMS_INVOCATION_COUNTER_VALIDATOR
+
 #ifdef ARDUINO
 /////////////////////////////////////////////////////////////////////////////
 //If Arduino is used.

@@ -516,6 +516,13 @@ int apdu_parseUserInformation(
         {
             return DLMS_ERROR_CODE_INVALID_SECURITY_SUITE;
         }
+#ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
+        settings->expectedInvocationCounter = svr_validInvocationCounter(settings, invocationCounter);
+        if (settings->expectedInvocationCounter != 0)
+        {
+            return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+        }
+#else
         if (settings->expectedInvocationCounter != NULL)
         {
             if (invocationCounter < 1 + *settings->expectedInvocationCounter)
@@ -523,12 +530,12 @@ int apdu_parseUserInformation(
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
 #ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-            *settings->expectedInvocationCounter = 1 + invocationCounter;
+            * settings->expectedInvocationCounter = 1 + invocationCounter;
 #else
-            *settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+            * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-
         }
+#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
         //If client system title doesn't match.
         if (settings->expectedClientSystemTitle != NULL &&
             memcmp(settings->expectedClientSystemTitle, EMPTY_SYSTEM_TITLE, 8) != 0 &&

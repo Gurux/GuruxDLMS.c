@@ -338,11 +338,19 @@ int svr_generateExceptionResponse(
         {
             if ((ret = bb_setUInt8(data, DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR)) == 0)
             {
+#ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
+#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+                ret = bb_setUInt64(data, settings->expectedInvocationCounter);
+#else
+                ret = bb_setUInt32(data, settings->expectedInvocationCounter);
+#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+#else
 #ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
                 ret = bb_setUInt64(data, *settings->expectedInvocationCounter);
 #else
                 ret = bb_setUInt32(data, (uint32_t)*settings->expectedInvocationCounter);
-#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+#endif // DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+#endif // DLMS_INVOCATION_COUNTER_VALIDATOR
             }
         }
         else if (error == DLMS_ERROR_CODE_INVALID_COMMAND)

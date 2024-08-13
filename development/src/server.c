@@ -3261,9 +3261,10 @@ int svr_handleCommand(
 #ifndef DLMS_IGNORE_SET
     case DLMS_COMMAND_SET_REQUEST:
         //If connection is not established.
-        if ((!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0) ||
+        if (!settings->info.preEstablished &&
+            !((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
             //If service is not negotiated.
-            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_SET) == 0)
+            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_SET) == 0))
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
@@ -3288,9 +3289,10 @@ int svr_handleCommand(
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_GET_REQUEST:
         //If connection is not established.
-        if ((!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0) ||
+        if (!settings->info.preEstablished &&
+            !((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
             //If service is not negotiated.
-            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_GET) == 0)
+            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_GET) == 0))
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
@@ -3311,9 +3313,10 @@ int svr_handleCommand(
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_READ_REQUEST:
         //If connection is not established.
-        if ((!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0) ||
+        if (!settings->info.preEstablished &&
+            !((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
             //If service is not negotiated.
-            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_READ) == 0)
+            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_READ) == 0))
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
@@ -3335,7 +3338,8 @@ int svr_handleCommand(
     case DLMS_COMMAND_METHOD_REQUEST:
         //Connection established is checked inside of the function because of HLS.
         //If service is not negotiated.
-        if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_ACTION) == 0)
+        if (!settings->info.preEstablished &&
+            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_ACTION) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }

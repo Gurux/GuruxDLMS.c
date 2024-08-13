@@ -126,8 +126,9 @@ unsigned char dlms_usePreEstablishedConnection(dlmsSettings* settings)
 unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, DLMS_COMMAND encryptedCommand)
 {
     unsigned char cmd;
-    unsigned glo = settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION ||
-        dlms_usePreEstablishedConnection(settings);
+    unsigned glo = (settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0 ||
+        //If pre-established connection.
+        (settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0;
     unsigned ded = dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0;
     if (encryptedCommand == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
         encryptedCommand == DLMS_COMMAND_GENERAL_DED_CIPHERING)
@@ -4873,7 +4874,7 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
 #endif //DLMS_TRACE_PDU
         }
         //If pre-set connection is made.
-        else if (dlms_usePreEstablishedConnection(settings) && emptySourceSystemTile)
+        else if (emptySourceSystemTile)
         {
 #ifndef DLMS_IGNORE_SERVER
             if (settings->server && settings->connected == DLMS_CONNECTION_STATE_NONE && !data->preEstablished)
@@ -4911,9 +4912,12 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
 #ifdef DLMS_TRACE_PDU
             cip_tracePdu(0, &data->data);
 #endif //DLMS_TRACE_PDU
-            if (data->preEstablished == 0)
+            //If pre-established connection.
+            if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0)
             {
                 data->preEstablished = 1;
+                settings->cipher.suite = suite;
+                settings->cipher.security = security;
             }
         }
         else
@@ -5303,11 +5307,6 @@ int dlms_getPdu(
 #if !defined(DLMS_IGNORE_SERVER)
             if (settings->server)
             {
-                if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0 &&
-                    dlms_usePreEstablishedConnection(settings) == 0)
-                {
-                    return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
-                }
                 ret = dlms_handleGloDedRequest(settings, data);
             }
 #endif// !defined(DLMS_IGNORE_CLIENT)

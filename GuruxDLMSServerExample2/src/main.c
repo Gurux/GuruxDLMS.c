@@ -227,6 +227,8 @@ static gxG3PlcMacSetup g3PlcMacSetup;
 static gxG3Plc6LoWPAN g3Plc6LoWPAN;
 static gxArrayManager arrayManager;
 static gxFunctionControl functionControl;
+static gxLteMonitoring lteMonitoring;
+
 #ifdef DLMS_ITALIAN_STANDARD
 static gxTariffPlan tariffPlan;
 #endif //DLMS_ITALIAN_STANDARD
@@ -252,6 +254,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(mbusDiagnostic), BASE(mbusPortSetup),
     BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager),
     BASE(functionControl),
+    BASE(lteMonitoring),
 #ifdef DLMS_ITALIAN_STANDARD
     BASE(tariffPlan)
 #endif //DLMS_ITALIAN_STANDARD
@@ -2496,6 +2499,34 @@ int addIecHdlcSetup()
     return ret;
 }
 
+
+///////////////////////////////////////////////////////////////////////
+//Add LTE monitoring object.
+///////////////////////////////////////////////////////////////////////
+int addLteMonitoring()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 25, 11, 0, 255 };
+    if ((ret = INIT_OBJECT(lteMonitoring, DLMS_OBJECT_TYPE_LTE_MONITORING, ln)) == 0)
+    {
+        //Set default values.
+        lteMonitoring.networkParameters.t3402 = 0;
+        lteMonitoring.networkParameters.t3412 = 0;
+        lteMonitoring.networkParameters.t3412ext2 = 0;
+        lteMonitoring.networkParameters.t3324 = 0;
+        lteMonitoring.networkParameters.teDRX = 0;
+        lteMonitoring.networkParameters.tPTW = 0;
+        lteMonitoring.networkParameters.qRxlevMin = 0;
+        lteMonitoring.networkParameters.qRxlevMinCE = 0;
+        lteMonitoring.networkParameters.qRxLevMinCE1 = 0;
+        lteMonitoring.qualityOfService.signalQuality = 0;
+        lteMonitoring.qualityOfService.signalLevel = 0;
+        lteMonitoring.qualityOfService.signalToNoiseRatio = 0;
+        lteMonitoring.qualityOfService.coverageEnhancement = 0;
+    }
+    return ret;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // This method is used to test object serialization.
 // Object is first save and then load.
@@ -2642,6 +2673,7 @@ int createObjects()
         (ret = addPrimeNbOfdmPlcMacNetworkAdministrationData()) != 0 ||
         (ret = addTwistedPairSetup()) != 0 ||
         (ret = addLimiter()) != 0 ||
+        (ret = addLteMonitoring()) != 0 ||        
 #ifdef DLMS_ITALIAN_STANDARD
         (ret = addTariffPlan()) != 0 ||
 #endif //DLMS_ITALIAN_STANDARD
@@ -3732,8 +3764,8 @@ void svr_postAction(
 
 unsigned char svr_isTarget(
     dlmsSettings* settings,
-    unsigned long serverAddress,
-    unsigned long clientAddress)
+    uint32_t serverAddress,
+    uint32_t clientAddress)
 {
     GXTRACE(("svr_isTarget."), NULL);
     objectArray objects;

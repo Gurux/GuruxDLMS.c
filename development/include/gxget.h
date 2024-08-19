@@ -276,6 +276,10 @@ extern "C" {
     int cosem_getSFSKReportingSystemList(
         gxValueEventArg* e);
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    int cosem_getLteMonitoring(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_LTE_MONITORING
 
 #ifdef DLMS_ITALIAN_STANDARD
     //Convert compact data buffer to array of values.

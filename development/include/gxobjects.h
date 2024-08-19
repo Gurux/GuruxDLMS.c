@@ -2179,7 +2179,7 @@ extern "C" {
         /*Key ciphered data.*/
         gxByteBuffer data;
     }gxDataProtectionAgreedKey;
-    
+
     /*Data protection Key.*/
     typedef struct
     {
@@ -4177,6 +4177,85 @@ extern "C" {
         gxArray reportingSystemList;
     } gxSFSKReportingSystemList;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+
+#ifndef DLMS_IGNORE_LTE_MONITORING
+
+    /// <summary>
+    /// Lte coverage enhancement.
+    /// </summary>
+    typedef enum
+    {
+        // CE Mode A in LTE Cat M1 and CE Level 0 in NB-Iot.
+        DLMS_LTE_COVERAGE_ENHANCEMENT_LEVEL0 = 0,
+        // CE Mode B in LTE Cat M1 and CE Level 1 in NB-Iot.
+        DLMS_LTE_COVERAGE_ENHANCEMENT_LEVEL1,
+        // CE Level 2 in NB-Iot.
+        DLMS_LTE_COVERAGE_ENHANCEMENT_LEVEL2
+    }DLMS_LTE_COVERAGE_ENHANCEMENT;
+
+    // Network parameters for the LTE network
+    typedef struct
+    {
+        // T3402 timer in seconds.
+        uint16_t t3402;
+
+        // T3412 timer in seconds.
+        uint16_t t3412;
+
+        // T3412ext2 timer in seconds.
+        uint32_t t3412ext2;
+
+        // Power saving mode active timer timer in 0,01 seconds.
+        uint16_t t3324;
+
+        // Extended idle mode DRX cycle timer in 0,01 seconds.
+        uint32_t teDRX;
+
+        // DRX paging time window timer in seconds.
+        uint16_t tPTW;
+
+        // The minimum required Rx level in the cell in dBm.
+        signed char qRxlevMin;
+
+        // The minimum required Rx level in enhanced coverage CE Mode A.
+        signed char qRxlevMinCE;
+
+        // The minimum required Rx level in enhanced coverage CE Mode B.
+        signed char qRxLevMinCE1;
+    }gxLteNetworkParameters;
+
+    // Quality of service of the LTE network.
+    typedef struct
+    {
+        // Signal quality.
+        signed char signalQuality;
+
+        // Signal level.
+        signed char signalLevel;
+
+        // Signal to noise ratio.
+        signed char signalToNoiseRatio;
+
+        // Coverage enhancement.
+        DLMS_LTE_COVERAGE_ENHANCEMENT coverageEnhancement;
+    }gxLteQualityOfService;
+
+    // Online help:
+    // https://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSLteMonitoring
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+
+        // Network parameters for the LTE network.
+        gxLteNetworkParameters networkParameters;
+
+        // Quality of service of the LTE network.
+        gxLteQualityOfService qualityOfService;
+    } gxLteMonitoring;
+#endif //DLMS_IGNORE_LTE_MONITORING
 
 #ifdef DLMS_ITALIAN_STANDARD
 

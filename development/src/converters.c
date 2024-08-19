@@ -397,6 +397,11 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
         ret = GET_STR_FROM_EEPROM("SFSKReportingSystemList");
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        ret = GET_STR_FROM_EEPROM("LTEMonitoring");
+        break;
+#endif //DLMS_IGNORE_LTE_MONITORING
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = GET_STR_FROM_EEPROM("TariffPlan");
@@ -3781,6 +3786,46 @@ int obj_SFSKReportingSystemListToString(gxSFSKReportingSystemList* object, char*
 }
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 
+#ifndef DLMS_IGNORE_LTE_MONITORING
+int obj_lteMonitoringToString(gxLteMonitoring* object, char** buff)
+{
+    int ret = 0;
+    gxByteBuffer bb;
+    BYTE_BUFFER_INIT(&bb);
+    if ((ret = bb_addString(&bb, "\nt3402: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->networkParameters.t3402)) == 0 &&
+        (ret = bb_addString(&bb, "\nt3412: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->networkParameters.t3412)) == 0 &&
+        (ret = bb_addString(&bb, "\nt3412ext2: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->networkParameters.t3412ext2)) == 0 &&
+        (ret = bb_addString(&bb, "\nt3324: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->networkParameters.t3324)) == 0 &&
+        (ret = bb_addString(&bb, "\nteDRX: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->networkParameters.teDRX)) == 0 &&
+        (ret = bb_addString(&bb, "\ntPTW: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->networkParameters.tPTW)) == 0 &&
+        (ret = bb_addString(&bb, "\nqRxlevMin: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->networkParameters.qRxlevMin)) == 0 &&
+        (ret = bb_addString(&bb, "\nqRxlevMinCE: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->networkParameters.qRxlevMinCE)) == 0 &&
+        (ret = bb_addString(&bb, "\nqRxLevMinCE1: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->networkParameters.qRxLevMinCE1)) == 0 &&        
+        (ret = bb_addString(&bb, "}\nsignalQuality: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->qualityOfService.signalQuality)) == 0 &&
+        (ret = bb_addString(&bb, "\nsignalLevel: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->qualityOfService.signalLevel)) == 0 &&
+        (ret = bb_addString(&bb, "\nsignalToNoiseRatio: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->qualityOfService.signalToNoiseRatio)) == 0 &&
+        (ret = bb_addString(&bb, "\ncoverageEnhancement: ")) == 0 &&
+        (ret = bb_addIntAsString(&bb, object->qualityOfService.coverageEnhancement)) == 0)
+    {
+        *buff = bb_toString(&bb);
+    }  
+    bb_clear(&bb);
+    return ret;
+}
+#endif //DLMS_IGNORE_LTE_MONITORING
+
 #ifdef DLMS_ITALIAN_STANDARD
 int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
 {
@@ -4201,6 +4246,11 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_SFSKReportingSystemListToString((gxSFSKReportingSystemList*)object, buff);
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        ret = obj_lteMonitoringToString((gxLteMonitoring*)object, buff);
+        break;
+#endif //DLMS_IGNORE_LTE_MONITORING
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = obj_TariffPlanToString((gxTariffPlan*)object, buff);

@@ -5749,6 +5749,11 @@ int cosem_getValue(
         ret = cosem_getSFSKReportingSystemList(e);
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        ret = cosem_getLteMonitoring(e);
+        break;
+#endif //DLMS_IGNORE_LTE_MONITORING
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = cosem_getTariffPlan(e);
@@ -7024,3 +7029,43 @@ int cosem_getSFSKReportingSystemList(
     return ret;
 }
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+
+#ifndef DLMS_IGNORE_LTE_MONITORING
+int cosem_getLteMonitoring(
+    gxValueEventArg* e)
+{
+    int ret;
+    gxByteBuffer* data = e->value.byteArr;
+    gxLteMonitoring* object = (gxLteMonitoring*)e->target;
+    if (e->index == 2)
+    {
+        if ((ret = cosem_setStructure(data, 9)) == 0 &&
+            (ret = cosem_setUInt16(data, object->networkParameters.t3402)) == 0 &&
+            (ret = cosem_setUInt16(data, object->networkParameters.t3412)) == 0 &&
+            (ret = cosem_setUInt32(data, object->networkParameters.t3412ext2)) == 0 &&
+            (ret = cosem_setUInt16(data, object->networkParameters.t3324)) == 0 &&
+            (ret = cosem_setUInt32(data, object->networkParameters.teDRX)) == 0 &&
+            (ret = cosem_setUInt16(data, object->networkParameters.tPTW)) == 0 &&
+            (ret = cosem_setInt8(data, object->networkParameters.qRxlevMin)) == 0 &&
+            (ret = cosem_setInt8(data, object->networkParameters.qRxlevMinCE)) == 0 &&
+            (ret = cosem_setInt8(data, object->networkParameters.qRxLevMinCE1)) == 0)
+        {
+        }
+    }
+    else if (e->index == 3)
+    {
+        if ((ret = cosem_setStructure(data, 4)) == 0 &&
+            (ret = cosem_setInt8(data, object->qualityOfService.signalQuality)) == 0 &&
+            (ret = cosem_setInt8(data, object->qualityOfService.signalLevel)) == 0 &&
+            (ret = cosem_setInt8(data, object->qualityOfService.signalToNoiseRatio)) == 0 &&
+            (ret = cosem_setEnum(data, object->qualityOfService.coverageEnhancement)) == 0)
+        {
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_LTE_MONITORING

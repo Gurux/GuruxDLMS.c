@@ -5739,6 +5739,51 @@ int cosem_setSFSKReportingSystemList(
 }
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 
+#ifndef DLMS_IGNORE_LTE_MONITORING
+int cosem_setLteMonitoring(
+    dlmsSettings* settings,
+    gxLteMonitoring* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int ret;
+    unsigned char ch;
+    if (index == 2)
+    {
+        if ((ret = cosem_checkStructure(value->byteArr, 9)) == 0 &&
+            (ret = cosem_getUInt16(value->byteArr, &object->networkParameters.t3402)) == 0 &&
+            (ret = cosem_getUInt16(value->byteArr, &object->networkParameters.t3412)) == 0 &&
+            (ret = cosem_getUInt32(value->byteArr, &object->networkParameters.t3412ext2)) == 0 &&
+            (ret = cosem_getUInt16(value->byteArr, &object->networkParameters.t3324)) == 0 &&
+            (ret = cosem_getUInt32(value->byteArr, &object->networkParameters.teDRX)) == 0 &&
+            (ret = cosem_getUInt16(value->byteArr, &object->networkParameters.tPTW)) == 0 &&
+            (ret = cosem_getInt8(value->byteArr, &object->networkParameters.qRxlevMin)) == 0 &&
+            (ret = cosem_getInt8(value->byteArr, &object->networkParameters.qRxlevMinCE)) == 0 &&
+            (ret = cosem_getInt8(value->byteArr, &object->networkParameters.qRxLevMinCE1)) == 0)
+        {
+
+        }
+    }
+    else if (index == 3)
+    {
+        if ((ret = cosem_checkStructure(value->byteArr, 4)) == 0 &&
+            (ret = cosem_getInt8(value->byteArr, &object->qualityOfService.signalQuality)) == 0 &&
+            (ret = cosem_getInt8(value->byteArr, &object->qualityOfService.signalLevel)) == 0 &&
+            (ret = cosem_getInt8(value->byteArr, &object->qualityOfService.signalToNoiseRatio)) == 0 &&
+            (ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+        {
+            object->qualityOfService.coverageEnhancement = (DLMS_LTE_COVERAGE_ENHANCEMENT)ch;
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_LTE_MONITORING
+
+
 #ifdef DLMS_ITALIAN_STANDARD
 int updateIntervals(gxInterval* interval, gxByteBuffer* value)
 {

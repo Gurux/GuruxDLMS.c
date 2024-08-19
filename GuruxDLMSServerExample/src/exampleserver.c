@@ -93,7 +93,6 @@ static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Define server system title.
 static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
 time_t imageActionStartTime = 0;
-gxImageActivateInfo IMAGE_ACTIVATE_INFO[1];
 static gxByteBuffer reply;
 
 uint32_t time_current(void)
@@ -163,6 +162,7 @@ gxG3PlcMacLayerCounters g3plcMacLayerCounters;
 gxG3PlcMacSetup g3PlcMacSetup;
 gxG3Plc6LoWPAN g3Plc6LoWPAN;
 gxArrayManager arrayManager;
+gxLteMonitoring lteMonitoring;
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
@@ -179,7 +179,8 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
     BASE(tarifficationScriptTable), BASE(registerActivation), BASE(limiter),
     BASE(mbusDiagnostic), BASE(mbusPortSetup),
-    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager)
+    BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager),
+    BASE(lteMonitoring)
 };
 
 ////////////////////////////////////////////////////
@@ -1465,6 +1466,15 @@ int addImageTransfer()
     imageTransfer.imageFirstNotTransferredBlockNumber = 0;
     //Enable image transfer.
     imageTransfer.imageTransferEnabled = 1;
+    //There is only one image.
+    gxImageActivateInfo* info;
+    if (imageTransfer.imageActivateInfo.size == 0)
+    {
+        info = malloc(sizeof(gxImageActivateInfo));
+        bb_init(&info->identification);
+        bb_init(&info->signature);
+        arr_push(&imageTransfer.imageActivateInfo, info);
+    }
     return 0;
 }
 
@@ -1670,7 +1680,7 @@ unsigned long getIpAddress()
         if (phe == 0)
         {
             ret = 0;
-        }
+    }
         else
         {
             struct in_addr* addr = (struct in_addr*)phe->h_addr_list[0];
@@ -1679,13 +1689,13 @@ unsigned long getIpAddress()
 #else //or Linux
             return addr->s_addr;
 #endif
-        }
+}
     }
 #else
     //If no OS get IP.
 #endif
     return ret;
-    }
+}
 
 ///////////////////////////////////////////////////////////////////////
 //Add IP4 Setup object.
@@ -2055,6 +2065,33 @@ int addPushSetup()
     return 0;
 }
 
+///////////////////////////////////////////////////////////////////////
+//Add LTE monitoring object.
+///////////////////////////////////////////////////////////////////////
+int addLteMonitoring()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 25, 11, 0, 255 };
+    if ((ret = INIT_OBJECT(lteMonitoring, DLMS_OBJECT_TYPE_LTE_MONITORING, ln)) == 0)
+    {
+        //Set default values.
+        lteMonitoring.networkParameters.t3402 = 0;
+        lteMonitoring.networkParameters.t3412 = 0;
+        lteMonitoring.networkParameters.t3412ext2 = 0;
+        lteMonitoring.networkParameters.t3324 = 0;
+        lteMonitoring.networkParameters.teDRX = 0;
+        lteMonitoring.networkParameters.tPTW = 0;
+        lteMonitoring.networkParameters.qRxlevMin = 0;
+        lteMonitoring.networkParameters.qRxlevMinCE = 0;
+        lteMonitoring.networkParameters.qRxLevMinCE1 = 0;       
+        lteMonitoring.qualityOfService.signalQuality = 0;
+        lteMonitoring.qualityOfService.signalLevel = 0;
+        lteMonitoring.qualityOfService.signalToNoiseRatio = 0;
+        lteMonitoring.qualityOfService.coverageEnhancement = 0;
+    }
+    return ret;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Load security settings from the EEPROM.
 /////////////////////////////////////////////////////////////////////////////
@@ -2238,6 +2275,7 @@ int svr_InitObjects(
         (ret = addImageTransfer()) != 0 ||
         (ret = addCompactData(&settings->base, &settings->base.objects)) != 0 ||
         (ret = addLimiter()) != 0 ||
+        (ret = addLteMonitoring()) != 0 ||
         (ret = oa_verify(&settings->base.objects)) != 0 ||
         (ret = svr_initialize(settings)) != 0)
     {
@@ -2510,7 +2548,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
         }
     }
     return ret;
-}
+    }
 
 
 int readProfileGeneric(
@@ -2601,7 +2639,7 @@ int readProfileGeneric(
             {
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
-            }
+        }
 #else
             if ((f = fopen(fileName, "rb")) != 0)
             {
@@ -2709,8 +2747,8 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
-        }
     }
+}
     if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
     {
         ret = 0;
@@ -2897,7 +2935,7 @@ void handleProfileGenericActions(
             fwrite(pdu.data, 1, 4, f);
             fclose(f);
         }
-    }
+}
     else if (it->index == 2)
     {
         //Increase power value before each load profile read to increase the value.
@@ -3042,7 +3080,6 @@ void svr_preAction(
                 i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_NOT_INITIATED;
                 //There is only one image.
                 gxImageActivateInfo* info;
-                imageTransfer.imageActivateInfo.size = 1;
                 if ((e->error = arr_getByIndex(&imageTransfer.imageActivateInfo, 0, (void**)&info)) != 0)
                 {
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
@@ -3115,7 +3152,13 @@ void svr_preAction(
                 fseek(f, 0L, SEEK_END);
                 long size = ftell(f);
                 fclose(f);
-                if (size != IMAGE_ACTIVATE_INFO[0].size)
+                gxImageActivateInfo* info;
+                if ((e->error = arr_getByIndex(&imageTransfer.imageActivateInfo, 0, (void**)&info)) != 0)
+                {
+                    e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    return;
+                }
+                if (size != info->size)
                 {
                     i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_FAILED;
                     e->error = DLMS_ERROR_CODE_OTHER_REASON;
@@ -3163,8 +3206,8 @@ void svr_preAction(
             }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
+        }
     }
-}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -3339,9 +3382,9 @@ int connectServer(
             close(*s);
 #endif
             return err;
-    };
+        };
         add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
-};
+    };
 
     //Connect to the meter.
     ret = connect(*s, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
@@ -3390,11 +3433,11 @@ int sendPush(
 #else
         close(s);
 #endif
-        }
+    }
     mes_clear(&messages);
     free(host);
     return 0;
-    }
+}
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 unsigned char svr_isTarget(
@@ -3437,8 +3480,10 @@ unsigned char svr_isTarget(
                     }
                     settings->proposedConformance = a->xDLMSContextInfo.conformance;
                     settings->expectedClientSystemTitle = NULL;
+#ifndef DLMS_INVOCATION_COUNTER_VALIDATOR
                     //Set Invocation counter value.
                     settings->expectedInvocationCounter = NULL;
+#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
                     //Client can establish a ciphered connection only with Security Suite 1.
                     settings->expectedSecuritySuite = 0;
                     //Security policy is not defined by default. Client can connect using any security policy.
@@ -3460,8 +3505,10 @@ unsigned char svr_isTarget(
                         //GMac authentication uses innocation counter.
                         if (a->securitySetup == &securitySetupHighGMac)
                         {
+#ifndef DLMS_INVOCATION_COUNTER_VALIDATOR
                             //Set invocation counter value. If this is set client's invocation counter must match with server IC.
                             settings->expectedInvocationCounter = &securitySetupHighGMac.minimumInvocationCounter;
+#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
                         }
 
                         //Set security suite that client must use.
@@ -3877,13 +3924,13 @@ int svr_connected(
             }
             bb_addString(settings->base.preEstablishedSystemTitle, "ABCDEFGH");
             settings->base.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
-}
+        }
         else
         {
             //Return error if client can connect only using pre-established connnection.
             return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-        }
-    }
+}
+}
 #else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;

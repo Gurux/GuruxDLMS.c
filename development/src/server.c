@@ -3262,7 +3262,7 @@ int svr_handleCommand(
     case DLMS_COMMAND_SET_REQUEST:
         //If connection is not established.
         if (!settings->info.preEstablished &&
-            !((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
+            ((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
             //If service is not negotiated.
             (settings->base.negotiatedConformance & DLMS_CONFORMANCE_SET) == 0))
         {
@@ -3290,7 +3290,7 @@ int svr_handleCommand(
     case DLMS_COMMAND_GET_REQUEST:
         //If connection is not established.
         if (!settings->info.preEstablished &&
-            !((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
+            ((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
             //If service is not negotiated.
             (settings->base.negotiatedConformance & DLMS_CONFORMANCE_GET) == 0))
         {
@@ -3314,7 +3314,7 @@ int svr_handleCommand(
     case DLMS_COMMAND_READ_REQUEST:
         //If connection is not established.
         if (!settings->info.preEstablished &&
-            !((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
+            ((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
             //If service is not negotiated.
             (settings->base.negotiatedConformance & DLMS_CONFORMANCE_READ) == 0))
         {

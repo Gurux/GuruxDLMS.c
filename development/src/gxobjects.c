@@ -1290,6 +1290,10 @@ void obj_clear(gxObject* object)
             obj_clearByteBufferList(&((gxSFSKReportingSystemList*)object)->reportingSystemList);
             break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+        case DLMS_OBJECT_TYPE_LTE_MONITORING:
+            break;
+#endif //DLMS_IGNORE_LTE_MONITORING
 #ifdef DLMS_ITALIAN_STANDARD
         case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         {
@@ -1643,6 +1647,11 @@ unsigned char obj_attributeCount(gxObject* object)
         ret = 2;
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        ret = 3;
+        break;
+#endif //DLMS_IGNORE_LTE_MONITORING
     default:
         //Unknown type.
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -2063,6 +2072,11 @@ unsigned char obj_methodCount(gxObject* object)
         ret = 0;
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        ret = 0;
+        break;
+#endif //DLMS_IGNORE_LTE_MONITORING
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = 0;

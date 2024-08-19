@@ -430,6 +430,11 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxSFSKReportingSystemList);
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_OBJECT_TYPE_LTE_MONITORING
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        size = sizeof(gxLteMonitoring);
+        break;
+#endif //DLMS_OBJECT_TYPE_LTE_MONITORING
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         size = sizeof(gxTariffPlan);
@@ -733,6 +738,9 @@ int cosem_init4(
         ((gxObject*)object)->version = 3;
         break;
     case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        break;
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        ((gxObject*)object)->version = 1;
         break;
     default:
         break;

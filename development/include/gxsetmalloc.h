@@ -388,6 +388,14 @@ extern "C" {
         dlmsVARIANT* value);
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    int cosem_setLteMonitoring(
+        dlmsSettings* settings,
+        gxLteMonitoring* object,
+        unsigned char index,
+        dlmsVARIANT* value);
+#endif //DLMS_IGNORE_LTE_MONITORING
+
 #ifdef DLMS_ITALIAN_STANDARD
     int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT* value);
 #endif //DLMS_ITALIAN_STANDARD

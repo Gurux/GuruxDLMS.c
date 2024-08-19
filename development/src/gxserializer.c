@@ -4635,6 +4635,16 @@ int ser_saveSFSKReportingSystemList(
     return 0;
 }
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+
+#ifndef DLMS_IGNORE_LTE_MONITORING
+int ser_saveLteMonitoring(
+    gxSerializerSettings* serializeSettings,
+    gxLteMonitoring* object)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_LTE_MONITORING
+
 #ifndef DLMS_IGNORE_SCHEDULE
 int ser_saveSchedule(
     gxSerializerSettings* serializeSettings,
@@ -5071,6 +5081,12 @@ int ser_saveObject(
         ser_saveSFSKReportingSystemList(serializeSettings, (gxSFSKReportingSystemList*)object);
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        ser_saveLteMonitoring(serializeSettings, (gxLteMonitoring*)object);
+        break;
+#endif //DLMS_IGNORE_LTE_MONITORING
+        
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = ser_saveTariffPlan(serializeSettings, (gxTariffPlan*)object);
@@ -8729,6 +8745,15 @@ int ser_loadSFSKReportingSystemList(
 }
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 
+#ifndef DLMS_IGNORE_LTE_MONITORING
+int ser_loadLteMonitoring(
+    gxSerializerSettings* serializeSettings,
+    gxLteMonitoring* object)
+{
+    return 0;
+}
+#endif //DLMS_IGNORE_LTE_MONITORING
+
 #ifndef DLMS_IGNORE_SCHEDULE
 int ser_loadSchedule(
     gxSerializerSettings * serializeSettings,
@@ -9160,6 +9185,11 @@ int ser_loadObject(
         ser_loadSFSKReportingSystemList(serializeSettings, (gxSFSKReportingSystemList*)object);
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        ser_loadLteMonitoring(serializeSettings, (gxLteMonitoring*)object);
+        break;
+#endif //DLMS_IGNORE_LTE_MONITORING
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = ser_loadTariffPlan(serializeSettings, (gxTariffPlan*)object);

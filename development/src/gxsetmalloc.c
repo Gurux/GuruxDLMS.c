@@ -8442,6 +8442,106 @@ int cosem_setSFSKReportingSystemList(
 }
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 
+#ifndef DLMS_IGNORE_LTE_MONITORING
+int cosem_setLteMonitoring(
+    dlmsSettings* settings,
+    gxLteMonitoring* object,
+    unsigned char index,
+    dlmsVARIANT* value)
+{
+    int ret = 0;
+    dlmsVARIANT* it;
+    if (index == 2)
+    {
+        if (value->vt == DLMS_DATA_TYPE_STRUCTURE)
+        {
+            if ((ret = va_getByIndex(value->Arr, 0, &it)) == DLMS_ERROR_CODE_OK)
+            {
+                object->networkParameters.t3402 = var_toInteger(it);
+                if ((ret = va_getByIndex(value->Arr, 1, &it)) == DLMS_ERROR_CODE_OK)
+                {
+                    object->networkParameters.t3412 = var_toInteger(it);
+                    if ((ret = va_getByIndex(value->Arr, 2, &it)) == DLMS_ERROR_CODE_OK)
+                    {
+                        object->networkParameters.t3412ext2 = var_toInteger(it);
+                        if ((ret = va_getByIndex(value->Arr, 3, &it)) == DLMS_ERROR_CODE_OK)
+                        {
+                            object->networkParameters.t3324 = var_toInteger(it);
+                            if ((ret = va_getByIndex(value->Arr, 4, &it)) == DLMS_ERROR_CODE_OK)
+                            {
+                                object->networkParameters.teDRX = var_toInteger(it);
+                                if ((ret = va_getByIndex(value->Arr, 5, &it)) == DLMS_ERROR_CODE_OK)
+                                {
+                                    object->networkParameters.tPTW = var_toInteger(it);
+                                    if ((ret = va_getByIndex(value->Arr, 6, &it)) == DLMS_ERROR_CODE_OK)
+                                    {
+                                        object->networkParameters.qRxlevMin = var_toInteger(it);
+                                        if ((ret = va_getByIndex(value->Arr, 7, &it)) == DLMS_ERROR_CODE_OK)
+                                        {
+                                            object->networkParameters.qRxlevMinCE = var_toInteger(it);
+                                            if ((ret = va_getByIndex(value->Arr, 8, &it)) == DLMS_ERROR_CODE_OK)
+                                            {
+                                                object->networkParameters.qRxLevMinCE1 = var_toInteger(it);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            object->networkParameters.t3402 = 0;
+            object->networkParameters.t3412 = 0;
+            object->networkParameters.t3412ext2 = 0;
+            object->networkParameters.t3324 = 0;
+            object->networkParameters.teDRX = 0;
+            object->networkParameters.tPTW = 0;
+            object->networkParameters.qRxlevMin = 0;
+            object->networkParameters.qRxlevMinCE = 0;
+            object->networkParameters.qRxLevMinCE1 = 0;
+        }
+    }
+    else if (index == 3)
+    {
+        if (value->vt == DLMS_DATA_TYPE_STRUCTURE)
+        {
+            if ((ret = va_getByIndex(value->Arr, 0, &it)) == DLMS_ERROR_CODE_OK)
+            {
+                object->qualityOfService.signalQuality = var_toInteger(it);
+                if ((ret = va_getByIndex(value->Arr, 1, &it)) == DLMS_ERROR_CODE_OK)
+                {
+                    object->qualityOfService.signalLevel = var_toInteger(it);
+                    if ((ret = va_getByIndex(value->Arr, 2, &it)) == DLMS_ERROR_CODE_OK)
+                    {
+                        object->qualityOfService.signalToNoiseRatio = var_toInteger(it);
+                        if ((ret = va_getByIndex(value->Arr, 3, &it)) == DLMS_ERROR_CODE_OK)
+                        {
+                            object->qualityOfService.coverageEnhancement = (DLMS_LTE_COVERAGE_ENHANCEMENT)var_toInteger(it);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            object->qualityOfService.signalQuality = 0;
+            object->qualityOfService.signalLevel = 0;
+            object->qualityOfService.signalToNoiseRatio = 0;
+            object->qualityOfService.coverageEnhancement = DLMS_LTE_COVERAGE_ENHANCEMENT_LEVEL0;
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_LTE_MONITORING
+
 #ifdef DLMS_ITALIAN_STANDARD
 int updateIntervals(gxInterval* interval, gxByteBuffer* value)
 {

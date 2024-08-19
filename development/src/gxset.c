@@ -459,6 +459,11 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
         ret = cosem_setSFSKReportingSystemList(settings, (gxSFSKReportingSystemList*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
+#ifndef DLMS_IGNORE_LTE_MONITORING
+    case DLMS_OBJECT_TYPE_LTE_MONITORING:
+        ret = cosem_setLteMonitoring(settings, (gxLteMonitoring*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_LTE_MONITORING
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = cosem_setTariffPlan((gxTariffPlan*)e->target, e->index, &e->value);

@@ -446,6 +446,27 @@ extern "C" {
         */
         DLMS_OBJECT_TYPE_FUNCTION_CONTROL = 122,
 
+        // Communication port protection.
+        DLMS_OBJECT_TYPE_COMMUNICATION_PORT_PROTECTION = 124,
+
+        // LTE monitoring.
+        DLMS_OBJECT_TYPE_LTE_MONITORING = 151,
+
+        // CoAP setup.
+        DLMS_OBJECT_TYPE_COAP_SETUP = 152,
+
+        // CoAP diagnostic.
+        DLMS_OBJECT_TYPE_COAP_DIAGNOSTIC = 153,
+
+        // G3-PLC Hybrid RF MAC layer counters.
+        DLMS_OBJECT_TYPE_G3_PLC_HYBRID_RF_MAC_LAYER_COUNTERS = 160,
+
+        // G3-PLC Hybrid RF MAC setup.
+        DLMS_OBJECT_TYPE_G3_PLC_HYBRID_RF_MAC_SETUP = 161,
+
+        // G3-PLC Hybrid 6LoWPAN adaptation layer setup.
+        DLMS_OBJECT_TYPE_G3_PLC_HYBRID_6LOWPAN_ADAPTATION_LAYER_SETUP = 162,
+        
         /*
         * Configure a ZigBee PRO device with information necessary to create or
         * join the network.

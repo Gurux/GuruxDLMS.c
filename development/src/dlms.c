@@ -3163,6 +3163,14 @@ int dlms_checkWrapperAddress(dlmsSettings* settings,
         {
             return ret;
         }
+        if (data->preEstablished)
+        {
+            //Reset addresses if pre-established connection.
+            if (settings->clientAddress != 0 && settings->clientAddress != value)
+            {
+                settings->serverAddress = settings->clientAddress = 0;
+            }
+        }
         // Check that client addresses match.
         if (settings->clientAddress != 0 && settings->clientAddress != value)
         {
@@ -4897,10 +4905,10 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
             if ((ret = cip_decrypt(&settings->cipher,
 #ifndef DLMS_IGNORE_MALLOC
                 settings->preEstablishedSystemTitle->data,
-                &settings->cipher.blockCipherKey,
+                (settings->cipher.broadcast ? &settings->cipher.broadcastBlockCipherKey : &settings->cipher.blockCipherKey),
 #else
                 settings->preEstablishedSystemTitle,
-                settings->cipher.blockCipherKey,
+                (settings->cipher.broadcast ? settings->cipher.broadcastBlockCipherKey : settings->cipher.blockCipherKey),
 #endif //DLMS_IGNORE_MALLOC
                 & data->data,
                 &security,
@@ -4925,10 +4933,10 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
             if ((ret = cip_decrypt(&settings->cipher,
 #ifndef DLMS_IGNORE_MALLOC
                 settings->sourceSystemTitle,
-                &settings->cipher.blockCipherKey,
+                (settings->cipher.broadcast ? &settings->cipher.broadcastBlockCipherKey : &settings->cipher.blockCipherKey),
 #else
                 settings->sourceSystemTitle,
-                settings->cipher.blockCipherKey,
+                (settings->cipher.broadcast ? settings->cipher.broadcastBlockCipherKey : settings->cipher.blockCipherKey),
 #endif //DLMS_IGNORE_MALLOC
                 & data->data,
                 &security,

@@ -2935,6 +2935,13 @@ extern "C" {
         DLMS_CONNECTION_STATE_IEC = 4
     }DLMS_CONNECTION_STATE;
 
+    // Used ECC scheme.
+    typedef enum {
+        //ECC-P256 domain parameters are used.
+        ECC_P256 = 0,
+        //ECC-384 domain parameters are used.
+        ECC_P384 = 1
+    }ECC;
     typedef enum {
         //Data is captured with Capture-method.
         DLMS_CAPTURE_METHOD_INVOKE,

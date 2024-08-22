@@ -1337,7 +1337,7 @@ int cosem_setBitString(gxByteBuffer* bb, uint32_t value, uint16_t count)
         (ret = hlp_setObjectCount(count, bb)) == 0)
     {
         bitArray ba;
-        ba_attach(&ba, bb->data + bb->size, 0, (uint16_t)(8 * (bb->size - bb->size)));
+        ba_attach(&ba, bb->data + bb->size, 0, (uint16_t)(8 * bb_getCapacity(bb)));
         for (pos = 0; pos != count; ++pos)
         {
             if ((ret = ba_setByIndex(&ba, pos, value & 01)) != 0)

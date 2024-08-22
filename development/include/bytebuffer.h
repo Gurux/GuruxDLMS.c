@@ -525,6 +525,16 @@ extern "C" {
         gxByteBuffer* bb,
         char ch);
 
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    void ba_reverse(gxByteBuffer* bb,
+        uint32_t index,
+        uint32_t count);
+#else
+    void ba_reverse(gxByteBuffer* bb,
+        uint16_t index,
+        uint16_t count);
+#endif
+
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     //Print content of byte buffer to cout.
     int bb_print(gxByteBuffer* bb);

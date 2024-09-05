@@ -1788,7 +1788,6 @@ int addMbusDiagnostic()
 int addMbusPortSetup()
 {
     int ret;
-    gxBroadcastFrameCounter* item;
     const unsigned char ln[6] = { 0,0,24,8,0,255 };
     const unsigned char PROFILE_SELECTION[6] = { 0,0,24,0,0,255 };
     if ((ret = INIT_OBJECT(mbusPortSetup, DLMS_OBJECT_TYPE_MBUS_PORT_SETUP, ln)) == 0)
@@ -1952,12 +1951,12 @@ int addG3Plc6LoWPAN()
         arr_push(&g3Plc6LoWPAN.routingTable, rt);
 
         gxContextInformationTable* cit = (gxContextInformationTable*)malloc(sizeof(gxContextInformationTable));
-        bb_init(&cit->context);
         cit->cid = 0xF;
-        bb_setUInt8(&cit->context, 0xFF);
-        bb_setUInt8(&cit->context, 0);
-        bb_setUInt8(&cit->context, 0xFF);
-        bb_setUInt8(&cit->context, 0);
+        cit->context[0] = 0xFF;
+        cit->context[1] = 0;
+        cit->context[2] = 0xFF;
+        cit->context[3] = 0;
+        cit->contextLength = 4;
         cit->compression = 1;
         cit->validLifetime = 4;
         arr_push(&g3Plc6LoWPAN.contextInformationTable, cit);
@@ -3072,6 +3071,7 @@ void svr_preAction(
             e->handled = 1;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             FILE* f;
+            dlmsVARIANT *identification, *pSize;
             gxImageTransfer* i = (gxImageTransfer*)e->target;
             const char* imageFile = "image.raw";
             //Image name and size to transfer
@@ -3080,20 +3080,24 @@ void svr_preAction(
                 i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_NOT_INITIATED;
                 //There is only one image.
                 gxImageActivateInfo* info;
-                if ((e->error = arr_getByIndex(&imageTransfer.imageActivateInfo, 0, (void**)&info)) != 0)
+                if (e->parameters.vt != DLMS_DATA_TYPE_STRUCTURE ||
+                    (e->error = arr_getByIndex(&imageTransfer.imageActivateInfo, 0, (void**)&info)) != 0)
                 {
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     return;
                 }
-                uint16_t size;
-                if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
-                    (ret = cosem_getOctetString2(e->parameters.byteArr, info->identification.data, sizeof(info->identification.data), &size)) != 0 ||
-                    (ret = cosem_getUInt32(e->parameters.byteArr, &info->size)) != 0)
+                uint16_t size;                
+                if ((ret = va_getByIndex(e->parameters.Arr, 0, &identification)) != 0 ||
+                    identification->vt != DLMS_DATA_TYPE_OCTET_STRING ||
+                    (ret = va_getByIndex(e->parameters.Arr, 1, &pSize)) != 0 ||
+                    pSize->vt != DLMS_DATA_TYPE_UINT32)
                 {
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     return;
                 }
-                info->identification.size = size;
+                info->size = var_toInteger(pSize);
+                bb_clear(&info->identification);
+                bb_set(&info->identification, identification->byteArr->data, bb_size(identification->byteArr));
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
                 printf("Updating image %s Size: %d\r\n", imageFile, info->size);
 #endif
@@ -3104,18 +3108,19 @@ void svr_preAction(
             //Transfers one block of the Image to the server
             else if (e->index == 2)
             {
-                uint32_t index;
-                uint16_t blockSize;
-                if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
-                    (ret = cosem_getUInt32(e->parameters.byteArr, &index)) != 0 ||
-                    (ret = hlp_getObjectCount2(e->parameters.byteArr, &blockSize)) != 0)
+                dlmsVARIANT* index, *block;
+                if (e->parameters.vt != DLMS_DATA_TYPE_STRUCTURE ||
+                    (ret = va_getByIndex(e->parameters.Arr, 0, &index)) != 0 ||
+                    index->vt != DLMS_DATA_TYPE_UINT32 ||
+                    (ret = va_getByIndex(e->parameters.Arr, 1, &block)) != 0 ||
+                    block->vt != DLMS_DATA_TYPE_OCTET_STRING)
                 {
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     return;
                 }
-                if ((ret = ba_setByIndex(&i->imageTransferredBlocksStatus, (uint16_t)index, 1)) == 0)
+                if ((ret = ba_setByIndex(&i->imageTransferredBlocksStatus, (uint16_t)var_toInteger(index), 1)) == 0)
                 {
-                    i->imageFirstNotTransferredBlockNumber = index + 1;
+                    i->imageFirstNotTransferredBlockNumber = (uint32_t)(var_toInteger(index) + 1);
                 }
                 f = fopen(imageFile, "r+b");
                 if (!f)
@@ -3126,13 +3131,12 @@ void svr_preAction(
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     return;
                 }
-                int ret = (int)fwrite(e->parameters.byteArr->data + e->parameters.byteArr->position, 1, (int)blockSize, f);
+                int ret = (int)fwrite(block->byteArr->data, 1, (int)bb_size(block->byteArr), f);
                 fclose(f);
-                if (ret != (int)blockSize)
+                if (ret != (int)bb_size(block->byteArr))
                 {
                     e->error = DLMS_ERROR_CODE_UNMATCH_TYPE;
                 }
-                bb_clear(e->parameters.byteArr);
                 imageActionStartTime = time(NULL);
                 return;
             }
@@ -3442,8 +3446,8 @@ int sendPush(
 
 unsigned char svr_isTarget(
     dlmsSettings* settings,
-    unsigned long serverAddress,
-    unsigned long clientAddress)
+    uint32_t serverAddress,
+    uint32_t clientAddress)
 {
     GXTRACE(("svr_isTarget."), NULL);
     objectArray objects;

@@ -50,8 +50,8 @@ int svr_InitObjects(
 */
 unsigned char svr_isTarget(
     dlmsSettings *settings,
-    unsigned long int serverAddress,
-    unsigned long clientAddress);
+    uint32_t serverAddress,
+    uint32_t clientAddress);
 
 /**
 * Get attribute access level.

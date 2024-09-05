@@ -254,3 +254,5 @@ NordicSemiconductor/GuruxDLMSSimpleServerExample2/src/dlms
 development/VS/.vs/
 GuruxDLMSClientExample/VS/.vs/
 *.json
+*.bin
+*.hex

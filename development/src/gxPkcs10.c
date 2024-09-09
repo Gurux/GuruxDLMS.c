@@ -32,6 +32,7 @@
 
 #include <stddef.h>
 #include "../include/gxPkcs10.h"
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
 #include "../include/errorcodes.h"
 #include "../include/gxecdsa.h"
 #include "../include/helpers.h"
@@ -177,3 +178,4 @@ int pkcs10_createCertificateSigningRequest(
     }
     return ret;
 }
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)

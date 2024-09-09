@@ -760,7 +760,9 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
 #ifndef DLMS_IGNORE_HIGH_GMAC
     int pos;
 #endif //DLMS_IGNORE_HIGH_GMAC
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     gxCertificateInfo* it;
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     gxByteBuffer sn2;
     bb_init(&sn2);
 #ifdef DLMS_IGNORE_MALLOC

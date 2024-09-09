@@ -2098,15 +2098,15 @@ int cosem_setLimiter(dlmsSettings* settings, gxLimiter* object, unsigned char in
     }
     else if (index == 3)
     {
-        ret = cosem_getVariant(value->byteArr, &object->thresholdActive);
+        ret = cosem_getVariantExact(value->byteArr, &object->thresholdActive);
     }
     else if (index == 4)
     {
-        ret = cosem_getVariant(value->byteArr, &object->thresholdNormal);
+        ret = cosem_getVariantExact(value->byteArr, &object->thresholdNormal);
     }
     else if (index == 5)
     {
-        ret = cosem_getVariant(value->byteArr, &object->thresholdEmergency);
+        ret = cosem_getVariantExact(value->byteArr, &object->thresholdEmergency);
     }
     else if (index == 6)
     {

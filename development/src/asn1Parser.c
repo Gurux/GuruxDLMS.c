@@ -34,6 +34,8 @@
 #include "../include/asn1Parser.h"
 #include "../include/helpers.h"
 
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+
 uint32_t asn1Parser_getUtcTime(const char* dateString)
 {
     gxtime time;
@@ -292,3 +294,5 @@ int asn1Parser_parsex509Certificate(
         target, level, index, &objectIdentifier);
     return ret;
 }
+
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)

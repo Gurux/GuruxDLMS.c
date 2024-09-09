@@ -157,6 +157,10 @@ extern "C" {
   int cosem_getIntegerFromBitString(gxByteBuffer* bb, uint32_t* value);
 
   int cosem_getVariant(gxByteBuffer* bb, dlmsVARIANT* value);
+  
+  /*Updated variant data type must be the same as the existing value.
+  E.g. limiter uses this.*/
+  int cosem_getVariantExact(gxByteBuffer* bb, dlmsVARIANT* value);
 
   int cosem_getEnum(gxByteBuffer* bb, unsigned char* value);
 

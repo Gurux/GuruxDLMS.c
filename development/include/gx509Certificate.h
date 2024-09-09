@@ -38,6 +38,7 @@ extern "C" {
 #endif
 
 #include "gxignore.h"
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
 #include "bytebuffer.h"   
 #include "bigInteger.h"     
 #include "publicKey.h"     
@@ -168,6 +169,7 @@ extern "C" {
         DLMS_X509_CERTIFICATE_DATA info, 
         gxByteBuffer* value);
 
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #ifdef  __cplusplus
 }

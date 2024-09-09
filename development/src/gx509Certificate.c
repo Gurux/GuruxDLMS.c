@@ -32,6 +32,8 @@
 
 #include <string.h>
 #include "../include/gx509Certificate.h"
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+
 #include "../include/gxdefine.h"
 #include "../include/helpers.h"
 #include "../include/errorcodes.h"
@@ -221,3 +223,4 @@ int gx509Certificate_load2(const char* path,
 }
 
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)

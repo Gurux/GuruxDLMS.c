@@ -38,6 +38,8 @@ extern "C" {
 #endif
 
 #include "gxignore.h"
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+
 #include "bytebuffer.h"   
 #include "privateKey.h"       
     /*Create Certificate Signing Request.*/
@@ -46,6 +48,7 @@ extern "C" {
         const unsigned char* subject,
         gxByteBuffer* value);
 
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
 #ifdef  __cplusplus
 }
 #endif

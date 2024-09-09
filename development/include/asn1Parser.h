@@ -38,6 +38,7 @@ extern "C" {
 #endif
 
 #include "gxignore.h"
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
 #include "bytebuffer.h"   
 #include "gx509Certificate.h"       
    
@@ -49,6 +50,7 @@ extern "C" {
         uint8_t level,
         uint8_t index);
 
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
 #ifdef  __cplusplus
 }
 #endif

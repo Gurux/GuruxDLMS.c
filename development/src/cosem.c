@@ -1258,6 +1258,31 @@ int cosem_getVariant(gxByteBuffer* bb, dlmsVARIANT* value)
     return ret;
 }
 
+int cosem_getVariantExact(gxByteBuffer* bb, dlmsVARIANT* value)
+{
+    int ret;
+    unsigned char ch;
+    gxDataInfo info;
+    if ((ret = bb_getUInt8(bb, &ch)) == 0)
+    {
+        if (ch != value->vt)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            var_clear(value);
+            if (ch != DLMS_DATA_TYPE_NONE)
+            {
+                di_init(&info);
+                --bb->position;
+                ret = dlms_getData(bb, &info, value);
+            }
+        }
+    }
+    return ret;
+}
+
 int cosem_getEnum(gxByteBuffer* bb, unsigned char* value)
 {
     int ret;

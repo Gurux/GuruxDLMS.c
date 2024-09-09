@@ -51,6 +51,11 @@
 #include "gxkey.h"
 #include "gxdefine.h"
 
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+#include "privateKey.h"
+#include "gx509Certificate.h"
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -766,6 +771,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_SECURITY_SETUP
     typedef struct
     {
+#ifndef DLMS_IGNORE_CLIENT
         // Used certificate entity.
         DLMS_CERTIFICATE_ENTITY entity;
 
@@ -795,6 +801,14 @@ extern "C" {
         // Certificate subject alt name.
         char* subjectAltName;
 #endif //DLMS_IGNORE_MALLOC
+#endif //DLMS_IGNORE_CLIENT
+#ifndef DLMS_IGNORE_SERVER
+        //Server side sertificate. 
+        gxByteBuffer cert;
+#ifdef DLMS_IGNORE_MALLOC
+        unsigned char CERTIFICATE_BUFFER[DLMS_X509_CETRIFICATE_MAX_SIZE];
+#endif //DLMS_IGNORE_MALLOC
+#endif //DLMS_IGNORE_SERVER
     }gxCertificateInfo;
 
     /*
@@ -819,6 +833,18 @@ extern "C" {
 #else
         uint32_t minimumInvocationCounter;
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+        //Signing key of the server.
+        gxPrivateKey signingKey;
+
+        //Key agreement key of the server.
+        gxPrivateKey keyAgreementKey;
+
+        //TLS pair of the server.
+        gxPrivateKey tlsKey;
+
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     } gxSecuritySetup;
 #endif //DLMS_IGNORE_SECURITY_SETUP
 
@@ -4421,6 +4447,10 @@ extern "C" {
 
     int obj_clearScheduleEntries(gxArray* list);
     int obj_clearScriptTable(gxArray* list);
+
+#if defined(DLMS_SECURITY_SUITE_1) ||defined(DLMS_SECURITY_SUITE_2) 
+    int obj_clearCertificates(gxArray* list);
+#endif //defined(DLMS_SECURITY_SUITE_1) ||defined(DLMS_SECURITY_SUITE_2) 
 
 #if !(defined(DLMS_IGNORE_OBJECT_POINTERS) || defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES))
     int obj_clearRegisterActivationAssignment(objectArray* list);

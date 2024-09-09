@@ -157,7 +157,11 @@ extern "C" {
         //Serialization save failed.
         DLMS_ERROR_CODE_SERIALIZATION_SAVE_FAILURE,
         //Serialization count failed.
-        DLMS_ERROR_CODE_SERIALIZATION_COUNT_FAILURE
+        DLMS_ERROR_CODE_SERIALIZATION_COUNT_FAILURE,
+        //Verify failed.
+        DLMS_ERROR_CODE_INVALID_VERIFY,
+        //Invalid X.509 certificate.
+        DLMS_ERROR_CODE_INVALID_CERTIFICATE,
     }DLMS_ERROR_CODE;
 
 #ifdef  __cplusplus

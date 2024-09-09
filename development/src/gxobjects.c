@@ -204,12 +204,34 @@ int obj_clearProfileGenericCaptureObjects(gxArray* captureObjects)
 }
 #endif //!(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA))
 
+#if defined(DLMS_SECURITY_SUITE_1) ||defined(DLMS_SECURITY_SUITE_2) 
+int obj_clearCertificates(gxArray* list)
+{
+    int ret = DLMS_ERROR_CODE_OK;
+#ifndef DLMS_IGNORE_MALLOC
+    uint16_t pos;
+    gxCertificateInfo* it;
+    for (pos = 0; pos != list->size; ++pos)
+    {
+        ret = arr_getByIndex(list, pos, (void**)&it);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            break;
+        }
+        bb_clear(&it->cert);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    arr_clear(list);
+    return ret;
+}
+#endif //defined(DLMS_SECURITY_SUITE_1) ||defined(DLMS_SECURITY_SUITE_2) 
+
 #ifndef DLMS_IGNORE_ACTIVITY_CALENDAR
 int obj_clearSeasonProfile(gxArray* list)
 {
     int ret = DLMS_ERROR_CODE_OK;
 #ifndef DLMS_IGNORE_MALLOC
-    int pos;
+    uint16_t pos;
     gxSeasonProfile* sp;
     for (pos = 0; pos != list->size; ++pos)
     {
@@ -230,7 +252,7 @@ int obj_clearWeekProfileTable(gxArray* list)
 {
     int ret = DLMS_ERROR_CODE_OK;
 #ifndef DLMS_IGNORE_MALLOC
-    int pos;
+    uint16_t pos;
     gxWeekProfile* wp;
     for (pos = 0; pos != list->size; ++pos)
     {
@@ -250,7 +272,7 @@ int obj_clearDayProfileTable(gxArray* list)
 {
     int ret = DLMS_ERROR_CODE_OK;
 #ifndef DLMS_IGNORE_MALLOC
-    int pos, pos2;
+    uint16_t pos, pos2;
     gxDayProfile* it;
     gxDayProfileAction* dp;
     for (pos = 0; pos != list->size; ++pos)
@@ -289,7 +311,7 @@ int obj_clearModemConfigurationInitialisationStrings(gxArray* list)
 {
     int ret = DLMS_ERROR_CODE_OK;
 #ifndef DLMS_IGNORE_MALLOC
-    int pos;
+    uint16_t pos;
     gxModemInitialisation* it;
     for (pos = 0; pos != list->size; ++pos)
     {
@@ -312,7 +334,7 @@ int obj_clearScheduleEntries(gxArray* list)
 {
     int ret = DLMS_ERROR_CODE_OK;
 #ifndef DLMS_IGNORE_MALLOC
-    int pos;
+    uint16_t pos;
     gxScheduleEntry* it;
     for (pos = 0; pos != list->size; ++pos)
     {
@@ -334,7 +356,8 @@ int obj_clearByteBufferList(gxArray* list)
     list->size = 0;
     return 0;
 #else
-    int pos, ret = 0;
+    int ret = 0;
+    uint16_t pos;
     gxByteBuffer* it;
     for (pos = 0; pos != list->size; ++pos)
     {
@@ -355,7 +378,7 @@ int obj_clearScriptTable(gxArray* list)
 {
     int ret = DLMS_ERROR_CODE_OK;
 #ifndef DLMS_IGNORE_MALLOC
-    int pos, pos2;
+    uint16_t pos, pos2;
     gxScript* s;
     gxScriptAction* sa;
     for (pos = 0; pos != list->size; ++pos)
@@ -387,7 +410,7 @@ int obj_clearChargeTables(gxArray* list)
 {
     int ret = DLMS_ERROR_CODE_OK;
 #ifndef DLMS_IGNORE_MALLOC
-    int pos;
+    uint16_t pos;
     gxChargeTable* it;
     for (pos = 0; pos != list->size; ++pos)
     {
@@ -440,7 +463,8 @@ int obj_clearRegisterActivationMaskList(gxArray* list)
     arr_clear(list);
     return ret;
 #else
-    int ret = 0, pos;
+    int ret = 0;
+    uint16_t pos;
     gxKey* it;
     for (pos = 0; pos != list->size; ++pos)
     {
@@ -836,6 +860,11 @@ void obj_clear(gxObject* object)
             bb_clear(&((gxSecuritySetup*)object)->clientSystemTitle);
             bb_clear(&((gxSecuritySetup*)object)->serverSystemTitle);
             obj_clearCertificateInfo(&((gxSecuritySetup*)object)->certificates);
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+            priv_clear(&((gxSecuritySetup*)object)->signingKey);
+            priv_clear(&((gxSecuritySetup*)object)->keyAgreementKey);
+            priv_clear(&((gxSecuritySetup*)object)->tlsKey);
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
             break;
 #endif //DLMS_IGNORE_SECURITY_SETUP
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
@@ -1837,7 +1866,14 @@ unsigned char obj_methodCount(gxObject* object)
         ret = 0;
         break;
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
-        ret = 2;
+        if (object->version == 0)
+        {
+            ret = 2;
+        }
+        else
+        {
+            ret = 8;
+        }
         break;
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
         ret = 0;

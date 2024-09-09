@@ -49,6 +49,15 @@
 #include "../include/helpers.h"
 #include "../include/errorcodes.h"
 
+#if defined(_WIN32) || defined(_WIN64)//Windows
+#include <direct.h>
+#endif
+#if defined(__linux__)
+#include <errno.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#endif
+
 //Check byte order.
 unsigned char hlp_isBigEndian(void)
 {
@@ -258,6 +267,18 @@ const char* hlp_getErrorMessage(int error)
         case DLMS_ERROR_CODE_INVALID_SECURITY_SUITE:
             str = GET_STR_FROM_EEPROM("Client try to connect with wrong security suite.");
             break;
+        case DLMS_ERROR_CODE_SERIALIZATION_LOAD_FAILURE:
+            str = GET_STR_FROM_EEPROM("Serialization load failed.");
+            break;
+        case DLMS_ERROR_CODE_SERIALIZATION_SAVE_FAILURE:
+            str = GET_STR_FROM_EEPROM("Serialization save failed.");
+            break;
+        case DLMS_ERROR_CODE_SERIALIZATION_COUNT_FAILURE:
+            str = GET_STR_FROM_EEPROM("Serialization count failed.");
+            break;
+        case DLMS_ERROR_CODE_INVALID_VERIFY:
+            str = GET_STR_FROM_EEPROM("Verify failed.");
+            break;
         default:
             str = GET_STR_FROM_EEPROM("Unknown error.");
             break;
@@ -448,10 +469,21 @@ char* hlp_bytesToHex(const unsigned char* bytes, int count)
 
 int hlp_bytesToHex2(const unsigned char* bytes, uint16_t count, char* buff, uint16_t size)
 {
+    return hlp_bytesToHex3(bytes, count, buff, size, 3);
+}
+
+int hlp_bytesToHex3(
+    const unsigned char* bytes,
+    uint16_t count,
+    char* buff,
+    uint16_t size,
+    unsigned char addSpace)
+{
     const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
     unsigned char tmp;
     int pos;
-    if (3 * count > size)
+    uint16_t amount = addSpace ? 3 : 2;
+    if (amount * count > size)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
@@ -460,11 +492,17 @@ int hlp_bytesToHex2(const unsigned char* bytes, uint16_t count, char* buff, uint
         for (pos = 0; pos != count; ++pos)
         {
             tmp = bytes[pos] & 0xFF;
-            buff[pos * 3] = hexArray[tmp >> 4];
-            buff[pos * 3 + 1] = hexArray[tmp & 0x0F];
-            buff[pos * 3 + 2] = ' ';
+            buff[pos * amount] = hexArray[tmp >> 4];
+            buff[pos * amount + 1] = hexArray[tmp & 0x0F];
+            if (addSpace)
+            {
+                buff[pos * amount + 2] = ' ';
+            }
         }
-        buff[(3 * count) - 1] = '\0';
+        if ((amount * count) - (addSpace ? 1 : 0) < size)
+        {
+            buff[(amount * count) - (addSpace ? 1 : 0)] = '\0';
+        }
     }
     else
     {
@@ -533,14 +571,14 @@ int hlp_hexToBytes(
             {
                 tmp[*count] = (unsigned char)(lastValue << 4 | hlp_getValue(*str));
                 lastValue = -1;
-                ++* count;
+                ++*count;
             }
         }
         else if (lastValue != -1)
         {
             tmp[*count] = hlp_getValue(*str);
             lastValue = -1;
-            ++* count;
+            ++*count;
         }
         ++str;
     }
@@ -548,10 +586,10 @@ int hlp_hexToBytes(
     {
 #ifdef gxrealloc
         //If compiler supports realloc.
-        *buffer = gxrealloc(*buffer, *count);
- #else
+        * buffer = gxrealloc(*buffer, *count);
+#else
         //A few extra bytes are returned if compiler doesn't support realloc.
- #endif // gxrealloc  
+#endif // gxrealloc  
     }
     return 0;
 }
@@ -590,14 +628,14 @@ int hlp_hexToBytes2(
             {
                 buffer[*count] = (unsigned char)(lastValue << 4 | hlp_getValue(*str));
                 lastValue = -1;
-                ++* count;
+                ++*count;
             }
         }
         else if (lastValue != -1)
         {
             buffer[*count] = hlp_getValue(*str);
             lastValue = -1;
-            ++* count;
+            ++*count;
         }
         if (max < *count)
         {
@@ -721,11 +759,11 @@ int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
 {
     int ret;
 #if defined(_WIN32) || defined(_WIN64)
-	#if _MSC_VER > 1000
-        ret = sprintf_s(ln, 25, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
-	#else
-	    ret = sprintf(ln, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
-	#endif  
+#if _MSC_VER > 1000
+    ret = sprintf_s(ln, 25, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
+#else
+    ret = sprintf(ln, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
+#endif  
     if (ret != -1)
     {
         ret = 0;
@@ -792,7 +830,7 @@ int hlp_setLogicalName(unsigned char ln[6], const char* name)
     memcpy(pBuff, name, size);
     pBuff[size] = 0;
     //AVR compiler can't handle this if casting to char* is removed.
-    while ((ch = (char*) strchr(pBuff, '.')) != NULL)
+    while ((ch = (char*)strchr(pBuff, '.')) != NULL)
     {
         *ch = '\0';
         val = hlp_stringToInt(pBuff);
@@ -846,7 +884,7 @@ double hlp_getScaler(int scaler)
     return pow((float)10, scaler);
 #else
     double ret = 1;
-    if (scaler > 0) 
+    if (scaler > 0)
     {
         while (scaler--)
         {
@@ -860,7 +898,7 @@ double hlp_getScaler(int scaler)
             ret /= 10;
         }
     }
-    return ret; 
+    return ret;
 #endif
 }
 
@@ -979,10 +1017,10 @@ int hlp_intToString(char* str, int bufsize, int32_t value, unsigned char isSigne
         }
         *str = (value % 10) + '0';
         value /= 10;
-		if (value != 0)
-		{
-        	--str;
-		}
+        if (value != 0)
+        {
+            --str;
+        }
         --bufsize;
         ++cnt;
     } while (value != 0);
@@ -1040,6 +1078,11 @@ int hlp_uint64ToString(char* str, int bufsize, uint64_t value, unsigned char dig
 
 int32_t hlp_stringToInt(const char* str)
 {
+    return hlp_stringToInt2(str, NULL);
+}
+
+int32_t hlp_stringToInt2(const char* str, const char* end)
+{
     if (str == NULL)
     {
         return -1;
@@ -1051,7 +1094,7 @@ int32_t hlp_stringToInt(const char* str)
         minus = 1;
         ++str;
     }
-    while (*str != '\0')
+    while (*str != '\0' && str != end)
     {
         if (*str < '0' || *str > '9')
         {
@@ -1134,7 +1177,7 @@ int64_t hlp_stringToInt64(const char* str)
     }
     return value;
 }
-uint16_t lfsr = 0xACE1u;
+static uint16_t lfsr = 0xACE1u;
 unsigned bit;
 
 unsigned char hlp_rand(void)
@@ -1185,3 +1228,186 @@ int hlp_add(bitArray* arr, gxByteBuffer* bytes, uint16_t count)
     }
     return 0;
 }
+
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+int hlp_load(const char* path, char* value, uint16_t* length)
+{
+#if defined(_WIN32) || defined(_WIN64)//Windows
+    FILE* f = NULL;
+    if (fopen_s(&f, path, "r") != 0)
+    {
+        return errno;
+    }
+#else
+    FILE* f = fopen(path, "r");
+    if (f == NULL)
+    {
+        return errno;
+    }
+#endif
+    uint16_t length2 = *length;
+    *length = 0;
+    while (!feof(f))
+    {
+        if (length2 == 0)
+        {
+            //If buffer is full.
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        char* s = fgets(value, length2, f);
+        if (s == NULL)
+        {
+            break;
+        }
+        int size = strlen(s);
+        if (size == 0)
+        {
+            //If buffer is full.
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        *length += size;
+        length2 -= size;
+        value += size;
+    }
+    fclose(f);
+    return 0;
+}
+
+int hlp_save(const char* path, const char* value)
+{
+#if defined(_WIN32) || defined(_WIN64)//Windows
+    FILE* f = NULL;
+    if (fopen_s(&f, path, "r") != 0)
+    {
+        return errno;
+    }
+#else
+    FILE* f = fopen(path, "r");
+    if (f == NULL)
+    {
+        return errno;
+    }
+#endif
+    if (fputs(value, f) == EOF)
+    {
+        return errno;
+    }
+    fclose(f);
+    return 0;
+}
+
+#ifndef DLMS_IGNORE_DIRECTORY
+int hlp_createDir(const char* path)
+{
+#if defined(_WIN32) || defined(_WIN64)//Windows
+    return _mkdir(path);
+#else
+    return mkdir(path, 0777);
+#endif
+}
+
+unsigned char hlp_directoryExists(const char* path)
+{
+#if defined(_WIN32) || defined(_WIN64)//Windows
+    DWORD ftyp = GetFileAttributesA(path);
+    if (ftyp == INVALID_FILE_ATTRIBUTES)
+    {
+        //Invalid path.
+        return 0;
+    }
+    return (ftyp & FILE_ATTRIBUTE_DIRECTORY) != 0;
+#else
+    struct stat sb;
+    if (stat(path, &sb) == 0)
+    {
+        return 1;
+    }
+#endif
+    return 0;
+}
+#endif //DLMS_IGNORE_DIRECTORY
+
+/**
+    * Get index of given char.
+    *
+    * @param ch
+    * @return
+    */
+static int hlp_getIndex(const char ch, uint16_t* value)
+{
+    if (ch == '+')
+    {
+        *value = 62;
+    }
+    else if (ch == '/')
+    {
+        *value = 63;
+    }
+    else if (ch == '=')
+    {
+        *value = 64;
+    }
+    else if (ch < ':')
+    {
+        *value = (52 + (ch - '0'));
+    }
+    else if (ch < '[')
+    {
+        *value = (ch - 'A');
+    }
+    else if (ch < '{')
+    {
+        *value = (26 + (ch - 'a'));
+    }
+    else
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return 0;
+}
+
+/**
+ * Convert Base64 string to byte array.
+ *
+ * @param input
+ *            Base64 string.
+ * @return Converted byte array.
+ */
+int hlp_fromBase64(const char* input, uint16_t length, gxByteBuffer* decoded)
+{
+    if (length % 4 != 0)
+    {
+        //        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    int ret = 0;
+    int pos = (strstr(input, "=") - input);
+    uint16_t b1, b2, b3, b4;
+    pos = 0;
+    while (pos < length)
+    {
+        if (input[pos] == '\r' || input[pos] == '\n')
+        {
+            ++pos;
+        }
+        else
+        {
+            if ((ret = hlp_getIndex(input[pos], &b1)) != 0 ||
+                (ret = hlp_getIndex(input[pos + 1], &b2)) != 0 ||
+                (ret = hlp_getIndex(input[pos + 2], &b3)) != 0 ||
+                (ret = hlp_getIndex(input[pos + 3], &b4)) != 0 ||
+                (ret = bb_setUInt8(decoded, (b1 << 2) | (b2 >> 4))) != 0)
+            {
+                break;
+            }
+            pos += 4;
+            if (b3 < 64) {
+                bb_setUInt8(decoded, (b2 << 4) | (b3 >> 2));
+                if (b4 < 64) {
+                    bb_setUInt8(decoded, (b3 << 6) | b4);
+                }
+            }
+        }
+    }
+    return ret;
+}
+#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)

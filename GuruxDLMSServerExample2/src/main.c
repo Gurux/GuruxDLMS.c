@@ -178,6 +178,8 @@ static gxAssociationLogicalName associationNone;
 static gxAssociationLogicalName associationLow;
 static gxAssociationLogicalName associationHigh;
 static gxAssociationLogicalName associationHighGMac;
+static gxAssociationLogicalName associationHighGMacPreEstablished;
+static gxAssociationLogicalName associationHighEcdsa;
 static gxRegister activePowerL1;
 static gxRegister activePowerL1;
 static gxScriptTable scriptTableGlobalMeterReset;
@@ -199,7 +201,8 @@ static gxSecuritySetup securitySetupHigh;
 static gxSecuritySetup securitySetupHighGMac;
 //Security Setup HighGMac is for pre-established GMac authentication.
 static gxSecuritySetup securitySetupHighGMacPreEstablished;
-static gxAssociationLogicalName associationHighGMacPreEstablished;
+//Security Setup HighEdcsa is for ECDSA authentication.
+static gxSecuritySetup securitySetupHighEcdsa;
 
 gxImageTransfer imageTransfer;
 gxAutoConnect autoConnect;
@@ -239,8 +242,9 @@ static gxTariffPlan tariffPlan;
 //Append new COSEM object to the end so serialization will work correctly.
 static gxObject* ALL_OBJECTS[] = {
     BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac),
-    BASE(associationHighGMacPreEstablished),
+    BASE(associationHighGMacPreEstablished), BASE(associationHighEcdsa),
     BASE(securitySetupHigh), BASE(securitySetupHighGMac),BASE(securitySetupHighGMacPreEstablished),
+    BASE(securitySetupHighEcdsa),
     BASE(ldn), BASE(eeprom), BASE(testMode), BASE(sapAssignment), BASE(eventCode),
     BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
     BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
@@ -862,7 +866,7 @@ int addAssociationHighGMac()
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         associationHighGMac.securitySetup = &securitySetupHighGMac;
 #else
-        memcpy(associationHighGMac.securitySetupReference, securitySetupHigh.base.logicalName, 6);
+        memcpy(associationHighGMac.securitySetupReference, securitySetupHighGMac.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     }
     return ret;
@@ -895,7 +899,39 @@ int addAssociationHighGMacPreEstablished()
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         associationHighGMacPreEstablished.securitySetup = &securitySetupHighGMacPreEstablished;
 #else
-        memcpy(associationHighGMacPreEstablished.securitySetupReference, securitySetupHigh.base.logicalName, 6);
+        memcpy(associationHighGMacPreEstablished.securitySetupReference, securitySetupHighGMacPreEstablished.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example Logical Name Association object for ECDSA High authentication.
+///////////////////////////////////////////////////////////////////////
+int addAssociationHighECDSA()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 40, 0, 6, 255 };
+    if ((ret = INIT_OBJECT(associationHighEcdsa, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+    {
+        associationHighEcdsa.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH_ECDSA;
+        OA_ATTACH(associationHighEcdsa.objectList, ALL_OBJECTS);
+        associationHighEcdsa.clientSAP = 0x3;
+        associationHighEcdsa.xDLMSContextInfo.maxSendPduSize = associationHighEcdsa.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
+        associationHighEcdsa.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)
+            (DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+                DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+                DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+                DLMS_CONFORMANCE_SET |
+                DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+                DLMS_CONFORMANCE_ACTION |
+                DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+                DLMS_CONFORMANCE_GET);
+        //GMAC authentication don't need password.
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        associationHighEcdsa.securitySetup = &securitySetupHighEcdsa;
+#else
+        memcpy(associationHighEcdsa.securitySetupReference, securitySetupHighEcdsa.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     }
     return ret;
@@ -958,6 +994,32 @@ int addSecuritySetupPreEstablishedHighGMac()
         //Only Authenticated encrypted connections are allowed.
         securitySetupHighGMacPreEstablished.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
         securitySetupHighGMacPreEstablished.securitySuite = DLMS_SECURITY_SUITE_V0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds security setup object for ECDSA authentication.
+///////////////////////////////////////////////////////////////////////
+int addSecuritySetupHighEcdsa()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 43, 0, 4, 255 };
+    static gxCertificateInfo CERTIFICATES[2] = {0};
+    if ((ret = INIT_OBJECT(securitySetupHighEcdsa, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(securitySetupHighEcdsa.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+        //Ciphering is not used.
+        securitySetupHighEcdsa.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
+        securitySetupHighEcdsa.securitySuite = DLMS_SECURITY_SUITE_V1;
+        ARR_ATTACH(securitySetupHighEcdsa.certificates, CERTIFICATES, 0);
+        //Assign certificates.
+        uint16_t pos;
+        gxCertificateInfo* ci = securitySetupHighEcdsa.certificates.data;
+        for (pos = 0; pos != arr_getCapacity(&securitySetupHighEcdsa.certificates); ++pos)
+        {
+            BB_ATTACH(CERTIFICATES[pos].cert, CERTIFICATES[pos].CERTIFICATE_BUFFER, 0);
+        }
     }
     return ret;
 }
@@ -2630,6 +2692,8 @@ int createObjects()
         (ret = addAssociationHighGMac()) != 0 ||
         (ret = addAssociationHighGMacPreEstablished()) != 0 ||
         (ret = addSecuritySetupPreEstablishedHighGMac()) != 0 ||
+        (ret = addSecuritySetupHighEcdsa()) != 0 ||
+        (ret = addAssociationHighECDSA()) != 0 ||
         (ret = addSecuritySetupHigh()) != 0 ||
         (ret = addSecuritySetupHighGMac()) != 0 ||
         (ret = addMbusDiagnostic()) != 0 ||

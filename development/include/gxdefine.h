@@ -141,6 +141,9 @@ extern "C" {
 //Define neighbour table tone map size for G3 MAC Setup object.
 #define MAX_G3_MAC_NEIGHBOUR_TABLE_TONE_MAP_SIZE 5
 
+//X.509 certificate max size.
+#define DLMS_X509_CETRIFICATE_MAX_SIZE 2048
+
 #ifdef  __cplusplus
 }
 #endif

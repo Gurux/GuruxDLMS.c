@@ -53,6 +53,11 @@
 #include "../include/gxget.h"
 #include "../include/gxkey.h"
 #include "../include/serverevents.h"
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+#include "../include/gxecdsa.h"
+#include "../include/gxpkcs10.h"
+#include "../include/gx509Certificate.h"
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
 
 #ifndef DLMS_IGNORE_CHARGE
 
@@ -755,7 +760,19 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
 #ifndef DLMS_IGNORE_HIGH_GMAC
     int pos;
 #endif //DLMS_IGNORE_HIGH_GMAC
-    if (e->index == 1)
+    gxCertificateInfo* it;
+    gxByteBuffer sn2;
+    bb_init(&sn2);
+#ifdef DLMS_IGNORE_MALLOC
+    gxByteBuffer sn, issuer;
+    bb_init(&sn);
+    bb_init(&issuer);
+#endif //DLMS_IGNORE_MALLOC
+    if (target->securitySuite == 0 && e->index > 3)
+    {
+        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+    }
+    else if (e->index == 1)
     {
         //The security policy can only be strengthened.
         if (target->securityPolicy > var_toInteger(&e->parameters))
@@ -858,7 +875,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION:
                     bb_clear(&settings->base.cipher.broadcastBlockCipherKey);
-                    bb_set(&settings->base.cipher.broadcastBlockCipherKey, bb.data, bb.size);                    
+                    bb_set(&settings->base.cipher.broadcastBlockCipherKey, bb.data, bb.size);
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION:
                     bb_clear(&settings->base.cipher.authenticationKey);
@@ -879,6 +896,523 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
 #endif //DLMS_IGNORE_MALLOC
 #endif //DLMS_IGNORE_HIGH_GMAC
     }
+    else if (e->index == 3)
+    {
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+    }
+    else if (e->index == 4)
+    {
+        //Generate key pair.
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+        uint8_t type;
+#ifdef DLMS_IGNORE_MALLOC
+        if (e->parameters.vt != DLMS_DATA_TYPE_ENUM)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            type = e->parameters.bVal;
+        }
+#else
+        if (e->parameters.vt != DLMS_DATA_TYPE_ENUM)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            type = (uint8_t)var_toInteger(&e->parameters);
+        }
+#endif //DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            gxPrivateKey* key;
+            if (type == DLMS_CERTIFICATE_TYPE_DIGITAL_SIGNATURE)
+            {
+                key = &target->signingKey;
+            }
+            else if (type == DLMS_CERTIFICATE_TYPE_KEY_AGREEMENT)
+            {
+                key = &target->keyAgreementKey;
+            }
+            else if (type == DLMS_CERTIFICATE_TYPE_TLS)
+            {
+                key = &target->tlsKey;
+            }
+            else
+            {
+                ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+            }
+            if (ret == 0)
+            {
+                ret = gxecdsa_generateKeyPair((ECC)(target->securitySuite - 1), &key->publicKey, key);
+            }
+        }
+#else
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+    }
+    else if (e->index == 5)
+    {
+        //GenerateCertificateRequest
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+        //Generate key pair.
+        uint8_t type;
+#ifdef DLMS_IGNORE_MALLOC
+        if (e->parameters.vt != DLMS_DATA_TYPE_ENUM)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            type = e->parameters.bVal;
+        }
+#else
+        if (e->parameters.vt != DLMS_DATA_TYPE_ENUM)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            type = (uint8_t)var_toInteger(&e->parameters);
+        }
+#endif //DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            gxPrivateKey* key;
+            if (type == DLMS_CERTIFICATE_TYPE_DIGITAL_SIGNATURE)
+            {
+                key = &target->signingKey;
+            }
+            else if (type == DLMS_CERTIFICATE_TYPE_KEY_AGREEMENT)
+            {
+                key = &target->keyAgreementKey;
+            }
+            else if (type == DLMS_CERTIFICATE_TYPE_TLS)
+            {
+                key = &target->tlsKey;
+            }
+            else
+            {
+                ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+            }
+            if (ret == 0)
+            {
+                if (key->rawValue.size != 0)
+                {
+                    e->byteArray = 1;
+                    bb_empty(&settings->info.data);
+                    if (key->publicKey.rawValue.size == 0)
+                    {
+                        ret = priv_getPublicKey(key, &key->publicKey);
+                    }
+                    if (ret == 0)
+                    {
+                        ret = pkcs10_createCertificateSigningRequest(key,
+                            target->serverSystemTitle.data, &settings->info.data);
+                        if (ret == 0 && settings->info.data.size != 0)
+                        {
+                            uint16_t size = (uint16_t)settings->info.data.size;
+                            unsigned char cnt = hlp_getObjectCountSizeInBytes(size);
+                            ret = bb_move(&settings->info.data, 0, cnt + 1, size);
+                            settings->info.data.size = 0;
+                            if ((ret = bb_setUInt8(&settings->info.data, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
+                                (ret = hlp_setObjectCount(size, &settings->info.data)) == 0)
+                            {
+                                settings->info.data.size += size;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    }
+                }
+            }
+        }
+#else
+ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+    }
+    else if (e->index == 6)
+    {
+        //Import certificate.
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+#ifdef DLMS_IGNORE_MALLOC
+        if (e->parameters.vt != DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+#else
+        if (e->parameters.vt != DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+#endif //DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            unsigned char ch;
+            uint16_t count;
+            gxCertificateInfo* it;
+            //Find by system title and key usage.
+            if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0 ||
+                ch != DLMS_DATA_TYPE_OCTET_STRING ||
+                hlp_getObjectCount2(e->parameters.byteArr, &count) != 0 ||
+                bb_available(e->parameters.byteArr) < count)
+            {
+                return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+            }
+            if ((ret = gx509Certificate_getSystemTitle(e->parameters.byteArr, &sn)) == 0)
+            {
+                //Remove old server certificate.
+                for (pos = 0; pos != target->certificates.size; ++pos)
+                {
+                    if ((ret = arr_getByIndex(&target->certificates, target->certificates.size - 1, (void**)&it, sizeof(gxCertificateInfo))) != 0)
+                    {
+                        return DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                    }
+                    if ((ret = gx509Certificate_getSystemTitle(&it->cert, &sn2)) != 0)
+                    {
+                        break;
+                    }
+                    if (memcmp(sn2.data, sn.data, 8) == 0)
+                    {
+                        ret = arr_removeByIndex(&target->certificates, pos, sizeof(gxCertificateInfo));
+                        break;
+                    }
+                }
+                if (ret == 0)
+                {
+                    if (!(target->certificates.size < target->certificates.capacity))
+                    {
+                        //If certificates are full.
+                        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                    }
+                    else
+                    {
+                        ++target->certificates.size;
+                        if ((ret = arr_getByIndex(&target->certificates, target->certificates.size - 1, (void**)&it, sizeof(gxCertificateInfo))) != 0)
+                        {
+                            --target->certificates.size;
+                            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+                        }
+                        else
+                        {
+                            //Update the new certificate.
+                            bb_clear(&it->cert);
+                            if ((ret = bb_set(&it->cert,
+                                e->parameters.byteArr->data + e->parameters.byteArr->position,
+                                bb_available(e->parameters.byteArr))) != 0)
+                            {
+                                --target->certificates.size;
+                            }
+                        }
+                    }
+                }
+                bb_clear(e->parameters.byteArr);
+            }
+#else
+            gx509Certificate cert;
+            gx509Certificate certInstalled;
+            gxCertificateInfo* it;
+            gxCertificateInfo* cInfo = (gxCertificateInfo*)gxmalloc(sizeof(gxCertificateInfo));
+            if (cInfo == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+            bb_init(&cInfo->cert);
+            if ((ret = bb_set(&cInfo->cert, e->parameters.byteArr->data, e->parameters.byteArr->size)) == 0)
+            {
+                gx509Certificate_init(&cert);
+                gx509Certificate_init(&certInstalled);
+                uint32_t now = 0;
+                if (settings->defaultClock != NULL)
+                {
+                    now = time_toUnixTime2(&settings->defaultClock->time);
+                }
+                if ((ret = gx509Certificate_fromBytes(&cert, DLMS_X509_CERTIFICATE_DATA_NONE, e->parameters.byteArr)) == 0 &&
+                    (ret = gx509Certificate_validate(&cert, now)) == 0)
+                {
+                    //Remove old server certificate.
+                    for (pos = 0; pos != target->certificates.size; ++pos)
+                    {
+                        if ((ret = arr_getByIndex(&target->certificates, pos, (void**)&it)) != 0)
+                        {
+                            break;
+                        }
+                        if ((ret = gx509Certificate_fromBytes(&certInstalled,
+                            DLMS_X509_CERTIFICATE_DATA_NONE, &it->cert)) == 0)
+                        {
+                            if (certInstalled.keyUsage == cert.keyUsage &&
+                                memcmp(certInstalled.systemTitle, cert.systemTitle, 8) == 0)
+                            {
+                                if ((ret = arr_removeByIndex(&target->certificates, pos, (void**)&it)) == 0)
+                                {
+                                    gxfree(it);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (ret == 0)
+                    {
+                        ret = arr_push(&target->certificates, cInfo);
+                    }
+                }
+            }
+            if (ret != 0 && cInfo != NULL)
+            {
+                gxfree(cInfo);
+            }
+#endif //DLMS_IGNORE_MALLOC
+        }
+#else
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+    }
+    else if (e->index == 7)
+    {
+        //Export certificate.
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+        uint8_t type;
+#ifdef DLMS_IGNORE_MALLOC
+        if (e->parameters.vt != DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
+                (ret = cosem_getEnum(e->parameters.byteArr, &type)) == 0)
+            {
+            }
+        }
+#else
+        dlmsVARIANT* sn, * tmp, * tmp2;
+        if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp)) == 0)
+        {
+            type = (uint8_t)var_toInteger(tmp);
+        }
+#endif //DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            if (type == 0)
+            {
+                //Find certificate by entity.
+            }
+            else if (type == 1)
+            {
+                //Find by serial.
+#ifdef DLMS_IGNORE_MALLOC
+                unsigned char ch;
+                uint16_t count;
+                if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
+                    //serialNumber
+                    (ret = bb_getUInt8(e->parameters.byteArr, &ch)) == 0 &&
+                    ch == DLMS_DATA_TYPE_OCTET_STRING &&
+                    (ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) == 0)
+                {
+                    bb_attach(&sn, e->parameters.byteArr->data + e->parameters.byteArr->position, count, count);
+                    e->parameters.byteArr->position += count;
+                    //Issuer
+                    if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) == 0 && 
+                        ch == DLMS_DATA_TYPE_OCTET_STRING &&
+                        (ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) == 0)
+                    {
+                        bb_attach(&issuer, e->parameters.byteArr->data + e->parameters.byteArr->position, count, count);
+                        e->parameters.byteArr->position += count;
+                        //Find certificate.
+                        for (pos = 0; pos != target->certificates.size; ++pos)
+                        {
+                            if ((ret = arr_getByIndex(&target->certificates, pos, (void**)&it, sizeof(gxCertificateInfo))) != 0)
+                            {
+                                break;
+                            }
+                            if ((ret = gx509Certificate_getSerialNumber(&it->cert, &sn2)) != 0)
+                            {
+                                break;
+                            }
+                            if (bb_size(&sn) == bb_size(&sn2) &&
+                                bb_compare(&sn, sn2.data, sn2.size))
+                            {
+                                e->byteArray = 1;
+                                bb_empty(&settings->info.data);
+                                if ((ret = bb_setUInt8(&settings->info.data, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
+                                    (ret = hlp_setObjectCount(it->cert.size, &settings->info.data)) == 0 &&
+                                    (ret = bb_set(&settings->info.data, it->cert.data, it->cert.size)) == 0)
+                                {
+                                }
+                                return ret;
+                            }
+                        }
+                        //Return error if certificate is not found.
+                        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    }
+                }
+            }
+#else
+                if ((ret = va_getByIndex(e->parameters.Arr, 1, &tmp2)) == 0 &&
+                    //serialNumber
+                    (ret = va_getByIndex(tmp2->Arr, 0, &sn)) == 0 &&
+                    //Issuer
+                    (ret = va_getByIndex(tmp2->Arr, 1, &tmp)) == 0)
+                {
+                    //Find certificate.
+                    for (pos = 0; pos != target->certificates.size; ++pos)
+                    {
+                        if ((ret = arr_getByIndex(&target->certificates, pos, (void**)&it)) != 0)
+                        {
+                            break;
+                        }
+                        if ((ret = gx509Certificate_getSerialNumber(&it->cert, &sn2)) != 0)
+                        {
+                            break;
+                        }
+                        if (bb_size(sn->byteArr) == bb_size(&sn2) &&
+                            bb_compare(sn->byteArr, sn2.data, sn2.size))
+                        {
+                            bb_empty(&settings->info.data);
+                            if ((ret = bb_setUInt8(&settings->info.data, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
+                                (ret = hlp_setObjectCount(it->cert.size, &settings->info.data)) == 0 &&
+                                (ret = bb_set(&settings->info.data, it->cert.data, it->cert.size)) == 0)
+                            {
+                            }
+                            return ret;
+                        }
+                    }
+                    //Return error if certificate is not found.
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                }
+            }
+#endif //DLMS_IGNORE_MALLOC
+            else
+            {
+                ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+            }
+        }
+#else
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+    }
+    else if (e->index == 8)
+    {
+        //Remove certificate.
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+        uint8_t type;
+#ifdef DLMS_IGNORE_MALLOC
+        if (e->parameters.vt != DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+        }
+        else
+        {
+            if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 && 
+                (ret = cosem_getEnum(e->parameters.byteArr, &type)) == 0)
+            {
+            }
+        }
+#else
+        dlmsVARIANT* sn, * tmp, * tmp2;
+        if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp)) == 0)
+        {
+            type = (uint8_t)var_toInteger(tmp);
+        }
+#endif //DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            if (type == 0)
+            {
+                //Find certificate by entity.
+            }
+            else if (type == 1)
+            {
+                gxCertificateInfo* it;
+#ifdef DLMS_IGNORE_MALLOC
+                unsigned char ch;
+                uint16_t count;
+                if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
+                    //serialNumber
+                    (ret = bb_getUInt8(e->parameters.byteArr, &ch)) == 0 &&
+                    ch == DLMS_DATA_TYPE_OCTET_STRING &&
+                    (ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) == 0)
+                {
+                    bb_attach(&sn, e->parameters.byteArr->data + e->parameters.byteArr->position, count, count);
+                    e->parameters.byteArr->position += count;
+                    //Issuer
+                    if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) == 0 &&
+                        ch == DLMS_DATA_TYPE_OCTET_STRING &&
+                        (ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) == 0)
+                    {
+                        bb_attach(&issuer, e->parameters.byteArr->data + e->parameters.byteArr->position, count, count);
+                        e->parameters.byteArr->position += count;
+                        //Find certificate.
+                        for (pos = 0; pos != target->certificates.size; ++pos)
+                        {
+                            if ((ret = arr_getByIndex(&target->certificates, pos, (void**)&it, sizeof(gxCertificateInfo))) != 0)
+                            {
+                                break;
+                            }
+                            if ((ret = gx509Certificate_getSerialNumber(&it->cert, &sn2)) != 0)
+                            {
+                                break;
+                            }
+                            if (bb_size(&sn) == bb_size(&sn2) &&
+                                bb_compare(&sn, sn2.data, sn2.size))
+                            {
+                                bb_empty(&settings->info.data);
+                                return arr_removeByIndex(&target->certificates, pos, sizeof(gxCertificateInfo));
+                            }
+                        }
+                        //Return error if certificate is not found.
+                        ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    }
+                }
+            }
+#else
+                gxByteBuffer sn2;
+                if ((ret = va_getByIndex(e->parameters.Arr, 1, &tmp2)) == 0 &&
+                    //serialNumber
+                    (ret = va_getByIndex(tmp2->Arr, 0, &sn)) == 0 &&
+                    //Issuer
+                    (ret = va_getByIndex(tmp2->Arr, 1, &tmp)) == 0)
+                {
+                    //Find certificate.
+                    for (pos = 0; pos != target->certificates.size; ++pos)
+                    {
+                        if ((ret = arr_getByIndex(&target->certificates, pos, (void**)&it)) != 0)
+                        {
+                            break;
+                        }
+                        if ((ret = gx509Certificate_getSerialNumber(&it->cert, &sn2)) != 0)
+                        {
+                            break;
+                        }
+                        if (bb_size(sn->byteArr) == bb_size(&sn2) &&
+                            bb_compare(sn->byteArr, sn2.data, sn2.size))
+                        {
+                            bb_empty(&settings->info.data);
+                            if ((ret = arr_removeByIndex(&target->certificates, pos, (void**)&it)) == 0)
+                            {
+                                gxfree(it);
+                            }
+                            return ret;
+                        }
+                    }
+                    //Return error if certificate is not found.
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                }
+            }
+#endif //DLMS_IGNORE_MALLOC
+            else
+            {
+                ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+            }
+        }
+#else
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+        }
     else
     {
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
@@ -1090,11 +1624,11 @@ int invoke_ScriptTable(
                     {
                         break;
                     }
+                    }
                 }
             }
-        }
         vec_clear(&args);
-    }
+        }
     else
     {
         ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
@@ -1401,11 +1935,19 @@ int invoke_Register(
     gxRegister* object,
     gxValueEventArg* e)
 {
-    int ret = 0;
+    int ret;
     //Reset.
     if (e->index == 1)
     {
-        ret = var_clear(&object->value);
+        if (e->parameters.vt != DLMS_DATA_TYPE_INT8 ||
+            e->parameters.cVal != 0)
+        {
+            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        }
+        else
+        {
+            ret = var_clear(&object->value);
+        }
     }
     else
     {
@@ -1968,7 +2510,11 @@ int invoke_SpecialDaysTable(
 #ifdef DLMS_IGNORE_MALLOC
                 ret = arr_removeByIndex(&object->entries, pos, sizeof(gxSpecialDay));
 #else
-                ret = arr_removeByIndex(&object->entries, pos, NULL);
+                ret = arr_removeByIndex(&object->entries, pos, (void**) & specialDay);
+                if (ret == 0)
+                {
+                    gxfree(specialDay);
+                }
 #endif //DLMS_IGNORE_MALLOC
                 break;
             }
@@ -2030,7 +2576,7 @@ int invoke_RegisterActivation(
         if ((ret = arr_setByIndexRef(&object->registerAssignment, (void**)it)) != 0)
         {
             return ret;
-        }
+}
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #else
         dlmsVARIANT* tmp, * tmp3;
@@ -2073,7 +2619,7 @@ int invoke_RegisterActivation(
 #else
             arr_push(&object->registerAssignment, it);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        }
+            }
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
         if (ret != 0 && objectDefinition != NULL)
         {
@@ -2109,10 +2655,10 @@ int invoke_RegisterActivation(
                     }
                 }
             }
-        }
+            }
 #else
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    }
+        }
     //Remove mask.
     else if (e->index == 3)
     {
@@ -2133,7 +2679,7 @@ int invoke_RegisterActivation(
                         if ((ret = arr_getByIndex2(&object->maskList, pos, (void**)&k, sizeof(gxRegisterActivationMask))) != 0)
                         {
                             break;
-                        }
+            }
 #if defined(DLMS_IGNORE_MALLOC)
                         if (bb_available(e->parameters.byteArr) == k->length &&
                             memcmp(k->name, e->parameters.byteArr->data + e->parameters.byteArr->position, count) == 0)
@@ -2157,10 +2703,10 @@ int invoke_RegisterActivation(
                         }
 #endif //defined(DLMS_IGNORE_MALLOC)
                         e->parameters.byteArr->position += count;
-                    }
-                }
-            }
         }
+    }
+}
+    }
         bb_clear(e->parameters.byteArr);
     }
     else
@@ -2191,7 +2737,7 @@ int invoke_copySeasonProfile(gxArray* target, gxArray* source)
                 if ((ret = arr_getByIndex2(source, pos, (void**)&sp, sizeof(gxSeasonProfile))) != 0)
                 {
                     break;
-                }
+    }
 #if defined(DLMS_IGNORE_MALLOC)
                 if ((ret = arr_getByIndex2(target, pos, (void**)&it, sizeof(gxSeasonProfile))) != 0)
                 {
@@ -2209,9 +2755,9 @@ int invoke_copySeasonProfile(gxArray* target, gxArray* source)
                 it->start = sp->start;
                 bb_set(&it->weekName, sp->weekName.data, sp->weekName.size);
 #endif //#if defined(DLMS_IGNORE_MALLOC)
+}
+                }
             }
-        }
-    }
     return ret;
 }
 
@@ -2252,11 +2798,11 @@ int invoke_copyWeekProfileTable(gxArray* target, gxArray* source)
                 it->friday = wp->friday;
                 it->saturday = wp->saturday;
                 it->sunday = wp->sunday;
-            }
-        }
     }
-    return ret;
 }
+        }
+    return ret;
+    }
 
 int invoke_copyDayProfileTable(gxArray* target, gxArray* source)
 {
@@ -2310,10 +2856,10 @@ int invoke_copyDayProfileTable(gxArray* target, gxArray* source)
                     memcpy(dp2->scriptLogicalName, dp->scriptLogicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                     dp2->scriptSelector = dp->scriptSelector;
-                }
-            }
-        }
+                    }
     }
+}
+}
     return ret;
 }
 
@@ -2414,7 +2960,7 @@ int invoke_ArrayManagerInsertEntry(
                     {
                         var_clear(&value);
                         break;
-                    }
+            }
                     if (e->value.byteArr->size < e->value.byteArr->position + count)
                     {
                         ret = DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -2422,11 +2968,11 @@ int invoke_ArrayManagerInsertEntry(
                         break;
                     }
                     e->value.byteArr->position += count;
-                }
+        }
 #endif //DLMS_IGNORE_MALLOC
                 di_init(&info);
                 var_clear(&value);
-            }
+    }
             --totalCount;
             if (index == 0 && totalCount == 0)
             {
@@ -2476,10 +3022,10 @@ int invoke_ArrayManagerInsertEntry(
                 }
                 --index;
             }
-        }
-    }
-    return ret;
 }
+        }
+    return ret;
+    }
 
 int invoke_ArrayManagerDeleteEntry(
     dlmsServerSettings* settings,
@@ -2560,18 +3106,18 @@ int invoke_ArrayManagerDeleteEntry(
                     if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
                     {
                         break;
-                    }
+            }
                     if (e->value.byteArr->size < e->value.byteArr->position + count)
                     {
                         ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                         break;
                     }
                     e->value.byteArr->position += count;
-                }
+        }
 #endif //DLMS_IGNORE_MALLOC
                 di_init(&info);
                 var_clear(&value);
-            }
+    }
             --totalCount;
             if (totalCount == 0)
             {
@@ -2587,10 +3133,10 @@ int invoke_ArrayManagerDeleteEntry(
                 }
                 --from;
             }
-        }
-    }
-    return ret;
 }
+        }
+    return ret;
+    }
 
 int invoke_ArrayManager(
     dlmsServerSettings* settings,
@@ -2678,7 +3224,7 @@ int invoke_ArrayManager(
         if ((ret = va_getByIndex(tmp3->Arr, 1, &tmp2)) != 0)
         {
             return ret;
-        }
+}
         to = tmp2->uiVal;
 #endif //DLMS_IGNORE_MALLOC
         bb_clear(e->value.byteArr);
@@ -2826,19 +3372,19 @@ int invoke_ArrayManager(
                                     if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
                                     {
                                         break;
-                                    }
+                            }
                                     if (e->value.byteArr->size < e->value.byteArr->position + count)
                                     {
                                         ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                                         break;
                                     }
                                     e->value.byteArr->position += count;
-                                }
+                        }
 #endif //DLMS_IGNORE_MALLOC
 
                                 di_init(&info);
                                 var_clear(&value);
-                            }
+                    }
                             --totalCount;
                             if (totalCount == 0)
                             {
@@ -2852,13 +3398,13 @@ int invoke_ArrayManager(
                                 }
                                 --from;
                             }
-                        }
+                }
                         found = 1;
                         break;
-                    }
-                }
-                break;
             }
+        }
+                break;
+    }
             else if (e->index == 3)
             {
                 e->index = it->element.attributeIndex;
@@ -2884,15 +3430,15 @@ int invoke_ArrayManager(
                 found = 1;
                 break;
             }
-        }
-    }
+                }
+            }
     if (!found)
     {
         bb_clear(e->value.byteArr);
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
     }
     return ret;
-}
+    }
 #endif //DLMS_IGNORE_ARRAY_MANAGER
 
 #ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
@@ -2933,12 +3479,12 @@ int invoke_G3_PLC_MAC_Setup(
             {
                 ++count;
             }
-        }
+    }
         if (ret == 0)
         {
             return cosem_getG3PlcMacSetupNeighbourTables(&object->neighbourTable, address, count, e);
         }
-    }
+}
     else if (e->index == 2)
     {
         gxMacPosTable* it;
@@ -2960,15 +3506,15 @@ int invoke_G3_PLC_MAC_Setup(
             {
                 ++count;
             }
-        }
+    }
         if (ret == 0)
         {
             return cosem_getG3PlcMacSetupPosTables(&object->macPosTable, address, count, e);
         }
-    }
+        }
     bb_clear(e->value.byteArr);
     return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-}
+    }
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 int cosem_invoke(

@@ -182,8 +182,20 @@ extern "C" {
     // #define DLMS_TRACE_PDU
 
     // Some DLMS standard define that invocation counter must between given range.
-    // 
+    // The server can validate IC using svr_validInvocationCounter method.
     //#define DLMS_INVOCATION_COUNTER_VALIDATOR
+
+    // Server notifies invalid authentication error.
+    //#define DLMS_NOTIFY_AUTHENTICATION_ERROR
+
+    // Server notifies invalid ciphering error.
+    //#define DLMS_NOTIFY_CIPHERING_ERROR
+
+    //Security Suite 1 is used.
+    //#define DLMS_SECURITY_SUITE_1
+    
+    //Security Suite 2 is used.
+    //#define DLMS_SECURITY_SUITE_2
 
 #ifdef ARDUINO
 /////////////////////////////////////////////////////////////////////////////

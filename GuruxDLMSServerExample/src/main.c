@@ -140,7 +140,9 @@ int startServers(int port, int trace)
     printf("Authentication levels:\n");
     printf("None: Client address 16 (0x10)\n");
     printf("Low: Client address 17 (0x11)\n");
-    printf("High: Client address 1 (0x1)\n");
+    printf("High GMac: Client address 1 (0x1)\n");
+    printf("High Pre-established: Client address 2 (0x2)\n");
+    printf("High ECDSA: Client address 3 (0x3)\n");
     printf("----------------------------------------------------------\n");
     println("System Title", &snHdlc.settings.base.cipher.systemTitle);
     println("Authentication key", &snHdlc.settings.base.cipher.authenticationKey);

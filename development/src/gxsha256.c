@@ -123,7 +123,8 @@ void gxsha256_transform(uint32_t* h, const unsigned char* message, uint32_t mess
 int gxsha256_hash(gxByteBuffer* data, gxByteBuffer* digest)
 {
     int ret = 0;
-    unsigned int len = data->size;
+    uint32_t len = data->size;
+    uint32_t position = data->position;
     uint32_t h[8] = { 0x6a09e667, 0xbb67ae85,
         0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c,
@@ -157,14 +158,17 @@ int gxsha256_hash(gxByteBuffer* data, gxByteBuffer* digest)
         data->position += size;
     }
     digest->size = 0;
-    bb_capacity(digest, 32);
-    for (pos = 0; pos < 8; ++pos)
+    if ((ret = bb_capacity(digest, 32)) == 0)
     {
-        if ((ret = bb_setUInt32(digest, h[pos])) != 0)
+        for (pos = 0; pos < 8; ++pos)
         {
-            break;
+            if ((ret = bb_setUInt32(digest, h[pos])) != 0)
+            {
+                break;
+            }
         }
     }
+    data->position = position;
     return ret;
 }
 

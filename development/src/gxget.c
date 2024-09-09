@@ -1420,48 +1420,120 @@ int cosem_getSecuritySetup(
     {
         ret = cosem_setOctetString(data, &object->serverSystemTitle);
     }
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     else if (e->index == 6)
     {
         gxCertificateInfo* it;
-        uint16_t pos, len;
+        uint16_t pos;
         if ((ret = cosem_setArray(data, object->certificates.size)) == 0)
         {
             for (pos = 0; pos != object->certificates.size; ++pos)
             {
 #ifdef DLMS_IGNORE_MALLOC
-                if ((ret = arr_getByIndex(&object->certificates, pos, (void**)&it, sizeof(gxCertificateInfo))) != 0 ||
+                if ((ret = arr_getByIndex(&object->certificates, pos, (void**)&it, sizeof(gxCertificateInfo))) != 0)
+                {
+                    break;
+                }
 #else
-                if ((ret = arr_getByIndex(&object->certificates, pos, (void**)&it)) != 0 ||
+                if ((ret = arr_getByIndex(&object->certificates, pos, (void**)&it)) != 0)
+                {
+                    break;
+                }
 #endif //DLMS_IGNORE_MALLOC
-                    (ret = cosem_setStructure(data, 6)) != 0 ||
-                    (ret = cosem_setEnum(data, it->entity)) != 0 ||
-                    (ret = cosem_setEnum(data, it->type)) != 0)
+#ifndef DLMS_IGNORE_SERVER
+                if (bb_size(&it->cert) != 0)
                 {
-                    break;
+                    gx509Certificate cert;
+                    gx509Certificate_init(&cert);
+                    if ((ret = gx509Certificate_fromBytes(&cert, 
+                                DLMS_X509_CERTIFICATE_DATA_NONE, &it->cert)) == 0)
+                    {
+                        DLMS_CERTIFICATE_TYPE type;
+                        if (cert.keyUsage == DLMS_KEY_USAGE_DIGITAL_SIGNATURE)
+                        {
+                            type = DLMS_CERTIFICATE_TYPE_DIGITAL_SIGNATURE;
+                        }
+                        else if (cert.keyUsage == DLMS_KEY_USAGE_KEY_AGREEMENT)
+                        {
+                            type = DLMS_CERTIFICATE_TYPE_KEY_AGREEMENT;
+                        }
+                        else if (cert.keyUsage == (DLMS_KEY_USAGE_DIGITAL_SIGNATURE | DLMS_KEY_USAGE_KEY_AGREEMENT))
+                        {
+                            type = DLMS_CERTIFICATE_TYPE_TLS;
+                        }
+                        else
+                        {
+                            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+                        }
+                        DLMS_CERTIFICATE_ENTITY entity;
+                        if (memcmp(object->serverSystemTitle.data, cert.systemTitle, 8) == 0)
+                        {
+                            entity = DLMS_CERTIFICATE_ENTITY_SERVER;
+                        }
+                        else
+                        {
+                            entity = DLMS_CERTIFICATE_ENTITY_CLIENT;
+                        }
+                        if ((ret = cosem_setStructure(data, 6)) == 0 &&
+                            (ret = cosem_setEnum(data, entity)) == 0 &&
+                            (ret = cosem_setEnum(data, type)) == 0)
+                        {
+                            gxByteBuffer tmp;
+                            if ((ret = gx509Certificate_getSerialNumber(&it->cert, &tmp)) == 0 &&
+                                (ret = cosem_setOctetString2(data, tmp.data, tmp.size)) == 0)
+                            {
+                                if ((ret = gx509Certificate_getIssuer(&it->cert, &tmp)) == 0 &&
+                                    (ret = cosem_setOctetString2(data, tmp.data, tmp.size)) == 0)
+                                {
+                                    if ((ret = gx509Certificate_getSubject(&it->cert, &tmp)) == 0 &&
+                                        (ret = cosem_setOctetString2(data, tmp.data, tmp.size)) == 0)
+                                    {
+                                        ret = cosem_setOctetString2(data, NULL, 0);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                len = (uint16_t)strlen(it->serialNumber);
-                if ((ret = cosem_setOctetString2(data, (unsigned char*)it->serialNumber, len)) != 0)
+                if (bb_size(&it->cert) == 0)
+#endif //DLMS_IGNORE_SERVER
                 {
-                    break;
+
                 }
-                len = (uint16_t)strlen(it->issuer);
-                if ((ret = cosem_setOctetString2(data, (unsigned char*)it->issuer, len)) != 0)
+#ifndef DLMS_IGNORE_CLIENT
                 {
-                    break;
+                    if ((ret = cosem_setStructure(data, 6)) != 0 ||
+                        (ret = cosem_setEnum(data, it->entity)) != 0 ||
+                        (ret = cosem_setEnum(data, it->type)) != 0)
+                    {
+                        break;
+                    }
+                    uint16_t len = it->serialNumber == NULL ? 0 : (uint16_t)strlen(it->serialNumber);
+                    if ((ret = cosem_setOctetString2(data, (unsigned char*)it->serialNumber, len)) != 0)
+                    {
+                        break;
+                    }
+                    len = (uint16_t)strlen(it->issuer);
+                    if ((ret = cosem_setOctetString2(data, (unsigned char*)it->issuer, len)) != 0)
+                    {
+                        break;
+                    }
+                    len = (uint16_t)strlen(it->subject);
+                    if ((ret = cosem_setOctetString2(data, (unsigned char*)it->subject, len)) != 0)
+                    {
+                        break;
+                    }
+                    len = (uint16_t)strlen(it->subjectAltName);
+                    if ((ret = cosem_setOctetString2(data, (unsigned char*)it->subjectAltName, len)) != 0)
+                    {
+                        break;
+                    }
                 }
-                len = (uint16_t)strlen(it->subject);
-                if ((ret = cosem_setOctetString2(data, (unsigned char*)it->subject, len)) != 0)
-                {
-                    break;
-                }
-                len = (uint16_t)strlen(it->subjectAltName);
-                if ((ret = cosem_setOctetString2(data, (unsigned char*)it->subjectAltName, len)) != 0)
-                {
-                    break;
-                }
+#endif //DLMS_IGNORE_CLIENT
             }
         }
     }
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

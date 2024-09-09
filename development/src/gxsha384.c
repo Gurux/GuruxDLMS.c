@@ -122,13 +122,14 @@ void gxsha384_transform(uint32_t* h, const unsigned char* message, uint32_t mess
     }
     for (pos = 0; pos < 8; pos++)
     {
-        h[pos] += wv[pos];
+        h[pos] += (uint32_t)wv[pos];
     }
 }
 
 int gxsha384_hash(gxByteBuffer* data, gxByteBuffer* digest)
 {
     uint32_t len = data->size;
+    uint32_t position = data->position;
     uint64_t h[8] = {
         0xcbbb9d5dc1059ed8,
         0x629a292a367cd507,
@@ -167,14 +168,18 @@ int gxsha384_hash(gxByteBuffer* data, gxByteBuffer* digest)
         gxsha384_transform((uint32_t*)h, block, size);
         data->position += size;
     }
-    bb_capacity(digest, 48);
-    digest->size = 0;
-    for (pos = 0; pos < 6; ++pos)
+    int ret = bb_capacity(digest, 48);
+    if (ret == 0)
     {
-        bb_setUInt64(digest, h[pos]);
+        digest->size = 0;
+        for (pos = 0; pos < 6; ++pos)
+        {
+            bb_setUInt64(digest, h[pos]);
+        }
+        digest->size = 48;
     }
-    digest->size = 48;
-    return 0;
+    data->position = position;
+    return ret;
 }
 
 #endif //DLMS_IGNORE_HIGH_SHA384

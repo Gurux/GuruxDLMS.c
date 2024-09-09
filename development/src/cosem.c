@@ -626,6 +626,14 @@ int cosem_init4(
     case DLMS_OBJECT_TYPE_GPRS_SETUP:
         break;
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
+    {
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_1)
+        ((gxObject*)object)->version = 1;
+        priv_init(&((gxSecuritySetup*)object)->signingKey);
+        priv_init(&((gxSecuritySetup*)object)->keyAgreementKey);
+        priv_init(&((gxSecuritySetup*)object)->tlsKey);
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_1)        
+    }
         break;
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
@@ -1481,7 +1489,7 @@ int cosem_setOctetString2(
         }
     }
     else if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-        (ret = bb_setUInt8(bb, (unsigned char)size)) != 0 ||
+        (ret = hlp_setObjectCount(size, bb)) != 0 ||
         (ret = bb_set(bb, value, size)) != 0)
     {
         //Error code is returned at the end of the function.

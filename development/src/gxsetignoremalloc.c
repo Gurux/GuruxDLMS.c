@@ -1531,8 +1531,7 @@ int cosem_setGprsSetup(gxGPRSSetup* object, unsigned char index, dlmsVARIANT* va
 int cosem_setSecuritySetup(dlmsSettings* settings, gxSecuritySetup* object, unsigned char index, dlmsVARIANT* value)
 {
     unsigned char ch;
-    int pos, ret;
-    gxCertificateInfo* it = NULL;
+    int ret;
     switch (index)
     {
     case 2:
@@ -1558,6 +1557,9 @@ int cosem_setSecuritySetup(dlmsSettings* settings, gxSecuritySetup* object, unsi
         uint16_t count;
         if ((ret = cosem_verifyArray(value->byteArr, &object->certificates, &count)) == 0)
         {
+#ifdef DLMS_IGNORE_SERVER
+            int pos;
+            gxCertificateInfo* it = NULL;
             for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = cosem_getArrayItem(&object->certificates, pos, (void**)&it, sizeof(gxCertificateInfo))) != 0 ||
@@ -1571,7 +1573,9 @@ int cosem_setSecuritySetup(dlmsSettings* settings, gxSecuritySetup* object, unsi
                 {
                     break;
                 }
-            }
+        }
+#else          
+#endif //DLMS_IGNORE_SERVER
         }
         break;
     default:

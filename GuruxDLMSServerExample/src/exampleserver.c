@@ -91,7 +91,7 @@ static unsigned char frameBuff[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 static unsigned char pduBuff[PDU_BUFFER_SIZE];
 static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Define server system title.
-static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
+static unsigned char SERVER_SYSTEM_TITLE[8] = { 0x47, 0x52, 0x58, 0x00, 0x00, 0x00, 0x00, 0x01 };
 time_t imageActionStartTime = 0;
 static gxByteBuffer reply;
 
@@ -120,6 +120,7 @@ static gxAssociationLogicalName associationLow;
 static gxAssociationLogicalName associationHigh;
 static gxAssociationLogicalName associationHighGMac;
 static gxAssociationLogicalName associationHighGMacPreEstablished;
+static gxAssociationLogicalName associationHighEcdsa;
 static gxRegister activePowerL1;
 static gxScriptTable scriptTableGlobalMeterReset;
 static gxScriptTable scriptTableDisconnectControl;
@@ -140,6 +141,8 @@ static gxSecuritySetup securitySetupHigh;
 static gxSecuritySetup securitySetupHighGMac;
 //Security Setup HighGMac is for pre-established GMac authentication.
 static gxSecuritySetup securitySetupHighGMacPreEstablished;
+//Security Setup HighEdcsa is for ECDSA authentication.
+static gxSecuritySetup securitySetupHighEcdsa;
 
 gxImageTransfer imageTransfer;
 gxAutoConnect autoConnect;
@@ -169,8 +172,9 @@ gxLteMonitoring lteMonitoring;
 static gxObject* ALL_OBJECTS[] = {
     BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac),
     BASE(associationHighGMacPreEstablished),
+    BASE(associationHighEcdsa),
     BASE(securitySetupHigh), BASE(securitySetupHighGMac),BASE(securitySetupHighGMacPreEstablished),
-
+    BASE(securitySetupHighEcdsa),
     BASE(ldn), BASE(sapAssignment), BASE(eventCode),
     BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
     BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
@@ -762,7 +766,7 @@ int addAssociationHighGMac()
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         associationHighGMac.securitySetup = &securitySetupHighGMac;
 #else
-        memcpy(associationHighGMac.securitySetupReference, securitySetupHigh.base.logicalName, 6);
+        memcpy(associationHighGMac.securitySetupReference, securitySetupHighGMac.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     }
     return ret;
@@ -794,7 +798,39 @@ int addAssociationHighGMacPreEstablished()
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         associationHighGMacPreEstablished.securitySetup = &securitySetupHighGMacPreEstablished;
 #else
-        memcpy(associationHighGMacPreEstablished.securitySetupReference, securitySetupHigh.base.logicalName, 6);
+        memcpy(associationHighGMacPreEstablished.securitySetupReference, securitySetupHighGMacPreEstablished.base.logicalName, 6);
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example Logical Name Association object for ECDSA High authentication.
+///////////////////////////////////////////////////////////////////////
+int addAssociationHighECDSA()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 40, 0, 6, 255 };
+    if ((ret = INIT_OBJECT(associationHighEcdsa, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
+    {
+        associationHighEcdsa.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH_ECDSA;
+        OA_ATTACH(associationHighEcdsa.objectList, ALL_OBJECTS);
+        associationHighEcdsa.clientSAP = 0x3;
+        associationHighEcdsa.xDLMSContextInfo.maxSendPduSize = associationHighEcdsa.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
+        associationHighEcdsa.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)
+            (DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+                DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+                DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+                DLMS_CONFORMANCE_SET |
+                DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+                DLMS_CONFORMANCE_ACTION |
+                DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+                DLMS_CONFORMANCE_GET);
+        //GMAC authentication don't need password.
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+        associationHighEcdsa.securitySetup = &securitySetupHighEcdsa;
+#else
+        memcpy(associationHighEcdsa.securitySetupReference, securitySetupHighEcdsa.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     }
     return ret;
@@ -856,6 +892,23 @@ int addSecuritySetupPreEstablishedHighGMac()
         //Only Authenticated encrypted connections are allowed.
         securitySetupHighGMacPreEstablished.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
         securitySetupHighGMacPreEstablished.securitySuite = DLMS_SECURITY_SUITE_V0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds security setup object for ECDSA authentication.
+///////////////////////////////////////////////////////////////////////
+int addSecuritySetupHighEcdsa()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 43, 0, 4, 255 };
+    if ((ret = INIT_OBJECT(securitySetupHighEcdsa, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
+    {
+        BB_ATTACH(securitySetupHighEcdsa.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+        //Ciphering is not used.
+        securitySetupHighEcdsa.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
+        securitySetupHighEcdsa.securitySuite = DLMS_SECURITY_SUITE_V1;
     }
     return ret;
 }
@@ -1680,7 +1733,7 @@ unsigned long getIpAddress()
         if (phe == 0)
         {
             ret = 0;
-    }
+        }
         else
         {
             struct in_addr* addr = (struct in_addr*)phe->h_addr_list[0];
@@ -1689,7 +1742,7 @@ unsigned long getIpAddress()
 #else //or Linux
             return addr->s_addr;
 #endif
-}
+        }
     }
 #else
     //If no OS get IP.
@@ -2082,7 +2135,7 @@ int addLteMonitoring()
         lteMonitoring.networkParameters.tPTW = 0;
         lteMonitoring.networkParameters.qRxlevMin = 0;
         lteMonitoring.networkParameters.qRxlevMinCE = 0;
-        lteMonitoring.networkParameters.qRxLevMinCE1 = 0;       
+        lteMonitoring.networkParameters.qRxLevMinCE1 = 0;
         lteMonitoring.qualityOfService.signalQuality = 0;
         lteMonitoring.qualityOfService.signalLevel = 0;
         lteMonitoring.qualityOfService.signalToNoiseRatio = 0;
@@ -2133,9 +2186,9 @@ int loadSecurity(dlmsSettings* settings)
             bb_clear(&bb);
             return ret;
         }
-    }
-    return saveSecurity(settings);
 }
+    return saveSecurity(settings);
+    }
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2239,7 +2292,9 @@ int svr_InitObjects(
         (ret = addSecuritySetupHigh()) != 0 ||
         (ret = addSecuritySetupHighGMac()) != 0 ||
         (ret = addAssociationHighGMacPreEstablished()) != 0 ||
+        (ret = addAssociationHighECDSA()) != 0 ||
         (ret = addSecuritySetupPreEstablishedHighGMac()) != 0 ||
+        (ret = addSecuritySetupHighEcdsa()) != 0 ||
         (ret = addMbusDiagnostic()) != 0 ||
         (ret = addMbusPortSetup()) != 0 ||
         (ret = addG3PlcMacLayerCounters()) != 0 ||
@@ -2547,7 +2602,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
         }
     }
     return ret;
-    }
+}
 
 
 int readProfileGeneric(
@@ -2638,7 +2693,7 @@ int readProfileGeneric(
             {
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
-        }
+            }
 #else
             if ((f = fopen(fileName, "rb")) != 0)
             {
@@ -2746,8 +2801,8 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
-    }
-}
+            }
+        }
     if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
     {
         ret = 0;
@@ -2933,7 +2988,7 @@ void handleProfileGenericActions(
             //Update values to the EEPROM.
             fwrite(pdu.data, 1, 4, f);
             fclose(f);
-        }
+    }
 }
     else if (it->index == 2)
     {
@@ -2974,7 +3029,7 @@ void allocateImageTransfer(const char* fileName, uint32_t size)
             }
         }
         fclose(f);
-    }
+}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3024,7 +3079,7 @@ void svr_preAction(
             if (f != NULL)
             {
                 fclose(f);
-            }
+        }
             //Load objects again.
             if ((ret = loadSettings(settings)) != 0)
             {
@@ -3040,7 +3095,7 @@ void svr_preAction(
             }
             updateState(settings, GURUX_EVENT_CODES_GLOBAL_METER_RESET);
             e->handled = 1;
-        }
+    }
         else if (e->target == BASE(disconnectControl))
         {
             updateState(settings, GURUX_EVENT_CODES_OUTPUT_RELAY_STATE);
@@ -3071,7 +3126,7 @@ void svr_preAction(
             e->handled = 1;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             FILE* f;
-            dlmsVARIANT *identification, *pSize;
+            dlmsVARIANT* identification, * pSize;
             gxImageTransfer* i = (gxImageTransfer*)e->target;
             const char* imageFile = "image.raw";
             //Image name and size to transfer
@@ -3086,7 +3141,7 @@ void svr_preAction(
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     return;
                 }
-                uint16_t size;                
+                uint16_t size;
                 if ((ret = va_getByIndex(e->parameters.Arr, 0, &identification)) != 0 ||
                     identification->vt != DLMS_DATA_TYPE_OCTET_STRING ||
                     (ret = va_getByIndex(e->parameters.Arr, 1, &pSize)) != 0 ||
@@ -3108,7 +3163,7 @@ void svr_preAction(
             //Transfers one block of the Image to the server
             else if (e->index == 2)
             {
-                dlmsVARIANT* index, *block;
+                dlmsVARIANT* index, * block;
                 if (e->parameters.vt != DLMS_DATA_TYPE_STRUCTURE ||
                     (ret = va_getByIndex(e->parameters.Arr, 0, &index)) != 0 ||
                     index->vt != DLMS_DATA_TYPE_UINT32 ||
@@ -3210,8 +3265,32 @@ void svr_preAction(
             }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
+        //Update values to compact data buffer.
+        else if (e->target == BASE(compactData) && e->index == 2)
+        {
+            gxValueEventCollection args2;
+            gxValueEventArg e2;
+            ve_init(&e2);
+            e2.action = 1;
+            vec_init(&args2);
+            vec_push(&args2, &e2);
+            gxKey* kv;
+            //Loop capture columns and get values.
+            for (pos = 0; pos != compactData.captureObjects.size; ++pos)
+            {
+                if ((ret = arr_getByIndex(&compactData.captureObjects, (uint16_t)pos, (void**)&kv)) != 0)
+                {
+                    break;
+                }
+                e2.target = (gxObject*)kv->key;
+                e2.index = ((gxTarget*)kv->value)->attributeIndex;
+                //Read and update values. This example uses preRead.
+                svr_preRead(settings, &args);
+            }
+            break;
         }
     }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -3332,7 +3411,7 @@ void svr_postAction(
             }
         }
         //Check is client changing the settings with action.
-        else if (svr_isChangedWithAction(e->target->objectType, e->index))
+        if (svr_isChangedWithAction(e->target->objectType, e->index))
         {
             //Save settings to EEPROM.
             if (e->error == 0)
@@ -3388,7 +3467,7 @@ int connectServer(
             return err;
         };
         add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
-    };
+        };
 
     //Connect to the meter.
     ret = connect(*s, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
@@ -3397,7 +3476,7 @@ int connectServer(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     };
     return DLMS_ERROR_CODE_OK;
-}
+    }
 
 int sendPush(
     dlmsSettings* settings,
@@ -3933,8 +4012,8 @@ int svr_connected(
         {
             //Return error if client can connect only using pre-established connnection.
             return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-}
-}
+        }
+    }
 #else
 #endif //DLMS_ITALIAN_STANDARD
     return 0;

@@ -86,7 +86,7 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
     const char* hlp_getErrorMessage(int error);
 
-    //Returns items count. Use hlp_getObjectCount22.
+    //Returns items count. Use hlp_getObjectCount2.
     int hlp_getObjectCount(gxByteBuffer* buff);
 
     //Returns items count.
@@ -113,6 +113,11 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     * Convert byte array to hex string.
     */
     int hlp_bytesToHex2(const unsigned char* bytes, uint16_t count, char* buff, uint16_t size);
+
+    /**
+    * Convert byte array to hex string.
+    */
+    int hlp_bytesToHex3(const unsigned char* bytes, uint16_t count, char* buff, uint16_t size, unsigned char addSpace);
 
 #ifndef DLMS_IGNORE_MALLOC
     /**
@@ -220,6 +225,17 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     */
     int32_t hlp_stringToInt(
         const char* str);
+
+    /**
+    * Convert string to integer.
+    *
+    * @param str
+    *            Parsed string.
+    * @return Value of string as integer.
+    */
+    int32_t hlp_stringToInt2(
+        const char* str, const char* end);
+
     /**
     * Convert integer to string.
     *
@@ -266,6 +282,28 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
     //Swap bits. Reserved for internal use.
     unsigned char hlp_swapBits(unsigned char value);
+
+
+    /*Load file.*/
+    int hlp_load(const char* path, char* value, uint16_t* length);
+
+    /*Save file.*/
+    int hlp_save(const char* path, const char* value);
+
+    /*Create new directory.*/
+    int hlp_createDir(const char* path);
+    
+    /*Check if the directory exists.*/
+    unsigned char hlp_directoryExists(const char* path);
+
+    /**
+     * Convert Base64 string to byte array.
+     *
+     * @param input
+     *            Base64 string.
+     * @return Converted byte array.
+     */
+    int hlp_fromBase64(const char* input, uint16_t length, gxByteBuffer* decoded);
 
 #ifdef  __cplusplus
 }

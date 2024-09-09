@@ -2236,8 +2236,44 @@ int ser_saveSecuritySetup(
         (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_saveOctetString(serializeSettings, &object->serverSystemTitle)) != 0) ||
         (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_saveOctetString(serializeSettings, &object->clientSystemTitle)) != 0))
     {
-
     }
+    if (!isAttributeSet(serializeSettings, ignored, 6))
+    {
+        gxCertificateInfo* it;
+        uint16_t pos, count;
+        if ((ret = ser_saveArrayCount(serializeSettings, &object->certificates, &count)) == 0)
+        {
+            for (pos = 0; pos != object->certificates.size; ++pos)
+            {
+#ifdef DLMS_IGNORE_MALLOC
+                if ((ret = arr_getByIndex3(&object->certificates, pos, (void**)&it, sizeof(gxCertificateInfo), 0)) != 0)
+                {
+                    break;
+                }
+#else
+                if ((ret = arr_getByIndex3(&object->certificates, pos, (void**)&it, 0)) != 0)
+                {
+                    break;
+                }
+#endif //DLMS_IGNORE_MALLOC
+                if ((ret = ser_saveOctetString(serializeSettings, &it->cert)) != 0)
+                {
+                    break;
+                }
+            }
+#ifdef DLMS_IGNORE_MALLOC
+            object->certificates.size = count;
+#endif //DLMS_IGNORE_MALLOC
+        }
+    }
+
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+    if ((ret = ser_saveOctetString(serializeSettings, &object->signingKey.rawValue)) == 0 &&
+        (ret = ser_saveOctetString(serializeSettings, &object->keyAgreementKey.rawValue)) == 0 &&
+        (ret = ser_saveOctetString(serializeSettings, &object->tlsKey.rawValue)) == 0)
+    {
+    }
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     return ret;
 }
 #endif //DLMS_IGNORE_SECURITY_SETUP
@@ -5946,6 +5982,35 @@ int ser_loadSecuritySetup(
             ret = ser_loadOctetString(serializeSettings, &object->clientSystemTitle);
         }
     }
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 6))
+    {
+        gxCertificateInfo* it;
+        int pos, ret;
+        uint16_t count;
+        if ((ret = obj_clearCertificates(&object->certificates)) == 0 &&
+            (ret = ser_loadArray(serializeSettings, &object->certificates, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = ser_getArrayItem(&object->certificates, pos, (void**)&it, sizeof(gxCertificateInfo))) != 0)
+                {
+                    break;
+                }
+                if ((ret = ser_loadOctetString(serializeSettings, &it->cert)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    if (ret == 0 &&
+        (ret = ser_loadOctetString(serializeSettings, &object->signingKey.rawValue)) == 0 &&
+        (ret = ser_loadOctetString(serializeSettings, &object->keyAgreementKey.rawValue)) == 0 &&
+        (ret = ser_loadOctetString(serializeSettings, &object->tlsKey.rawValue)) == 0)
+    {
+    }
+#endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     return ret;
 }
 #endif //DLMS_IGNORE_SECURITY_SETUP

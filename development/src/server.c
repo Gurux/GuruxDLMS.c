@@ -2893,6 +2893,7 @@ int svr_handleMethodRequest(
         if (data->position == data->size)
         {
             bb_clear(data);
+            var_clear(&e->value);
         }
 #endif //DLMS_IGNORE_MALLOC
         if (settings->base.cipher.broadcast)
@@ -4739,16 +4740,16 @@ uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char meth
             ret = GET_ATTRIBUTE(2);
             break;
         case 2:
-            //Key transfer. TODO: Check this when SS 1 is released.
+            //Key transfer. 
             ret = GET_ATTRIBUTE(7);
             break;
         case 4:
-            //Generate key pair. TODO: Check this when SS 1 is released.
-            ret = GET_ATTRIBUTE(2);
+            //Generate key pair. 
+            ret = GET_ATTRIBUTE(6);
             break;
         case 6:
         case 8:
-            //Import or export certificate.
+            //Import or remove certificate.
             ret = GET_ATTRIBUTE(6);
             break;
         default:

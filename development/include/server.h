@@ -165,6 +165,16 @@ extern "C" {
     extern uint32_t svr_validInvocationCounter(dlmsSettings* settings, uint32_t value);
 #endif //DLMS_INVOCATION_COUNTER_VALIDATOR
 
+#ifdef DLMS_NOTIFY_CIPHERING_ERROR
+    //Meter notifies from the ciphering error.
+    extern void svr_cipheringError();
+#endif //DLMS_NOTIFY_CIPHERING_ERROR
+
+#ifdef DLMS_NOTIFY_AUTHENTICATION_ERROR
+    //Meter notifies from the authentication error.
+    extern void svr_authenticationError();
+#endif //DLMS_NOTIFY_AUTHENTICATION_ERROR
+
 #ifdef  __cplusplus
 }
 #endif

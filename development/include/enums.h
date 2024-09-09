@@ -815,6 +815,14 @@ extern "C" {
         */
         BER_TYPE_UTF8_STRING = 12,
         /*
+        * Sequence.
+        */
+        BER_TYPE_SEQUENCE = 16,
+        /*
+        * Set.
+        */
+        BER_TYPE_SET = 17,
+        /*
         * Numeric string.
         */
         BER_TYPE_NUMERIC_STRING = 18,
@@ -2902,13 +2910,13 @@ extern "C" {
     // Certificate entity.
     typedef enum {
         // Certificate entity is server.
-        DLMS_CERTIFICATE_ENTITY_Server = 0,
+        DLMS_CERTIFICATE_ENTITY_SERVER = 0,
         // Certificate entity is client.
-        DLMS_CERTIFICATE_ENTITY_Client,
+        DLMS_CERTIFICATE_ENTITY_CLIENT,
         // Certificate entity is certification authority.
-        DLMS_CERTIFICATE_ENTITY_Certification_Authority,
+        DLMS_CERTIFICATE_ENTITY_CERTIFICATION_AUTHORITY,
         // Certificate entity is other.
-        DLMS_CERTIFICATE_ENTITY_Other
+        DLMS_CERTIFICATE_ENTITY_OTHER
     }DLMS_CERTIFICATE_ENTITY;
 
     // Certificate type.
@@ -2921,7 +2929,7 @@ extern "C" {
         DLMS_CERTIFICATE_TYPE_TLS = 2,
         // Certificate type is other.
         DLMS_CERTIFICATE_TYPE_OTHER = 3
-    }    DLMS_CERTIFICATE_TYPE;
+    }DLMS_CERTIFICATE_TYPE;
 
     // Connection types.
     typedef enum {

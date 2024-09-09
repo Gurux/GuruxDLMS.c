@@ -112,6 +112,39 @@
     <ClCompile Include="..\src\gxsetignoremalloc.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\gxsha384.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bigInteger.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\privateKey.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\publicKey.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\curve.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\eccPoint.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\shamirs.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxecdsa.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gxPkcs10.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gx509Certificate.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\asn1Parser.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\apdu.h">
@@ -244,6 +277,39 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\gxsetmalloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxsha384.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bigInteger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\publicKey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\privateKey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\curve.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\eccPoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\shamirs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxecdsa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gxPkcs10.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gx509Certificate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\asn1Parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

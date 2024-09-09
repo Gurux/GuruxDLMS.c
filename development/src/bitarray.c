@@ -181,13 +181,13 @@ int ba_set(bitArray* arr, unsigned char item)
 //Set bit by index.
 int ba_setByIndex(bitArray* arr, uint16_t index, unsigned char item)
 {
-    int ret;
     int byteIndex;
     //Byte is reset when new item is added.
     unsigned char newItem = arr->size == 0 || getByteIndex(index) > getByteIndex(arr->size - 1);
     if (!ba_isAttached(arr))
     {
 #ifndef DLMS_IGNORE_MALLOC
+        int ret;
         if (index >= arr->capacity)
         {
             if ((ret = ba_capacity(arr, arr->capacity + BIT_ARRAY_CAPACITY)) != 0)

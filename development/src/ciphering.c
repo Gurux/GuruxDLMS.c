@@ -765,6 +765,9 @@ static const unsigned char __R_CON[11] PROGMEM = {
                         //Check authentication tag.
                         if (memcmp(NONSE, input->data + input->size, 12) != 0)
                         {
+#if DLMS_NOTIFY_AUTHENTICATION_ERROR
+                            svr_authenticationError();
+#endif //DLMS_NOTIFY_AUTHENTICATION_ERROR
                             ret = DLMS_ERROR_CODE_INVALID_TAG;
                         }
                         else

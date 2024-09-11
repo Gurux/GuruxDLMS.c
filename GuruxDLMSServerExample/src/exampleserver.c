@@ -167,6 +167,14 @@ gxG3Plc6LoWPAN g3Plc6LoWPAN;
 gxArrayManager arrayManager;
 gxLteMonitoring lteMonitoring;
 
+#ifdef DLMS_ITALIAN_STANDARD
+static gxTariffPlan tariffPlan;
+static gxTariffPlan passiveTariffPlan;
+static gxData spareObject;
+//Compact Frame 6.
+static gxCompactData cf6;
+#endif //DLMS_ITALIAN_STANDARD
+
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
 static gxObject* ALL_OBJECTS[] = {
@@ -184,7 +192,13 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(tarifficationScriptTable), BASE(registerActivation), BASE(limiter),
     BASE(mbusDiagnostic), BASE(mbusPortSetup),
     BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager),
-    BASE(lteMonitoring)
+    BASE(lteMonitoring),
+    #ifdef DLMS_ITALIAN_STANDARD
+    BASE(tariffPlan),
+    BASE(passiveTariffPlan),
+    BASE(spareObject),
+    BASE(cf6)
+#endif //DLMS_ITALIAN_STANDARD
 };
 
 ////////////////////////////////////////////////////
@@ -1962,6 +1976,390 @@ int addG3PlcMacSetup()
     return ret;
 }
 
+
+#ifdef DLMS_ITALIAN_STANDARD
+///////////////////////////////////////////////////////////////////////
+// Add tariff plan object. Tariff plan is used only in Italy standard.
+// 
+// Active UNI/TS Tariff Plan (end-of-billing-period)
+///////////////////////////////////////////////////////////////////////
+int addTariffPlan()
+{
+    int ret;
+    static unsigned char CALENDAR_NAME[2] = { 0x0D, 0x01 };
+    static unsigned char WEEKLY_ACTIVATION[2] = { 0x7, 0xFF };
+    const unsigned char ln[6] = { 0, 0, 94, 39, 21, 101 };
+    if ((ret = INIT_OBJECT(tariffPlan, DLMS_OBJECT_TYPE_TARIFF_PLAN, ln)) == 0)
+    {
+        BB_ATTACH(tariffPlan.calendarName, CALENDAR_NAME, 2);
+        tariffPlan.enabled = 0;
+        time_init(&tariffPlan.activationTime, 2015, 1, 1, 0, 0, 0, 0, 120);
+        //General 
+        tariffPlan.plan.defaultTariffBand = 3;
+        BIT_ATTACH(tariffPlan.plan.weeklyActivation, WEEKLY_ACTIVATION, 2);
+
+        //////////////
+        //Get winter season.
+        tariffPlan.plan.winterSeason.dayOfMonth = 1;
+        tariffPlan.plan.winterSeason.month = 10;
+        //Working day interval #1.
+        tariffPlan.plan.winterSeason.workingDayIntervals[0].startHour = 21;
+        tariffPlan.plan.winterSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Working day interval #2.
+        tariffPlan.plan.winterSeason.workingDayIntervals[1].startHour = 24;
+        tariffPlan.plan.winterSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #3.
+        tariffPlan.plan.winterSeason.workingDayIntervals[2].startHour = 24;
+        tariffPlan.plan.winterSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #4.
+        tariffPlan.plan.winterSeason.workingDayIntervals[3].startHour = 24;
+        tariffPlan.plan.winterSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #5.
+        tariffPlan.plan.winterSeason.workingDayIntervals[4].startHour = 24;
+        tariffPlan.plan.winterSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Saturday interval #1.
+        tariffPlan.plan.winterSeason.saturdayIntervals[0].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Saturday interval #2.
+        tariffPlan.plan.winterSeason.saturdayIntervals[1].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #3.
+        tariffPlan.plan.winterSeason.saturdayIntervals[2].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #4.
+        tariffPlan.plan.winterSeason.saturdayIntervals[3].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #5.
+        tariffPlan.plan.winterSeason.saturdayIntervals[4].startHour = 21;
+        tariffPlan.plan.winterSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Holiday interval #1.
+        tariffPlan.plan.winterSeason.holidayIntervals[0].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Holiday interval #2.
+        tariffPlan.plan.winterSeason.holidayIntervals[1].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #3.
+        tariffPlan.plan.winterSeason.holidayIntervals[2].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #4.
+        tariffPlan.plan.winterSeason.holidayIntervals[3].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #5.
+        tariffPlan.plan.winterSeason.holidayIntervals[4].startHour = 21;
+        tariffPlan.plan.winterSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //////////////
+        // Get summer season.
+        tariffPlan.plan.summerSeason.dayOfMonth = 1;
+        tariffPlan.plan.summerSeason.month = 4;
+        //Working day interval #1.
+        tariffPlan.plan.summerSeason.workingDayIntervals[0].startHour = 21;
+        tariffPlan.plan.summerSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Working day interval #2.
+        tariffPlan.plan.summerSeason.workingDayIntervals[1].startHour = 24;
+        tariffPlan.plan.summerSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #3.
+        tariffPlan.plan.summerSeason.workingDayIntervals[2].startHour = 24;
+        tariffPlan.plan.summerSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #4.
+        tariffPlan.plan.summerSeason.workingDayIntervals[3].startHour = 24;
+        tariffPlan.plan.summerSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #5.
+        tariffPlan.plan.summerSeason.workingDayIntervals[4].startHour = 24;
+        tariffPlan.plan.summerSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Saturday interval #1.
+        tariffPlan.plan.summerSeason.saturdayIntervals[0].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Saturday interval #2.
+        tariffPlan.plan.summerSeason.saturdayIntervals[1].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #3.
+        tariffPlan.plan.summerSeason.saturdayIntervals[2].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #4.
+        tariffPlan.plan.summerSeason.saturdayIntervals[3].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #5.
+        tariffPlan.plan.summerSeason.saturdayIntervals[4].startHour = 21;
+        tariffPlan.plan.summerSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Holiday interval #1.
+        tariffPlan.plan.summerSeason.holidayIntervals[0].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Holiday interval #2.
+        tariffPlan.plan.summerSeason.holidayIntervals[1].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #3.
+        tariffPlan.plan.summerSeason.holidayIntervals[2].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #4.
+        tariffPlan.plan.summerSeason.holidayIntervals[3].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #5.
+        tariffPlan.plan.summerSeason.holidayIntervals[4].startHour = 21;
+        tariffPlan.plan.summerSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        
+        dlmsVARIANT* it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 1;
+        va_push(&tariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 2;
+        va_push(&tariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 3;
+        va_push(&tariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 4;
+        va_push(&tariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 5;
+        va_push(&tariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 6;
+        va_push(&tariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 7;
+        va_push(&tariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 8;
+        va_push(&tariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 9;
+        va_push(&tariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 10;
+        va_push(&tariffPlan.plan.specialDays, it);
+    }
+    return ret;
+}
+
+int addPassiveTariffPlan()
+{
+    int ret;
+    static unsigned char CALENDAR_NAME[2] = { 0x0D, 0x01 };
+    static unsigned char WEEKLY_ACTIVATION[2] = { 0x7, 0xFF };
+    const unsigned char ln[6] = { 0, 0, 94, 39, 22, 255 }; //0-0:94.39.22.255
+    if ((ret = INIT_OBJECT(passiveTariffPlan, DLMS_OBJECT_TYPE_TARIFF_PLAN, ln)) == 0)
+    {
+        BB_ATTACH(passiveTariffPlan.calendarName, CALENDAR_NAME, 2);
+        passiveTariffPlan.enabled = 0;
+        time_init(&passiveTariffPlan.activationTime, 2024, 1, 1, 0, 0, 0, 0, 120);
+        //General 
+        passiveTariffPlan.plan.defaultTariffBand = 3;
+        BIT_ATTACH(passiveTariffPlan.plan.weeklyActivation, WEEKLY_ACTIVATION, 2);
+
+        //////////////
+        //Get winter season.
+        passiveTariffPlan.plan.winterSeason.dayOfMonth = 1;
+        passiveTariffPlan.plan.winterSeason.month = 10;
+        //Working day interval #1.
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[0].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Working day interval #2.
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[1].startHour = 24;
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #3.
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[2].startHour = 24;
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #4.
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[3].startHour = 24;
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #5.
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[4].startHour = 24;
+        passiveTariffPlan.plan.winterSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Saturday interval #1.
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[0].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Saturday interval #2.
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[1].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #3.
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[2].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #4.
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[3].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #5.
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[4].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Holiday interval #1.
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[0].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Holiday interval #2.
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[1].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #3.
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[2].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #4.
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[3].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #5.
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[4].startHour = 21;
+        passiveTariffPlan.plan.winterSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //////////////
+        // Get summer season.
+        passiveTariffPlan.plan.summerSeason.dayOfMonth = 1;
+        passiveTariffPlan.plan.summerSeason.month = 4;
+        //Working day interval #1.
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[0].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Working day interval #2.
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[1].startHour = 24;
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #3.
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[2].startHour = 24;
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #4.
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[3].startHour = 24;
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Working day interval #5.
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[4].startHour = 24;
+        passiveTariffPlan.plan.summerSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Saturday interval #1.
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[0].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Saturday interval #2.
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[1].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #3.
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[2].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #4.
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[3].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Saturday interval #5.
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[4].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        //Holiday interval #1.
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[0].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        //Holiday interval #2.
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[1].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #3.
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[2].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #4.
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[3].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        //Holiday interval #5.
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[4].startHour = 21;
+        passiveTariffPlan.plan.summerSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+
+        dlmsVARIANT* it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 1;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 2;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 3;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 4;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 5;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 6;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 7;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 8;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 9;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 10;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add spare object as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addSpareObject()
+{
+    int ret;
+    unsigned char DATA[1] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 96, 39, 40, 255 };//0-0:94:39.40.255
+    if ((ret = INIT_OBJECT(spareObject, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        var_addBytes(&spareObject.value, DATA, 0);
+    }
+    return ret;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+//Add Compact frame 6 as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addCF6Plan(dlmsSettings* settings)
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 66, 0, 6, 255 };//0-0:66.0.6.255
+    if ((ret = INIT_OBJECT(cf6, DLMS_OBJECT_TYPE_COMPACT_DATA, ln)) == 0)
+    {
+        cf6.templateId = 6;
+        cf6.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
+        cf6.appendAA = 1;
+        //Add 6 capture objects.
+        //CF6 attribute #4.
+        gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 4;
+        capture->dataIndex = 0;
+        gxKey* k = key_init(BASE(cf6), capture);
+        arr_push(&cf6.captureObjects, k);
+        //Passive UNI/TS Tariff Plan attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(passiveTariffPlan), capture);
+        arr_push(&cf6.captureObjects, k);
+        //Passive UNI/TS Tariff Plan attribute #3.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 3;
+        capture->dataIndex = 0;
+        k = key_init(BASE(passiveTariffPlan), capture);
+        arr_push(&cf6.captureObjects, k);
+        //Passive UNI/TS Tariff Plan attribute #4.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 4;
+        capture->dataIndex = 0;
+        k = key_init(BASE(passiveTariffPlan), capture);
+        arr_push(&cf6.captureObjects, k);
+        //Passive UNI/TS Tariff Plan attribute #5.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 5;
+        capture->dataIndex = 0;
+        k = key_init(BASE(passiveTariffPlan), capture);
+        arr_push(&cf6.captureObjects, k);
+        //Spare Object.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(spareObject), capture);
+        arr_push(&cf6.captureObjects, k);
+        ret = compactData_updateTemplateDescription(settings, &cf6);
+    }
+    return ret;
+}
+#endif //DLMS_ITALIAN_STANDARD
+
 ///////////////////////////////////////////////////////////////////////
 //Add G3 PLC 6LoWPAN object.
 ///////////////////////////////////////////////////////////////////////
@@ -2330,6 +2728,12 @@ int svr_InitObjects(
         (ret = addCompactData(&settings->base, &settings->base.objects)) != 0 ||
         (ret = addLimiter()) != 0 ||
         (ret = addLteMonitoring()) != 0 ||
+#ifdef DLMS_ITALIAN_STANDARD
+        (ret = addTariffPlan()) != 0 ||
+        (ret = addPassiveTariffPlan()) != 0 ||
+        (ret = addSpareObject()) != 0 ||
+        (ret = addCF6Plan(&settings->base)) != 0 ||
+#endif //DLMS_ITALIAN_STANDARD
         (ret = oa_verify(&settings->base.objects)) != 0 ||
         (ret = svr_initialize(settings)) != 0)
     {

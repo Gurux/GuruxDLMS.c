@@ -1409,7 +1409,7 @@ int cosem_setOctetString(gxByteBuffer* bb, gxByteBuffer* value)
         }
     }
     else if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
-        (ret = bb_setUInt8(bb, (unsigned char)value->size)) != 0 ||
+        (ret = hlp_setObjectCount(value->size, bb)) != 0 ||
         (ret = bb_set(bb, value->data, (uint16_t)value->size)) != 0)
     {
         //Error code is returned at the end of the function.

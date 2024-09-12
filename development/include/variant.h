@@ -458,6 +458,15 @@ extern "C" {
         gxByteBuffer* ba,
         unsigned char addType);
 
+    //Get bytes from variant value.
+    int var_getBytes4(
+        dlmsVARIANT* data,
+        DLMS_DATA_TYPE type,
+        gxByteBuffer* ba,
+        unsigned char addType,
+        unsigned char addArraySize,
+        unsigned char addStructureSize);
+
     //Get size in bytes.
     int var_getSize(
         DLMS_DATA_TYPE vt);

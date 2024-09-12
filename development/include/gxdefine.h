@@ -112,7 +112,7 @@ extern "C" {
 #define MAX_CLIENT_PDU_SIZE 200
 
 //Define max capture object buffer size.
-#define MAX_CAPTURE_OBJECT_BUFFER_SIZE 100
+#define MAX_CAPTURE_OBJECT_BUFFER_SIZE 200
 
 //Define max challenge size.
 #define MAX_CHALLENGE_SIZE 64

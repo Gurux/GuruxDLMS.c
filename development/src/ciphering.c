@@ -740,7 +740,7 @@ static const unsigned char __R_CON[11] PROGMEM = {
             if ((ret = bb_move(input, input->position, offset, bb_available(input))) == 0)
             {
                 input->position = 0;
-                ret = bb_setUInt8ByIndex(input, 0, security | settings->suite);
+                ret = bb_setUInt8ByIndex(input, 0, (settings->broadcast ? 0x40 : 0) | security | settings->suite);
     #ifndef DLMS_IGNORE_MALLOC
                 memcpy(input->data + 1, settings->authenticationKey.data, settings->authenticationKey.size);
     #else

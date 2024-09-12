@@ -2063,35 +2063,23 @@ int invoke_ProfileGeneric(
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
 int compactDataAppend(unsigned char byteArray, dlmsVARIANT* value3, gxByteBuffer* bb)
-{
+{   
+#ifdef DLMS_IGNORE_MALLOC
+    int ret;
     if (byteArray && value3->vt == DLMS_DATA_TYPE_OCTET_STRING)
     {
         if (bb_size(value3->byteArr) == 1)
         {
-            bb_setUInt8(bb, 0);
+            ret = bb_setUInt8(bb, 0);
         }
         else
         {
-            bb_set(bb, value3->byteArr->data + 1, value3->byteArr->size - 1);
+            ret = bb_set(bb, value3->byteArr->data + 1, value3->byteArr->size - 1);
         }
-        return 0;
-    }
-    int ret;
-    uint16_t startPos = (uint16_t)bb->size;
-    if ((ret = dlms_setData(bb, value3->vt, value3)) != 0)
-    {
         return ret;
     }
-    //If data is empty.
-    if (bb->size - startPos == 1)
-    {
-        bb_setUInt8(bb, 0);
-    }
-    else
-    {
-        ret = bb_move(bb, startPos + 1, startPos, bb->size - startPos - 1);
-    }
-    return 0;
+#endif //DLMS_IGNORE_MALLOC
+    return var_getBytes4(value3, value3->vt, bb, 0, 0, 0);
 }
 
 int compactDataAppendArray(dlmsVARIANT* value, gxByteBuffer* bb, uint16_t dataIndex)
@@ -2142,81 +2130,64 @@ int cosem_captureCompactData(
     dlmsSettings* settings,
     gxCompactData* object)
 {
+#ifdef DLMS_IGNORE_MALLOC
+    return compactData_update(settings, object, 0);
+#else
     int ret = 0;
     uint16_t pos;
-#ifdef DLMS_IGNORE_MALLOC
-    gxTarget* kv;
-#else
     gxKey* kv;
-#endif //DLMS_IGNORE_MALLOC
-    gxValueEventArg e;
     gxValueEventCollection args;
     bb_clear(&object->buffer);
-    ve_init(&e);
-    e.action = 1;
-    e.target = &object->base;
-    e.index = 2;
-#ifdef DLMS_IGNORE_MALLOC
+
+    gxValueEventArg* e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
+    ve_init(e);
+    vec_init(&args);
+    vec_push(&args, e);
+    e->action = 1;
+    e->target = &object->base;
+    e->index = 2;
     //Allocate space where captured values are saved before they are added to the buffer.
     // We can't use server buffer because there might be transaction on progress when this is called.
     unsigned char tmp[MAX_CAPTURE_OBJECT_BUFFER_SIZE];
     gxByteBuffer bb;
-    bb_attach(&bb, tmp, 0, sizeof(tmp));
-    gxValueEventArg p[1] = { e };
-    vec_attach(&args, p, 1, 1);
-#else
-    vec_init(&args);
-    vec_push(&args, &e);
-#endif //DLMS_IGNORE_MALLOC
+    bb_attach(&bb, tmp, 0, sizeof(tmp));    
     svr_preGet(settings, &args);
-    if (!e.handled)
+    if (!e->handled)
     {
         uint16_t dataIndex;
         for (pos = 0; pos != object->captureObjects.size; ++pos)
         {
-#ifdef DLMS_IGNORE_MALLOC
-            ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv, sizeof(gxTarget));
-#else
             ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv);
-#endif //DLMS_IGNORE_MALLOC
             if (ret != DLMS_ERROR_CODE_OK)
             {
                 bb_clear(&object->buffer);
                 break;
             }
-#ifdef DLMS_IGNORE_MALLOC
-            e.value.byteArr = &bb;
-            e.value.vt = DLMS_DATA_TYPE_OCTET_STRING;
-            e.target = kv->target;
-            e.index = kv->attributeIndex;
-            dataIndex = kv->dataIndex;
-#else
-            e.target = (gxObject*)kv->key;
-            e.index = ((gxTarget*)kv->value)->attributeIndex;
+            e->target = (gxObject*)kv->key;
+            e->index = ((gxTarget*)kv->value)->attributeIndex;
             dataIndex = ((gxTarget*)kv->value)->dataIndex;
-#endif //DLMS_IGNORE_MALLOC
-            if ((ret = cosem_getValue(settings, &e)) != 0)
+            if ((ret = cosem_getValue(settings, e)) != 0)
             {
                 bb_clear(&object->buffer);
                 break;
             }
-            if (e.byteArray && e.value.vt == DLMS_DATA_TYPE_OCTET_STRING)
+            if (e->byteArray && e->value.vt == DLMS_DATA_TYPE_OCTET_STRING)
             {
                 gxDataInfo info;
                 dlmsVARIANT value;
                 di_init(&info);
                 var_init(&value);
-                if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0)
+                if ((ret = dlms_getData(e->value.byteArr, &info, &value)) != 0)
                 {
                     var_clear(&value);
                     break;
                 }
-                if (value.vt == DLMS_DATA_TYPE_STRUCTURE ||
-                    value.vt == DLMS_DATA_TYPE_ARRAY)
+                if (info.type == DLMS_DATA_TYPE_STRUCTURE ||
+                    info.type == DLMS_DATA_TYPE_ARRAY)
                 {
 #ifdef DLMS_ITALIAN_STANDARD
                     //Some meters require that there is a array count in data.
-                    if (value.vt == DLMS_DATA_TYPE_ARRAY && object->appendAA)
+                    if (info.type == DLMS_DATA_TYPE_ARRAY && object->appendAA)
                     {
                         bb_setUInt8(&object->buffer, (unsigned char)value.Arr->size);
                     }
@@ -2229,7 +2200,7 @@ int cosem_captureCompactData(
                 }
                 else
                 {
-                    if ((ret = compactDataAppend(1, &e.value, &object->buffer)) != 0)
+                    if ((ret = compactDataAppend(1, &value, &object->buffer)) != 0)
                     {
                         var_clear(&value);
                         break;
@@ -2237,11 +2208,11 @@ int cosem_captureCompactData(
                 }
                 var_clear(&value);
             }
-            else if ((ret = compactDataAppend(0, &e.value, &object->buffer)) != 0)
+            else if ((ret = compactDataAppend(0, &e->value, &object->buffer)) != 0)
             {
                 break;
             }
-            ve_clear(&e);
+            ve_clear(e);
         }
     }
     svr_postGet(settings, &args);
@@ -2251,6 +2222,7 @@ int cosem_captureCompactData(
     }
     vec_empty(&args);
     return ret;
+#endif //DLMS_IGNORE_MALLOC
 }
 
 int invoke_CompactData(
@@ -2258,7 +2230,7 @@ int invoke_CompactData(
     gxCompactData* object,
     unsigned char index)
 {
-    int ret = 0;
+    int ret;
     //Reset.
     if (index == 1)
     {
@@ -2268,11 +2240,18 @@ int invoke_CompactData(
     else if (index == 2)
     {
         // Capture.
-        ret = cosem_captureCompactData(&settings->base, object);
+        if (object->captureMethod == DLMS_CAPTURE_METHOD_INVOKE)
+        {
+            ret = cosem_captureCompactData(&settings->base, object);
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        }
     }
     else
     {
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
     }
     return ret;
 }

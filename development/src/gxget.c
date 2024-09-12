@@ -51,6 +51,10 @@
 #include "../include/helpers.h"
 #include "../include/serverevents.h"
 
+#ifndef DLMS_IGNORE_COMPACT_DATA
+#include "../include/gxinvoke.h"
+#endif // DLMS_IGNORE_COMPACT_DATA
+
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
 #define OBJECT_TYPE it->objectType
 #define SCRIPT_LOGICAL_NAME action->scriptLogicalName
@@ -5382,22 +5386,28 @@ int cosem_getCompactData(
     dlmsSettings* settings,
     gxValueEventArg* e)
 {
-    gxByteBuffer* data = data = e->value.byteArr;
     gxCompactData* object = (gxCompactData*)e->target;
-    int ret;
+    int ret = 0;
     switch (e->index)
     {
     case 2:
-        ret = cosem_setOctetString(data, &object->buffer);
+        if (object->captureMethod == DLMS_CAPTURE_METHOD_IMPLICIT)
+        {
+            ret = cosem_captureCompactData(settings, object);
+        }
+        if (ret == 0)
+        {
+            ret = cosem_setOctetString(e->value.byteArr, &object->buffer);
+        }
         break;
     case 3:
-        ret = getColumns(settings, &object->captureObjects, data, e);
+        ret = getColumns(settings, &object->captureObjects, e->value.byteArr, e);
         break;
     case 4:
         ret = cosem_setUInt8(e->value.byteArr, object->templateId);
         break;
     case 5:
-        ret = cosem_setOctetString(data, &object->templateDescription);
+        ret = cosem_setOctetString(e->value.byteArr, &object->templateDescription);
         break;
     case 6:
         ret = cosem_setEnum(e->value.byteArr, object->captureMethod);
@@ -5893,18 +5903,7 @@ int cosem_getTariffPlan(gxValueEventArg* e)
     switch (e->index)
     {
     case 2:
-#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
-        ret = cosem_setString2(e->value.byteArr, &object->calendarName);
-#else
-        if (object->calendarName == NULL)
-        {
-            ret = cosem_setString(e->value.byteArr, object->calendarName, 0);
-        }
-        else
-        {
-            ret = cosem_setString(e->value.byteArr, object->calendarName, (uint16_t)strlen(object->calendarName));
-        }
-#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+        ret = cosem_setOctetString(e->value.byteArr, &object->calendarName);
         break;
     case 3:
         ret = cosem_setBoolean(e->value.byteArr, object->enabled);

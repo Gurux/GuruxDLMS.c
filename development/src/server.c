@@ -3456,7 +3456,11 @@ int svr_handleCommand(
     {
         settings->info.moreData |= DLMS_DATA_REQUEST_TYPES_FRAME;
     }
-    ret = dlms_addFrame(&settings->base, frame, data, reply);
+    if (!(settings->base.cipher.broadcast && data->size == 0))
+    {
+        //Reply is not send with broadcast.
+        ret = dlms_addFrame(&settings->base, frame, data, reply);
+    }
     if (cmd == DLMS_COMMAND_DISC ||
         (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER && cmd == DLMS_COMMAND_RELEASE_REQUEST))
     {

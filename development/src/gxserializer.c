@@ -2237,6 +2237,7 @@ int ser_saveSecuritySetup(
         (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_saveOctetString(serializeSettings, &object->clientSystemTitle)) != 0))
     {
     }
+#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     if (!isAttributeSet(serializeSettings, ignored, 6))
     {
         gxCertificateInfo* it;
@@ -2266,8 +2267,6 @@ int ser_saveSecuritySetup(
 #endif //DLMS_IGNORE_MALLOC
         }
     }
-
-#if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     if ((ret = ser_saveOctetString(serializeSettings, &object->signingKey.rawValue)) == 0 &&
         (ret = ser_saveOctetString(serializeSettings, &object->keyAgreementKey.rawValue)) == 0 &&
         (ret = ser_saveOctetString(serializeSettings, &object->tlsKey.rawValue)) == 0)
@@ -4696,11 +4695,7 @@ int ser_saveTariffPlan(
     gxTariffPlan* object)
 {
     int ret;
-#ifdef DLMS_IGNORE_MALLOC
     if ((ret = ser_saveOctetString(serializeSettings, &object->calendarName) != 0) ||
-#else
-    if ((ret = ser_saveOctetString2(serializeSettings, object->calendarName, strlen(object->calendarName))) != 0 ||
-#endif //DLMS_IGNORE_MALLOC
         (ret = ser_saveUInt8(serializeSettings, object->enabled)) != 0 ||
         (ret = ser_saveDateTime(&object->activationTime, serializeSettings)) != 0)
     {
@@ -4719,6 +4714,11 @@ int ser_saveObject(
     gxObject* object)
 {
     int ret = 0;
+    if (ser_getIgnoredAttributes(serializeSettings, object) == 0xFFFF)
+    {
+        //If object is ignored.
+        return 0;
+    }
     switch (object->objectType)
     {
 #ifndef DLMS_IGNORE_DATA
@@ -8834,11 +8834,7 @@ int ser_loadTariffPlan(
     gxTariffPlan * object)
 {
     int ret;
-#ifdef DLMS_IGNORE_MALLOC
     if ((ret = ser_loadOctetString(serializeSettings, &object->calendarName) != 0) ||
-#else
-    if ((ret = ser_loadOctetString2(serializeSettings, &object->calendarName)) != 0 ||
-#endif //DLMS_IGNORE_MALLOC
         (ret = ser_loadUInt8(serializeSettings, &object->enabled)) != 0 ||
         (ret = ser_loadDateTime(&object->activationTime, serializeSettings, DLMS_DATA_TYPE_DATETIME)) != 0)
     {
@@ -8853,6 +8849,11 @@ int ser_loadObject(
     gxObject * object)
 {
     int ret = 0;
+    if (ser_getIgnoredAttributes(serializeSettings, object) == 0xFFFF)
+    {
+        //If object is ignored.
+        return 0;
+    }
     switch (object->objectType)
     {
 #ifndef DLMS_IGNORE_DATA

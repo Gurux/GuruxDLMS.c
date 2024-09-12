@@ -248,6 +248,11 @@ extern "C" {
         gxCompactData* object,
         unsigned char index,
         dlmsVARIANT* value);
+
+    int compactData_update(
+        dlmsSettings* settings,
+        gxCompactData* object,
+        unsigned char isTemplate);
 #endif //DLMS_IGNORE_COMPACT_DATA
 
 #ifndef DLMS_IGNORE_PARAMETER_MONITOR

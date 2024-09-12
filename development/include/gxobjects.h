@@ -833,7 +833,12 @@ extern "C" {
 #else
         uint32_t minimumInvocationCounter;
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-
+        //Block cipher key.
+        gxByteBuffer guek;
+        //Broadcast block cipher key.
+        gxByteBuffer gbek;
+        //Authentication key.
+        gxByteBuffer gak;
 #if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
         //Signing key of the server.
         gxPrivateKey signingKey;
@@ -4405,11 +4410,7 @@ extern "C" {
         gxObject base;
 
         // Calendar Name.
-#ifdef DLMS_IGNORE_MALLOC
         gxByteBuffer calendarName;
-#else 
-        char* calendarName;
-#endif //DLMS_IGNORE_MALLOC
         //Is tariff plan enabled.
         unsigned char enabled;
         // Tariff plan.

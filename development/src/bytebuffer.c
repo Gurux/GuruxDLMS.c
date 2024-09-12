@@ -362,7 +362,7 @@ int bb_setUInt16ByIndex(
     int ret = 0;
     if (index + 2 > arr->size)
     {
-        bb_allocate(arr, arr->size, 2);
+        ret = bb_allocate(arr, arr->size, 2);
     }
     if (ret == 0)
     {

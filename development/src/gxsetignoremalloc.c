@@ -1573,7 +1573,7 @@ int cosem_setSecuritySetup(dlmsSettings* settings, gxSecuritySetup* object, unsi
                 {
                     break;
                 }
-        }
+            }
 #else          
 #endif //DLMS_IGNORE_SERVER
         }
@@ -4572,9 +4572,176 @@ int cosem_setTokenGateway(gxTokenGateway* object, unsigned char index, dlmsVARIA
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
 
-int compactData_updateTemplateDescription(
+int compactData_updateTemplateArrayOrStructDescription(
+    gxCompactData* object,
+    unsigned char ch,
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    gxTarget* kv,
+#else
+    gxKey* kv,
+#endif //DLMS_IGNORE_MALLOC
+    gxByteBuffer* byteArr,
+    unsigned char isTemplate)
+{
+    int ret;
+    gxDataInfo info;
+    dlmsVARIANT value;
+    uint16_t count, count2, pos;
+    di_init(&info);
+    var_init(&value);
+    if ((ret = hlp_getObjectCount2(byteArr, &count)) != 0 ||
+        kv->dataIndex > count)
+    {
+        return DLMS_ERROR_CODE_FALSE;
+    }
+    //If all data is captured.
+    if (kv->dataIndex == 0)
+    {
+
+        if (isTemplate)
+        {
+            if ((ret = bb_setUInt8(&object->templateDescription, ch)) != 0)
+            {
+                return ret;
+            }
+            if (ch == DLMS_DATA_TYPE_ARRAY)
+            {
+                if ((ret = bb_setUInt16(&object->templateDescription, count)) != 0)
+                {
+                    return ret;
+                }
+            }
+            else
+            {
+                if ((ret = bb_setUInt8(&object->templateDescription, (unsigned char)count)) != 0)
+                {
+                    return ret;
+                }
+            }
+        }
+        for (pos = 0; pos < count; ++pos)
+        {
+            di_init(&info);
+            var_clear(&value);
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+            uint32_t position = 1 + byteArr->position;
+#else
+            uint16_t position = 1 + byteArr->position;
+#endif
+            if ((ret = dlms_getData(byteArr, &info, &value)) != 0)
+            {
+                break;
+            }
+            if (info.type == DLMS_DATA_TYPE_STRUCTURE || info.type == DLMS_DATA_TYPE_ARRAY)
+            {
+                if ((ret = bb_getUInt8(byteArr, &ch)) != 0 ||
+                    (ret = compactData_updateTemplateArrayOrStructDescription(
+                        object, ch, kv, byteArr, isTemplate)) != 0)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                if (isTemplate)
+                {
+                    if ((ret = bb_setUInt8(&object->templateDescription, info.type)) != 0)
+                    {
+                        break;
+                    }
+                }
+                if (info.type == DLMS_DATA_TYPE_OCTET_STRING ||
+                    info.type == DLMS_DATA_TYPE_STRING ||
+                    info.type == DLMS_DATA_TYPE_BIT_STRING)
+                {
+                    ++byteArr->position;
+                    if ((ret = hlp_getObjectCount2(byteArr, &count2)) != 0)
+                    {
+                        break;
+                    }
+                    if (!isTemplate)
+                    {
+                        //Add length.
+                        ret = hlp_setObjectCount(count2, &object->buffer);
+                    }
+                    if (info.type == DLMS_DATA_TYPE_BIT_STRING)
+                    {
+                        count2 = ba_getByteCount(count2);
+                    }
+                    if (!isTemplate)
+                    {
+                        ret = bb_set(&object->buffer, byteArr->data + position, count2);
+                    }
+                    byteArr->position += count2;
+                }
+                else if (info.type == DLMS_DATA_TYPE_DATETIME ||
+                    info.type == DLMS_DATA_TYPE_TIME ||
+                    info.type == DLMS_DATA_TYPE_DATE)
+                {
+                    ++byteArr->position;
+                    if (!isTemplate)
+                    {
+                        ret = bb_set(&object->buffer, byteArr->data + byteArr->position, var_getSize(value.vt));
+                    }
+                    byteArr->position += var_getSize(value.vt);
+                }
+                else if (!isTemplate)
+                {
+                    ret = bb_set(&object->buffer, byteArr->data + position, var_getSize(value.vt));
+                }
+                if (ret != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        for (unsigned char pos = 0; pos < kv->dataIndex; ++pos)
+        {
+            var_clear(&value);
+            di_init(&info);
+            if ((ret = dlms_getData(byteArr, &info, &value)) != 0)
+            {
+                var_clear(&value);
+                bb_clear(&object->buffer);
+                return ret;
+            }
+            if (!info.complete)
+            {
+                return DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            }
+        }
+        if (info.type == DLMS_DATA_TYPE_STRUCTURE)
+        {
+            dlmsVARIANT* value2;
+            bb_setUInt8(&object->templateDescription, DLMS_DATA_TYPE_STRUCTURE);
+            bb_setUInt8(&object->templateDescription, (unsigned char)value.Arr->size);
+            for (uint16_t pos = 0; pos < value.Arr->size; ++pos)
+            {
+                if ((ret = va_getByIndex(value.Arr, pos, &value2)) != 0 ||
+                    (ret = bb_setUInt8(&object->templateDescription, value2->vt)) != 0)
+                {
+                    var_clear(&value);
+                    bb_clear(&object->buffer);
+                    return ret;
+                }
+            }
+        }
+        else
+        {
+            bb_setUInt8(&object->templateDescription, info.type);
+        }
+    }
+    var_clear(&value);
+    return ret;
+}
+
+int compactData_update(
     dlmsSettings* settings,
-    gxCompactData* object)
+    gxCompactData* object,
+    unsigned char isTemplate)
 {
     int ret, pos;
     gxByteBuffer tmp;
@@ -4586,26 +4753,40 @@ int compactData_updateTemplateDescription(
 #else
     gxKey* kv;
 #endif //DLMS_IGNORE_MALLOC
-    unsigned char tmp2[100];
+#ifndef GX_DLMS_MICROCONTROLLER
+    static unsigned char tmp3[100];
+    static unsigned char tmp2[200];
+#else
+    unsigned char tmp3[100];
+    unsigned char tmp2[200];
+#endif //GX_DLMS_MICROCONTROLLER
     gxByteBuffer bb;
     bb_attach(&bb, tmp2, 0, sizeof(tmp2));
+    if (isTemplate)
+    {
+        bb_clear(&object->templateDescription);
+    }
     bb_clear(&object->buffer);
-    bb_clear(&object->templateDescription);
     e.action = 1;
     e.target = &object->base;
     e.index = 2;
     vec_init(&args);
-    BYTE_BUFFER_INIT(&tmp);
-    unsigned char tmp3[100];
     bb_attach(&tmp, tmp3, 0, sizeof(tmp3));
     if (!e.handled)
     {
-        if ((ret = bb_setUInt8(&object->templateDescription, DLMS_DATA_TYPE_STRUCTURE)) != DLMS_ERROR_CODE_OK)
+        if (isTemplate)
         {
-            bb_clear(&object->buffer);
-            return ret;
+            if ((ret = bb_setUInt8(&object->templateDescription, DLMS_DATA_TYPE_STRUCTURE)) != DLMS_ERROR_CODE_OK)
+            {
+                bb_clear(&object->buffer);
+                return ret;
+            }
+            if ((ret = hlp_setObjectCount(object->captureObjects.size, &object->templateDescription)) != 0)
+            {
+                bb_clear(&object->buffer);
+                return ret;
+            }
         }
-        hlp_setObjectCount(object->captureObjects.size, &object->templateDescription);
         for (pos = 0; pos != object->captureObjects.size; ++pos)
         {
 #ifdef DLMS_IGNORE_MALLOC
@@ -4619,6 +4800,7 @@ int compactData_updateTemplateDescription(
                 break;
             }
 #endif //DLMS_IGNORE_MALLOC
+            bb_clear(&bb);
             e.value.byteArr = &bb;
             e.value.vt = DLMS_DATA_TYPE_OCTET_STRING;
             e.target = kv->target;
@@ -4643,123 +4825,24 @@ int compactData_updateTemplateDescription(
                     if (ch == DLMS_DATA_TYPE_ARRAY ||
                         ch == DLMS_DATA_TYPE_STRUCTURE)
                     {
-                        gxDataInfo info;
-                        dlmsVARIANT value;
-                        uint16_t count;
-                        di_init(&info);
-                        var_init(&value);
-                        if ((ret = hlp_getObjectCount2(e.value.byteArr, &count)) != 0 ||
-                            kv->dataIndex > count)
+                        if ((ret = compactData_updateTemplateArrayOrStructDescription(object,
+                            ch, kv, e.value.byteArr, isTemplate)) != 0)
                         {
-                            break;
+                            var_clear(&e.value);
+                            return ret;
                         }
-                        //If all data is captured.
-                        if (kv->dataIndex == 0)
-                        {
-                            uint16_t count2;
-                            if ((ret = bb_setUInt8(&object->templateDescription, ch)) != 0)
-                            {
-                                break;
-                            }
-                            if (ch == DLMS_DATA_TYPE_ARRAY)
-                            {
-                                if ((ret = bb_setUInt16(&object->templateDescription, count)) != 0)
-                                {
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                if ((ret = bb_setUInt8(&object->templateDescription, (unsigned char)count)) != 0)
-                                {
-                                    break;
-                                }
-                            }
-                            for (unsigned char pos = 0; pos < count; ++pos)
-                            {
-                                di_init(&info);
-                                var_clear(&value);
-                                if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0)
-                                {
-                                    break;
-                                }
-                                if (info.type == DLMS_DATA_TYPE_STRUCTURE || info.type == DLMS_DATA_TYPE_ARRAY)
-                                {
-                                    bb_setUInt8(&object->templateDescription, info.type);
-                                    ++value.byteArr->position;
-                                    if ((ret = hlp_getObjectCount2(value.byteArr, &count2)) != 0 ||
-                                        (ret = hlp_setObjectCount(count2, &object->templateDescription)) != 0)
-                                    {
-                                        break;
-                                    }
-                                    for (uint16_t pos = 0; pos < count2; ++pos)
-                                    {
-                                        var_clear(&value);
-                                        if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0 ||
-                                            (ret = bb_setUInt8(&object->templateDescription, value.vt)) != 0)
-                                        {
-                                            var_clear(&value);
-                                            var_clear(&e.value);
-                                            bb_clear(&object->buffer);
-                                            return ret;
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    bb_setUInt8(&object->templateDescription, info.type);
-                                }
-                                if (e.value.byteArr->data[0] == DLMS_DATA_TYPE_ARRAY)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            for (unsigned char pos = 0; pos < kv->dataIndex; ++pos)
-                            {
-                                var_clear(&value);
-                                di_init(&info);
-                                if ((ret = dlms_getData(e.value.byteArr, &info, &value)) != 0)
-                                {
-                                    var_clear(&value);
-                                    var_clear(&e.value);
-                                    bb_clear(&object->buffer);
-                                    return ret;
-                                }
-                                if (!info.complete)
-                                {
-                                    return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-                                }
-                            }
-                            if (info.type == DLMS_DATA_TYPE_STRUCTURE)
-                            {
-                                dlmsVARIANT* value2;
-                                bb_setUInt8(&object->templateDescription, DLMS_DATA_TYPE_STRUCTURE);
-                                bb_setUInt8(&object->templateDescription, (unsigned char)value.Arr->size);
-                                for (uint16_t pos = 0; pos < value.Arr->size; ++pos)
-                                {
-                                    if ((ret = va_getByIndex(value.Arr, pos, &value2)) != 0)
-                                    {
-                                        var_clear(&value);
-                                        var_clear(&e.value);
-                                        bb_clear(&object->buffer);
-                                        return ret;
-                                    }
-                                    bb_setUInt8(&object->templateDescription, value2->vt);
-                                }
-                            }
-                            else
-                            {
-                                bb_setUInt8(&object->templateDescription, info.type);
-                            }
-                        }
-                        var_clear(&value);
                     }
                     else
                     {
-                        bb_setUInt8(&object->templateDescription, ch);
+                        if (isTemplate)
+                        {
+                            ret = bb_setUInt8(&object->templateDescription, ch);
+                        }
+                        else if (e.value.byteArr->size != 1)
+                        {
+                            //Add data.
+                            ret = bb_set(&object->buffer, e.value.byteArr->data + 1, e.value.byteArr->size - 1);
+                        }
                     }
                 }
             }
@@ -4772,7 +4855,15 @@ int compactData_updateTemplateDescription(
                     bb_clear(&object->buffer);
                     return ret;
                 }
-                bb_setUInt8(&object->templateDescription, tmp.data[0]);
+                if (isTemplate)
+                {
+                    ret = bb_setUInt8(&object->templateDescription, tmp.data[0]);
+                }
+                else if (tmp.size != 1)
+                {
+                    //Add data.
+                    ret = bb_set(&object->buffer, tmp.data + 1, tmp.size - 1);
+                }
                 bb_clear(&tmp);
             }
             var_clear(&e.value);
@@ -4783,6 +4874,13 @@ int compactData_updateTemplateDescription(
     //svr_postGet(settings, &args);
     vec_empty(&args);
     return 0;
+    }
+
+int compactData_updateTemplateDescription(
+    dlmsSettings* settings,
+    gxCompactData* object)
+{
+    return compactData_update(settings, object, 1);
 }
 
 int cosem_setCompactData(
@@ -4856,7 +4954,7 @@ int cosem_setParameterMonitor(
             object->changedParameter.type = type;
             memcpy(object->changedParameter.logicalName, ln, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        }
+    }
         break;
     }
     case 3:
@@ -4894,12 +4992,12 @@ int cosem_setParameterMonitor(
                 if ((ret = cosem_findObjectByLN(settings, type, ln, &it->target)) != 0)
                 {
                     break;
-                }
-#endif //DLMS_IGNORE_OBJECT_POINTERS
             }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
         }
+}
         break;
-    }
+}
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;

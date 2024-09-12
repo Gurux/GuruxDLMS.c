@@ -3832,7 +3832,7 @@ int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
     bb_addString(&ba, "Index: 2 Value: ");
-    bb_addString(&ba, object->calendarName);
+    bb_set(&ba, object->calendarName.data, bb_size(&object->calendarName));
     bb_addString(&ba, "\nIndex: 3 Value: ");
     bb_addIntAsString(&ba, object->enabled);
     bb_addString(&ba, "\nIndex: 5 Value: ");

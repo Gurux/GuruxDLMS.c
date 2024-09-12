@@ -821,12 +821,22 @@ int var_getBytes2(
     return var_getBytes3(data, type, ba, 1);
 }
 
-//Returns bytes as Big Endian byteorder.
 int var_getBytes3(
     dlmsVARIANT* data,
     DLMS_DATA_TYPE type,
     gxByteBuffer* ba,
     unsigned char addType)
+{
+    return var_getBytes4(data, type, ba, addType, 1, 1);
+}
+
+int var_getBytes4(
+    dlmsVARIANT* data,
+    DLMS_DATA_TYPE type,
+    gxByteBuffer* ba,
+    unsigned char addType,
+    unsigned char addArraySize,
+    unsigned char addStructureSize)
 {
     int ret = 0, pos;
     if ((type & DLMS_DATA_TYPE_BYREF) != 0)
@@ -837,15 +847,26 @@ int var_getBytes3(
         type == DLMS_DATA_TYPE_ARRAY)
     {
         dlmsVARIANT* tmp;
-        if ((ret = bb_setUInt8(ba, type)) == 0 &&
-            (ret = hlp_setObjectCount(data->Arr != NULL ? data->Arr->size : 0, ba)) == 0)
+        if (addType)
+        {
+            if ((ret = bb_setUInt8(ba, type)) != 0)
+            {
+                return ret;
+            }
+        }
+        if ((type == DLMS_DATA_TYPE_ARRAY && addArraySize) ||
+            (type == DLMS_DATA_TYPE_STRUCTURE && addStructureSize))
+        {
+            ret = hlp_setObjectCount(data->Arr != NULL ? data->Arr->size : 0, ba);
+        }
+        if (ret == 0)
         {
             if (data->Arr != NULL)
             {
                 for (pos = 0; pos != data->Arr->size; ++pos)
                 {
                     if ((ret = va_getByIndex(data->Arr, pos, &tmp)) != DLMS_ERROR_CODE_OK ||
-                        (ret = var_getBytes(tmp, ba)) != DLMS_ERROR_CODE_OK)
+                        (ret = var_getBytes4(tmp, tmp->vt, ba, addType, addArraySize, addStructureSize)) != DLMS_ERROR_CODE_OK)
                     {
                         break;
                     }
@@ -1102,9 +1123,13 @@ int var_getSize(DLMS_DATA_TYPE vt)
     case DLMS_DATA_TYPE_DATETIME:
         nSize = 12;
         break;
-        //case DLMS_DATA_TYPE_DATE:
-        //case DLMS_DATA_TYPE_TIME:
-        //case DLMS_DATA_TYPE_ARRAY:
+    case DLMS_DATA_TYPE_DATE:
+        nSize = 5;
+        break;
+    case DLMS_DATA_TYPE_TIME:
+        nSize = 4;
+        break;
+                //case DLMS_DATA_TYPE_ARRAY:
         //case DLMS_DATA_TYPE_STRUCTURE:
         //case DLMS_DATA_TYPE_COMPACT_ARRAY:
     default:

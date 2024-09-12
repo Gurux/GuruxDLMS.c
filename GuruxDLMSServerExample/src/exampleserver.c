@@ -206,13 +206,17 @@ static gxObject* ALL_OBJECTS[] = {
 gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     //Nothing is saved when authentication is not used.
     IGNORE_ATTRIBUTE(BASE(associationNone), GET_ATTRIBUTE_ALL()),
+    IGNORE_ATTRIBUTE(BASE(securitySetupHighGMac), GET_ATTRIBUTE_ALL()),
+    IGNORE_ATTRIBUTE(BASE(securitySetupHighGMacPreEstablished), GET_ATTRIBUTE_ALL()),
+    IGNORE_ATTRIBUTE(BASE(securitySetupHighEcdsa), GET_ATTRIBUTE_ALL()),
     //Only password is saved for low and high authentication.
     IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
     IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
     //Only scaler and unit are saved for all register objects.
     IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)),
     //Objects are not load because they are created statically.
-    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE(2)) };
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE(2))
+};
 
 static uint32_t executeTime = 0;
 
@@ -905,7 +909,7 @@ int addSecuritySetupPreEstablishedHighGMac()
         BB_ATTACH(securitySetupHighGMacPreEstablished.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
         //Only Authenticated encrypted connections are allowed.
         securitySetupHighGMacPreEstablished.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
-        securitySetupHighGMacPreEstablished.securitySuite = DLMS_SECURITY_SUITE_V0;
+        securitySetupHighGMacPreEstablished.securitySuite = DLMS_SECURITY_SUITE_V0;        
     }
     return ret;
 }
@@ -3545,7 +3549,6 @@ void svr_preAction(
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     return;
                 }
-                uint16_t size;
                 if ((ret = va_getByIndex(e->parameters.Arr, 0, &identification)) != 0 ||
                     identification->vt != DLMS_DATA_TYPE_OCTET_STRING ||
                     (ret = va_getByIndex(e->parameters.Arr, 1, &pSize)) != 0 ||
@@ -3689,7 +3692,7 @@ void svr_preAction(
                 e2.target = (gxObject*)kv->key;
                 e2.index = ((gxTarget*)kv->value)->attributeIndex;
                 //Read and update values. This example uses preRead.
-                svr_preRead(settings, &args);
+                svr_preRead(settings, &args2);
             }
             break;
         }
@@ -3984,6 +3987,8 @@ unsigned char svr_isTarget(
                             settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
                             settings->preEstablishedSystemTitle = &a->securitySetup->clientSystemTitle;
                             settings->cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
+                            //Authentication is updated.
+                            settings->authentication = a->authenticationMechanismName.mechanismId;
                         }
                         else
                         {
@@ -4020,8 +4025,8 @@ unsigned char svr_isTarget(
     {
         // If address is not broadcast or serial number.
         //Remove logical address from the server address.
-        unsigned char broadcast = (serverAddress & 0x3FFF) == 0x3FFF || (serverAddress & 0x7F) == 0x7F;
-        if (!(broadcast ||
+        settings->cipher.broadcast = (serverAddress & 0x3FFF) == 0x3FFF || (serverAddress & 0x7F) == 0x7F;
+        if (!(settings->cipher.broadcast ||
             (serverAddress & 0x3FFF) == SERIAL_NUMBER % 10000 + 1000))
         {
             ret = 0;
@@ -4070,7 +4075,7 @@ unsigned char svr_isTarget(
             oa_empty(&objects);
         }
         //Set serial number as meter address if broadcast is used.
-        if (broadcast)
+        if (settings->cipher.broadcast && settings->interfaceType == DLMS_INTERFACE_TYPE_HDLC)
         {
             settings->serverAddress = SERIAL_NUMBER % 10000 + 1000;
         }

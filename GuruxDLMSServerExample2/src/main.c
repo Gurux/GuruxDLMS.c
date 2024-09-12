@@ -232,6 +232,8 @@ static gxArrayManager arrayManager;
 static gxFunctionControl functionControl;
 static gxLteMonitoring lteMonitoring;
 
+static gxCompactData compactDataExample;
+
 #ifdef DLMS_ITALIAN_STANDARD
 static gxTariffPlan tariffPlan;
 static gxTariffPlan passiveTariffPlan;
@@ -263,6 +265,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager),
     BASE(functionControl),
     BASE(lteMonitoring),
+    BASE(compactDataExample),
 #ifdef DLMS_ITALIAN_STANDARD
     BASE(tariffPlan),
     BASE(passiveTariffPlan),    
@@ -2155,7 +2158,6 @@ int addSpareObject()
     return ret;
 }
 
-
 ///////////////////////////////////////////////////////////////////////
 //Add Compact frame 6 as defined in UNI TS 11291-13-2 specifications.
 ///////////////////////////////////////////////////////////////////////
@@ -2164,9 +2166,11 @@ int addCF6Plan()
     int ret;
     const unsigned char ln[6] = { 0, 0, 66, 0, 6, 255 };//0-0:66.0.6.255
     static gxTarget CAPTURE_OBBJECTS[6] = {0};
-    static unsigned char TEMPLATE_DESCRIPTION[100];
+    static unsigned char BUFFER[72];
+    static unsigned char TEMPLATE_DESCRIPTION[86];
     if ((ret = INIT_OBJECT(cf6, DLMS_OBJECT_TYPE_COMPACT_DATA, ln)) == 0)
     {
+        BB_ATTACH(cf6.buffer, BUFFER, 0);
         BB_ATTACH(cf6.templateDescription, TEMPLATE_DESCRIPTION, 0);
         cf6.templateId = 6;
         cf6.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
@@ -2197,6 +2201,35 @@ int addCF6Plan()
 }
 #endif //DLMS_ITALIAN_STANDARD
 
+///////////////////////////////////////////////////////////////////////
+// Add Compact data example where are only template description 
+// and buffer for 20 UInt16 Value.
+///////////////////////////////////////////////////////////////////////
+int addCompactDataExample()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 66, 0, 1, 255 };//0-0:66.0.1.255
+    static uint16_t BUFFER[20];
+    static unsigned char TEMPLATE_DESCRIPTION[3];
+    if ((ret = INIT_OBJECT(compactDataExample, DLMS_OBJECT_TYPE_COMPACT_DATA, ln)) == 0)
+    {
+        BB_ATTACH(compactDataExample.buffer, BUFFER, 0);
+        //Data type is structure.
+        TEMPLATE_DESCRIPTION[0] = DLMS_DATA_TYPE_STRUCTURE;
+        //The number of elements in the structure 
+        TEMPLATE_DESCRIPTION[1] = 1;
+        TEMPLATE_DESCRIPTION[2] = DLMS_DATA_TYPE_UINT16;
+        BB_ATTACH(compactDataExample.templateDescription, TEMPLATE_DESCRIPTION, sizeof(TEMPLATE_DESCRIPTION));
+        compactDataExample.templateId = 1;
+        cf6.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
+        //Update buffer with data.
+        for (int pos = 0; pos != 20; ++pos)
+        {
+            bb_setInt32(&compactDataExample.buffer, pos);
+        }
+    }
+    return ret;
+}
 ///////////////////////////////////////////////////////////////////////
 //Add G3 PLC 6LoWPAN object.
 ///////////////////////////////////////////////////////////////////////
@@ -2929,7 +2962,8 @@ int createObjects()
         (ret = addPrimeNbOfdmPlcMacNetworkAdministrationData()) != 0 ||
         (ret = addTwistedPairSetup()) != 0 ||
         (ret = addLimiter()) != 0 ||
-        (ret = addLteMonitoring()) != 0 ||        
+        (ret = addLteMonitoring()) != 0 ||  
+        (ret = addCompactDataExample()) != 0 ||        
 #ifdef DLMS_ITALIAN_STANDARD
         (ret = addTariffPlan()) != 0 ||
         (ret = addPassiveTariffPlan()) != 0 ||

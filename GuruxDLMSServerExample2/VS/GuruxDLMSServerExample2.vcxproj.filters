@@ -132,6 +132,39 @@
     <ClCompile Include="..\dlms\src\gxsetignoremalloc.c">
       <Filter>dlms\src</Filter>
     </ClCompile>
+    <ClCompile Include="..\dlms\src\bigInteger.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\curve.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\eccPoint.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gxecdsa.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gxsha384.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\privateKey.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\publicKey.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\shamirs.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gxPkcs10.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\asn1Parser.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlms\src\gx509Certificate.c">
+      <Filter>dlms\src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\dlms\include\apdu.h">
@@ -267,6 +300,39 @@
       <Filter>dlms\include</Filter>
     </ClInclude>
     <ClInclude Include="..\dlms\include\gxsetmalloc.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\bigInteger.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\curve.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\eccPoint.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\gxecdsa.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\gxsha384.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\privateKey.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\publicKey.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\shamirs.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\gxPkcs10.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\asn1Parser.h">
+      <Filter>dlms\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\dlms\include\gx509Certificate.h">
       <Filter>dlms\include</Filter>
     </ClInclude>
   </ItemGroup>

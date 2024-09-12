@@ -1326,11 +1326,7 @@ void obj_clear(gxObject* object)
 #ifdef DLMS_ITALIAN_STANDARD
         case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         {
-#ifdef DLMS_IGNORE_MALLOC
             bb_clear(&((gxTariffPlan*)object)->calendarName);
-#else
-            gxfree(((gxTariffPlan*)object)->calendarName);
-#endif //DLMS_IGNORE_MALLOC
             ba_clear(&((gxTariffPlan*)object)->plan.weeklyActivation);
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
             arr_clear(&((gxTariffPlan*)object)->plan.specialDays);

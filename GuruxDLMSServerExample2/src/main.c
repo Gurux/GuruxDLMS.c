@@ -45,15 +45,15 @@
 #include <errno.h>
 #endif
 
-#include "../dlms/include/dlmssettings.h"
-#include "../dlms/include/variant.h"
-#include "../dlms/include/cosem.h"
-#include "../dlms/include/server.h"
+#include "../../development/include/dlmssettings.h"
+#include "../../development/include/variant.h"
+#include "../../development/include/cosem.h"
+#include "../../development/include/server.h"
 //Add this if you want to send notify messages.
-#include "../dlms/include/notify.h"
+#include "../../development/include/notify.h"
 //Add support for serialization.
-#include "../dlms/include/gxserializer.h"
-#include "../dlms/include/gxset.h"
+#include "../../development/include/gxserializer.h"
+#include "../../development/include/gxset.h"
 
 //Serial port handlers.
 #if defined(_WIN32) || defined(_WIN64)// If Windows

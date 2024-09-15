@@ -283,7 +283,7 @@ int saveSecurity(
     }
     else
     {
-        printf("%s\r\n", "Failed to open keys file.");
+        printf("%s\n", "Failed to open keys file.");
     }
     return ret;
 }
@@ -318,7 +318,7 @@ int saveSettings()
     }
     else
     {
-        printf("%s\r\n", "Failed to open settings file.");
+        printf("%s\n", "Failed to open settings file.");
     }
     return ret;
 }
@@ -616,11 +616,11 @@ void GXTRACE(const char* str, const char* data)
     {
         if (data == NULL)
         {
-            printf("%s\r\n", str);
+            printf("%s\n", str);
         }
         else
         {
-            printf("%s %s\r\n", str, data);
+            printf("%s %s\n", str, data);
         }
     }
 }
@@ -668,7 +668,7 @@ void println(char* desc, gxByteBuffer* data)
     if (data != NULL)
     {
         char* str = bb_toHexString(data);
-        printf("%s: %s\r\n", desc, str);
+        printf("%s: %s\n", desc, str);
         free(str);
     }
 }
@@ -707,7 +707,7 @@ int addAssociationLow()
         //Only Logical Device Name is add to this Association View.
         OA_ATTACH(associationLow.objectList, ALL_OBJECTS);
         associationLow.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_LOW;
-        associationLow.clientSAP = 0x11;
+        associationLow.clientSAP = 0x20;
         associationLow.xDLMSContextInfo.maxSendPduSize = associationLow.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
         associationLow.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
@@ -738,7 +738,7 @@ int addAssociationHigh()
         associationHigh.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH;
         OA_ATTACH(associationHigh.objectList, ALL_OBJECTS);
         BB_ATTACH(associationHigh.xDLMSContextInfo.cypheringInfo, CYPHERING_INFO, 0);
-        associationHigh.clientSAP = 0x12;
+        associationHigh.clientSAP = 0x30;
         associationHigh.xDLMSContextInfo.maxSendPduSize = associationHigh.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
         associationHigh.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
@@ -3099,13 +3099,13 @@ int readProfileGeneric(
 #if _MSC_VER > 1400
             if (fopen_s(&f, fileName, "rb") != 0)
             {
-                printf("Failed to open %s.\r\n", fileName);
+                printf("Failed to open %s.\n", fileName);
                 return -1;
             }
 #else
             if ((f = fopen(fileName, "rb")) != 0)
             {
-                printf("Failed to open %s.\r\n", fileName);
+                printf("Failed to open %s.\n", fileName);
                 return -1;
             }
 #endif
@@ -3122,7 +3122,7 @@ int readProfileGeneric(
                 //Skip current index and total amount of the entries (+4 bytes).
                 if (fseek(f, 4 + ((e->transactionStartIndex - 1) * dataSize), SEEK_SET) != 0)
                 {
-                    printf("Failed to seek %s.\r\n", fileName);
+                    printf("Failed to seek %s.\n", fileName);
                     return -1;
                 }
                 for (pos = e->transactionStartIndex - 1; pos != e->transactionEndIndex; ++pos)
@@ -3206,7 +3206,7 @@ int readProfileGeneric(
             }
             else
             {
-                printf("Failed to open %s.\r\n", fileName);
+                printf("Failed to open %s.\n", fileName);
                 return -1;
             }
             }
@@ -3300,7 +3300,7 @@ int printValues(variantArray* values)
             return DLMS_ERROR_CODE_READ_WRITE_DENIED;
         }
         char* tmp = bb_toString(&bb);
-        printf("Writing %s\r\n", tmp);
+        printf("Writing %s\n", tmp);
         free(tmp);
         bb_clear(&bb);
     }
@@ -3363,7 +3363,7 @@ void svr_preWrite(
             e->handled = 1;
         }
         hlp_getLogicalNameToString(e->target->logicalName, str);
-        printf("Writing %s\r\n", str);
+        printf("Writing %s\n", str);
     }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
 }
@@ -3510,11 +3510,11 @@ void svr_preAction(
             //Disconnect. Turn led OFF.
             if (e->index == 1)
             {
-                printf("%s\r\n", "Led is OFF.");
+                printf("%s\n", "Led is OFF.");
             }
             else //Reconnnect. Turn LED ON.
             {
-                printf("%s\r\n", "Led is ON.");
+                printf("%s\n", "Led is ON.");
             }
         }
         else if (e->target == BASE(scriptTableActivateTestMode))
@@ -3561,7 +3561,7 @@ void svr_preAction(
                 bb_clear(&info->identification);
                 bb_set(&info->identification, identification->byteArr->data, bb_size(identification->byteArr));
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                printf("Updating image %s Size: %d\r\n", imageFile, info->size);
+                printf("Updating image %s Size: %d\n", imageFile, info->size);
 #endif
                 allocateImageTransfer(imageFile, info->size);
                 ba_clear(&i->imageTransferredBlocksStatus);
@@ -3588,7 +3588,7 @@ void svr_preAction(
                 if (!f)
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                    printf("Unable to open file %s\r\n", imageFile);
+                    printf("Unable to open file %s\n", imageFile);
 #endif
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     return;
@@ -3610,7 +3610,7 @@ void svr_preAction(
                 if (!f)
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                    printf("Unable to open file %s\r\n", imageFile);
+                    printf("Unable to open file %s\n", imageFile);
 #endif
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     return;
@@ -3635,14 +3635,14 @@ void svr_preAction(
                     if (time(NULL) - imageActionStartTime < 5)
                     {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                        printf("Image verification is on progress.\r\n");
+                        printf("Image verification is on progress.\n");
 #endif
                         e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
                     }
                     else
                     {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                        printf("Image is verificated.\r\n");
+                        printf("Image is verificated.\n");
 #endif
                         i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_SUCCESSFUL;
                         imageActionStartTime = time(NULL);
@@ -3657,14 +3657,14 @@ void svr_preAction(
                 if (time(NULL) - imageActionStartTime < 5)
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                    printf("Image activation is on progress.\r\n");
+                    printf("Image activation is on progress.\n");
 #endif
                     e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
                 }
                 else
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-                    printf("Image is activated.\r\n");
+                    printf("Image is activated.\n");
 #endif
                     i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_ACTIVATION_SUCCESSFUL;
                     imageActionStartTime = time(NULL);
@@ -4268,7 +4268,7 @@ DLMS_ACCESS_MODE getActivityCalendarAttributeAccess(
     unsigned char index)
 {
     //Only Activate passive calendar date-time and passive calendar settings are writeble.
-    if (settings->authentication > DLMS_AUTHENTICATION_LOW && index > 5)
+    if (settings->authentication >= DLMS_AUTHENTICATION_LOW && index > 5)
     {
         return DLMS_ACCESS_MODE_READ_WRITE;
     }
@@ -4398,7 +4398,7 @@ int svr_connected(
     dlmsServerSettings* settings)
 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-    printf("Connected %d.\r\n", settings->base.connected);
+    printf("Connected %d.\n", settings->base.connected);
 #endif
 #ifdef DLMS_ITALIAN_STANDARD
     if (settings->base.clientAddress == 1)
@@ -4445,7 +4445,7 @@ int svr_invalidConnection(dlmsServerSettings* settings)
 int svr_disconnected(
     dlmsServerSettings* settings)
 {
-    printf("Disconnected %d.\r\n", settings->base.connected);
+    printf("Disconnected %d.\n", settings->base.connected);
     if (settings->base.cipher.security != 0 && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) != 0)
     {
         //Save Invocation counter value when connection is closed.

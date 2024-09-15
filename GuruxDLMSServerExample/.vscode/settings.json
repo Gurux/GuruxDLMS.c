@@ -1,0 +1,12 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/mnt/d/Work/GuruxDLMS.c/GuruxDLMSServerExample/bin",
+            "binaryPath": "/mnt/d/Work/GuruxDLMS.c/GuruxDLMSServerExample/bin/gurux.dlms.server.bin",
+            "binaryArgs": [
+                "-tVerbose",
+                "-p4059"
+            ]
+        }
+    ]
+}

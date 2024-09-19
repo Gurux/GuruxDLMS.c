@@ -1033,7 +1033,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
             }
         }
 #else
-ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
 #endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     }
     else if (e->index == 6)
@@ -1218,7 +1218,7 @@ ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
                     bb_attach(&sn, e->parameters.byteArr->data + e->parameters.byteArr->position, count, count);
                     e->parameters.byteArr->position += count;
                     //Issuer
-                    if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) == 0 && 
+                    if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) == 0 &&
                         ch == DLMS_DATA_TYPE_OCTET_STRING &&
                         (ret = hlp_getObjectCount2(e->parameters.byteArr, &count)) == 0)
                     {
@@ -1309,7 +1309,7 @@ ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
         }
         else
         {
-            if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 && 
+            if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
                 (ret = cosem_getEnum(e->parameters.byteArr, &type)) == 0)
             {
             }
@@ -1414,7 +1414,7 @@ ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
 #else
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
 #endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
-        }
+    }
     else
     {
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
@@ -2063,7 +2063,7 @@ int invoke_ProfileGeneric(
 
 #ifndef DLMS_IGNORE_COMPACT_DATA
 int compactDataAppend(unsigned char byteArray, dlmsVARIANT* value3, gxByteBuffer* bb)
-{   
+{
 #ifdef DLMS_IGNORE_MALLOC
     int ret;
     if (byteArray && value3->vt == DLMS_DATA_TYPE_OCTET_STRING)
@@ -2086,13 +2086,13 @@ int compactDataAppendArray(dlmsVARIANT* value, gxByteBuffer* bb, uint16_t dataIn
 {
     int ret, pos;
     int cnt = value->Arr->size;
-    if (dataIndex != 0)
+    if (dataIndex > 0xFFF)
     {
-        cnt = dataIndex;
-        --dataIndex;
-    }
+        //0x1000 to 0xFFFF is the selective access to the array.
+        cnt = value->Arr->size;
+    }    
     dlmsVARIANT* value2;
-    for (pos = dataIndex; pos != cnt; ++pos)
+    for (pos = 0; pos != cnt; ++pos)
     {
         if ((ret = va_getByIndex(value->Arr, pos, &value2)) != 0)
         {
@@ -2150,7 +2150,7 @@ int cosem_captureCompactData(
     // We can't use server buffer because there might be transaction on progress when this is called.
     unsigned char tmp[MAX_CAPTURE_OBJECT_BUFFER_SIZE];
     gxByteBuffer bb;
-    bb_attach(&bb, tmp, 0, sizeof(tmp));    
+    bb_attach(&bb, tmp, 0, sizeof(tmp));
     svr_preGet(settings, &args);
     if (!e->handled)
     {
@@ -2189,7 +2189,7 @@ int cosem_captureCompactData(
                     //Some meters require that there is a array count in data.
                     if (info.type == DLMS_DATA_TYPE_ARRAY && object->appendAA)
                     {
-                        bb_setUInt8(&object->buffer, (unsigned char)value.Arr->size);
+                        bb_setUInt16(&object->buffer, value.Arr->size);
                     }
 #endif //DLMS_ITALIAN_STANDARD
                     if ((ret = compactDataAppendArray(&value, &object->buffer, dataIndex)) != 0)
@@ -2491,7 +2491,7 @@ int invoke_SpecialDaysTable(
 #ifdef DLMS_IGNORE_MALLOC
                 ret = arr_removeByIndex(&object->entries, pos, sizeof(gxSpecialDay));
 #else
-                ret = arr_removeByIndex(&object->entries, pos, (void**) & specialDay);
+                ret = arr_removeByIndex(&object->entries, pos, (void**)&specialDay);
                 if (ret == 0)
                 {
                     gxfree(specialDay);
@@ -2557,7 +2557,7 @@ int invoke_RegisterActivation(
         if ((ret = arr_setByIndexRef(&object->registerAssignment, (void**)it)) != 0)
         {
             return ret;
-}
+        }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #else
         dlmsVARIANT* tmp, * tmp3;
@@ -2636,7 +2636,7 @@ int invoke_RegisterActivation(
                     }
                 }
             }
-            }
+    }
 #else
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         }
@@ -2660,7 +2660,7 @@ int invoke_RegisterActivation(
                         if ((ret = arr_getByIndex2(&object->maskList, pos, (void**)&k, sizeof(gxRegisterActivationMask))) != 0)
                         {
                             break;
-            }
+                        }
 #if defined(DLMS_IGNORE_MALLOC)
                         if (bb_available(e->parameters.byteArr) == k->length &&
                             memcmp(k->name, e->parameters.byteArr->data + e->parameters.byteArr->position, count) == 0)
@@ -2684,10 +2684,10 @@ int invoke_RegisterActivation(
                         }
 #endif //defined(DLMS_IGNORE_MALLOC)
                         e->parameters.byteArr->position += count;
+                    }
+                }
+            }
         }
-    }
-}
-    }
         bb_clear(e->parameters.byteArr);
     }
     else
@@ -2718,7 +2718,7 @@ int invoke_copySeasonProfile(gxArray* target, gxArray* source)
                 if ((ret = arr_getByIndex2(source, pos, (void**)&sp, sizeof(gxSeasonProfile))) != 0)
                 {
                     break;
-    }
+                }
 #if defined(DLMS_IGNORE_MALLOC)
                 if ((ret = arr_getByIndex2(target, pos, (void**)&it, sizeof(gxSeasonProfile))) != 0)
                 {
@@ -2736,11 +2736,11 @@ int invoke_copySeasonProfile(gxArray* target, gxArray* source)
                 it->start = sp->start;
                 bb_set(&it->weekName, sp->weekName.data, sp->weekName.size);
 #endif //#if defined(DLMS_IGNORE_MALLOC)
-}
                 }
             }
+        }
     return ret;
-}
+    }
 
 int invoke_copyWeekProfileTable(gxArray* target, gxArray* source)
 {
@@ -2779,8 +2779,8 @@ int invoke_copyWeekProfileTable(gxArray* target, gxArray* source)
                 it->friday = wp->friday;
                 it->saturday = wp->saturday;
                 it->sunday = wp->sunday;
-    }
-}
+                }
+            }
         }
     return ret;
     }
@@ -2837,12 +2837,12 @@ int invoke_copyDayProfileTable(gxArray* target, gxArray* source)
                     memcpy(dp2->scriptLogicalName, dp->scriptLogicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                     dp2->scriptSelector = dp->scriptSelector;
-                    }
-    }
-}
-}
+                }
+                }
+            }
+        }
     return ret;
-}
+    }
 
 int invoke_ActivityCalendar(gxValueEventArg* e)
 {
@@ -2941,7 +2941,7 @@ int invoke_ArrayManagerInsertEntry(
                     {
                         var_clear(&value);
                         break;
-            }
+                    }
                     if (e->value.byteArr->size < e->value.byteArr->position + count)
                     {
                         ret = DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -2949,11 +2949,11 @@ int invoke_ArrayManagerInsertEntry(
                         break;
                     }
                     e->value.byteArr->position += count;
-        }
+                }
 #endif //DLMS_IGNORE_MALLOC
                 di_init(&info);
                 var_clear(&value);
-    }
+            }
             --totalCount;
             if (index == 0 && totalCount == 0)
             {
@@ -3003,10 +3003,10 @@ int invoke_ArrayManagerInsertEntry(
                 }
                 --index;
             }
-}
         }
-    return ret;
     }
+    return ret;
+}
 
 int invoke_ArrayManagerDeleteEntry(
     dlmsServerSettings* settings,
@@ -3087,18 +3087,18 @@ int invoke_ArrayManagerDeleteEntry(
                     if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
                     {
                         break;
-            }
+                    }
                     if (e->value.byteArr->size < e->value.byteArr->position + count)
                     {
                         ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                         break;
                     }
                     e->value.byteArr->position += count;
-        }
+                }
 #endif //DLMS_IGNORE_MALLOC
                 di_init(&info);
                 var_clear(&value);
-    }
+            }
             --totalCount;
             if (totalCount == 0)
             {
@@ -3114,10 +3114,10 @@ int invoke_ArrayManagerDeleteEntry(
                 }
                 --from;
             }
-}
         }
-    return ret;
     }
+    return ret;
+}
 
 int invoke_ArrayManager(
     dlmsServerSettings* settings,
@@ -3205,7 +3205,7 @@ int invoke_ArrayManager(
         if ((ret = va_getByIndex(tmp3->Arr, 1, &tmp2)) != 0)
         {
             return ret;
-}
+        }
         to = tmp2->uiVal;
 #endif //DLMS_IGNORE_MALLOC
         bb_clear(e->value.byteArr);
@@ -3353,19 +3353,19 @@ int invoke_ArrayManager(
                                     if ((ret = hlp_getObjectCount2(e->value.byteArr, &count)) != 0)
                                     {
                                         break;
-                            }
+                                    }
                                     if (e->value.byteArr->size < e->value.byteArr->position + count)
                                     {
                                         ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                                         break;
                                     }
                                     e->value.byteArr->position += count;
-                        }
+                                }
 #endif //DLMS_IGNORE_MALLOC
 
                                 di_init(&info);
                                 var_clear(&value);
-                    }
+                            }
                             --totalCount;
                             if (totalCount == 0)
                             {
@@ -3379,13 +3379,13 @@ int invoke_ArrayManager(
                                 }
                                 --from;
                             }
-                }
+                        }
                         found = 1;
                         break;
-            }
-        }
+                    }
+                }
                 break;
-    }
+            }
             else if (e->index == 3)
             {
                 e->index = it->element.attributeIndex;
@@ -3411,8 +3411,8 @@ int invoke_ArrayManager(
                 found = 1;
                 break;
             }
-                }
-            }
+        }
+}
     if (!found)
     {
         bb_clear(e->value.byteArr);
@@ -3460,12 +3460,12 @@ int invoke_G3_PLC_MAC_Setup(
             {
                 ++count;
             }
-    }
+        }
         if (ret == 0)
         {
             return cosem_getG3PlcMacSetupNeighbourTables(&object->neighbourTable, address, count, e);
         }
-}
+    }
     else if (e->index == 2)
     {
         gxMacPosTable* it;
@@ -3487,15 +3487,15 @@ int invoke_G3_PLC_MAC_Setup(
             {
                 ++count;
             }
-    }
+        }
         if (ret == 0)
         {
             return cosem_getG3PlcMacSetupPosTables(&object->macPosTable, address, count, e);
         }
-        }
+    }
     bb_clear(e->value.byteArr);
     return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-    }
+}
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
 int cosem_invoke(

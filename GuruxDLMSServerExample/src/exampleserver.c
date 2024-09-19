@@ -168,11 +168,31 @@ gxArrayManager arrayManager;
 gxLteMonitoring lteMonitoring;
 
 #ifdef DLMS_ITALIAN_STANDARD
+
 static gxTariffPlan tariffPlan;
 static gxTariffPlan passiveTariffPlan;
 static gxData spareObject;
+static gxProfileGeneric hourlyProfileGeneric;
+static gxProfileGeneric dailyProfileGeneric;
+static gxData hourlyDiagnostic;
 //Compact Frame 6.
 static gxCompactData cf6;
+//Compact Frame 62.
+static gxCompactData cf62;
+//Compact Frame 63.
+static gxCompactData cf63;
+static gxData ppNetworkStatus;
+static gxData metrologicalEventCounter;
+static gxData eventCounter;
+static gxData dailyDiagnostic;
+static gxRegister hourlyConvertedConsumption;
+static gxRegister hourlyConvertedConsumptionUnderAlarm;
+
+static gxRegister currentIndexOfConvertedVolume;
+static gxRegister currentIndexOfConvertedVolumeUnderAlarm;
+static gxExtendedRegister maximumConventionalConvertedGasFlow;
+static gxData managementFrameCounterOnLine;
+static gxData billingSnapshotPeriodCounter;
 #endif //DLMS_ITALIAN_STANDARD
 
 //static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
@@ -197,7 +217,23 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(tariffPlan),
     BASE(passiveTariffPlan),
     BASE(spareObject),
-    BASE(cf6)
+    BASE(cf6),
+    BASE(cf62),
+    BASE(cf63),
+    BASE(hourlyProfileGeneric),
+    BASE(dailyProfileGeneric),
+    BASE(hourlyDiagnostic),
+    BASE(hourlyConvertedConsumption),
+    BASE(hourlyConvertedConsumptionUnderAlarm),
+    BASE(ppNetworkStatus),
+    BASE(metrologicalEventCounter),
+    BASE(eventCounter),
+    BASE(dailyDiagnostic),
+    BASE(currentIndexOfConvertedVolume),
+    BASE(currentIndexOfConvertedVolumeUnderAlarm),
+    BASE(maximumConventionalConvertedGasFlow),
+    BASE(managementFrameCounterOnLine),
+    BASE(billingSnapshotPeriodCounter),
 #endif //DLMS_ITALIAN_STANDARD
 };
 
@@ -522,6 +558,16 @@ int captureProfileGeneric(
 #else
     f = fopen(fileName, "r+b");
 #endif
+    if (f == NULL)
+    {
+        //Allocate space for the profile generic buffer.
+        allocateProfileGenericBuffer(fileName, 1024);
+#if _MSC_VER > 1400
+        fopen_s(&f, fileName, "r+b");
+#else
+        f = fopen(fileName, "r+b");
+#endif
+    }
     if (f != NULL)
     {
         uint16_t dataSize = 0;
@@ -909,7 +955,7 @@ int addSecuritySetupPreEstablishedHighGMac()
         BB_ATTACH(securitySetupHighGMacPreEstablished.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
         //Only Authenticated encrypted connections are allowed.
         securitySetupHighGMacPreEstablished.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
-        securitySetupHighGMacPreEstablished.securitySuite = DLMS_SECURITY_SUITE_V0;        
+        securitySetupHighGMacPreEstablished.securitySuite = DLMS_SECURITY_SUITE_V0;
     }
     return ret;
 }
@@ -941,7 +987,7 @@ int addRegisterObject()
     //10 ^ 3 =  1000
     GX_UINT16_BYREF(activePowerL1.value, activePowerL1Value);
     activePowerL1.scaler = -2;
-    activePowerL1.unit = 30;
+    activePowerL1.unit = DLMS_UNIT_ACTIVE_ENERGY;
     return 0;
 }
 
@@ -1218,7 +1264,7 @@ int addLoadProfileProfileGeneric(dlmsSettings* settings)
         loadProfile.sortMethod = DLMS_SORT_METHOD_FIFO;
         ///////////////////////////////////////////////////////////////////
         //Add 2 columns.
-        //Add clock obect.
+        //Add clock object.
         capture = (gxTarget*)malloc(sizeof(gxTarget));
         capture->attributeIndex = 2;
         capture->dataIndex = 0;
@@ -1251,7 +1297,7 @@ int addEventLogProfileGeneric(dlmsSettings* settings)
         ///////////////////////////////////////////////////////////////////
         //Add 2 columns as default.
         gxTarget* capture;
-        //Add clock obect.
+        //Add clock object.
         capture = (gxTarget*)malloc(sizeof(gxTarget));
         capture->attributeIndex = 2;
         capture->dataIndex = 0;
@@ -2105,7 +2151,7 @@ int addTariffPlan()
         //Holiday interval #5.
         tariffPlan.plan.summerSeason.holidayIntervals[4].startHour = 21;
         tariffPlan.plan.summerSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
-        
+
         dlmsVARIANT* it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 1;
         va_push(&tariffPlan.plan.specialDays, it);
@@ -2308,6 +2354,37 @@ int addSpareObject()
     return ret;
 }
 
+///////////////////////////////////////////////////////////////////////
+// Add management frame counter On-line object 
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addManagementFrameCounterOnLine()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,43,1,1,255 };
+    if ((ret = INIT_OBJECT(managementFrameCounterOnLine, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        //Initial invocation counter value.
+        GX_UINT32(managementFrameCounterOnLine.value) = 0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+// Add billing snapshot/period counter object 
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addBillingSnapshotPeriodCounter()
+{
+    int ret;
+    const unsigned char ln[6] = { 7,0,0,1,0,255 };
+    if ((ret = INIT_OBJECT(billingSnapshotPeriodCounter, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        //Initial invocation counter value.
+        GX_UINT32(billingSnapshotPeriodCounter.value) = 0;
+    }
+    return ret;
+}
 
 ///////////////////////////////////////////////////////////////////////
 //Add Compact frame 6 as defined in UNI TS 11291-13-2 specifications.
@@ -2362,6 +2439,443 @@ int addCF6Plan(dlmsSettings* settings)
     }
     return ret;
 }
+
+///////////////////////////////////////////////////////////////////////
+//Add Compact frame 62 as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addCF62(dlmsSettings* settings)
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 66, 0, 62, 255 };//0-0:66.0.62.255
+    if ((ret = INIT_OBJECT(cf62, DLMS_OBJECT_TYPE_COMPACT_DATA, ln)) == 0)
+    {
+        cf62.templateId = 62;
+        cf62.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
+        cf62.appendAA = 1;
+        //Add 11 capture objects.
+        //CF6 attribute #4.
+        gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 4;
+        capture->dataIndex = 0;
+        gxKey* k = key_init(BASE(cf62), capture);
+        arr_push(&cf62.captureObjects, k);
+
+        //Unix time attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(unixTime), capture);
+        arr_push(&cf62.captureObjects, k);
+
+        //PP network status attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(ppNetworkStatus), capture);
+        arr_push(&cf62.captureObjects, k);
+        //LTE Monitoring attribute #3.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 3;
+        capture->dataIndex = 0;
+        k = key_init(BASE(lteMonitoring), capture);
+        arr_push(&cf62.captureObjects, k);
+        //Metrological event counter attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(metrologicalEventCounter), capture);
+        arr_push(&cf62.captureObjects, k);
+        //Event counter attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(eventCounter), capture);
+        arr_push(&cf62.captureObjects, k);
+        //Daily diagnostic attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(dailyDiagnostic), capture);
+        arr_push(&cf62.captureObjects, k);
+
+        //Current index of converted Volume attribute #3.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 3;
+        capture->dataIndex = 0;
+        k = key_init(BASE(currentIndexOfConvertedVolume), capture);
+        arr_push(&cf62.captureObjects, k);
+
+        //Daily load profile attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        //Last two day entries.
+        capture->dataIndex = 0xE002;
+        k = key_init(BASE(dailyProfileGeneric), capture);
+        arr_push(&cf62.captureObjects, k);
+
+        //Billing/Snapshot period counter attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(billingSnapshotPeriodCounter), capture);
+        arr_push(&cf62.captureObjects, k);
+
+        //Management frame counter - on-line attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(managementFrameCounterOnLine), capture);
+        arr_push(&cf62.captureObjects, k);
+        ret = compactData_updateTemplateDescription(settings, &cf62);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Compact frame 63 as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addCF63(dlmsSettings* settings)
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 66, 0, 63, 255 };//0-0:66.0.63.255
+    if ((ret = INIT_OBJECT(cf63, DLMS_OBJECT_TYPE_COMPACT_DATA, ln)) == 0)
+    {
+        cf63.templateId = 63;
+        cf63.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
+        cf63.appendAA = 1;
+        //Add 11 capture objects.
+        //CF6 attribute #4.
+        gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 4;
+        capture->dataIndex = 0;
+        gxKey* k = key_init(BASE(cf63), capture);
+        arr_push(&cf63.captureObjects, k);
+
+        //Unix time attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(unixTime), capture);
+        arr_push(&cf63.captureObjects, k);
+
+        //PP network status attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(ppNetworkStatus), capture);
+        arr_push(&cf63.captureObjects, k);
+        //LTE Monitoring attribute #3.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 3;
+        capture->dataIndex = 0;
+        k = key_init(BASE(lteMonitoring), capture);
+        arr_push(&cf63.captureObjects, k);
+        //Metrological event counter attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(metrologicalEventCounter), capture);
+        arr_push(&cf63.captureObjects, k);
+        //Event counter attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(eventCounter), capture);
+        arr_push(&cf63.captureObjects, k);
+        //Daily diagnostic attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(dailyDiagnostic), capture);
+        arr_push(&cf63.captureObjects, k);
+
+        //Current index of converted Volume attribute #3.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 3;
+        capture->dataIndex = 0;
+        k = key_init(BASE(currentIndexOfConvertedVolume), capture);
+        arr_push(&cf63.captureObjects, k);
+
+        //Daily load profile attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        //Last entry.
+        capture->dataIndex = 0xE001;
+        k = key_init(BASE(dailyProfileGeneric), capture);
+        arr_push(&cf63.captureObjects, k);
+
+        //Hourle load profile attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        //Last day entry.
+        capture->dataIndex = 0xE201;
+        k = key_init(BASE(hourlyProfileGeneric), capture);
+        arr_push(&cf63.captureObjects, k);
+
+        //Billing/Snapshot period counter attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(billingSnapshotPeriodCounter), capture);
+        arr_push(&cf63.captureObjects, k);
+
+        //Management frame counter - on-line attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(managementFrameCounterOnLine), capture);
+        arr_push(&cf63.captureObjects, k);
+        ret = compactData_updateTemplateDescription(settings, &cf63);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+// Add hourly profile generic (historical data) object 
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addHourlyProfileGeneric(dlmsSettings* settings)
+{
+    int ret;
+    const unsigned char ln[6] = { 7, 0, 99, 99, 2, 255 };
+    if ((ret = INIT_OBJECT(hourlyProfileGeneric, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln)) == 0)
+    {
+        gxTarget* capture;
+        //Set default values if load the first time.
+        hourlyProfileGeneric.sortMethod = DLMS_SORT_METHOD_FIFO;
+        ///////////////////////////////////////////////////////////////////
+        //Add 4 columns.
+        //Add hourly diagnostic.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&hourlyProfileGeneric.captureObjects, key_init(BASE(hourlyDiagnostic), capture));
+
+        //Add hourly converted consumption.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&hourlyProfileGeneric.captureObjects, key_init(BASE(hourlyConvertedConsumption), capture));
+
+        //Add hourly converted consumption under alarm.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&hourlyProfileGeneric.captureObjects, key_init(BASE(hourlyConvertedConsumptionUnderAlarm), capture));
+
+        //Add unix time object.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&hourlyProfileGeneric.captureObjects, key_init(BASE(unixTime), capture));
+        ///////////////////////////////////////////////////////////////////
+        //Update amount of capture objects.
+        //Set clock to sort object.
+        hourlyProfileGeneric.sortObject = BASE(unixTime);
+        hourlyProfileGeneric.sortObjectAttributeIndex = 2;
+        hourlyProfileGeneric.profileEntries = getProfileGenericBufferMaxRowCount(settings, &hourlyProfileGeneric);
+    }
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+// Add Daily profile generic (historical data) object 
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addDailyProfileGeneric(dlmsSettings* settings)
+{
+    int ret;
+    const unsigned char ln[6] = { 7, 0, 99, 99, 3, 255 };
+    if ((ret = INIT_OBJECT(dailyProfileGeneric, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln)) == 0)
+    {
+        gxTarget* capture;
+        //Set default values if load the first time.
+        dailyProfileGeneric.sortMethod = DLMS_SORT_METHOD_FIFO;
+        ///////////////////////////////////////////////////////////////////
+        //Add 6 columns.
+
+        //Add unix time object.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&dailyProfileGeneric.captureObjects, key_init(BASE(unixTime), capture));
+
+        //Add Daily diagnostic.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&dailyProfileGeneric.captureObjects, key_init(BASE(dailyDiagnostic), capture));
+
+        //Add current index of converted volume.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&dailyProfileGeneric.captureObjects, key_init(BASE(currentIndexOfConvertedVolume), capture));
+
+        //Add current index of converted volume under alarm.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&dailyProfileGeneric.captureObjects, key_init(BASE(currentIndexOfConvertedVolumeUnderAlarm), capture));
+
+        //Add maximum conventional converted gas flow value.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&dailyProfileGeneric.captureObjects, key_init(BASE(maximumConventionalConvertedGasFlow), capture));
+
+        //Add maximum conventional converted gas flow status.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 4;
+        capture->dataIndex = 0;
+        arr_push(&dailyProfileGeneric.captureObjects, key_init(BASE(maximumConventionalConvertedGasFlow), capture));
+
+        ///////////////////////////////////////////////////////////////////
+        //Update amount of capture objects.
+        //Set clock to sort object.
+        dailyProfileGeneric.sortObject = BASE(unixTime);
+        dailyProfileGeneric.sortObjectAttributeIndex = 2;
+        dailyProfileGeneric.profileEntries = getProfileGenericBufferMaxRowCount(settings, &dailyProfileGeneric);
+    }
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example hourly diagnostic data object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addHourlyDiagnostic()
+{
+    const unsigned char ln[6] = { 7,3,96,5,1,255 };
+    INIT_OBJECT(hourlyDiagnostic, DLMS_OBJECT_TYPE_DATA, ln);
+    GX_UINT16(hourlyDiagnostic.value) = 0;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example PP network status data object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addPpNetworkStatus()
+{
+    const unsigned char ln[6] = { 0,1,96,5,4,255 };
+    INIT_OBJECT(ppNetworkStatus, DLMS_OBJECT_TYPE_DATA, ln);
+    GX_UINT16(ppNetworkStatus.value) = 0;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example metrological event counter data object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addMetrologicalEventCounter()
+{
+    const unsigned char ln[6] = { 0,0,96,15,1,255 };
+    INIT_OBJECT(metrologicalEventCounter, DLMS_OBJECT_TYPE_DATA, ln);
+    GX_UINT16(metrologicalEventCounter.value) = 0;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example event counter data object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addEventCounter()
+{
+    const unsigned char ln[6] = { 0,0,96,15,2,255 };
+    INIT_OBJECT(eventCounter, DLMS_OBJECT_TYPE_DATA, ln);
+    GX_UINT16(eventCounter.value) = 0;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example daily diagnostic data object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addDailyDiagnostic()
+{
+    const unsigned char ln[6] = { 7,1,96,5,1,255 };
+    INIT_OBJECT(dailyDiagnostic, DLMS_OBJECT_TYPE_DATA, ln);
+    GX_UINT16(dailyDiagnostic.value) = 0;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example hourly diagnostic register object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addHourlyConvertedConsumption()
+{
+    const unsigned char ln[6] = { 7,0,13,14,0,255 };
+    INIT_OBJECT(hourlyConvertedConsumption, DLMS_OBJECT_TYPE_REGISTER, ln);
+    //10 ^ -2 =  0,01
+    GX_UINT16(hourlyDiagnostic.value) = 0;
+    hourlyConvertedConsumption.scaler = -2;
+    hourlyConvertedConsumption.unit = DLMS_UNIT_ACTIVE_ENERGY;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example hourly diagnostic register object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addHourlyConvertedConsumptionUnderAlarm()
+{
+    const unsigned char ln[6] = { 7,0,12,14,0,255 };
+    INIT_OBJECT(hourlyConvertedConsumptionUnderAlarm, DLMS_OBJECT_TYPE_REGISTER, ln);
+    //10 ^ -2 =  0,01
+    GX_UINT16(hourlyDiagnostic.value) = 0;
+    hourlyConvertedConsumptionUnderAlarm.scaler = -2;
+    hourlyConvertedConsumptionUnderAlarm.unit = DLMS_UNIT_ACTIVE_ENERGY;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example hourly diagnostic register object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addCurrentIndexOfConvertedVolume()
+{
+    const unsigned char ln[6] = { 7,0,13,2,0,255 };
+    INIT_OBJECT(currentIndexOfConvertedVolume, DLMS_OBJECT_TYPE_REGISTER, ln);
+    GX_UINT16(currentIndexOfConvertedVolume.value) = 0;
+    currentIndexOfConvertedVolume.scaler = 0;
+    currentIndexOfConvertedVolume.unit = DLMS_UNIT_NONE;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds example hourly diagnostic register object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addCurrentIndexOfConvertedVolumeUnderAlarm()
+{
+    const unsigned char ln[6] = { 7,0,12,2,0,255 };
+    INIT_OBJECT(currentIndexOfConvertedVolumeUnderAlarm, DLMS_OBJECT_TYPE_REGISTER, ln);
+    GX_UINT16(currentIndexOfConvertedVolumeUnderAlarm.value) = 0;
+    currentIndexOfConvertedVolumeUnderAlarm.scaler = 0;
+    currentIndexOfConvertedVolumeUnderAlarm.unit = DLMS_UNIT_NONE;
+    return 0;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+//This method adds  maximum conventional converted gas flow value extended register object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addMaximumConventionalConvertedGasFlow()
+{
+    const unsigned char ln[6] = { 7,0,43,53,0,255 };
+    INIT_OBJECT(maximumConventionalConvertedGasFlow, DLMS_OBJECT_TYPE_EXTENDED_REGISTER, ln);
+    //Set default value.
+    GX_UINT16(maximumConventionalConvertedGasFlow.value) = 10;
+    maximumConventionalConvertedGasFlow.scaler = 0;
+    maximumConventionalConvertedGasFlow.unit = DLMS_UNIT_NONE;
+    //Set default status.
+    GX_UINT16(maximumConventionalConvertedGasFlow.status) = 0;
+    return 0;
+}
+
 #endif //DLMS_ITALIAN_STANDARD
 
 ///////////////////////////////////////////////////////////////////////
@@ -2588,9 +3102,9 @@ int loadSecurity(dlmsSettings* settings)
             bb_clear(&bb);
             return ret;
         }
-}
-    return saveSecurity(settings);
     }
+    return saveSecurity(settings);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2736,7 +3250,25 @@ int svr_InitObjects(
         (ret = addTariffPlan()) != 0 ||
         (ret = addPassiveTariffPlan()) != 0 ||
         (ret = addSpareObject()) != 0 ||
+        (ret = addHourlyDiagnostic()) != 0 ||
+        (ret = addHourlyConvertedConsumption()) != 0 ||
+        (ret = addHourlyConvertedConsumptionUnderAlarm()) != 0 ||
+        (ret = addCurrentIndexOfConvertedVolume()) != 0 ||
+        (ret = addCurrentIndexOfConvertedVolumeUnderAlarm()) != 0 ||
+        (ret = addMaximumConventionalConvertedGasFlow()) != 0 ||
+        (ret = addPpNetworkStatus()) != 0 ||
+        (ret = addMetrologicalEventCounter()) != 0 ||
+        (ret = addEventCounter()) != 0 ||
+        (ret = addDailyDiagnostic()) != 0 ||
+        (ret = addManagementFrameCounterOnLine()) != 0 ||
+        (ret = addBillingSnapshotPeriodCounter()) != 0 ||
+        //Profile generic objects must add after capture objects are initialized.
+        (ret = addHourlyProfileGeneric(&settings->base)) != 0 ||
+        (ret = addDailyProfileGeneric(&settings->base)) != 0 ||
+        //Compact data object must add after capture objects are initialized.
         (ret = addCF6Plan(&settings->base)) != 0 ||
+        (ret = addCF62(&settings->base)) != 0 ||
+        (ret = addCF63(&settings->base)) != 0 ||
 #endif //DLMS_ITALIAN_STANDARD
         (ret = oa_verify(&settings->base.objects)) != 0 ||
         (ret = svr_initialize(settings)) != 0)
@@ -3078,7 +3610,8 @@ int readProfileGeneric(
         }
         bb_clear(e->value.byteArr);
         arr_clear(&captureObjects);
-        if (ret == 0 && first)
+        //Objects are saved to the buffer when action is used.
+        if (ret == 0 && first && !e->action)
         {
             if (e->transactionEndIndex == 0)
             {
@@ -3125,20 +3658,42 @@ int readProfileGeneric(
                     printf("Failed to seek %s.\r\n", fileName);
                     return -1;
                 }
+                //Objects are saved to the buffer when action is used.
+                if (e->action)
+                {
+                    //Clear buffer.
+                    arr_clear(&pg->buffer);
+                }
                 for (pos = e->transactionStartIndex - 1; pos != e->transactionEndIndex; ++pos)
                 {
-                    pduSize = (uint16_t)e->value.byteArr->size;
-                    if ((ret = cosem_setStructure(e->value.byteArr, pg->captureObjects.size)) != 0)
+                    //Objects are saved to the buffer when action is used.
+                    if (!e->action)
                     {
-                        //Don't set error if PDU is full.
-                        if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+                        pduSize = (uint16_t)e->value.byteArr->size;
+                        if ((ret = cosem_setStructure(e->value.byteArr, pg->captureObjects.size)) != 0)
                         {
-                            e->value.byteArr->size = pduSize;
+                            //Don't set error if PDU is full.
+                            if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
+                            {
+                                e->value.byteArr->size = pduSize;
+                            }
+                            break;
                         }
-                        break;
                     }
                     uint8_t colIndex;
                     gxKey* it;
+                    variantArray* va = NULL;
+                    dlmsVARIANT* value;
+                    //Objects are saved to the buffer when action is used.
+                    if (e->action)
+                    {
+                        va = (variantArray*)malloc(sizeof(variantArray));
+                        va_init(va);
+                        arr_push(&pg->buffer, va);
+                        //Allocate space for 20 bytes.
+                        //The example expects that the max value size is 20 bytes.
+                        bb_capacity(e->value.byteArr, 20);
+                    }
                     //Loop capture columns and get values.
                     for (colIndex = 0; colIndex != pg->captureObjects.size; ++colIndex)
                     {
@@ -3156,34 +3711,74 @@ int readProfileGeneric(
                                 {
                                     clock_utcToMeterTime(&clock1, &tm);
                                 }
-                                if ((ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm)) != 0)
+                                //Objects are saved to the buffer when action is used.
+                                if (va != NULL)
                                 {
-                                    //Error is handled later.
+                                    value = malloc(sizeof(dlmsVARIANT));
+                                    var_init(value);
+                                    if (((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK)
+                                    {
+                                        //Add time from clock object.
+                                        gxtime tmp;
+                                        time_fromUnixTime(&tmp, &tm);
+                                        var_setDateTime(value, &tmp);
+                                    }
+                                    else
+                                    {
+                                        //Add time from data object.
+                                        var_setUInt32(value, time);
+                                    }
+                                    va_push(va, value);
+                                }
+                                else
+                                {
+                                    if (((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK)
+                                    {
+                                        ret = cosem_setDateTimeAsOctetString(e->value.byteArr, &tm);
+                                        //Error is handled later.
+                                    }
+                                    else
+                                    {
+                                        ret = cosem_setUInt32(e->value.byteArr, time_toUnixTime(&tm));
+                                        //Error is handled later.
+                                    }
                                 }
                             }
                             else
                             {
-                                //Append data type.
-                                if ((ret = bb_setUInt8(e->value.byteArr, dataTypes[colIndex])) != 0)
+                                //Objects are saved to the buffer when action is used.
+                                if (!e->action)
                                 {
-                                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
-                                    break;
-                                }
-                                if (bb_getCapacity(e->value.byteArr) < bb_size(e->value.byteArr) + columnSizes[colIndex])
-                                {
-                                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
-                                    break;
+                                    //Append data type.
+                                    if ((ret = bb_setUInt8(e->value.byteArr, dataTypes[colIndex])) != 0)
+                                    {
+                                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                                        break;
+                                    }
+                                    if (bb_getCapacity(e->value.byteArr) < bb_size(e->value.byteArr) + columnSizes[colIndex])
+                                    {
+                                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                                        break;
+                                    }
                                 }
                                 //Read data.
                                 fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
                                 e->value.byteArr->size += columnSizes[colIndex];
-                                /*
-                                e->value.byteArr->data[e->value.byteArr->size] = dataTypes[colIndex];
-                                ++e->value.byteArr->size;
-                                //Read data.
-                                fread(&e->value.byteArr->data[e->value.byteArr->size], columnSizes[colIndex], 1, f);
-                                e->value.byteArr->size += columnSizes[colIndex];
-                                */
+                                if (e->action)
+                                {
+                                    gxDataInfo di;
+                                    di_init(&di);
+                                    di.type = dataTypes[colIndex];
+                                    value = malloc(sizeof(dlmsVARIANT));
+                                    var_init(value);
+                                    va_push(va, value);
+                                    ret = dlms_getData(e->value.byteArr, &di, value);
+                                    bb_empty(e->value.byteArr);
+                                    if (ret != 0)
+                                    {
+                                        break;
+                                    }
+                                }
                             }
                         }
                         if (ret != 0)
@@ -3209,12 +3804,57 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
-            }
         }
+    }
     if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
     {
         ret = 0;
     }
+    return ret;
+}
+
+int updateCompactData(dlmsSettings* settings, gxCompactData* cd)
+{
+    int ret;
+    uint16_t pos;
+    gxValueEventCollection args2;
+    gxByteBuffer bb;
+    bb_init(&bb);
+    //Allocate space for 200 bytes.
+    bb_capacity(&bb, 200);
+
+    gxValueEventArg* e2 = malloc(sizeof(gxValueEventArg));
+    ve_init(e2);
+    e2->action = 1;
+    vec_init(&args2);
+    ret = vec_push(&args2, e2);
+    gxKey* kv;
+    //Loop capture columns and get values.
+    for (pos = 0; pos != cd->captureObjects.size; ++pos)
+    {
+        if ((ret = arr_getByIndex(&cd->captureObjects, (uint16_t)pos, (void**)&kv)) != 0)
+        {
+            break;
+        }
+        bb_empty(&bb);
+        e2->value.byteArr = &bb;
+        e2->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+        e2->target = (gxObject*)kv->key;
+        e2->index = ((gxTarget*)kv->value)->attributeIndex;
+        //Read and update values. This example uses preRead.
+        svr_preRead(settings, &args2);
+        if (e2->error != 0)
+        {
+            ret = e2->error;
+            break;
+        }
+    }
+    //Update  template description.
+    ret = compactData_updateTemplateDescription(settings, cd);
+    //Byte buffer is clear separetly.
+    e2->value.vt = DLMS_DATA_TYPE_NONE;
+    vec_clear(&args2);
+    bb_clear(&bb);
     return ret;
 }
 
@@ -3272,8 +3912,19 @@ void svr_preRead(
         {
             e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, (gxProfileGeneric*)e->target, e);
         }
+        else if (e->target->objectType == DLMS_OBJECT_TYPE_COMPACT_DATA && e->index == 2 &&
+            ((gxCompactData*)e->target)->captureMethod == DLMS_CAPTURE_METHOD_IMPLICIT)
+        {
+            //Compact data is updated in read.
+            ret = updateCompactData(settings, (gxCompactData*)e->target);
+        }
+        else if (e->target->objectType == DLMS_OBJECT_TYPE_COMPACT_DATA && e->index == 5)
+        {
+            //Update  template description.
+            ret = compactData_updateTemplateDescription(settings, (gxCompactData*)e->target);
+        }
         //Update Unix time.
-        if (e->target == BASE(unixTime) && e->index == 2)
+        else if (e->target == BASE(unixTime) && e->index == 2)
         {
             gxtime dt;
             time_now(&dt, 0);
@@ -3396,8 +4047,8 @@ void handleProfileGenericActions(
             //Update values to the EEPROM.
             fwrite(pdu.data, 1, 4, f);
             fclose(f);
+        }
     }
-}
     else if (it->index == 2)
     {
         //Increase power value before each load profile read to increase the value.
@@ -3437,7 +4088,7 @@ void allocateImageTransfer(const char* fileName, uint32_t size)
             }
         }
         fclose(f);
-}
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3487,7 +4138,7 @@ void svr_preAction(
             if (f != NULL)
             {
                 fclose(f);
-        }
+            }
             //Load objects again.
             if ((ret = loadSettings(settings)) != 0)
             {
@@ -3529,7 +4180,13 @@ void svr_preAction(
             testMode = 0;
             saveSettings();
         }
-        if (e->target == BASE(imageTransfer))
+        else if (e->target->objectType == DLMS_OBJECT_TYPE_COMPACT_DATA && e->index == 2 &&
+            ((gxCompactData*)e->target)->captureMethod == DLMS_CAPTURE_METHOD_INVOKE)
+        {
+            //Compact data is updated with invoke.
+            ret = updateCompactData(settings, (gxCompactData*)e->target);
+        }
+        else if (e->target == BASE(imageTransfer))
         {
             e->handled = 1;
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -3672,31 +4329,7 @@ void svr_preAction(
             }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
-        //Update values to compact data buffer.
-        else if (e->target == BASE(compactData) && e->index == 2)
-        {
-            gxValueEventCollection args2;
-            gxValueEventArg e2;
-            ve_init(&e2);
-            e2.action = 1;
-            vec_init(&args2);
-            vec_push(&args2, &e2);
-            gxKey* kv;
-            //Loop capture columns and get values.
-            for (pos = 0; pos != compactData.captureObjects.size; ++pos)
-            {
-                if ((ret = arr_getByIndex(&compactData.captureObjects, (uint16_t)pos, (void**)&kv)) != 0)
-                {
-                    break;
-                }
-                e2.target = (gxObject*)kv->key;
-                e2.index = ((gxTarget*)kv->value)->attributeIndex;
-                //Read and update values. This example uses preRead.
-                svr_preRead(settings, &args2);
-            }
-            break;
-        }
-    }
+}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3874,7 +4507,7 @@ int connectServer(
             return err;
         };
         add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
-        };
+};
 
     //Connect to the meter.
     ret = connect(*s, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
@@ -3883,7 +4516,7 @@ int connectServer(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     };
     return DLMS_ERROR_CODE_OK;
-    }
+}
 
 int sendPush(
     dlmsSettings* settings,
@@ -3916,18 +4549,18 @@ int sendPush(
                     mes_clear(&messages);
                     break;
                 }
+                }
             }
-        }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         closesocket(s);
 #else
         close(s);
 #endif
-    }
+        }
     mes_clear(&messages);
     free(host);
     return 0;
-}
+    }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 unsigned char svr_isTarget(

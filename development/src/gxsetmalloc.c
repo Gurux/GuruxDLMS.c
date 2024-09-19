@@ -7005,6 +7005,11 @@ int compactData_updateTemplateArrayOrStructDescription(
                     {
                         return ret;
                     }
+                    if (var->vt == DLMS_DATA_TYPE_ARRAY)
+                    {
+                        //Array data types are added only once.
+                        break;
+                    }
                 }
                 else
                 {
@@ -7019,19 +7024,40 @@ int compactData_updateTemplateArrayOrStructDescription(
     }
     else
     {
-        if (var->vt == DLMS_DATA_TYPE_STRUCTURE)
+        if (var->vt == DLMS_DATA_TYPE_STRUCTURE || 
+            var->vt == DLMS_DATA_TYPE_ARRAY)
         {
-            bb_setUInt8(&object->templateDescription, DLMS_DATA_TYPE_STRUCTURE);
-            bb_setUInt8(&object->templateDescription, (unsigned char)var->Arr->size);
+            bb_setUInt8(&object->templateDescription, var->vt);
+            if (var->vt == DLMS_DATA_TYPE_STRUCTURE)
+            {
+                bb_setUInt8(&object->templateDescription, (unsigned char)var->Arr->size);
+            }
+            else
+            {
+                bb_setUInt16(&object->templateDescription, var->Arr->size);
+            }
             for (uint16_t pos = 0; pos < var->Arr->size; ++pos)
             {
                 if ((ret = va_getByIndex(var->Arr, pos, &value2)) != 0)
                 {
                     return ret;
                 }
-                if ((ret = bb_setUInt8(&object->templateDescription, value2->vt)) != 0)
+                if (value2->vt == DLMS_DATA_TYPE_STRUCTURE || value2->vt == DLMS_DATA_TYPE_ARRAY)
                 {
-                    break;
+                    if ((ret = compactData_updateTemplateArrayOrStructDescription(
+                        object, value2, kv)) != 0)
+                    {
+                        return ret;
+                    }
+                    if (var->vt == DLMS_DATA_TYPE_ARRAY)
+                    {
+                        //Array column data types are added only once.
+                        break;
+                    }
+                }
+                else
+                {
+                    ret = bb_setUInt8(&object->templateDescription, value2->vt);
                 }
             }
         }

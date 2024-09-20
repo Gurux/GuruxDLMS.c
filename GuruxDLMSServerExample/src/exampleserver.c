@@ -169,11 +169,15 @@ gxLteMonitoring lteMonitoring;
 
 #ifdef DLMS_ITALIAN_STANDARD
 
-static gxTariffPlan tariffPlan;
+static gxTariffPlan activeTariffPlan;
 static gxTariffPlan passiveTariffPlan;
+static gxData currentDiagnostic;
+static gxData snapshotReasonCode;
+static gxData snapshotPeriodCounter;
 static gxData spareObject;
 static gxProfileGeneric hourlyProfileGeneric;
 static gxProfileGeneric dailyProfileGeneric;
+static gxProfileGeneric snapshotPeriodData;
 static gxData hourlyDiagnostic;
 //Compact Frame 6.
 static gxCompactData cf6;
@@ -181,14 +185,19 @@ static gxCompactData cf6;
 static gxCompactData cf62;
 //Compact Frame 63.
 static gxCompactData cf63;
+//Compact Frame 64.
+static gxCompactData cf64;
 static gxData ppNetworkStatus;
 static gxData metrologicalEventCounter;
 static gxData eventCounter;
 static gxData dailyDiagnostic;
 static gxRegister hourlyConvertedConsumption;
 static gxRegister hourlyConvertedConsumptionUnderAlarm;
-
 static gxRegister currentIndexOfConvertedVolume;
+static gxRegister currentIndexOfConvertedVolumeF1Rate;
+static gxRegister currentIndexOfConvertedVolumeF2Rate;
+static gxRegister currentIndexOfConvertedVolumeF3Rate;
+static gxData snapshotPeriodDiagnostic;
 static gxRegister currentIndexOfConvertedVolumeUnderAlarm;
 static gxExtendedRegister maximumConventionalConvertedGasFlow;
 static gxData managementFrameCounterOnLine;
@@ -214,14 +223,19 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager),
     BASE(lteMonitoring),
     #ifdef DLMS_ITALIAN_STANDARD
-    BASE(tariffPlan),
+    BASE(activeTariffPlan),
     BASE(passiveTariffPlan),
     BASE(spareObject),
+    BASE(currentDiagnostic),
+    BASE(snapshotReasonCode),
+    BASE(snapshotPeriodCounter),
     BASE(cf6),
     BASE(cf62),
     BASE(cf63),
+    BASE(cf64),
     BASE(hourlyProfileGeneric),
     BASE(dailyProfileGeneric),
+    BASE(snapshotPeriodData),
     BASE(hourlyDiagnostic),
     BASE(hourlyConvertedConsumption),
     BASE(hourlyConvertedConsumptionUnderAlarm),
@@ -230,6 +244,10 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(eventCounter),
     BASE(dailyDiagnostic),
     BASE(currentIndexOfConvertedVolume),
+    BASE(currentIndexOfConvertedVolumeF1Rate),
+    BASE(currentIndexOfConvertedVolumeF2Rate),
+    BASE(currentIndexOfConvertedVolumeF3Rate),
+    BASE(snapshotPeriodDiagnostic),
     BASE(currentIndexOfConvertedVolumeUnderAlarm),
     BASE(maximumConventionalConvertedGasFlow),
     BASE(managementFrameCounterOnLine),
@@ -571,8 +589,13 @@ int captureProfileGeneric(
     if (f != NULL)
     {
         uint16_t dataSize = 0;
-        uint8_t columnSizes[10];
-        DLMS_DATA_TYPE dataTypes[10];
+        uint8_t columnSizes[20];
+        DLMS_DATA_TYPE dataTypes[20];
+        if (sizeof(dataTypes) / sizeof(dataTypes[0]) < pg->captureObjects.size ||
+            sizeof(columnSizes) / sizeof(columnSizes[0]) < pg->captureObjects.size)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
         //Load current entry index from the begin of the data.
         uint16_t index = 0;
         if (fread(pdu.data, 1, 2, f) == 2)
@@ -2033,155 +2056,155 @@ int addG3PlcMacSetup()
 // 
 // Active UNI/TS Tariff Plan (end-of-billing-period)
 ///////////////////////////////////////////////////////////////////////
-int addTariffPlan()
+int addActiveTariffPlan()
 {
     int ret;
     static unsigned char CALENDAR_NAME[2] = { 0x0D, 0x01 };
     static unsigned char WEEKLY_ACTIVATION[2] = { 0x7, 0xFF };
     const unsigned char ln[6] = { 0, 0, 94, 39, 21, 101 };
-    if ((ret = INIT_OBJECT(tariffPlan, DLMS_OBJECT_TYPE_TARIFF_PLAN, ln)) == 0)
+    if ((ret = INIT_OBJECT(activeTariffPlan, DLMS_OBJECT_TYPE_TARIFF_PLAN, ln)) == 0)
     {
-        BB_ATTACH(tariffPlan.calendarName, CALENDAR_NAME, 2);
-        tariffPlan.enabled = 0;
-        time_init(&tariffPlan.activationTime, 2015, 1, 1, 0, 0, 0, 0, 120);
+        BB_ATTACH(activeTariffPlan.calendarName, CALENDAR_NAME, 2);
+        activeTariffPlan.enabled = 0;
+        time_init(&activeTariffPlan.activationTime, 2015, 1, 1, 0, 0, 0, 0, 120);
         //General 
-        tariffPlan.plan.defaultTariffBand = 3;
-        BIT_ATTACH(tariffPlan.plan.weeklyActivation, WEEKLY_ACTIVATION, 2);
+        activeTariffPlan.plan.defaultTariffBand = 3;
+        BIT_ATTACH(activeTariffPlan.plan.weeklyActivation, WEEKLY_ACTIVATION, 2);
 
         //////////////
         //Get winter season.
-        tariffPlan.plan.winterSeason.dayOfMonth = 1;
-        tariffPlan.plan.winterSeason.month = 10;
+        activeTariffPlan.plan.winterSeason.dayOfMonth = 1;
+        activeTariffPlan.plan.winterSeason.month = 10;
         //Working day interval #1.
-        tariffPlan.plan.winterSeason.workingDayIntervals[0].startHour = 21;
-        tariffPlan.plan.winterSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[0].startHour = 21;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
         //Working day interval #2.
-        tariffPlan.plan.winterSeason.workingDayIntervals[1].startHour = 24;
-        tariffPlan.plan.winterSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[1].startHour = 24;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Working day interval #3.
-        tariffPlan.plan.winterSeason.workingDayIntervals[2].startHour = 24;
-        tariffPlan.plan.winterSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[2].startHour = 24;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Working day interval #4.
-        tariffPlan.plan.winterSeason.workingDayIntervals[3].startHour = 24;
-        tariffPlan.plan.winterSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[3].startHour = 24;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Working day interval #5.
-        tariffPlan.plan.winterSeason.workingDayIntervals[4].startHour = 24;
-        tariffPlan.plan.winterSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[4].startHour = 24;
+        activeTariffPlan.plan.winterSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
 
         //Saturday interval #1.
-        tariffPlan.plan.winterSeason.saturdayIntervals[0].startHour = 21;
-        tariffPlan.plan.winterSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[0].startHour = 21;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
         //Saturday interval #2.
-        tariffPlan.plan.winterSeason.saturdayIntervals[1].startHour = 21;
-        tariffPlan.plan.winterSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[1].startHour = 21;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Saturday interval #3.
-        tariffPlan.plan.winterSeason.saturdayIntervals[2].startHour = 21;
-        tariffPlan.plan.winterSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[2].startHour = 21;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Saturday interval #4.
-        tariffPlan.plan.winterSeason.saturdayIntervals[3].startHour = 21;
-        tariffPlan.plan.winterSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[3].startHour = 21;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Saturday interval #5.
-        tariffPlan.plan.winterSeason.saturdayIntervals[4].startHour = 21;
-        tariffPlan.plan.winterSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[4].startHour = 21;
+        activeTariffPlan.plan.winterSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
 
         //Holiday interval #1.
-        tariffPlan.plan.winterSeason.holidayIntervals[0].startHour = 21;
-        tariffPlan.plan.winterSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[0].startHour = 21;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
         //Holiday interval #2.
-        tariffPlan.plan.winterSeason.holidayIntervals[1].startHour = 21;
-        tariffPlan.plan.winterSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[1].startHour = 21;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Holiday interval #3.
-        tariffPlan.plan.winterSeason.holidayIntervals[2].startHour = 21;
-        tariffPlan.plan.winterSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[2].startHour = 21;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Holiday interval #4.
-        tariffPlan.plan.winterSeason.holidayIntervals[3].startHour = 21;
-        tariffPlan.plan.winterSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[3].startHour = 21;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Holiday interval #5.
-        tariffPlan.plan.winterSeason.holidayIntervals[4].startHour = 21;
-        tariffPlan.plan.winterSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[4].startHour = 21;
+        activeTariffPlan.plan.winterSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
 
         //////////////
         // Get summer season.
-        tariffPlan.plan.summerSeason.dayOfMonth = 1;
-        tariffPlan.plan.summerSeason.month = 4;
+        activeTariffPlan.plan.summerSeason.dayOfMonth = 1;
+        activeTariffPlan.plan.summerSeason.month = 4;
         //Working day interval #1.
-        tariffPlan.plan.summerSeason.workingDayIntervals[0].startHour = 21;
-        tariffPlan.plan.summerSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[0].startHour = 21;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
         //Working day interval #2.
-        tariffPlan.plan.summerSeason.workingDayIntervals[1].startHour = 24;
-        tariffPlan.plan.summerSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[1].startHour = 24;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Working day interval #3.
-        tariffPlan.plan.summerSeason.workingDayIntervals[2].startHour = 24;
-        tariffPlan.plan.summerSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[2].startHour = 24;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Working day interval #4.
-        tariffPlan.plan.summerSeason.workingDayIntervals[3].startHour = 24;
-        tariffPlan.plan.summerSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[3].startHour = 24;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Working day interval #5.
-        tariffPlan.plan.summerSeason.workingDayIntervals[4].startHour = 24;
-        tariffPlan.plan.summerSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[4].startHour = 24;
+        activeTariffPlan.plan.summerSeason.workingDayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
 
         //Saturday interval #1.
-        tariffPlan.plan.summerSeason.saturdayIntervals[0].startHour = 21;
-        tariffPlan.plan.summerSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[0].startHour = 21;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
         //Saturday interval #2.
-        tariffPlan.plan.summerSeason.saturdayIntervals[1].startHour = 21;
-        tariffPlan.plan.summerSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[1].startHour = 21;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Saturday interval #3.
-        tariffPlan.plan.summerSeason.saturdayIntervals[2].startHour = 21;
-        tariffPlan.plan.summerSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[2].startHour = 21;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Saturday interval #4.
-        tariffPlan.plan.summerSeason.saturdayIntervals[3].startHour = 21;
-        tariffPlan.plan.summerSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[3].startHour = 21;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Saturday interval #5.
-        tariffPlan.plan.summerSeason.saturdayIntervals[4].startHour = 21;
-        tariffPlan.plan.summerSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[4].startHour = 21;
+        activeTariffPlan.plan.summerSeason.saturdayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
 
         //Holiday interval #1.
-        tariffPlan.plan.summerSeason.holidayIntervals[0].startHour = 21;
-        tariffPlan.plan.summerSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[0].startHour = 21;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[0].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_TARIFF_BAND_2;
         //Holiday interval #2.
-        tariffPlan.plan.summerSeason.holidayIntervals[1].startHour = 21;
-        tariffPlan.plan.summerSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[1].startHour = 21;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[1].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Holiday interval #3.
-        tariffPlan.plan.summerSeason.holidayIntervals[2].startHour = 21;
-        tariffPlan.plan.summerSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[2].startHour = 21;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[2].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Holiday interval #4.
-        tariffPlan.plan.summerSeason.holidayIntervals[3].startHour = 21;
-        tariffPlan.plan.summerSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[3].startHour = 21;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[3].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
         //Holiday interval #5.
-        tariffPlan.plan.summerSeason.holidayIntervals[4].startHour = 21;
-        tariffPlan.plan.summerSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[4].startHour = 21;
+        activeTariffPlan.plan.summerSeason.holidayIntervals[4].intervalTariff = DLMS_DEFAULT_TARIFF_BAND_NONE;
 
         dlmsVARIANT* it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 1;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 2;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 3;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 4;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 5;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 6;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 7;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 8;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 9;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 10;
-        va_push(&tariffPlan.plan.specialDays, it);
+        va_push(&activeTariffPlan.plan.specialDays, it);
     }
     return ret;
 }
@@ -2355,6 +2378,52 @@ int addSpareObject()
 }
 
 ///////////////////////////////////////////////////////////////////////
+//Add current diagnostic object as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addCurrentDiagnostic()
+{
+    int ret;
+    unsigned char DATA[1] = { 0 };
+    const unsigned char ln[6] = { 7, 0, 96, 5, 1, 255 };//7-0:96:5.1.255
+    if ((ret = INIT_OBJECT(currentDiagnostic, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_UINT16(currentDiagnostic.value) = 0;
+    }
+    return ret;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+//Add snapshot reason code object as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addSnapshotReasonCode()
+{
+    int ret;
+    unsigned char DATA[1] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 96, 10, 2, 255 };//0-0:96:10.2.255
+    if ((ret = INIT_OBJECT(snapshotReasonCode, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_UINT16(snapshotReasonCode.value) = 0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add snapshot perios counter object as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addSnapshotPeriodCounter()
+{
+    int ret;
+    unsigned char DATA[1] = { 0 };
+    const unsigned char ln[6] = { 7, 0, 0, 1, 0, 255 };//7-0:0:1.0.255
+    if ((ret = INIT_OBJECT(snapshotPeriodCounter, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        GX_UINT16(snapshotPeriodCounter.value) = 0;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
 // Add management frame counter On-line object 
 // as defined in UNI TS 11291-13-2 specifications.
 ///////////////////////////////////////////////////////////////////////
@@ -2453,7 +2522,7 @@ int addCF62(dlmsSettings* settings)
         cf62.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
         cf62.appendAA = 1;
         //Add 11 capture objects.
-        //CF6 attribute #4.
+        //CF62 attribute #4.
         gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
         capture->attributeIndex = 4;
         capture->dataIndex = 0;
@@ -2544,7 +2613,7 @@ int addCF63(dlmsSettings* settings)
         cf63.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
         cf63.appendAA = 1;
         //Add 11 capture objects.
-        //CF6 attribute #4.
+        //CF63 attribute #4.
         gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
         capture->attributeIndex = 4;
         capture->dataIndex = 0;
@@ -2626,6 +2695,105 @@ int addCF63(dlmsSettings* settings)
         k = key_init(BASE(managementFrameCounterOnLine), capture);
         arr_push(&cf63.captureObjects, k);
         ret = compactData_updateTemplateDescription(settings, &cf63);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add Compact frame 64 as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addCF64(dlmsSettings* settings)
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 66, 0, 64, 255 };//0-0:66.0.64.255
+    if ((ret = INIT_OBJECT(cf64, DLMS_OBJECT_TYPE_COMPACT_DATA, ln)) == 0)
+    {
+        cf64.templateId = 64;
+        cf64.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
+        cf64.appendAA = 1;
+        //Add 11 capture objects.
+        //CF64 attribute #4.
+        gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 4;
+        capture->dataIndex = 0;
+        gxKey* k = key_init(BASE(cf64), capture);
+        arr_push(&cf64.captureObjects, k);
+
+        //Unix time attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(unixTime), capture);
+        arr_push(&cf64.captureObjects, k);
+
+        //PP network status attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(ppNetworkStatus), capture);
+        arr_push(&cf64.captureObjects, k);
+        //LTE Monitoring attribute #3.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 3;
+        capture->dataIndex = 0;
+        k = key_init(BASE(lteMonitoring), capture);
+        arr_push(&cf64.captureObjects, k);
+        //Metrological event counter attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(metrologicalEventCounter), capture);
+        arr_push(&cf64.captureObjects, k);
+        //Event counter attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(eventCounter), capture);
+        arr_push(&cf64.captureObjects, k);
+        //Daily diagnostic attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(dailyDiagnostic), capture);
+        arr_push(&cf64.captureObjects, k);
+
+        //Current index of converted Volume attribute #3.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 3;
+        capture->dataIndex = 0;
+        k = key_init(BASE(currentIndexOfConvertedVolume), capture);
+        arr_push(&cf64.captureObjects, k);
+
+        //Daily load profile attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        //Last two entries.
+        capture->dataIndex = 0xE002;
+        k = key_init(BASE(dailyProfileGeneric), capture);
+        arr_push(&cf64.captureObjects, k);
+
+        //Hourle load profile attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        //Last two-day entries.
+        capture->dataIndex = 0xE202;
+        k = key_init(BASE(hourlyProfileGeneric), capture);
+        arr_push(&cf64.captureObjects, k);
+
+        //Billing/Snapshot period counter attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(billingSnapshotPeriodCounter), capture);
+        arr_push(&cf64.captureObjects, k);
+
+        //Management frame counter on-line attribute #2.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        k = key_init(BASE(managementFrameCounterOnLine), capture);
+        arr_push(&cf64.captureObjects, k);
+        ret = compactData_updateTemplateDescription(settings, &cf64);
     }
     return ret;
 }
@@ -2741,6 +2909,109 @@ int addDailyProfileGeneric(dlmsSettings* settings)
 }
 
 ///////////////////////////////////////////////////////////////////////
+// Add snapshot period data profile generic (historical data) object 
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addSnapshotPeriodData(dlmsSettings* settings)
+{
+    int ret;
+    const unsigned char ln[6] = { 7, 0, 98, 11, 0, 255 };
+    if ((ret = INIT_OBJECT(snapshotPeriodData, DLMS_OBJECT_TYPE_PROFILE_GENERIC, ln)) == 0)
+    {
+        gxTarget* capture;
+        //Set default values if load the first time.
+        snapshotPeriodData.sortMethod = DLMS_SORT_METHOD_FIFO;
+        ///////////////////////////////////////////////////////////////////
+        //Add 13 columns.
+
+        //Add unix time object.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(unixTime), capture));
+
+        //Add current diagnostic.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(currentDiagnostic), capture));
+
+        //Add snapshot reason code.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(snapshotReasonCode), capture));
+
+        //Add snapshot period counter.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(snapshotPeriodCounter), capture));
+
+        //Add current index of converted volume.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(currentIndexOfConvertedVolume), capture));
+
+        //Add current index of converted volume F1 rate.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(currentIndexOfConvertedVolumeF1Rate), capture));
+
+        //Add current index of converted volume F2 rate.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(currentIndexOfConvertedVolumeF2Rate), capture));
+
+        //Add current index of converted volume F3 rate.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(currentIndexOfConvertedVolumeF3Rate), capture));
+
+        //Add current index of converted volume under alarm.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(currentIndexOfConvertedVolumeUnderAlarm), capture));
+
+        //Add maximum conventional converted gas flow value.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(maximumConventionalConvertedGasFlow), capture));
+
+        //Add maximum conventional converted gas flow status.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 4;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(maximumConventionalConvertedGasFlow), capture));
+
+        //Add snapshot period diagnostic.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(snapshotPeriodDiagnostic), capture));
+        //Add active UNI/TS tariff plan.
+        capture = (gxTarget*)malloc(sizeof(gxTarget));
+        capture->attributeIndex = 2;
+        capture->dataIndex = 0;
+        arr_push(&snapshotPeriodData.captureObjects, key_init(BASE(activeTariffPlan), capture));
+
+        ///////////////////////////////////////////////////////////////////
+        //Update amount of capture objects.
+        //Set clock to sort object.
+        snapshotPeriodData.sortObject = BASE(unixTime);
+        snapshotPeriodData.sortObjectAttributeIndex = 2;
+        snapshotPeriodData.profileEntries = getProfileGenericBufferMaxRowCount(settings, &snapshotPeriodData);
+    }
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
 //This method adds example hourly diagnostic data object
 // as defined in UNI TS 11291-13-2 specifications.
 ///////////////////////////////////////////////////////////////////////
@@ -2816,7 +3087,7 @@ int addHourlyConvertedConsumption()
 }
 
 ///////////////////////////////////////////////////////////////////////
-//This method adds example hourly diagnostic register object
+//This method adds hourly converted consumption under alarm register object
 // as defined in UNI TS 11291-13-2 specifications.
 ///////////////////////////////////////////////////////////////////////
 int addHourlyConvertedConsumptionUnderAlarm()
@@ -2831,12 +3102,12 @@ int addHourlyConvertedConsumptionUnderAlarm()
 }
 
 ///////////////////////////////////////////////////////////////////////
-//This method adds example hourly diagnostic register object
+//This method adds current index of converted volume register object
 // as defined in UNI TS 11291-13-2 specifications.
 ///////////////////////////////////////////////////////////////////////
 int addCurrentIndexOfConvertedVolume()
 {
-    const unsigned char ln[6] = { 7,0,13,2,0,255 };
+    const unsigned char ln[6] = { 7, 0, 13, 2, 0, 255 };
     INIT_OBJECT(currentIndexOfConvertedVolume, DLMS_OBJECT_TYPE_REGISTER, ln);
     GX_UINT16(currentIndexOfConvertedVolume.value) = 0;
     currentIndexOfConvertedVolume.scaler = 0;
@@ -2845,7 +3116,61 @@ int addCurrentIndexOfConvertedVolume()
 }
 
 ///////////////////////////////////////////////////////////////////////
-//This method adds example hourly diagnostic register object
+//This method adds current index of converted volume F1 rate register object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addcurrentIndexOfConvertedVolumeF1Rate()
+{
+    const unsigned char ln[6] = { 7, 0, 13, 2, 1, 255 };
+    INIT_OBJECT(currentIndexOfConvertedVolumeF1Rate, DLMS_OBJECT_TYPE_REGISTER, ln);
+    GX_UINT16(currentIndexOfConvertedVolumeF1Rate.value) = 0;
+    currentIndexOfConvertedVolumeF1Rate.scaler = 0;
+    currentIndexOfConvertedVolumeF1Rate.unit = DLMS_UNIT_NONE;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds current index of converted volume F1 rate register object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addcurrentIndexOfConvertedVolumeF2Rate()
+{
+    const unsigned char ln[6] = { 7, 0, 13, 2, 2, 255 };
+    INIT_OBJECT(currentIndexOfConvertedVolumeF2Rate, DLMS_OBJECT_TYPE_REGISTER, ln);
+    GX_UINT16(currentIndexOfConvertedVolumeF2Rate.value) = 0;
+    currentIndexOfConvertedVolumeF2Rate.scaler = 0;
+    currentIndexOfConvertedVolumeF2Rate.unit = DLMS_UNIT_NONE;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds current index of converted volume F1 rate register object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addcurrentIndexOfConvertedVolumeF3Rate()
+{
+    const unsigned char ln[6] = { 7, 0, 13, 2, 3, 255 };
+    INIT_OBJECT(currentIndexOfConvertedVolumeF3Rate, DLMS_OBJECT_TYPE_REGISTER, ln);
+    GX_UINT16(currentIndexOfConvertedVolumeF3Rate.value) = 0;
+    currentIndexOfConvertedVolumeF3Rate.scaler = 0;
+    currentIndexOfConvertedVolumeF3Rate.unit = DLMS_UNIT_NONE;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+// This method adds snapshot period diagnostic data object
+// as defined in UNI TS 11291-13-2 specifications.
+///////////////////////////////////////////////////////////////////////
+int addSnapshotPeriodDiagnostic()
+{
+    const unsigned char ln[6] = { 7, 2, 96, 5, 1, 255 };
+    INIT_OBJECT(snapshotPeriodDiagnostic, DLMS_OBJECT_TYPE_DATA, ln);
+    GX_UINT16(snapshotPeriodDiagnostic.value) = 0;
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+// This method adds current index of converted volume under alarm register object
 // as defined in UNI TS 11291-13-2 specifications.
 ///////////////////////////////////////////////////////////////////////
 int addCurrentIndexOfConvertedVolumeUnderAlarm()
@@ -2865,7 +3190,7 @@ int addCurrentIndexOfConvertedVolumeUnderAlarm()
 ///////////////////////////////////////////////////////////////////////
 int addMaximumConventionalConvertedGasFlow()
 {
-    const unsigned char ln[6] = { 7,0,43,53,0,255 };
+    const unsigned char ln[6] = { 7,0,43,45,0,255 };
     INIT_OBJECT(maximumConventionalConvertedGasFlow, DLMS_OBJECT_TYPE_EXTENDED_REGISTER, ln);
     //Set default value.
     GX_UINT16(maximumConventionalConvertedGasFlow.value) = 10;
@@ -3247,13 +3572,20 @@ int svr_InitObjects(
         (ret = addLimiter()) != 0 ||
         (ret = addLteMonitoring()) != 0 ||
 #ifdef DLMS_ITALIAN_STANDARD
-        (ret = addTariffPlan()) != 0 ||
+        (ret = addCurrentDiagnostic()) != 0 ||
+        (ret = addSnapshotReasonCode()) != 0 ||
+        (ret = addSnapshotPeriodCounter()) != 0 ||        
+        (ret = addActiveTariffPlan()) != 0 ||
         (ret = addPassiveTariffPlan()) != 0 ||
         (ret = addSpareObject()) != 0 ||
         (ret = addHourlyDiagnostic()) != 0 ||
         (ret = addHourlyConvertedConsumption()) != 0 ||
         (ret = addHourlyConvertedConsumptionUnderAlarm()) != 0 ||
         (ret = addCurrentIndexOfConvertedVolume()) != 0 ||
+        (ret = addcurrentIndexOfConvertedVolumeF1Rate()) != 0 ||
+        (ret = addcurrentIndexOfConvertedVolumeF2Rate()) != 0 ||
+        (ret = addcurrentIndexOfConvertedVolumeF3Rate()) != 0 ||
+        (ret = addSnapshotPeriodDiagnostic()) != 0 ||
         (ret = addCurrentIndexOfConvertedVolumeUnderAlarm()) != 0 ||
         (ret = addMaximumConventionalConvertedGasFlow()) != 0 ||
         (ret = addPpNetworkStatus()) != 0 ||
@@ -3265,10 +3597,12 @@ int svr_InitObjects(
         //Profile generic objects must add after capture objects are initialized.
         (ret = addHourlyProfileGeneric(&settings->base)) != 0 ||
         (ret = addDailyProfileGeneric(&settings->base)) != 0 ||
+        (ret = addSnapshotPeriodData(&settings->base)) != 0 ||
         //Compact data object must add after capture objects are initialized.
         (ret = addCF6Plan(&settings->base)) != 0 ||
         (ret = addCF62(&settings->base)) != 0 ||
         (ret = addCF63(&settings->base)) != 0 ||
+        (ret = addCF64(&settings->base)) != 0 ||
 #endif //DLMS_ITALIAN_STANDARD
         (ret = oa_verify(&settings->base.objects)) != 0 ||
         (ret = svr_initialize(settings)) != 0)
@@ -3496,8 +3830,13 @@ int getProfileGenericDataByRangeFromRingBuffer(
         FILE* f = fopen(fileName, "rb");
 #endif
         uint16_t rowSize = 0;
-        uint8_t columnSizes[10];
-        DLMS_DATA_TYPE dataTypes[10];
+        uint8_t columnSizes[20];
+        DLMS_DATA_TYPE dataTypes[20];
+        if (sizeof(dataTypes) / sizeof(dataTypes[0]) < pg->captureObjects.size ||
+            sizeof(columnSizes) / sizeof(columnSizes[0]) < pg->captureObjects.size)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
         if (f != NULL)
         {
             getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &rowSize);
@@ -3551,11 +3890,18 @@ int readProfileGeneric(
     gxValueEventArg* e)
 {
     unsigned char first = e->transactionEndIndex == 0;
-    int ret = 0;
+    int ret;
     gxArray captureObjects;
     arr_init(&captureObjects);
     char fileName[30];
-    getProfileGenericFileName(pg, fileName);
+    ret = getProfileGenericFileName(pg, fileName);
+    if (e->action && e->dataIndex != 0)
+    {
+        //Data index tells rows count when compact data ask it.
+        e->selector = 1;
+        e->transactionEndIndex = pg->entriesInUse;
+        e->transactionStartIndex = e->transactionEndIndex - (e->dataIndex & 0xFF) + 1;        
+    }
     if (ret == DLMS_ERROR_CODE_OK)
     {
         e->byteArray = 1;
@@ -3571,11 +3917,14 @@ int readProfileGeneric(
             }
             else if (e->selector == 1)
             {
-                //Read by entry. Find start and end index from the ring buffer.
-                if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, fileName, e)) != 0 ||
-                    (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
+                if (!e->action)
                 {
-                    e->transactionStartIndex = e->transactionEndIndex = 0;
+                    //Read by entry. Find start and end index from the ring buffer.
+                    if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, fileName, e)) != 0 ||
+                        (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
+                    {
+                        e->transactionStartIndex = e->transactionEndIndex = 0;
+                    }
                 }
             }
             else if (e->selector == 2)
@@ -3633,18 +3982,23 @@ int readProfileGeneric(
             if (fopen_s(&f, fileName, "rb") != 0)
             {
                 printf("Failed to open %s.\r\n", fileName);
-                return -1;
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
 #else
             if ((f = fopen(fileName, "rb")) != 0)
             {
                 printf("Failed to open %s.\r\n", fileName);
-                return -1;
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
 #endif
             uint16_t dataSize = 0;
-            uint8_t columnSizes[10];
-            DLMS_DATA_TYPE dataTypes[10];
+            uint8_t columnSizes[20];
+            DLMS_DATA_TYPE dataTypes[20];
+            if (sizeof(dataTypes) / sizeof(dataTypes[0]) < pg->captureObjects.size ||
+                sizeof(columnSizes) / sizeof(columnSizes[0]) < pg->captureObjects.size)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
             if (f != NULL)
             {
                 ret = getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
@@ -3802,7 +4156,7 @@ int readProfileGeneric(
             else
             {
                 printf("Failed to open %s.\r\n", fileName);
-                return -1;
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
             }
         }
     }
@@ -3841,6 +4195,7 @@ int updateCompactData(dlmsSettings* settings, gxCompactData* cd)
         e2->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         e2->target = (gxObject*)kv->key;
         e2->index = ((gxTarget*)kv->value)->attributeIndex;
+        e2->dataIndex = ((gxTarget*)kv->value)->dataIndex;
         //Read and update values. This example uses preRead.
         svr_preRead(settings, &args2);
         if (e2->error != 0)
@@ -4057,9 +4412,12 @@ void handleProfileGenericActions(
         {
             readActivePowerValue();
         }
-        captureProfileGeneric(settings, ((gxProfileGeneric*)it->target));
+        it->error = captureProfileGeneric(settings, ((gxProfileGeneric*)it->target));
     }
-    saveSettings();
+    if (it->error == 0)
+    {
+        it->error = saveSettings();
+    }
 }
 
 

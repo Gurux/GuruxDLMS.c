@@ -159,9 +159,14 @@ extern "C" {
         //Serialization count failed.
         DLMS_ERROR_CODE_SERIALIZATION_COUNT_FAILURE,
         //Verify failed.
-        DLMS_ERROR_CODE_INVALID_VERIFY,
+        DLMS_ERROR_CODE_VERIFY_FAILED,
         //Invalid X.509 certificate.
         DLMS_ERROR_CODE_INVALID_CERTIFICATE,
+        // Feature is not implemented. 
+        // This means that the command is unknown.
+        // THe code might be ignored with compiler flag.
+        //See DLMS_IGNORE values.
+        DLMS_ERROR_CODE_UNKNOWN_COMMAND,
     }DLMS_ERROR_CODE;
 
 #ifdef  __cplusplus

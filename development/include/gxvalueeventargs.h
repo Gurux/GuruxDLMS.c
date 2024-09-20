@@ -66,6 +66,10 @@ extern "C" {
         */
         unsigned char index;
         /**
+        * Data index.
+        */
+        unsigned char dataIndex;        
+        /**
         * Optional selector.
         */
         unsigned char selector;

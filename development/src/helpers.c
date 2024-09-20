@@ -276,8 +276,14 @@ const char* hlp_getErrorMessage(int error)
         case DLMS_ERROR_CODE_SERIALIZATION_COUNT_FAILURE:
             str = GET_STR_FROM_EEPROM("Serialization count failed.");
             break;
-        case DLMS_ERROR_CODE_INVALID_VERIFY:
+        case DLMS_ERROR_CODE_VERIFY_FAILED:
             str = GET_STR_FROM_EEPROM("Verify failed.");
+            break;
+        case DLMS_ERROR_CODE_INVALID_CERTIFICATE:
+            str = GET_STR_FROM_EEPROM("Invalid certificate.");
+            break;
+        case DLMS_ERROR_CODE_UNKNOWN_COMMAND:
+            str = GET_STR_FROM_EEPROM("Unknown command.");
             break;
         default:
             str = GET_STR_FROM_EEPROM("Unknown error.");

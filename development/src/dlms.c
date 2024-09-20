@@ -5260,7 +5260,7 @@ int dlms_getPdu(
             break;
         case DLMS_COMMAND_RELEASE_RESPONSE:
             break;
-#if !defined(DLMS_IGNORE_SERVER)
+#if !defined(DLMS_IGNORE_CLIENT)
         case DLMS_COMMAND_CONFIRMED_SERVICE_ERROR:
             ret = dlms_handleConfirmedServiceError(&data->data);
             break;
@@ -5345,7 +5345,7 @@ int dlms_getPdu(
             break;
         default:
             // Invalid command.
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return DLMS_ERROR_CODE_UNKNOWN_COMMAND;
         }
     }
     else if ((data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)

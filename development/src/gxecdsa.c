@@ -136,7 +136,7 @@ int gxecdsa_verify(gxPublicKey* key,
                         (ret = shamirs_trick(&curve, key, &tmp, &u1, &u2)) == 0)
                     {
                         bi_mod(&tmp.x, &curve.n);
-                        ret = bi_compare(&tmp.x, &sigR) == 0 ? 0 : DLMS_ERROR_CODE_INVALID_VERIFY;
+                        ret = bi_compare(&tmp.x, &sigR) == 0 ? 0 : DLMS_ERROR_CODE_VERIFY_FAILED;
                     }
                 }
             }

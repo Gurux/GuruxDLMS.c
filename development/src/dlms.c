@@ -5123,7 +5123,7 @@ int dlms_handleGeneralCiphering(
 }
 #endif //!defined(DLMS_IGNORE_GENERAL_CIPHERING) && !defined(DLMS_IGNORE_HIGH_GMAC)
 
-#if !defined(DLMS_IGNORE_SERVER)
+#if !defined(DLMS_IGNORE_CLIENT)
 int32_t dlms_handleConfirmedServiceError(gxByteBuffer* data)
 {
     int32_t ret;

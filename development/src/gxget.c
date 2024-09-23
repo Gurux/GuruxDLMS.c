@@ -5379,7 +5379,9 @@ int cosem_getCompactData(
     case 2:
         if (object->captureMethod == DLMS_CAPTURE_METHOD_IMPLICIT)
         {
+#ifndef DLMS_IGNORE_SERVER
             ret = cosem_captureCompactData(settings, object);
+#endif //DLMS_IGNORE_SERVER
         }
         if (ret == 0)
         {

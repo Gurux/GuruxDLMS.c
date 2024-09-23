@@ -51,10 +51,6 @@ typedef struct
     DLMS_DATA_TYPE type;
     // Is data parsed to the end.
     unsigned char complete;
-#ifdef DLMS_ITALIAN_STANDARD
-    //Some meters require that there is a array count in data.
-    unsigned char appendAA;
-#endif //DLMS_ITALIAN_STANDARD
 } gxDataInfo;
 
 void di_init(gxDataInfo *info);

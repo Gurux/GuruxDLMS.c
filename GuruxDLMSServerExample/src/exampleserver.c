@@ -166,6 +166,7 @@ gxG3PlcMacSetup g3PlcMacSetup;
 gxG3Plc6LoWPAN g3Plc6LoWPAN;
 gxArrayManager arrayManager;
 gxLteMonitoring lteMonitoring;
+gxAccount account;
 
 #ifdef DLMS_ITALIAN_STANDARD
 
@@ -222,6 +223,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(mbusDiagnostic), BASE(mbusPortSetup),
     BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager),
     BASE(lteMonitoring),
+    BASE(account),
     #ifdef DLMS_ITALIAN_STANDARD
     BASE(activeTariffPlan),
     BASE(passiveTariffPlan),
@@ -842,6 +844,7 @@ int addAssociationHighGMac()
         associationHighGMac.clientSAP = 0x1;
         associationHighGMac.xDLMSContextInfo.maxSendPduSize = associationHighGMac.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
         associationHighGMac.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+            DLMS_CONFORMANCE_GENERAL_PROTECTION |
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
             DLMS_CONFORMANCE_SET |
@@ -1649,11 +1652,6 @@ int addCompactData(
     unsigned char ln[6] = { 0,0,66,0,1,255 };
     INIT_OBJECT(compactData, DLMS_OBJECT_TYPE_COMPACT_DATA, ln);
     compactData.templateId = 66;
-#ifdef DLMS_ITALIAN_STANDARD
-    //Some Italy meters require that there is a array count in some compact buffer.
-    //This is against compact data structure defined in DLMS standard.
-    compactData.appendAA = 1;
-#endif //DLMS_ITALIAN_STANDARD
     //Buffer is captured when invoke is called.
     compactData.captureMethod = DLMS_CAPTURE_METHOD_INVOKE;
     ////////////////////////////////////////
@@ -2461,12 +2459,11 @@ int addBillingSnapshotPeriodCounter()
 int addCF6Plan(dlmsSettings* settings)
 {
     int ret;
-    const unsigned char ln[6] = { 0, 0, 66, 0, 6, 255 };//0-0:66.0.6.255
+    const unsigned char ln[6] = { 0, 0, 66, 0, 6, 255 }; // 0-0:66.0.6.255
     if ((ret = INIT_OBJECT(cf6, DLMS_OBJECT_TYPE_COMPACT_DATA, ln)) == 0)
     {
         cf6.templateId = 6;
         cf6.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
-        cf6.appendAA = 1;
         //Add 6 capture objects.
         //CF6 attribute #4.
         gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
@@ -2520,7 +2517,6 @@ int addCF62(dlmsSettings* settings)
     {
         cf62.templateId = 62;
         cf62.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
-        cf62.appendAA = 1;
         //Add 11 capture objects.
         //CF62 attribute #4.
         gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
@@ -2611,7 +2607,6 @@ int addCF63(dlmsSettings* settings)
     {
         cf63.templateId = 63;
         cf63.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
-        cf63.appendAA = 1;
         //Add 11 capture objects.
         //CF63 attribute #4.
         gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
@@ -2710,7 +2705,6 @@ int addCF64(dlmsSettings* settings)
     {
         cf64.templateId = 64;
         cf64.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
-        cf64.appendAA = 1;
         //Add 11 capture objects.
         //CF64 attribute #4.
         gxTarget* capture = (gxTarget*)malloc(sizeof(gxTarget));
@@ -3359,6 +3353,21 @@ int addPushSetup()
 }
 
 ///////////////////////////////////////////////////////////////////////
+//Add account object.
+///////////////////////////////////////////////////////////////////////
+int addAccount()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 19, 0, 0, 255 };
+    if ((ret = INIT_OBJECT(account, DLMS_OBJECT_TYPE_ACCOUNT, ln)) == 0)
+    {
+        //Set default values.
+        account.currentCreditStatus = DLMS_ACCOUNT_CREDIT_STATUS_OUT_OF_CREDIT;
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
 //Add LTE monitoring object.
 ///////////////////////////////////////////////////////////////////////
 int addLteMonitoring()
@@ -3384,6 +3393,7 @@ int addLteMonitoring()
     }
     return ret;
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Load security settings from the EEPROM.
@@ -3571,6 +3581,7 @@ int svr_InitObjects(
         (ret = addCompactData(&settings->base, &settings->base.objects)) != 0 ||
         (ret = addLimiter()) != 0 ||
         (ret = addLteMonitoring()) != 0 ||
+        (ret = addAccount()) != 0 ||        
 #ifdef DLMS_ITALIAN_STANDARD
         (ret = addCurrentDiagnostic()) != 0 ||
         (ret = addSnapshotReasonCode()) != 0 ||

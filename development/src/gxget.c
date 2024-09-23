@@ -5336,12 +5336,11 @@ int cosem_getAccount(
 #ifndef DLMS_IGNORE_COMPACT_DATA
 
 //Convert compact data buffer to array of values.
-int compactData_getValues2(
+int compactData_getValues(
     dlmsSettings* settings,
     gxByteBuffer* templateDescription,
     gxByteBuffer* buffer,
-    variantArray* values,
-    unsigned char appendAA)
+    variantArray* values)
 {
     int ret;
     gxDataInfo info;
@@ -5359,9 +5358,6 @@ int compactData_getValues2(
     bb_set(&data, buffer->data, buffer->size);
     var_init(&tmp);
     di_init(&info);
-#ifdef DLMS_ITALIAN_STANDARD
-    info.appendAA = appendAA;
-#endif //DLMS_ITALIAN_STANDARD
     info.type = DLMS_DATA_TYPE_COMPACT_ARRAY;
     if ((ret = dlms_getData(&data, &info, &tmp)) == 0 && tmp.Arr != NULL)
     {
@@ -5370,16 +5366,6 @@ int compactData_getValues2(
     var_clear(&tmp);
     bb_clear(&data);
     return ret;
-}
-
-//Convert compact data buffer to array of values.
-int compactData_getValues(
-    dlmsSettings* settings,
-    gxByteBuffer* templateDescription,
-    gxByteBuffer* buffer,
-    variantArray* values)
-{
-    return compactData_getValues2(settings, templateDescription, buffer, values, 0);
 }
 
 int cosem_getCompactData(

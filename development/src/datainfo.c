@@ -38,9 +38,4 @@ void di_init(gxDataInfo *info)
     info->count = 0;
     info->type = DLMS_DATA_TYPE_NONE;
     info->complete = 1;
-#ifdef DLMS_ITALIAN_STANDARD
-        //Some meters require that there is a array count in data.
-    info->appendAA = 0;
-#endif //DLMS_ITALIAN_STANDARD
-
 }

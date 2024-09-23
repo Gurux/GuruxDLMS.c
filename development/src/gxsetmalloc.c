@@ -7005,7 +7005,8 @@ int compactData_updateTemplateArrayOrStructDescription(
                     {
                         return ret;
                     }
-                    if (var->vt == DLMS_DATA_TYPE_ARRAY)
+                    if (var->vt == DLMS_DATA_TYPE_ARRAY || 
+                        (var->vt != DLMS_DATA_TYPE_STRUCTURE && value2->vt == DLMS_DATA_TYPE_ARRAY))
                     {
                         //Array data types are added only once.
                         break;
@@ -7014,6 +7015,12 @@ int compactData_updateTemplateArrayOrStructDescription(
                 else
                 {
                     ret = bb_setUInt8(&object->templateDescription, value2->vt);
+                }
+                if (var->vt == DLMS_DATA_TYPE_ARRAY ||
+                    (var->vt != DLMS_DATA_TYPE_STRUCTURE && value2->vt == DLMS_DATA_TYPE_ARRAY))
+                {
+                    //Array data types are added only once.
+                    break;
                 }
             }
         }
@@ -7137,7 +7144,7 @@ int compactData_updateTemplateDescription(
                             var_clear(&e.value);
                             bb_clear(&object->buffer);
                             return ret;
-                        }
+                        }                            
                     }
                     else
                     {

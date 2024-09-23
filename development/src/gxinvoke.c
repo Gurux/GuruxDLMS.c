@@ -2185,13 +2185,6 @@ int cosem_captureCompactData(
                 if (info.type == DLMS_DATA_TYPE_STRUCTURE ||
                     info.type == DLMS_DATA_TYPE_ARRAY)
                 {
-#ifdef DLMS_ITALIAN_STANDARD
-                    //Some meters require that there is a array count in data.
-                    if (info.type == DLMS_DATA_TYPE_ARRAY && object->appendAA)
-                    {
-                        bb_setUInt16(&object->buffer, value.Arr->size);
-                    }
-#endif //DLMS_ITALIAN_STANDARD
                     if ((ret = compactDataAppendArray(&value, &object->buffer, dataIndex)) != 0)
                     {
                         var_clear(&value);

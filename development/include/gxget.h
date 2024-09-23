@@ -281,18 +281,6 @@ extern "C" {
         gxValueEventArg* e);
 #endif //DLMS_IGNORE_LTE_MONITORING
 
-#ifdef DLMS_ITALIAN_STANDARD
-    //Convert compact data buffer to array of values.
-    //Some Italy meters require that there is a array count in data.
-    //This is against compact data structure defined in DLMS standard.
-    int compactData_getValues2(
-        dlmsSettings* settings,
-        gxByteBuffer* templateDescription,
-        gxByteBuffer* buffer,
-        variantArray* values,
-        unsigned char appendAA);
-#endif //DLMS_ITALIAN_STANDARD
-
 #ifdef  __cplusplus
 }
 #endif

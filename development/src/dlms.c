@@ -1866,22 +1866,15 @@ int getCompactArray(
                     int pos1;
                     variantArray tmp2;
                     va_init(&tmp2);
-#ifdef DLMS_ITALIAN_STANDARD
-                    //Some Italy meters require that there is a array count in data.
-                    if (info->appendAA)
+                    if ((ret = bb_getUInt16(buff, &len)) != 0)
                     {
-                        if ((ret = hlp_getObjectCount2(buff, &len)) != 0)
-                        {
-                            va_clear(&cols);
-                            return ret;
-                        }
-                        if (it->Arr->size != len)
-                        {
-                            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-                        }
+                        va_clear(&cols);
+                        return ret;
                     }
-#endif //DLMS_ITALIAN_STANDARD
-
+                    if (it->Arr->size != len)
+                    {
+                        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    }
                     if ((ret = getCompactArrayItem2(buff, it->Arr, &tmp2, 1)) != 0 ||
                         (ret = va_getByIndex(&tmp2, 0, &it2)) != 0)
                     {
@@ -6849,6 +6842,11 @@ int dlms_isPduFull(dlmsSettings* settings, gxByteBuffer* data, uint16_t* size)
         if (settings->cipher.security != DLMS_SECURITY_NONE)
         {
             len += 20 + CIPHERING_HEADER_SIZE + (uint16_t)data->size;
+            if ((settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
+            {
+                //System title is sent when General Protection is used.
+                len += 9;
+            }
         }
         else
 #endif //DLMS_IGNORE_HIGH_GMAC

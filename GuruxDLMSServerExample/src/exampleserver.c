@@ -3074,7 +3074,7 @@ int addHourlyConvertedConsumption()
     const unsigned char ln[6] = { 7,0,13,14,0,255 };
     INIT_OBJECT(hourlyConvertedConsumption, DLMS_OBJECT_TYPE_REGISTER, ln);
     //10 ^ -2 =  0,01
-    GX_UINT16(hourlyDiagnostic.value) = 0;
+    GX_UINT16(hourlyConvertedConsumption.value) = 0;
     hourlyConvertedConsumption.scaler = -2;
     hourlyConvertedConsumption.unit = DLMS_UNIT_ACTIVE_ENERGY;
     return 0;
@@ -3089,7 +3089,7 @@ int addHourlyConvertedConsumptionUnderAlarm()
     const unsigned char ln[6] = { 7,0,12,14,0,255 };
     INIT_OBJECT(hourlyConvertedConsumptionUnderAlarm, DLMS_OBJECT_TYPE_REGISTER, ln);
     //10 ^ -2 =  0,01
-    GX_UINT16(hourlyDiagnostic.value) = 0;
+    GX_UINT16(hourlyConvertedConsumptionUnderAlarm.value) = 1;
     hourlyConvertedConsumptionUnderAlarm.scaler = -2;
     hourlyConvertedConsumptionUnderAlarm.unit = DLMS_UNIT_ACTIVE_ENERGY;
     return 0;

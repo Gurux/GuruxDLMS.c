@@ -1866,7 +1866,9 @@ int getCompactArray(
                     int pos1;
                     variantArray tmp2;
                     va_init(&tmp2);
-                    if ((ret = bb_getUInt16(buff, &len)) != 0)
+#ifdef DLMS_ITALIAN_STANDARD
+                    //Italy standard require that there is a array count in data.
+                    if ((ret = hlp_getObjectCount2(buff, &len)) != 0)
                     {
                         va_clear(&cols);
                         return ret;
@@ -1875,6 +1877,7 @@ int getCompactArray(
                     {
                         return DLMS_ERROR_CODE_INVALID_PARAMETER;
                     }
+#endif //DLMS_ITALIAN_STANDARD
                     if ((ret = getCompactArrayItem2(buff, it->Arr, &tmp2, 1)) != 0 ||
                         (ret = va_getByIndex(&tmp2, 0, &it2)) != 0)
                     {

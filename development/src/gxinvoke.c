@@ -2185,6 +2185,17 @@ int cosem_captureCompactData(
                 if (info.type == DLMS_DATA_TYPE_STRUCTURE ||
                     info.type == DLMS_DATA_TYPE_ARRAY)
                 {
+#ifdef DLMS_ITALIAN_STANDARD
+                    //Italian standard requires that there is a array count in data.
+                    if (info.type == DLMS_DATA_TYPE_ARRAY)
+                    {
+                        if ((ret = hlp_setObjectCount(value.Arr->size, &object->buffer)) != 0)
+                        {
+                            var_clear(&value);
+                            break;
+                        }
+                    }
+#endif //DLMS_ITALIAN_STANDARD
                     if ((ret = compactDataAppendArray(&value, &object->buffer, dataIndex)) != 0)
                     {
                         var_clear(&value);

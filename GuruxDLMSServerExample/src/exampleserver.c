@@ -81,10 +81,6 @@ uint32_t SERIAL_NUMBER = 123456;
 
 //TODO: Allocate space where profile generic row values are serialized.
 #define PDU_MAX_PROFILE_GENERIC_COLUMN_SIZE 100
-#define HDLC_HEADER_SIZE 17
-#define HDLC_BUFFER_SIZE 128
-#define PDU_BUFFER_SIZE 512
-#define WRAPPER_BUFFER_SIZE 8 + PDU_BUFFER_SIZE
 //Buffer where frames are saved.
 static unsigned char frameBuff[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Buffer where PDUs are saved.
@@ -3869,23 +3865,17 @@ int getProfileGenericDataByRangeFromRingBuffer(
                     }
                     else
                     {
-                        if (last <= t)
+                        if (t <= l)
                         {
-                            e->transactionEndIndex = pos + 1;
-                        }
-                        else
-                        {
-                            //Index is one based, not zero.
-                            if (e->transactionEndIndex == 0)
-                            {
-                                ++e->transactionEndIndex;
-                            }
-                            e->transactionEndIndex += pg->entriesInUse - 1;
-                            e->transactionStartIndex = pos;
-                            break;
+                            ++e->transactionEndIndex;
                         }
                     }
                     last = t;
+                }
+                else if (t > l)
+                {
+                    //End value is found.
+                    break;
                 }
             }
             fclose(f);
@@ -3987,7 +3977,6 @@ int readProfileGeneric(
             //Loop items.
             uint32_t pos;
             gxtime tm;
-            uint16_t pduSize;
             FILE* f = NULL;
 #if _MSC_VER > 1400
             if (fopen_s(&f, fileName, "rb") != 0)
@@ -4029,19 +4018,23 @@ int readProfileGeneric(
                     //Clear buffer.
                     arr_clear(&pg->buffer);
                 }
+                uint16_t pduSize = 0;
                 for (pos = e->transactionStartIndex - 1; pos != e->transactionEndIndex; ++pos)
                 {
                     //Objects are saved to the buffer when action is used.
                     if (!e->action)
                     {
-                        pduSize = (uint16_t)e->value.byteArr->size;
+                        if (dlms_isPduFull(settings, e->value.byteArr, NULL))
+                        {
+                            //Return last full row.
+                            --e->transactionStartIndex;
+                            e->value.byteArr->size = pduSize;
+                            ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                            break;
+                        }
+                        pduSize = e->value.byteArr->size;
                         if ((ret = cosem_setStructure(e->value.byteArr, pg->captureObjects.size)) != 0)
                         {
-                            //Don't set error if PDU is full.
-                            if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
-                            {
-                                e->value.byteArr->size = pduSize;
-                            }
                             break;
                         }
                     }
@@ -4153,11 +4146,6 @@ int readProfileGeneric(
                     }
                     if (ret != 0)
                     {
-                        //Don't set error if PDU is full.
-                        if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
-                        {
-                            e->value.byteArr->size = pduSize;
-                        }
                         break;
                     }
                     ++e->transactionStartIndex;
@@ -4173,6 +4161,7 @@ int readProfileGeneric(
     }
     if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)
     {
+        //Don't set error if PDU is full.
         ret = 0;
     }
     return ret;
@@ -4224,6 +4213,41 @@ int updateCompactData(dlmsSettings* settings, gxCompactData* cd)
     return ret;
 }
 
+//Read profile generic captured values.
+int updateProfileGenericValues(dlmsSettings* settings, gxProfileGeneric* pg)
+{
+    int ret;
+    uint16_t pos;
+    gxValueEventCollection args2;
+    gxValueEventArg* e2 = malloc(sizeof(gxValueEventArg));
+    ve_init(e2);
+    e2->action = 1;
+    vec_init(&args2);
+    ret = vec_push(&args2, e2);
+    gxKey* kv;
+    //Loop capture columns and get values.
+    for (pos = 0; pos != pg->captureObjects.size; ++pos)
+    {
+        if ((ret = arr_getByIndex(&pg->captureObjects, (uint16_t)pos, (void**)&kv)) != 0)
+        {
+            break;
+        }
+        ve_clear(e2);
+        e2->target = (gxObject*)kv->key;
+        e2->index = ((gxTarget*)kv->value)->attributeIndex;
+        e2->dataIndex = ((gxTarget*)kv->value)->dataIndex;
+        //Read and update values. This example uses preRead.
+        svr_preRead(settings, &args2);
+        if (e2->error != 0)
+        {
+            ret = e2->error;
+            break;
+        }
+    }
+    vec_clear(&args2);
+    return ret;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 /////////////////////////////////////////////////////////////////////////////
@@ -4260,6 +4284,11 @@ void svr_preRead(
         {
             readActivePowerValue();
         }
+        else if (e->target->objectType == DLMS_OBJECT_TYPE_REGISTER && e->index == 2)
+        {
+            //Update value by one every time when user reads register.
+            GX_ADD(((gxRegister*)e->target)->value, 1);
+        }
         //Get time if user want to read date and time.
         if (e->target == BASE(clock1) && e->index == 2)
         {
@@ -4286,7 +4315,7 @@ void svr_preRead(
         }
         else if (e->target->objectType == DLMS_OBJECT_TYPE_COMPACT_DATA && e->index == 5)
         {
-            //Update  template description.
+            //Update template description.
             ret = compactData_updateTemplateDescription(settings, (gxCompactData*)e->target);
         }
         //Update Unix time.
@@ -4478,7 +4507,12 @@ void svr_preAction(
         GXTRACE_LN(("svr_preAction: "), e->target->objectType, e->target->logicalName);
         if (e->target->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC)
         {
-            handleProfileGenericActions(settings, e);
+            //Read captured profile generic values.
+            e->error = updateProfileGenericValues(settings, (gxProfileGeneric*)e->target);
+            if (e->error == 0)
+            {
+                handleProfileGenericActions(settings, e);
+            }
             e->handled = 1;
         }
         else if (e->target == BASE(activePowerL1))

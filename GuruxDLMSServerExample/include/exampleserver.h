@@ -21,6 +21,10 @@
 #endif
 
 #include "../../development/include/server.h"
+#define HDLC_HEADER_SIZE 17
+#define HDLC_BUFFER_SIZE 128
+#define PDU_BUFFER_SIZE 512
+#define WRAPPER_BUFFER_SIZE 8 + PDU_BUFFER_SIZE
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include "connection.h"

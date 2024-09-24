@@ -46,12 +46,6 @@
 #include "../../development/include/cosem.h"
 #include "../../development/include/gxaes.h"
 
-
-#define HDLC_HEADER_SIZE 17
-
-#define HDLC_BUFFER_SIZE 128
-#define PDU_BUFFER_SIZE 1024
-#define WRAPPER_BUFFER_SIZE 8 + PDU_BUFFER_SIZE
 unsigned char snframeBuff[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 unsigned char snpduBuff[PDU_BUFFER_SIZE];
 unsigned char lnframeBuff[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
@@ -152,6 +146,7 @@ int startServers(int port, int trace)
     printf("----------------------------------------------------------\n");
     printf("Press Enter to close application.\r\n");
     uint32_t lastMonitor = 0;
+    uint32_t executeTime = 0;
     while (1)
     {
         //Monitor values only once/second.
@@ -189,6 +184,17 @@ int startServers(int port, int trace)
             if ((ret = svr_monitorAll(&lnWrapper.settings)) != 0)
             {
                 printf("lnWrapper monitor failed.\r\n");
+            }
+            if (executeTime <= lastMonitor)
+            {
+                svr_run(&lnHdlc.settings, lastMonitor, &executeTime);
+                if (executeTime != -1)
+                {
+                    time_t tmp = lastMonitor;
+                    printf("%s", ctime(&tmp));
+                    tmp = executeTime;
+                    printf("%lu seconds before next invoke %s", executeTime - lastMonitor, ctime(&tmp));
+                }
             }
         }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes

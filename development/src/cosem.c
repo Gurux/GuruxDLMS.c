@@ -2016,3 +2016,185 @@ int cosem_findObjectByLN(
     }
     return ret;
 }
+
+#ifndef DLMS_IGNORE_DELTA
+int cosem_setDeltaUInt8(gxByteBuffer* bb, unsigned char value)
+{
+    int ret;
+    if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_DELTA_UINT8)) != 0 ||
+        (ret = bb_setUInt8(bb, value)) != 0)
+    {
+        //Error code is returned at the end of the function.
+    }
+    return ret;
+}
+
+int cosem_setDeltaUInt16(gxByteBuffer* bb, uint16_t value)
+{
+    int ret;
+    if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_DELTA_UINT16)) != 0 ||
+        (ret = bb_setUInt16(bb, value)) != 0)
+    {
+        //Error code is returned at the end of the function.
+    }
+    return ret;
+}
+
+int cosem_setDeltaUInt32(gxByteBuffer* bb, uint32_t value)
+{
+    int ret;
+    if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_DELTA_UINT32)) != 0 ||
+        (ret = bb_setUInt32(bb, value)) != 0)
+    {
+        //Error code is returned at the end of the function.
+    }
+    return ret;
+}
+
+int cosem_setDeltaInt8(gxByteBuffer* bb, char value)
+{
+    int ret;
+    if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_DELTA_INT8)) != 0 ||
+        (ret = bb_setInt8(bb, value)) != 0)
+    {
+        //Error code is returned at the end of the function.
+    }
+    return ret;
+}
+
+int cosem_setDeltaInt16(gxByteBuffer* bb, int16_t value)
+{
+    int ret;
+    if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_DELTA_INT16)) != 0 ||
+        (ret = bb_setInt16(bb, value)) != 0)
+    {
+        //Error code is returned at the end of the function.
+    }
+    return ret;
+}
+
+int cosem_setDeltaInt32(gxByteBuffer* bb, int32_t value)
+{
+    int ret;
+    if ((ret = bb_setUInt8(bb, DLMS_DATA_TYPE_DELTA_INT32)) != 0 ||
+        (ret = bb_setInt32(bb, value)) != 0)
+    {
+        //Error code is returned at the end of the function.
+    }
+    return ret;
+}
+
+int cosem_getDeltaUInt8(gxByteBuffer* bb, unsigned char* value)
+{
+    int ret;
+    unsigned char tmp;
+    if ((ret = bb_getUInt8(bb, &tmp)) != 0)
+    {
+        return ret;
+    }
+    if (tmp != DLMS_DATA_TYPE_DELTA_UINT8)
+    {
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
+    }
+    if ((ret = bb_getUInt8(bb, value)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+
+int cosem_getDeltaUInt16(gxByteBuffer* bb, uint16_t* value)
+{
+    int ret;
+    unsigned char tmp;
+    if ((ret = bb_getUInt8(bb, &tmp)) != 0)
+    {
+        return ret;
+    }
+    if (tmp != DLMS_DATA_TYPE_DELTA_UINT16)
+    {
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
+    }
+    if ((ret = bb_getUInt16(bb, value)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+
+int cosem_getDeltaUInt32(gxByteBuffer* bb, uint32_t* value)
+{
+    int ret;
+    unsigned char tmp;
+    if ((ret = bb_getUInt8(bb, &tmp)) != 0)
+    {
+        return ret;
+    }
+    if (tmp != DLMS_DATA_TYPE_DELTA_UINT32)
+    {
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
+    }
+    if ((ret = bb_getUInt32(bb, value)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+
+int cosem_getDeltaInt8(gxByteBuffer* bb, signed char* value)
+{
+    int ret;
+    unsigned char tmp;
+    if ((ret = bb_getUInt8(bb, &tmp)) != 0)
+    {
+        return ret;
+    }
+    if (tmp != DLMS_DATA_TYPE_DELTA_INT8)
+    {
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
+    }
+    if ((ret = bb_getInt8(bb, value)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+
+int cosem_getDeltaInt16(gxByteBuffer* bb, int16_t* value)
+{
+    int ret;
+    unsigned char tmp;
+    if ((ret = bb_getUInt8(bb, &tmp)) != 0)
+    {
+        return ret;
+    }
+    if (tmp != DLMS_DATA_TYPE_DELTA_INT16)
+    {
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
+    }
+    if ((ret = bb_getInt16(bb, value)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+
+int cosem_getDeltaInt32(gxByteBuffer* bb, int32_t* value)
+{
+    int ret;
+    unsigned char tmp;
+    if ((ret = bb_getUInt8(bb, &tmp)) != 0)
+    {
+        return ret;
+    }
+    if (tmp != DLMS_DATA_TYPE_DELTA_INT32)
+    {
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
+    }
+    if ((ret = bb_getInt32(bb, value)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+#endif //DLMS_IGNORE_DELTA

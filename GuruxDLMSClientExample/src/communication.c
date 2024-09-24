@@ -991,7 +991,7 @@ int com_updateInvocationCounter(
             connection->settings.cipher.invocationCounter = 1 + var_toInteger(&d.value);
             if (connection->trace > GX_TRACE_LEVEL_WARNING)
             {
-                printf("Invocation counter: %lu (0x%lX)\r\n",
+                printf("Invocation counter: %u (0x%X)\r\n",
                     connection->settings.cipher.invocationCounter,
                     connection->settings.cipher.invocationCounter);
             }
@@ -1004,7 +1004,7 @@ int com_updateInvocationCounter(
             bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
             bb_clear(&challenge);
             connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;
-            if (dlms_usePreEstablishedConnection(&connection->settings) != NULL)
+            if (dlms_usePreEstablishedConnection(&connection->settings))
             {
                 connection->settings.negotiatedConformance |= DLMS_CONFORMANCE_GENERAL_PROTECTION;
             }
@@ -1048,20 +1048,30 @@ int com_initializeConnection(
             (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
             (ret = cl_parseAAREResponse(&connection->settings, &reply.data)) != 0)
         {
-            mes_clear(&messages);
-            reply_clear(&reply);
             if (ret == DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED)
             {
                 if (connection->trace > GX_TRACE_LEVEL_OFF)
                 {
                     printf("Use Logical Name referencing is wrong. Change it!\r\n");
                 }
-                return ret;
             }
-            if (connection->trace > GX_TRACE_LEVEL_OFF)
+            else if (connection->trace > GX_TRACE_LEVEL_OFF)
             {
-                printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
+                if (ret == (DLMS_ERROR_TYPE_EXCEPTION_RESPONSE | DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR))
+                {
+                    //If invocation counter value is too low.
+                    //Get invocation counter value.
+                    uint32_t value = 0;
+                    bb_getUInt32(&reply.data, &value);
+                    printf("Connection failed. Expected invocation counter value: %u \r\n", value);
+                }
+                else
+                {
+                    printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
+                }
             }
+            mes_clear(&messages);
+            reply_clear(&reply);
             return ret;
         }
         mes_clear(&messages);
@@ -1802,7 +1812,7 @@ int com_readProfileGenerics(
         }
         if (connection->trace > GX_TRACE_LEVEL_WARNING)
         {
-            printf("Entries: %ld/%ld\r\n", pg->entriesInUse, pg->profileEntries);
+            printf("Entries: %d/%d\r\n", pg->entriesInUse, pg->profileEntries);
         }
         //If there are no columns or rows.
         if (pg->entriesInUse == 0 || pg->captureObjects.size == 0)

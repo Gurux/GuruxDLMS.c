@@ -5165,13 +5165,7 @@ int dlms_handleExceptionResponse(gxByteBuffer* data)
     {
         return ret;
     }
-    error = (DLMS_EXCEPTION_SERVICE_ERROR)ch;
-    uint32_t value = 0;
-    if (error == DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR && bb_available(data) > 3)
-    {
-        bb_getUInt32(data, &value);
-    }
-    return DLMS_ERROR_TYPE_EXCEPTION_RESPONSE | value << 8 | error;
+    return DLMS_ERROR_TYPE_EXCEPTION_RESPONSE | ch;
 }
 #endif //!defined(DLMS_IGNORE_SERVER)
 

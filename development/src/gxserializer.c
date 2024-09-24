@@ -992,6 +992,26 @@ int ser_loadVariant(dlmsVARIANT* data,
             ret = ser_loadDateTime(data->dateTime, serializeSettings, DLMS_DATA_TYPE_TIME);
 #endif //DLMS_IGNORE_MALLOC
             break;
+#ifndef DLMS_IGNORE_DELTA
+        case DLMS_DATA_TYPE_DELTA_INT8:
+            ret = ser_loadInt8(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &data->cVal : data->pcVal);
+            break;
+        case DLMS_DATA_TYPE_DELTA_INT16:
+            ret = ser_loadInt16(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &data->iVal : data->piVal);
+            break;
+        case DLMS_DATA_TYPE_DELTA_INT32:
+            ret = ser_loadInt32(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &data->lVal : data->plVal);
+            break;
+        case DLMS_DATA_TYPE_DELTA_UINT8:
+            ret = ser_loadUInt8(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &data->bVal : data->pbVal);
+            break;
+        case DLMS_DATA_TYPE_DELTA_UINT16:
+            ret = ser_loadUInt16(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &data->uiVal : data->puiVal);
+            break;
+        case DLMS_DATA_TYPE_DELTA_UINT32:
+            ret = ser_loadUInt32(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &data->ulVal : data->pulVal);
+            break;
+#endif //DLMS_IGNORE_DELTA
         default:
 #ifdef _DEBUG
             //Assert in debug version.
@@ -1464,6 +1484,26 @@ int ser_saveBytes3(
 #endif //DLMS_IGNORE_MALLOC
         break;
     }
+#ifndef DLMS_IGNORE_DELTA
+    case DLMS_DATA_TYPE_DELTA_UINT8:
+        ret = ser_saveUInt8(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->pbVal : data->bVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_UINT16:
+        ret = ser_saveUInt16(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->puiVal : data->uiVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_UINT32:
+        ret = ser_saveUInt32(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->pulVal : data->ulVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT8:
+        ret = ser_saveUInt8(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->pcVal : data->cVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT16:
+        ret = ser_saveInt16(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->puiVal : data->uiVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT32:
+        ret = ser_saveUInt32(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->plVal : data->lVal);
+        break;
+#endif //DLMS_IGNORE_DELTA
     default:
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);

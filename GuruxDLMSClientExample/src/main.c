@@ -35,6 +35,72 @@
 #include "../../development/include/gxserializer.h"
 
 //Client don't need this.
+void svr_preGet(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
+
+}
+
+//Client don't need this.
+void svr_postGet(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
+
+}
+
+//Client don't need this.
+void svr_preRead(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
+
+}
+
+//Client don't need this.
+void svr_preWrite(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
+
+}
+
+
+//Client don't need this.
+void svr_preAction(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
+
+}
+
+//Client don't need this.
+extern void svr_postRead(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
+
+}
+
+//Client don't need this.
+extern void svr_postWrite(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
+
+}
+
+//Client don't need this.
+extern void svr_postAction(
+    dlmsSettings* settings,
+    gxValueEventCollection* args)
+{
+
+}
+
+
+//Client don't need this.
 unsigned char svr_isTarget(
     dlmsSettings* settings,
     unsigned long serverAddress,
@@ -833,7 +899,6 @@ int connectMeter(int argc, char* argv[])
             con.settings.plcSettings.macDestinationAddress = atoi(optarg);
             break;
         case 'R':
-            con.settings.cipher.broacast = 1;
             if (strcasecmp("UnConfirmed", optarg) == 0)
             {
                 con.settings.serviceClass = DLMS_SERVICE_CLASS_UN_CONFIRMED;

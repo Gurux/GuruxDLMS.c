@@ -125,6 +125,9 @@ extern "C" {
 
     // #define DLMS_IGNORE_FLOAT32
     // #define DLMS_IGNORE_FLOAT64
+    
+    //Delta values are ignored.
+    // #define DLMS_IGNORE_DELTA
 
     //Use EPOCH time. This can be used to improve memory usage.
     // #define DLMS_USE_EPOCH_TIME

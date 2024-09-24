@@ -210,7 +210,21 @@ extern "C" {
   int cosem_setArray(gxByteBuffer* bb, uint16_t count);
   int cosem_setEnum(gxByteBuffer* bb, unsigned char value);
   int cosem_setBoolean(gxByteBuffer* bb, unsigned char value);
+#ifndef DLMS_IGNORE_DELTA
+  int cosem_setDeltaInt8(gxByteBuffer* bb, char value);
+  int cosem_setDeltaInt16(gxByteBuffer* bb, int16_t value);
+  int cosem_setDeltaInt32(gxByteBuffer* bb, int32_t value);
+  int cosem_setDeltaUInt8(gxByteBuffer* bb, unsigned char value);
+  int cosem_setDeltaUInt16(gxByteBuffer* bb, uint16_t value);
+  int cosem_setDeltaUInt32(gxByteBuffer* bb, uint32_t value);
 
+  int cosem_getDeltaUInt8(gxByteBuffer* bb, unsigned char* value);
+  int cosem_getDeltaUInt16(gxByteBuffer* bb, uint16_t* value);
+  int cosem_getDeltaUInt32(gxByteBuffer* bb, uint32_t* value);
+  int cosem_getDeltaInt8(gxByteBuffer* bb, signed char* value);
+  int cosem_getDeltaInt16(gxByteBuffer* bb, int16_t* value);
+  int cosem_getDeltaInt32(gxByteBuffer* bb, int32_t* value);
+#endif //DLMS_IGNORE_DELTA
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
   int cosem_getColumns(
       gxArray* captureObjects,

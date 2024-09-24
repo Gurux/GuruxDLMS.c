@@ -1074,6 +1074,27 @@ int var_getBytes4(
 #endif //DLMS_IGNORE_MALLOC
         break;
     }
+#ifndef DLMS_IGNORE_DELTA
+    case DLMS_DATA_TYPE_DELTA_INT8:
+        ret = bb_setInt8(ba, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->pcVal : data->cVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT16:
+        ret = bb_setInt16(ba, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->puiVal : data->uiVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT32:
+        ret = bb_setUInt32(ba, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->plVal : data->lVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_UINT8:
+        ret = bb_setInt8(ba, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->pcVal : data->cVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_UINT16:
+        ret = bb_setInt16(ba, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->puiVal : data->uiVal);
+        break;
+    case DLMS_DATA_TYPE_DELTA_UINT32:
+        ret = bb_setUInt32(ba, (data->vt & DLMS_DATA_TYPE_BYREF) != 0 ? *data->plVal : data->lVal);
+        break;
+#endif //DLMS_IGNORE_DELTA
+
     default:
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
@@ -1129,9 +1150,19 @@ int var_getSize(DLMS_DATA_TYPE vt)
     case DLMS_DATA_TYPE_TIME:
         nSize = 4;
         break;
-                //case DLMS_DATA_TYPE_ARRAY:
-        //case DLMS_DATA_TYPE_STRUCTURE:
-        //case DLMS_DATA_TYPE_COMPACT_ARRAY:
+#ifndef DLMS_IGNORE_DELTA
+    case DLMS_DATA_TYPE_DELTA_INT8:
+    case DLMS_DATA_TYPE_DELTA_UINT8:
+        nSize = 1;
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT16:
+    case DLMS_DATA_TYPE_DELTA_UINT16:
+        nSize = 2;
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT32:
+    case DLMS_DATA_TYPE_DELTA_UINT32:
+        break;
+#endif //DLMS_IGNORE_DELTA
     default:
         break;
     }
@@ -1227,6 +1258,26 @@ int var_toInteger(dlmsVARIANT* data)
     }
     break;
 #endif //DLMS_IGNORE_MALLOC
+#ifndef DLMS_IGNORE_DELTA
+    case DLMS_DATA_TYPE_DELTA_INT8:
+        ret = data->cVal;
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT16:
+        ret = data->iVal;
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT32:
+        ret = data->lVal;
+        break;
+    case DLMS_DATA_TYPE_DELTA_UINT8:
+        ret = data->bVal;
+        break;
+    case DLMS_DATA_TYPE_DELTA_UINT16:
+        ret = data->uiVal;
+        break;
+    case DLMS_DATA_TYPE_DELTA_UINT32:
+        ret = data->ulVal;
+        break;
+#endif //DLMS_IGNORE_DELTA
     default:
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
@@ -1636,6 +1687,9 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
         }
         case DLMS_DATA_TYPE_INT32:
+#ifndef DLMS_IGNORE_DELTA
+        case DLMS_DATA_TYPE_DELTA_INT32:
+#endif //DLMS_IGNORE_DELTA
         {
             hlp_intToString(buff, 250, tmp.lVal, 1, 0);
             bb_addString(item->strVal, buff);
@@ -1644,6 +1698,9 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
         }
         case DLMS_DATA_TYPE_UINT32:
+#ifndef DLMS_IGNORE_DELTA
+        case DLMS_DATA_TYPE_DELTA_UINT32:
+#endif //DLMS_IGNORE_DELTA
         {
             hlp_uint64ToString(buff, 250, tmp.ulVal, 0);
             if ((ret = bb_addString(item->strVal, buff)) == 0)
@@ -1654,6 +1711,9 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return ret;
         }
         case DLMS_DATA_TYPE_INT8:
+#ifndef DLMS_IGNORE_DELTA
+        case DLMS_DATA_TYPE_DELTA_INT8:       
+#endif //DLMS_IGNORE_DELTA
         {
             hlp_intToString(buff, 250, tmp.cVal, 1, 0);
             bb_addString(item->strVal, buff);
@@ -1662,6 +1722,9 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
         }
         case DLMS_DATA_TYPE_INT16:
+#ifndef DLMS_IGNORE_DELTA
+        case DLMS_DATA_TYPE_DELTA_INT16:
+#endif //DLMS_IGNORE_DELTA
         {
             hlp_intToString(buff, 250, tmp.iVal, 1, 0);
             bb_addString(item->strVal, buff);
@@ -1670,6 +1733,9 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
         }
         case DLMS_DATA_TYPE_UINT8:
+#ifndef DLMS_IGNORE_DELTA
+        case DLMS_DATA_TYPE_DELTA_UINT8:
+#endif //DLMS_IGNORE_DELTA
         {
             hlp_intToString(buff, 250, tmp.bVal, 0, 0);
             bb_addString(item->strVal, buff);
@@ -1678,6 +1744,9 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             return DLMS_ERROR_CODE_OK;
         }
         case DLMS_DATA_TYPE_UINT16:
+#ifndef DLMS_IGNORE_DELTA
+        case DLMS_DATA_TYPE_DELTA_UINT16:
+#endif //DLMS_IGNORE_DELTA
         {
             hlp_intToString(buff, 250, tmp.uiVal, 0, 0);
             bb_addString(item->strVal, buff);
@@ -1791,42 +1860,66 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (type == DLMS_DATA_TYPE_INT32)
+        else if (type == DLMS_DATA_TYPE_INT32
+#ifndef DLMS_IGNORE_DELTA
+        || type == DLMS_DATA_TYPE_DELTA_INT32
+#endif //DLMS_IGNORE_DELTA
+            )
         {
             item->lVal = hlp_stringToInt((char*)tmp.strVal->data);
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (type == DLMS_DATA_TYPE_UINT32)
+        else if (type == DLMS_DATA_TYPE_UINT32
+#ifndef DLMS_IGNORE_DELTA
+            || type == DLMS_DATA_TYPE_DELTA_UINT32
+#endif //DLMS_IGNORE_DELTA
+            )
         {
             item->ulVal = hlp_stringToInt((char*)tmp.strVal->data) & 0xFFFFFFFF;
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (type == DLMS_DATA_TYPE_INT8)
+        else if (type == DLMS_DATA_TYPE_INT8
+#ifndef DLMS_IGNORE_DELTA
+            || type == DLMS_DATA_TYPE_DELTA_INT8
+#endif //DLMS_IGNORE_DELTA
+            )
         {
             item->cVal = (char)hlp_stringToInt((char*)tmp.strVal->data);
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (type == DLMS_DATA_TYPE_INT16)
+        else if (type == DLMS_DATA_TYPE_INT16 
+#ifndef DLMS_IGNORE_DELTA
+            || type == DLMS_DATA_TYPE_DELTA_INT16
+#endif //DLMS_IGNORE_DELTA
+            )
         {
             item->iVal = (short)hlp_stringToInt((char*)tmp.strVal->data);
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (type == DLMS_DATA_TYPE_UINT8)
+        else if (type == DLMS_DATA_TYPE_UINT8
+#ifndef DLMS_IGNORE_DELTA
+            || type == DLMS_DATA_TYPE_DELTA_UINT8
+#endif //DLMS_IGNORE_DELTA
+            )
         {
             item->bVal = (unsigned char)hlp_stringToInt((char*)tmp.strVal->data);
             item->vt = type;
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (type == DLMS_DATA_TYPE_UINT16)
+        else if (type == DLMS_DATA_TYPE_UINT16
+#ifndef DLMS_IGNORE_DELTA
+            || type == DLMS_DATA_TYPE_DELTA_UINT16
+#endif //DLMS_IGNORE_DELTA
+            )
         {
             item->uiVal = (uint16_t)hlp_stringToInt((char*)tmp.strVal->data);
             item->vt = type;
@@ -1959,6 +2052,14 @@ int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
 #ifndef DLMS_IGNORE_FLOAT64
     case DLMS_DATA_TYPE_FLOAT64:
 #endif //DLMS_IGNORE_FLOAT64
+#ifndef DLMS_IGNORE_DELTA
+    case DLMS_DATA_TYPE_DELTA_INT8:
+    case DLMS_DATA_TYPE_DELTA_INT16:
+    case DLMS_DATA_TYPE_DELTA_INT32:
+    case DLMS_DATA_TYPE_DELTA_UINT8:
+    case DLMS_DATA_TYPE_DELTA_UINT16:
+    case DLMS_DATA_TYPE_DELTA_UINT32:
+#endif //DLMS_IGNORE_DELTA
         return convert(value, newType);
     default:
         //Handled later.
@@ -2027,6 +2128,15 @@ int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
             break;
         case DLMS_DATA_TYPE_FLOAT64:
             break;
+#ifndef DLMS_IGNORE_DELTA
+        case DLMS_DATA_TYPE_DELTA_INT8:
+        case DLMS_DATA_TYPE_DELTA_INT16:
+        case DLMS_DATA_TYPE_DELTA_INT32:
+        case DLMS_DATA_TYPE_DELTA_UINT8:
+        case DLMS_DATA_TYPE_DELTA_UINT16:
+        case DLMS_DATA_TYPE_DELTA_UINT32:
+            break;
+#endif //DLMS_IGNORE_DELTA
         default:
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -2579,6 +2689,32 @@ double var_toDouble(dlmsVARIANT* target)
         return target->dblVal;
     }
 #endif //DLMS_IGNORE_FLOAT64
+#ifndef DLMS_IGNORE_DELTA
+    case DLMS_DATA_TYPE_DELTA_INT8:
+    {
+        return target->cVal;
+    }
+    case DLMS_DATA_TYPE_DELTA_INT16:
+    {
+        return target->iVal;
+    }
+    case DLMS_DATA_TYPE_DELTA_INT32:
+    {
+        return target->lVal;
+    }
+    case DLMS_DATA_TYPE_DELTA_UINT8:
+    {
+        return target->bVal;
+    }
+    case DLMS_DATA_TYPE_DELTA_UINT16:
+    {
+        return target->uiVal;
+    }
+    case DLMS_DATA_TYPE_DELTA_UINT32:
+    {
+        return target->ulVal;
+    }
+#endif //DLMS_IGNORE_DELTA
     default:
         break;
     }
@@ -2637,4 +2773,146 @@ int va_print(
     return ret;
 }
 
+#ifndef DLMS_IGNORE_DELTA
+int var_setDeltaUInt8(dlmsVARIANT* data, unsigned char value)
+{
+    var_clear(data);
+    data->vt = DLMS_DATA_TYPE_DELTA_UINT8;
+    data->bVal = value;
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_setDeltaUInt16(dlmsVARIANT* data, uint16_t value)
+{
+    var_clear(data);
+    data->vt = DLMS_DATA_TYPE_DELTA_UINT16;
+    data->uiVal = value;
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_setDeltaUInt32(dlmsVARIANT* data, uint32_t value)
+{
+    var_clear(data);
+    data->vt = DLMS_DATA_TYPE_DELTA_UINT32;
+    data->ulVal = value;
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_setDeltaInt8(dlmsVARIANT* data, char value)
+{
+    var_clear(data);
+    data->vt = DLMS_DATA_TYPE_INT8;
+    data->cVal = value;
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_setDeltaInt16(dlmsVARIANT* data, short value)
+{
+    var_clear(data);
+    data->vt = DLMS_DATA_TYPE_DELTA_INT16;
+    data->iVal = value;
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_setDeltaInt32(dlmsVARIANT* data, int32_t value)
+{
+    var_clear(data);
+    data->vt = DLMS_DATA_TYPE_DELTA_INT32;
+    data->lVal = value;
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_getDeltaUInt8(dlmsVARIANT* data, unsigned char* value)
+{
+    if (data->vt == DLMS_DATA_TYPE_NONE)
+    {
+        *value = 0;
+    }
+    else
+    {
+        *value = data->bVal;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_getDeltaUInt16(dlmsVARIANT* data, uint16_t* value)
+{
+    if (data->vt == DLMS_DATA_TYPE_NONE)
+    {
+        *value = 0;
+    }
+    else
+    {
+        *value = data->uiVal;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_getDeltaUInt32(dlmsVARIANT* data, uint32_t* value)
+{
+    if (data->vt == DLMS_DATA_TYPE_NONE)
+    {
+        *value = 0;
+    }
+    else
+    {
+        *value = data->lVal;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_getDeltaUInt64(dlmsVARIANT* data, uint64_t* value)
+{
+    if (data->vt == DLMS_DATA_TYPE_NONE)
+    {
+        *value = 0;
+    }
+    else
+    {
+        *value = data->ullVal;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_getDeltaInt8(dlmsVARIANT* data, char* value)
+{
+    if (data->vt == DLMS_DATA_TYPE_NONE)
+    {
+        *value = 0;
+    }
+    else
+    {
+        *value = data->cVal;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_getDeltaInt16(dlmsVARIANT* data, short* value)
+{
+    if (data->vt == DLMS_DATA_TYPE_NONE)
+    {
+        *value = 0;
+    }
+    else
+    {
+        *value = data->iVal;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+int var_getDeltaInt32(dlmsVARIANT* data, int32_t* value)
+{
+    var_clear(data);
+    if (data->vt == DLMS_DATA_TYPE_NONE)
+    {
+        *value = 0;
+    }
+    else
+    {
+        *value = data->lVal;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+#endif //DLMS_IGNORE_DELTA
 #endif //!defined(DLMS_IGNORE_STRING_CONVERTER) && defined(DLMS_IGNORE_MALLOC)

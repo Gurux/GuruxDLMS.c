@@ -966,6 +966,20 @@ int hlp_getDataTypeSize(DLMS_DATA_TYPE type)
     case DLMS_DATA_TYPE_UINT8:
         size = 1;
         break;
+#ifndef DLMS_IGNORE_DELTA
+    case DLMS_DATA_TYPE_DELTA_INT16:
+    case DLMS_DATA_TYPE_DELTA_UINT16:
+        size = 2;
+        break;
+    case DLMS_DATA_TYPE_DELTA_INT32:
+    case DLMS_DATA_TYPE_DELTA_UINT32:
+        size = 4;
+        break;
+    case DLMS_DATA_TYPE_DELTA_UINT8:
+    case DLMS_DATA_TYPE_DELTA_INT8:
+        size = 1;
+        break;
+#endif //DLMS_IGNORE_DELTA
     default:
         break;
     }

@@ -539,6 +539,67 @@ extern "C" {
 
 #endif //GX_DLMS_MICROCONTROLLER
 
+#ifndef DLMS_IGNORE_DELTA
+    //Set byte delta value to variant.
+    int var_setDeltaUInt8(
+        dlmsVARIANT* data,
+        unsigned char value);
+
+    //Set UInt16 delta value to variant.
+    int var_setDeltaUInt16(
+        dlmsVARIANT* data,
+        uint16_t value);
+
+    //Set UInt32 delta value to variant.
+    int var_setDeltaUInt32(dlmsVARIANT
+        * data,
+        uint32_t value);
+
+    //Set signed byte delta value to variant.
+    int var_setDeltaInt8(
+        dlmsVARIANT* data,
+        char value);
+
+    //Set Int16 delta value to variant.
+    int var_setDeltaInt16(
+        dlmsVARIANT* data,
+        short value);
+
+    //Set Int32 delta value to variant.
+    int var_setDeltaInt32(
+        dlmsVARIANT* data,
+        int32_t value);
+
+    //Get byte value from variant.
+    int var_getDeltaUInt8(
+        dlmsVARIANT* data,
+        unsigned char* value);
+
+    //Get UInt16 value from variant.
+    int var_getDeltaUInt16(
+        dlmsVARIANT* data,
+        uint16_t* value);
+
+    //Get UInt32 value from variant.
+    int var_getDeltaUInt32(
+        dlmsVARIANT* data,
+        uint32_t* value);
+
+    //Get signed byte value from variant.
+    int var_getDeltaInt8(
+        dlmsVARIANT* data,
+        char* value);
+
+    //Get Int16 value from variant.
+    int var_getDeltaInt16(
+        dlmsVARIANT* data,
+        short* value);
+
+    //Get Int32 value from variant.
+    int var_getDeltaInt32(
+        dlmsVARIANT* data,
+        int32_t* value);
+#endif //DLMS_IGNORE_DELTA
 #define VA_ATTACH(X, V, S) va_attach(&X, V, S, sizeof(V)/sizeof(V[0]))
 
 #ifdef  __cplusplus

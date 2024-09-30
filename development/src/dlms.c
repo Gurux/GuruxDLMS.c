@@ -4975,10 +4975,6 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
         data->encryptedCommand = data->command;
         data->command = (DLMS_COMMAND)ch;
     }
-    else
-    {
-        data->data.position -= 1;
-    }
 #endif //DLMS_IGNORE_HIGH_GMAC
     return ret;
 }
@@ -5373,6 +5369,9 @@ int dlms_getPdu(
             case DLMS_COMMAND_GLO_GET_REQUEST:
             case DLMS_COMMAND_GLO_SET_REQUEST:
             case DLMS_COMMAND_GLO_METHOD_REQUEST:
+            case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
+            case DLMS_COMMAND_GENERAL_DED_CIPHERING:
+            case DLMS_COMMAND_GENERAL_CIPHERING:
                 data->command = DLMS_COMMAND_NONE;
                 data->data.position = (data->cipherIndex);
                 ret = dlms_getPdu(settings, data, 0);
@@ -5401,6 +5400,7 @@ int dlms_getPdu(
             case DLMS_COMMAND_DED_METHOD_RESPONSE:
             case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
             case DLMS_COMMAND_GENERAL_DED_CIPHERING:
+            case DLMS_COMMAND_GENERAL_CIPHERING:
                 data->data.position = data->cipherIndex;
                 ret = dlms_getPdu(settings, data, 0);
                 break;

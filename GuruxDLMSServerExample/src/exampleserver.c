@@ -838,7 +838,11 @@ int addAssociationHighGMac()
         associationHighGMac.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_HIGH_GMAC;
         OA_ATTACH(associationHighGMac.objectList, ALL_OBJECTS);
         associationHighGMac.clientSAP = 0x1;
+#ifndef DLMS_ITALIAN_STANDARD
         associationHighGMac.xDLMSContextInfo.maxSendPduSize = associationHighGMac.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
+#else
+        associationHighGMac.xDLMSContextInfo.maxSendPduSize = associationHighGMac.xDLMSContextInfo.maxReceivePduSize = 504;
+#endif //DLMS_ITALIAN_STANDARD
         associationHighGMac.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
             DLMS_CONFORMANCE_GENERAL_PROTECTION |
             DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
@@ -948,7 +952,13 @@ int addSecuritySetupHighGMac()
 {
     int ret;
     //Define client system title.
+#ifdef DLMS_ITALIAN_STANDARD
+    // Client system title is not send with message and it must define for the 
+    // meter. This example uses client system title: Gurux123
+    static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0x47, 0x75, 0x72, 0x75, 0x78, 0x31, 0x32, 0x33 };
+#else
     static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0 };
+#endif
     const unsigned char ln[6] = { 0, 0, 43, 0, 2, 255 };
     if ((ret = INIT_OBJECT(securitySetupHighGMac, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
     {
@@ -1601,7 +1611,7 @@ int addImageTransfer()
 {
     unsigned char ln[6] = { 0,0,44,0,0,255 };
     INIT_OBJECT(imageTransfer, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln);
-    imageTransfer.imageBlockSize = 100;
+    imageTransfer.imageBlockSize = 450;
     imageTransfer.imageFirstNotTransferredBlockNumber = 0;
     //Enable image transfer.
     imageTransfer.imageTransferEnabled = 1;

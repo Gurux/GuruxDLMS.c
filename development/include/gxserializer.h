@@ -128,6 +128,8 @@ extern "C" {
         //This is for internal use.
         uint16_t currentIndex;
 #endif //DLMS_IGNORE_MALLOC
+        //Serializer version number.
+        unsigned char version;
     } gxSerializerSettings;
 
     void ser_init(gxSerializerSettings* settings);

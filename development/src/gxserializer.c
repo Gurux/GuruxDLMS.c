@@ -45,7 +45,7 @@
 #endif //DLMS_DEBUG
 
 //Serialization version is increased every time when structure of serialized data is changed.
-#define SERIALIZATION_VERSION 1
+#define SERIALIZATION_VERSION 2
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 #include <assert.h>
@@ -287,17 +287,20 @@ int ser_get(
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
 #endif //DLMS_IGNORE_MALLOC
+    if (count != 0)
+    {
 #if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-    if (fread(value, sizeof(unsigned char), count, serializeSettings->stream) != count)
-    {
-        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+        if (fread(value, sizeof(unsigned char), count, serializeSettings->stream) != count)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
 #else
-    if ((ret = SERIALIZER_LOAD((uint16_t)serializeSettings->position, count, value)) == 0)
-    {
-        serializeSettings->position += count;
-    }
+        if ((ret = SERIALIZER_LOAD((uint16_t)serializeSettings->position, count, value)) == 0)
+        {
+            serializeSettings->position += count;
+        }
 #endif//!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+    }
 #if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 #ifdef DLMS_IGNORE_MALLOC
     if (ret == 0)
@@ -2312,6 +2315,13 @@ int ser_saveSecuritySetup(
         (ret = ser_saveOctetString(serializeSettings, &object->tlsKey.rawValue)) == 0)
     {
     }
+#else
+    if (!isAttributeSet(serializeSettings, ignored, 6) &&
+        ret == 0 && serializeSettings->version == 1)
+    {
+        uint16_t count;
+        ret = ser_saveArrayCount(serializeSettings, &object->certificates, &count);
+    }
 #endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     return ret;
 }
@@ -4103,16 +4113,35 @@ int ser_saveAssociationLogicalName(
         {
             for (pos = 0; pos != object->objectList.size; ++pos)
             {
-                if ((ret = oa_getByIndex(&object->objectList, pos, &obj)) != DLMS_ERROR_CODE_OK ||
-                    (ret = ser_saveUInt8(serializeSettings, obj->version)) != DLMS_ERROR_CODE_OK ||
-                    (ret = ser_saveUInt16(serializeSettings, obj->objectType)) != DLMS_ERROR_CODE_OK ||
-                    (ret = ser_set(serializeSettings, obj->logicalName, 6
-#ifdef DLMS_IGNORE_MALLOC
-                        , 6
-#endif //DLMS_IGNORE_MALLOC
-                    )) != 0)
+                if ((ret = oa_getByIndex(&object->objectList, pos, &obj)) != DLMS_ERROR_CODE_OK)
                 {
                     break;
+                }
+                if (obj != NULL)
+                {
+                    if ((ret = ser_saveUInt8(serializeSettings, obj->version)) != DLMS_ERROR_CODE_OK ||
+                        (ret = ser_saveUInt16(serializeSettings, obj->objectType)) != DLMS_ERROR_CODE_OK ||
+                        (ret = ser_set(serializeSettings, obj->logicalName, 6
+#ifdef DLMS_IGNORE_MALLOC
+                            , 6
+#endif //DLMS_IGNORE_MALLOC
+                        )) != 0)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if ((ret = ser_saveUInt8(serializeSettings, 0)) != DLMS_ERROR_CODE_OK ||
+                        (ret = ser_saveUInt16(serializeSettings, 0)) != DLMS_ERROR_CODE_OK ||
+                        (ret = ser_set(serializeSettings, EMPTY_LN, 6
+#ifdef DLMS_IGNORE_MALLOC
+                            , 6
+#endif //DLMS_IGNORE_MALLOC
+                        )) != 0)
+                    {
+                        break;
+                    }
                 }
             }
 #ifdef DLMS_IGNORE_MALLOC
@@ -4747,6 +4776,7 @@ int ser_saveTariffPlan(
 void ser_init(gxSerializerSettings* settings)
 {
     memset(settings, 0, sizeof(gxSerializerSettings));
+    settings->version = SERIALIZATION_VERSION;
 }
 
 int ser_saveObject(
@@ -5162,7 +5192,7 @@ int ser_saveObject(
         ser_saveLteMonitoring(serializeSettings, (gxLteMonitoring*)object);
         break;
 #endif //DLMS_IGNORE_LTE_MONITORING
-        
+
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = ser_saveTariffPlan(serializeSettings, (gxTariffPlan*)object);
@@ -5518,14 +5548,17 @@ int ser_loadScriptTable(
                         if (pos2 < count2)
                         {
                             sa->target = NULL;
-                            if ((ret = cosem_findObjectByLN(settings, ot, ln, &sa->target)) != 0)
+                            if (ot != 0)
                             {
-                                break;
-                            }
-                            if (sa->target == NULL)
-                            {
-                                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
-                                break;
+                                if ((ret = cosem_findObjectByLN(settings, ot, ln, &sa->target)) != 0)
+                                {
+                                    break;
+                                }
+                                if (sa->target == NULL)
+                                {
+                                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                                    break;
+                                }
                             }
                         }
 #else
@@ -6049,6 +6082,13 @@ int ser_loadSecuritySetup(
         (ret = ser_loadOctetString(serializeSettings, &object->keyAgreementKey.rawValue)) == 0 &&
         (ret = ser_loadOctetString(serializeSettings, &object->tlsKey.rawValue)) == 0)
     {
+    }
+#else
+    if (ret == 0 && serializeSettings->version == 1 &&
+        !isAttributeSet(serializeSettings, ignored, 6))
+    {
+        uint16_t count;
+        ret = ser_loadArray(serializeSettings, &object->certificates, &count);
     }
 #endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     return ret;
@@ -8052,34 +8092,37 @@ int ser_loadAssociationLogicalName(
 #ifdef DLMS_IGNORE_MALLOC
                     , 6
 #endif //DLMS_IGNORE_MALLOC
-                )) != 0 ||
-                    (ret = oa_findByLN(&settings->objects, type, ln, &obj)) != 0)
+                )) != 0)
                 {
                     break;
                 }
-                if (obj == NULL)
+                if (type != DLMS_OBJECT_TYPE_NONE)
                 {
-#ifdef DLMS_IGNORE_MALLOC
-                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-                    break;
-#else
-                    if ((ret = cosem_createObject(type, &obj)) != DLMS_ERROR_CODE_OK)
+                    ret = oa_findByLN(&settings->objects, type, ln, &obj);
+                    if (obj == NULL)
                     {
-                        //If unknown object.
-                        if (ret == DLMS_ERROR_CODE_INVALID_PARAMETER)
+    #ifdef DLMS_IGNORE_MALLOC
+                        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                        break;
+    #else
+                        if ((ret = cosem_createObject(type, &obj)) != DLMS_ERROR_CODE_OK)
                         {
-                            ret = 0;
-                            continue;
+                            //If unknown object.
+                            if (ret == DLMS_ERROR_CODE_INVALID_PARAMETER)
+                            {
+                                ret = 0;
+                                continue;
+                            }
+                            break;
                         }
-                        break;
+                        if ((ret = cosem_setLogicalName(obj, ln)) != DLMS_ERROR_CODE_OK)
+                        {
+                            break;
+                        }
+                        obj->version = version;
+                        oa_push(&object->objectList, obj);
+    #endif //DLMS_IGNORE_MALLOC
                     }
-                    if ((ret = cosem_setLogicalName(obj, ln)) != DLMS_ERROR_CODE_OK)
-                    {
-                        break;
-                    }
-                    obj->version = version;
-                    oa_push(&object->objectList, obj);
-#endif //DLMS_IGNORE_MALLOC
                 }
             }
         }
@@ -8249,20 +8292,20 @@ int ser_loadAssociationShortName(
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
                         return ret;
-                    }
+                }
 #endif //DLMS_IGNORE_MALLOC
                 }
 #ifndef DLMS_IGNORE_MALLOC
                 oa_push(&object->objectList, obj);
 #endif //DLMS_IGNORE_MALLOC
                 // obj->version = (unsigned char)version;
+                }
             }
-        }
         if (ret != 0)
         {
             return ret;
         }
-    }
+        }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 9))
     {
 #ifndef DLMS_IGNORE_SECURITY_SETUP
@@ -8325,7 +8368,7 @@ int ser_loadAssociationShortName(
         }
     }
     return ret;
-}
+    }
 
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #ifndef DLMS_IGNORE_PPP_SETUP
@@ -8852,8 +8895,8 @@ int ser_loadSFSKReportingSystemList(
 
 #ifndef DLMS_IGNORE_LTE_MONITORING
 int ser_loadLteMonitoring(
-    gxSerializerSettings* serializeSettings,
-    gxLteMonitoring* object)
+    gxSerializerSettings * serializeSettings,
+    gxLteMonitoring * object)
 {
     return 0;
 }
@@ -9310,22 +9353,20 @@ int ser_loadObject(
 int ser_getDataSize(gxSerializerSettings * serializeSettings, void* size)
 {
     int ret;
-    //Serializer version number.
-    unsigned char version;
 #if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     ResetPosition(serializeSettings);
 #endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-    if ((ret = ser_loadUInt8(serializeSettings, &version)) == 0)
+    if ((ret = ser_loadUInt8(serializeSettings, &serializeSettings->version)) == 0)
     {
-        if (version == 0 || version > SERIALIZATION_VERSION)
+        if (serializeSettings->version == 0 || serializeSettings->version > SERIALIZATION_VERSION)
         {
 #ifdef DLMS_DEBUG
             svr_notifyTrace(GET_STR_FROM_EEPROM("ser_loadObject failed. Invalid version,"), version);
 #endif //DLMS_DEBUG
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-        ret = ser_loadUInt32(serializeSettings, size);
     }
+        ret = ser_loadUInt32(serializeSettings, size);
+}
     return ret;
 }
 
@@ -9348,7 +9389,7 @@ int ser_loadObjects(
             if (ser_isEof(serializeSettings))
             {
                 break;
-            }
+            }           
 #ifdef DLMS_DEBUG
             svr_notifyTrace(GET_STR_FROM_EEPROM("ser_loadObject"), pos);
 #endif //DLMS_DEBUG

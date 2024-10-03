@@ -5122,7 +5122,7 @@ int dlms_handleGeneralCiphering(
 }
 #endif //!defined(DLMS_IGNORE_GENERAL_CIPHERING) && !defined(DLMS_IGNORE_HIGH_GMAC)
 
-#if !defined(DLMS_IGNORE_CLIENT)
+#ifndef DLMS_IGNORE_CLIENT
 int32_t dlms_handleConfirmedServiceError(gxByteBuffer* data)
 {
     int32_t ret;
@@ -5153,13 +5153,12 @@ int dlms_handleExceptionResponse(gxByteBuffer* data)
 {
     int ret;
     unsigned char ch;
-    // DLMS_EXCEPTION_STATE_ERROR state;
-    DLMS_EXCEPTION_SERVICE_ERROR error;
+    // DLMS_EXCEPTION_STATE_ERROR
     if ((ret = bb_getUInt8(data, &ch)) != 0)
     {
         return ret;
     }
-    // state = (DLMS_EXCEPTION_STATE_ERROR)ch;
+    //DLMS_EXCEPTION_STATE_ERROR
     if ((ret = bb_getUInt8(data, &ch)) != 0)
     {
         return ret;
@@ -5238,6 +5237,12 @@ int dlms_getPdu(
         case DLMS_COMMAND_GENERAL_BLOCK_TRANSFER:
             ret = dlms_handleGbt(settings, data);
             break;
+        case DLMS_COMMAND_CONFIRMED_SERVICE_ERROR:
+            ret = dlms_handleConfirmedServiceError(&data->data);
+            break;
+        case DLMS_COMMAND_EXCEPTION_RESPONSE:
+            ret = dlms_handleExceptionResponse(&data->data);
+            break;
 #endif //!defined(DLMS_IGNORE_CLIENT)
         case DLMS_COMMAND_AARQ:
         case DLMS_COMMAND_AARE:
@@ -5246,13 +5251,7 @@ int dlms_getPdu(
             break;
         case DLMS_COMMAND_RELEASE_RESPONSE:
             break;
-#if !defined(DLMS_IGNORE_CLIENT)
-        case DLMS_COMMAND_CONFIRMED_SERVICE_ERROR:
-            ret = dlms_handleConfirmedServiceError(&data->data);
-            break;
-        case DLMS_COMMAND_EXCEPTION_RESPONSE:
-            ret = dlms_handleExceptionResponse(&data->data);
-            break;
+#if !defined(DLMS_IGNORE_SERVER)
         case DLMS_COMMAND_GET_REQUEST:
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_READ_REQUEST:

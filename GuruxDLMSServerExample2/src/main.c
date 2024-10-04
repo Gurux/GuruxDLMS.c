@@ -2209,7 +2209,7 @@ int addCompactDataExample()
 {
     int ret;
     const unsigned char ln[6] = { 0, 0, 66, 0, 1, 255 };//0-0:66.0.1.255
-    static uint16_t BUFFER[20];
+    static unsigned char BUFFER[20 * sizeof(uint32_t)];
     static unsigned char TEMPLATE_DESCRIPTION[3];
     if ((ret = INIT_OBJECT(compactDataExample, DLMS_OBJECT_TYPE_COMPACT_DATA, ln)) == 0)
     {
@@ -2218,14 +2218,15 @@ int addCompactDataExample()
         TEMPLATE_DESCRIPTION[0] = DLMS_DATA_TYPE_STRUCTURE;
         //The number of elements in the structure 
         TEMPLATE_DESCRIPTION[1] = 1;
-        TEMPLATE_DESCRIPTION[2] = DLMS_DATA_TYPE_UINT16;
+        TEMPLATE_DESCRIPTION[2] = DLMS_DATA_TYPE_UINT32;
         BB_ATTACH(compactDataExample.templateDescription, TEMPLATE_DESCRIPTION, sizeof(TEMPLATE_DESCRIPTION));
         compactDataExample.templateId = 1;
+        //Data is captured upon reading.
         compactDataExample.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
         //Update buffer with data.
-        for (int pos = 0; pos != 20; ++pos)
+        for (int pos = 0; pos != sizeof(BUFFER) / sizeof(uint32_t); ++pos)
         {
-            bb_setInt32(&compactDataExample.buffer, pos);
+            bb_setUInt32(&compactDataExample.buffer, pos);
         }
     }
     return ret;
@@ -3485,8 +3486,23 @@ void svr_preRead(
         {
             e->error = (DLMS_ERROR_CODE)readProfileGeneric(settings, &eventLog, e);
         }
+        else if (e->target == BASE(compactDataExample) && e->index == 2)
+        {
+            //There are no capture objects in compact data example.
+            //This causes that the buffer must update manually.
+            uint32_t value;
+            for (int pos = 0; pos <= compactDataExample.buffer.size / sizeof(uint32_t); pos += 4)
+            {
+                if ((ret = bb_getUInt32ByIndex(&compactDataExample.buffer, pos, &value)) != 0 ||
+                    (ret = bb_setUInt32ByIndex(&compactDataExample.buffer, pos, 1 + value)) != 0)
+                {
+                    e->error = ret;
+                    break;
+                }
+            }
+        }        
         //Update Unix time.
-        if (e->target == BASE(unixTime) && e->index == 2)
+        else if (e->target == BASE(unixTime) && e->index == 2)
         {
             gxtime dt;
             time_now(&dt, 0);

@@ -2221,7 +2221,7 @@ int addCompactDataExample()
         TEMPLATE_DESCRIPTION[2] = DLMS_DATA_TYPE_UINT16;
         BB_ATTACH(compactDataExample.templateDescription, TEMPLATE_DESCRIPTION, sizeof(TEMPLATE_DESCRIPTION));
         compactDataExample.templateId = 1;
-        cf6.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
+        compactDataExample.captureMethod = DLMS_CAPTURE_METHOD_IMPLICIT;
         //Update buffer with data.
         for (int pos = 0; pos != 20; ++pos)
         {

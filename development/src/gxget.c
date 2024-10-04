@@ -5380,7 +5380,12 @@ int cosem_getCompactData(
         if (object->captureMethod == DLMS_CAPTURE_METHOD_IMPLICIT)
         {
 #ifndef DLMS_IGNORE_SERVER
-            ret = cosem_captureCompactData(settings, object);
+            if (object->captureObjects.size != 0)
+            {
+                //Some meters implment only template description and not capture objects.
+                //Then the buffer must update in svr_preRead.
+                ret = cosem_captureCompactData(settings, object);
+            }
 #endif //DLMS_IGNORE_SERVER
         }
         if (ret == 0)

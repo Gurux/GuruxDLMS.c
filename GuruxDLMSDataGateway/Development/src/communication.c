@@ -1355,15 +1355,14 @@ int com_getKeepAlive(
 int com_write(
     clientConnection* clientConnection,
     gxObject* object,
-    unsigned char attributeOrdinal,
-    dlmsVARIANT* value)
+    unsigned char attributeOrdinal)
 {
     int ret;
     message data;
     gxReplyData reply;
     mes_init(&data);
     reply_init(&reply);
-    if ((ret = cl_write2(&clientConnection->settings, object, attributeOrdinal, value ,1, &data)) != 0 ||
+    if ((ret = cl_write(&clientConnection->settings, object, attributeOrdinal, &data)) != 0 ||
         (ret = com_readDataBlock(clientConnection, &data, &reply)) != 0)
     {
         com_reportError("Write failed", object, attributeOrdinal, ret);

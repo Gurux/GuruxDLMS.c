@@ -100,8 +100,7 @@ int com_getKeepAlive(
 int com_write(
     clientConnection* clientConnection,
     gxObject* object,
-    unsigned char attributeOrdinal,
-    dlmsVARIANT* value);
+    unsigned char attributeOrdinal);
 
 int com_method(
     clientConnection* clientConnection,

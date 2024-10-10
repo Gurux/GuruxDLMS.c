@@ -281,7 +281,7 @@ void svr_preWrite(
         }
         GXTRACE_LN("svr_preWrite: ", e->target->objectType, e->target->logicalName);
         bb_empty(&clientCon.data);
-        e->error = com_write(&clientCon, e->target, e->index,&e->parameters);
+        e->error = com_write(&clientCon, e->target, e->index);
         e->handled = 1;
     }
 }
@@ -370,8 +370,8 @@ void svr_postAction(
 
 unsigned char svr_isTarget(
     dlmsSettings* settings,
-    unsigned long serverAddress,
-    unsigned long clientAddress)
+    uint32_t serverAddress,
+    uint32_t clientAddress)
 {
     //In this example gateway there is only one meter after the GW.
     return 1;

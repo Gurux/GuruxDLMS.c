@@ -790,11 +790,17 @@ int cosem_updateAttributeAccessModes(gxObject* object, variantArray* arr)
             object->access = (gxAccess*)gxcalloc(1, sizeof(gxAccess));
         }
         cnt = obj_attributeCount(object);
-        bb_capacity(&object->access->attributeAccessModes, cnt);
+        if ((ret = bb_capacity(&object->access->attributeAccessModes, cnt)) != 0)
+        {
+            return ret;
+        }
         object->access->attributeAccessModes.size = object->access->attributeAccessModes.capacity;
 
         cnt = obj_methodCount(object);
-        bb_capacity(&object->access->methodAccessModes, cnt);
+        if ((ret = bb_capacity(&object->access->methodAccessModes, cnt)) != 0)
+        {
+            return ret;
+        }
         object->access->methodAccessModes.size = object->access->methodAccessModes.capacity;
     }
     for (pos = 0; pos != tmp->Arr->size; ++pos)
@@ -2217,9 +2223,12 @@ int cosem_setGprsSetup(gxGPRSSetup* object, unsigned char index, dlmsVARIANT* va
 #ifndef DLMS_IGNORE_SECURITY_SETUP
 int cosem_setSecuritySetup(dlmsSettings* settings, gxSecuritySetup* object, unsigned char index, dlmsVARIANT* value)
 {
-    int pos, ret = 0;
-    gxCertificateInfo* it = NULL;
+    int ret = 0;
+#ifndef DLMS_IGNORE_CLIENT
     dlmsVARIANT* tmp, * tmp3;
+    gxCertificateInfo* it = NULL;
+    int pos;
+#endif //DLMS_IGNORE_CLIENT
     switch (index)
     {
     case 2:
@@ -2247,6 +2256,9 @@ int cosem_setSecuritySetup(dlmsSettings* settings, gxSecuritySetup* object, unsi
         }
         break;
     case 6:
+#ifdef DLMS_IGNORE_CLIENT
+        ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+#else
         obj_clearCertificateInfo(&object->certificates);
         if (value->Arr != NULL)
         {
@@ -2372,6 +2384,7 @@ int cosem_setSecuritySetup(dlmsSettings* settings, gxSecuritySetup* object, unsi
                 gxfree(it);
             }
         }
+#endif
         break;
     default:
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
@@ -7005,7 +7018,7 @@ int compactData_updateTemplateArrayOrStructDescription(
                     {
                         return ret;
                     }
-                    if (var->vt == DLMS_DATA_TYPE_ARRAY || 
+                    if (var->vt == DLMS_DATA_TYPE_ARRAY ||
                         (var->vt != DLMS_DATA_TYPE_STRUCTURE && value2->vt == DLMS_DATA_TYPE_ARRAY))
                     {
                         //Array data types are added only once.
@@ -7031,7 +7044,7 @@ int compactData_updateTemplateArrayOrStructDescription(
     }
     else
     {
-        if (var->vt == DLMS_DATA_TYPE_STRUCTURE || 
+        if (var->vt == DLMS_DATA_TYPE_STRUCTURE ||
             var->vt == DLMS_DATA_TYPE_ARRAY)
         {
             bb_setUInt8(&object->templateDescription, var->vt);
@@ -7138,13 +7151,13 @@ int compactData_updateTemplateDescription(
                         {
                             break;
                         }
-                        if ((ret = compactData_updateTemplateArrayOrStructDescription(object, 
+                        if ((ret = compactData_updateTemplateArrayOrStructDescription(object,
                             &value, kv)) != 0)
                         {
                             var_clear(&e.value);
                             bb_clear(&object->buffer);
                             return ret;
-                        }                            
+                        }
                     }
                     else
                     {
@@ -7706,8 +7719,8 @@ int cosem_setAvailableSwitches(gxPrimeNbOfdmPlcMacNetworkAdministrationData* obj
             }
             it = (gxMacAvailableSwitch*)gxmalloc(sizeof(gxMacAvailableSwitch));
             BYTE_BUFFER_INIT(&it->sna);
-            bb_capacity(&it->sna, tmp2->byteArr->size);
-            if ((ret = bb_set(&it->sna, tmp2->byteArr->data, tmp2->byteArr->size)) != DLMS_ERROR_CODE_OK)
+            if ((ret = bb_capacity(&it->sna, tmp2->byteArr->size)) != DLMS_ERROR_CODE_OK ||
+                (ret = bb_set(&it->sna, tmp2->byteArr->data, tmp2->byteArr->size)) != DLMS_ERROR_CODE_OK)
             {
                 gxfree(it);
                 break;
@@ -8559,45 +8572,49 @@ int cosem_setLteMonitoring(
 #endif //DLMS_IGNORE_LTE_MONITORING
 
 #ifdef DLMS_ITALIAN_STANDARD
-int updateIntervals(gxInterval* interval, gxByteBuffer* value)
+int updateIntervals(gxInterval* interval, variantArray* value)
 {
     int ret;
-    unsigned char b;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
+    dlmsVARIANT* tmp;
+    if (value->size != 5)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = va_getByIndex(value, 0, &tmp)) != 0)
     {
         return ret;
     }
-    interval[0].startHour = (unsigned char)(b >> 3);
-    interval[0].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[0].useInterval = (b & 0x1) != 0;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
+    interval[0].startHour = (unsigned char)(tmp->bVal >> 3);
+    interval[0].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
+    interval[0].useInterval = (tmp->bVal & 0x1) != 0;
+    if ((ret = va_getByIndex(value, 1, &tmp)) != 0)
     {
         return ret;
     }
-    interval[1].startHour = (unsigned char)(b >> 3);
-    interval[1].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[1].useInterval = (b & 0x1) != 0;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
+    interval[1].startHour = (unsigned char)(tmp->bVal >> 3);
+    interval[1].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
+    interval[1].useInterval = (tmp->bVal & 0x1) != 0;
+    if ((ret = va_getByIndex(value, 2, &tmp)) != 0)
     {
         return ret;
     }
-    interval[2].startHour = (unsigned char)(b >> 3);
-    interval[2].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[2].useInterval = (b & 0x1) != 0;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
+    interval[2].startHour = (unsigned char)(tmp->bVal >> 3);
+    interval[2].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
+    interval[2].useInterval = (tmp->bVal & 0x1) != 0;
+    if ((ret = va_getByIndex(value, 3, &tmp)) != 0)
     {
         return ret;
     }
-    interval[3].startHour = (unsigned char)(b >> 3);
-    interval[3].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[3].useInterval = (b & 0x1) != 0;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
+    interval[3].startHour = (unsigned char)(tmp->bVal >> 3);
+    interval[3].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
+    interval[3].useInterval = (tmp->bVal & 0x1) != 0;
+    if ((ret = va_getByIndex(value, 4, &tmp)) != 0)
     {
         return ret;
     }
-    interval[4].startHour = (unsigned char)(b >> 3);
-    interval[4].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[4].useInterval = (b & 0x1) != 0;
+    interval[4].startHour = (unsigned char)(tmp->bVal >> 3);
+    interval[4].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
+    interval[4].useInterval = (tmp->bVal & 0x1) != 0;
     return 0;
 }
 
@@ -8618,11 +8635,11 @@ int updateSeason(gxBandDescriptor* season, variantArray* value)
         }
         season->month = tmp->bVal;
         if ((ret = va_getByIndex(value, 2, &tmp)) != 0 ||
-            (ret = updateIntervals(season->workingDayIntervals, tmp->byteArr)) != 0 ||
+            (ret = updateIntervals(season->workingDayIntervals, tmp->Arr)) != 0 ||
             (ret = va_getByIndex(value, 3, &tmp)) != 0 ||
-            (ret = updateIntervals(season->saturdayIntervals, tmp->byteArr)) != 0 ||
+            (ret = updateIntervals(season->saturdayIntervals, tmp->Arr)) != 0 ||
             (ret = va_getByIndex(value, 4, &tmp)) != 0 ||
-            (ret = updateIntervals(season->holidayIntervals, tmp->byteArr)) != 0)
+            (ret = updateIntervals(season->holidayIntervals, tmp->Arr)) != 0)
         {
             return ret;
         }

@@ -2045,10 +2045,13 @@ int apdu_generateAARE(
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (encryptedData != NULL && encryptedData->size != 0)
         {
-            bb_capacity(&tmp, 2 + encryptedData->size);
-            bb_setUInt8(&tmp, DLMS_COMMAND_GLO_INITIATE_RESPONSE);
-            hlp_setObjectCount(encryptedData->size, &tmp);
-            bb_set2(&tmp, encryptedData, 0, encryptedData->size);
+            if ((ret = bb_capacity(&tmp, 2 + encryptedData->size)) != 0 ||
+                (ret = bb_setUInt8(&tmp, DLMS_COMMAND_GLO_INITIATE_RESPONSE)) != 0 ||
+                (ret = hlp_setObjectCount(encryptedData->size, &tmp)) != 0 ||
+                (ret = bb_set2(&tmp, encryptedData, 0, encryptedData->size)) != 0)
+            {
+                return ret;
+            }
         }
         else
 #endif //DLMS_IGNORE_HIGH_GMAC

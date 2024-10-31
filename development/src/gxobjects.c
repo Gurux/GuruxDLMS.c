@@ -722,7 +722,7 @@ int obj_clearAvailableSwitches(
 int obj_clearCertificateInfo(gxArray* arr)
 {
     int ret = 0;
-#ifndef DLMS_IGNORE_MALLOC
+#if !(defined(DLMS_IGNORE_MALLOC) || defined(DLMS_IGNORE_CLIENT))
     gxCertificateInfo* it;
     uint16_t pos;
     for (pos = 0; pos != arr->size; ++pos)
@@ -736,7 +736,7 @@ int obj_clearCertificateInfo(gxArray* arr)
         gxfree(it->subject);
         gxfree(it->subjectAltName);
     }
-#endif //DLMS_IGNORE_MALLOC
+#endif //!(defined(DLMS_IGNORE_MALLOC) || defined(DLMS_IGNORE_CLIENT))
     arr_clear(arr);
     return ret;
 }

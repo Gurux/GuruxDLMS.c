@@ -227,38 +227,38 @@ int gxmd5_update(unsigned char* data, uint32_t len, unsigned char* buffer, uint3
 
 int gxmd5_encrypt(gxByteBuffer* data, gxByteBuffer* digest)
 {
+    static unsigned char padding[64] = {
+        0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+    int ret;
     // Bytes that didn't fit in last 64 byte chunk
     unsigned char buffer[64];
     // Number of bits (lo, hi)
     uint32_t count[2] = { 0, 0 };
     // Digest
     uint32_t state[4] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
-    bb_capacity(digest, 16);
+    if ((ret = bb_capacity(digest, 16)) == 0)
+    {
+        gxmd5_update(data->data, data->size, buffer, count, state);
+        // Save number of bits
+        unsigned char bits[8];
+        gxmd5_encode(bits, count, 2);
 
-    gxmd5_update(data->data, data->size, buffer, count, state);
+        // Pad out to 56 mod 64.
+        unsigned int index = count[0] / 8 % 64;
+        unsigned int padLen = (index < 56) ? (56 - index) : (120 - index);
+        gxmd5_update(padding, padLen, buffer, count, state);
 
-    static unsigned char padding[64] = {
-        0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
+        // Append length (before padding)
+        gxmd5_update(bits, 8, buffer, count, state);
 
-    // Save number of bits
-    unsigned char bits[8];
-    gxmd5_encode(bits, count, 2);
-
-    // Pad out to 56 mod 64.
-    unsigned int index = count[0] / 8 % 64;
-    unsigned int padLen = (index < 56) ? (56 - index) : (120 - index);
-    gxmd5_update(padding, padLen, buffer, count, state);
-
-    // Append length (before padding)
-    gxmd5_update(bits, 8, buffer, count, state);
-
-    // Store state in digest
-    gxmd5_encode(digest->data, state, 4);
-    digest->size = 16;
-    return 0;
+        // Store state in digest
+        gxmd5_encode(digest->data, state, 4);
+        digest->size = 16;
+    }
+    return ret;
 }
 
 #endif //DLMS_IGNORE_HIGH_MD5

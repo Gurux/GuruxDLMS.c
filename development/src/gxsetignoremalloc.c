@@ -671,10 +671,16 @@ int cosem_updateAttributeAccessModes(gxObject* object, gxByteBuffer* data)
         BYTE_BUFFER_INIT(&object->access->attributeAccessModes);
         BYTE_BUFFER_INIT(&object->access->methodAccessModes);
         cnt = obj_methodCount(object);
-        bb_capacity(&object->access->methodAccessModes, cnt);
+        if ((ret = bb_capacity(&object->access->methodAccessModes, cnt)) != 0)
+        {
+            return ret;
+        }
         object->access->methodAccessModes.size = object->access->methodAccessModes.capacity;
         cnt = obj_attributeCount(object);
-        bb_capacity(&object->access->attributeAccessModes, cnt);
+        if ((ret = bb_capacity(&object->access->attributeAccessModes, cnt)) != 0)
+        {
+            return ret;
+        }
         object->access->attributeAccessModes.size = object->access->attributeAccessModes.capacity;
 #else
         return DLMS_ERROR_CODE_INVALID_PARAMETER;

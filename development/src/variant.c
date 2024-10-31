@@ -2503,8 +2503,8 @@ int var_setDateTimeAsOctetString(
     {
         target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         BYTE_BUFFER_INIT(target->byteArr);
-        bb_capacity(target->byteArr, 12);
-        if ((ret = var_getDateTime2(value, target->byteArr)) == 0)
+        if ((ret = bb_capacity(target->byteArr, 12)) == 0 &&
+            (ret = var_getDateTime2(value, target->byteArr)) == 0)
         {
             target->vt = DLMS_DATA_TYPE_OCTET_STRING;
         }
@@ -2521,8 +2521,8 @@ int var_setDateAsOctetString(
     {
         target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         BYTE_BUFFER_INIT(target->byteArr);
-        bb_capacity(target->byteArr, 5);
-        if ((ret = var_getDate(value, target->byteArr)) == 0)
+        if ((ret = bb_capacity(target->byteArr, 5)) == 0 &&
+            (ret = var_getDate(value, target->byteArr)) == 0)
         {
             target->vt = DLMS_DATA_TYPE_OCTET_STRING;
         }
@@ -2539,8 +2539,8 @@ int var_setTimeAsOctetString(
     {
         target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
         BYTE_BUFFER_INIT(target->byteArr);
-        bb_capacity(target->byteArr, 4);
-        if ((ret = var_getTime(value, target->byteArr)) == 0)
+        if ((ret = bb_capacity(target->byteArr, 4)) == 0 &&
+            (ret = var_getTime(value, target->byteArr)) == 0)
         {
             target->vt = DLMS_DATA_TYPE_OCTET_STRING;
         }

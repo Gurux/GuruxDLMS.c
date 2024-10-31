@@ -977,6 +977,7 @@ static const unsigned char __R_CON[11] PROGMEM = {
         gxByteBuffer* data,
         gxByteBuffer* output)
     {
+        int ret;
         unsigned char buf[16] = { 0 };
         unsigned char buf2[16] = { 0 };
         unsigned char n, j, i;
@@ -987,7 +988,10 @@ static const unsigned char __R_CON[11] PROGMEM = {
         {
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
-        bb_capacity(output, 24);
+        if ((ret = bb_capacity(output, 24)) != 0)
+        {
+            return ret;
+        }
         output->size = 24;
         output->position = 0;
         // Amount of 64-bit blocks.

@@ -834,17 +834,22 @@ int getBcd(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlmsVA
     value->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
     BYTE_BUFFER_INIT(value->strVal);
     value->vt = DLMS_DATA_TYPE_STRING;
-    bb_capacity(value->strVal, (uint16_t)(len * 2));
-    for (a = 0; a != len; ++a)
+    if ((ret = bb_capacity(value->strVal, (uint16_t)(len * 2))) == 0)
     {
-        if ((ret = bb_getUInt8(buff, &ch)) != 0)
+        for (a = 0; a != len; ++a)
         {
-            break;
+            if ((ret = bb_getUInt8(buff, &ch)) != 0)
+            {
+                break;
+            }
+            idHigh = ch >> 4;
+            idLow = ch & 0x0F;
+            if ((ret = bb_setInt8(value->strVal, hexArray[idHigh])) != 0 ||
+                (ret = bb_setInt8(value->strVal, hexArray[idLow])) != 0)
+            {
+                break;
+            }
         }
-        idHigh = ch >> 4;
-        idLow = ch & 0x0F;
-        bb_setInt8(value->strVal, hexArray[idHigh]);
-        bb_setInt8(value->strVal, hexArray[idLow]);
     }
 #endif //DLMS_IGNORE_MALLOC
     return ret;
@@ -2634,6 +2639,7 @@ int dlms_getPlcFrame(
     gxByteBuffer* data,
     gxByteBuffer* reply)
 {
+    int ret;
     int frameSize = bb_available(data);
     //Max frame size is 124 bytes.
     if (frameSize > 134)
@@ -2642,50 +2648,59 @@ int dlms_getPlcFrame(
     }
     //PAD Length.
     unsigned char padLen = (unsigned char)((36 - ((11 + frameSize) % 36)) % 36);
-    bb_capacity(reply, 15 + frameSize + padLen);
-    //Add STX
-    bb_setUInt8(reply, 2);
-    //Length.
-    bb_setUInt8(reply, (unsigned char)(11 + frameSize));
-    //Length.
-    bb_setUInt8(reply, 0x50);
-    //Add  Credit fields.
-    bb_setUInt8(reply, creditFields);
-    //Add source and target MAC addresses.
-    bb_setUInt8(reply, (unsigned char)(settings->plcSettings.macSourceAddress >> 4));
-    int val = settings->plcSettings.macSourceAddress << 12;
-    val |= settings->plcSettings.macDestinationAddress & 0xFFF;
-    bb_setUInt16(reply, (uint16_t)val);
-    bb_setUInt8(reply, padLen);
-    //Control byte.
-    bb_setUInt8(reply, DLMS_PLC_DATA_LINK_DATA_REQUEST);
-    bb_setUInt8(reply, (unsigned char)settings->serverAddress);
-    bb_setUInt8(reply, (unsigned char)settings->clientAddress);
-    bb_set(reply, data->data + data->position, frameSize);
-    data->position += frameSize;
-    //Add padding.
-    while (padLen != 0)
+    if ((ret = bb_capacity(reply, 15 + frameSize + padLen)) == 0 &&
+        //Add STX
+        (ret = bb_setUInt8(reply, 2)) == 0 &&
+        //Length.
+        (ret = bb_setUInt8(reply, (unsigned char)(11 + frameSize))) == 0 &&
+        //Length.
+        (ret = bb_setUInt8(reply, 0x50)) == 0 &&
+        //Add  Credit fields.
+        (ret = bb_setUInt8(reply, creditFields)) == 0 &&
+        //Add source and target MAC addresses.
+        (ret = bb_setUInt8(reply, (unsigned char)(settings->plcSettings.macSourceAddress >> 4))) == 0)
     {
-        bb_setUInt8(reply, 0);
-        --padLen;
-    }
-    //Checksum.
-    uint16_t crc = countCRC(reply, 0, reply->size);
-    bb_setUInt16(reply, crc);
-    //Remove sent data in server side.
-    if (settings->server)
-    {
-        if (data->size == data->position)
+        int val = settings->plcSettings.macSourceAddress << 12;
+        val |= settings->plcSettings.macDestinationAddress & 0xFFF;
+        if ((ret = bb_setUInt16(reply, (uint16_t)val)) == 0 &&
+            (ret = bb_setUInt8(reply, padLen)) == 0 &&
+            //Control byte.
+            (ret = bb_setUInt8(reply, DLMS_PLC_DATA_LINK_DATA_REQUEST)) == 0 &&
+            (ret = bb_setUInt8(reply, (unsigned char)settings->serverAddress)) == 0 &&
+            (ret = bb_setUInt8(reply, (unsigned char)settings->clientAddress)) == 0 &&
+            (ret = bb_set(reply, data->data + data->position, frameSize)) == 0)
         {
-            bb_clear(data);
-        }
-        else
-        {
-            bb_move(data, data->position, 0, data->size - data->position);
-            data->position = 0;
+            data->position += frameSize;
+            //Add padding.
+            while (padLen != 0)
+            {
+                if ((ret = bb_setUInt8(reply, 0)) != 0)
+                {
+                    return ret;
+                }
+                --padLen;
+            }
+            //Checksum.
+            uint16_t crc = countCRC(reply, 0, reply->size);
+            if ((ret = bb_setUInt16(reply, crc)) == 0)
+            {
+                //Remove sent data in server side.
+                if (settings->server)
+                {
+                    if (data->size == data->position)
+                    {
+                        bb_clear(data);
+                    }
+                    else
+                    {
+                        ret = bb_move(data, data->position, 0, data->size - data->position);
+                        data->position = 0;
+                    }
+                }
+            }
         }
     }
-    return 0;
+    return ret;
 }
 
 // Reserved for internal use.
@@ -4965,7 +4980,7 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
 #else
             * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-        }    
+        }
 #endif //DLMS_INVOCATION_COUNTER_VALIDATOR
         // Get command.
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
@@ -6165,7 +6180,7 @@ int dlms_getLnMessages(
                 }
                 else
                 {
-                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
             }
             else
@@ -6173,10 +6188,17 @@ int dlms_getLnMessages(
                 it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
                 if (it == NULL)
                 {
-                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                BYTE_BUFFER_INIT(it);
-                mes_push(messages, it);
+                else
+                {
+                    BYTE_BUFFER_INIT(it);
+                    ret = mes_push(messages, it);
+                }
+            }
+            if (ret != 0)
+            {
+                break;
             }
 #endif //DLMS_IGNORE_MALLOC
             switch (p->settings->interfaceType)
@@ -6292,7 +6314,7 @@ int dlms_getSnMessages(
                 break;
             }
 #ifndef DLMS_IGNORE_MALLOC
-            mes_push(messages, it);
+            ret = mes_push(messages, it);
 #endif //DLMS_IGNORE_MALLOC
         }
         bb_clear(&data);

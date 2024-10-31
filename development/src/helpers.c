@@ -593,6 +593,10 @@ int hlp_hexToBytes(
 #ifdef gxrealloc
         //If compiler supports realloc.
         * buffer = gxrealloc(*buffer, *count);
+        if (tmp == NULL)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
 #else
         //A few extra bytes are returned if compiler doesn't support realloc.
 #endif // gxrealloc  
@@ -1279,7 +1283,7 @@ int hlp_load(const char* path, char* value, uint16_t* length)
         {
             break;
         }
-        int size = strlen(s);
+        uint16_t size = (uint16_t) strlen(s);
         if (size == 0)
         {
             //If buffer is full.
@@ -1397,10 +1401,10 @@ int hlp_fromBase64(const char* input, uint16_t length, gxByteBuffer* decoded)
 {
     if (length % 4 != 0)
     {
-        //        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     int ret = 0;
-    int pos = (strstr(input, "=") - input);
+    uint16_t pos = (uint16_t)(strstr(input, "=") - input);
     uint16_t b1, b2, b3, b4;
     pos = 0;
     while (pos < length)

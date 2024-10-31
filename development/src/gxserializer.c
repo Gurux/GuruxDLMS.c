@@ -667,11 +667,11 @@ int ser_getOctetString(gxSerializerSettings* serializeSettings, gxByteBuffer* va
     bb_clear(value);
 #ifdef DLMS_IGNORE_MALLOC
     uint16_t capacity;
-    if ((ret = ser_loadObjectCount(serializeSettings, &capacity)) != 0)
+    if ((ret = ser_loadObjectCount(serializeSettings, &capacity)) != 0 ||
+        (ret = bb_capacity(value, capacity)) != 0)
     {
         return ret;
     }
-    bb_capacity(value, capacity);
 #else
     if ((ret = bb_capacity(value, count)) != 0)
     {

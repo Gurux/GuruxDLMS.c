@@ -31,7 +31,7 @@
 //---------------------------------------------------------------------------
 
 #include "../include/gxignore.h"
-#if !defined(DLMS_IGNORE_CLIENT)
+#if !(defined(DLMS_IGNORE_CLIENT) || defined(DLMS_IGNORE_MALLOC))
 #include "../include/gxmem.h"
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -77,7 +77,7 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
         ret = dlms_getMacHdlcFrame(settings, DLMS_COMMAND_SNRM, 0, NULL, reply);
         if (ret == 0)
         {
-            mes_push(messages, reply);
+            ret = mes_push(messages, reply);
         }
         return ret;
     }
@@ -110,7 +110,10 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     BYTE_BUFFER_INIT(reply);
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);
-    bb_capacity(&bb, 30);
+    if ((ret = bb_capacity(&bb, 30)) != 0)
+    {
+        return ret;
+    }
     pData = &bb;
 #endif //DLMS_IGNORE_MALLOC
 
@@ -167,7 +170,7 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     }
     bb_clear(pData);
 #ifndef DLMS_IGNORE_MALLOC
-    mes_push(messages, reply);
+    ret = mes_push(messages, reply);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
 }
@@ -1517,7 +1520,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
 #ifndef DLMS_IGNORE_MALLOC
         if (ret == 0)
         {
-            mes_push(packets, reply);
+            ret = mes_push(packets, reply);
         }
         else
         {
@@ -1539,7 +1542,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
 #ifndef DLMS_IGNORE_MALLOC
         if (ret == 0)
         {
-            mes_push(packets, reply);
+            ret = mes_push(packets, reply);
         }
         else
         {
@@ -1559,7 +1562,7 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
 #ifndef DLMS_IGNORE_MALLOC
         if (ret == 0)
         {
-            mes_push(packets, reply);
+            ret = mes_push(packets, reply);
         }
         else
         {
@@ -2072,9 +2075,12 @@ int cl_methodLN(
                 if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
                 {
                     //Space is allocated for type and size
-                    bb_capacity(&data, 5 + bb_size(value->byteArr));
+                    ret = bb_capacity(&data, 5 + bb_size(value->byteArr));
                 }
-                ret = dlms_setData(&data, value->vt, value);
+                if (ret == 0)
+                {
+                    ret = dlms_setData(&data, value->vt, value);
+                }
             }
         }
 #endif //DLMS_IGNORE_MALLOC
@@ -2294,4 +2300,4 @@ uint16_t cl_getServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, 
     }
     return value;
 }
-#endif //!defined(DLMS_IGNORE_CLIENT)
+#endif //!(defined(DLMS_IGNORE_CLIENT) || defined(DLMS_IGNORE_MALLOC))

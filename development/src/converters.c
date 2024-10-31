@@ -1345,12 +1345,12 @@ int obj_dayProfileToString(gxArray* arr, gxByteBuffer* ba)
             bb_addIntAsString(ba, it->scriptSelector);
             bb_addString(ba, " ");
             time_toString(&it->startTime, ba);
-            }
-        bb_addString(ba, "]");
         }
+        bb_addString(ba, "]");
+    }
     bb_addString(ba, "]");
     return 0;
-    }
+}
 
 int obj_activityCalendarToString(gxActivityCalendar* object, char** buff)
 {
@@ -1609,13 +1609,13 @@ int obj_registerActivationToString(gxRegisterActivation* object, char** buff)
                     (ret = bb_attachString(&ba, bb_toHexString(&it->indexes))) != 0)
                 {
                     break;
-            }
+                }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        }
+            }
             bb_addString(&ba, "]\n");
             *buff = bb_toString(&ba);
+        }
     }
-}
     bb_clear(&ba);
     return ret;
 }
@@ -1637,7 +1637,7 @@ void actionItemToString(gxActionItem* item, gxByteBuffer* ba)
 #endif //DLMS_IGNORE_OBJECT_POINTERS
     bb_addString(ba, " ");
     bb_addIntAsString(ba, item->scriptSelector);
-    }
+}
 #endif //!(defined(DLMS_IGNORE_REGISTER_MONITOR) && defined(DLMS_IGNORE_LIMITER))
 
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
@@ -1708,7 +1708,7 @@ int obj_registerMonitorToString(gxRegisterMonitor* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_REGISTER_MONITOR
 #ifndef DLMS_IGNORE_ACTION_SCHEDULE
 int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
@@ -1762,7 +1762,7 @@ int obj_actionScheduleToString(gxActionSchedule* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return DLMS_ERROR_CODE_OK;
-    }
+}
 #endif //DLMS_IGNORE_ACTION_SCHEDULE
 #ifndef DLMS_IGNORE_SAP_ASSIGNMENT
 int obj_sapAssignmentToString(gxSapAssignment* object, char** buff)
@@ -1869,7 +1869,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
         {
             return ret;
         }
-        }
+    }
     bb_addString(&ba, "]\nIndex: 5 Value: [");
     for (pos = 0; pos != object->ipOptions.size; ++pos)
     {
@@ -1902,7 +1902,7 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_IP4_SETUP
 
 #ifndef DLMS_IGNORE_IP6_SETUP
@@ -2016,7 +2016,7 @@ int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
     }
     bb_clear(&ba);
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_IP6_SETUP
 
 #ifndef DLMS_IGNORE_MBUS_DIAGNOSTIC
@@ -2143,28 +2143,34 @@ int obj_G3PlcMacSetupKeyTableToString(gxG3PlcMacSetup* object, gxByteBuffer* ba)
     bb_addString(ba, "\nIndex: 5 Value: [\r\n");
     for (pos = 0; pos != object->keyTable.size; ++pos)
     {
-        if ((ret = arr_getByIndex(&object->keyTable, pos, (void**)&it)) != 0)
+        if ((ret = arr_getByIndex(&object->keyTable, pos, (void**)&it)) != 0 ||
+            (ret = bb_addString(ba, "{ ")) != 0 ||
+            (ret = bb_addIntAsString(ba, it->id)) != 0 ||
+            (ret = bb_addString(ba, ",")) != 0)
         {
-            return ret;
+            break;
         }
-        bb_addString(ba, "{ ");
-        bb_addIntAsString(ba, it->id);
-        bb_addString(ba, ",");
         //Add MAC keys as a hex string.
         if (bb_getCapacity(ba) - ba->size < 3 * MAX_G3_MAC_KEY_TABLE_KEY_SIZE)
         {
-            bb_capacity(ba, bb_size(ba) + 3 * MAX_G3_MAC_KEY_TABLE_KEY_SIZE);
+            if ((ret = bb_capacity(ba, bb_size(ba) + 3 * MAX_G3_MAC_KEY_TABLE_KEY_SIZE)) != 0)
+            {
+                break;
+            }
         }
         if ((ret = hlp_bytesToHex2(it->key, MAX_G3_MAC_KEY_TABLE_KEY_SIZE,
             (char*)ba->data + ba->size, (uint16_t)bb_available(ba))) != 0)
         {
-            return ret;
+            break;
         }
         ba->size += 3 * MAX_G3_MAC_KEY_TABLE_KEY_SIZE;
         --ba->size;
         bb_addString(ba, "}\n");
     }
-    bb_addString(ba, "]\n");
+    if (ret == 0)
+    {
+        ret = bb_addString(ba, "]\n");
+    }
     return ret;
 }
 
@@ -2447,7 +2453,7 @@ int obj_G3Plc6LoWPANToString(gxG3Plc6LoWPAN* object, char** buff)
     if ((ret = obj_UInt16ArrayToString(&ba, &object->groupTable)) != 0)
     {
         return ret;
-}
+    }
 #else
     if ((ret = va_toString(&object->groupTable, &ba)) != 0)
     {
@@ -2476,7 +2482,7 @@ int obj_G3Plc6LoWPANToString(gxG3Plc6LoWPAN* object, char** buff)
     {
         bb_clear(&ba);
         return ret;
-}
+    }
 #else
     if ((ret = va_toString(&object->destinationAddress, &ba)) != 0)
     {
@@ -2492,7 +2498,7 @@ int obj_G3Plc6LoWPANToString(gxG3Plc6LoWPAN* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_G3_PLC_6LO_WPAN
 
 
@@ -2757,7 +2763,7 @@ int obj_limiterToString(gxLimiter* object, char** buff)
     if ((ret = obj_UInt16ArrayToString(&ba, &object->emergencyProfileGroupIDs)) != 0)
     {
         return ret;
-}
+    }
 #else
     if ((ret = va_toString(&object->emergencyProfileGroupIDs, &ba)) != 0)
     {
@@ -2790,7 +2796,7 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
     if (object->mBusPort != NULL)
     {
         bb_addLogicalName(&ba, object->mBusPort->logicalName);
-    }
+}
 #else
     bb_addLogicalName(&ba, object->mBusPortReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -3125,7 +3131,7 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
     if (object->phy != NULL)
     {
         bb_addLogicalName(&ba, object->phy->logicalName);
-    }
+}
 #else
     bb_addLogicalName(&ba, object->PHYReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -3195,7 +3201,7 @@ int obj_appendReferences(gxByteBuffer* ba, gxArray* list)
         {
             break;
         }
-}
+    }
     return ret;
 }
 int obj_accountToString(gxAccount* object, char** buff)
@@ -3809,7 +3815,7 @@ int obj_lteMonitoringToString(gxLteMonitoring* object, char** buff)
         (ret = bb_addString(&bb, "\nqRxlevMinCE: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->networkParameters.qRxlevMinCE)) == 0 &&
         (ret = bb_addString(&bb, "\nqRxLevMinCE1: ")) == 0 &&
-        (ret = bb_addIntAsString(&bb, object->networkParameters.qRxLevMinCE1)) == 0 &&        
+        (ret = bb_addIntAsString(&bb, object->networkParameters.qRxLevMinCE1)) == 0 &&
         (ret = bb_addString(&bb, "}\nsignalQuality: ")) == 0 &&
         (ret = bb_addIntAsString(&bb, object->qualityOfService.signalQuality)) == 0 &&
         (ret = bb_addString(&bb, "\nsignalLevel: ")) == 0 &&
@@ -3820,7 +3826,7 @@ int obj_lteMonitoringToString(gxLteMonitoring* object, char** buff)
         (ret = bb_addIntAsString(&bb, object->qualityOfService.coverageEnhancement)) == 0)
     {
         *buff = bb_toString(&bb);
-    }  
+    }
     bb_clear(&bb);
     return ret;
 }

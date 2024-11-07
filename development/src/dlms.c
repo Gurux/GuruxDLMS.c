@@ -4962,8 +4962,7 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
         }
         //If IC value is wrong.
 #ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
-        settings->expectedInvocationCounter = svr_validInvocationCounter(settings, invocationCounter);
-        if (settings->expectedInvocationCounter != 0)
+        if (svr_validateInvocationCounter(settings, invocationCounter) != 0)
         {
             return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
         }
@@ -5055,8 +5054,7 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
 #ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
-        settings->expectedInvocationCounter = svr_validInvocationCounter(settings, invocationCounter);
-        if (settings->expectedInvocationCounter != 0)
+        if (svr_validateInvocationCounter(settings, invocationCounter) != 0)
         {
             return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
         }

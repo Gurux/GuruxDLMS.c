@@ -162,7 +162,7 @@ extern "C" {
 #ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
     //Some DLMS standard define that invocation counter must between given range.
     //Returns expected invocation counter value or zero if the invocation counter is accepted.
-    extern uint32_t svr_validInvocationCounter(dlmsSettings* settings, uint32_t value);
+    extern unsigned char svr_validateInvocationCounter(dlmsSettings* settings, uint32_t value);
 #endif //DLMS_INVOCATION_COUNTER_VALIDATOR
 
 #ifdef DLMS_NOTIFY_CIPHERING_ERROR

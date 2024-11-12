@@ -79,25 +79,29 @@ int mes_push(message* mes, gxByteBuffer* item)
             mes->data = (gxByteBuffer**)gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
             if (mes->data == NULL)
             {
+                mes->capacity = 0;
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
         }
         else
         {
+            gxByteBuffer** old = mes->data;
 #ifdef gxrealloc
             //If compiler supports realloc.
             mes->data = (gxByteBuffer**)gxrealloc(mes->data, mes->capacity * sizeof(gxByteBuffer*));
             if (mes->data == NULL)
             {
+                mes->capacity -= MESSAGE_CAPACITY;
+                mes->data = old;
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
 #else
             //If compiler doesn't support realloc.
-            gxByteBuffer** old = mes->data;
             mes->data = (gxByteBuffer**)gxmalloc(mes->capacity * sizeof(gxByteBuffer*));
             //If not enought memory available.
             if (mes->data == NULL)
             {
+                mes->capacity -= MESSAGE_CAPACITY;
                 mes->data = old;
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }

@@ -3367,6 +3367,7 @@ int addAccount()
     const unsigned char ln[6] = { 0, 0, 19, 0, 0, 255 };
     if ((ret = INIT_OBJECT(account, DLMS_OBJECT_TYPE_ACCOUNT, ln)) == 0)
     {
+        account.paymentMode = DLMS_ACCOUNT_PAYMENT_MODE_CREDIT;
         //Set default values.
         account.currentCreditStatus = DLMS_ACCOUNT_CREDIT_STATUS_OUT_OF_CREDIT;
     }

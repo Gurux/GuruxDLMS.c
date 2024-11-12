@@ -142,18 +142,18 @@ int bb_capacity(
             }
             else
             {
+                unsigned char* old = arr->data;
 #ifdef gxrealloc
                 //If compiler supports realloc.
-                unsigned char* tmp = (unsigned char*)gxrealloc(arr->data, capacity);
+                arr->data = (unsigned char*)gxrealloc(arr->data, capacity);
                 //If not enought memory available.
-                if (tmp == NULL)
+                if (arr->data == NULL)
                 {
+                    arr->data = old;
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                arr->data = tmp;
  #else
                 //If compiler doesn't support realloc.
-                unsigned char* old = arr->data;
                 arr->data = (unsigned char*)gxmalloc(capacity);
                 //If not enought memory available.
                 if (arr->data == NULL)
@@ -262,39 +262,39 @@ int bb_allocate(
     {
         unsigned char empty = arr->capacity == 0;
         //If data is append fist time.
-        if (dataSize > VECTOR_CAPACITY || arr->capacity == 0)
+        if (!(dataSize > VECTOR_CAPACITY || arr->capacity == 0))
         {
-            arr->capacity += dataSize;
+            dataSize = VECTOR_CAPACITY;
         }
-        else
-        {
-            arr->capacity += VECTOR_CAPACITY;
-        }
+        arr->capacity += dataSize;
         if (empty)
         {
             arr->data = (unsigned char*)gxmalloc(arr->capacity);
             if (arr->data == NULL)
             {
+                arr->capacity -= dataSize;
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
         }
         else
         {
+            unsigned char* old = arr->data;
 #ifdef gxrealloc
             //If compiler supports realloc.
-            unsigned char* tmp = (unsigned char*)gxrealloc(arr->data, arr->capacity);
-            if (tmp == NULL)
+            arr->data = (unsigned char*)gxrealloc(arr->data, arr->capacity);
+            if (arr->data == NULL)
             {
+                arr->capacity -= dataSize;
+                arr->data = old;
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
-            arr->data = tmp;
 #else
             //If compiler doesn't supports realloc.
-            unsigned char* old = arr->data;
             arr->data = (unsigned char*)gxmalloc(arr->capacity);
             //If not enought memory available.
             if (arr->data == NULL)
             {
+                arr->capacity -= dataSize;
                 arr->data = old;
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }

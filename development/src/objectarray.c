@@ -73,23 +73,38 @@ int oa_capacity(objectArray* arr, const uint16_t capacity)
 #ifndef DLMS_IGNORE_MALLOC
     if (!oa_isAttached(arr))
     {
+        uint16_t orig = capacity;
         arr->capacity = capacity;
         if (arr->data == NULL)
         {
             arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
+            //If not enought memory available.
+            if (arr->data == NULL)
+            {
+                arr->capacity = 0;
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
         }
         else
         {
+            gxObject** old = arr->data;
 #ifdef gxrealloc
             //If compiler supports realloc.
             arr->data = (gxObject**)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
- #else
+            //If not enought memory available.
+            if (arr->data == NULL)
+            {
+                arr->capacity = orig;
+                arr->data = old;
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+#else
             //If compiler doesn't support realloc.
-            gxObject** old = arr->data;
             arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
             //If not enought memory available.
             if (arr->data == NULL)
             {
+                arr->capacity = orig;
                 arr->data = old;
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
@@ -159,15 +174,26 @@ int oa_push(objectArray* arr, gxObject* item)
         if (arr->data == NULL)
         {
             arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
+            //If not enought memory available.
+            if (arr->data == NULL)
+            {
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
         }
         else
         {
+            gxObject** old = arr->data;
 #ifdef gxrealloc
             //If compiler supports realloc.
             arr->data = (gxObject**)gxrealloc(arr->data, arr->capacity * sizeof(gxObject*));
- #else
+            //If not enought memory available.
+            if (arr->data == NULL)
+            {
+                arr->data = old;
+                return DLMS_ERROR_CODE_OUTOFMEMORY;
+            }
+#else
             //If compiler doesn't support realloc.
-            gxObject** old = arr->data;
             arr->data = (gxObject**)gxmalloc(arr->capacity * sizeof(gxObject*));
             //If not enought memory available.
             if (arr->data == NULL)

@@ -220,6 +220,27 @@ extern "C" {
     //Server uses notify trace if DLMS_DEBUG is defined.
     void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, int err);
 
+#ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
+    //Some DLMS sub standard define that invocation counter must between given range.
+    //Returns zero if the invocation counter is accepted.
+    extern unsigned char svr_validateInvocationCounter(
+        dlmsSettings* settings, 
+        uint32_t value);
+
+    /* Code example:
+    unsigned char svr_validateInvocationCounter(dlmsSettings* settings, uint32_t value)
+    {
+        if (value < *settings->expectedInvocationCounter - 3 &&
+            value > *settings->expectedInvocationCounter + 3) {
+            // If the IC value is out of the expected range
+            return 1;
+        }
+        *settings->expectedInvocationCounter = value + 1;
+        return 0;
+    }
+    */
+#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
+
 #ifdef  __cplusplus
 }
 #endif

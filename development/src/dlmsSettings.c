@@ -163,9 +163,7 @@ void cl_init(
     oa_init(&settings->releasedObjects);
     settings->expectedSecurityPolicy = 0xFF;
     settings->expectedSecuritySuite = 0xFF;
-#ifndef DLMS_INVOCATION_COUNTER_VALIDATOR
     settings->expectedInvocationCounter = NULL;
-#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
     settings->expectedClientSystemTitle = NULL;
 #ifndef DLMS_IGNORE_PLC
     plc_reset(settings);
@@ -210,9 +208,7 @@ void cl_clear(
     oa_clear(&settings->releasedObjects, 1);
     oa_clear(&settings->internalObjects, 0);
     resetFrameSequence(settings);
-#ifndef DLMS_INVOCATION_COUNTER_VALIDATOR
     settings->expectedInvocationCounter = NULL;
-#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
 }
 
 void svr_clear(

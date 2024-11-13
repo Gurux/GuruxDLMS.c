@@ -6839,8 +6839,34 @@ int dlms_appendHdlcParameter(gxByteBuffer* data, uint16_t value)
     }
     return 0;
 }
+int dlms_pduAvailable(
+    dlmsSettings* settings,
+    gxByteBuffer* data,
+    uint16_t* size)
+{
+    *size = settings->maxPduSize;
+#ifndef DLMS_IGNORE_HIGH_GMAC
+    if (settings->cipher.security != DLMS_SECURITY_NONE)
+    {
+        *size -= 20 + CIPHERING_HEADER_SIZE + (uint16_t)data->size;
+        if ((settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
+        {
+            //System title is sent when General Protection is used.
+            *size -= 9;
+        }
+    }
+    else
+#endif //DLMS_IGNORE_HIGH_GMAC
+    {
+        *size -= 20 + (uint16_t)data->size;
+    }
+    return 0;
+}
 
-int dlms_isPduFull(dlmsSettings* settings, gxByteBuffer* data, uint16_t* size)
+int dlms_isPduFull(
+    dlmsSettings* settings, 
+    gxByteBuffer* data, 
+    uint16_t* size)
 {
     unsigned char ret;
     if (bb_isAttached(data))

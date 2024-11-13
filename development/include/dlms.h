@@ -293,6 +293,12 @@ extern "C" {
         gxByteBuffer* data,
         uint16_t* size);
 
+    //Thís method returns the amount of availabe bytes in PDU.
+    int dlms_pduAvailable(
+        dlmsSettings* settings,
+        gxByteBuffer* data,
+        uint16_t* size);
+
     int dlms_getMacFrame(
         dlmsSettings* settings,
         unsigned char frame,

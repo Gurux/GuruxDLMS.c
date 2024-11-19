@@ -423,6 +423,7 @@ int svr_HandleAarqRequest(
     BB_ATTACH(error, ERROR_BUFF, 0);
     DLMS_ASSOCIATION_RESULT result;
     unsigned char diagnostic;
+    settings->base.serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
     // Reset settings for wrapper and PDU.
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER ||
         settings->base.interfaceType == DLMS_INTERFACE_TYPE_PDU)
@@ -673,6 +674,7 @@ int svr_handleSnrmRequest(
     DLMS_SECURITY security;
 #endif
     //Initialize default settings.
+    settings->base.serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
     if (settings->hdlc != NULL)
     {
         settings->base.maxInfoRX = settings->hdlc->maximumInfoLengthReceive;
@@ -737,6 +739,8 @@ int svr_generateDisconnectRequest(
     gxByteBuffer* data)
 {
     int ret, len;
+    //Initialize default settings.
+    settings->base.serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
     if (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
     {
         bb_setUInt8(data, 0x63);
@@ -2991,6 +2995,8 @@ int svr_handleReleaseRequest(
     int ret;
     unsigned char ch, len;
     gxByteBuffer tmp;
+    //Initialize default settings.
+    settings->base.serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
     //Get len.
     if ((ret = bb_getUInt8(data, &len)) != 0 ||
         (ret = bb_getUInt8(data, &ch)) != 0 ||
@@ -3455,10 +3461,14 @@ int svr_handleCommand(
     {
         settings->info.moreData |= DLMS_DATA_REQUEST_TYPES_FRAME;
     }
-    if (!(settings->base.cipher.broadcast && data->size == 0))
+    if (settings->base.serviceClass == DLMS_SERVICE_CLASS_CONFIRMED)
     {
-        //Reply is not send with broadcast.
+        //Reply is not send if serviceClass is DLMS_SERVICE_CLASS_UN_CONFIRMED.
         ret = dlms_addFrame(&settings->base, frame, data, reply);
+    }
+    else
+    {
+        bb_clear(reply);
     }
     if (cmd == DLMS_COMMAND_DISC ||
         (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER && cmd == DLMS_COMMAND_RELEASE_REQUEST))

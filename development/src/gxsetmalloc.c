@@ -8572,6 +8572,15 @@ int cosem_setLteMonitoring(
 #endif //DLMS_IGNORE_LTE_MONITORING
 
 #ifdef DLMS_ITALIAN_STANDARD
+
+int updateInterval(gxInterval* interval, unsigned char value)
+{
+    interval->startHour = (unsigned char)(value & 0x1F);
+    interval->intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((value >> 5) & 0x3);
+    interval->useInterval = (value & 0x80) != 0;
+    return 0;
+}
+
 int updateIntervals(gxInterval* interval, variantArray* value)
 {
     int ret;
@@ -8580,42 +8589,19 @@ int updateIntervals(gxInterval* interval, variantArray* value)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    if ((ret = va_getByIndex(value, 0, &tmp)) != 0)
+    if ((ret = va_getByIndex(value, 0, &tmp)) != 0 ||
+        (ret = updateInterval(interval, tmp->bVal)) != 0 ||
+        (ret = va_getByIndex(value, 1, &tmp)) != 0 ||
+        (ret = updateInterval(interval + 1, tmp->bVal)) != 0 ||
+        (ret = va_getByIndex(value, 2, &tmp)) != 0 ||
+        (ret = updateInterval(interval + 2, tmp->bVal)) != 0 ||
+        (ret = va_getByIndex(value, 3, &tmp)) != 0 ||
+        (ret = updateInterval(interval + 3, tmp->bVal)) != 0 ||
+        (ret = va_getByIndex(value, 4, &tmp)) != 0 ||
+        (ret = updateInterval(interval + 4, tmp->bVal)) != 0)
     {
-        return ret;
     }
-    interval[0].startHour = (unsigned char)(tmp->bVal >> 3);
-    interval[0].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
-    interval[0].useInterval = (tmp->bVal & 0x1) != 0;
-    if ((ret = va_getByIndex(value, 1, &tmp)) != 0)
-    {
-        return ret;
-    }
-    interval[1].startHour = (unsigned char)(tmp->bVal >> 3);
-    interval[1].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
-    interval[1].useInterval = (tmp->bVal & 0x1) != 0;
-    if ((ret = va_getByIndex(value, 2, &tmp)) != 0)
-    {
-        return ret;
-    }
-    interval[2].startHour = (unsigned char)(tmp->bVal >> 3);
-    interval[2].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
-    interval[2].useInterval = (tmp->bVal & 0x1) != 0;
-    if ((ret = va_getByIndex(value, 3, &tmp)) != 0)
-    {
-        return ret;
-    }
-    interval[3].startHour = (unsigned char)(tmp->bVal >> 3);
-    interval[3].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
-    interval[3].useInterval = (tmp->bVal & 0x1) != 0;
-    if ((ret = va_getByIndex(value, 4, &tmp)) != 0)
-    {
-        return ret;
-    }
-    interval[4].startHour = (unsigned char)(tmp->bVal >> 3);
-    interval[4].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((tmp->bVal >> 1) & 0x3);
-    interval[4].useInterval = (tmp->bVal & 0x1) != 0;
-    return 0;
+    return ret;
 }
 
 int updateSeason(gxBandDescriptor* season, variantArray* value)

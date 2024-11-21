@@ -5845,9 +5845,9 @@ int cosem_getValue(
 
 unsigned char getInterval(gxInterval* interval)
 {
-    unsigned char b = (unsigned char)(interval->useInterval ? 1 : 0);
-    b |= (unsigned char)(interval->intervalTariff << 1);
-    b |= (unsigned char)(interval->startHour << 3);
+    unsigned char b = (unsigned char)(interval->startHour & 0x1F);
+    b |= (unsigned char)(interval->intervalTariff << 5);
+    b |= (unsigned char)(interval->useInterval ? 0x80 : 0);
     return b;
 }
 

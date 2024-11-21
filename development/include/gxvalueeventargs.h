@@ -68,7 +68,7 @@ extern "C" {
         /**
         * Data index.
         */
-        unsigned char dataIndex;        
+        uint16_t dataIndex;        
         /**
         * Optional selector.
         */

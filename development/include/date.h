@@ -204,6 +204,20 @@ Get years from time.
         uint32_t value);
 
     /*
+    Adds amount of years to current time.
+    */
+    void time_addYears(
+        gxtime* value,
+        int years);
+
+    /*
+    Adds amount of months to current time.
+    */
+        void time_addMonths(
+            gxtime* value,
+            int months);
+
+    /*
     Adds amount of days to current time.
     */
     void time_addDays(

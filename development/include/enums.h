@@ -3504,6 +3504,43 @@ extern "C" {
         /// </summary>
         DLMS_ZIG_BEE_STATUS_SEP_TRANSMITTING = 0x10
     }DLMS_ZIG_BEE_STATUS;
+
+    /*Encoding of selective access parameters with data_index.*/
+    typedef enum
+    {
+        /*Selective access is not used.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_NONE = 0x0,
+        /*Last number of entries.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_ENTRIES_LAST = 0x1,
+        /*Number of entries after last confirmation.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_ENTRIES_LAST_CONFIRMATION = 0x2,
+        /*Complete number of minutes after last confirmation.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_MINUTES_LAST_CONFIRMATION = 0x3,
+        /*Complete number of hours after last confirmation.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_HOURS_LAST_CONFIRMATION = 0x4,
+        /*Complete number of days after last confirmation.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_DAYS_LAST_CONFIRMATION = 0x5,
+        /*Complete number of months after last confirmation.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_MONTHS_LAST_CONFIRMATION = 0x6,
+        /*Last complete number of minutes including the current minute.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_MINUTES = 0x7,
+        /*Last complete number of hours including the current hour.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_HOURS = 0x8,
+        /*Last complete number of days including the current day.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_DAYS = 0x9,
+        /*Last complete number of months including the current month.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_MONTHS = 0xA,
+        /*Last number of seconds.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_SECONDS = 0xB,
+        /*Last complete number of minutes.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MINUTES = 0xC,
+        /*Last complete number of hours.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_HOURS = 0xD,
+        /*Last complete number of days.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_DAYS = 0xE,
+        /*Last complete number of months.*/
+        DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MONTHS = 0xF
+    }DLMS_SELECTIVE_ACCESS_PARAMETER;
 #ifdef  __cplusplus
 }
 #endif

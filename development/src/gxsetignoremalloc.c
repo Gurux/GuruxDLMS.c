@@ -4880,7 +4880,7 @@ int compactData_update(
     //svr_postGet(settings, &args);
     vec_empty(&args);
     return 0;
-    }
+}
 
 int compactData_updateTemplateDescription(
     dlmsSettings* settings,
@@ -4960,7 +4960,7 @@ int cosem_setParameterMonitor(
             object->changedParameter.type = type;
             memcpy(object->changedParameter.logicalName, ln, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-    }
+        }
         break;
     }
     case 3:
@@ -4998,12 +4998,12 @@ int cosem_setParameterMonitor(
                 if ((ret = cosem_findObjectByLN(settings, type, ln, &it->target)) != 0)
                 {
                     break;
-            }
+                }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
+            }
         }
-}
         break;
-}
+    }
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
@@ -5893,46 +5893,33 @@ int cosem_setLteMonitoring(
 
 
 #ifdef DLMS_ITALIAN_STANDARD
+
+
+int updateInterval(gxInterval* interval, unsigned char value)
+{
+    interval->startHour = (unsigned char)(value & 0x1F);
+    interval->intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((value >> 5) & 0x3);
+    interval->useInterval = (value & 0x80) != 0;
+    return 0;
+}
+
 int updateIntervals(gxInterval* interval, gxByteBuffer* value)
 {
     int ret;
     unsigned char b;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
+    if ((ret = bb_getUInt8(value, &b)) != 0 ||
+        (ret = updateInterval(&interval[0], b)) != 0 ||
+        (ret = bb_getUInt8(value, &b)) != 0 ||
+        (ret = updateInterval(&interval[1], b)) != 0 ||
+        (ret = bb_getUInt8(value, &b)) != 0 ||
+        (ret = updateInterval(&interval[2], b)) != 0 ||
+        (ret = bb_getUInt8(value, &b)) != 0 ||
+        (ret = updateInterval(&interval[3], b)) != 0 ||
+        (ret = bb_getUInt8(value, &b)) != 0 ||
+        (ret = updateInterval(&interval[4], b)) != 0)
     {
-        return ret;
     }
-    interval[0].startHour = (unsigned char)(b >> 3);
-    interval[0].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[0].useInterval = (b & 0x1) != 0;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
-    {
-        return ret;
-    }
-    interval[1].startHour = (unsigned char)(b >> 3);
-    interval[1].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[1].useInterval = (b & 0x1) != 0;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
-    {
-        return ret;
-    }
-    interval[2].startHour = (unsigned char)(b >> 3);
-    interval[2].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[2].useInterval = (b & 0x1) != 0;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
-    {
-        return ret;
-    }
-    interval[3].startHour = (unsigned char)(b >> 3);
-    interval[3].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[3].useInterval = (b & 0x1) != 0;
-    if ((ret = bb_getUInt8(value, &b)) != 0)
-    {
-        return ret;
-    }
-    interval[4].startHour = (unsigned char)(b >> 3);
-    interval[4].intervalTariff = (DLMS_DEFAULT_TARIFF_BAND)((b >> 1) & 0x3);
-    interval[4].useInterval = (b & 0x1) != 0;
-    return 0;
+    return ret;
 }
 
 int updateSeason(gxBandDescriptor* season, variantArray* value)

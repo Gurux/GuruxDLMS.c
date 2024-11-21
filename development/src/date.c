@@ -555,6 +555,57 @@ unsigned char time_getSeconds2(
     return value % 60;
 }
 
+void time_addYears(
+    gxtime* value,
+    int years)
+{
+#ifdef DLMS_USE_EPOCH_TIME
+    time_addMonths(value, years * 12);
+#else
+    value->value.tm_year += years;
+    if (gxmktime(&value->value) == (time_t)-1)
+    {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+        assert(0);
+#endif
+    }
+#endif //DLMS_USE_EPOCH_TIME
+}
+
+void time_addMonths(
+    gxtime* value,
+    int months)
+{
+#ifdef DLMS_USE_EPOCH_TIME
+    int pos;
+    unsigned char days;
+    if (months < 0)
+    {
+        for (pos = 0; pos != months; --pos)
+        {
+            days = date_daysInMonth(time_getYears(value), time_getMonths(value));
+            time_addDays(value, -days);
+        }
+    }
+    else
+    {
+        for (pos = 0; pos != months; ++pos)
+        {
+            days = date_daysInMonth(time_getYears(value), time_getMonths(value));
+            time_addDays(value, days);
+        }
+    }
+#else
+    value->value.tm_mon += months;
+    if (gxmktime(&value->value) == (time_t)-1)
+    {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+        assert(0);
+#endif
+    }
+#endif //DLMS_USE_EPOCH_TIME
+}
+
 void time_addDays(
     gxtime* value,
     int days)
@@ -709,25 +760,26 @@ unsigned char date_daysInMonth(
     switch (month)
     {
     case 0:
-    case 2:
-    case 4:
-    case 6:
-    case 7:
-    case 9:
-    case 11:
-        return 31;
+        return -1;
+    case 1:
     case 3:
     case 5:
+    case 7:
     case 8:
     case 10:
+    case 12:
+        return 31;
+    case 4:
+    case 6:
+    case 9:
+    case 11:
         return 30;
-    default:
-        if (date_isleap(year))
-        {
-            return 29;
-        }
-        return 28;
     }
+    if (date_isleap(year))
+    {
+        return 29;
+    }
+    return 28;
 }
 
 uint16_t date_getYearDay(uint8_t day, uint8_t mon, uint16_t year)
@@ -826,9 +878,15 @@ int time_toString2(
     char* buff,
     uint16_t len)
 {
+    int ret;
     gxByteBuffer bb;
     bb_attach(&bb, (unsigned char*)buff, 0, len);
-    return time_toString(time, &bb);
+    ret = time_toString(time, &bb);
+    if (ret != 0)
+    {
+        buff[0] = 0;
+    }
+    return ret;
 }
 
 int time_toString(
@@ -874,55 +932,58 @@ int time_toString(
             if ((time->skip & DATETIME_SKIPS_DAY) == 0)
             {
                 empty = 0;
-                bb_addIntAsString2(ba, day, 2);
+                ret = bb_addIntAsString2(ba, day, 2);
             }
             if ((time->skip & DATETIME_SKIPS_MONTH) == 0)
             {
                 if (!empty)
                 {
-                    bb_setUInt8(ba, separator);
+                    ret = bb_setUInt8(ba, separator);
                 }
                 else
                 {
                     empty = 0;
                 }
-                bb_addIntAsString2(ba, mon, 2);
+                ret = bb_addIntAsString2(ba, mon, 2);
             }
             else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
             {
                 if (!empty)
                 {
-                    bb_setUInt8(ba, separator);
+                    ret = bb_setUInt8(ba, separator);
                 }
                 else
                 {
                     empty = 0;
                 }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
+                ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
             }
-            if ((time->skip & DATETIME_SKIPS_YEAR) == 0)
+            if (ret == 0)
             {
-                if (!empty)
+                if ((time->skip & DATETIME_SKIPS_YEAR) == 0)
                 {
-                    bb_setUInt8(ba, separator);
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addIntAsString(ba, year);
                 }
-                else
+                else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
                 {
-                    empty = 0;
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
                 }
-                bb_addIntAsString(ba, year);
-            }
-            else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
-            {
-                if (!empty)
-                {
-                    bb_setUInt8(ba, separator);
-                }
-                else
-                {
-                    empty = 0;
-                }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
             }
         }
         break;
@@ -931,55 +992,58 @@ int time_toString(
             if ((time->skip & DATETIME_SKIPS_YEAR) == 0)
             {
                 empty = 0;
-                bb_addIntAsString(ba, year);
+                ret = bb_addIntAsString(ba, year);
             }
             else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
             {
                 if (!empty)
                 {
-                    bb_setUInt8(ba, separator);
+                    ret = bb_setUInt8(ba, separator);
                 }
                 else
                 {
                     empty = 0;
                 }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
+                ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
             }
-            if ((time->skip & DATETIME_SKIPS_MONTH) == 0)
+            if (ret == 0)
             {
-                if (!empty)
+                if ((time->skip & DATETIME_SKIPS_MONTH) == 0)
                 {
-                    bb_setUInt8(ba, separator);
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addIntAsString2(ba, mon, 2);
                 }
-                else
+                else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
                 {
-                    empty = 0;
+                    if (!empty)
+                    {
+                        bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
                 }
-                bb_addIntAsString2(ba, mon, 2);
-            }
-            else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
-            {
-                if (!empty)
+                if ((time->skip & DATETIME_SKIPS_DAY) == 0)
                 {
-                    bb_setUInt8(ba, separator);
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addIntAsString2(ba, day, 2);
                 }
-                else
-                {
-                    empty = 0;
-                }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
-            }
-            if ((time->skip & DATETIME_SKIPS_DAY) == 0)
-            {
-                if (!empty)
-                {
-                    bb_setUInt8(ba, separator);
-                }
-                else
-                {
-                    empty = 0;
-                }
-                bb_addIntAsString2(ba, day, 2);
             }
         }
         break;
@@ -987,56 +1051,59 @@ int time_toString(
         {
             if ((time->skip & DATETIME_SKIPS_YEAR) == 0)
             {
-                bb_addIntAsString(ba, year);
+                ret = bb_addIntAsString(ba, year);
                 empty = 0;
             }
             else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
             {
                 if (!empty)
                 {
-                    bb_setUInt8(ba, separator);
+                    ret = bb_setUInt8(ba, separator);
                 }
                 else
                 {
                     empty = 0;
                 }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
+                ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
             }
-            if ((time->skip & DATETIME_SKIPS_DAY) == 0)
+            if (ret == 0)
             {
-                if (!empty)
+                if ((time->skip & DATETIME_SKIPS_DAY) == 0)
                 {
-                    bb_setUInt8(ba, separator);
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addIntAsString2(ba, day, 2);
                 }
-                else
+                if ((time->skip & DATETIME_SKIPS_MONTH) == 0)
                 {
-                    empty = 0;
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addIntAsString2(ba, mon, 2);
                 }
-                bb_addIntAsString2(ba, day, 2);
-            }
-            if ((time->skip & DATETIME_SKIPS_MONTH) == 0)
-            {
-                if (!empty)
+                else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
                 {
-                    bb_setUInt8(ba, separator);
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
                 }
-                else
-                {
-                    empty = 0;
-                }
-                bb_addIntAsString2(ba, mon, 2);
-            }
-            else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
-            {
-                if (!empty)
-                {
-                    bb_setUInt8(ba, separator);
-                }
-                else
-                {
-                    empty = 0;
-                }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
             }
         }
         break;
@@ -1046,36 +1113,36 @@ int time_toString(
             {
                 empty = 0;
                 addDate = 1;
-                bb_addString(ba, GET_STR_FROM_EEPROM("BEGIN"));
+                ret = bb_addString(ba, GET_STR_FROM_EEPROM("BEGIN"));
             }
             else if ((time->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_DST_END) != 0)
             {
                 empty = 0;
                 addDate = 1;
-                bb_addString(ba, GET_STR_FROM_EEPROM("END"));
+                ret = bb_addString(ba, GET_STR_FROM_EEPROM("END"));
             }
             else if ((time->skip & DATETIME_SKIPS_MONTH) == 0)
             {
                 empty = 0;
-                bb_addIntAsString2(ba, mon, 2);
+                ret = bb_addIntAsString2(ba, mon, 2);
             }
             else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
             {
                 if (!empty)
                 {
-                    bb_setUInt8(ba, separator);
+                    ret = bb_setUInt8(ba, separator);
                 }
                 else
                 {
                     empty = 0;
                 }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
+                ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
             }
             if ((time->skip & DATETIME_SKIPS_DAY) == 0)
             {
                 if (!empty)
                 {
-                    bb_setUInt8(ba, separator);
+                    ret = bb_setUInt8(ba, separator);
                 }
                 else
                 {
@@ -1083,64 +1150,67 @@ int time_toString(
                 }
                 if ((time->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY) != 0)
                 {
-                    bb_addString(ba, GET_STR_FROM_EEPROM("LASTDAY"));
+                    ret = bb_addString(ba, GET_STR_FROM_EEPROM("LASTDAY"));
                 }
                 else if ((time->extraInfo & DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2) != 0)
                 {
-                    bb_addString(ba, GET_STR_FROM_EEPROM("LASTDAY2"));
+                    ret = bb_addString(ba, GET_STR_FROM_EEPROM("LASTDAY2"));
                 }
                 else
                 {
-                    bb_addIntAsString2(ba, day, 2);
+                    ret = bb_addIntAsString2(ba, day, 2);
                 }
             }
             else if (addDate)
             {
                 if (!empty)
                 {
-                    bb_setUInt8(ba, separator);
+                    ret = bb_setUInt8(ba, separator);
                 }
                 else
                 {
                     empty = 0;
                 }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
+                ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
             }
-            if ((time->skip & DATETIME_SKIPS_YEAR) == 0)
+            if (ret == 0)
             {
-                if (!empty)
+                if ((time->skip & DATETIME_SKIPS_YEAR) == 0)
                 {
-                    bb_setUInt8(ba, separator);
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addIntAsString(ba, (time->skip & DATETIME_SKIPS_YEAR) == 0 ? year : 0);
                 }
-                else
+                else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
                 {
-                    empty = 0;
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
                 }
-                bb_addIntAsString(ba, (time->skip & DATETIME_SKIPS_YEAR) == 0 ? year : 0);
-            }
-            else if ((time->extraInfo & (DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY | DLMS_DATE_TIME_EXTRA_INFO_LAST_DAY2)) != 0)
-            {
-                if (!empty)
+                else if (addDate)
                 {
-                    bb_setUInt8(ba, separator);
+                    if (!empty)
+                    {
+                        ret = bb_setUInt8(ba, separator);
+                    }
+                    else
+                    {
+                        empty = 0;
+                    }
+                    ret = bb_addString(ba, GET_STR_FROM_EEPROM("*"));
                 }
-                else
-                {
-                    empty = 0;
-                }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
-            }
-            else if (addDate)
-            {
-                if (!empty)
-                {
-                    bb_setUInt8(ba, separator);
-                }
-                else
-                {
-                    empty = 0;
-                }
-                bb_addString(ba, GET_STR_FROM_EEPROM("*"));
             }
         }
         break;
@@ -1149,107 +1219,124 @@ int time_toString(
     unsigned char addTime = (time->skip & (DATETIME_SKIPS_HOUR | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_MINUTE | DATETIME_SKIPS_SECOND)) != 0;
     if (!empty)
     {
-        bb_setUInt8(ba, ' ');
+        ret = bb_setUInt8(ba, ' ');
     }
     //Add hours.
     if ((time->skip & DATETIME_SKIPS_HOUR) == 0)
     {
         empty = 0;
-        bb_addIntAsString2(ba, hour, 2);
+        ret = bb_addIntAsString2(ba, hour, 2);
     }
     else if (addTime)
     {
         if (!empty)
         {
-            bb_setUInt8(ba, ':');
+            ret = bb_setUInt8(ba, ':');
         }
         else
         {
             empty = 0;
         }
-        bb_setUInt8(ba, '*');
+        ret = bb_setUInt8(ba, '*');
     }
     //Add minutes.
     if ((time->skip & DATETIME_SKIPS_MINUTE) == 0)
     {
         if (!empty)
         {
-            bb_setUInt8(ba, ':');
+            ret = bb_setUInt8(ba, ':');
         }
         else
         {
             empty = 0;
         }
-        bb_addIntAsString2(ba, min, 2);
+        ret = bb_addIntAsString2(ba, min, 2);
     }
     else if (addTime)
     {
         if (!empty)
         {
-            bb_setUInt8(ba, ':');
+            ret = bb_setUInt8(ba, ':');
         }
         else
         {
             empty = 0;
         }
-        bb_setUInt8(ba, '*');
+        ret = bb_setUInt8(ba, '*');
     }
-    //Add seconds.
-    if ((time->skip & DATETIME_SKIPS_SECOND) == 0)
+    if (ret == 0)
     {
-        if (!empty)
+        //Add seconds.
+        if ((time->skip & DATETIME_SKIPS_SECOND) == 0)
         {
-            bb_setUInt8(ba, ':');
-        }
-        empty = 0;
-        bb_addIntAsString2(ba, sec, 2);
-    }
-    else if (addTime)
-    {
-        if (!empty)
-        {
-            bb_setUInt8(ba, ':');
-        }
-        else
-        {
+            if (!empty)
+            {
+                ret = bb_setUInt8(ba, ':');
+            }
             empty = 0;
+            ret = bb_addIntAsString2(ba, sec, 2);
         }
-        bb_setUInt8(ba, '*');
+        else if (addTime)
+        {
+            if (!empty)
+            {
+                ret = bb_setUInt8(ba, ':');
+            }
+            else
+            {
+                empty = 0;
+            }
+            ret = bb_setUInt8(ba, '*');
+        }
     }
     //Add milliseconds.
-    if ((time->skip & DATETIME_SKIPS_MS) == 0 &&
+    if (ret == 0 &&
+        (time->skip & DATETIME_SKIPS_MS) == 0 &&
         time->millisecond != 0)
     {
         if (!empty)
         {
-            bb_setUInt8(ba, '.');
+            ret = bb_setUInt8(ba, '.');
         }
         empty = 0;
-        bb_addIntAsString2(ba, time->millisecond, 2);
+        if (ret == 0)
+        {
+            ret = bb_addIntAsString2(ba, time->millisecond, 2);
+        }
     }
-    if (time->deviation != (short)0x8000 && (time->skip & DATETIME_SKIPS_DEVITATION) == 0)
+    if (ret == 0 &&
+        time->deviation != (short)0x8000 && (time->skip & DATETIME_SKIPS_DEVITATION) == 0)
     {
         short tmp = time->deviation;
 #ifndef DLMS_USE_UTC_TIME_ZONE
         tmp = -tmp;
 #endif //DLMS_USE_UTC_TIME_ZONE
-        bb_addString(ba, " UTC");
-        if (tmp < 0)
+        if ((ret = bb_addString(ba, " UTC")) == 0)
         {
-            bb_addString(ba, "-");
+            if (tmp < 0)
+            {
+                ret = bb_addString(ba, "-");
+            }
+            else
+            {
+                ret = bb_addString(ba, "+");
+            }
+            if (ret == 0 &&
+                (ret = bb_addIntAsString2(ba, (int)(tmp / 60), 2)) == 0 &&
+                (ret = bb_addString(ba, ":")) == 0 &&
+                (ret = bb_addIntAsString2(ba, (int)(tmp % 60), 2)) == 0)
+            {
+
+            }
         }
-        else
-        {
-            bb_addString(ba, "+");
-        }
-        bb_addIntAsString2(ba, (int)(tmp / 60), 2);
-        bb_addString(ba, ":");
-        bb_addIntAsString2(ba, (int)(tmp % 60), 2);
     }
     //Add end of string, but that is not added to the length.
-    bb_setUInt8(ba, '\0');
-    --ba->size;
-    return 0;
+    if (ret == 0)
+    {
+        ret = bb_setUInt8(ba, '\0');
+        --ba->size;
+    }
+    return ret;
 }
 #endif //!defined(GX_DLMS_MICROCONTROLLER)
 
@@ -1262,6 +1349,7 @@ void time_copy(
     trg->status = src->status;
     trg->value = src->value;
     trg->deviation = src->deviation;
+    trg->millisecond = src->millisecond;
 }
 
 void time_addTime(

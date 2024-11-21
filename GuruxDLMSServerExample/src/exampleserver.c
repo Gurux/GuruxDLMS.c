@@ -102,6 +102,7 @@ uint32_t time_elapsed(void)
     return (uint32_t)clock() / (CLOCKS_PER_SEC / 1000);
 }
 
+
 //In this example we wait 5 seconds before image is verified or activated.
 time_t imageActionStartTime;
 
@@ -270,6 +271,20 @@ gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE(2))
 };
 
+//Returns current time.
+//If you are not using operating system you have to implement this by yourself.
+//Reason for this is that all compilers's or HWs don't support time at all.
+void time_now(
+    gxtime* value, unsigned char meterTime)
+{
+    time_initUnix(value, (unsigned long)time(NULL));
+    //If date time is wanted in meter time.
+    if (meterTime)
+    {
+        clock_utcToMeterTime(&clock1, value);
+    }
+}
+
 static uint32_t executeTime = 0;
 
 static uint16_t activePowerL1Value = 0;
@@ -420,7 +435,8 @@ int getProfileGenericBufferColumnSizes(
     gxProfileGeneric* pg,
     DLMS_DATA_TYPE* dataTypes,
     uint8_t* columnSizes,
-    uint16_t* rowSize)
+    uint16_t* rowSize,
+    uint16_t* sortLocation)
 {
     int ret = 0;
     uint8_t pos;
@@ -473,6 +489,12 @@ int getProfileGenericBufferColumnSizes(
         {
             columnSizes[pos] = (uint8_t)size;
         }
+        if (sortLocation != NULL && *sortLocation == 0 &&
+            pg->sortObject == it->key)
+        {
+            //Update location of sort object.
+            *sortLocation = *rowSize;
+        }
         *rowSize += (uint16_t)size;
         ve_clear(&e);
     }
@@ -508,7 +530,7 @@ uint16_t getProfileGenericBufferMaxRowCount(
     }
     if (f != NULL)
     {
-        getProfileGenericBufferColumnSizes(settings, pg, NULL, NULL, &rowSize);
+        getProfileGenericBufferColumnSizes(settings, pg, NULL, NULL, &rowSize, NULL);
         if (rowSize != 0)
         {
             fseek(f, 0L, SEEK_END);
@@ -618,7 +640,7 @@ int captureProfileGeneric(
         bb_setUInt16(&pdu, (uint16_t)pg->entriesInUse);
         //Update values to the EEPROM.
         fwrite(pdu.data, 1, 4, f);
-        getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
+        getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize, NULL);
         if (index != 0 && pg->profileEntries != 0)
         {
             fseek(f, 4 + ((index % pg->profileEntries) * dataSize), SEEK_SET);
@@ -635,7 +657,9 @@ int captureProfileGeneric(
             if ((((gxObject*)it->key)->objectType == DLMS_OBJECT_TYPE_CLOCK || ((gxObject*)it->key) == BASE(unixTime)) &&
                 ((gxTarget*)it->value)->attributeIndex == 2)
             {
-                e.value.ulVal = time_current();
+                gxtime tm2;
+                time_now(&tm2, 1);
+                e.value.ulVal = time_toUnixTime2(&tm2);
                 e.value.vt = DLMS_DATA_TYPE_UINT32;
                 fwrite(&e.value.bVal, 4, 1, f);
             }
@@ -714,20 +738,6 @@ void GXTRACE_LN(const char* str, uint16_t type, unsigned char* ln)
     char buff[30];
     sprintf(buff, "%d %d.%d.%d.%d.%d.%d", type, ln[0], ln[1], ln[2], ln[3], ln[4], ln[5]);
     GXTRACE(str, buff);
-}
-
-//Returns current time.
-//If you are not using operating system you have to implement this by yourself.
-//Reason for this is that all compilers's or HWs don't support time at all.
-void time_now(
-    gxtime* value, unsigned char meterTime)
-{
-    time_initUnix(value, (unsigned long)time(NULL));
-    //If date time is wanted in meter time.
-    if (meterTime)
-    {
-        clock_utcToMeterTime(&clock1, value);
-    }
 }
 
 void println(char* desc, gxByteBuffer* data)
@@ -3781,7 +3791,9 @@ int getRestrictingObject(dlmsSettings* settings,
 int getProfileGenericDataByRangeFromRingBuffer(
     dlmsSettings* settings,
     const char* fileName,
-    gxValueEventArg* e)
+    gxValueEventArg* e,
+    uint32_t startTime,
+    uint32_t endTime)
 {
     //Get all data if there are no sort object.
     uint32_t s = 0;
@@ -3793,50 +3805,57 @@ int getProfileGenericDataByRangeFromRingBuffer(
     uint32_t last = 0;
     gxObject* obj = NULL;
     short index;
-    if ((ret = getRestrictingObject(settings, e, &obj, &index)) != 0)
+    if (startTime == 0 && endTime == 0)
     {
-        return ret;
-    }
-    var_init(&tmp);
-    //Check sort object
-    if ((ret = va_getByIndex(e->parameters.Arr, 1, &it)) != 0)
-    {
-        return ret;
-    }
-    if (it->vt == DLMS_DATA_TYPE_UINT32)
-    {
-        s = it->ulVal;
-    }
-    else
-    {
-        if ((ret = dlms_changeType(it->byteArr, DLMS_DATA_TYPE_DATETIME, &tmp)) != 0)
+        if ((ret = getRestrictingObject(settings, e, &obj, &index)) != 0)
         {
-            var_clear(&tmp);
             return ret;
         }
-        //Start time.
-        s = time_toUnixTime2(tmp.dateTime);
-        var_clear(&tmp);
-    }
-    if ((ret = va_getByIndex(e->parameters.Arr, 2, &it)) != 0)
-    {
-        return ret;
-    }
-    if (it->vt == DLMS_DATA_TYPE_UINT32)
-    {
-        l = it->ulVal;
-    }
-    else
-    {
-        if ((ret = dlms_changeType(it->byteArr, DLMS_DATA_TYPE_DATETIME, &tmp)) != 0)
+        var_init(&tmp);
+        //Check sort object
+        if ((ret = va_getByIndex(e->parameters.Arr, 1, &it)) != 0)
         {
-            var_clear(&tmp);
             return ret;
         }
-        l = time_toUnixTime2(tmp.dateTime);
-        var_clear(&tmp);
+        if (it->vt == DLMS_DATA_TYPE_UINT32)
+        {
+            s = it->ulVal;
+        }
+        else
+        {
+            if ((ret = dlms_changeType(it->byteArr, DLMS_DATA_TYPE_DATETIME, &tmp)) != 0)
+            {
+                var_clear(&tmp);
+                return ret;
+            }
+            //Start time.
+            s = time_toUnixTime2(tmp.dateTime);
+            var_clear(&tmp);
+        }
+        if ((ret = va_getByIndex(e->parameters.Arr, 2, &it)) != 0)
+        {
+            return ret;
+        }
+        if (it->vt == DLMS_DATA_TYPE_UINT32)
+        {
+            l = it->ulVal;
+        }
+        else
+        {
+            if ((ret = dlms_changeType(it->byteArr, DLMS_DATA_TYPE_DATETIME, &tmp)) != 0)
+            {
+                var_clear(&tmp);
+                return ret;
+            }
+            l = time_toUnixTime2(tmp.dateTime);
+            var_clear(&tmp);
+        }
+    }     
+    else
+    {
+        s = startTime;
+        l = endTime;
     }
-
     uint32_t t;
     gxProfileGeneric* pg = (gxProfileGeneric*)e->target;
     if (pg->entriesInUse != 0)
@@ -3857,15 +3876,19 @@ int getProfileGenericDataByRangeFromRingBuffer(
         }
         if (f != NULL)
         {
-            getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &rowSize);
+            //Find date time location. In Italy standard the date time can be the the last column.
+            uint16_t location = 0;
+            getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &rowSize, &location);
             //Skip current index and total amount of the entries.
             fseek(f, 4, SEEK_SET);
             for (pos = 0; pos != pg->entriesInUse; ++pos)
             {
                 //Load time from EEPROM.
+                fseek(f, location, SEEK_CUR);
                 fread(&t, sizeof(uint32_t), 1, f);
+                fseek(f, -(location + sizeof(uint32_t)), SEEK_CUR);
                 //seek to begin of next row.
-                fseek(f, rowSize - sizeof(uint32_t), SEEK_CUR);
+                fseek(f, rowSize, SEEK_CUR);
                 //If value is inside of start and end time.
                 if (t >= s && t <= l)
                 {
@@ -3907,12 +3930,120 @@ int readProfileGeneric(
     arr_init(&captureObjects);
     char fileName[30];
     ret = getProfileGenericFileName(pg, fileName);
+    uint32_t startTime = 0, endTime = 0;
+    unsigned char maxCount = 0;
+    unsigned char selectedColumns = 0;
+    DLMS_SELECTIVE_ACCESS_PARAMETER selective = DLMS_SELECTIVE_ACCESS_PARAMETER_NONE;
     if (e->action && e->dataIndex != 0)
     {
         //Data index tells rows count when compact data ask it.
+        //Read by range.
         e->selector = 1;
-        e->transactionEndIndex = pg->entriesInUse;
-        e->transactionStartIndex = e->transactionEndIndex - (e->dataIndex & 0xFF) + 1;        
+        gxtime start, end;
+        time_now(&end, 1);
+        //Reset seconds.
+        time_addSeconds(&end , -time_getSeconds(&end));
+        end.millisecond = 0;
+        maxCount = (unsigned char)(e->dataIndex & 0xFF);
+        selective = (e->dataIndex >> 12);
+        selectedColumns = (unsigned char) ((e->dataIndex >> 8) & 0xF);
+        switch (selective)
+        {
+            /*Last number of seconds.*/
+            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_SECONDS:
+                time_copy(&start, &end);
+                time_addSeconds(&start, -maxCount);
+                break;
+                /*Last complete number of minutes.*/
+            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MINUTES:
+                /*Last complete number of minutes including the current minute.*/
+            case DLMS_SELECTIVE_ACCESS_PARAMETER_MINUTES:
+                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MINUTES)
+                {
+                    //Reset seconds.
+                    time_addSeconds(&end, -time_getSeconds(&end));
+                }
+                time_copy(&start, &end);
+                time_addMinutes(&start, -maxCount);
+                break;
+                /*Last complete number of hours.*/
+            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_HOURS:
+                /*Last complete number of hours including the current hour.*/
+            case DLMS_SELECTIVE_ACCESS_PARAMETER_HOURS:
+                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_HOURS)
+                {
+                    //Reset seconds.
+                    time_addSeconds(&end, -time_getSeconds(&end));
+                    //Reset minutes.
+                    time_addMinutes(&end, -time_getMinutes(&end));
+                }
+                time_copy(&start, &end);
+                time_addHours(&start, -maxCount);
+                break;
+                /*Last complete number of days.*/
+            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_DAYS:
+                /*Last complete number of days including the current day.*/
+            case DLMS_SELECTIVE_ACCESS_PARAMETER_DAYS:
+                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_DAYS)
+                {
+                    //Reset seconds.
+                    time_addSeconds(&end, -time_getSeconds(&end));
+                    //Reset minutes.
+                    time_addMinutes(&end, -time_getMinutes(&end));
+                    //Reset hours.
+                    time_addHours(&end, -time_getHours(&end));
+                }
+                time_copy(&start, &end);
+                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_DAYS)
+                {
+                    //Reset seconds.
+                    time_addSeconds(&start, -time_getSeconds(&start));
+                    //Reset minutes.
+                    time_addMinutes(&start, -time_getMinutes(&start));
+                    //Reset hours.
+                    time_addHours(&start, -time_getHours(&start));
+                }
+                time_addDays(&start, -maxCount);
+                break;
+                /*Last complete number of months.*/
+            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MONTHS:
+                /*Last complete number of months including the current month.*/
+            case DLMS_SELECTIVE_ACCESS_PARAMETER_MONTHS:
+                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MONTHS)
+                {
+                    //Reset seconds.
+                    time_addSeconds(&end, -time_getSeconds(&end));
+                    //Reset minutes.
+                    time_addMinutes(&end, -time_getMinutes(&end));
+                    //Reset hours.
+                    time_addHours(&end, -time_getHours(&end));
+                    //Reset days.
+                    time_addDays(&end, -(time_getDays(&end) - 1));
+                }
+                time_copy(&start, &end);
+                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_MONTHS)
+                {
+                    //Reset seconds.
+                    time_addSeconds(&start, -time_getSeconds(&start));
+                    //Reset minutes.
+                    time_addMinutes(&start, -time_getMinutes(&start));
+                    //Reset hours.
+                    time_addHours(&start, -time_getHours(&start));
+                    //Reset days.
+                    time_addDays(&start, -(time_getDays(&start) - 1));
+                }
+                time_addMonths(&start, -maxCount);
+                break;
+            default:
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        };
+        startTime = time_toUnixTime2(&start);
+        endTime = time_toUnixTime2(&end);
+        char s1[40];
+        char e1[40];
+        time_toString2(&start, s1, sizeof(s1));
+        time_toString2(&end, e1, sizeof(e1));
+        printf("Reading max %d rows between: %s - %s\r\n", maxCount, s1, e1);
     }
     if (ret == DLMS_ERROR_CODE_OK)
     {
@@ -3929,14 +4060,17 @@ int readProfileGeneric(
             }
             else if (e->selector == 1)
             {
-                if (!e->action)
+                //Read by entry. Find start and end index from the ring buffer.
+                if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, fileName, e, startTime, endTime)) != 0 ||
+                    (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
                 {
-                    //Read by entry. Find start and end index from the ring buffer.
-                    if ((ret = getProfileGenericDataByRangeFromRingBuffer(settings, fileName, e)) != 0 ||
-                        (ret = cosem_getColumns(&pg->captureObjects, e->selector, &e->parameters, &captureObjects)) != 0)
-                    {
-                        e->transactionStartIndex = e->transactionEndIndex = 0;
-                    }
+                    e->transactionStartIndex = e->transactionEndIndex = 0;
+                }
+                else if (e->action && maxCount != 0 &&
+                    e->transactionEndIndex >= e->transactionStartIndex + maxCount)
+                {
+                    //Set maximum count if profile generic selective access is used.
+                    e->transactionEndIndex = e->transactionStartIndex + maxCount - 1;
                 }
             }
             else if (e->selector == 2)
@@ -4012,7 +4146,7 @@ int readProfileGeneric(
             }
             if (f != NULL)
             {
-                ret = getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize);
+                ret = getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &dataSize, NULL);
             }
             //Append data.
             if (ret == 0 && dataSize != 0)
@@ -4066,6 +4200,11 @@ int readProfileGeneric(
                     //Loop capture columns and get values.
                     for (colIndex = 0; colIndex != pg->captureObjects.size; ++colIndex)
                     {
+                        if (selectedColumns != 0 && colIndex == selectedColumns)
+                        {
+                            //If selected columns is used.
+                            break;
+                        }
                         if ((ret = arr_getByIndex(&pg->captureObjects, colIndex, (void**)&it)) == 0)
                         {
                             //Date time is saved in EPOCH to save space.
@@ -4202,6 +4341,7 @@ int updateCompactData(dlmsSettings* settings, gxCompactData* cd)
             break;
         }
         bb_empty(&bb);
+        e2->transactionStartIndex = e2->transactionEndIndex = 0;
         e2->value.byteArr = &bb;
         e2->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
         e2->target = (gxObject*)kv->key;

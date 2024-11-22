@@ -4715,9 +4715,10 @@ int cosem_setG3PlcMacSetup(gxG3PlcMacSetup* object, unsigned char index, dlmsVAR
                 }
                 if (tmp2->bitArr != NULL)
                 {
-                    ba_copy(&it->toneMap, tmp2->bitArr->data, ba_size(tmp2->bitArr));
+                    ret = ba_copy(&it->toneMap, tmp2->bitArr->data, ba_size(tmp2->bitArr));
                 }
-                if ((ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
+                if (ret != 0 ||
+                    (ret = va_getByIndex(tmp->Arr, 3, &tmp2)) != DLMS_ERROR_CODE_OK)
                 {
                     break;
                 }

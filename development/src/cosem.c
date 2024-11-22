@@ -1359,27 +1359,34 @@ int cosem_setBitString(gxByteBuffer* bb, uint32_t value, uint16_t count)
 {
     int ret = 0;
     uint16_t pos;
-    uint16_t capacity = count == 0 ? 2 : (3 + (count / 8));
-    capacity += (uint16_t)bb_size(bb);
-    if (bb_getCapacity(bb) < capacity)
+    if (count > 32)
     {
-        ret = bb_capacity(bb, capacity);
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    if (ret == 0 &&
-        (ret = bb_setUInt8(bb, DLMS_DATA_TYPE_BIT_STRING)) == 0 &&
-        (ret = hlp_setObjectCount(count, bb)) == 0)
+    else
     {
-        bitArray ba;
-        ba_attach(&ba, bb->data + bb->size, 0, (uint16_t)(8 * bb_getCapacity(bb)));
-        for (pos = 0; pos != count; ++pos)
+        uint16_t capacity = count == 0 ? 2 : (3 + (count / 8));
+        capacity += (uint16_t)bb_size(bb);
+        if (bb_getCapacity(bb) < capacity)
         {
-            if ((ret = ba_setByIndex(&ba, pos, value & 01)) != 0)
-            {
-                break;
-            }
-            value >>= 1;
+            ret = bb_capacity(bb, capacity);
         }
-        bb->size += ba_getByteCount(count);
+        if (ret == 0 &&
+            (ret = bb_setUInt8(bb, DLMS_DATA_TYPE_BIT_STRING)) == 0 &&
+            (ret = hlp_setObjectCount(count, bb)) == 0)
+        {
+            bitArray ba;
+            ba_attach(&ba, bb->data + bb->size, 0, (uint16_t)(8 * bb_getCapacity(bb)));
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = ba_setByIndex(&ba, pos, value & 01)) != 0)
+                {
+                    break;
+                }
+                value >>= 1;
+            }
+            bb->size += ba_getByteCount(count);
+        }
     }
     return ret;
 }

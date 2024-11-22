@@ -232,47 +232,6 @@ unsigned char useDedicatedKey(dlmsSettings* settings)
 }
 #endif //DLMS_IGNORE_HIGH_GMAC
 
-// Reserved for internal use.
-int apdu_getConformanceFromArray(gxByteBuffer* data, uint32_t* value)
-{
-    int ret;
-    unsigned char v;
-    uint32_t tmp;
-    if ((ret = bb_getUInt8(data, &v)) == 0)
-    {
-        *value = hlp_swapBits(v);
-        if ((ret = bb_getUInt8(data, &v)) == 0)
-        {
-            tmp = hlp_swapBits(v);
-            tmp <<= 8;
-            *value |= tmp;
-            if ((ret = bb_getUInt8(data, &v)) == 0)
-            {
-                tmp = hlp_swapBits(v);
-                tmp <<= 16;
-                *value |= tmp;
-            }
-        }
-    }
-    return ret;
-}
-
-// Reserved for internal use.
-int apdu_setConformanceToArray(uint32_t value, gxByteBuffer* data)
-{
-    int ret;
-    if ((ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(value & 0xFF)))) == 0)
-    {
-        value >>= 8;
-        if ((ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(value & 0xFF)))) == 0)
-        {
-            value >>= 8;
-            ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(value & 0xFF)));
-        }
-    }
-    return ret;
-}
-
 /**
  * Generate User information initiate request.
  *
@@ -331,11 +290,12 @@ int apdu_getInitiateRequest(
         // Tag for conformance block
         (ret = bb_setUInt8(data, 0x5F)) != 0 ||
         (ret = bb_setUInt8(data, 0x1F)) != 0 ||
-        // length of the conformance block
-        (ret = bb_setUInt8(data, 0x04)) != 0 ||
+        (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
         // encoding the number of unused bits in the bit string
         (ret = bb_setUInt8(data, 0x00)) != 0 ||
-        (ret = apdu_setConformanceToArray(settings->proposedConformance, data)) != 0 ||
+        (ret = bb_setUInt8(data, hlp_swapBits((unsigned char)settings->proposedConformance))) != 0 ||
+        (ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(settings->proposedConformance >> 8)))) != 0 ||
+        (ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(settings->proposedConformance >> 16)))) != 0 ||
         (ret = bb_setUInt16(data, settings->maxPduSize)) != 0)
     {
         return ret;
@@ -702,10 +662,16 @@ int apdu_parseUserInformation(
     {
         return ret;
     }
-    if ((ret = apdu_getConformanceFromArray(data, &v)) != 0)
+    uint32_t tmp;
+    if ((ret = bb_getUInt24(data, &tmp)) != 0)
     {
         return ret;
     }
+    v = hlp_swapBits((unsigned char)tmp) << 16;
+    tmp >>= 8;
+    v |= hlp_swapBits((unsigned char)tmp) << 8;
+    tmp >>= 8;
+    v |= hlp_swapBits((unsigned char)tmp);
     if (settings->server)
     {
         settings->negotiatedConformance = (DLMS_CONFORMANCE)(v & settings->proposedConformance);
@@ -1098,7 +1064,9 @@ int apdu_getUserInformation(
         (ret = bb_setUInt8(data, 0x04)) != 0 ||
         // encoding the number of unused bits in the bit string
         (ret = bb_setUInt8(data, 0x00)) != 0 ||
-        (ret = apdu_setConformanceToArray(settings->negotiatedConformance, data)) != 0 ||
+        (ret = bb_setUInt8(data, hlp_swapBits((unsigned char)settings->negotiatedConformance))) != 0 ||
+        (ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(settings->negotiatedConformance >> 8)))) != 0 ||
+        (ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(settings->negotiatedConformance >> 16)))) != 0 ||
         (ret = bb_setUInt16(data, settings->maxPduSize)) != 0)
     {
         return ret;

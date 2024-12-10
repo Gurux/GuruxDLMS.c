@@ -326,6 +326,11 @@ uint32_t GXDLMSClient::GetServerAddress()
   return settings.serverAddress;
 }
 
+DLMS_INTERFACE_TYPE GXDLMSClient::GetInterfaceType()
+{
+  return settings.interfaceType;  
+}
+
 #ifndef DLMS_IGNORE_SERIALIZER
 int GXDLMSClient::LoadObjects(gxSerializerSettings* serializeSettings, gxObject** objects, uint16_t count)
 {

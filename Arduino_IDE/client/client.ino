@@ -317,6 +317,73 @@ int com_updateInvocationCounter(const char* invocationCounter)
   return ret;
 }
 
+int com_initializeOpticalHead()
+{
+  int ret = DLMS_ERROR_CODE_OK, baudRate;
+  if (Client.GetInterfaceType() == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
+  {
+    // Optical probes work with 300 bps 7E1:
+    Serial.begin(9600, SERIAL_7E1);
+    static char* DATA = "/?!\r\n";
+    //Send data.
+    if ((ret = Serial.write(DATA, strlen(DATA))) != strlen(DATA))
+    {
+      //If failed to write all bytes.
+      GXTRACE(GET_STR_FROM_EEPROM("Failed to write all data to the serial port.\n"), NULL);
+    }
+    String data = Serial.readStringUntil('\n');
+    if (data[0] != '/')
+    {
+      return DLMS_ERROR_CODE_SEND_FAILED;
+    }
+    //Get used baud rate.
+    switch (data[4])
+    {
+      case '0':
+        baudRate = 300;
+        break;
+      case '1':
+        baudRate = 600;
+        break;
+      case '2':
+        baudRate = 1200;
+        break;
+      case '3':
+        baudRate = 2400;
+        break;
+      case '4':
+        baudRate = 4800;
+        break;
+      case '5':
+        baudRate = 9600;
+        break;
+      case '6':
+        baudRate = 19200;
+        break;
+      default:
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    //Send ACK
+    unsigned char buff[6];
+    buff[0] = 0x06;
+    //Send Protocol control character
+    buff[1] = '2';// "2" HDLC protocol procedure (Mode E)
+    buff[2] = (unsigned char)data[4];
+    buff[3] = '2';
+    buff[4] = (char)0x0D;
+    buff[5] = 0x0A;
+    if ((ret = Serial.write(buff, strlen(buff))) != strlen(buff))
+    {
+      //If failed to write all bytes.
+      GXTRACE(GET_STR_FROM_EEPROM("Failed to write all data to the serial port.\n"), NULL);
+    }
+    //Wait 1000ms.
+    delay(1000);
+    Serial.begin(baudRate, SERIAL_8N1);
+  }
+  return ret;
+}
+
 //Initialize connection to the meter.
 int com_initializeConnection()
 {
@@ -329,7 +396,8 @@ int com_initializeConnection()
 
 #ifndef DLMS_IGNORE_HDLC
   //Get meter's send and receive buffers size.
-  if ((ret = Client.SnrmRequest(&messages)) != 0 ||
+  if ((ret = com_initializeOpticalHead()) != 0 ||
+      (ret = Client.SnrmRequest(&messages)) != 0 ||
       (ret = com_readDataBlock(&messages, &reply)) != 0 ||
       (ret = Client.ParseUAResponse(&reply.data)) != 0)
   {

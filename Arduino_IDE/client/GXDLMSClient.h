@@ -291,6 +291,10 @@ class GXDLMSClient
     //Set HDLC settings.
     void SetHDLCSettings(uint16_t maxInfoTX, uint16_t maxInfoRX, unsigned char windowSizeTX, unsigned char windowSizeRX);
 
+    /////////////////////////////////////////////////////////////////////////
+    //Returns used interface type.
+    DLMS_INTERFACE_TYPE GetInterfaceType();
+
 };
 
 static GXDLMSClient Client;

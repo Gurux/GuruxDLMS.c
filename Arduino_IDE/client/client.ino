@@ -319,14 +319,14 @@ int com_updateInvocationCounter(const char* invocationCounter)
 
 int com_initializeOpticalHead()
 {
-  int ret = DLMS_ERROR_CODE_OK, baudRate;
+  int baudRate;
   if (Client.GetInterfaceType() == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
   {
     // Optical probes work with 300 bps 7E1:
-    Serial.begin(9600, SERIAL_7E1);
+    Serial.begin(300, SERIAL_7E1);
     static char* DATA = "/?!\r\n";
     //Send data.
-    if ((ret = Serial.write(DATA, strlen(DATA))) != strlen(DATA))
+    if (Serial.write(DATA, strlen(DATA))) != strlen(DATA))
     {
       //If failed to write all bytes.
       GXTRACE(GET_STR_FROM_EEPROM("Failed to write all data to the serial port.\n"), NULL);
@@ -381,7 +381,7 @@ int com_initializeOpticalHead()
     delay(1000);
     Serial.begin(baudRate, SERIAL_8N1);
   }
-  return ret;
+  return 0;
 }
 
 //Initialize connection to the meter.

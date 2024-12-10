@@ -1467,7 +1467,7 @@ int cosem_setAssociationLogicalName(
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-                memcpy(object->currentUser.value, tmp->strVal, tmp->strVal->size);
+                memcpy(object->currentUser.value, tmp->strVal->data, tmp->strVal->size);
             }
         }
         else

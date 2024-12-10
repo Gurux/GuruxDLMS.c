@@ -750,7 +750,7 @@ int getUserList(
             // Id
             (ret = cosem_setUInt8(data, (unsigned char)id)) != 0 ||
             // Name
-            (ret = cosem_setOctetString2(data, (unsigned char*)name, len)) != 0)
+            (ret = cosem_setString(data, name, len)) != 0)
         {
             return ret;
         }
@@ -862,7 +862,7 @@ int cosem_getAssociationLogicalName(
         char* str = (char*)object->currentUser.name;
         unsigned char len = (unsigned char)strlen(str);
         if ((ret = cosem_setUInt8(data, object->currentUser.id)) != 0 ||
-            (ret = cosem_setOctetString2(data, (unsigned char*)str, len)) != 0)
+            (ret = cosem_setString(data, str, len)) != 0)
         {
             return ret;
         }
@@ -881,7 +881,7 @@ int cosem_getAssociationLogicalName(
             char* str = (char*)object->currentUser.value;
             unsigned char len = (unsigned char)strlen(str);
             if ((ret = cosem_setUInt8(data, object->currentUser.key)) != 0 ||
-                (ret = cosem_setOctetString2(data, (unsigned char*)str, len)) != 0)
+                (ret = cosem_setString(data, str, len)) != 0)
             {
                 return ret;
             }

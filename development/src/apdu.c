@@ -667,7 +667,8 @@ int apdu_parseUserInformation(
     {
         return ret;
     }
-    v = hlp_swapBits((unsigned char)tmp) << 16;
+    v = hlp_swapBits((unsigned char)tmp);
+    v <<= 16;
     tmp >>= 8;
     v |= hlp_swapBits((unsigned char)tmp) << 8;
     tmp >>= 8;

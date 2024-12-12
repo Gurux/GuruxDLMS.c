@@ -121,7 +121,7 @@ void time_init(
     unsigned char minute,
     unsigned char second,
     uint16_t millisecond,
-    signed short devitation)
+    int16_t devitation)
 {
     if (devitation == -1)
     {

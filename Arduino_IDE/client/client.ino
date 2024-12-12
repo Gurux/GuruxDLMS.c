@@ -324,9 +324,9 @@ int com_initializeOpticalHead()
   {
     // Optical probes work with 300 bps 7E1:
     Serial.begin(300, SERIAL_7E1);
-    static char* DATA = "/?!\r\n";
+    static char DATA[6] = "/?!\r\n";
     //Send data.
-    if (Serial.write(DATA, strlen(DATA))) != strlen(DATA))
+    if (Serial.write(DATA, sizeof(DATA)) != sizeof(DATA))
     {
       //If failed to write all bytes.
       GXTRACE(GET_STR_FROM_EEPROM("Failed to write all data to the serial port.\n"), NULL);
@@ -334,6 +334,7 @@ int com_initializeOpticalHead()
     String data = Serial.readStringUntil('\n');
     if (data[0] != '/')
     {
+      GXTRACE(GET_STR_FROM_EEPROM("Failed to to receive IEC reply from serial port.\n"), NULL);
       return DLMS_ERROR_CODE_SEND_FAILED;
     }
     //Get used baud rate.
@@ -372,14 +373,16 @@ int com_initializeOpticalHead()
     buff[3] = '2';
     buff[4] = (char)0x0D;
     buff[5] = 0x0A;
-    if ((ret = Serial.write(buff, strlen(buff))) != strlen(buff))
+    if (Serial.write(buff, sizeof(buff)) != sizeof(buff))
     {
       //If failed to write all bytes.
       GXTRACE(GET_STR_FROM_EEPROM("Failed to write all data to the serial port.\n"), NULL);
     }
-    //Wait 1000ms.
-    delay(1000);
+    Serial.flush();
+    Serial.readBytes(buff, sizeof(buff));
     Serial.begin(baudRate, SERIAL_8N1);
+    //Some meters need this sleep. Do not remove.
+    delay(800);
   }
   return 0;
 }
@@ -825,7 +828,6 @@ int com_readValues()
 {
   gxByteBuffer attributes;
   unsigned char ch;
-  char* data = NULL;
   gxObject* object;
   unsigned long index;
   int ret, pos;
@@ -1055,8 +1057,16 @@ void setup() {
   Serial1.begin(115200);
 
   // start serial port at 9600 bps:
-  Serial.begin(9600);
-  while (!Serial) {
+ if (Client.GetInterfaceType() == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
+  {
+    // Optical probes work with 300 bps 7E1:
+    Serial.begin(300, SERIAL_7E1);
+  }
+  else
+  {
+    Serial.begin(9600, SERIAL_8N1);    
+  }
+  while (!Serial1) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 }

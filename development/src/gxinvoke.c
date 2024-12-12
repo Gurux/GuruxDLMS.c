@@ -284,7 +284,9 @@ int invoke_AssociationLogicalName(
                 return ret;
             }
             bb_insertUInt8(&settings->info.data, 0, DLMS_DATA_TYPE_OCTET_STRING);
-            bb_insertUInt8(&settings->info.data, 1, (unsigned char)(settings->info.data.size - 1));
+            //bb_insertUInt8 is increasing the size by one.
+            --settings->info.data.size;
+            bb_insertUInt8(&settings->info.data, 1, (unsigned char)(settings->info.data.size));
             object->associationStatus = DLMS_ASSOCIATION_STATUS_ASSOCIATED;
         }
         else

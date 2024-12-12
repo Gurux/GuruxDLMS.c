@@ -177,7 +177,7 @@ extern "C" {
             gxByteBuffer* byteArr;
             unsigned char* pbVal;
             signed char* pcVal;
-            short* piVal;
+            int16_t* piVal;
             int32_t* plVal;
             int64_t* pllVal;
 #ifndef DLMS_IGNORE_FLOAT32

@@ -1292,7 +1292,7 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     }
 #endif //DLMS_IGNORE_MALLOC
 #ifdef DLMS_USE_EPOCH_TIME
-    short deviation;
+    int16_t deviation;
     unsigned char mon = 0, day = 0, hour = 0, min = 0, sec = 0, wday = 0, skip = 0;
     // Get month
     if ((ret = bb_getUInt8(buff, &mon)) != 0)

@@ -496,7 +496,7 @@ int bb_setInt8(
 
 int bb_setInt16(
     gxByteBuffer* arr,
-    short item)
+    int16_t item)
 {
     return bb_setUInt16(arr, (uint16_t)item);
 }
@@ -768,7 +768,7 @@ int bb_getUInt32(
 
 int bb_getInt16(
     gxByteBuffer* arr,
-    short* value)
+    int16_t* value)
 {
 
     if (arr->position + 2 > arr->size)

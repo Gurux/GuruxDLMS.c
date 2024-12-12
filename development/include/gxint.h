@@ -34,32 +34,32 @@
 #define GXINT_H
 
 #include <stdint.h>
-#if !defined(_WIN32) && !defined(_WIN64) && !defined(__linux__)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(__linux__) && !defined(ARDUINO)
 #ifdef  __cplusplus
 extern "C" {
 #endif
-#if !(defined uint16_t) && !(defined _UINT16_T_DECLARED)
+#if !defined(uint16_t) && !defined(_UINT16_T_DECLARED)
 #define uint16_t unsigned short
-#endif //!(defined uint16_t) && !(defined _UINT16_T_DECLARED)
-#if !(defined uint32_t) && !(defined _UINT32_T_DECLARED)
+#endif //!defined(uint16_t) && !defined(_UINT16_T_DECLARED)
+#if !defined(uint32_t) && !defined(_UINT32_T_DECLARED)
 #define uint32_t unsigned int
-#endif //!(defined uint32_t) && !(defined _UINT32_T_DECLARED)
-#if !(defined uint64_t) && !(defined _UINT64_T_DECLARED)
+#endif //!defined(uint32_t) && !defined(_UINT32_T_DECLARED)
+#if !defined(uint64_t) && !defined(_UINT64_T_DECLARED)
 #define uint64_t unsigned long long
-#endif //#!(defined uint64_t) && !(defined _UINT64_T_DECLARED)
+#endif //#!defined(uint64_t) && !defined(_UINT64_T_DECLARED)
 
-#if !(defined int16_t) && !(defined _INT16_T_DECLARED)
+#if !defined(int16_t) && !defined(_INT16_T_DECLARED)
 #define int16_t short
-#endif //!(defined int16_t) && !(defined _INT16_T_DECLARED)
-#if !(defined int32_t) && !(defined _INT32_T_DECLARED)
+#endif //!defined(int16_t) && !defined(_INT16_T_DECLARED)
+#if !defined(int32_t) && !defined(_INT32_T_DECLARED)
 #define int32_t int
-#endif //!(defined int32_t) && !(defined _INT32_T_DECLARED)
-#if !(defined int64_t) && !(defined _INT64_T_DECLARED)
+#endif //!defined(int32_t) && !defined(_INT32_T_DECLARED)
+#if !defined(int64_t) && !defined(_INT64_T_DECLARED)
 #define int64_t long long
-#endif //!(defined int64_t) && !(defined _INT64_T_DECLARED)
+#endif //!defined(int64_t) && !defined(_INT64_T_DECLARED)
 
 #ifdef  __cplusplus
 }
 #endif
-#endif //!defined(_WIN32) && !defined(_WIN64) && !defined(__linux__)
+#endif //!defined(_WIN32) && !defined(_WIN64) && !defined(__linux__) && !defined(ARDUINO)
 #endif //GXINT_H

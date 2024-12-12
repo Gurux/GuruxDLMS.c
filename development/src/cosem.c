@@ -1823,7 +1823,7 @@ int cosem_getColumns(
             uint16_t ot;
             unsigned char ln[6];
             signed char aIndex;
-            short dIndex;
+            int16_t dIndex;
             columns->size = 0;
             for (pos = 0; pos != count; ++pos)
             {

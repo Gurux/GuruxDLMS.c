@@ -4410,7 +4410,7 @@ int cosem_setProfileGeneric(
             unsigned char ln[6];
             type = 0;
             object->sortObject = NULL;
-            if ((ret = cosem_getInt16(value->byteArr, (signed short*)&type)) == 0 &&
+            if ((ret = cosem_getInt16(value->byteArr, (int16_t*)&type)) == 0 &&
                 (ret = cosem_getOctetString2(value->byteArr, ln, 6, NULL)) == 0 &&
                 (ret = cosem_findObjectByLN(settings, type, ln, &object->sortObject)) == 0 &&
                 (ret = cosem_getInt8(value->byteArr, &object->sortObjectAttributeIndex)) == 0 &&

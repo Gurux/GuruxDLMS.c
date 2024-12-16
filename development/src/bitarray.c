@@ -219,7 +219,6 @@ int ba_setByIndex(bitArray* arr, uint16_t index, unsigned char item)
             {
                 //Reset new data.
                 memset(arr->data + getByteIndex(arr->size), 0, getByteIndex(index - arr->size));
-                arr->size = index;
             }
         }
         else
@@ -236,13 +235,16 @@ int ba_setByIndex(bitArray* arr, uint16_t index, unsigned char item)
             {
                 //Reset new data.
                 memset(arr->data + getByteIndex(arr->size), 0, getByteIndex(index - arr->size));
-                arr->size = index;
             }
         }
         else
         {
             arr->data[byteIndex] |= (1 << (7 - (index % 8)));
         }
+    }
+    if (index >= arr->size)
+    {
+        arr->size = 1 + index;
     }
     return 0;
 }

@@ -3598,11 +3598,11 @@ int svr_InitObjects(
         (ret = addCompactData(&settings->base, &settings->base.objects)) != 0 ||
         (ret = addLimiter()) != 0 ||
         (ret = addLteMonitoring()) != 0 ||
-        (ret = addAccount()) != 0 ||        
+        (ret = addAccount()) != 0 ||
 #ifdef DLMS_ITALIAN_STANDARD
         (ret = addCurrentDiagnostic()) != 0 ||
         (ret = addSnapshotReasonCode()) != 0 ||
-        (ret = addSnapshotPeriodCounter()) != 0 ||        
+        (ret = addSnapshotPeriodCounter()) != 0 ||
         (ret = addActiveTariffPlan()) != 0 ||
         (ret = addPassiveTariffPlan()) != 0 ||
         (ret = addSpareObject()) != 0 ||
@@ -3850,7 +3850,7 @@ int getProfileGenericDataByRangeFromRingBuffer(
             l = time_toUnixTime2(tmp.dateTime);
             var_clear(&tmp);
         }
-    }     
+    }
     else
     {
         s = startTime;
@@ -3942,100 +3942,100 @@ int readProfileGeneric(
         gxtime start, end;
         time_now(&end, 1);
         //Reset seconds.
-        time_addSeconds(&end , -time_getSeconds(&end));
+        time_addSeconds(&end, -time_getSeconds(&end));
         end.millisecond = 0;
         maxCount = (unsigned char)(e->dataIndex & 0xFF);
         selective = (e->dataIndex >> 12);
-        selectedColumns = (unsigned char) ((e->dataIndex >> 8) & 0xF);
+        selectedColumns = (unsigned char)((e->dataIndex >> 8) & 0xF);
         switch (selective)
         {
             /*Last number of seconds.*/
-            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_SECONDS:
-                time_copy(&start, &end);
-                time_addSeconds(&start, -maxCount);
-                break;
-                /*Last complete number of minutes.*/
-            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MINUTES:
-                /*Last complete number of minutes including the current minute.*/
-            case DLMS_SELECTIVE_ACCESS_PARAMETER_MINUTES:
-                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MINUTES)
-                {
-                    //Reset seconds.
-                    time_addSeconds(&end, -time_getSeconds(&end));
-                }
-                time_copy(&start, &end);
-                time_addMinutes(&start, -maxCount);
-                break;
-                /*Last complete number of hours.*/
-            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_HOURS:
-                /*Last complete number of hours including the current hour.*/
-            case DLMS_SELECTIVE_ACCESS_PARAMETER_HOURS:
-                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_HOURS)
-                {
-                    //Reset seconds.
-                    time_addSeconds(&end, -time_getSeconds(&end));
-                    //Reset minutes.
-                    time_addMinutes(&end, -time_getMinutes(&end));
-                }
-                time_copy(&start, &end);
-                time_addHours(&start, -maxCount);
-                break;
-                /*Last complete number of days.*/
-            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_DAYS:
-                /*Last complete number of days including the current day.*/
-            case DLMS_SELECTIVE_ACCESS_PARAMETER_DAYS:
-                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_DAYS)
-                {
-                    //Reset seconds.
-                    time_addSeconds(&end, -time_getSeconds(&end));
-                    //Reset minutes.
-                    time_addMinutes(&end, -time_getMinutes(&end));
-                    //Reset hours.
-                    time_addHours(&end, -time_getHours(&end));
-                }
-                time_copy(&start, &end);
-                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_DAYS)
-                {
-                    //Reset seconds.
-                    time_addSeconds(&start, -time_getSeconds(&start));
-                    //Reset minutes.
-                    time_addMinutes(&start, -time_getMinutes(&start));
-                    //Reset hours.
-                    time_addHours(&start, -time_getHours(&start));
-                }
-                time_addDays(&start, -maxCount);
-                break;
-                /*Last complete number of months.*/
-            case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MONTHS:
-                /*Last complete number of months including the current month.*/
-            case DLMS_SELECTIVE_ACCESS_PARAMETER_MONTHS:
-                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MONTHS)
-                {
-                    //Reset seconds.
-                    time_addSeconds(&end, -time_getSeconds(&end));
-                    //Reset minutes.
-                    time_addMinutes(&end, -time_getMinutes(&end));
-                    //Reset hours.
-                    time_addHours(&end, -time_getHours(&end));
-                    //Reset days.
-                    time_addDays(&end, -(time_getDays(&end) - 1));
-                }
-                time_copy(&start, &end);
-                if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_MONTHS)
-                {
-                    //Reset seconds.
-                    time_addSeconds(&start, -time_getSeconds(&start));
-                    //Reset minutes.
-                    time_addMinutes(&start, -time_getMinutes(&start));
-                    //Reset hours.
-                    time_addHours(&start, -time_getHours(&start));
-                    //Reset days.
-                    time_addDays(&start, -(time_getDays(&start) - 1));
-                }
-                time_addMonths(&start, -maxCount);
-                break;
-            default:
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_SECONDS:
+            time_copy(&start, &end);
+            time_addSeconds(&start, -maxCount);
+            break;
+            /*Last complete number of minutes.*/
+        case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MINUTES:
+            /*Last complete number of minutes including the current minute.*/
+        case DLMS_SELECTIVE_ACCESS_PARAMETER_MINUTES:
+            if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MINUTES)
+            {
+                //Reset seconds.
+                time_addSeconds(&end, -time_getSeconds(&end));
+            }
+            time_copy(&start, &end);
+            time_addMinutes(&start, -maxCount);
+            break;
+            /*Last complete number of hours.*/
+        case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_HOURS:
+            /*Last complete number of hours including the current hour.*/
+        case DLMS_SELECTIVE_ACCESS_PARAMETER_HOURS:
+            if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_HOURS)
+            {
+                //Reset seconds.
+                time_addSeconds(&end, -time_getSeconds(&end));
+                //Reset minutes.
+                time_addMinutes(&end, -time_getMinutes(&end));
+            }
+            time_copy(&start, &end);
+            time_addHours(&start, -maxCount);
+            break;
+            /*Last complete number of days.*/
+        case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_DAYS:
+            /*Last complete number of days including the current day.*/
+        case DLMS_SELECTIVE_ACCESS_PARAMETER_DAYS:
+            if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_DAYS)
+            {
+                //Reset seconds.
+                time_addSeconds(&end, -time_getSeconds(&end));
+                //Reset minutes.
+                time_addMinutes(&end, -time_getMinutes(&end));
+                //Reset hours.
+                time_addHours(&end, -time_getHours(&end));
+            }
+            time_copy(&start, &end);
+            if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_DAYS)
+            {
+                //Reset seconds.
+                time_addSeconds(&start, -time_getSeconds(&start));
+                //Reset minutes.
+                time_addMinutes(&start, -time_getMinutes(&start));
+                //Reset hours.
+                time_addHours(&start, -time_getHours(&start));
+            }
+            time_addDays(&start, -maxCount);
+            break;
+            /*Last complete number of months.*/
+        case DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MONTHS:
+            /*Last complete number of months including the current month.*/
+        case DLMS_SELECTIVE_ACCESS_PARAMETER_MONTHS:
+            if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MONTHS)
+            {
+                //Reset seconds.
+                time_addSeconds(&end, -time_getSeconds(&end));
+                //Reset minutes.
+                time_addMinutes(&end, -time_getMinutes(&end));
+                //Reset hours.
+                time_addHours(&end, -time_getHours(&end));
+                //Reset days.
+                time_addDays(&end, -(time_getDays(&end) - 1));
+            }
+            time_copy(&start, &end);
+            if (selective == DLMS_SELECTIVE_ACCESS_PARAMETER_MONTHS)
+            {
+                //Reset seconds.
+                time_addSeconds(&start, -time_getSeconds(&start));
+                //Reset minutes.
+                time_addMinutes(&start, -time_getMinutes(&start));
+                //Reset hours.
+                time_addHours(&start, -time_getHours(&start));
+                //Reset days.
+                time_addDays(&start, -(time_getDays(&start) - 1));
+            }
+            time_addMonths(&start, -maxCount);
+            break;
+        default:
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
         };
         startTime = time_toUnixTime2(&start);
         endTime = time_toUnixTime2(&end);
@@ -4708,7 +4708,7 @@ void svr_preAction(
             }
             updateState(settings, GURUX_EVENT_CODES_GLOBAL_METER_RESET);
             e->handled = 1;
-    }
+        }
         else if (e->target == BASE(disconnectControl))
         {
             updateState(settings, GURUX_EVENT_CODES_OUTPUT_RELAY_STATE);
@@ -4777,6 +4777,14 @@ void svr_preAction(
                 allocateImageTransfer(imageFile, info->size);
                 ba_clear(&i->imageTransferredBlocksStatus);
                 i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
+                //Reset old image. This is needed if old image is bigger then the new one.
+#if _MSC_VER > 1400
+                FILE* f = NULL;
+                fopen_s(&f, imageFile, "wb");
+#else
+                FILE* f = fopen(imageFile, "wb");
+#endif
+                fclose(f);
             }
             //Transfers one block of the Image to the server
             else if (e->index == 2)
@@ -4795,7 +4803,7 @@ void svr_preAction(
                 {
                     i->imageFirstNotTransferredBlockNumber = (uint32_t)(var_toInteger(index) + 1);
                 }
-                f = fopen(imageFile, "r+b");
+                f = fopen(imageFile, "a+b");
                 if (!f)
                 {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
@@ -4883,7 +4891,7 @@ void svr_preAction(
             }
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
-}
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -5061,7 +5069,7 @@ int connectServer(
             return err;
         };
         add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
-};
+    };
 
     //Connect to the meter.
     ret = connect(*s, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
@@ -5103,18 +5111,18 @@ int sendPush(
                     mes_clear(&messages);
                     break;
                 }
-                }
             }
+        }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
         closesocket(s);
 #else
         close(s);
 #endif
-        }
+    }
     mes_clear(&messages);
     free(host);
     return 0;
-    }
+}
 #endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 
 unsigned char svr_isTarget(

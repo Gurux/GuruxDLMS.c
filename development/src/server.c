@@ -4719,6 +4719,7 @@ int svr_run(
     return svr_handleInactivityTimeout(settings, time, next);
 }
 
+#ifndef DLMS_IGNORE_SERIALIZER
 uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex)
 {
     uint32_t ret = 0;
@@ -4798,6 +4799,7 @@ uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char meth
     }
     return ret;
 }
+#endif //DLMS_IGNORE_SERIALIZER
 
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
 int svr_monitor(dlmsServerSettings* settings, gxRegisterMonitor* object)

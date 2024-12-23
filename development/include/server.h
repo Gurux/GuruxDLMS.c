@@ -154,10 +154,12 @@ extern "C" {
         uint32_t* next);
 #endif //!defined(DLMS_IGNORE_ACTIVITY_CALENDAR) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
 
+#ifndef DLMS_IGNORE_SERIALIZER
     //Check is client changing the settings with action.
     //This can be used to check is meter data changed.
     //Return value is saved atribute index or zero if nothing hasn't change.
     uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex);
+#endif //DLMS_IGNORE_SERIALIZER
 
 #ifdef DLMS_NOTIFY_CIPHERING_ERROR
     //Meter notifies from the ciphering error.

@@ -491,9 +491,6 @@ int cl_getApplicationAssociationRequest(
 #endif //!defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
     if (ret == 0)
     {
-#if !defined(DLMS_IGNORE_HIGH_GMAC)
-        ++settings->cipher.invocationCounter;
-#endif //!defined(DLMS_IGNORE_HIGH_GMAC)
         var_init(&data);
         data.vt = DLMS_DATA_TYPE_OCTET_STRING;
         data.byteArr = &challenge;

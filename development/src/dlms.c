@@ -126,16 +126,17 @@ unsigned char dlms_usePreEstablishedConnection(dlmsSettings* settings)
 unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, DLMS_COMMAND encryptedCommand)
 {
     unsigned char cmd;
-    unsigned glo = (settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0 ||
+    unsigned gp = ((settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0 &&
+        (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0) ||
         //If pre-established connection.
-        (settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0;
+        dlms_usePreEstablishedConnection(settings) != 0;
     unsigned ded = dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0;
     if (encryptedCommand == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
         encryptedCommand == DLMS_COMMAND_GENERAL_DED_CIPHERING)
     {
         cmd = encryptedCommand;
     }
-    else if (glo && encryptedCommand == DLMS_COMMAND_NONE)
+    else if (gp && encryptedCommand == DLMS_COMMAND_NONE)
     {
         if (ded)
         {

@@ -279,44 +279,6 @@ int com_close()
   return ret;
 }
 
-//Read Invocation counter (frame counter) from the meter and update it.
-int com_updateInvocationCounter(const char* invocationCounter)
-{
-  int ret = DLMS_ERROR_CODE_OK;
-  //Read frame counter if security is used.
-  if (invocationCounter != NULL && Client.GetSecurity() != DLMS_SECURITY_NONE)
-  {
-    uint32_t ic = 0;
-    message messages;
-    gxReplyData reply;
-    unsigned short add = Client.GetClientAddress();
-    DLMS_AUTHENTICATION auth = Client.GetAuthentication();
-    DLMS_SECURITY security = Client.GetSecurity();
-    Client.SetClientAddress(16);
-    Client.SetAuthentication(DLMS_AUTHENTICATION_NONE);
-    Client.SetSecurity(DLMS_SECURITY_NONE);
-    if ((ret = com_initializeConnection()) == DLMS_ERROR_CODE_OK)
-    {
-      gxData d;
-      cosem_init(BASE(d), DLMS_OBJECT_TYPE_DATA, invocationCounter);
-      if ((ret = com_read(BASE(d), 2)) == 0)
-      {
-        GXTRACE_INT(GET_STR_FROM_EEPROM("Invocation Counter:"), var_toInteger(&d.value));
-        ic = 1 + var_toInteger(&d.value);
-      }
-      obj_clear(BASE(d));
-    }
-    //Close connection. It's OK if this fails.
-    com_close();
-    //Return original settings.
-    Client.SetClientAddress(add);
-    Client.SetAuthentication(auth);
-    Client.SetSecurity(security);
-    Client.SetInvocationCounter(ic);
-  }
-  return ret;
-}
-
 int com_initializeOpticalHead()
 {
   int baudRate;

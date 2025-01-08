@@ -163,7 +163,7 @@ extern "C" {
     // #define GX_DLMS_BYTE_BUFFER_SIZE_32
 
     //Serializer is not used.
-    //DLMS_IGNORE_SERIALIZER
+    //#define DLMS_IGNORE_SERIALIZER
     //Serializer is used instead of file system.
     //#define GX_DLMS_SERIALIZER
 

@@ -256,6 +256,7 @@ static gxObject* ALL_OBJECTS[] = {
 
 ////////////////////////////////////////////////////
 //Define what is serialized to decrease EEPROM usage.
+#ifndef DLMS_IGNORE_SERIALIZER
 gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     //Nothing is saved when authentication is not used.
     IGNORE_ATTRIBUTE(BASE(associationNone), GET_ATTRIBUTE_ALL()),
@@ -270,6 +271,7 @@ gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     //Objects are not load because they are created statically.
     IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE(2))
 };
+#endif //DLMS_IGNORE_SERIALIZER
 
 //Returns current time.
 //If you are not using operating system you have to implement this by yourself.
@@ -365,6 +367,7 @@ int saveSecurity(
 int saveSettings()
 {
     int ret = 0;
+#ifndef DLMS_IGNORE_SERIALIZER
     const char* fileName = "settings.raw";
     //Save keys to own block in EEPROM.
 #if _MSC_VER > 1400
@@ -387,6 +390,7 @@ int saveSettings()
     {
         printf("%s\r\n", "Failed to open settings file.");
     }
+#endif //DLMS_IGNORE_SERIALIZER
     return ret;
 }
 
@@ -3465,8 +3469,9 @@ int loadSecurity(dlmsSettings* settings)
 /////////////////////////////////////////////////////////////////////////////
 int loadSettings(dlmsSettings* settings)
 {
+    int ret = 0;
+#ifndef DLMS_IGNORE_SERIALIZER
     const char* fileName = "settings.raw";
-    int ret;
     //Update keys.
 #if _MSC_VER > 1400
     FILE* f = NULL;
@@ -3493,7 +3498,9 @@ int loadSettings(dlmsSettings* settings)
         }
         fclose(f);
     }
-    return saveSettings();
+    ret = saveSettings();
+#endif //DLMS_IGNORE_SERIALIZER
+    return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -5012,6 +5019,7 @@ void svr_postAction(
                 loadSecurity(settings);
             }
         }
+#ifndef DLMS_IGNORE_SERIALIZER
         //Check is client changing the settings with action.
         if (svr_isChangedWithAction(e->target->objectType, e->index))
         {
@@ -5026,6 +5034,7 @@ void svr_postAction(
                 loadSettings(settings);
             }
         }
+#endif //DLMS_IGNORE_SERIALIZER
     }
 }
 

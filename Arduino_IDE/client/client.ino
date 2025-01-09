@@ -73,17 +73,20 @@ void GXTRACE(const char* str, const char* data)
 {
   //Send trace to the serial port.
   byte c;
-  Serial1.write("\t:");
-  while ((c = pgm_read_byte(str++)) != 0)
+  if (str != NULL)
   {
-    Serial1.write(c);
+    Serial.write("\t:");
+    while ((c = pgm_read_byte(str++)) != 0)
+    {
+      Serial.write(c);
+    }
   }
   if (data != NULL)
   {
-    Serial1.write(data);
+    Serial.write(data);
   }
-  Serial1.write("\0");
-  //Serial1.flush();
+  Serial.write("\0");
+ // Serial.flush();
   delay(10);
 }
 
@@ -98,6 +101,24 @@ void GXTRACE_INT(const char* str, int32_t value)
   char data[10];
   sprintf(data, " %ld", value);
   GXTRACE(str, data);
+}
+
+
+///////////////////////////////////////////////////////////////////////
+// Write trace to the serial port.
+//
+// This can be used for debugging.
+///////////////////////////////////////////////////////////////////////
+void GXTRACE_BB(const char* str, gxByteBuffer* value)
+{
+  int pos;
+  char data[3];
+  GXTRACE(str, NULL);
+  for (pos = 0; pos < bb_size(value); ++pos)
+  {
+      itoa(value->data[pos], data, 16);
+      GXTRACE(NULL, data);
+  }  
 }
 
 uint32_t runTime = 0;
@@ -279,6 +300,44 @@ int com_close()
   return ret;
 }
 
+//Read Invocation counter (frame counter) from the meter and update it.
+int com_updateInvocationCounter(const char* invocationCounter)
+{
+  int ret = DLMS_ERROR_CODE_OK;
+  //Read frame counter if security is used.
+  if (invocationCounter != NULL && Client.GetSecurity() != DLMS_SECURITY_NONE)
+  {
+    uint32_t ic = 0;
+    message messages;
+    gxReplyData reply;
+    unsigned short add = Client.GetClientAddress();
+    DLMS_AUTHENTICATION auth = Client.GetAuthentication();
+    DLMS_SECURITY security = Client.GetSecurity();
+    Client.SetClientAddress(16);
+    Client.SetAuthentication(DLMS_AUTHENTICATION_NONE);
+    Client.SetSecurity(DLMS_SECURITY_NONE);
+    if ((ret = com_initializeConnection()) == DLMS_ERROR_CODE_OK)
+    {
+      gxData d;
+      cosem_init(BASE(d), DLMS_OBJECT_TYPE_DATA, invocationCounter);
+      if ((ret = com_read(BASE(d), 2)) == 0)
+      {
+        GXTRACE_INT(GET_STR_FROM_EEPROM("Invocation Counter:"), var_toInteger(&d.value));
+        ic = 1 + var_toInteger(&d.value);
+      }
+      obj_clear(BASE(d));
+    }
+    //Close connection. It's OK if this fails.
+    com_close();
+    //Return original settings.
+    Client.SetClientAddress(add);
+    Client.SetAuthentication(auth);
+    Client.SetSecurity(security);
+    Client.SetInvocationCounter(ic);
+  }
+  return ret;
+}
+
 int com_initializeOpticalHead()
 {
   int baudRate;
@@ -341,8 +400,10 @@ int com_initializeOpticalHead()
       GXTRACE(GET_STR_FROM_EEPROM("Failed to write all data to the serial port.\n"), NULL);
     }
     Serial.flush();
-    Serial.readBytes(buff, sizeof(buff));
+    //This sleep is in standard. Do not remove.
+    delay(300);
     Serial.begin(baudRate, SERIAL_8N1);
+    Serial.readBytes(buff, sizeof(buff));
     //Some meters need this sleep. Do not remove.
     delay(800);
   }
@@ -1005,13 +1066,13 @@ void setup() {
     //TODO: Change logical name of the frame counter if it's used to com_readAllObjects.
     gxByteBuffer bb;
     bb_init(&bb);
-    bb_addHexString(&bb, GET_STR_FROM_EEPROM("3132333435363738"));
+    bb_addHexString(&bb, "3132333435363738");
     Client.SetSystemTitle(&bb);
     bb_clear(&bb);
-    bb_addHexString(&bb, GET_STR_FROM_EEPROM("D0 D1 D2 D3 D4 D5 D6 D7D8 D9 DA DB DC DD DE DF"));
+    bb_addHexString(&bb, "D0 D1 D2 D3 D4 D5 D6 D7D8 D9 DA DB DC DD DE DF");
     Client.SetAuthenticationKey(&bb);
     bb_clear(&bb);
-    bb_addHexString(&bb, GET_STR_FROM_EEPROM("00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F"));
+    bb_addHexString(&bb, "00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F");
     Client.SetBlockCipherKey(&bb);
     bb_clear(&bb);
   */

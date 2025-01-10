@@ -1288,13 +1288,13 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     //Return error if certificate is not found.
                     ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                 }
-            }
+        }
 #endif //DLMS_IGNORE_MALLOC
             else
             {
                 ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
             }
-        }
+    }
 #else
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
 #endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
@@ -1406,13 +1406,13 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     //Return error if certificate is not found.
                     ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                 }
-            }
+        }
 #endif //DLMS_IGNORE_MALLOC
             else
             {
                 ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
             }
-        }
+    }
 #else
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
 #endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
@@ -1628,11 +1628,11 @@ int invoke_ScriptTable(
                     {
                         break;
                     }
-                    }
                 }
             }
-        vec_clear(&args);
         }
+        vec_clear(&args);
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
@@ -2081,7 +2081,8 @@ int compactDataAppend(unsigned char byteArray, dlmsVARIANT* value3, gxByteBuffer
         return ret;
     }
 #endif //DLMS_IGNORE_MALLOC
-    return var_getBytes4(value3, value3->vt, bb, 0, 0, 0);
+    //Compact data adds count to array, bit-string.
+    return var_getBytes4(value3, value3->vt, bb, 0, 1, 0);
 }
 
 int compactDataAppendArray(dlmsVARIANT* value, gxByteBuffer* bb, uint16_t dataIndex)
@@ -2092,7 +2093,7 @@ int compactDataAppendArray(dlmsVARIANT* value, gxByteBuffer* bb, uint16_t dataIn
     {
         //0x1000 to 0xFFFF is the selective access to the array.
         cnt = value->Arr->size;
-    }    
+    }
     dlmsVARIANT* value2;
     for (pos = 0; pos != cnt; ++pos)
     {
@@ -2606,7 +2607,7 @@ int invoke_RegisterActivation(
 #else
             arr_push(&object->registerAssignment, it);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-            }
+        }
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
         if (ret != 0 && objectDefinition != NULL)
         {
@@ -2642,10 +2643,10 @@ int invoke_RegisterActivation(
                     }
                 }
             }
-    }
+        }
 #else
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        }
+    }
     //Remove mask.
     else if (e->index == 3)
     {
@@ -2742,11 +2743,11 @@ int invoke_copySeasonProfile(gxArray* target, gxArray* source)
                 it->start = sp->start;
                 bb_set(&it->weekName, sp->weekName.data, sp->weekName.size);
 #endif //#if defined(DLMS_IGNORE_MALLOC)
-                }
             }
         }
-    return ret;
     }
+    return ret;
+}
 
 int invoke_copyWeekProfileTable(gxArray* target, gxArray* source)
 {
@@ -2785,11 +2786,11 @@ int invoke_copyWeekProfileTable(gxArray* target, gxArray* source)
                 it->friday = wp->friday;
                 it->saturday = wp->saturday;
                 it->sunday = wp->sunday;
-                }
             }
         }
-    return ret;
     }
+    return ret;
+}
 
 int invoke_copyDayProfileTable(gxArray* target, gxArray* source)
 {
@@ -2844,11 +2845,11 @@ int invoke_copyDayProfileTable(gxArray* target, gxArray* source)
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                     dp2->scriptSelector = dp->scriptSelector;
                 }
-                }
             }
         }
-    return ret;
     }
+    return ret;
+}
 
 int invoke_ActivityCalendar(gxValueEventArg* e)
 {
@@ -3418,14 +3419,14 @@ int invoke_ArrayManager(
                 break;
             }
         }
-}
+    }
     if (!found)
     {
         bb_clear(e->value.byteArr);
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
     }
     return ret;
-    }
+}
 #endif //DLMS_IGNORE_ARRAY_MANAGER
 
 #ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP

@@ -1230,27 +1230,29 @@ int hlp_add(bitArray* arr, gxByteBuffer* bytes, uint16_t count)
     {
         count = (uint16_t)(bytes->size - bytes->position);
     }
-    for (pos = 0; pos != count; ++pos)
+    if ((ret = ba_capacity(arr, count)) == 0)
     {
-        //Get next byte.
-        if ((pos % 8) == 0)
+        for (pos = 0; pos != count; ++pos)
         {
-            bytePos = 7;
-            ret = bb_getUInt8ByIndex(bytes, bytes->position, &ch);
-            if (ret != 0)
+            //Get next byte.
+            if ((pos % 8) == 0)
+            {
+                bytePos = 7;
+                ret = bb_getUInt8ByIndex(bytes, bytes->position, &ch);
+                if (ret != 0)
+                {
+                    return ret;
+                }
+                ++bytes->position;
+            }
+            if ((ret = ba_setByIndex(arr, pos, (unsigned char)(ch & (1 << bytePos)))) != 0)
             {
                 return ret;
             }
-            ++bytes->position;
+            --bytePos;
         }
-        if ((ret = ba_setByIndex(arr, pos, (unsigned char)(ch & (1 << bytePos)))) != 0)
-        {
-            return ret;
-        }
-        --bytePos;
-        ++arr->size;
     }
-    return 0;
+    return ret;
 }
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)

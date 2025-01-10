@@ -2087,7 +2087,7 @@ int addActiveTariffPlan()
         time_init(&activeTariffPlan.activationTime, 2015, 1, 1, 0, 0, 0, 0, 120);
         //General 
         activeTariffPlan.plan.defaultTariffBand = 3;
-        BIT_ATTACH(activeTariffPlan.plan.weeklyActivation, WEEKLY_ACTIVATION, 2);
+        BIT_ATTACH(activeTariffPlan.plan.weeklyActivation, WEEKLY_ACTIVATION, 16);
 
         //////////////
         //Get winter season.
@@ -2223,6 +2223,24 @@ int addActiveTariffPlan()
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 10;
         va_push(&activeTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 11;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 12;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 13;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 14;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 15;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 16;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
     }
     return ret;
 }
@@ -2240,7 +2258,7 @@ int addPassiveTariffPlan()
         time_init(&passiveTariffPlan.activationTime, 2024, 1, 1, 0, 0, 0, 0, 120);
         //General 
         passiveTariffPlan.plan.defaultTariffBand = 3;
-        BIT_ATTACH(passiveTariffPlan.plan.weeklyActivation, WEEKLY_ACTIVATION, 2);
+        BIT_ATTACH(passiveTariffPlan.plan.weeklyActivation, WEEKLY_ACTIVATION, 16);
 
         //////////////
         //Get winter season.
@@ -2375,6 +2393,24 @@ int addPassiveTariffPlan()
         va_push(&passiveTariffPlan.plan.specialDays, it);
         it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
         GX_UINT16(*it) = 10;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 11;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 12;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 13;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 14;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 15;
+        va_push(&passiveTariffPlan.plan.specialDays, it);
+        it = (dlmsVARIANT*)malloc(sizeof(dlmsVARIANT));
+        GX_UINT16(*it) = 16;
         va_push(&passiveTariffPlan.plan.specialDays, it);
     }
     return ret;

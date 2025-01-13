@@ -220,6 +220,15 @@ extern "C" {
     //Server uses notify trace if DLMS_DEBUG is defined.
     void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, int err);
 
+    //Server uses notify trace if DLMS_DEBUG is defined.
+    void svr_notifyTrace3(const char* str, const char* value);
+
+    //Server uses notify trace if DLMS_DEBUG is defined.
+    void svr_notifyTrace4(const char* str, gxByteBuffer* value);
+
+    //Server uses notify trace if DLMS_DEBUG is defined.
+    void svr_notifyTrace5(const char* str, const unsigned char* value, uint16_t length);
+
 #ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
     //Some DLMS sub standard define that invocation counter must between given range.
     //Returns zero if the invocation counter is accepted.

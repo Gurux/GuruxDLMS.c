@@ -447,9 +447,9 @@ int cl_getApplicationAssociationRequest(
 #endif //DLMS_IGNORE_MALLOC
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
-#ifndef DLMS_IGNORE_HIGH_SHA256
     else if (settings->authentication == DLMS_AUTHENTICATION_HIGH_SHA256)
     {
+#ifndef DLMS_IGNORE_HIGH_SHA256
 #ifdef DLMS_IGNORE_MALLOC
         if ((ret = bb_set(&pw2, settings->password.data, settings->password.size)) != 0 ||
             (ret = bb_set(&pw2, settings->cipher.systemTitle, 8)) != 0 ||
@@ -471,9 +471,11 @@ int cl_getApplicationAssociationRequest(
             return ret;
         }
         pw = &pw2;
+#else
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_HIGH_SHA256
     }
     else
-#endif //DLMS_IGNORE_HIGH_SHA256
     {
         pw = &settings->password;
     }

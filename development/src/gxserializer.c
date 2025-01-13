@@ -9361,7 +9361,7 @@ int ser_getDataSize(gxSerializerSettings * serializeSettings, void* size)
         if (serializeSettings->version == 0 || serializeSettings->version > SERIALIZATION_VERSION)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace(GET_STR_FROM_EEPROM("ser_loadObject failed. Invalid version,"), version);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("ser_loadObject failed. Invalid version,"), serializeSettings->version);
 #endif //DLMS_DEBUG
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }

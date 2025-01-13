@@ -6591,6 +6591,43 @@ int dlms_getActionInfo(
 }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
+#ifndef DLMS_IGNORE_AES
+int aes(gxByteBuffer* data, gxByteBuffer* secret, gxByteBuffer* challenge, gxByteBuffer* reply)
+{
+    int ret = 0;
+    unsigned char tmp[16];
+    gxByteBuffer s;
+    uint16_t len = (uint16_t)data->size;
+    bb_attach(&s, tmp, 0, sizeof(tmp));
+    if (len % 16 != 0)
+    {
+        len += (16 - (data->size % 16));
+    }
+    if (secret->size > data->size)
+    {
+        len = (uint16_t)secret->size;
+        if (len % 16 != 0)
+        {
+            len += (16 - (secret->size % 16));
+        }
+    }
+    if ((ret = bb_set(&s, secret->data, secret->size)) == 0 &&
+        (ret = bb_zero(&s, s.size, len - s.size)) == 0 &&
+        (ret = bb_set(challenge, data->data, data->size)) == 0 &&
+        (ret = bb_zero(challenge, challenge->size, len - challenge->size)) == 0 &&
+        (ret = bb_capacity(reply, challenge->size)) == 0)
+    {
+        gxaes_ecb_encrypt(challenge->data, s.data, reply->data, s.size);
+    }
+    reply->size = s.size;
+#ifndef DLMS_IGNORE_MALLOC
+    bb_clear(&s);
+    bb_clear(challenge);
+#endif //DLMS_IGNORE_MALLOC
+    return ret;
+}
+#endif //DLMS_IGNORE_AES
+
 int dlms_secure(
     dlmsSettings* settings,
     int32_t ic,
@@ -6601,7 +6638,7 @@ int dlms_secure(
     int ret = 0;
     gxByteBuffer challenge;
     bb_clear(reply);
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC) || defined(GX_DLMS_MICROCONTROLLER)
     bb_attach(&challenge, pduAttributes, 0, sizeof(pduAttributes));
 #else
     BYTE_BUFFER_INIT(&challenge);
@@ -6609,36 +6646,7 @@ int dlms_secure(
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH)
     {
 #ifndef DLMS_IGNORE_AES
-        unsigned char tmp[16];
-        gxByteBuffer s;
-        uint16_t len = (uint16_t)data->size;
-        bb_attach(&s, tmp, 0, sizeof(tmp));
-        if (len % 16 != 0)
-        {
-            len += (16 - (data->size % 16));
-        }
-        if (secret->size > data->size)
-        {
-            len = (uint16_t)secret->size;
-            if (len % 16 != 0)
-            {
-                len += (16 - (secret->size % 16));
-            }
-        }
-        if ((ret = bb_set(&s, secret->data, secret->size)) == 0 &&
-            (ret = bb_zero(&s, s.size, len - s.size)) == 0 &&
-            (ret = bb_set(&challenge, data->data, data->size)) == 0 &&
-            (ret = bb_zero(&challenge, challenge.size, len - challenge.size)) == 0 &&
-            (ret = bb_capacity(reply, challenge.size)) == 0)
-        {
-            gxaes_ecb_encrypt(challenge.data, s.data, reply->data, s.size);
-        }
-        reply->size = s.size;
-#ifndef DLMS_IGNORE_MALLOC
-        bb_clear(&s);
-        bb_clear(&challenge);
-#endif //DLMS_IGNORE_MALLOC
-        return ret;
+        return aes(data, secret, &challenge, reply);
 #else
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_AES

@@ -65,3 +65,45 @@ void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, 
     }
 #endif// DLMS_DEBUG
 }
+
+
+void svr_notifyTrace3(const char* str, const char* value)
+{
+#ifdef DLMS_DEBUG
+    svr_trace(str, value);
+#endif// DLMS_DEBUG
+}
+
+void svr_notifyTrace4(const char* str, gxByteBuffer* value)
+{
+#ifdef DLMS_DEBUG
+    svr_notifyTrace5(str, value->data, value->size);
+#endif// DLMS_DEBUG
+}
+
+//Server uses notify trace if DLMS_DEBUG is defined.
+void svr_notifyTrace5(const char* str, const unsigned char* value, uint16_t length)
+{
+#ifdef DLMS_DEBUG
+    int pos, index = 0;
+#define COUNT 20
+    static char tmp[3 * COUNT];
+    for (pos = 0; pos != length; ++pos)
+    {
+        sprintf(tmp + (3 * index), "%02X ", value[pos]);
+        ++index;
+        if (index == COUNT)
+        {
+            tmp[sizeof(tmp) - 1] = '\0';
+            svr_trace(str, tmp);
+            index = 0;
+        }
+    }
+    if (index != 0)
+    {
+        tmp[(3 * index) - 1] = '\0';
+        svr_trace(str, tmp);
+    }
+#endif// DLMS_DEBUG
+}
+

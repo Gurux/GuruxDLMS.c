@@ -53,6 +53,10 @@
 #include "../include/helpers.h"
 #include "../include/gxaes.h"
 
+#ifdef DLMS_DEBUG
+#include "../include/serverevents.h"
+#endif //DLMS_DEBUG
+
 static const unsigned char DEFAUlT_BROADCAST_BLOCK_CIPHER_KEY[] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
 static const unsigned char DEFAUlT_BLOCK_CIPHER_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 static const unsigned char DEFAULT_SYSTEM_TITLE[] = { 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48 };
@@ -120,7 +124,9 @@ void cip_clear(ciphering* target)
 *            System title.
 * @return
 */
-static int cip_getNonse(uint32_t frameCounter, unsigned char* systemTitle, gxByteBuffer* nonce)
+static int cip_getNonse(uint32_t frameCounter, 
+    const unsigned char* systemTitle, 
+    gxByteBuffer* nonce)
 {
     int ret;
     nonce->size = 0;
@@ -606,7 +612,7 @@ static const unsigned char __R_CON[11] PROGMEM = {
         DLMS_COUNT_TYPE type,
         uint32_t frameCounter,
         unsigned char tag,
-        unsigned char* systemTitle,
+        const unsigned char* systemTitle,
         gxByteBuffer* key,
         gxByteBuffer* input,
         unsigned char encrypt)
@@ -617,7 +623,7 @@ static const unsigned char __R_CON[11] PROGMEM = {
         DLMS_COUNT_TYPE type,
         uint32_t frameCounter,
         unsigned char tag,
-        unsigned char* systemTitle,
+        const unsigned char* systemTitle,
         unsigned char* key,
         gxByteBuffer* input,
         unsigned char encrypt)
@@ -811,14 +817,14 @@ static const unsigned char __R_CON[11] PROGMEM = {
         return ret;
     }
 
-    #ifndef DLMS_IGNORE_MALLOC
+#ifndef DLMS_IGNORE_MALLOC
     int cip_encrypt(
         ciphering* settings,
         DLMS_SECURITY security,
         DLMS_COUNT_TYPE type,
         uint32_t frameCounter,
         unsigned char tag,
-        unsigned char* systemTitle,
+        const unsigned char* systemTitle,
         gxByteBuffer* key,
         gxByteBuffer* input)
     #else
@@ -828,11 +834,50 @@ static const unsigned char __R_CON[11] PROGMEM = {
         DLMS_COUNT_TYPE type,
         uint32_t frameCounter,
         unsigned char tag,
-        unsigned char* systemTitle,
+        const unsigned char* systemTitle,
         unsigned char* key,
         gxByteBuffer* input)
 #endif //DLMS_IGNORE_MALLOC
     {
+#ifdef DLMS_DEBUG
+        svr_notifyTrace5(GET_STR_FROM_EEPROM("System title: "), systemTitle, 8);
+#ifndef DLMS_IGNORE_MALLOC
+        svr_notifyTrace5(GET_STR_FROM_EEPROM("Block cipher key: "), key->data, key->size);
+        svr_notifyTrace5(GET_STR_FROM_EEPROM("Authentication key: "), settings->authenticationKey.data, settings->authenticationKey.size);
+#else
+        svr_notifyTrace5(GET_STR_FROM_EEPROM("Block cipher key: "), key, 16);
+        svr_notifyTrace5(GET_STR_FROM_EEPROM("Authentication key: "), settings->authenticationKey, 16);
+#endif //DLMS_IGNORE_MALLOC
+
+#endif //DLMS_DEBUG
+#ifndef DLMS_IGNORE_MALLOC
+        if (settings->suite == DLMS_SECURITY_SUITE_V2)
+        {
+            if (bb_available(&settings->authenticationKey) != 32)
+            {
+                //Invalid system title.
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            if (bb_available(&settings->blockCipherKey) != 32)
+            {
+                //Invalid system title.
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+        }
+        else
+        {
+            if (bb_available(&settings->authenticationKey) != 16)
+            {
+                //Invalid system title.
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            if (bb_available(&settings->blockCipherKey) != 16)
+            {
+                //Invalid system title.
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+        }
+#endif //DLMS_IGNORE_MALLOC
         return cip_crypt(
             settings,
             security,

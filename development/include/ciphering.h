@@ -115,7 +115,7 @@ int cip_encrypt(
     DLMS_COUNT_TYPE type,
     uint32_t frameCounter,
     unsigned char tag,
-    unsigned char* systemTitle,
+    const unsigned char* systemTitle,
     gxByteBuffer* key,
     gxByteBuffer* input);
 #else
@@ -125,7 +125,7 @@ int cip_encrypt(
     DLMS_COUNT_TYPE type,
     uint32_t frameCounter,
     unsigned char tag,
-    unsigned char* systemTitle,
+    const unsigned char* systemTitle,
     unsigned char* key,
     gxByteBuffer* input);
 #endif //DLMS_IGNORE_MALLOC

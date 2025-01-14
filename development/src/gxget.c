@@ -2202,6 +2202,11 @@ int cosem_getRow(
     {
         if (columns->size != 0)
         {
+            if (pos == columns->size)
+            {
+                //If all columns are read.
+                break;
+            }
             if (captureObjects->data[pos] != columns->data[colPos])
             {
                 continue;
@@ -2269,6 +2274,26 @@ int profileGeneric_getData(
         if ((ret = cosem_getColumns(captureObjects, e->selector, &e->parameters, &columns)) != 0)
         {
             return ret;
+        }
+    }
+    else if (e->dataIndex != 0)
+    {
+        unsigned char selectedColumns = (unsigned char)((e->dataIndex >> 8) & 0xF);
+        if (selectedColumns != 0)
+        {
+#if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+            gxTarget* k;
+#else
+            gxKey* k;
+#endif //defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
+            for (pos = 0; pos != selectedColumns; ++pos)
+            {
+                if ((ret = arr_getByIndex(captureObjects, pos, (void**)&k)) != 0 ||
+                    (ret = arr_push(&columns, k)) != 0)
+                {
+                    return ret;
+                }
+            }
         }
     }
     for (pos = 0; pos != table->size; ++pos)

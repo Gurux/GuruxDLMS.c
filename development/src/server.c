@@ -4575,7 +4575,7 @@ int svr_handlePushSetup(
             &object->executedTime,
             next)) != 0)
         {
-            //Save infor that invoke failed.
+            //Save information that invoke failed.
         }
     }
     return ret;

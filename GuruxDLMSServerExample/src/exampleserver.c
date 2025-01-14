@@ -2647,7 +2647,12 @@ int addCF62(dlmsSettings* settings)
         capture->dataIndex = 0;
         k = key_init(BASE(managementFrameCounterOnLine), capture);
         arr_push(&cf62.captureObjects, k);
-        ret = compactData_updateTemplateDescription(settings, &cf62);
+        //Hardcoded template description value is used.
+        // This is done because updateTemplateDescription returns wrong value 
+        // if profile generic buffer is empty.
+        //ret = compactData_updateTemplateDescription(settings, &cf62);
+        static unsigned char DESCRIPTION[] = { 0x02, 0x0B, 0x11, 0x06, 0x12, 0x02, 0x04, 0x0F, 0x0F, 0x0F, 0x16, 0x12, 0x12, 0x12, 0x02, 0x02, 0x0F, 0x16, 0x01, 0x00, 0x02, 0x02, 0x06, 0x06, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x06 };
+        bb_set(&cf62.templateDescription, DESCRIPTION, sizeof(DESCRIPTION));
     }
     return ret;
 }
@@ -2745,7 +2750,12 @@ int addCF63(dlmsSettings* settings)
         capture->dataIndex = 0;
         k = key_init(BASE(managementFrameCounterOnLine), capture);
         arr_push(&cf63.captureObjects, k);
-        ret = compactData_updateTemplateDescription(settings, &cf63);
+        //Hardcoded template description value is used.
+        // This is done because updateTemplateDescription returns wrong value 
+        // if profile generic buffer is empty.
+//        ret = compactData_updateTemplateDescription(settings, &cf63);
+        static unsigned char DESCRIPTION[] = { 0x02, 0x0C, 0x11, 0x06, 0x12, 0x02, 0x04, 0x0F, 0x0F, 0x0F, 0x16, 0x12, 0x12, 0x12, 0x02, 0x02, 0x0F, 0x16, 0x01, 0x00, 0x01, 0x02, 0x06, 0x06, 0x12, 0x12, 0x12, 0x12, 0x12, 0x01, 0x00, 0x01, 0x02, 0x02, 0x12, 0x12, 0x12, 0x06 };
+        bb_set(&cf63.templateDescription, DESCRIPTION, sizeof(DESCRIPTION));      
     }
     return ret;
 }
@@ -3919,6 +3929,8 @@ int getProfileGenericDataByRangeFromRingBuffer(
         }
         if (f != NULL)
         {
+            //Set pointer to the start of file.
+            fseek(f, 0, SEEK_SET);
             //Find date time location. In Italy standard the date time can be the the last column.
             uint16_t location = 0;
             getProfileGenericBufferColumnSizes(settings, pg, dataTypes, columnSizes, &rowSize, &location);
@@ -4255,7 +4267,7 @@ int readProfileGeneric(
                                 && ((gxTarget*)it->value)->attributeIndex == 2)
                             {
                                 uint32_t time;
-                                fread(&time, 4, 1, f);
+                                fread(&time, sizeof(uint32_t), 1, f);
                                 time_initUnix(&tm, time);
                                 //Convert to meter time if UNIX time is not used.
                                 if (((gxObject*)it->key) != BASE(unixTime))

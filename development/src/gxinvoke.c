@@ -2157,7 +2157,6 @@ int cosem_captureCompactData(
     svr_preGet(settings, &args);
     if (!e->handled)
     {
-        uint16_t dataIndex;
         for (pos = 0; pos != object->captureObjects.size; ++pos)
         {
             ret = arr_getByIndex(&object->captureObjects, pos, (void**)&kv);
@@ -2168,7 +2167,7 @@ int cosem_captureCompactData(
             }
             e->target = (gxObject*)kv->key;
             e->index = ((gxTarget*)kv->value)->attributeIndex;
-            dataIndex = ((gxTarget*)kv->value)->dataIndex;
+            e->dataIndex = ((gxTarget*)kv->value)->dataIndex;
             if ((ret = cosem_getValue(settings, e)) != 0)
             {
                 bb_clear(&object->buffer);
@@ -2199,7 +2198,7 @@ int cosem_captureCompactData(
                         }
                     }
 #endif //DLMS_ITALIAN_STANDARD
-                    if ((ret = compactDataAppendArray(&value, &object->buffer, dataIndex)) != 0)
+                    if ((ret = compactDataAppendArray(&value, &object->buffer, e->dataIndex)) != 0)
                     {
                         var_clear(&value);
                         break;

@@ -7127,6 +7127,7 @@ int compactData_updateTemplateDescription(
             }
             e.target = (gxObject*)kv->key;
             e.index = ((gxTarget*)kv->value)->attributeIndex;
+            e.dataIndex = ((gxTarget*)kv->value)->dataIndex;
             if ((ret = cosem_getValue(settings, &e)) != 0)
             {
                 var_clear(&e.value);

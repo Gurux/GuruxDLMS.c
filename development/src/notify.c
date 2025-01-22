@@ -127,7 +127,7 @@ int notify_generateDataNotificationMessages(
     message* messages)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxListItem* it;
     gxByteBuffer buff;
     BYTE_BUFFER_INIT(&buff);
@@ -259,7 +259,7 @@ int notify_generatePushSetupMessages(
     message* messages)
 {
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxByteBuffer pdu;
     gxValueEventCollection args;
 #ifdef DLMS_IGNORE_MALLOC
@@ -301,6 +301,7 @@ int notify_generatePushSetupMessages(
 #ifdef DLMS_IGNORE_MALLOC
             p[0].target = it->target;
             p[0].index = it->attributeIndex;
+            p[0].dataIndex = it->dataIndex;
             //Allocate space for byte array where reply data can be saved.
             p[0].value.byteArr = &pdu;
             p[0].value.vt = DLMS_DATA_TYPE_OCTET_STRING;
@@ -316,6 +317,7 @@ int notify_generatePushSetupMessages(
 #else
             e.target = (gxObject*)it->key;
             e.index = ((gxTarget*)it->value)->attributeIndex;
+            e.dataIndex = ((gxTarget*)it->value)->dataIndex;
 #ifndef DLMS_IGNORE_SERVER
             svr_preRead(settings, &args);
 #endif
@@ -379,7 +381,7 @@ int notify_parsePush(
     gxObject* obj;
     unsigned char index;
     int classID, ret;
-	uint16_t pos;
+    uint16_t pos;
     gxValueEventArg e;
     dlmsVARIANT* it, * list, * tmp;
     if ((ret = va_getByIndex(data, 0, &list)) != 0)
@@ -482,7 +484,7 @@ int notify_getPushValues(
     gxObject* tmp;
     gxKey* k;
     int ret = 0;
-	uint16_t pos;
+    uint16_t pos;
     gxValueEventArg e;
     dlmsVARIANT* it;
     for (pos = 0; pos != pushSetup->pushObjectList.size; ++pos)

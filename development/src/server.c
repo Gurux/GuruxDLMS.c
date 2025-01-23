@@ -1230,10 +1230,10 @@ int svr_handleSetRequestWithList(
                     if (!bb_isAttached(data))
                     {
                         ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
-                }
+                    }
 #endif //DLMS_IGNORE_MALLOC
                     settings->transaction.command = DLMS_COMMAND_SET_REQUEST;
-            }
+                }
                 if (ret == 0)
                 {
                     if (e->error != 0)
@@ -1257,7 +1257,7 @@ int svr_handleSetRequestWithList(
 #ifndef DLMS_IGNORE_MALLOC
                 var_clear(&e->value);
 #endif //DLMS_IGNORE_MALLOC
-                    }
+            }
         }
     }
 #ifndef DLMS_IGNORE_MALLOC
@@ -1273,7 +1273,7 @@ int svr_handleSetRequestWithList(
     bb_clear(&status);
     p->requestType = DLMS_SET_RESPONSE_TYPE_WITH_LIST;
     return ret;
-                }
+}
 #endif //DLMS_IGNORE_SET
 
 #ifndef DLMS_IGNORE_MALLOC
@@ -1337,7 +1337,7 @@ int svr_hanleSetRequestWithDataBlock(
     }
     p->multipleBlocks = 1;
     return ret;
-        }
+}
 #endif //DLMS_IGNORE_MALLOC
 
 /**
@@ -1523,10 +1523,10 @@ int svr_getRequestNormal(
         {
             vec_clear(arr);
             return ret;
-    }
+        }
         bb_clear(data);
 #endif //DLMS_IGNORE_MALLOC
-}
+    }
     else
     {
         bb_clear(data);
@@ -1613,15 +1613,15 @@ int svr_getRequestNormal(
                         status = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     }
                     var_clear(&e->value);
-                    }
-#endif //DLMS_IGNORE_MALLOC
                 }
+#endif //DLMS_IGNORE_MALLOC
+            }
             else if (status != 0)
             {
                 bb_clear(data);
             }
-            }
         }
+    }
     //PDU is used for serialization. Set data type to none so size is not changed.
     if (e->byteArray || (e->value.vt == DLMS_DATA_TYPE_OCTET_STRING && bb_isAttached(e->value.byteArr)))
     {
@@ -1645,7 +1645,7 @@ int svr_getRequestNormal(
         if (!bb_isAttached(data))
         {
             ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
-    }
+        }
 #endif //DLMS_IGNORE_MALLOC
         e->transaction = 1;
         settings->transaction.command = DLMS_COMMAND_GET_REQUEST;
@@ -1654,7 +1654,7 @@ int svr_getRequestNormal(
     vec_clear(arr);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-    }
+}
 
 int svr_getRequestNextDataBlock(
     dlmsServerSettings* settings,
@@ -1739,18 +1739,18 @@ int svr_getRequestNextDataBlock(
                 if (!bb_isAttached(data))
                 {
                     bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
-    }
+                }
 #endif //DLMS_IGNORE_MALLOC
-}
+            }
             else
             {
                 trans_clear(&settings->transaction);
                 resetBlockIndex(&settings->base);
             }
-}
         }
-    return ret;
     }
+    return ret;
+}
 
 int svr_getRequestWithList(
     dlmsServerSettings* settings,
@@ -1852,7 +1852,7 @@ int svr_getRequestWithList(
                 }
             }
         }
-        }
+    }
     bb_clear(data);
     svr_preRead(&settings->base, arr);
     hlp_setObjectCount(cnt, data);
@@ -1925,9 +1925,9 @@ int svr_getRequestWithList(
             if (!bb_isAttached(data))
             {
                 bb_set2(&settings->transaction.data, data, data->position, data->size - data->position);
-        }
+            }
 #endif //DLMS_IGNORE_MALLOC
-    }
+        }
     }
     svr_postRead(&settings->base, arr);
     params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 3, NULL, data, 0xFF, settings->info.encryptedCommand, moreData, !moreData);
@@ -2839,8 +2839,8 @@ int svr_handleMethodRequest(
             vec_clear(&arr);
 #endif //DLMS_IGNORE_MALLOC
             return ret;
+        }
     }
-}
     if (ci == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
     {
         e->target = NULL;
@@ -2854,8 +2854,8 @@ int svr_handleMethodRequest(
             vec_clear(&arr);
 #endif //DLMS_IGNORE_MALLOC
             return ret;
-    }
         }
+    }
     if (e->target == NULL)
     {
         ret = svr_findObject(&settings->base, ci, 0, ln, e);
@@ -2978,7 +2978,7 @@ int svr_handleMethodRequest(
     vec_clear(&arr);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-        }
+}
 #endif //DLMS_IGNORE_ACTION
 
 /**
@@ -3040,12 +3040,12 @@ int svr_handleReleaseRequest(
 #ifndef DLMS_IGNORE_MALLOC
                     ret = bb_set(data, tmp.data, tmp.size);
 #endif //DLMS_IGNORE_MALLOC
+                }
             }
         }
     }
-}
     return 0;
-    }
+}
 
 #ifndef DLMS_IGNORE_PLC
 int svr_registerRequest(
@@ -3254,7 +3254,7 @@ int svr_handleCommand(
     {
         //Get next frame.
         frame = getNextSend(&settings->base, 0);
-}
+    }
 #else
     if (dlms_useHdlc(settings->base.interfaceType) && bb_size(reply) != 0)
     {
@@ -3290,7 +3290,7 @@ int svr_handleCommand(
         else
         {
             ret = svr_handleWriteRequest(settings, data);
-    }
+        }
         break;
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_GET_REQUEST:
@@ -3357,8 +3357,8 @@ int svr_handleCommand(
 #ifdef DLMS_DEBUG
                 svr_notifyTrace("handleMethodRequest failed. ", ret);
 #endif //DLMS_DEBUG
+            }
         }
-    }
         break;
 #endif //DLMS_IGNORE_ACTION
 #ifndef DLMS_IGNORE_HDLC
@@ -3373,7 +3373,7 @@ int svr_handleCommand(
 #ifdef DLMS_DEBUG
             svr_notifyTrace("handleSnrmRequest failed. ", ret);
 #endif //DLMS_DEBUG
-            }
+        }
         break;
 #endif //DLMS_IGNORE_HDLC
     case DLMS_COMMAND_AARQ:
@@ -3388,7 +3388,7 @@ int svr_handleCommand(
 #ifdef DLMS_DEBUG
             svr_notifyTrace("HandleAarqRequest failed. ", ret);
 #endif //DLMS_DEBUG
-            }
+        }
         break;
     case DLMS_COMMAND_RELEASE_REQUEST:
         ret = svr_handleReleaseRequest(settings, data);
@@ -3431,7 +3431,7 @@ int svr_handleCommand(
         svr_notifyTrace("Unknown command. ", cmd);
 #endif //DLMS_DEBUG
         ret = DLMS_ERROR_CODE_INVALID_COMMAND;
-        }
+    }
     if (ret == DLMS_ERROR_CODE_INVALID_COMMAND)
     {
         bb_clear(data);
@@ -3482,7 +3482,7 @@ int svr_handleCommand(
     }
 #endif //DLMS_DEBUG
     return ret;
-    }
+}
 
 int svr_handleRequest(
     dlmsServerSettings* settings,
@@ -3598,7 +3598,7 @@ int svr_handleRequest4(
 #endif //DLMS_DEBUG
         //Server not Initialized.
         return DLMS_ERROR_CODE_NOT_INITIALIZED;
-}
+    }
     //Check frame using inter Charachter Timeout.
 #if !defined(DLMS_IGNORE_HDLC) || !defined(DLMS_IGNORE_IEC_HDLC_SETUP)
     if (IS_HDLC(settings->base.interfaceType) && settings->hdlc != NULL && settings->hdlc->inactivityTimeout != 0)
@@ -3621,21 +3621,21 @@ int svr_handleRequest4(
 #endif //DLMS_DEBUG
 #ifndef DLMS_IGNORE_HDLC
         //Send U-Frame Frame Reject if we have received more data that can fit to one HDLC frame.
-            if (IS_HDLC(settings->base.interfaceType))
-            {
-                ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, sr->reply);
-                settings->receivedData.position = settings->receivedData.size = 0;
-                reply_clear2(&settings->info, 1);
-            }
-            else
-            {
-                ret = 0;
-            }
+        if (IS_HDLC(settings->base.interfaceType))
+        {
+            ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_REJECTED, NULL, sr->reply);
+            settings->receivedData.position = settings->receivedData.size = 0;
+            reply_clear2(&settings->info, 1);
+        }
+        else
+        {
+            ret = 0;
+        }
 #else
         ret = 0;
 #endif //DLMS_IGNORE_HDLC
         return ret;
-            }
+    }
     if (bb_set(&settings->receivedData, sr->data, sr->dataSize) != 0)
     {
         //If client is sending junk data.
@@ -3761,7 +3761,7 @@ int svr_handleRequest4(
             svr_notifyTrace("Invalid server address. ", -1);
 #endif //DLMS_DEBUG
             return 0;
-            }
+        }
         else if (ret == DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS)
         {
 #ifdef DLMS_DEBUG
@@ -3791,7 +3791,7 @@ int svr_handleRequest4(
             settings->receivedData.position = settings->receivedData.size = 0;
             reply_clear2(&settings->info, 1);
             return 0;
-            }
+        }
         else if (ret == DLMS_ERROR_CODE_INVALID_FRAME_NUMBER)
         {
 #ifdef DLMS_DEBUG
@@ -3809,7 +3809,7 @@ int svr_handleRequest4(
             settings->receivedData.position = settings->receivedData.size = 0;
             reply_clear2(&settings->info, 1);
             return 0;
-            }
+        }
         else
         {
 #ifndef DLMS_IGNORE_HDLC
@@ -3825,7 +3825,7 @@ int svr_handleRequest4(
             reply_clear2(&settings->info, 1);
             return 0;
         }
-        }
+    }
     // If all data is not received yet.
     if (!settings->info.complete)
     {
@@ -3842,7 +3842,7 @@ int svr_handleRequest4(
 #endif //DLMS_IGNORE_HDLC
         reply_clear2(&settings->info, 1);
         return ret;
-        }
+    }
 
     if ((first || settings->info.command == DLMS_COMMAND_SNRM ||
         (settings->base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER && settings->info.command == DLMS_COMMAND_AARQ)) &&
@@ -3940,9 +3940,9 @@ int svr_handleRequest4(
                 {
                     svr_disconnected(settings);
                 }
+            }
         }
     }
-        }
 #endif // DLMS_IGNORE_IEC_HDLC_SETUP
 #endif //DLMS_IGNORE_HDLC
 #ifndef DLMS_IGNORE_WRAPPER
@@ -3970,9 +3970,9 @@ int svr_handleRequest4(
                 {
                     svr_disconnected(settings);
                 }
+            }
         }
     }
-        }
 #endif // DLMS_IGNORE_TCP_UDP_SETUP
 #endif //DLMS_IGNORE_WRAPPER
     ret = svr_handleCommand(settings, settings->info.command, &settings->info.data, sr->reply);
@@ -4009,7 +4009,7 @@ int svr_handleRequest4(
     }
     settings->dataReceived = time_elapsed();
     return ret;
-    }
+}
 
 int svr_handleInactivityTimeout(
     dlmsServerSettings* settings,
@@ -4088,6 +4088,17 @@ int svr_invoke(
         {
             exec = time_compare2(start, time) != 1 && time_compare2(end, time) != -1;
         }
+        if (exec && target->objectType == DLMS_OBJECT_TYPE_PUSH_SETUP)
+        {
+            //Check that push message is not send yet in the given time window.
+            if (*executed != 0)
+            {
+                if (time < time_getNextScheduledDate(*executed, start))
+                {
+                    exec = 0;
+                }
+            }
+        }
     }
     if (exec)
     {
@@ -4134,7 +4145,7 @@ int svr_invoke(
 #endif //DLMS_IGNORE_MALLOC
         //Increase time by one second so next scheduled date is retreaved.
         ++time;
-            }
+    }
     if (start != NULL)
     {
         uint32_t tmp = time_getNextScheduledDate(time, start);
@@ -4144,7 +4155,7 @@ int svr_invoke(
         }
     }
     return ret;
-        }
+}
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
 
@@ -4216,7 +4227,7 @@ int svr_handleSingleActionSchedule(
         if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&s)) != 0)
         {
             break;
-}
+        }
 #else
         if ((ret = arr_getByIndex(&object->executionTime, pos, (void**)&s, sizeof(gxtime))) != 0)
         {
@@ -4360,7 +4371,7 @@ int svr_invokeScript(
     vec_clear(&args);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-        }
+}
 
 int svr_handleActivityCalendar(
     dlmsServerSettings* settings,
@@ -4628,9 +4639,9 @@ int svr_handleAutoConnect(
         {
             break;
         }
-        }
-    return ret;
     }
+    return ret;
+}
 #endif //DLMS_IGNORE_AUTO_CONNECT
 
 int svr_run(
@@ -4903,7 +4914,7 @@ int svr_monitor(dlmsServerSettings* settings, gxRegisterMonitor* object)
     vec_clear(&args);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-        }
+}
 
 int svr_monitorAll(dlmsServerSettings* settings)
 {
@@ -5085,7 +5096,7 @@ int svr_limiter(dlmsServerSettings* settings,
                         if (va_getByIndex(&object->emergencyProfileGroupIDs, pos, &id) != 0)
                         {
                             break;
-                }
+                        }
 #else
                         if (arr_getByIndex(&object->emergencyProfileGroupIDs, pos, (void**)&id, sizeof(uint16_t)) != 0)
                         {
@@ -5102,9 +5113,9 @@ int svr_limiter(dlmsServerSettings* settings,
                             object->emergencyProfileActive = 1;
                             break;
                         }
-                        }
+                    }
+                }
             }
-        }
             else
             {
                 //Limiter is in emergency mode.
@@ -5121,7 +5132,7 @@ int svr_limiter(dlmsServerSettings* settings,
     vec_clear(&args);
 #endif //DLMS_IGNORE_MALLOC
     return ret;
-    }
+}
 
 int svr_limiterAll(dlmsServerSettings* settings, uint32_t now)
 {

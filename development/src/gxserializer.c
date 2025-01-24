@@ -348,7 +348,11 @@ int ser_set2(
         {
 #if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
             int pos;
+#ifdef DLMS_IGNORE_MALLOC
+            for (pos = 0; pos != capacity; ++pos)
+#else
             for (pos = 0; pos != count; ++pos)
+#endif //DLMS_IGNORE_MALLOC
             {
                 if (fread(&arr->data[pos + arr->size], sizeof(unsigned char), 1, serializeSettings->stream) != 1)
                 {
@@ -357,19 +361,14 @@ int ser_set2(
                 }
             }
 #else
-            if ((ret = SERIALIZER_LOAD(serializeSettings->position, count, arr->data + arr->size)) == 0)
+            if ((ret = SERIALIZER_LOAD(serializeSettings->position, capacity, arr->data + arr->size)) == 0)
             {
-                serializeSettings->position += count;
+                serializeSettings->position += capacity;
             }
 #endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
             if (ret == 0)
             {
                 arr->size += count;
-#if !(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-#ifdef DLMS_IGNORE_MALLOC
-                serializeSettings->position += capacity - count;
-#endif //DLMS_IGNORE_MALLOC
-#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
             }
         }
     }
@@ -829,7 +828,14 @@ int ser_loadVariant(dlmsVARIANT* data,
 {
     int ret;
     unsigned char ch;
-    var_clear(data);
+    if (data->vt == DLMS_DATA_TYPE_OCTET_STRING && data->byteArr != NULL)
+    {
+        bb_empty(data->byteArr);
+    }
+    else
+    {
+        var_clear(data);
+    }
     if ((ret = ser_loadUInt8(serializeSettings, &ch)) == 0)
     {
         //Update data type if not reference.
@@ -931,7 +937,16 @@ int ser_loadVariant(dlmsVARIANT* data,
             bb_init(data->byteArr);
             ret = ser_getOctetString(serializeSettings, data->byteArr);
 #else
-            ret = ser_loadOctetString3(serializeSettings, data->pVal, &data->size);
+            if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
+            {
+                ret = ser_loadOctetString3(serializeSettings, data->pVal, &data->size);
+            }
+            else if (data->byteArr != NULL)
+            {
+                uint16_t size;
+                ret = ser_loadOctetString3(serializeSettings, data->byteArr->data, &size);
+                data->byteArr->size = size;
+            }
 #endif // DLMS_IGNORE_MALLOC
             break;
         case DLMS_DATA_TYPE_BINARY_CODED_DESIMAL:
@@ -1432,6 +1447,17 @@ int ser_saveBytes3(
             (ret = ser_saveObjectCount(data->capacity, serializeSettings)) != 0 ||
 #endif //DLMS_IGNORE_MALLOC
                 (ret = ser_set(serializeSettings, data->pbVal, data->size, data->capacity)) != 0)
+            {
+                //Error code is returned at the end of the function.
+            }
+        }
+        else if (data->vt == (DLMS_DATA_TYPE_OCTET_STRING))
+        {
+            if ((ret = ser_saveObjectCount(bb_size(data->byteArr), serializeSettings)) != 0 ||
+#ifdef DLMS_IGNORE_MALLOC
+            (ret = ser_saveObjectCount(bb_getCapacity(data->byteArr), serializeSettings)) != 0 ||
+#endif //DLMS_IGNORE_MALLOC
+                (ret = ser_set(serializeSettings, data->pbVal, bb_size(data->byteArr), bb_getCapacity(data->byteArr))) != 0)
             {
                 //Error code is returned at the end of the function.
             }
@@ -8101,10 +8127,10 @@ int ser_loadAssociationLogicalName(
                     ret = oa_findByLN(&settings->objects, type, ln, &obj);
                     if (obj == NULL)
                     {
-    #ifdef DLMS_IGNORE_MALLOC
+#ifdef DLMS_IGNORE_MALLOC
                         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
                         break;
-    #else
+#else
                         if ((ret = cosem_createObject(type, &obj)) != DLMS_ERROR_CODE_OK)
                         {
                             //If unknown object.
@@ -8121,7 +8147,7 @@ int ser_loadAssociationLogicalName(
                         }
                         obj->version = version;
                         oa_push(&object->objectList, obj);
-    #endif //DLMS_IGNORE_MALLOC
+#endif //DLMS_IGNORE_MALLOC
                     }
                 }
             }
@@ -8292,20 +8318,20 @@ int ser_loadAssociationShortName(
                     if (ret != DLMS_ERROR_CODE_OK)
                     {
                         return ret;
-                }
+                    }
 #endif //DLMS_IGNORE_MALLOC
                 }
 #ifndef DLMS_IGNORE_MALLOC
                 oa_push(&object->objectList, obj);
 #endif //DLMS_IGNORE_MALLOC
                 // obj->version = (unsigned char)version;
-                }
             }
+        }
         if (ret != 0)
         {
             return ret;
         }
-        }
+    }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 9))
     {
 #ifndef DLMS_IGNORE_SECURITY_SETUP
@@ -8368,7 +8394,7 @@ int ser_loadAssociationShortName(
         }
     }
     return ret;
-    }
+}
 
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 #ifndef DLMS_IGNORE_PPP_SETUP
@@ -9364,9 +9390,9 @@ int ser_getDataSize(gxSerializerSettings * serializeSettings, void* size)
             svr_notifyTrace(GET_STR_FROM_EEPROM("ser_loadObject failed. Invalid version,"), serializeSettings->version);
 #endif //DLMS_DEBUG
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+        }
         ret = ser_loadUInt32(serializeSettings, size);
-}
+    }
     return ret;
 }
 
@@ -9389,7 +9415,7 @@ int ser_loadObjects(
             if (ser_isEof(serializeSettings))
             {
                 break;
-            }           
+            }
 #ifdef DLMS_DEBUG
             svr_notifyTrace(GET_STR_FROM_EEPROM("ser_loadObject"), pos);
 #endif //DLMS_DEBUG

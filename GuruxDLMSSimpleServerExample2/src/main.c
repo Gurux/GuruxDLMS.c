@@ -87,6 +87,10 @@ static unsigned char replyFrame[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE];
 //Define server system title.
 static unsigned char SERVER_SYSTEM_TITLE[8] = { 0 };
 
+//Large data.
+static uint32_t LARGE_DATA_BUFFER[1920] = { 0 };
+static uint32_t LARGE_DATA_BUFFER_SIZE = sizeof(LARGE_DATA_BUFFER) / sizeof(LARGE_DATA_BUFFER[0]);
+
 uint32_t time_current(void)
 {
     //Get current time somewhere.
@@ -105,6 +109,8 @@ static gxData ldn;
 static gxData eventCode;
 static gxData unixTime;
 static gxData frameCounter;
+static gxData largeData;
+static gxData structureData;
 static gxAssociationLogicalName associationNone;
 static gxAssociationLogicalName associationLow;
 static gxAssociationLogicalName associationHigh;
@@ -133,7 +139,8 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(securitySetupHighGMac), BASE(ldn), BASE(sapAssignment), BASE(eventCode),
     BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
     BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
-    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(frameCounter)
+    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(frameCounter),
+    BASE(largeData), BASE(structureData)
 };
 
 ////////////////////////////////////////////////////
@@ -145,7 +152,13 @@ gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
     IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
     //Only scaler and unit are saved for all register objects.
-    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)) };
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)),
+    //Association view objects are not serialized.
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, GET_ATTRIBUTE(2)),
+    //Association view objects are not serialized.
+    IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME, GET_ATTRIBUTE(2)),
+    //Large data is not serialized.
+    IGNORE_ATTRIBUTE(BASE(largeData), GET_ATTRIBUTE(2)) };
 
 static uint32_t executeTime = 0;
 
@@ -831,6 +844,43 @@ int addInvocationCounter()
     return ret;
 }
 
+//Add large data object.
+int addLargeData()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,43,3,0,255 };
+    if ((ret = INIT_OBJECT(largeData, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+    }
+    return ret;
+}
+
+//Add structure data object.
+int addstructureData()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,43,3,1,255 };
+    static unsigned char BYFFER[20];
+    static gxByteBuffer bb;
+    if ((ret = INIT_OBJECT(structureData, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        //Structure data is saved as octet-string so it can be serialized.
+        //If the server needs the structure, it is parsed from octet-string when it's written or after load.
+        //If strucuture is read only, it can be handled in svr_preRead.
+        structureData.value.byteArr = &bb;
+        structureData.value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+        if ((ret = BB_ATTACH(bb, BYFFER, 0)) != 0 ||
+            (ret = cosem_setStructure(&bb, 4)) != 0 ||
+            (ret = cosem_setUInt32(&bb, 1)) != 0 ||
+            (ret = cosem_setUInt16(&bb, 2)) != 0 ||
+            (ret = cosem_setUInt32(&bb, 3)) != 0 ||
+            (ret = cosem_setUInt16(&bb, 4)) != 0)
+        {
+        }
+    }
+    return ret;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //Add push setup object. (On Connectivity)
 ///////////////////////////////////////////////////////////////////////
@@ -1246,6 +1296,8 @@ int createObjects()
         (ret = addActionScheduleDisconnectClose()) != 0 ||
         (ret = addDisconnectControl()) != 0 ||
         (ret = addIecHdlcSetup()) != 0 ||
+        (ret = addLargeData()) != 0 ||
+        (ret = addstructureData()) != 0 ||
         (ret = oa_verify(&settings.base.objects)) != 0 ||
         (ret = svr_initialize(&settings)) != 0)
     {
@@ -1716,6 +1768,53 @@ void svr_preRead(
         {
             readActivePowerValue();
         }
+        //Update value by one every time when user reads register.
+        if (e->target == BASE(largeData) && e->index == 2)
+        {
+            e->byteArray = 1;
+            e->handled = 1;
+            uint16_t len;
+            if (e->transactionEndIndex == 0)
+            {
+                gxtime dt;
+                time_now(&dt, 1);
+                //Amount of structure items.
+                if ((ret = cosem_setStructure(e->value.byteArr, 6)) != 0 ||
+                    (ret = cosem_setUInt32(e->value.byteArr, time_toUnixTime2(&dt))) != 0 ||
+                    (ret = cosem_setUInt16(e->value.byteArr, 0)) != 0 ||
+                    (ret = cosem_setUInt32(e->value.byteArr, time_toUnixTime2(&dt))) != 0 ||
+                    (ret = cosem_setUInt16(e->value.byteArr, 1)) != 0 ||
+                    (ret = cosem_setUInt16(e->value.byteArr, 2)) != 0 ||
+                    (ret = bb_setUInt8(e->value.byteArr, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                    (ret = hlp_setObjectCount(sizeof(uint32_t) * LARGE_DATA_BUFFER_SIZE, e->value.byteArr)) != 0)
+                {
+                    e->error = ret;
+                }
+                else
+                {
+                    //Set transactionEndIndex to data size.
+                    e->transactionEndIndex = sizeof(uint32_t) * LARGE_DATA_BUFFER_SIZE;
+                }
+            }
+            //Add large data.
+            //Fill PDU with data.
+            dlms_pduAvailable(settings, e->value.byteArr, &len);
+            if (len > e->transactionEndIndex - e->transactionStartIndex)
+            {
+                len = e->transactionEndIndex - e->transactionStartIndex;
+            }
+            ret = bb_set(e->value.byteArr, (unsigned char*)LARGE_DATA_BUFFER + e->transactionStartIndex, len);
+            e->transactionStartIndex += len;
+            continue;
+        }
+        if (e->target == BASE(structureData) && e->index == 2)
+        {
+            //Copy structureData.
+            e->byteArray = 1;
+            e->handled = 1;
+            ret = bb_set(e->value.byteArr, structureData.value.byteArr->data, structureData.value.byteArr->size);            
+            continue;
+        }
         //Get time if user want to read date and time.
         if (e->target == BASE(clock1) && e->index == 2)
         {
@@ -1774,6 +1873,39 @@ void svr_preWrite(
             ret = cosem_getOctetString(e->value.byteArr, &associationLow.secret);
             saveSettings();
             e->handled = 1;
+        }
+        else if (e->target == BASE(structureData) && e->index == 2)
+        {
+            e->handled = 1;
+            //verify structureData.
+            uint32_t val1, val3;
+            uint16_t val2, val4;
+            //Data index.
+            uint16_t index = e->value.byteArr->position;
+            if ((ret = cosem_checkStructure(e->value.byteArr, 4)) == 0 &&
+                (ret = cosem_getUInt32(e->value.byteArr, &val1)) == 0 &&
+                (ret = cosem_getUInt16(e->value.byteArr, &val2)) == 0 &&
+                (ret = cosem_getUInt32(e->value.byteArr, &val3)) == 0 &&
+                (ret = cosem_getUInt16(e->value.byteArr, &val4)) == 0)
+            {
+                //Validate the content.
+                if (val1 < 10 && val2 < 10 && val3 < 10 && val4 < 10)
+                {
+                    bb_clear(structureData.value.byteArr);
+                    ret = bb_set(structureData.value.byteArr, e->value.byteArr->data + index, e->value.byteArr->size - index);
+                    saveSettings();
+                }
+                else
+                {
+                    //The content is invalid.
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                }
+            }
+            else
+            {
+                e->error = ret;
+            }
+            continue;
         }
         hlp_getLogicalNameToString(e->target->logicalName, str);
         printf("Writing %s\r\n", str);

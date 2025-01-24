@@ -141,7 +141,7 @@ gxSerializerIgnore NON_SERIALIZED_OBJECTS[] = {
     IGNORE_ATTRIBUTE(BASE(associationLow), GET_ATTRIBUTE_EXCEPT(7)),
     IGNORE_ATTRIBUTE(BASE(associationHigh), GET_ATTRIBUTE_EXCEPT(7)),
     //Nothing is saved when authentication is not used.
-    IGNORE_ATTRIBUTE(BASE(associationHighGMac), GET_ATTRIBUTE_ALL()),    
+    IGNORE_ATTRIBUTE(BASE(associationHighGMac), GET_ATTRIBUTE_ALL()),
     //Only scaler and unit are saved for all register objects.
     IGNORE_ATTRIBUTE_BY_TYPE(DLMS_OBJECT_TYPE_REGISTER, GET_ATTRIBUTE(2)) };
 
@@ -271,9 +271,9 @@ void allocateProfileGenericBuffer(const char* fileName, uint32_t size)
                     break;
                 }
             }
-    }
+        }
         fclose(f);
-}
+    }
 }
 
 int getProfileGenericFileName(gxProfileGeneric* pg, char* fileName)
@@ -386,9 +386,9 @@ uint16_t getProfileGenericBufferMaxRowCount(
             //Decrease current index and total amount of the entries.
             count -= 4;
             count /= rowSize;
-    }
+        }
         fclose(f);
-}
+    }
     return count;
 }
 
@@ -1517,8 +1517,8 @@ int getProfileGenericDataByRangeFromRingBuffer(
                 }
             }
             fclose(f);
+        }
     }
-}
     return ret;
 }
 
@@ -1624,7 +1624,7 @@ int readProfileGeneric(
             if (f != NULL)
             {
                 getProfileGenericBufferColumnSizes(pg, dataTypes, columnSizes, &dataSize);
-        }
+            }
             //Append data.
             if (ret == 0 && dataSize != 0)
             {
@@ -1700,8 +1700,8 @@ int readProfileGeneric(
                 printf("Failed to open %s.\r\n", fileName);
                 return -1;
             }
+        }
     }
-}
     return ret;
 }
 
@@ -2792,7 +2792,7 @@ void ListenerThread(void* pVoid)
                 socket1 = -1;
 #endif
                 break;
-        }
+            }
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
             if (trace > GX_TRACE_LEVEL_WARNING)
             {
@@ -2802,7 +2802,7 @@ void ListenerThread(void* pVoid)
                     first = 0;
                 }
                 printf("%.2X ", data);
-}
+            }
 #endif //OS
             if (svr_handleRequest3(&settings, data, &reply) != 0)
             {
@@ -2998,7 +2998,7 @@ int com_initializeSerialPort(
         ret = GetLastError();
         printf("Failed to open serial port: \"%s\"\n", buff);
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
-}
+    }
     DCB dcb = { 0 };
     unsigned long sendSize = 0;
     if (*comPort == INVALID_HANDLE_VALUE)
@@ -3181,7 +3181,7 @@ int main(int argc, char* argv[])
             showHelp();
             return 1;
         }
-}
+    }
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
@@ -3336,4 +3336,4 @@ int main(int argc, char* argv[])
 #endif
 #endif
     return 0;
-            }
+}

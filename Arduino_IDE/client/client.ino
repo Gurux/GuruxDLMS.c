@@ -75,21 +75,20 @@ void GXTRACE(const char* str, const char* data)
   byte c;
   if (str != NULL)
   {
-    Serial.write("\t:");
+    Serial1.write("\t:");
     while ((c = pgm_read_byte(str++)) != 0)
     {
-      Serial.write(c);
+      Serial1.write(c);
     }
   }
   if (data != NULL)
   {
-    Serial.write(data);
+    Serial1.write(data);
   }
   if (str != NULL)
   {
-    Serial.write("\0");
+    Serial1.write("\0");
   }
-  // Serial.flush();
   delay(10);
 }
 
@@ -122,7 +121,7 @@ void GXTRACE_BB(const char* str, gxByteBuffer* value)
       sprintf(data, "%02X ", value->data[pos]);
       GXTRACE(NULL, data);
   }
-  Serial.write("\0");  
+  Serial1.write("\0");  
 }
 
 uint32_t runTime = 0;

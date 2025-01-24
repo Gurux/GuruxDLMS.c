@@ -36,6 +36,7 @@
 #include "gxignore.h"
 #if !defined(DLMS_IGNORE_SERVER) || defined(DLMS_DEBUG)
 #include "dlmssettings.h"
+#include "bytebuffer.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -233,7 +234,7 @@ extern "C" {
     //Some DLMS sub standard define that invocation counter must between given range.
     //Returns zero if the invocation counter is accepted.
     extern unsigned char svr_validateInvocationCounter(
-        dlmsSettings* settings, 
+        dlmsSettings* settings,
         uint32_t value);
 
     /* Code example:

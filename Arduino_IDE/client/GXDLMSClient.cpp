@@ -232,15 +232,13 @@ int GXDLMSClient::SetSystemTitle(const gxByteBuffer* systemTitle)
   {
     return DLMS_ERROR_CODE_INVALID_PARAMETER;
   }
-  bb_clear(&settings.cipher.systemTitle);
-  bb_set(&settings.cipher.systemTitle, systemTitle->data, 8);
-  return 0;
+  bb_empty(&settings.cipher.systemTitle);
+  return bb_set(&settings.cipher.systemTitle, systemTitle->data, 8);
 }
 
 int GXDLMSClient::GetSystemTitle(gxByteBuffer* systemTitle)
 {
-  bb_set(systemTitle, settings.cipher.systemTitle.data, settings.cipher.systemTitle.size);
-  return 0;
+  return bb_set(systemTitle, settings.cipher.systemTitle.data, settings.cipher.systemTitle.size);
 }
 
 int GXDLMSClient::SetBlockCipherKey(const gxByteBuffer* blockCipherKey)
@@ -249,15 +247,13 @@ int GXDLMSClient::SetBlockCipherKey(const gxByteBuffer* blockCipherKey)
   {
     return DLMS_ERROR_CODE_INVALID_PARAMETER;
   }
-  bb_clear(&settings.cipher.blockCipherKey);
-  bb_set(&settings.cipher.blockCipherKey, blockCipherKey->data, blockCipherKey->size);
-  return 0;
+  bb_empty(&settings.cipher.blockCipherKey);
+  return bb_set(&settings.cipher.blockCipherKey, blockCipherKey->data, blockCipherKey->size);
 }
 
 int GXDLMSClient::GetBlockCipherKey(gxByteBuffer* blockCipherKey)
 {
-  bb_set(blockCipherKey, settings.cipher.blockCipherKey.data, settings.cipher.blockCipherKey.size);
-  return 0;
+  return bb_set(blockCipherKey, settings.cipher.blockCipherKey.data, settings.cipher.blockCipherKey.size);
 }
 
 bool GXDLMSClient::UseLogicalNameReferencing()
@@ -272,14 +268,12 @@ int GXDLMSClient::SetAuthenticationKey(const gxByteBuffer* authenticationKey)
     return DLMS_ERROR_CODE_INVALID_PARAMETER;
   }
   bb_clear(&settings.cipher.authenticationKey);
-  bb_set(&settings.cipher.authenticationKey, authenticationKey->data, authenticationKey->size);
-  return 0;
+  return bb_set(&settings.cipher.authenticationKey, authenticationKey->data, authenticationKey->size);
 }
 
 int GXDLMSClient::GetAuthenticationKey(gxByteBuffer* authenticationKey)
 {
-  bb_set(authenticationKey, settings.cipher.authenticationKey.data, settings.cipher.authenticationKey.size);
-  return 0;
+  return bb_set(authenticationKey, settings.cipher.authenticationKey.data, settings.cipher.authenticationKey.size);
 }
 
 uint32_t GXDLMSClient::GetInvocationCounter()
@@ -328,7 +322,7 @@ uint32_t GXDLMSClient::GetServerAddress()
 
 DLMS_INTERFACE_TYPE GXDLMSClient::GetInterfaceType()
 {
-  return settings.interfaceType;  
+  return settings.interfaceType;
 }
 
 #ifndef DLMS_IGNORE_SERIALIZER

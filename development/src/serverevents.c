@@ -30,6 +30,8 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 #include "../include/serverevents.h"
+#include "../include/bytebuffer.h"
+
 #ifdef DLMS_DEBUG
 #include <stdio.h>
 #endif //DLMS_DEBUG

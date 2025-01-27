@@ -101,7 +101,13 @@ time_t gxmktime(struct tm* value)
     int pos;
     if (value->tm_year != 0)
     {
-        for (pos = 0; pos != value->tm_year; ++pos)
+        uint16_t year = 1900 + value->tm_year;
+        if (year < 1970)
+        {
+            return 0;
+        }
+        year -= 1970;
+        for (pos = 0; pos != year; ++pos)
         {
             uint32_t days = date_isleap(1970 + pos) ? 366 : 365;
             days *= 24 * 3600;

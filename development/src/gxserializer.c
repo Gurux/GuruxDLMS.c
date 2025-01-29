@@ -3457,7 +3457,7 @@ int ser_saveFunctionList(gxSerializerSettings* serializeSettings, gxArray* table
                         break;
                     }
 #else
-                    if (pos < it->functionSpecificationsSize)
+                    if (pos2 < it->functionSpecificationsSize)
                     {
                         obj = it->functionSpecifications[pos2];
                     }

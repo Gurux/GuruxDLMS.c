@@ -4805,6 +4805,23 @@ uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char meth
     case DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE:
         ret = GET_ATTRIBUTE(2);
         break;
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        switch (methodIndex)
+        {
+        case 1:
+            //Activation status changed.
+            ret = GET_ATTRIBUTE(1);
+            break;
+        case 2:
+        case 3:
+            ret = GET_ATTRIBUTE(1, 2);
+            break;
+        default:
+            break;
+        }
+        break;
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
     default:
         break;
     }

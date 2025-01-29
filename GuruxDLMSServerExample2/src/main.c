@@ -268,8 +268,8 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(compactDataExample),
 #ifdef DLMS_ITALIAN_STANDARD
     BASE(tariffPlan),
-    BASE(passiveTariffPlan),    
-    BASE(spareObject),    
+    BASE(passiveTariffPlan),
+    BASE(spareObject),
     BASE(cf6)
 #endif //DLMS_ITALIAN_STANDARD
 };
@@ -346,6 +346,7 @@ int saveSettings(gxObject* savedObject, uint32_t savedAttributes)
     serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
     serializerSettings.savedObject = savedObject;
     serializerSettings.savedAttributes = savedAttributes;
+
     if ((ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]))) != 0)
     {
         printf("saveObjects failed: %d", ret);
@@ -1015,7 +1016,7 @@ int addSecuritySetupHighEcdsa()
 {
     int ret;
     const unsigned char ln[6] = { 0, 0, 43, 0, 4, 255 };
-    static gxCertificateInfo CERTIFICATES[2] = {0};
+    static gxCertificateInfo CERTIFICATES[2] = { 0 };
     if ((ret = INIT_OBJECT(securitySetupHighEcdsa, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
     {
         BB_ATTACH(securitySetupHighEcdsa.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
@@ -1206,7 +1207,7 @@ int addImageTransfer()
     unsigned char ln[6] = { 0,0,44,0,0,255 };
     if ((ret = INIT_OBJECT(imageTransfer, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln)) == 0)
     {
-        imageTransfer.imageBlockSize = 100;
+        imageTransfer.imageBlockSize = 128;
         imageTransfer.imageFirstNotTransferredBlockNumber = 0;
         //Enable image transfer.
         imageTransfer.imageTransferEnabled = 1;
@@ -2025,7 +2026,7 @@ int addPassiveTariffPlan()
     static uint16_t SPECIAL_DAYS[10] = { 0x0, 0x00, 0x00, 0x00, 0x00, 0x0, 0x00, 0x00, 0x00, 0x00 };
     static unsigned char CALENDAR_NAME[2] = { 0x0D, 0x01 };
     static unsigned char WEEKLY_ACTIVATION[2] = { 0x7, 0xFF };
-    const unsigned char ln[6] = { 0, 0, 94, 39, 22, 255}; //0-0:94.39.22.255
+    const unsigned char ln[6] = { 0, 0, 94, 39, 22, 255 }; //0-0:94.39.22.255
     if ((ret = INIT_OBJECT(passiveTariffPlan, DLMS_OBJECT_TYPE_TARIFF_PLAN, ln)) == 0)
     {
         BB_ATTACH(passiveTariffPlan.calendarName, CALENDAR_NAME, 2);
@@ -2149,7 +2150,7 @@ int addPassiveTariffPlan()
 int addSpareObject()
 {
     int ret;
-    static unsigned char DATA[1] = {0};
+    static unsigned char DATA[1] = { 0 };
     const unsigned char ln[6] = { 0, 0, 96, 39, 40, 255 };//0-0:94:39.40.255
     if ((ret = INIT_OBJECT(spareObject, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
     {
@@ -2165,7 +2166,7 @@ int addCF6Plan()
 {
     int ret;
     const unsigned char ln[6] = { 0, 0, 66, 0, 6, 255 };//0-0:66.0.6.255
-    static gxTarget CAPTURE_OBBJECTS[6] = {0};
+    static gxTarget CAPTURE_OBBJECTS[6] = { 0 };
     static unsigned char BUFFER[72];
     static unsigned char TEMPLATE_DESCRIPTION[86];
     if ((ret = INIT_OBJECT(cf6, DLMS_OBJECT_TYPE_COMPACT_DATA, ln)) == 0)
@@ -2325,14 +2326,21 @@ int addFunctionControl()
 {
     int ret;
     //Function statuc must initialize to zero.
-    static functionStatus FUNCTION_STATUS[2] = { 0 };
+    static functionStatus FUNCTION_STATUS[5] = { 0 };
     //Function block must initialize to zero.
-    static functionalBlock FUNCTION_BLOCKS[2] = { 0 };
+    static functionalBlock FUNCTION_BLOCKS[5] = { 0 };
     const unsigned char ln[6] = { 0,0,44,1,0,255 };
     if ((ret = INIT_OBJECT(functionControl, DLMS_OBJECT_TYPE_FUNCTION_CONTROL, ln)) == 0)
     {
-        ARR_ATTACH(functionControl.activationStatus, FUNCTION_STATUS, 0);
-        ARR_ATTACH(functionControl.functions, FUNCTION_BLOCKS, 0);
+        ARR_ATTACH(functionControl.activationStatus, FUNCTION_STATUS, 1);
+        ARR_ATTACH(functionControl.functions, FUNCTION_BLOCKS, 1);
+        memcpy(FUNCTION_BLOCKS[0].name, "LP1", 3);
+        FUNCTION_BLOCKS[0].nameSize = 3;
+        FUNCTION_BLOCKS[0].functionSpecificationsSize = 1;
+        FUNCTION_BLOCKS[0].functionSpecifications[0] = BASE(loadProfile);
+        memcpy(FUNCTION_STATUS[0].name, "LP1", 3);
+        FUNCTION_STATUS[0].size = 3;
+        FUNCTION_STATUS[0].status = 0;
     }
     return ret;
 }
@@ -2824,7 +2832,8 @@ int testobjectSerialization(gxObject* obj)
     gxSerializerSettings serializerSettings;
     ser_init(&serializerSettings);
     int ret = ser_saveObject(&serializerSettings, obj);
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#else
     serializerSettings.position = 0;
 #endif
     ret = ser_loadObject(&settings.base, &serializerSettings, obj);
@@ -2928,7 +2937,6 @@ int createObjects()
         (ret = addG3PlcMacSetup()) != 0 ||
         (ret = addG3Plc6LoWPAN()) != 0 ||
         (ret = addArrayManager()) != 0 ||
-        (ret = addFunctionControl()) != 0 ||
         (ret = addPushSetup()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
@@ -2962,9 +2970,10 @@ int createObjects()
         (ret = addPrimeNbOfdmPlcMacFunctionalParameters()) != 0 ||
         (ret = addPrimeNbOfdmPlcMacNetworkAdministrationData()) != 0 ||
         (ret = addTwistedPairSetup()) != 0 ||
+        (ret = addFunctionControl()) != 0 ||
         (ret = addLimiter()) != 0 ||
-        (ret = addLteMonitoring()) != 0 ||  
-        (ret = addCompactDataExample()) != 0 ||        
+        (ret = addLteMonitoring()) != 0 ||
+        (ret = addCompactDataExample()) != 0 ||
 #ifdef DLMS_ITALIAN_STANDARD
         (ret = addTariffPlan()) != 0 ||
         (ret = addPassiveTariffPlan()) != 0 ||
@@ -3500,7 +3509,7 @@ void svr_preRead(
                     break;
                 }
             }
-        }        
+        }
         //Update Unix time.
         else if (e->target == BASE(unixTime) && e->index == 2)
         {

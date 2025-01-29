@@ -3504,6 +3504,336 @@ int invoke_G3_PLC_MAC_Setup(
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+
+int invoke_removeFromActivationStatusList(gxArray* arr, unsigned char* name, uint16_t len)
+{
+    uint16_t pos;
+    functionStatus* fs;
+    int ret = 0;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(arr, pos, (void**)&fs)) != 0)
+        {
+            break;
+        }
+        if (fs->name.size == len && memcmp(fs->name.data, name, len) == 0)
+        {
+            ret = arr_removeByIndex(arr, pos, (void**)&fs);
+            bb_clear(&fs->name);
+            gxfree(fs);
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(arr, pos, (void**)&fs, sizeof(functionStatus))) != 0)
+        {
+            break;
+        }
+        if (fs->size == len && memcmp(fs->name, name, len) == 0)
+        {
+            ret = arr_removeByIndex(arr, pos, sizeof(functionStatus));
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+
+int invoke_removeFromFunctionList(gxArray* arr, unsigned char* name, uint16_t len)
+{
+    uint16_t pos;
+    functionalBlock* fb;
+    int ret = 0;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(arr, pos, (void**)&fb)) != 0)
+        {
+            break;
+        }
+        if (fb->name.size == len && memcmp(fb->name.data, name, len) == 0)
+        {
+            ret = arr_removeByIndex(arr, pos, (void**)&fb);
+            bb_clear(&fb->name);
+            gxfree(fb);
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(arr, pos, (void**)&fb, sizeof(functionalBlock))) != 0)
+        {
+            break;
+        }
+        if (fb->nameSize == len && memcmp(fb->name, name, len) == 0)
+        {
+            ret = arr_removeByIndex(arr, pos, sizeof(functionalBlock));
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int invoke_FunctionControl(
+    dlmsServerSettings* settings,
+    gxFunctionControl* object,
+    gxValueEventArg* e)
+{
+    uint16_t pos, pos2, ot, count = 0;
+    uint8_t ch;
+    int ret = 0;
+    functionStatus* fs;
+    functionalBlock* fb;
+    unsigned char* name, * ln;
+    uint16_t len, lnLen;
+    if (e->index == 1)
+    {
+        count = arr_getCapacity(&object->activationStatus);
+        if ((ret = cosem_checkArray(e->value.byteArr, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_checkStructure(e->value.byteArr, 2)) != 0)
+                {
+                    break;
+                }
+                if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0)
+                {
+                    return ret;
+                }
+                if (ch != DLMS_DATA_TYPE_OCTET_STRING)
+                {
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
+                }
+                if ((ret = hlp_getObjectCount2(e->parameters.byteArr, &len)) != 0)
+                {
+                    return ret;
+                }
+                if (e->parameters.byteArr->position + len > e->parameters.byteArr->size)
+                {
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
+                }
+                name = e->parameters.byteArr->data + e->parameters.byteArr->position;
+                e->parameters.byteArr->position += len;
+                if ((ret = cosem_getBoolean(e->value.byteArr, &ch)) != 0)
+                {
+                    break;
+                }
+                for (pos2 = 0; pos2 != object->activationStatus.size; ++pos2)
+                {
+#ifndef DLMS_IGNORE_MALLOC
+                    if ((ret = arr_getByIndex(&object->activationStatus, pos2, (void**)&fs)) != 0)
+                    {
+                        break;
+                    }
+                    if (fs->name.size == len && memcmp(fs->name.data, name, len) == 0)
+                    {
+                        fs->status = ch;
+                        break;
+                    }
+#else
+                    if ((ret = arr_getByIndex(&object->activationStatus, pos2, (void**)&fs, sizeof(functionStatus))) != 0)
+                    {
+                        break;
+                    }
+                    if (fs->size == len && memcmp(fs->name, name, len) == 0)
+                    {
+                        fs->status = ch;
+                        break;
+                    }
+#endif //DLMS_IGNORE_MALLOC
+                }
+            }
+        }
+    }
+    else if (e->index == 2)
+    {
+        if ((ret = cosem_checkStructure(e->value.byteArr, 2)) != 0 ||
+            (ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0)
+        {
+            return ret;
+        }
+        if (ch != DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        if ((ret = hlp_getObjectCount2(e->parameters.byteArr, &len)) != 0)
+        {
+            return ret;
+        }
+        if (e->parameters.byteArr->position + len > e->parameters.byteArr->size)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        name = e->parameters.byteArr->data + e->parameters.byteArr->position;
+        e->parameters.byteArr->position += len;
+        if ((ret = invoke_removeFromActivationStatusList(&object->activationStatus, name, len)) == 0)
+        {
+            ret = invoke_removeFromFunctionList(&object->functions, name, len);
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        fb = (functionalBlock*)gxmalloc(sizeof(functionalBlock));
+        if (fb == NULL)
+        {
+            ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        fs = (functionStatus*)gxmalloc(sizeof(functionStatus));
+        if (fs == NULL)
+        {
+            ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        if (ret == 0)
+        {
+            bb_init(&fb->name);
+            bb_set(&fb->name, name, len);
+            oa_init(&fb->functionSpecifications);
+            if ((ret = arr_push(&object->functions, fb)) != 0)
+            {
+                gxfree(fb);
+            }
+            bb_init(&fs->name);
+            bb_set(&fs->name, name, len);
+            if ((ret = arr_push(&object->activationStatus, fb)) != 0)
+            {
+                --object->functions.size;
+                gxfree(fb);
+                gxfree(fs);
+            }
+        }
+#else
+        if (ret == 0 && object->functions.size < object->functions.capacity &&
+            object->activationStatus.size < object->activationStatus.capacity)
+        {
+            ++object->functions.size;
+            if ((ret = arr_getByIndex(&object->functions, object->functions.size - 1, (void**)&fb, sizeof(functionalBlock))) != 0)
+            {
+                --object->functions.size;
+            }
+            ++object->activationStatus.size;
+            if ((ret = arr_getByIndex(&object->activationStatus, object->activationStatus.size - 1, (void**)&fs, sizeof(functionStatus))) != 0)
+            {
+                --object->functions.size;
+                --object->activationStatus.size;
+            }
+            if (sizeof(fb->name) < len ||
+                sizeof(fs->name) < len)
+            {
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            else
+            {
+                memcpy(fb->name, name, len);
+                fb->nameSize = len;
+                fb->functionSpecificationsSize = 0;
+                memcpy(fs->name, name, len);
+                fs->size = len;
+            }
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+#endif //DLMS_IGNORE_MALLOC
+        count = arr_getCapacity(&object->functions);
+        if (ret == 0 && (ret = cosem_checkArray(e->value.byteArr, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_checkStructure(e->value.byteArr, 2)) != 0)
+                {
+                    break;
+                }
+                if ((ret = cosem_getUInt16(e->value.byteArr, &ot)) != 0)
+                {
+                    break;
+                }
+                if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0)
+                {
+                    return ret;
+                }
+                if (ch != DLMS_DATA_TYPE_OCTET_STRING)
+                {
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
+                }
+                if ((ret = hlp_getObjectCount2(e->parameters.byteArr, &lnLen)) != 0)
+                {
+                    return ret;
+                }
+                if (e->parameters.byteArr->position + lnLen > e->parameters.byteArr->size)
+                {
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
+                }
+                ln = e->parameters.byteArr->data + e->parameters.byteArr->position;
+                e->parameters.byteArr->position += lnLen;
+                if (ret == 0)
+                {
+                    //Add new function
+                    gxObject* obj;
+                    ret = cosem_findObjectByLN(&settings->base, (DLMS_OBJECT_TYPE)ot, ln, &obj);
+                    if (ret == 0)
+                    {
+#ifndef DLMS_IGNORE_MALLOC
+                        if ((ret = oa_push(&fb->functionSpecifications, obj)) != 0)
+                        {
+                            break;
+                        }
+#else
+                        if (ret == 0 && fb->functionSpecificationsSize < MAX_FUNCTION_TARGET_LENGTH)
+                        {
+                            fb->functionSpecifications[fb->functionSpecificationsSize] = obj;
+                            ++fb->functionSpecificationsSize;
+                        }
+                        else
+                        {
+                            --fb->functionSpecificationsSize;
+                            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                            break;
+                        }
+#endif //DLMS_IGNORE_MALLOC
+                    }
+                }
+            }
+        }
+    }
+    else if (e->index == 3)
+    {
+        //Remove item from the function list and activation status.
+        if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) != 0)
+        {
+            return ret;
+        }
+        if (ch != DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        if ((ret = hlp_getObjectCount2(e->parameters.byteArr, &len)) != 0)
+        {
+            return ret;
+        }
+        if (e->parameters.byteArr->position + len > e->parameters.byteArr->size)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        name = e->parameters.byteArr->data + e->parameters.byteArr->position;
+        if ((ret = invoke_removeFromActivationStatusList(&object->activationStatus, name, len)) == 0)
+        {
+            ret = invoke_removeFromFunctionList(&object->functions, name, len);
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    bb_clear(e->value.byteArr);
+    return ret;
+}
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
+
 int cosem_invoke(
     dlmsServerSettings* settings,
     gxValueEventArg* e)
@@ -3671,6 +4001,11 @@ int cosem_invoke(
         ret = invoke_G3_PLC_MAC_Setup(settings, (gxG3PlcMacSetup*)e->target, e);
         break;
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
+#ifndef DLMS_IGNORE_FUNCTION_CONTROL
+    case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
+        ret = invoke_FunctionControl(settings, (gxFunctionControl*)e->target, e);
+        break;
+#endif //DLMS_IGNORE_FUNCTION_CONTROL
     default:
         //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

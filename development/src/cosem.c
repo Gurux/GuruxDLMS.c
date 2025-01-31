@@ -663,6 +663,7 @@ int cosem_init4(
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:
         break;
     case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
+        ((gxObject*)object)->version = 1;
         break;
     case DLMS_OBJECT_TYPE_LIMITER:
         break;

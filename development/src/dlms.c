@@ -4976,9 +4976,9 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
             }
             //Update IC.
 #ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-            * settings->expectedInvocationCounter = (1 + invocationCounter);
+            * settings->expectedInvocationCounter = (invocationCounter);
 #else
-            * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+            * settings->expectedInvocationCounter = (uint32_t)(invocationCounter);
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
         }
 #endif //DLMS_INVOCATION_COUNTER_VALIDATOR
@@ -5068,9 +5068,9 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
             }
             //Update IC.
 #ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-            * settings->expectedInvocationCounter = (1 + invocationCounter);
+            * settings->expectedInvocationCounter = (invocationCounter);
 #else
-            * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+            * settings->expectedInvocationCounter = (uint32_t)(invocationCounter);
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
         }
 #endif //DLMS_INVOCATION_COUNTER_VALIDATOR

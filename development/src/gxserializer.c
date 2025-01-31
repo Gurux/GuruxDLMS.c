@@ -6419,6 +6419,7 @@ int ser_loadRegisterMonitor(
         {
             for (pos = 0; pos != count; ++pos)
             {
+#ifdef DLMS_IGNORE_MALLOC
                 if (pos < object->thresholds.size)
                 {
                     if ((ret = ser_getVariantArrayItem(&object->thresholds, pos, &tmp)) != 0)
@@ -6431,6 +6432,11 @@ int ser_loadRegisterMonitor(
                     var_clear(&tmp2);
                     tmp = &tmp2;
                 }
+#else
+                tmp = gxmalloc(sizeof(dlmsVARIANT));
+                var_init(tmp);
+                va_push(&object->thresholds, tmp);
+#endif //DLMS_IGNORE_MALLOC
                 if ((ret = ser_loadVariant(tmp, serializeSettings)) != 0)
                 {
                     break;

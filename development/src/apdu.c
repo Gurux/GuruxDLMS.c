@@ -484,14 +484,14 @@ int apdu_parseUserInformation(
 #else
         if (settings->expectedInvocationCounter != NULL)
         {
-            if (invocationCounter < 1 + *settings->expectedInvocationCounter)
+            if (invocationCounter < *settings->expectedInvocationCounter)
             {
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
 #ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-            * settings->expectedInvocationCounter = 1 + invocationCounter;
+            * settings->expectedInvocationCounter = invocationCounter;
 #else
-            * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+            * settings->expectedInvocationCounter = (uint32_t)(invocationCounter);
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
         }
 #endif //DLMS_INVOCATION_COUNTER_VALIDATOR

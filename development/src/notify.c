@@ -308,11 +308,15 @@ int notify_generatePushSetupMessages(
             svr_preRead(settings, &args);
             if (p[0].error != 0)
             {
+                ret = p[0].error;
                 break;
             }
-            if ((ret = notify_addData(settings, it->target, it->attributeIndex, &pdu)) != 0)
+            if (!p[0].handled)
             {
-                break;
+                if ((ret = notify_addData(settings, it->target, it->attributeIndex, &pdu)) != 0)
+                {
+                    break;
+                }
             }
 #else
             e.target = (gxObject*)it->key;
@@ -323,6 +327,7 @@ int notify_generatePushSetupMessages(
 #endif
             if (e.error != 0)
             {
+                ret = e.error;
                 break;
             }
             if (e.value.vt != DLMS_DATA_TYPE_NONE)
@@ -345,12 +350,14 @@ int notify_generatePushSetupMessages(
             ve_clear(&p[0]);
             if (p[0].error != 0)
             {
+                ret = p[0].error;
                 break;
             }
 #else
             ve_clear(&e);
             if (e.error != 0)
             {
+                ret = e.error;
                 break;
             }
 #endif //DLMS_IGNORE_MALLOC

@@ -4897,8 +4897,11 @@ int svr_monitor(dlmsServerSettings* settings, gxRegisterMonitor* object)
                     {
                         break;
                     }
-                    e->target = &act->actionDown.script->base;
-                    index = (unsigned char)act->actionDown.scriptSelector;
+                    if (act != NULL && act->actionDown.script != NULL)
+                    {
+                        e->target = &act->actionDown.script->base;
+                        index = (unsigned char)act->actionDown.scriptSelector;
+                    }
                     ret = var_copy(lastValue, &value);
                 }
             }
@@ -4911,8 +4914,11 @@ int svr_monitor(dlmsServerSettings* settings, gxRegisterMonitor* object)
                     {
                         break;
                     }
-                    e->target = &act->actionUp.script->base;
-                    index = (unsigned char)act->actionUp.scriptSelector;
+                    if (act != NULL && act->actionUp.script != NULL)
+                    {
+                        e->target = &act->actionUp.script->base;
+                        index = (unsigned char)act->actionUp.scriptSelector;
+                    }
                     ret = var_copy(lastValue, &value);
                 }
             }

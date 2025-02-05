@@ -126,7 +126,7 @@ time_t gxmktime(struct tm* value)
     }
     ret += 3600 * value->tm_hour;
     ret += 60 * value->tm_min;
-    ret += value->tm_sec;   
+    ret += value->tm_sec;
     return ret;
 }
 #endif //DLMS_USE_EPOCH_TIME
@@ -738,6 +738,7 @@ void time_initUnix(
     uint32_t value)
 {
     time->deviation = 0;
+    time->millisecond = 0;
 #ifdef DLMS_USE_EPOCH_TIME
     time->value = value;
 #else
@@ -1631,7 +1632,7 @@ int time_fromUnixTime(uint32_t epoch, struct tm* time)
     time->tm_sec = second;
     time->tm_min = minute;
     time->tm_hour = hour;
-    time->tm_year = year - 1970;
+    time->tm_year = year - 1900;
     time->tm_mon = month - 1;
     time->tm_mday = day;
     time->tm_wday = dayOfWeek;

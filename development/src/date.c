@@ -88,45 +88,25 @@ void time_init3(
 }
 #endif //DLMS_USE_EPOCH_TIME
 
-int date_isleap(uint16_t year)
-{
-    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-}
-
 #ifndef DLMS_USE_EPOCH_TIME
-
 time_t gxmktime(struct tm* value)
 {
-    time_t ret = 0;
-    int pos;
-    if (value->tm_year != 0)
+    struct tm orig = *value;
+    time_t ret;
+    if ((ret = mktime(value)) == (time_t)-1)
     {
-        uint16_t year = 1900 + value->tm_year;
-        if (year < 1970)
+        return ret;
+    }
+    if (value->tm_isdst == 1)
+    {
+        *value = orig;
+        value->tm_isdst = 1;
+        if ((ret = mktime(value)) == (time_t)-1)
         {
-            return 0;
+            return ret;
         }
-        year -= 1970;
-        for (pos = 0; pos != year; ++pos)
-        {
-            uint32_t days = date_isleap(1970 + pos) ? 366 : 365;
-            days *= 24 * 3600;
-            ret += days;
-        }
+        value->tm_isdst = 0;
     }
-    for (pos = 0; pos != value->tm_mon; ++pos)
-    {
-        uint32_t days = date_daysInMonth(time_getYears2(value->tm_year), time_getMonths2(pos));
-        days *= 24 * 3600 * value->tm_mday;
-        ret += days;
-    }
-    if (value->tm_mday != 0)
-    {
-        ret += 24 * 3600 * (value->tm_mday - 1);
-    }
-    ret += 3600 * value->tm_hour;
-    ret += 60 * value->tm_min;
-    ret += value->tm_sec;
     return ret;
 }
 #endif //DLMS_USE_EPOCH_TIME
@@ -348,6 +328,12 @@ void time_init(
     time->value.tm_sec = second;
     time->deviation = devitation;
     time->millisecond = millisecond;
+    if (gxmktime(&time->value) == (time_t)-1)
+    {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+        assert(0);
+#endif
+    }
 #endif //DLMS_USE_EPOCH_TIME
 }
 
@@ -761,6 +747,11 @@ void time_clear(
     time->skip = DATETIME_SKIPS_NONE;
     time->extraInfo = 0;
     time->status = DLMS_CLOCK_STATUS_OK;
+}
+
+int date_isleap(uint16_t year)
+{
+    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 }
 
 unsigned char date_daysInMonth(
@@ -1668,15 +1659,7 @@ uint32_t time_toUnixTime2(gxtime* time)
 #endif //DLMS_USE_UTC_TIME_ZONE
     }
 #else
-    int ret = gxmktime(&tmp.value);
-    if (ret == -1)
-    {
-        value = 0;
-    }
-    else
-    {
-        value = (uint32_t)ret;
-    }
+    value = (uint32_t)gxmktime(&tmp.value);
 #endif //DLMS_USE_EPOCH_TIME
     return value;
 }

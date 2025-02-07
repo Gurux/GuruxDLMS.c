@@ -1322,7 +1322,7 @@ int cosem_getExtendedRegister(
     {
         if ((ret = cosem_setStructure(data, 2)) != 0 ||
             (ret = cosem_setInt8(data, object->scaler)) != 0 ||
-            (ret = cosem_setUInt8(data, object->unit)) != 0)
+            (ret = cosem_setEnum(data, object->unit)) != 0)
         {
             return ret;
         }
@@ -1449,8 +1449,8 @@ int cosem_getSecuritySetup(
                 {
                     gx509Certificate cert;
                     gx509Certificate_init(&cert);
-                    if ((ret = gx509Certificate_fromBytes(&cert, 
-                                DLMS_X509_CERTIFICATE_DATA_NONE, &it->cert)) == 0)
+                    if ((ret = gx509Certificate_fromBytes(&cert,
+                        DLMS_X509_CERTIFICATE_DATA_NONE, &it->cert)) == 0)
                     {
                         DLMS_CERTIFICATE_TYPE type;
                         if (cert.keyUsage == DLMS_KEY_USAGE_DIGITAL_SIGNATURE)

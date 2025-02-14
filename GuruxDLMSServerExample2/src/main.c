@@ -233,6 +233,7 @@ static gxFunctionControl functionControl;
 static gxLteMonitoring lteMonitoring;
 
 static gxCompactData compactDataExample;
+static gxNtpSetup ntpSetup;
 
 #ifdef DLMS_ITALIAN_STANDARD
 static gxTariffPlan tariffPlan;
@@ -266,6 +267,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(functionControl),
     BASE(lteMonitoring),
     BASE(compactDataExample),
+    BASE(ntpSetup),
 #ifdef DLMS_ITALIAN_STANDARD
     BASE(tariffPlan),
     BASE(passiveTariffPlan),
@@ -2203,6 +2205,39 @@ int addCF6Plan()
 #endif //DLMS_ITALIAN_STANDARD
 
 ///////////////////////////////////////////////////////////////////////
+//Add NTP setup object.
+///////////////////////////////////////////////////////////////////////
+int addNtpSetup()
+{
+    int ret;
+    static gxNtpKey KEYS[4];
+    static unsigned char SERVER_ADDRESS[20] = { 0 };
+    static unsigned char CLIENT_KEY[20] = { 0 };
+    const unsigned char ln[6] = { 0, 0, 25, 10, 0, 255 };
+    if ((ret = INIT_OBJECT(ntpSetup, DLMS_OBJECT_TYPE_NTP_SETUP, ln)) == 0)
+    {
+        //Set default values.
+        ntpSetup.activated = 1;
+        BB_ATTACH(ntpSetup.serverAddress, SERVER_ADDRESS, 0);
+        bb_addString(&ntpSetup.serverAddress, "pool.ntp.org");
+        ntpSetup.port = 123;
+        ntpSetup.authentication = DLMS_NTP_AUTHENTICATION_METHOD_SHARED_SECRETS;
+        ARR_ATTACH(ntpSetup.keys, KEYS, 2);
+        //Add key 1.
+        KEYS[0].id = 1;
+        strcpy(KEYS[0].key, "key 1");
+        KEYS[0].size = strlen(KEYS[0].key);
+        //Add key 2.
+        KEYS[1].id = 2;
+        strcpy(KEYS[1].key, "key 2");
+        KEYS[1].size = strlen(KEYS[0].key);
+        BB_ATTACH(ntpSetup.clientKey, CLIENT_KEY, 0);
+        bb_addString(&ntpSetup.clientKey, "client key");
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
 // Add Compact data example where are only template description 
 // and buffer for 20 UInt16 Value.
 ///////////////////////////////////////////////////////////////////////
@@ -2836,6 +2871,7 @@ int testobjectSerialization(gxObject* obj)
 #else
     serializerSettings.position = 0;
 #endif
+    obj_clear(obj);
     ret = ser_loadObject(&settings.base, &serializerSettings, obj);
     return ret;
 }
@@ -2974,6 +3010,7 @@ int createObjects()
         (ret = addLimiter()) != 0 ||
         (ret = addLteMonitoring()) != 0 ||
         (ret = addCompactDataExample()) != 0 ||
+        (ret = addNtpSetup()) != 0 ||
 #ifdef DLMS_ITALIAN_STANDARD
         (ret = addTariffPlan()) != 0 ||
         (ret = addPassiveTariffPlan()) != 0 ||
@@ -4416,6 +4453,23 @@ DLMS_ACCESS_MODE getRegisterActivationAttributeAccess(
     return DLMS_ACCESS_MODE_READ;
 }
 
+//Get attribute access level for register activation.
+DLMS_ACCESS_MODE getNtpSetupAttributeAccess(
+    dlmsSettings* settings,
+    unsigned char index)
+{
+    //NTP setup keys are added with actions.
+    if (index == 6)
+    {
+        return DLMS_ACCESS_MODE_READ;
+    }
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    {
+        // All writes are allowed with high authentication.
+        return DLMS_ACCESS_MODE_READ_WRITE;
+    }
+    return DLMS_ACCESS_MODE_READ;
+}
 
 /**
 * Get attribute access level.
@@ -4483,6 +4537,11 @@ DLMS_ACCESS_MODE svr_getAttributeAccess(
     {
         return getRegisterActivationAttributeAccess(settings, index);
     }
+    if (obj->objectType == DLMS_OBJECT_TYPE_NTP_SETUP)
+    {
+        return getNtpSetupAttributeAccess(settings, index);
+    }
+
     // Only clock write is allowed.
     if (settings->authentication == DLMS_AUTHENTICATION_LOW)
     {

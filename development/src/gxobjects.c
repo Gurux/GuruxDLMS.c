@@ -742,6 +742,28 @@ int obj_clearCertificateInfo(gxArray* arr)
 }
 #endif //DLMS_IGNORE_SECURITY_SETUP
 
+#ifndef DLMS_IGNORE_NTP_SETUP
+int obj_clearNtpSetupKeys(gxArray* arr)
+{
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    gxKey* it;
+    uint16_t pos;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        bb_clear((gxByteBuffer*)it->value);
+        gxfree(it->value);
+    }
+#endif //!(defined(DLMS_IGNORE_MALLOC) || defined(DLMS_IGNORE_CLIENT))
+    arr_clear(arr);
+    return ret;
+}
+#endif //DLMS_IGNORE_NTP_SETUP
+
 void obj_clear(gxObject* object)
 {
     int ret = 0;
@@ -1323,6 +1345,14 @@ void obj_clear(gxObject* object)
         case DLMS_OBJECT_TYPE_LTE_MONITORING:
             break;
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+        case DLMS_OBJECT_TYPE_NTP_SETUP:
+            bb_clear(&((gxNtpSetup*)object)->serverAddress);
+            bb_clear(&((gxNtpSetup*)object)->clientKey);
+            obj_clearNtpSetupKeys(&((gxNtpSetup*)object)->keys);
+            break;
+#endif //DLMS_IGNORE_IP6_SETUP
+
 #ifdef DLMS_ITALIAN_STANDARD
         case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         {
@@ -1677,6 +1707,11 @@ unsigned char obj_attributeCount(gxObject* object)
         ret = 3;
         break;
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        ret = 7;
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
     default:
         //Unknown type.
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
@@ -2109,6 +2144,11 @@ unsigned char obj_methodCount(gxObject* object)
         ret = 0;
         break;
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        ret = 3;
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = 0;

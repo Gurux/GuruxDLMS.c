@@ -435,6 +435,11 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
         size = sizeof(gxLteMonitoring);
         break;
 #endif //DLMS_OBJECT_TYPE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        size = sizeof(gxNtpSetup);
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         size = sizeof(gxTariffPlan);
@@ -634,7 +639,7 @@ int cosem_init4(
         priv_init(&((gxSecuritySetup*)object)->tlsKey);
 #endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_1)        
     }
-        break;
+    break;
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
         ((gxObject*)object)->version = 1;
@@ -943,9 +948,9 @@ int cosem_getInt32(gxByteBuffer* bb, int32_t* value)
     return 0;
 }
 
-int cosem_getOctetStringBase(gxByteBuffer* bb, 
-    gxByteBuffer* value, 
-    unsigned char type, 
+int cosem_getOctetStringBase(gxByteBuffer* bb,
+    gxByteBuffer* value,
+    unsigned char type,
     unsigned char exact)
 {
     int ret;
@@ -977,10 +982,10 @@ int cosem_getOctetStringBase(gxByteBuffer* bb,
     return 0;
 }
 
-int cosem_getOctetStringBase2(gxByteBuffer* bb, 
-    unsigned char* value, 
-    uint16_t capacity, 
-    uint16_t* size, 
+int cosem_getOctetStringBase2(gxByteBuffer* bb,
+    unsigned char* value,
+    uint16_t capacity,
+    uint16_t* size,
     unsigned char type)
 {
     int ret;

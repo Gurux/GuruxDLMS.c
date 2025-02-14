@@ -393,6 +393,10 @@ extern "C" {
                 dlmsVARIANT* value);
 #endif //DLMS_IGNORE_LTE_MONITORING
 
+#ifndef DLMS_IGNORE_NTP_SETUP
+            int cosem_setNtpSetup(gxNtpSetup* object, unsigned char index, dlmsVARIANT* value);
+#endif //DLMS_IGNORE_NTP_SETUP
+
 #ifdef DLMS_ITALIAN_STANDARD
             int cosem_setTariffPlan(gxTariffPlan* object, unsigned char index, dlmsVARIANT* value);
 #endif //DLMS_ITALIAN_STANDARD

@@ -506,9 +506,7 @@ int readSerialPort(
     ret = com_open(connection, port);
     if (ret == 0 && readObjects != NULL)
     {
-        if ((ret = com_initializeOpticalHead(connection)) == 0 &&
-            (ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 &&
-            (ret = com_initializeOpticalHead(connection)) == 0 &&
+        if ((ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 &&
             (ret = com_initializeConnection(connection)) == 0 &&
             (ret = com_getAssociationView(connection, outputFile)) == 0)
         {
@@ -553,9 +551,7 @@ int readSerialPort(
     else if (ret == 0)
     {
         //Initialize connection.
-        if ((ret = com_initializeOpticalHead(connection)) != 0 ||
-            (ret = com_updateInvocationCounter(connection, invocationCounter)) != 0 ||
-            (ret = com_initializeOpticalHead(connection)) != 0 ||
+        if ((ret = com_updateInvocationCounter(connection, invocationCounter)) != 0 ||
             (ret = com_initializeConnection(connection)) != 0 ||
             (ret = com_readAllObjects(connection, outputFile)) != 0)
             //Read all objects from the meter.
@@ -607,6 +603,10 @@ static void ShowHelp()
     printf("GuruxDlmsSample -S COM1 -c 16 -s 1 -a Low -P [password]\n");
 }
 
+void svr_trace(const char* str, const char* data)
+{
+}
+
 int connectMeter(int argc, char* argv[])
 {
     connection con;
@@ -622,7 +622,7 @@ int connectMeter(int argc, char* argv[])
     char* p, * readObjects = NULL, * outputFile = NULL;
     int index, a, b, c, d, e, f;
     char* invocationCounter = NULL;
-    while ((opt = getopt(argc, argv, "h:p:c:s:r:i:It:a:p:wP:g:S:C:v:T:A:B:D:l:F:o:V:M:b:R:")) != -1)
+    while ((opt = getopt(argc, argv, "h:p:c:s:r:i:It:a:p:P:g:S:C:v:T:A:B:D:l:F:o:V:M:b:R:w:f:")) != -1)
     {
         switch (opt)
         {
@@ -894,6 +894,12 @@ int connectMeter(int argc, char* argv[])
             break;
         case 'n':
             //TODO: Add support for serial number. con.settings.serverAddress = cl_getServerAddress(atoi(optarg));
+            break;
+        case 'w':
+            //Window size is not used.
+            break;
+        case 'f':
+            //Frame size is not used.
             break;
         case 'm':
             con.settings.plcSettings.macDestinationAddress = atoi(optarg);

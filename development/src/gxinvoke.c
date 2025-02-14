@@ -3834,6 +3834,115 @@ int invoke_FunctionControl(
 }
 #endif //DLMS_IGNORE_FUNCTION_CONTROL
 
+#ifndef DLMS_IGNORE_NTP_SETUP
+
+int invoke_removeFromNtpKeys(gxArray* arr, uint32_t id)
+{
+    uint16_t pos;
+#ifndef DLMS_IGNORE_MALLOC
+    gxKey3* it;
+#else
+    gxNtpKey* it;
+#endif //DLMS_IGNORE_MALLOC
+    int ret = 0;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        if (it->key == id)
+        {
+            ret = arr_removeByIndex(arr, pos, (void**)&it);
+            bb_clear((gxByteBuffer*)it->value);
+            gxfree(it);
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it, sizeof(gxNtpKey))) != 0)
+        {
+            break;
+        }
+        if (it->id == id)
+        {
+            ret = arr_removeByIndex(arr, pos, sizeof(gxNtpKey));
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int invoke_NtpSetup(
+    dlmsServerSettings* settings,
+    gxNtpSetup* object,
+    gxValueEventArg* e)
+{
+    int ret = 0;
+#ifndef DLMS_IGNORE_MALLOC
+    gxKey3* it;
+#else
+    gxNtpKey* it;
+#endif //DLMS_IGNORE_MALLOC
+    if (e->index == 1)
+    {
+        //server implements Synchronize
+    }
+    else if (e->index == 2)
+    {
+        //Add authentication key.
+        if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            it = (gxKey3*)gxmalloc(sizeof(gxKey3));
+            it->value = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+            bb_init(it->value);
+            if ((ret = cosem_getUInt32(e->parameters.byteArr, &it->key)) != 0 ||
+                (ret = cosem_getOctetString(e->parameters.byteArr, (gxByteBuffer*)it->value)) != 0 ||
+                (ret = arr_push(&object->keys, it)) != 0)
+            {
+            }
+#else
+            if (arr_getCapacity(&object->keys) < object->keys.size)
+            {
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            else
+            {
+                ++object->keys.size;
+                if ((ret = arr_getByIndex(&object->keys, object->keys.size - 1, (void**)&it, sizeof(gxNtpKey))) != 0 ||
+                    (ret = cosem_getUInt32(e->parameters.byteArr, &it->id)) != 0 ||
+                    (ret = cosem_getOctetString2(e->parameters.byteArr, it->key, MAX_AUTHENTICATION_KEY_LENGTH, &it->size)) != 0)
+                {
+                    --object->keys.size;
+                }
+            }
+#endif //DLMS_IGNORE_MALLOC
+        }
+    }
+    else if (e->index == 3)
+    {
+        //Delete authentication key.
+        if (e->parameters.vt == DLMS_DATA_TYPE_UINT32)
+        {
+            ret = invoke_removeFromNtpKeys(&object->keys, e->parameters.uiVal);
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_NTP_SETUP
+
+
+
 int cosem_invoke(
     dlmsServerSettings* settings,
     gxValueEventArg* e)
@@ -4006,6 +4115,11 @@ int cosem_invoke(
         ret = invoke_FunctionControl(settings, (gxFunctionControl*)e->target, e);
         break;
 #endif //DLMS_IGNORE_FUNCTION_CONTROL
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        ret = invoke_NtpSetup(settings, (gxNtpSetup*)e->target, e);
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
     default:
         //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

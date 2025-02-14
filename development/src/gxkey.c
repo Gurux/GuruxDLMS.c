@@ -35,7 +35,7 @@
 #ifndef DLMS_IGNORE_MALLOC
 gxKey* key_init(void* key, void* value)
 {
-    gxKey* obj = (gxKey*) gxmalloc(sizeof(gxKey));
+    gxKey* obj = (gxKey*)gxmalloc(sizeof(gxKey));
     if (obj != NULL)
     {
         obj->key = key;
@@ -54,4 +54,16 @@ gxKey2* key_init2(unsigned char key, void* value)
     }
     return obj;
 }
+
+gxKey3* key_init3(uint32_t key, void* value)
+{
+    gxKey3* obj = (gxKey3*)gxmalloc(sizeof(gxKey3));
+    if (obj != NULL)
+    {
+        obj->key = key;
+        obj->value = value;
+    }
+    return obj;
+}
+
 #endif //DLMS_IGNORE_MALLOC

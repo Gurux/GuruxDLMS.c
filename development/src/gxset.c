@@ -464,6 +464,13 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
         ret = cosem_setLteMonitoring(settings, (gxLteMonitoring*)e->target, e->index, &e->value);
         break;
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        ret = cosem_setNtpSetup((gxNtpSetup*)e->target, e->index, &e->value);
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
+
+
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = cosem_setTariffPlan((gxTariffPlan*)e->target, e->index, &e->value);

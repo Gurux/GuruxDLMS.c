@@ -4289,6 +4289,49 @@ extern "C" {
     } gxLteMonitoring;
 #endif //DLMS_IGNORE_LTE_MONITORING
 
+#ifndef DLMS_IGNORE_NTP_SETUP
+
+#ifdef DLMS_IGNORE_MALLOC
+    typedef struct
+    {
+        // Authentication id.
+        uint32_t id;
+        // The size of the authentication key.
+        uint16_t size;
+        // Authentication key.
+        unsigned char key[MAX_AUTHENTICATION_KEY_LENGTH];
+    }gxNtpKey;
+#endif //DLMS_IGNORE_SERVER
+
+    // Online help:
+    // https://www.gurux.fi/Gurux.DLMS.Objects.GXDLMSNtpSetup
+    typedef struct
+    {
+        /*
+        * Base class where class is derived.
+        */
+        gxObject base;
+
+        /*Is NTP time synchronisation active.*/
+        unsigned char activated;
+
+        /*NTP server address.*/
+        gxByteBuffer serverAddress;
+
+        /*UDP port related to this protocol.*/
+        uint16_t port;
+
+        /*The authentication mode.*/
+        DLMS_NTP_AUTHENTICATION_METHOD authentication;
+
+        /*Symmetric keys for authentication.*/
+        gxArray keys;
+
+        /*Client key(NTP server public key).*/
+        gxByteBuffer clientKey;
+    } gxNtpSetup;
+#endif //DLMS_IGNORE_NTP_SETUP
+
 #ifdef DLMS_ITALIAN_STANDARD
 
     /*

@@ -402,6 +402,11 @@ const char* obj_typeToString2(DLMS_OBJECT_TYPE type)
         ret = GET_STR_FROM_EEPROM("LTEMonitoring");
         break;
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        ret = GET_STR_FROM_EEPROM("NtpSetup");
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = GET_STR_FROM_EEPROM("TariffPlan");
@@ -2796,7 +2801,7 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
     if (object->mBusPort != NULL)
     {
         bb_addLogicalName(&ba, object->mBusPort->logicalName);
-}
+    }
 #else
     bb_addLogicalName(&ba, object->mBusPortReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -2824,7 +2829,7 @@ int obj_mBusClientToString(gxMBusClient* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_MBUS_CLIENT
 #ifndef DLMS_IGNORE_MODEM_CONFIGURATION
 int obj_modemConfigurationToString(gxModemConfiguration* object, char** buff)
@@ -3131,7 +3136,7 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
     if (object->phy != NULL)
     {
         bb_addLogicalName(&ba, object->phy->logicalName);
-}
+    }
 #else
     bb_addLogicalName(&ba, object->PHYReference);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
@@ -3147,7 +3152,7 @@ int obj_pppSetupToString(gxPppSetup* object, char** buff)
     *buff = bb_toString(&ba);
     bb_clear(&ba);
     return 0;
-    }
+}
 #endif //DLMS_IGNORE_PPP_SETUP
 
 #ifndef DLMS_IGNORE_PROFILE_GENERIC
@@ -3832,6 +3837,71 @@ int obj_lteMonitoringToString(gxLteMonitoring* object, char** buff)
 }
 #endif //DLMS_IGNORE_LTE_MONITORING
 
+#ifndef DLMS_IGNORE_NTP_SETUP
+
+int obj_getNtpKeys(gxByteBuffer* ba, gxArray* arr)
+{
+    int ret = 0, pos;
+#ifdef DLMS_IGNORE_MALLOC
+    gxNtpKey* k;
+#else
+    gxKey3* k;
+#endif //DLMS_IGNORE_MALLOC
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+        if (pos != 0)
+        {
+            bb_addString(ba, ", ");
+        }
+        ret = arr_getByIndex(arr, pos, (void**)&k);
+        if (ret != 0)
+        {
+            break;
+        }
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = bb_addIntAsString(ba, (uint32_t)k->id)) != 0 ||
+            (ret = bb_set2(ba, k->key, 0, k->size)) != 0)
+        {
+            break;
+        }
+#else
+        if ((ret = bb_addIntAsString(ba, k->key)) != 0 ||
+            (ret = bb_addString(ba, ", ")) != 0 ||
+            (ret = bb_set(ba, ((gxByteBuffer*)k->value)->data, bb_size((gxByteBuffer*)k->value))) != 0)
+        {
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int obj_NtpSetupToString(gxNtpSetup* object, char** buff)
+{
+    int ret;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    if ((ret = bb_addString(&ba, "Index: 2 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->activated)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 3 Value: ")) == 0 &&
+        (ret = bb_set(&ba, object->serverAddress.data, object->serverAddress.size)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 4 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->port)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 5 Value: ")) == 0 &&
+        (ret = bb_addIntAsString(&ba, object->authentication)) == 0 &&
+        (ret = bb_addString(&ba, "\nIndex: 6 Value:[ ")) == 0 &&
+        (ret = obj_getNtpKeys(&ba, &object->keys)) == 0 &&
+        (ret = bb_addString(&ba, "]\nIndex: 7 Value: ")) == 0 &&
+        (ret = bb_set(&ba, object->clientKey.data, object->clientKey.size)) == 0 &&
+        (ret = bb_addString(&ba, "\n")) == 0)
+    {
+        *buff = bb_toString(&ba);
+    }
+    bb_clear(&ba);
+    return 0;
+}
+#endif //DLMS_IGNORE_NTP_SETUP
+
 #ifdef DLMS_ITALIAN_STANDARD
 int obj_TariffPlanToString(gxTariffPlan* object, char** buff)
 {
@@ -4257,6 +4327,12 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_lteMonitoringToString((gxLteMonitoring*)object, buff);
         break;
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        ret = obj_NtpSetupToString((gxNtpSetup*)object, buff);
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
+
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = obj_TariffPlanToString((gxTariffPlan*)object, buff);

@@ -232,7 +232,7 @@ extern "C" {
         /*Agreed.*/
         DLMS_DATA_PROTECTION_KEY_TYPE_AGREED
     }DLMS_DATA_PROTECTION_KEY_TYPE;
-    
+
     typedef enum
     {
         DLMS_CLOCK_STATUS_OK = 0x0,
@@ -442,6 +442,10 @@ extern "C" {
         DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN = 92,
 
         /*
+        * NTP setup.
+        */
+        DLMS_OBJECT_TYPE_NTP_SETUP = 100,
+        /*
         * Function control.
         */
         DLMS_OBJECT_TYPE_FUNCTION_CONTROL = 122,
@@ -466,7 +470,7 @@ extern "C" {
 
         // G3-PLC Hybrid 6LoWPAN adaptation layer setup.
         DLMS_OBJECT_TYPE_G3_PLC_HYBRID_6LOWPAN_ADAPTATION_LAYER_SETUP = 162,
-        
+
         /*
         * Configure a ZigBee PRO device with information necessary to create or
         * join the network.
@@ -3541,6 +3545,19 @@ extern "C" {
         /*Last complete number of months.*/
         DLMS_SELECTIVE_ACCESS_PARAMETER_COMPLETE_MONTHS = 0xF
     }DLMS_SELECTIVE_ACCESS_PARAMETER;
+
+    /*Defines NTP authentication methods.*/
+    typedef enum
+    {
+        /*No security is used.*/
+        DLMS_NTP_AUTHENTICATION_METHOD_NO_SECURITY = 0,
+        /*Shared secrets are used.*/
+        DLMS_NTP_AUTHENTICATION_METHOD_SHARED_SECRETS,
+        /*IFF auto key is used.*/
+        DLMS_NTP_AUTHENTICATION_METHOD_AUTOKEY_IFF
+    }
+    DLMS_NTP_AUTHENTICATION_METHOD;
+
 #ifdef  __cplusplus
 }
 #endif

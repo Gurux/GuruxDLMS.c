@@ -5892,6 +5892,59 @@ int cosem_setLteMonitoring(
 #endif //DLMS_IGNORE_LTE_MONITORING
 
 
+#ifndef DLMS_IGNORE_NTP_SETUP
+int cosem_setNtpSetup(gxNtpSetup* object, unsigned char index, dlmsVARIANT* value)
+{
+    unsigned char ch;
+    int ret, pos;
+    gxNtpKey* v;
+    if (index == 2)
+    {
+        ret = cosem_getBoolean(value->byteArr, &object->activated);
+    }
+    else if (index == 3)
+    {
+        ret = cosem_getOctetString(value->byteArr, &object->serverAddress);
+    }
+    else if (index == 4)
+    {
+        ret = cosem_getUInt16(value->byteArr, &object->port);
+    }
+    else if (index == 5)
+    {
+        if ((ret = cosem_getEnum(value->byteArr, &ch)) == 0)
+        {
+            object->authentication = (DLMS_NTP_AUTHENTICATION_METHOD)ch;
+        }
+    }
+    else if (index == 6)
+    {
+        uint16_t count;
+        if ((ret = cosem_verifyArray(value->byteArr, &object->keys, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = cosem_getArrayItem(&object->keys, pos, (void**)&v, sizeof(gxNtpKey))) != 0 ||
+                    (ret = cosem_getUInt32(value->byteArr, &v->id)) != 0 ||
+                    (ret = cosem_getOctetString2(value->byteArr, v->key, MAX_AUTHENTICATION_KEY_LENGTH, &v->size)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    else if (index == 7)
+    {
+        ret = cosem_getOctetString(value->byteArr, &object->clientKey);
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_NTP_SETUP
+
 #ifdef DLMS_ITALIAN_STANDARD
 
 

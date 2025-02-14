@@ -170,7 +170,7 @@ extern "C" {
 #ifndef DLMS_IGNORE_G3_PLC_MAC_SETUP
     int cosem_getG3PlcMacSetupNeighbourTables(
         gxArray* tables,
-        uint16_t address, 
+        uint16_t address,
         uint16_t count,
         gxValueEventArg* e);
 
@@ -280,6 +280,10 @@ extern "C" {
     int cosem_getLteMonitoring(
         gxValueEventArg* e);
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    int cosem_getNtpSetup(
+        gxValueEventArg* e);
+#endif //DLMS_IGNORE_NTP_SETUP
 
 #ifdef  __cplusplus
 }

@@ -144,6 +144,9 @@ extern "C" {
 //X.509 certificate max size.
 #define DLMS_X509_CETRIFICATE_MAX_SIZE 2048
 
+//Define max authentication key length.
+#define MAX_AUTHENTICATION_KEY_LENGTH 20
+
 #ifdef  __cplusplus
 }
 #endif

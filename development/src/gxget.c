@@ -5270,9 +5270,9 @@ int cosem_getAccount(
                         (ret = cosem_setOctetString2(data, ccc->chargeReference, 6)) != 0 ||
                         //collection configuration
                         (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
-                    {
-                        break;
-                    }
+                {
+                    break;
+                }
         }
     }
     else if (e->index == 12)
@@ -5854,6 +5854,11 @@ int cosem_getValue(
         ret = cosem_getLteMonitoring(e);
         break;
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        ret = cosem_getNtpSetup(e);
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = cosem_getTariffPlan(e);
@@ -7158,3 +7163,74 @@ int cosem_getLteMonitoring(
     return ret;
 }
 #endif //DLMS_IGNORE_LTE_MONITORING
+
+#ifndef DLMS_IGNORE_NTP_SETUP
+
+int getAuthenticationKeys(gxArray* list, gxValueEventArg* e)
+{
+    int ret = 0;
+#ifdef DLMS_IGNORE_MALLOC
+    gxNtpKey* it;
+#else
+    gxKey3* it;
+#endif //DLMS_IGNORE_MALLOC
+    uint16_t pos;
+    if ((ret = cosem_setArray(e->value.byteArr, list->size)) == 0)
+    {
+        for (pos = 0; pos != list->size; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex(list, pos, (void**)&it, sizeof(gxNtpKey))) != 0 ||
+                (ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
+                (ret = cosem_setUInt32(e->value.byteArr, it->id)) != 0 ||
+                (ret = cosem_setOctetString2(e->value.byteArr, it->key, it->size)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(list, pos, (void**)&it)) != 0 ||
+                (ret = cosem_setStructure(e->value.byteArr, 2)) != 0 ||
+                (ret = cosem_setUInt32(e->value.byteArr, it->key)) != 0 ||
+                (ret = cosem_setOctetString2(e->value.byteArr, ((gxByteBuffer*)it->value)->data, ((gxByteBuffer*)it->value)->size)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+        }
+    }
+    return ret;
+}
+
+int cosem_getNtpSetup(
+    gxValueEventArg* e)
+{
+    int ret = 0;
+    gxNtpSetup* object = (gxNtpSetup*)e->target;
+    switch (e->index)
+    {
+    case 2:
+        ret = cosem_setBoolean(e->value.byteArr, object->activated);
+        break;
+    case 3:
+        ret = cosem_setOctetString2(e->value.byteArr, object->serverAddress.data, object->serverAddress.size);
+        break;
+    case 4:
+        ret = cosem_setUInt16(e->value.byteArr, object->port);
+        break;
+    case 5:
+        ret = cosem_setEnum(e->value.byteArr, object->authentication);
+        break;
+    case 6:
+        ret = getAuthenticationKeys(&object->keys, e);
+        break;
+    case 7:
+        ret = cosem_setOctetString2(e->value.byteArr, object->clientKey.data, object->clientKey.size);
+        break;
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_NTP_SETUP

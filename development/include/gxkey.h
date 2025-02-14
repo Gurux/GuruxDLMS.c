@@ -33,6 +33,7 @@
 #ifndef GXKEY_H
 #define GXKEY_H
 #include "gxignore.h"
+#include "gxint.h"
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -48,10 +49,17 @@ typedef struct {
     void *value;
 } gxKey2;
 
+typedef struct {
+    uint32_t key;
+    void* value;
+} gxKey3;
+
 //Make key.
     gxKey* key_init(void* key, void* value);
 
     gxKey2* key_init2(unsigned char key, void* value);
+
+    gxKey3* key_init3(uint32_t key, void* value);
 
 #endif //DLMS_IGNORE_MALLOC
 #ifdef  __cplusplus

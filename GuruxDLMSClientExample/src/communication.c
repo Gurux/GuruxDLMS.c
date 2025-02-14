@@ -312,7 +312,8 @@ int com_initializeOpticalHead(
     unsigned long sendSize = 0;
     if (connection->comPort == INVALID_HANDLE_VALUE)
     {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        //If serial port connection is not used.
+        return 0;
     }
     dcb.DCBlength = sizeof(DCB);
     if (!GetCommState(connection->comPort, &dcb))
@@ -537,28 +538,28 @@ int com_initializeOpticalHead(
             return DLMS_ERROR_CODE_SEND_FAILED;
         }
 #endif
+        printf("Moving to mode E.\r\n");
+
 #if defined(_WIN32) || defined(_WIN64)//Windows
         //This sleep is in standard. Do not remove.
-        Sleep(1000);
+        Sleep(300);
         dcb.BaudRate = baudRate;
+        dcb.ByteSize = 8;
+        dcb.StopBits = ONESTOPBIT;
+        dcb.Parity = NOPARITY;
         if ((ret = com_setCommState(connection->comPort, &dcb)) != 0)
         {
+            printf("com_setCommState failed %d\r\n", ret);
             return ret;
         }
         printf("New baudrate %d\r\n", dcb.BaudRate);
         len = 6;
         if ((ret = com_readSerialPort(connection, '\n')) != 0)
         {
-            printf("Read %d\r\n", ret);
-            return ret;
+            printf("Failed to read IEC reply %d\r\n", ret);
         }
-        dcb.ByteSize = 8;
-        dcb.StopBits = ONESTOPBIT;
-        dcb.Parity = NOPARITY;
-        if ((ret = com_setCommState(connection->comPort, &dcb)) != 0)
-        {
-            return ret;
-        }
+        //This sleep is in standard. Do not remove.
+        Sleep(1000);
 #else
         //This sleep is in standard. Do not remove.
         usleep(1000000);
@@ -573,6 +574,7 @@ int com_initializeOpticalHead(
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
 #endif
+        printf("IEC initialized\r\n");
     }
     return ret;
 }
@@ -581,7 +583,7 @@ int com_open(
     connection* connection,
     const char* port)
 {
-    int ret;
+    int ret = 0;
     //In Linux serial port name might be very long.
 #if defined(_WIN32) || defined(_WIN64)
     char buff[50];
@@ -616,7 +618,7 @@ int com_open(
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
 #endif
-    return com_initializeOpticalHead(connection);
+    return ret;
 }
 
 int sendData(connection* connection, gxByteBuffer* data)
@@ -917,6 +919,10 @@ int com_updateInvocationCounter(
     //Read frame counter if GeneralProtection is used.
     if (invocationCounter != NULL && connection->settings.cipher.security != DLMS_SECURITY_NONE)
     {
+        if ((ret = com_initializeOpticalHead(connection)) != 0)
+        {
+            return ret;
+        }
         message messages;
         gxReplyData reply;
         unsigned short add = connection->settings.clientAddress;
@@ -1019,7 +1025,11 @@ int com_initializeConnection(
 {
     message messages;
     gxReplyData reply;
-    int ret = 0;
+    int ret = com_initializeOpticalHead(connection);
+    if (ret != 0)
+    {
+        return ret;
+    }
     if (connection->trace > GX_TRACE_LEVEL_WARNING)
     {
         printf("InitializeConnection\r\n");

@@ -1607,7 +1607,7 @@ int ser_saveOctetString(gxSerializerSettings* serializeSettings, gxByteBuffer* v
     return ret;
 }
 
-int ser_saveOctetString3(gxSerializerSettings* serializeSettings, char* value, uint16_t len, uint16_t capacity)
+int ser_saveOctetString3(gxSerializerSettings* serializeSettings, unsigned char* value, uint16_t len, uint16_t capacity)
 {
     int ret;
     if (capacity < len)
@@ -1619,10 +1619,10 @@ int ser_saveOctetString3(gxSerializerSettings* serializeSettings, char* value, u
     {
         if ((ret = ser_saveObjectCount(len, serializeSettings)) != 0 ||
 #ifndef DLMS_IGNORE_MALLOC
-        (ret = ser_set(serializeSettings, (unsigned char*)value, len)) != 0)
+        (ret = ser_set(serializeSettings, value, len)) != 0)
 #else
             (ret = ser_saveObjectCount(capacity, serializeSettings)) != 0 ||
-            (ret = ser_set(serializeSettings, (unsigned char*)value, len, capacity)) != 0)
+            (ret = ser_set(serializeSettings, value, len, capacity)) != 0)
 #endif //DLMS_IGNORE_MALLOC
         {
             //Error code is returned at the end of the function.
@@ -1642,7 +1642,7 @@ int ser_saveOctetString2(gxSerializerSettings* serializeSettings, char* value, u
     {
         len = 0;
     }
-    return ser_saveOctetString3(serializeSettings, value, len, capacity);
+    return ser_saveOctetString3(serializeSettings, (unsigned char*)value, len, capacity);
 }
 
 int ser_saveBitString(gxSerializerSettings* serializeSettings, bitArray* value)
@@ -2110,13 +2110,13 @@ int ser_saveAutoConnect(
                 {
 #ifdef DLMS_IGNORE_MALLOC
                     if ((ret = arr_getByIndex3(&object->destinations, pos, (void**)&dest, sizeof(gxDestination), 0)) != 0 ||
-                        (ret = ser_saveOctetString3(serializeSettings, (char*)dest->value, dest->size, sizeof(dest->value))) != 0)
+                        (ret = ser_saveOctetString3(serializeSettings, dest->value, dest->size, sizeof(dest->value))) != 0)
                     {
                         break;
                     }
 #else
                     if ((ret = arr_getByIndex3(&object->destinations, pos, (void**)&dest, 0)) != 0 ||
-                        (ret = ser_saveOctetString3(serializeSettings, (char*)dest->data, (unsigned short)dest->size, (unsigned short)dest->capacity)) != 0)
+                        (ret = ser_saveOctetString3(serializeSettings, dest->data, (unsigned short)dest->size, (unsigned short)dest->capacity)) != 0)
                     {
                         break;
                     }
@@ -2147,9 +2147,9 @@ int ser_saveSeasonProfile(gxArray* arr, gxSerializerSettings* serializeSettings)
             {
                 break;
             }
-            if ((ret = ser_saveOctetString3(serializeSettings, (char*)it->name.value, it->name.size, sizeof(it->name.value))) != 0 ||
+            if ((ret = ser_saveOctetString3(serializeSettings, it->name.value, it->name.size, sizeof(it->name.value))) != 0 ||
                 (ret = ser_saveDateTime(&it->start, serializeSettings)) != 0 ||
-                (ret = ser_saveOctetString3(serializeSettings, (char*)it->weekName.value, it->weekName.size, sizeof(it->weekName.value))) != 0)
+                (ret = ser_saveOctetString3(serializeSettings, it->weekName.value, it->weekName.size, sizeof(it->weekName.value))) != 0)
             {
                 break;
             }
@@ -2184,7 +2184,7 @@ int ser_saveweekProfile(gxArray* arr, gxSerializerSettings* serializeSettings)
         {
 #ifdef DLMS_IGNORE_MALLOC
             if ((ret = arr_getByIndex3(arr, pos, (void**)&it, sizeof(gxWeekProfile), 0)) != 0 ||
-                (ret = ser_saveOctetString3(serializeSettings, (char*)it->name.value, it->name.size, sizeof(it->name.value))) != 0)
+                (ret = ser_saveOctetString3(serializeSettings, it->name.value, it->name.size, sizeof(it->name.value))) != 0)
             {
                 break;
             }
@@ -2497,8 +2497,8 @@ int ser_saveRegisterActivation(
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
 #ifdef DLMS_IGNORE_MALLOC
             if ((ret = arr_getByIndex3(&object->maskList, pos, (void**)&it, sizeof(gxRegisterActivationMask), 0)) != 0 ||
-                (ret = ser_saveOctetString3(serializeSettings, (char*)it->name, it->length, sizeof(it->name))) != 0 ||
-                (ret = ser_saveOctetString3(serializeSettings, (char*)it->indexes, it->count, sizeof(it->indexes))) != 0)
+                (ret = ser_saveOctetString3(serializeSettings, it->name, it->length, sizeof(it->name))) != 0 ||
+                (ret = ser_saveOctetString3(serializeSettings, it->indexes, it->count, sizeof(it->indexes))) != 0)
             {
                 break;
             }
@@ -2723,7 +2723,7 @@ int ser_saveSapAssignment(
 #ifdef DLMS_IGNORE_MALLOC
                 if ((ret = arr_getByIndex3(&object->sapAssignmentList, pos, (void**)&it, sizeof(gxSapItem), 0)) != 0 ||
                     (ret = ser_saveUInt16(serializeSettings, it->id)) != 0 ||
-                    (ret = ser_saveOctetString3(serializeSettings, (char*)it->name.value, it->name.size, sizeof(it->name.value))) != 0)
+                    (ret = ser_saveOctetString3(serializeSettings, it->name.value, it->name.size, sizeof(it->name.value))) != 0)
                 {
                     break;
                 }
@@ -2848,7 +2848,7 @@ int ser_saveIp4Setup(
             }
 
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = ser_saveOctetString3(serializeSettings, (char*)ip->data.value, ip->data.size, sizeof(ip->data.value))) != 0)
+            if ((ret = ser_saveOctetString3(serializeSettings, ip->data.value, ip->data.size, sizeof(ip->data.value))) != 0)
             {
                 break;
             }
@@ -2984,7 +2984,6 @@ int ser_saveIp6Setup(
 }
 #endif //DLMS_IGNORE_IP6_SETUP
 
-
 #ifndef DLMS_IGNORE_G3_PLC_MAC_LAYER_COUNTERS
 int ser_saveG3PlcMacLayerCounters(
     gxSerializerSettings* serializeSettings,
@@ -3022,7 +3021,7 @@ int ser_saveKeyTable(gxSerializerSettings* serializeSettings, gxArray* keys)
                 break;
             }
             if ((ret = ser_saveUInt8(serializeSettings, it->id)) != 0 ||
-                (ret = ser_saveOctetString3(serializeSettings, (char*)it->key, MAX_G3_MAC_KEY_TABLE_KEY_SIZE, MAX_G3_MAC_KEY_TABLE_KEY_SIZE)) != 0)
+                (ret = ser_saveOctetString3(serializeSettings, it->key, MAX_G3_MAC_KEY_TABLE_KEY_SIZE, MAX_G3_MAC_KEY_TABLE_KEY_SIZE)) != 0)
             {
                 break;
             }
@@ -3225,7 +3224,7 @@ int ser_saveContextInformationTable(gxSerializerSettings* serializeSettings, gxA
             }
             if ((ret = ser_saveUInt8(serializeSettings, it->cid)) != 0 ||
                 (ret = ser_saveUInt8(serializeSettings, it->contextLength)) != 0 ||
-                (ret = ser_saveOctetString3(serializeSettings, (char*)it->context, 16, 16)) != 0 ||
+                (ret = ser_saveOctetString3(serializeSettings, it->context, 16, 16)) != 0 ||
                 (ret = ser_saveUInt8(serializeSettings, it->compression)) != 0 ||
                 (ret = ser_saveUInt16(serializeSettings, it->validLifetime)) != 0)
             {
@@ -3389,7 +3388,7 @@ int ser_saveActivationStatus(gxSerializerSettings* serializeSettings, gxArray* t
                 break;
             }
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = ser_saveOctetString3(serializeSettings, (char*)it->name, it->size, sizeof(it->name))) != 0)
+            if ((ret = ser_saveOctetString3(serializeSettings, it->name, it->size, sizeof(it->name))) != 0)
             {
                 break;
             }
@@ -3427,7 +3426,7 @@ int ser_saveFunctionList(gxSerializerSettings* serializeSettings, gxArray* table
                 break;
             }
 #ifdef DLMS_IGNORE_MALLOC
-            if ((ret = ser_saveOctetString3(serializeSettings, (char*)it->name, it->nameSize, sizeof(it->name))) != 0)
+            if ((ret = ser_saveOctetString3(serializeSettings, it->name, it->nameSize, sizeof(it->name))) != 0)
             {
                 break;
             }
@@ -3752,8 +3751,8 @@ int ser_saveImageTransfer(
                     break;
                 }
                 if ((ret = ser_saveUInt32(serializeSettings, it->size)) != 0 ||
-                    (ret = ser_saveOctetString3(serializeSettings, (char*)it->identification.data, it->identification.size, sizeof(it->identification.data))) != 0 ||
-                    (ret = ser_saveOctetString3(serializeSettings, (char*)it->signature.data, it->signature.size, sizeof(it->signature.data))) != 0)
+                    (ret = ser_saveOctetString3(serializeSettings, it->identification.data, it->identification.size, sizeof(it->identification.data))) != 0 ||
+                    (ret = ser_saveOctetString3(serializeSettings, it->signature.data, it->signature.size, sizeof(it->signature.data))) != 0)
                 {
                     break;
                 }
@@ -3933,8 +3932,8 @@ int ser_saveModemConfiguration(
         {
 #ifdef DLMS_IGNORE_MALLOC
             if ((ret = arr_getByIndex3(&object->initialisationStrings, pos, (void**)&mi, sizeof(gxModemInitialisation), 0)) != 0 ||
-                (ret = ser_saveOctetString3(serializeSettings, (char*)mi->request.value, mi->request.size, sizeof(mi->request.value))) != 0 ||
-                (ret = ser_saveOctetString3(serializeSettings, (char*)mi->response.value, mi->response.size, sizeof(mi->response.value))) != 0 ||
+                (ret = ser_saveOctetString3(serializeSettings, mi->request.value, mi->request.size, sizeof(mi->request.value))) != 0 ||
+                (ret = ser_saveOctetString3(serializeSettings, mi->response.value, mi->response.size, sizeof(mi->response.value))) != 0 ||
                 (ret = ser_saveUInt16(serializeSettings, mi->delay)) != 0)
             {
                 break;
@@ -3961,7 +3960,7 @@ int ser_saveModemConfiguration(
 
 #ifdef DLMS_IGNORE_MALLOC
             if ((ret = arr_getByIndex3(&object->modemProfile, pos, (void**)&it, sizeof(gxModemProfile), 0)) != 0 ||
-                (ret = ser_saveOctetString3(serializeSettings, (char*)it->value, it->size, sizeof(it->value))) != 0)
+                (ret = ser_saveOctetString3(serializeSettings, it->value, it->size, sizeof(it->value))) != 0)
             {
                 break;
             }
@@ -4775,6 +4774,64 @@ int ser_saveLteMonitoring(
 }
 #endif //DLMS_IGNORE_LTE_MONITORING
 
+#ifndef DLMS_IGNORE_NTP_SETUP
+
+int saveNtpSetupKeys(
+    gxSerializerSettings* serializeSettings,
+    gxNtpSetup* object)
+{
+    uint16_t pos, count;
+    int ret = 0;
+#ifdef DLMS_IGNORE_MALLOC
+    gxNtpKey* it;
+#else
+    gxKey3* it;
+#endif //DLMS_IGNORE_MALLOC
+    if ((ret = ser_saveArrayCount(serializeSettings, &object->keys, &count)) == 0)
+    {
+        for (pos = 0; pos != object->keys.size; ++pos)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if ((ret = arr_getByIndex4(&object->keys, pos, (void**)&it, sizeof(gxNtpKey), 0)) != 0 ||
+                (ret = ser_saveUInt32(serializeSettings, it->id)) != 0 ||
+                (ret = ser_saveOctetString3(serializeSettings, it->key, it->size, MAX_AUTHENTICATION_KEY_LENGTH)) != 0)
+            {
+                break;
+            }
+#else
+            if ((ret = arr_getByIndex(&object->keys, pos, (void**)&it)) != 0 ||
+                (ret = ser_saveUInt32(serializeSettings, it->key)) != 0 ||
+                (ret = ser_saveOctetString(serializeSettings, (gxByteBuffer*)it->value)) != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+        }
+#ifdef DLMS_IGNORE_MALLOC
+        object->keys.size = count;
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+int ser_saveNtpSetup(
+    gxSerializerSettings* serializeSettings,
+    gxNtpSetup* object)
+{
+    int ret = 0;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+    if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_saveUInt8(serializeSettings, object->activated)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 3) && (ret = ser_saveOctetString(serializeSettings, &object->serverAddress)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 4) && (ret = ser_saveUInt16(serializeSettings, object->port)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 5) && (ret = ser_saveUInt8(serializeSettings, (unsigned char)object->authentication)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 6) && (ret = saveNtpSetupKeys(serializeSettings, object)) != 0) ||
+        (!isAttributeSet(serializeSettings, ignored, 7) && (ret = ser_saveOctetString(serializeSettings, &object->clientKey)) != 0))
+    {
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_NTP_SETUP
+
+
 #ifndef DLMS_IGNORE_SCHEDULE
 int ser_saveSchedule(
     gxSerializerSettings* serializeSettings,
@@ -5218,6 +5275,11 @@ int ser_saveObject(
         ser_saveLteMonitoring(serializeSettings, (gxLteMonitoring*)object);
         break;
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        ret = ser_saveNtpSetup(serializeSettings, (gxNtpSetup*)object);
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
 
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
@@ -8934,6 +8996,79 @@ int ser_loadLteMonitoring(
 }
 #endif //DLMS_IGNORE_LTE_MONITORING
 
+
+#ifndef DLMS_IGNORE_NTP_SETUP
+int ser_loadNtpSetup(
+    gxSerializerSettings * serializeSettings,
+    gxNtpSetup * object)
+{
+    int ret = 0;
+    uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
+#ifdef DLMS_IGNORE_MALLOC
+    gxNtpKey* k;
+#else 
+    gxKey3* k;
+#endif // DLMS_IGNORE_MALLOC
+
+    uint16_t pos, count;
+    unsigned char ch;
+    if (!isAttributeSet(serializeSettings, ignored, 2))
+    {
+        ret = ser_loadUInt8(serializeSettings, &object->activated);
+    }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 3))
+    {
+        ret = ser_loadOctetString(serializeSettings, &object->serverAddress);
+    }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 4))
+    {
+        ret = ser_loadUInt16(serializeSettings, &object->port);
+    }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 5))
+    {
+        if ((ret = ser_loadUInt8(serializeSettings, &ch)) == 0)
+        {
+            object->authentication = (DLMS_NTP_AUTHENTICATION_METHOD)ch;
+        }
+    }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 6))
+    {
+        arr_clear(&object->keys);
+        if (ret == 0 && (ret = ser_loadArray(serializeSettings, &object->keys, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+#ifdef DLMS_IGNORE_MALLOC
+                if ((ret = ser_getArrayItem(&object->keys, pos, (void**)&k, sizeof(gxNtpKey))) != 0 ||
+                    (ret = ser_loadUInt32(serializeSettings, &k->id)) != 0 ||
+                    (ret = ser_loadOctetString3(serializeSettings, k->key, &k->size)) != 0)
+                {
+                    break;
+                }
+#else 
+                if ((ret = ser_getArrayItem(&object->keys, pos, (void**)&k, sizeof(gxKey3))) != 0)
+                {
+                    break;
+                }
+                k->value = gxmalloc(sizeof(gxByteBuffer));
+                bb_init((gxByteBuffer*)k->value);
+                if ((ret = ser_loadUInt32(serializeSettings, &k->key)) != 0 ||
+                    (ret = ser_loadOctetString(serializeSettings, (gxByteBuffer*)k->value)) != 0)
+                {
+                    break;
+                }
+#endif // DLMS_IGNORE_MALLOC
+            }
+        }
+    }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 7))
+    {
+        ret = ser_loadOctetString(serializeSettings, &object->clientKey);
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_NTP_SETUP
+
 #ifndef DLMS_IGNORE_SCHEDULE
 int ser_loadSchedule(
     gxSerializerSettings * serializeSettings,
@@ -9333,44 +9468,49 @@ int ser_loadObject(
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE1_SETUP
 #ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
     case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE2_SETUP:
-        ser_loadIec8802LlcType2Setup(serializeSettings, (gxIec8802LlcType2Setup*)object);
+        ret = ser_loadIec8802LlcType2Setup(serializeSettings, (gxIec8802LlcType2Setup*)object);
         break;
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE2_SETUP
 #ifndef DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
     case DLMS_OBJECT_TYPE_IEC_8802_LLC_TYPE3_SETUP:
-        ser_loadIec8802LlcType3Setup(serializeSettings, (gxIec8802LlcType3Setup*)object);
+        ret = ser_loadIec8802LlcType3Setup(serializeSettings, (gxIec8802LlcType3Setup*)object);
         break;
 #endif //DLMS_IGNORE_IEC_8802_LLC_TYPE3_SETUP
 #ifndef DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
     case DLMS_OBJECT_TYPE_SFSK_ACTIVE_INITIATOR:
-        ser_loadSFSKActiveInitiator(serializeSettings, (gxSFSKActiveInitiator*)object);
+        ret = ser_loadSFSKActiveInitiator(serializeSettings, (gxSFSKActiveInitiator*)object);
         break;
 #endif //DLMS_IGNORE_SFSK_ACTIVE_INITIATOR
 #ifndef DLMS_IGNORE_SFSK_MAC_COUNTERS
     case DLMS_OBJECT_TYPE_SFSK_MAC_COUNTERS:
-        ser_loadFSKMacCounters(serializeSettings, (gxFSKMacCounters*)object);
+        ret = ser_loadFSKMacCounters(serializeSettings, (gxFSKMacCounters*)object);
         break;
 #endif //DLMS_IGNORE_SFSK_MAC_COUNTERS
 #ifndef DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
     case DLMS_OBJECT_TYPE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS:
-        ser_loadSFSKMacSynchronizationTimeouts(serializeSettings, (gxSFSKMacSynchronizationTimeouts*)object);
+        ret = ser_loadSFSKMacSynchronizationTimeouts(serializeSettings, (gxSFSKMacSynchronizationTimeouts*)object);
         break;
 #endif //DLMS_IGNORE_SFSK_MAC_SYNCHRONIZATION_TIMEOUTS
 #ifndef DLMS_IGNORE_SFSK_PHY_MAC_SETUP
     case DLMS_OBJECT_TYPE_SFSK_PHY_MAC_SETUP:
-        ser_loadSFSKPhyMacSetUp(serializeSettings, (gxSFSKPhyMacSetUp*)object);
+        ret = ser_loadSFSKPhyMacSetUp(serializeSettings, (gxSFSKPhyMacSetUp*)object);
         break;
 #endif //DLMS_IGNORE_SFSK_PHY_MAC_SETUP
 #ifndef DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
     case DLMS_OBJECT_TYPE_SFSK_REPORTING_SYSTEM_LIST:
-        ser_loadSFSKReportingSystemList(serializeSettings, (gxSFSKReportingSystemList*)object);
+        ret = ser_loadSFSKReportingSystemList(serializeSettings, (gxSFSKReportingSystemList*)object);
         break;
 #endif //DLMS_IGNORE_SFSK_REPORTING_SYSTEM_LIST
 #ifndef DLMS_IGNORE_LTE_MONITORING
     case DLMS_OBJECT_TYPE_LTE_MONITORING:
-        ser_loadLteMonitoring(serializeSettings, (gxLteMonitoring*)object);
+        ret = ser_loadLteMonitoring(serializeSettings, (gxLteMonitoring*)object);
         break;
 #endif //DLMS_IGNORE_LTE_MONITORING
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        ret = ser_loadNtpSetup(serializeSettings, (gxNtpSetup*)object);
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
 #ifdef DLMS_ITALIAN_STANDARD
     case DLMS_OBJECT_TYPE_TARIFF_PLAN:
         ret = ser_loadTariffPlan(serializeSettings, (gxTariffPlan*)object);

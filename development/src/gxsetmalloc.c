@@ -8573,6 +8573,105 @@ int cosem_setLteMonitoring(
 }
 #endif //DLMS_IGNORE_LTE_MONITORING
 
+
+#ifndef DLMS_IGNORE_NTP_SETUP
+int cosem_setNtpSetup(gxNtpSetup* object, unsigned char index, dlmsVARIANT* value)
+{
+    int ret = 0;
+    uint16_t pos;
+    gxKey3* k;
+    dlmsVARIANT* tmp, * tmp2;
+    if (index == 2)
+    {
+        object->activated = var_toInteger(value);
+    }
+    else if (index == 3)
+    {
+        if ((ret = bb_clear(&object->serverAddress)) == 0 &&
+            bb_size(value->byteArr) != 0)
+        {
+            ret = bb_set(&object->serverAddress, value->byteArr->data, bb_size(value->byteArr));
+        }
+    }
+    else if (index == 4)
+    {
+        object->port = var_toInteger(value);
+    }
+    else if (index == 5)
+    {
+        object->authentication = (DLMS_NTP_AUTHENTICATION_METHOD)var_toInteger(value);
+    }
+    else if (index == 6)
+    {
+        arr_clear(&object->keys);
+        if (value->Arr != NULL)
+        {
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                if ((ret = va_getByIndex(value->Arr, pos, &tmp)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if (tmp->vt != DLMS_DATA_TYPE_STRUCTURE)
+                {
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    break;
+                }
+                if ((ret = va_getByIndex(tmp->Arr, 0, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                if (tmp2->vt != DLMS_DATA_TYPE_UINT32)
+                {
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    break;
+                }
+                k = (gxKey3*)gxmalloc(sizeof(gxKey3));
+                k->key = tmp2->uiVal;
+                if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
+                {
+                    gxfree(k);
+                    break;
+                }
+                if (tmp2->vt != DLMS_DATA_TYPE_OCTET_STRING)
+                {
+                    gxfree(k);
+                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+                    break;
+                }
+                k->value = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+                if (k->value == NULL)
+                {
+                    gxfree(k);
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                bb_init((gxByteBuffer*)k->value);
+                bb_set(k->value, tmp2->byteArr->data, tmp2->byteArr->size);
+                if ((ret = arr_push(&object->keys, k)) != 0)
+                {
+                    gxfree(k);
+                    break;
+                }
+            }
+        }
+    }
+    else if (index == 7)
+    {
+        if ((ret = bb_clear(&object->clientKey)) == 0 &&
+            bb_size(value->byteArr) != 0)
+        {
+            ret = bb_set(&object->clientKey, value->byteArr->data, bb_size(value->byteArr));
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_NTP_SETUP
+
 #ifdef DLMS_ITALIAN_STANDARD
 
 int updateInterval(gxInterval* interval, unsigned char value)

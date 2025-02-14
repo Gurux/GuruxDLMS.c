@@ -4822,6 +4822,19 @@ uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char meth
         }
         break;
 #endif //DLMS_IGNORE_FUNCTION_CONTROL
+#ifndef DLMS_IGNORE_NTP_SETUP
+    case DLMS_OBJECT_TYPE_NTP_SETUP:
+        switch (methodIndex)
+        {
+        case 2:
+        case 3:
+            ret = GET_ATTRIBUTE(6);
+            break;
+        default:
+            break;
+        }
+        break;
+#endif //DLMS_IGNORE_NTP_SETUP
     default:
         break;
     }

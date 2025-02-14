@@ -117,6 +117,7 @@ extern "C" {
     // #define DLMS_IGNORE_G3_PLC_6LO_WPAN
     // #define DLMS_IGNORE_FUNCTION_CONTROL
     // #define DLMS_IGNORE_ARRAY_MANAGER
+    // #define DLMS_IGNORE_NTP_SETUP
 
     // #define DLMS_IGNORE_MALLOC
     // #define DLMS_USE_CUSTOM_MALLOC
@@ -125,7 +126,7 @@ extern "C" {
 
     // #define DLMS_IGNORE_FLOAT32
     // #define DLMS_IGNORE_FLOAT64
-    
+
     //Delta values are ignored.
     // #define DLMS_IGNORE_DELTA
 
@@ -196,7 +197,7 @@ extern "C" {
 
     //Security Suite 1 is used.
     //#define DLMS_SECURITY_SUITE_1
-    
+
     //Security Suite 2 is used.
     //#define DLMS_SECURITY_SUITE_2
 

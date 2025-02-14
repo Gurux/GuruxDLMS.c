@@ -164,6 +164,7 @@ gxG3Plc6LoWPAN g3Plc6LoWPAN;
 gxArrayManager arrayManager;
 gxLteMonitoring lteMonitoring;
 gxAccount account;
+gxNtpSetup ntpSetup;
 
 #ifdef DLMS_ITALIAN_STANDARD
 
@@ -221,6 +222,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(g3plcMacLayerCounters), BASE(g3PlcMacSetup), BASE(g3Plc6LoWPAN), BASE(arrayManager),
     BASE(lteMonitoring),
     BASE(account),
+    BASE(ntpSetup),
     #ifdef DLMS_ITALIAN_STANDARD
     BASE(activeTariffPlan),
     BASE(passiveTariffPlan),
@@ -353,6 +355,56 @@ int saveSecurity(
     else
     {
         printf("%s\r\n", "Failed to open keys file.");
+    }
+    return ret;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// This method is used to test object serialization.
+// Object is first save and then load.
+/////////////////////////////////////////////////////////////////////////////
+int testobjectSerialization(dlmsServerSettings* settings, gxObject* obj)
+{
+    int ret = 0;
+#ifndef DLMS_IGNORE_SERIALIZER
+    const char* fileName = "test.raw";
+#if _MSC_VER > 1400
+    FILE* f = NULL;
+    fopen_s(&f, fileName, "wb");
+#else
+    FILE* f = fopen(fileName, "wb");
+#endif
+    if (f != NULL)
+    {
+        gxSerializerSettings serializerSettings;
+        ser_init(&serializerSettings);
+        serializerSettings.stream = f;
+        ret = ser_saveObject(&serializerSettings, obj);
+        fclose(f);
+    }
+    else
+    {
+        printf("%s\r\n", "Failed to open settings file.");
+    }
+#endif //DLMS_IGNORE_SERIALIZER
+#if _MSC_VER > 1400
+    f = NULL;
+    fopen_s(&f, fileName, "rb");
+#else
+    f = fopen(fileName, "rb");
+#endif
+    if (f != NULL)
+    {
+        gxSerializerSettings serializerSettings;
+        ser_init(&serializerSettings);
+        serializerSettings.stream = f;
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+#else
+        serializerSettings.position = 0;
+#endif
+        obj_clear(obj);
+        ret = ser_loadObject(&settings->base, &serializerSettings, obj);
+        fclose(f);
     }
     return ret;
 }
@@ -2755,7 +2807,7 @@ int addCF63(dlmsSettings* settings)
         // if profile generic buffer is empty.
 //        ret = compactData_updateTemplateDescription(settings, &cf63);
         static unsigned char DESCRIPTION[] = { 0x02, 0x0C, 0x11, 0x06, 0x12, 0x02, 0x04, 0x0F, 0x0F, 0x0F, 0x16, 0x12, 0x12, 0x12, 0x02, 0x02, 0x0F, 0x16, 0x01, 0x00, 0x01, 0x02, 0x06, 0x06, 0x12, 0x12, 0x12, 0x12, 0x12, 0x01, 0x00, 0x01, 0x02, 0x02, 0x12, 0x12, 0x12, 0x06 };
-        bb_set(&cf63.templateDescription, DESCRIPTION, sizeof(DESCRIPTION));      
+        bb_set(&cf63.templateDescription, DESCRIPTION, sizeof(DESCRIPTION));
     }
     return ret;
 }
@@ -3435,6 +3487,40 @@ int addAccount()
 }
 
 ///////////////////////////////////////////////////////////////////////
+//Add NTP setup object.
+///////////////////////////////////////////////////////////////////////
+int addNtpSetup()
+{
+    int ret;
+    gxKey3* k;
+    const unsigned char ln[6] = { 0, 0, 25, 10, 0, 255 };
+    if ((ret = INIT_OBJECT(ntpSetup, DLMS_OBJECT_TYPE_NTP_SETUP, ln)) == 0)
+    {
+        //Set default values.
+        ntpSetup.activated = 1;
+        bb_addString(&ntpSetup.serverAddress, "pool.ntp.org");
+        ntpSetup.port = 123;
+        ntpSetup.authentication = DLMS_NTP_AUTHENTICATION_METHOD_SHARED_SECRETS;
+        //Add key 1.
+        k = (gxKey3*)malloc(sizeof(gxKey3));
+        k->key = 1;
+        k->value = malloc(sizeof(gxByteBuffer));
+        bb_init((gxByteBuffer*)k->value);
+        bb_addString((gxByteBuffer*)k->value, "key 1");
+        arr_push(&ntpSetup.keys, k);
+        //Add key 2.
+        k = (gxKey3*)malloc(sizeof(gxKey3));
+        k->key = 2;
+        k->value = malloc(sizeof(gxByteBuffer));
+        bb_init((gxByteBuffer*)k->value);
+        bb_addString((gxByteBuffer*)k->value, "key 1");
+        arr_push(&ntpSetup.keys, k);
+        bb_addString(&ntpSetup.clientKey, "client key");
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
 //Add LTE monitoring object.
 ///////////////////////////////////////////////////////////////////////
 int addLteMonitoring()
@@ -3652,6 +3738,7 @@ int svr_InitObjects(
         (ret = addLimiter()) != 0 ||
         (ret = addLteMonitoring()) != 0 ||
         (ret = addAccount()) != 0 ||
+        (ret = addNtpSetup()) != 0 ||
 #ifdef DLMS_ITALIAN_STANDARD
         (ret = addCurrentDiagnostic()) != 0 ||
         (ret = addSnapshotReasonCode()) != 0 ||

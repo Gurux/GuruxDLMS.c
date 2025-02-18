@@ -2615,10 +2615,11 @@ int invoke_RegisterActivation(
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #endif //DLMS_IGNORE_MALLOC
     }
+    //add mask.
     else if (e->index == 2)
     {
         count = arr_getCapacity(&object->maskList);
-        if (!(object->registerAssignment.size < count))
+        if (!(object->maskList.size < count))
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }

@@ -1737,6 +1737,10 @@ int apdu_parsePDU(
 #ifndef DLMS_IGNORE_HIGH_GMAC
             unsigned char invalidSystemTitle;
             invalidSystemTitle = memcmp(settings->sourceSystemTitle, EMPTY_SYSTEM_TITLE, 8) == 0;
+            if (settings->server && settings->authentication > DLMS_AUTHENTICATION_LOW)
+            {
+                afu |= DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE;
+            }
             if (settings->server && settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC && invalidSystemTitle)
             {
 #ifdef DLMS_DEBUG
@@ -1764,7 +1768,7 @@ int apdu_parsePDU(
                 break;
             }
 #ifndef DLMS_IGNORE_SERVER
-            if (ciphered)
+            if (ciphered || settings->authentication > DLMS_AUTHENTICATION_LOW)
             {
                 afu &= ~DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE;
             }
@@ -1971,7 +1975,8 @@ int apdu_generateAARE(
         bb_setUInt8(data, 1);
         bb_setUInt8(data, (unsigned char)settings->userId);
     }
-    if (settings->authentication > DLMS_AUTHENTICATION_LOW)
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW &&
+        result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
     {
         if (settings->stoCChallenge.size == 0)
         {

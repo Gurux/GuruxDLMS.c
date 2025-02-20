@@ -150,7 +150,6 @@ void bi_append(bigInteger* arr, uint32_t value)
 {
     arr->data[arr->size] = value;
     ++arr->size;
-    arr->isNegative |= value < 0;
 }
 
 int bi_attach(

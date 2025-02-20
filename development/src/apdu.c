@@ -1737,10 +1737,12 @@ int apdu_parsePDU(
 #ifndef DLMS_IGNORE_HIGH_GMAC
             unsigned char invalidSystemTitle;
             invalidSystemTitle = memcmp(settings->sourceSystemTitle, EMPTY_SYSTEM_TITLE, 8) == 0;
+#ifndef DLMS_IGNORE_SERVER
             if (settings->server && settings->authentication > DLMS_AUTHENTICATION_LOW)
             {
                 afu |= DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE;
             }
+#endif //DLMS_IGNORE_SERVER
             if (settings->server && settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC && invalidSystemTitle)
             {
 #ifdef DLMS_DEBUG

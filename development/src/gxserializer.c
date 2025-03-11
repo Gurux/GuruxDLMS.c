@@ -361,9 +361,19 @@ int ser_set2(
                 }
             }
 #else
-            if ((ret = SERIALIZER_LOAD(serializeSettings->position, capacity, arr->data + arr->size)) == 0)
+            if ((ret = SERIALIZER_LOAD(serializeSettings->position,
+#ifdef DLMS_IGNORE_MALLOC
+                capacity,
+#else
+                count,
+#endif //DLMS_IGNORE_MALLOC
+                arr->data + arr->size)) == 0)
             {
+#ifdef DLMS_IGNORE_MALLOC
                 serializeSettings->position += capacity;
+#else
+                serializeSettings->position += count;
+#endif //DLMS_IGNORE_MALLOC
             }
 #endif //(!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
             if (ret == 0)

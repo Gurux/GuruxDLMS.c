@@ -354,50 +354,6 @@ int svr_generateExceptionResponse(
             ret = bb_setUInt8(data, DLMS_EXCEPTION_SERVICE_ERROR_DECIPHERING_ERROR);
         }
     }
-#ifndef DLMS_IGNORE_HIGH_GMAC
-    if (settings->cipher.security != DLMS_SECURITY_NONE)
-    {
-        unsigned char cmd = DLMS_COMMAND_GLO_CONFIRMED_SERVICE_ERROR;
-#ifndef DLMS_IGNORE_MALLOC
-        gxByteBuffer* key;
-#else
-        unsigned char* key;
-#endif //DLMS_IGNORE_MALLOC
-        if (dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
-        {
-#ifndef DLMS_IGNORE_MALLOC
-            key = settings->cipher.dedicatedKey;
-#else
-            key = settings->cipher.dedicatedKey;
-#endif //DLMS_IGNORE_MALLOC
-            cmd = DLMS_COMMAND_DED_CONFIRMED_SERVICE_ERROR;
-        }
-        else
-        {
-#ifndef DLMS_IGNORE_MALLOC
-            key = &settings->cipher.blockCipherKey;
-#else
-            key = settings->cipher.blockCipherKey;
-#endif //DLMS_IGNORE_MALLOC
-        }
-#ifdef DLMS_TRACE_PDU
-        cip_tracePdu(1, data);
-#endif //DLMS_TRACE_PDU
-        ret = cip_encrypt(
-            &settings->cipher,
-            settings->cipher.security,
-            DLMS_COUNT_TYPE_PACKET,
-            settings->cipher.invocationCounter,
-            cmd,
-#ifndef DLMS_IGNORE_MALLOC
-            settings->cipher.systemTitle.data,
-#else
-            settings->cipher.systemTitle,
-#endif //DLMS_IGNORE_MALLOC
-            key,
-            data);
-    }
-#endif //DLMS_IGNORE_HIGH_GMAC
 #ifndef DLMS_IGNORE_HDLC
     if (ret == 0 && IS_HDLC(settings->interfaceType))
     {
@@ -3743,15 +3699,30 @@ int svr_handleRequest4(
             gxByteBuffer data;
             unsigned char tmp[10];
             bb_attach(&data, tmp, 0, sizeof(tmp));
-            if ((ret = svr_generateConfirmedServiceError(
-                settings,
-                DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
-                DLMS_SERVICE_ERROR_APPLICATION_REFERENCE,
-                DLMS_APPLICATION_REFERENCE_DECIPHERING_ERROR,
-                &data)) != 0)
+            if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL)
             {
-                settings->receivedData.position = settings->receivedData.size = 0;
-                return ret;
+                if ((ret = svr_generateExceptionResponse(
+                    &settings->base,
+                    DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN,
+                    ret,
+                    &data)) != 0)
+                {
+                    settings->receivedData.position = settings->receivedData.size = 0;
+                    return ret;
+                }
+            }
+            else
+            {
+                if ((ret = svr_generateConfirmedServiceError(
+                    settings,
+                    DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
+                    DLMS_SERVICE_ERROR_APPLICATION_REFERENCE,
+                    DLMS_APPLICATION_REFERENCE_DECIPHERING_ERROR,
+                    &data)) != 0)
+                {
+                    settings->receivedData.position = settings->receivedData.size = 0;
+                    return ret;
+                }
             }
             return dlms_addFrame(&settings->base, 0, &data, sr->reply);
         }

@@ -2929,6 +2929,34 @@ int svr_handleMethodRequest(
             }
 #endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
         }
+#ifndef DLMS_IGNORE_SECURITY_SETUP
+        //If security setup keys are changed.
+        if (e->target != NULL && e->target->objectType == DLMS_OBJECT_TYPE_SECURITY_SETUP && id == 2)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            memcpy(settings->base.cipher.authenticationKey, ((gxSecuritySetup*)e->target)->gak, 32);
+            memcpy(settings->base.cipher.blockCipherKey, ((gxSecuritySetup*)e->target)->guek, 32);
+            memcpy(settings->base.cipher.broadcastBlockCipherKey, ((gxSecuritySetup*)e->target)->gbek, 32);
+#else
+            if (((gxSecuritySetup*)e->target)->gak.size != 0)
+            {
+                bb_clear(&settings->base.cipher.authenticationKey);
+                bb_set(&settings->base.cipher.authenticationKey, ((gxSecuritySetup*)e->target)->gak.data, ((gxSecuritySetup*)e->target)->gak.size);
+            }
+            if (((gxSecuritySetup*)e->target)->guek.size != 0)
+            {
+                bb_clear(&settings->base.cipher.blockCipherKey);
+                bb_set(&settings->base.cipher.blockCipherKey, ((gxSecuritySetup*)e->target)->guek.data, ((gxSecuritySetup*)e->target)->guek.size);
+            }
+            if (((gxSecuritySetup*)e->target)->gbek.size != 0)
+            {
+                bb_clear(&settings->base.cipher.broadcastBlockCipherKey);
+                bb_set(&settings->base.cipher.broadcastBlockCipherKey, ((gxSecuritySetup*)e->target)->gbek.data, ((gxSecuritySetup*)e->target)->gbek.size);
+            }
+#endif //DLMS_IGNORE_MALLOC
+        }
+#endif //DLMS_IGNORE_SECURITY_SETUP
+
     }
 #ifndef DLMS_IGNORE_MALLOC
     vec_clear(&arr);

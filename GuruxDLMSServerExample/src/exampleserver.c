@@ -3590,6 +3590,7 @@ int loadSecurity(dlmsSettings* settings)
             bb_clear(&bb);
             return ret;
         }
+        fclose(f);
     }
     return saveSecurity(settings);
 }
@@ -5348,6 +5349,22 @@ unsigned char svr_isTarget(
                         if (a->securitySetup->securityPolicy != 0)
                         {
                             settings->expectedSecurityPolicy = a->securitySetup->securityPolicy;
+                        }
+                        //Update encryption keys from security setup object.
+                        if (a->securitySetup->gak.size != 0)
+                        {
+                            bb_clear(&settings->cipher.authenticationKey);
+                            bb_set(&settings->cipher.authenticationKey, a->securitySetup->gak.data, a->securitySetup->gak.size);
+                        }
+                        if (a->securitySetup->guek.size != 0)
+                        {
+                            bb_clear(&settings->cipher.blockCipherKey);
+                            bb_set(&settings->cipher.blockCipherKey, a->securitySetup->guek.data, a->securitySetup->guek.size);
+                        }
+                        if (a->securitySetup->gbek.size != 0)
+                        {
+                            bb_clear(&settings->cipher.broadcastBlockCipherKey);
+                            bb_set(&settings->cipher.broadcastBlockCipherKey, a->securitySetup->gbek.data, a->securitySetup->gbek.size);
                         }
                     }
                     break;

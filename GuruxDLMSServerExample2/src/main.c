@@ -4185,6 +4185,10 @@ unsigned char svr_isTarget(
                         {
                             settings->expectedSecurityPolicy = a->securitySetup->securityPolicy;
                         }
+                        //Update encryption keys from security setup object.
+                        memcpy(settings->cipher.authenticationKey, a->securitySetup->gak, 32);
+                        memcpy(settings->cipher.blockCipherKey, a->securitySetup->guek, 32);
+                        memcpy(settings->cipher.broadcastBlockCipherKey, a->securitySetup->gbek, 32);
                     }
                     break;
                 }

@@ -819,7 +819,8 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     {
                         break;
                     }
-                    if (bb.size != 16)
+                    if ((target->securitySuite == DLMS_SECURITY_SUITE_V2 && bb.size != 32) ||
+                        (target->securitySuite != DLMS_SECURITY_SUITE_V2 && bb.size != 16))
                     {
                         e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                         break;
@@ -827,13 +828,13 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     switch (type)
                     {
                     case DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION:
-                        memcpy(settings->base.cipher.blockCipherKey, BUFF, bb.size);
+                        memcpy(target->guek, BUFF, bb.size);
                         break;
                     case DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION:
-                        memcpy(settings->base.cipher.broadcastBlockCipherKey, BUFF, bb.size);
+                        memcpy(target->gbek, BUFF, bb.size);
                         break;
                     case DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION:
-                        memcpy(settings->base.cipher.authenticationKey, BUFF, bb.size);
+                        memcpy(target->gak, BUFF, bb.size);
                         break;
                     case DLMS_GLOBAL_KEY_TYPE_KEK:
                         memcpy(settings->base.kek, BUFF, bb.size);
@@ -866,7 +867,8 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                 {
                     break;
                 }
-                if (bb.size != 16)
+                if ((target->securitySuite == DLMS_SECURITY_SUITE_V2 && bb.size != 32) ||
+                    (target->securitySuite != DLMS_SECURITY_SUITE_V2 && bb.size != 16))
                 {
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     break;
@@ -874,16 +876,16 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                 switch (type->cVal)
                 {
                 case DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION:
-                    bb_clear(&settings->base.cipher.blockCipherKey);
-                    bb_set(&settings->base.cipher.blockCipherKey, bb.data, bb.size);
+                    bb_clear(&target->guek);
+                    bb_set(&target->guek, bb.data, bb.size);
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION:
-                    bb_clear(&settings->base.cipher.broadcastBlockCipherKey);
-                    bb_set(&settings->base.cipher.broadcastBlockCipherKey, bb.data, bb.size);
+                    bb_clear(&target->gbek);
+                    bb_set(&target->gbek, bb.data, bb.size);
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION:
-                    bb_clear(&settings->base.cipher.authenticationKey);
-                    bb_set(&settings->base.cipher.authenticationKey, bb.data, bb.size);
+                    bb_clear(&target->gak);
+                    bb_set(&target->gak, bb.data, bb.size);
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_KEK:
                     bb_clear(&settings->base.kek);

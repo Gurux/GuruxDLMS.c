@@ -40,6 +40,7 @@
 #include <crtdbg.h>
 #endif
 #include <string.h>
+#include "../include/enums.h"
 #include "../include/datainfo.h"
 #include "../include/dlms.h"
 #include "../include/cosem.h"
@@ -632,6 +633,20 @@ int cosem_init4(
         break;
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
     {
+        //Set default keys.
+#ifdef DLMS_IGNORE_MALLOC
+        memcpy(((gxSecuritySetup*)object)->gak, DEFAULT_AUTHENTICATION_KEY, sizeof(DEFAULT_AUTHENTICATION_KEY));
+        memcpy(((gxSecuritySetup*)object)->guek, DEFAULT_BLOCK_CIPHER_KEY, sizeof(DEFAULT_BLOCK_CIPHER_KEY));
+        memcpy(((gxSecuritySetup*)object)->gbek, DEFAULT_BROADCAST_BLOCK_CIPHER_KEY, sizeof(DEFAULT_BROADCAST_BLOCK_CIPHER_KEY));
+#else
+        BYTE_BUFFER_INIT(&((gxSecuritySetup*)object)->guek);
+        bb_set(&((gxSecuritySetup*)object)->guek, DEFAULT_BLOCK_CIPHER_KEY, sizeof(DEFAULT_BLOCK_CIPHER_KEY));
+        BYTE_BUFFER_INIT(&((gxSecuritySetup*)object)->gbek);
+        bb_set(&((gxSecuritySetup*)object)->gbek, DEFAULT_BROADCAST_BLOCK_CIPHER_KEY, sizeof(DEFAULT_BROADCAST_BLOCK_CIPHER_KEY));
+        BYTE_BUFFER_INIT(&((gxSecuritySetup*)object)->gak);
+        bb_set(&((gxSecuritySetup*)object)->gak, DEFAULT_AUTHENTICATION_KEY, sizeof(DEFAULT_AUTHENTICATION_KEY));
+#endif //DLMS_IGNORE_MALLOC
+
 #if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_1)
         ((gxObject*)object)->version = 1;
         priv_init(&((gxSecuritySetup*)object)->signingKey);

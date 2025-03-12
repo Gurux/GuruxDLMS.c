@@ -839,11 +839,25 @@ extern "C" {
         uint32_t minimumInvocationCounter;
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
         //Block cipher key.
+#ifdef DLMS_IGNORE_MALLOC
+        unsigned char guek[32];
+#else
         gxByteBuffer guek;
+#endif //DLMS_IGNORE_MALLOC
         //Broadcast block cipher key.
+#ifdef DLMS_IGNORE_MALLOC
+        unsigned char gbek[32];
+#else
         gxByteBuffer gbek;
+#endif //DLMS_IGNORE_MALLOC
+
         //Authentication key.
+#ifdef DLMS_IGNORE_MALLOC
+        unsigned char gak[32];
+#else
         gxByteBuffer gak;
+#endif //DLMS_IGNORE_MALLOC
+
 #if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
         //Signing key of the server.
         gxPrivateKey signingKey;

@@ -1490,7 +1490,8 @@ int apdu_parsePDU(
 #ifdef DLMS_DEBUG
                 svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid client system title. "), -1);
 #endif //DLMS_DEBUG
-                * diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
+                settings->cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
+                *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
             }
@@ -1947,8 +1948,9 @@ int apdu_generateAARE(
     bb_setUInt8(data, diagnostic);
     // SystemTitle
 #ifndef DLMS_IGNORE_HIGH_GMAC
-    if (settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC
-        || isCiphered(&settings->cipher))
+    if (diagnostic != DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED &&
+        (settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC
+            || isCiphered(&settings->cipher)))
     {
         bb_setUInt8(data, BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_CALLED_AP_INVOCATION_ID);
         bb_setUInt8(data, 2 + 8);

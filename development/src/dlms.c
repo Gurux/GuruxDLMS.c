@@ -4970,7 +4970,7 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
 #else
         if (settings->expectedInvocationCounter != NULL)
         {
-            if (invocationCounter < *settings->expectedInvocationCounter)
+            if (invocationCounter <= *settings->expectedInvocationCounter)
             {
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }

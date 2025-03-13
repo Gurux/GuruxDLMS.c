@@ -3721,7 +3721,8 @@ int svr_handleRequest4(
 #endif //DLMS_DEBUG
         if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL ||
             ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
-            ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE)
+            ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE ||
+            ret == DLMS_ERROR_CODE_INVALID_TAG)
         {
             bb_clear(sr->reply);
             gxByteBuffer data;

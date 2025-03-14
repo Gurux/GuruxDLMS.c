@@ -5344,7 +5344,7 @@ int dlms_getPdu(
             break;
         default:
             // Invalid command.
-            return DLMS_ERROR_CODE_UNKNOWN_COMMAND;
+            return DLMS_ERROR_CODE_INVALID_COMMAND;
         }
     }
     else if ((data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)

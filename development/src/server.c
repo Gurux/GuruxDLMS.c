@@ -331,6 +331,10 @@ int svr_generateExceptionResponse(
     gxByteBuffer* data)
 {
     int ret;
+    if (error == DLMS_ERROR_CODE_INVALID_COMMAND)
+    {
+        state = DLMS_EXCEPTION_STATE_ERROR_SERVICE_NOT_ALLOWED;
+    }
     if ((ret = bb_setUInt8(data, DLMS_COMMAND_EXCEPTION_RESPONSE)) == 0 &&
         (ret = bb_setUInt8(data, state)) == 0)
     {
@@ -3722,36 +3726,21 @@ int svr_handleRequest4(
         if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL ||
             ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
             ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE ||
-            ret == DLMS_ERROR_CODE_INVALID_TAG)
+            ret == DLMS_ERROR_CODE_INVALID_TAG ||
+            ret == DLMS_ERROR_CODE_INVALID_COMMAND)
         {
             bb_clear(sr->reply);
             gxByteBuffer data;
             unsigned char tmp[10];
             bb_attach(&data, tmp, 0, sizeof(tmp));
-            if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL)
+            if ((ret = svr_generateExceptionResponse(
+                &settings->base,
+                DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN,
+                ret,
+                &data)) != 0)
             {
-                if ((ret = svr_generateExceptionResponse(
-                    &settings->base,
-                    DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN,
-                    ret,
-                    &data)) != 0)
-                {
-                    settings->receivedData.position = settings->receivedData.size = 0;
-                    return ret;
-                }
-            }
-            else
-            {
-                if ((ret = svr_generateConfirmedServiceError(
-                    settings,
-                    DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR,
-                    DLMS_SERVICE_ERROR_APPLICATION_REFERENCE,
-                    DLMS_APPLICATION_REFERENCE_DECIPHERING_ERROR,
-                    &data)) != 0)
-                {
-                    settings->receivedData.position = settings->receivedData.size = 0;
-                    return ret;
-                }
+                settings->receivedData.position = settings->receivedData.size = 0;
+                return ret;
             }
             return dlms_addFrame(&settings->base, 0, &data, sr->reply);
         }

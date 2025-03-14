@@ -3536,7 +3536,7 @@ int cosem_setG3Plc6LoWPAN(gxG3Plc6LoWPAN* object, unsigned char index, dlmsVARIA
     }
     else if (index == 18)
     {
-        ret = cosem_getUInt8(value->byteArr, &object->disableDefaultRouting);
+        ret = cosem_getBoolean(value->byteArr, &object->disableDefaultRouting);
     }
     else if (index == 19)
     {

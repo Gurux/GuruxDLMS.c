@@ -101,6 +101,10 @@ extern "C" {
         //Secure connection is not supported.
         DLMS_ERROR_CODE_DLMS_SECURITY_NOT_IMPLEMENTED,
         //Invalid DLMS command.
+        // Feature is not implemented. 
+        // This means that the command is unknown.
+        // THe code might be ignored with compiler flag.
+        //See DLMS_IGNORE values.
         DLMS_ERROR_CODE_INVALID_COMMAND,
         //Invalid Block number.
         DLMS_ERROR_CODE_INVALID_BLOCK_NUMBER,
@@ -162,11 +166,6 @@ extern "C" {
         DLMS_ERROR_CODE_VERIFY_FAILED,
         //Invalid X.509 certificate.
         DLMS_ERROR_CODE_INVALID_CERTIFICATE,
-        // Feature is not implemented. 
-        // This means that the command is unknown.
-        // THe code might be ignored with compiler flag.
-        //See DLMS_IGNORE values.
-        DLMS_ERROR_CODE_UNKNOWN_COMMAND,
     }DLMS_ERROR_CODE;
 
 #ifdef  __cplusplus

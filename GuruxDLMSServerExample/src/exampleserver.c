@@ -412,9 +412,6 @@ int testobjectSerialization(dlmsServerSettings* settings, gxObject* obj)
 
 /////////////////////////////////////////////////////////////////////////////
 // Save data to the EEPROM.
-//
-// Only updated value is saved. This is done because write to EEPROM is slow
-// and there is a limit how many times value can be written to the EEPROM.
 /////////////////////////////////////////////////////////////////////////////
 int saveSettings()
 {

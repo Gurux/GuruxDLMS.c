@@ -4101,6 +4101,8 @@ void svr_postAction(
             //Save settings to EEPROM.
             if (e->error == 0)
             {
+                //Save meter Invocation counter value.
+                saveSettings(BASE(serverInvocationCounter), 2);
                 saveSettings(e->target, attribute);
                 if ((ret = loadSettings()) != 0)
                 {

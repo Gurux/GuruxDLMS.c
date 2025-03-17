@@ -2995,7 +2995,17 @@ int svr_handleReleaseRequest(
         return ret;
     }
     unsigned char userInfo = len != 3;
+    if (!userInfo && (settings->base.cipher.security != DLMS_SECURITY_NONE ||
+        bb_available(data) < len))
+    {
+        bb_clear(data);
+        //Return an error if client try to make release without ciphering.
+        //SYMSEC_REL_N1 subtest #1.
+        return DLMS_ERROR_CODE_INVALID_COMMAND;
+    }
+
     bb_clear(data);
+
 #ifdef DLMS_IGNORE_MALLOC
     unsigned char offset = IS_HDLC(settings->base.interfaceType) ? 12 : 9;
     bb_attach(&tmp, data->data + offset, 0, bb_getCapacity(data) - offset);
@@ -3380,8 +3390,11 @@ int svr_handleCommand(
         break;
     case DLMS_COMMAND_RELEASE_REQUEST:
         ret = svr_handleReleaseRequest(settings, data);
-        svr_disconnected(settings);
-        settings->base.connected &= ~DLMS_CONNECTION_STATE_DLMS;
+        if (ret == 0)
+        {
+            svr_disconnected(settings);
+            settings->base.connected &= ~DLMS_CONNECTION_STATE_DLMS;
+        }
         break;
 #ifndef DLMS_IGNORE_HDLC
     case DLMS_COMMAND_DISC:
@@ -3729,9 +3742,11 @@ int svr_handleRequest4(
             ret == DLMS_ERROR_CODE_INVALID_TAG ||
             ret == DLMS_ERROR_CODE_INVALID_COMMAND)
         {
+            bb_clear(&settings->receivedData);
             bb_clear(sr->reply);
+            reply_clear2(&settings->info, 1);
             gxByteBuffer data;
-            unsigned char tmp[10];
+            static unsigned char tmp[10];
             bb_attach(&data, tmp, 0, sizeof(tmp));
             if ((ret = svr_generateExceptionResponse(
                 &settings->base,
@@ -3739,7 +3754,6 @@ int svr_handleRequest4(
                 ret,
                 &data)) != 0)
             {
-                settings->receivedData.position = settings->receivedData.size = 0;
                 return ret;
             }
             return dlms_addFrame(&settings->base, 0, &data, sr->reply);

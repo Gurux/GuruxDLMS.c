@@ -3296,7 +3296,7 @@ int cosem_setG3PlcMacSetup(gxG3PlcMacSetup* object, unsigned char index, dlmsVAR
     }
     else if (index == 23)
     {
-        ret = cosem_getUInt8(value->byteArr, &object->macBroadcastMaxCwEnabled);
+        ret = cosem_getBoolean(value->byteArr, &object->macBroadcastMaxCwEnabled);
     }
     else if (index == 24)
     {

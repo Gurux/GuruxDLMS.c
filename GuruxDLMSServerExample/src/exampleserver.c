@@ -5317,13 +5317,25 @@ unsigned char svr_isTarget(
                     settings->expectedSecurityPolicy = 0xFF;
                     if (a->securitySetup != NULL)
                     {
+                        switch (a->securitySetup->securityPolicy)
+                        {
+                        case DLMS_SECURITY_POLICY_AUTHENTICATED:
+                            settings->cipher.security = DLMS_SECURITY_AUTHENTICATION;
+                            break;
+                        case DLMS_SECURITY_POLICY_ENCRYPTED:
+                            settings->cipher.security = DLMS_SECURITY_ENCRYPTION;
+                            break;
+                        case DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED:
+                            settings->cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
+                            break;
+                        }
+
                         //Set expected client system title. If this is set only client that is 
                         // using expected client system title can connect to the meter.
                         if (a->securitySetup->clientSystemTitle.size == 8)
                         {
                             settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
                             settings->preEstablishedSystemTitle = &a->securitySetup->clientSystemTitle;
-                            settings->cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
                             //Authentication is updated.
                             settings->authentication = a->authenticationMechanismName.mechanismId;
                         }

@@ -157,9 +157,13 @@ int ba_capacity(bitArray* arr, uint16_t capacity)
  #endif // gxrealloc  
             }
         }
+        arr->capacity = capacity;
     }
 #endif //DLMS_IGNORE_MALLOC
-    arr->capacity = capacity;
+    if (ba_getCapacity(arr) < capacity)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return 0;
 }
 

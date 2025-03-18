@@ -72,6 +72,16 @@ extern "C" {
         gxObject* obj,
         unsigned char index);
 
+#ifdef DLMS_USE_ACCESS_SELECTOR
+    /**
+    * Get access selectors.
+    */
+    extern uint32_t svr_getAccessSelector(
+        dlmsSettings* settings,
+        gxObject* obj,
+        unsigned char index);
+#endif //DLMS_USE_ACCESS_SELECTOR
+
     /**
     * called when client makes connection to the server.
     */

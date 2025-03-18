@@ -2996,8 +2996,7 @@ int svr_handleReleaseRequest(
         return ret;
     }
     unsigned char userInfo = len != 3;
-    if (!userInfo && (settings->base.cipher.security != DLMS_SECURITY_NONE ||
-        bb_available(data) < len))
+    if (!userInfo && settings->base.cipher.security != DLMS_SECURITY_NONE)
     {
         bb_clear(data);
         //Return an error if client try to make release without ciphering.

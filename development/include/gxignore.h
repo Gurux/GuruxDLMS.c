@@ -201,6 +201,10 @@ extern "C" {
     //Security Suite 2 is used.
     //#define DLMS_SECURITY_SUITE_2
 
+    // Meter can return a list of supported access selectors in the association view.
+    // Empty list is returned if this is not defined.
+    // #define DLMS_USE_ACCESS_SELECTOR
+
 #ifdef ARDUINO
 /////////////////////////////////////////////////////////////////////////////
 //If Arduino is used.

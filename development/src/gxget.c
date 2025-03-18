@@ -503,11 +503,51 @@ int getLNAccessRights(
             //Add index.
             (ret = cosem_setInt8(data, pos)) != 0 ||
             //Add value.
-            (ret = cosem_setEnum(data, ch)) != 0 ||
-            (ret = bb_setUInt8(data, DLMS_DATA_TYPE_NONE)) != 0)
+            (ret = cosem_setEnum(data, ch)) != 0)
         {
             return ret;
         }
+#ifdef DLMS_USE_ACCESS_SELECTOR
+        uint32_t value = svr_getAccessSelector(settings, object, pos);
+        if (value == 0)
+        {
+            //If access selector is not used.
+            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_NONE)) != 0)
+            {
+                return ret;
+            }
+        }
+        else
+        {
+            uint32_t index;
+            unsigned char count = 0;
+            for (index = 0; index != 8; ++index)
+            {
+                if ((value & (1 << index)) != 0)
+                {
+                    ++count;
+                }
+            }
+            if ((ret = cosem_setArray(data, count)) == 0)
+            {
+                for (index = 0; index != 8; ++index)
+                {
+                    if ((value & (1 << index)) != 0)
+                    {
+                        if ((ret = cosem_setInt8(data, (char)(value & (1 << index)))) != 0)
+                        {
+                            return ret;
+                        }
+                    }
+                }
+            }
+        }
+#else 
+        if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_NONE)) != 0)
+        {
+            return ret;
+        }
+#endif //DLMS_USE_ACCESS_SELECTOR
     }
 #ifdef INDIAN_STANDARD
     if ((ret = cosem_setArray(data, 0)) != 0)
@@ -5270,9 +5310,9 @@ int cosem_getAccount(
                         (ret = cosem_setOctetString2(data, ccc->chargeReference, 6)) != 0 ||
                         //collection configuration
                         (ret = cosem_setBitString(data, ccc->collectionConfiguration, 3)) != 0)
-                {
-                    break;
-                }
+                    {
+                        break;
+                    }
         }
     }
     else if (e->index == 12)

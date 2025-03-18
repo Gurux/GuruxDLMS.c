@@ -2865,7 +2865,8 @@ int svr_handleMethodRequest(
             return bb_clear(data);
         }
         // Set default action reply if not given.
-        if (e->error == DLMS_ERROR_CODE_OK)
+        if (e->error == DLMS_ERROR_CODE_OK && 
+            (e->byteArray || e->value.vt != DLMS_DATA_TYPE_NONE))
         {
             if (// Add return parameters
                 (ret = bb_insertUInt8(data, 0, 0)) != 0 ||
@@ -2900,7 +2901,7 @@ int svr_handleMethodRequest(
         else
         {
             // Add parameters error code.
-            if (e->error > 0 && e->error < DLMS_ERROR_CODE_OTHER_REASON + 1)
+            if (e->error >= 0 && e->error < DLMS_ERROR_CODE_OTHER_REASON + 1)
             {
                 error = e->error;
             }

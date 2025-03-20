@@ -4477,6 +4477,34 @@ DLMS_ACCESS_MODE getNtpSetupAttributeAccess(
     return DLMS_ACCESS_MODE_READ;
 }
 
+#ifdef DLMS_USE_ACCESS_SELECTOR
+/**
+* Get access selector. In this example only profile generic object has access selectors.
+* One for read by entry and one for read by range.
+*/
+int svr_getAccessSelector(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index,
+    gxByteBuffer* data)
+{
+    int ret;
+    if ((obj->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC) && (2 == index))
+    {
+        if ((ret = cosem_setArray(data, 2)) != 0 ||
+            (ret = cosem_setInt8(data, 1)) != 0 ||
+            (ret = cosem_setInt8(data, 2)) != 0)
+        {
+            return ret;
+        }
+    }
+    else
+    {
+        return bb_setUInt8(data, DLMS_DATA_TYPE_NONE);
+    }
+}
+#endif //DLMS_USE_ACCESS_SELECTOR
+
 /**
 * Get attribute access level.
 */

@@ -505,49 +505,23 @@ int getLNAccessRights(
             //Add value.
             (ret = cosem_setEnum(data, ch)) != 0)
         {
-            return ret;
+            break;
         }
 #ifdef DLMS_USE_ACCESS_SELECTOR
-        uint32_t value = svr_getAccessSelector(settings, object, pos);
-        if (value == 0)
+        if ((ret = svr_getAccessSelector(settings, object, pos, data)) != 0)
         {
-            //If access selector is not used.
-            if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_NONE)) != 0)
-            {
-                return ret;
-            }
-        }
-        else
-        {
-            uint32_t index;
-            unsigned char count = 0;
-            for (index = 0; index != 8; ++index)
-            {
-                if ((value & (1 << index)) != 0)
-                {
-                    ++count;
-                }
-            }
-            if ((ret = cosem_setArray(data, count)) == 0)
-            {
-                for (index = 0; index != 8; ++index)
-                {
-                    if ((value & (1 << index)) != 0)
-                    {
-                        if ((ret = cosem_setInt8(data, (char)(value & (1 << index)))) != 0)
-                        {
-                            return ret;
-                        }
-                    }
-                }
-            }
+            break;
         }
 #else 
         if ((ret = bb_setUInt8(data, DLMS_DATA_TYPE_NONE)) != 0)
         {
-            return ret;
+            break;
         }
 #endif //DLMS_USE_ACCESS_SELECTOR
+    }
+    if (ret != 0)
+    {
+        return ret;
     }
 #ifdef INDIAN_STANDARD
     if ((ret = cosem_setArray(data, 0)) != 0)

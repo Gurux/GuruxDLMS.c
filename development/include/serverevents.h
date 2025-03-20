@@ -76,10 +76,11 @@ extern "C" {
     /**
     * Get access selectors.
     */
-    extern uint32_t svr_getAccessSelector(
+    extern int svr_getAccessSelector(
         dlmsSettings* settings,
         gxObject* obj,
-        unsigned char index);
+        unsigned char index,
+        gxByteBuffer* data);
 #endif //DLMS_USE_ACCESS_SELECTOR
 
     /**

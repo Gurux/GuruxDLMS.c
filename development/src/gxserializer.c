@@ -912,10 +912,10 @@ int ser_loadVariant(dlmsVARIANT* data,
 #if !defined(DLMS_IGNORE_MALLOC)
             data->bitArr = (bitArray*)gxmalloc(sizeof(bitArray));
             ba_init(data->bitArr);
-            ret = ser_loadBitString(serializeSettings, data->bitArr);
 #else
-            ret = ser_loadBitStringtoVariant(serializeSettings, data);
+            ba_clear(data->bitArr);
 #endif //!defined(DLMS_IGNORE_MALLOC)
+            ret = ser_loadBitString(serializeSettings, data->bitArr);
             break;
         case DLMS_DATA_TYPE_INT32:
             ret = ser_loadInt32(serializeSettings, (data->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &data->lVal : data->plVal);
@@ -1506,10 +1506,10 @@ int ser_saveBytes3(
     case DLMS_DATA_TYPE_BIT_STRING:
     {
 #ifdef DLMS_IGNORE_MALLOC
-        if ((ret = ser_saveObjectCount(data->size, serializeSettings)) == 0 &&
-            (ret = ser_saveObjectCount(data->capacity, serializeSettings)) == 0)
+        if ((ret = ser_saveObjectCount(data->bitArr->size, serializeSettings)) == 0 &&
+            (ret = ser_saveObjectCount(ba_getByteCount(ba_getCapacity(data->bitArr)), serializeSettings)) == 0)
         {
-            ret = ser_set(serializeSettings, data->pVal, ba_getByteCount(data->size), ba_getByteCount(data->capacity));
+            ret = ser_set(serializeSettings, data->bitArr->data, ba_getByteCount(data->bitArr->size), ba_getByteCount(ba_getCapacity(data->bitArr)));
         }
 #else
         if ((ret = ser_saveObjectCount(data->bitArr->size, serializeSettings)) == 0)

@@ -174,6 +174,7 @@ static gxData ldn;
 static gxData eventCode;
 static gxData unixTime;
 static gxData invocationCounter;
+static gxData eventStatusWord;
 static gxAssociationLogicalName associationNone;
 static gxAssociationLogicalName associationLow;
 static gxAssociationLogicalName associationHigh;
@@ -268,6 +269,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(lteMonitoring),
     BASE(compactDataExample),
     BASE(ntpSetup),
+    BASE(eventStatusWord)
 #ifdef DLMS_ITALIAN_STANDARD
     BASE(tariffPlan),
     BASE(passiveTariffPlan),
@@ -1195,6 +1197,25 @@ int addInvocationCounter()
     {
         //Initial invocation counter value.
         GX_UINT32_BYREF(invocationCounter.value, securitySetupHighGMac.minimumInvocationCounter);
+    }
+    return ret;
+}
+
+//Add event status word object.
+int addEventStatusWord()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 94, 91, 18, 255 };
+    if ((ret = INIT_OBJECT(eventStatusWord, DLMS_OBJECT_TYPE_DATA, ln)) == 0)
+    {
+        static unsigned char ESW[10];
+        static bitArray ba;
+        ba_attach(&ba, ESW, 0, 8 * sizeof(ESW));
+        GX_BIT_STRING(eventStatusWord.value, ba);
+        ba_set(&ba, 1);
+        ba_set(&ba, 0);
+        ba_set(&ba, 0);
+        ba_set(&ba, 1);
     }
     return ret;
 }
@@ -3011,6 +3032,7 @@ int createObjects()
         (ret = addLteMonitoring()) != 0 ||
         (ret = addCompactDataExample()) != 0 ||
         (ret = addNtpSetup()) != 0 ||
+        (ret = addEventStatusWord()) != 0 ||
 #ifdef DLMS_ITALIAN_STANDARD
         (ret = addTariffPlan()) != 0 ||
         (ret = addPassiveTariffPlan()) != 0 ||

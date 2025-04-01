@@ -1061,17 +1061,10 @@ int var_getBytes4(
     }
     case DLMS_DATA_TYPE_BIT_STRING:
     {
-#ifdef DLMS_IGNORE_MALLOC
-        if ((ret = hlp_setObjectCount(data->size, ba)) == 0)
-        {
-            ret = bb_set(ba, data->pVal, ba_getByteCount(data->size));
-        }
-#else
         if ((ret = hlp_setObjectCount(data->bitArr->size, ba)) == 0)
         {
             ret = bb_set(ba, data->bitArr->data, ba_getByteCount(data->bitArr->size));
         }
-#endif //DLMS_IGNORE_MALLOC
         break;
     }
 #ifndef DLMS_IGNORE_DELTA
@@ -1357,7 +1350,7 @@ int va_capacity(variantArray* arr, uint16_t capacity)
                 }
                 memcpy(arr->data, old, sizeof(dlmsVARIANT*) * arr->size);
                 gxfree(old);
- #endif // gxrealloc  
+#endif // gxrealloc  
             }
         }
         arr->capacity = capacity;
@@ -1406,7 +1399,7 @@ int va_push(variantArray* arr, dlmsVARIANT* item)
                 }
                 memcpy(arr->data, old, sizeof(dlmsVARIANT*) * arr->size);
                 gxfree(old);
- #endif // gxrealloc  
+#endif // gxrealloc  
             }
         }
     }
@@ -1712,7 +1705,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         case DLMS_DATA_TYPE_INT8:
 #ifndef DLMS_IGNORE_DELTA
-        case DLMS_DATA_TYPE_DELTA_INT8:       
+        case DLMS_DATA_TYPE_DELTA_INT8:
 #endif //DLMS_IGNORE_DELTA
         {
             hlp_intToString(buff, 250, tmp.cVal, 1, 0);
@@ -1862,7 +1855,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
         }
         else if (type == DLMS_DATA_TYPE_INT32
 #ifndef DLMS_IGNORE_DELTA
-        || type == DLMS_DATA_TYPE_DELTA_INT32
+            || type == DLMS_DATA_TYPE_DELTA_INT32
 #endif //DLMS_IGNORE_DELTA
             )
         {
@@ -1893,7 +1886,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return DLMS_ERROR_CODE_OK;
         }
-        else if (type == DLMS_DATA_TYPE_INT16 
+        else if (type == DLMS_DATA_TYPE_INT16
 #ifndef DLMS_IGNORE_DELTA
             || type == DLMS_DATA_TYPE_DELTA_INT16
 #endif //DLMS_IGNORE_DELTA

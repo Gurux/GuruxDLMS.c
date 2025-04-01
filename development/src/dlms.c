@@ -543,9 +543,7 @@ int getInt32(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 static int getBitString(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     uint16_t cnt = 0;
-#ifndef DLMS_IGNORE_MALLOC
     int ret;
-#endif //DLMS_IGNORE_MALLOC
     if (hlp_getObjectCount2(buff, &cnt) != 0)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -562,21 +560,19 @@ static int getBitString(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    if (value->capacity < cnt)
+    ba_clear(value->bitArr);
+    if (ba_getCapacity(value->bitArr) < cnt)
     {
         return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
     }
-    value->size = cnt;
-    memcpy(value->pVal, buff->data + buff->position, byteCnt);
-    buff->position += byteCnt;
 #else
     value->bitArr = (bitArray*)gxmalloc(sizeof(bitArray));
     ba_init(value->bitArr);
+#endif //DLMS_IGNORE_MALLOC
     if ((ret = hlp_add(value->bitArr, buff, cnt)) != 0)
     {
         return ret;
     }
-#endif //DLMS_IGNORE_MALLOC
     return 0;
 }
 
@@ -6877,8 +6873,8 @@ int dlms_pduAvailable(
 }
 
 int dlms_isPduFull(
-    dlmsSettings* settings, 
-    gxByteBuffer* data, 
+    dlmsSettings* settings,
+    gxByteBuffer* data,
     uint16_t* size)
 {
     unsigned char ret;

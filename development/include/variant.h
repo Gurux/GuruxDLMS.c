@@ -99,7 +99,7 @@ extern "C" {
 
 #ifdef DLMS_IGNORE_MALLOC
 #define GX_OCTET_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE) (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING), SIZE_, sizeof(VALUE_))
-#define GX_BIT_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE) (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_BIT_STRING), SIZE_, 8 * sizeof(VALUE_)/sizeof(VALUE_[0]))
+#define GX_BIT_STRING(X, VALUE_) GX_UNION(&X, pVal = &VALUE_, (DLMS_DATA_TYPE) (DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_BIT_STRING))
 #define GX_STRING(X, VALUE_, SIZE_) GX_UNION2(&X, pVal = VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRING), SIZE_, sizeof(VALUE_))
 #define GX_ARRAY(X, VALUE_) GX_UNION2(&X, pVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_ARRAY), 0, 0)
 #define GX_STRUCT(X, VALUE_) GX_UNION2(&X, pVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_STRUCTURE), 0, 0)
@@ -107,7 +107,7 @@ extern "C" {
 
 #define GX_BOOL_BYREF(X, VALUE_) GX_UNION(&X, pcVal = &VALUE_, (DLMS_DATA_TYPE)(DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_BOOLEAN))
 
-/*Get UInt8 value from variant.*/
+    /*Get UInt8 value from variant.*/
 #define GX_GET_UINT8(X)  (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.bVal : *X.pbVal
 
 /*Get UInt16 value from variant.*/
@@ -171,10 +171,10 @@ extern "C" {
             gxtime* dateTime;
             gxByteBuffer* strVal;
             gxByteBuffer* strUtfVal;
-            bitArray* bitArr;
 #endif //DLMS_IGNORE_MALLOC
             variantArray* Arr;
             gxByteBuffer* byteArr;
+            bitArray* bitArr;
             unsigned char* pbVal;
             signed char* pcVal;
             int16_t* piVal;

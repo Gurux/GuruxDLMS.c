@@ -193,10 +193,10 @@ extern "C" {
     //#define DLMS_NOTIFY_AUTHENTICATION_ERROR
 
     // Server notifies invalid ciphering error.
-    //#define DLMS_NOTIFY_CIPHERING_ERROR
+    // #define DLMS_NOTIFY_CIPHERING_ERROR
 
     //Security Suite 1 is used.
-    //#define DLMS_SECURITY_SUITE_1
+    // #define DLMS_SECURITY_SUITE_1
 
     //Security Suite 2 is used.
     //#define DLMS_SECURITY_SUITE_2
@@ -204,6 +204,17 @@ extern "C" {
     // Meter can return a list of supported access selectors in the association view.
     // Empty list is returned if this is not defined.
     // #define DLMS_USE_ACCESS_SELECTOR
+
+    // Defined when the external AES Hardware Security Module using is used.
+    // The application must implement this method.
+    // extern int gx_hsmAes(const unsigned char* input, const unsigned char* key, unsigned char* output, const size_t length);
+    // Add DLMS_IGNORE_AES is AES table is not needed.
+    // #define DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+
+    // Defined when the external CRC Hardware Security Module is used.
+    // The application must implement this method.
+    // extern uint16_t gx_hsmCrc(const unsigned char* data, const uint16_t length);
+    // #define DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
 
 #ifdef ARDUINO
 /////////////////////////////////////////////////////////////////////////////

@@ -2506,36 +2506,23 @@ int cosem_setRegisterActivation(
             for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
-                (ret = cosem_getUInt16(value->byteArr, &ot)) != 0 ||
+                    (ret = cosem_getUInt16(value->byteArr, &ot)) != 0 ||
                     (ret = cosem_getOctetString2(value->byteArr, ln, 6, NULL)) != 0)
                 {
                     break;
                 }
-#ifndef DLMS_COSEM_EXACT_DATA_TYPES
-                if ((ret = arr_getByIndexRef(&object->registerAssignment, pos, (void**)&objectDefinition)) != 0)
-                {
-                    break;
-                }
-#endif //DLMS_COSEM_EXACT_DATA_TYPES
                 if ((ret = cosem_findObjectByLN(settings, (DLMS_OBJECT_TYPE)ot, ln, &objectDefinition)) != 0)
                 {
                     break;
                 }
-#ifdef DLMS_COSEM_EXACT_DATA_TYPES
-                if ((ret = arr_push(&object->registerAssignment, objectDefinition)) != 0)
+                if (objectDefinition == NULL)
                 {
-                    break;
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
-#endif //DLMS_COSEM_EXACT_DATA_TYPES
-#else
-                    (ret = cosem_getArrayItem(&object->registerAssignment, pos, (void**)&objectDefinition, sizeof(gxObjectDefinition))) != 0 ||
-                    (ret = cosem_getUInt16(value->byteArr, (uint16_t*)&objectDefinition->objectType)) != 0 ||
-                    (ret = cosem_getOctetString2(value->byteArr, objectDefinition->logicalName, 6, NULL)) != 0)
+                if ((ret = arr_setByIndexRef(&object->registerAssignment, (void**)objectDefinition)) != 0)
                 {
-                    break;
+                    return ret;
                 }
-#endif //DLMS_IGNORE_OBJECT_POINTERS
             }
         }
     }

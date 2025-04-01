@@ -62,6 +62,11 @@
 //Add support for serialization.
 #include "../../development/include/gxserializer.h"
 
+#ifdef defined(DLMS_USE_AES_HARDWARE_SECURITY_MODULE) || defined(DLMS_USE_CRC_HARDWARE_SECURITY_MODULE)
+//If external AES or CRC Hardware Security Module is used.
+#include "../../development/include/ciphering.h"
+#endif //defined(DLMS_USE_AES_HARDWARE_SECURITY_MODULE) || defined(DLMS_USE_CRC_HARDWARE_SECURITY_MODULE)
+
 GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_OFF;
 
 const static char* FLAG_ID = "GRX";
@@ -102,6 +107,23 @@ uint32_t time_elapsed(void)
     return (uint32_t)clock() / (CLOCKS_PER_SEC / 1000);
 }
 
+#ifdef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+//If external AES Hardware Security Module is used.
+extern int gx_hsmAes(const unsigned char* input, const unsigned char* key, unsigned char* output, const size_t length)
+{
+    return gxaes_ecb_encrypt(input, key, output, length);
+}
+#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+
+
+#ifdef DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
+//If external CRC Hardware Security Module is used.
+extern uint16_t gx_hsmCrc(const unsigned char* data, const uint16_t length)
+{
+    //Return counted checksum.
+    return 0xFFFF;
+}
+#endif //DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
 
 //In this example we wait 5 seconds before image is verified or activated.
 time_t imageActionStartTime;

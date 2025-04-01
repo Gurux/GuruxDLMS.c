@@ -43,6 +43,7 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
+#ifndef DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
     //CRC table.
 #ifndef USE_PROGMEM
     static const uint16_t FCS16Table[] = {
@@ -82,28 +83,33 @@ extern "C" {
         0xF78F, 0xE606, 0xD49D, 0xC514, 0xB1AB, 0xA022, 0x92B9, 0x8330,
         0x7BC7, 0x6A4E, 0x58D5, 0x495C, 0x3DE3, 0x2C6A, 0x1EF1, 0x0F78
     };
+#endif //DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
 
     static uint16_t countCRC(gxByteBuffer* Buff, uint32_t index, uint32_t count)
     {
+#ifndef DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
         uint16_t tmp;
         uint16_t FCS16 = 0xFFFF;
         uint16_t pos;
         for (pos = 0; pos < count; ++pos)
         {
 #ifdef ARDUINO_ARCH_AVR
-//If Arduino is used data is read from flash like this.
-            tmp = (FCS16 ^ Buff->data[index + pos]) & 0xFF;
-            FCS16 = (FCS16 >> 8) ^ pgm_read_word_near(FCS16Table + tmp);
+            //If Arduino is used data is read from flash like this.
+                        tmp = (FCS16 ^ Buff->data[index + pos]) & 0xFF;
+                        FCS16 = (FCS16 >> 8) ^ pgm_read_word_near(FCS16Table + tmp);
+            #else
+                        FCS16 = (FCS16 >> 8) ^ FCS16Table[(FCS16 ^ ((unsigned char*)Buff->data)[index + pos]) & 0xFF];
+            #endif //ARDUINO_ARCH_AVR
+                    }
+                    FCS16 = ~FCS16;
+                    //CRC is in big endian byte order.
+                    tmp = FCS16;
+                    FCS16 = tmp >> 8;
+                    FCS16 |= tmp << 8;
+                    return FCS16;
 #else
-            FCS16 = (FCS16 >> 8) ^ FCS16Table[(FCS16 ^ ((unsigned char*)Buff->data)[index + pos]) & 0xFF];
-#endif //ARDUINO_ARCH_AVR
-        }
-        FCS16 = ~FCS16;
-        //CRC is in big endian byte order.
-        tmp = FCS16;
-        FCS16 = tmp >> 8;
-        FCS16 |= tmp << 8;
-        return FCS16;
+        return gx_hsmCrc(Buff->data + index, count);
+#endif //DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
     }
 
 #ifdef  __cplusplus

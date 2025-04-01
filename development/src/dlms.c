@@ -6617,7 +6617,11 @@ int aes(gxByteBuffer* data, gxByteBuffer* secret, gxByteBuffer* challenge, gxByt
         (ret = bb_zero(challenge, challenge->size, len - challenge->size)) == 0 &&
         (ret = bb_capacity(reply, challenge->size)) == 0)
     {
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
         gxaes_ecb_encrypt(challenge->data, s.data, reply->data, s.size);
+#else
+        gx_hsmAes(challenge->data, s.data, reply->data, s.size);
+#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
     }
     reply->size = s.size;
 #ifndef DLMS_IGNORE_MALLOC

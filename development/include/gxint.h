@@ -34,7 +34,7 @@
 #define GXINT_H
 
 #include <stdint.h>
-#if !defined(_WIN32) && !defined(_WIN64) && !defined(__linux__) && !defined(ARDUINO)
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(__linux__) && !defined(ARDUINO) && !(__STDC_VERSION__ >= 199901L)
 #ifdef  __cplusplus
 extern "C" {
 #endif

@@ -1914,7 +1914,9 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
 
 int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
 {
+#if __has_include(<netinet/in.h>)
     char tmp[64];
+#endif
     int ret;
     uint16_t pos;
     IN6_ADDR* ip;
@@ -1930,9 +1932,11 @@ int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
             {
                 bb_addString(ba, ", ");
             }
+#if __has_include(<netinet/in.h>)
             //Add Ws2_32.lib for LabWindows/CVI.
             inet_ntop(AF_INET6, &ip, tmp, sizeof(tmp));
             bb_addString(ba, tmp);
+#endif //
         }
         if (ret == 0)
         {
@@ -1980,7 +1984,9 @@ int obj_getNeighborDiscoverySetupAsString(gxByteBuffer* ba, gxArray* arr)
 
 int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
 {
+#if __has_include(<netinet/in.h>)
     char tmp[64];
+#endif
     int ret;
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -2003,12 +2009,13 @@ int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
         (ret = obj_getIPAddress(&ba, &object->gatewayIPAddress)) == 0 &&
         (ret = bb_addString(&ba, "]\nIndex: 7 Value: ")) == 0)
     {
+#if __has_include(<netinet/in.h>)
         //Add Ws2_32.lib for LabWindows/CVI.
-
         inet_ntop(AF_INET6, &object->primaryDNSAddress, tmp, sizeof(tmp));
         bb_addString(&ba, tmp);
         inet_ntop(AF_INET6, &object->secondaryDNSAddress, tmp, sizeof(tmp));
         bb_addString(&ba, tmp);
+#endif
         if ((ret = bb_addIntAsString(&ba, object->trafficClass)) == 0 &&
             (ret = obj_getNeighborDiscoverySetupAsString(&ba, &object->neighborDiscoverySetup)) == 0 &&
             (ret = bb_addString(&ba, "\n")) == 0)

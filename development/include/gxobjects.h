@@ -34,14 +34,25 @@
 #define GXOBJECTS_H
 
 #include "gxignore.h"
+#include "gxint.h"
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
 #include <ws2tcpip.h>
 #else //Linux includes.
 #ifndef DLMS_IGNORE_IP6_SETUP
+#if __has_include(<netinet/in.h>)
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#else
+typedef struct in6_addr {
+    union {
+        unsigned char Byte[16];
+        uint16_t      Word[8];
+    } u;
+} IN6_ADDR, * PIN6_ADDR;
+#endif //__STDC_VERSION__ >= 199901L
 #define IN6_ADDR struct in6_addr
+
 #endif //DLMS_IGNORE_IP6_SETUP
 #endif
 #include "enums.h"

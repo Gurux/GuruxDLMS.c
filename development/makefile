@@ -1,7 +1,8 @@
 # Generate STATIC library.
 TARGET   = libgurux_dlms_c.a
 
-CC       = gcc
+#arm-none-eabi-gcc for embedded ARM systems.
+CC       = gcc 
 # compiling flags here
 CFLAGS   = -g -std=c99 -Wall -fPIC
 #Add this if used on microcontroller. -DGX_DLMS_MICROCONTROLLER

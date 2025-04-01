@@ -1839,7 +1839,11 @@ int getIpv6Address(IN6_ADDR* address, gxValueEventArg* e)
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
     tmp = address->u.Byte;
 #else //Linux includes.
+#if __has_include(<netinet/in.h>)
     tmp = address->s6_addr;
+#else
+    tmp = address->u.Byte;
+#endif
 #endif
     return cosem_setOctetString2(e->value.byteArr, tmp, 16);
 }

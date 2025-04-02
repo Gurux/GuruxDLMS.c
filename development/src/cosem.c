@@ -631,6 +631,7 @@ int cosem_init4(
         break;
     case DLMS_OBJECT_TYPE_GPRS_SETUP:
         break;
+#ifndef DLMS_IGNORE_SECURITY_SETUP
     case DLMS_OBJECT_TYPE_SECURITY_SETUP:
     {
         //Set default keys.
@@ -655,6 +656,7 @@ int cosem_init4(
 #endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_1)        
     }
     break;
+#endif //DLMS_IGNORE_SECURITY_SETUP
 #ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     case DLMS_OBJECT_TYPE_IEC_HDLC_SETUP:
         ((gxObject*)object)->version = 1;

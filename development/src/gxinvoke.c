@@ -130,19 +130,37 @@ int invoke_Credit(
     dlmsVARIANT* value)
 {
     int ret = 0;
+#ifdef DLMS_IGNORE_MALLOC
+    uint32_t tmp;
+#endif //DLMS_IGNORE_MALLOC
+
     //Update amount.
     if (index == 1)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = cosem_getUInt32(value->byteArr, &tmp)) == 0)
+        {
+            object->currentCreditAmount += tmp;
+        }
+#else
         object->currentCreditAmount += var_toInteger(value);
+#endif //DLMS_IGNORE_MALLOC
     }
     //Set amount to value.
     else if (index == 2)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        if ((ret = cosem_getUInt32(value->byteArr, &tmp)) == 0)
+        {
+            object->currentCreditAmount = tmp;
+        }
+#else
         object->currentCreditAmount = var_toInteger(value);
+#endif //DLMS_IGNORE_MALLOC
     }
     else if (index == 3)
     {
-        // The mechanism for selecting the �Credit� is not in the scope of COSEM and
+        // The mechanism for selecting the Credit is not in the scope of COSEM and
         // shall be specified by the implementer (e.g. button push, meter process, script etc.).
         object->status |= 4;
     }
@@ -164,10 +182,18 @@ int invoke_gxTokenGateway(
     if (index == 1)
     {
         bb_clear(&object->token);
+#ifdef DLMS_IGNORE_MALLOC
+        ret = cosem_getOctetString(value->byteArr, &object->token);
+#else
         if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
         {
             bb_set(&object->token, value->byteArr->data, value->byteArr->size);
         }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+#endif //DLMS_IGNORE_MALLOC
     }
     else
     {
@@ -3943,7 +3969,147 @@ int invoke_NtpSetup(
 }
 #endif //DLMS_IGNORE_NTP_SETUP
 
+#ifndef DLMS_IGNORE_IP6_SETUP
 
+int invoke_removeFromIps(gxArray* arr, IN6_ADDR* ip)
+{
+    uint16_t pos;
+    IN6_ADDR* it;
+    int ret = 0;
+    for (pos = 0; pos != arr->size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it)) != 0)
+        {
+            break;
+        }
+        if (memcmp(it, ip, sizeof(IN6_ADDR)) == 0)
+        {
+            ret = arr_removeByIndex(arr, pos, (void**)&it);
+            gxfree(it);
+            break;
+        }
+#else
+        if ((ret = arr_getByIndex(arr, pos, (void**)&it, sizeof(IN6_ADDR))) != 0)
+        {
+            break;
+        }
+        if (memcmp(it, ip, sizeof(IN6_ADDR)) == 0)
+        {
+            ret = arr_removeByIndex(arr, pos, sizeof(IN6_ADDR));
+            break;
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int invoke_appendToIps(gxArray* arr, IN6_ADDR* ip)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    return arr_push(arr, ip);
+#else
+    int ret;
+    IN6_ADDR* it;
+    if (arr_getCapacity(arr) < arr->size)
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    else
+    {
+        ++arr->size;
+        if ((ret = arr_getByIndex(arr, arr->size - 1, (void**)&it, sizeof(IN6_ADDR))) != 0)
+        {
+            --arr->size;
+        }
+        else
+        {
+            memcpy(it, ip, sizeof(IN6_ADDR));
+        }
+    }
+    return ret;
+#endif //DLMS_IGNORE_MALLOC
+}
+
+int invoke_Ip6Setup(
+    dlmsServerSettings* settings,
+    gxIp6Setup* object,
+    gxValueEventArg* e)
+{
+    int ret;
+    unsigned char type;
+#ifndef DLMS_IGNORE_MALLOC
+    IN6_ADDR* ip = (IN6_ADDR*)gxmalloc(sizeof(IN6_ADDR));
+    if (e->parameters.vt == DLMS_DATA_TYPE_STRUCTURE && e->parameters.Arr->size == 2)
+    {
+        dlmsVARIANT* tmp;
+        if ((ret = va_getByIndex(e->parameters.Arr, 0, &tmp)) == 0)
+        {
+            type = var_toInteger(tmp);
+            if ((ret = va_getByIndex(e->parameters.Arr, 1, &tmp)) == 0)
+            {
+                memcpy(ip, (IN6_ADDR*)tmp->byteArr->data, sizeof(IN6_ADDR));
+            }
+        }
+    }
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (ret == 0)
+#else
+    IN6_ADDR tmp;
+    IN6_ADDR* ip = &tmp;
+    if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
+        (ret = cosem_getEnum(e->parameters.byteArr, &type)) == 0 &&
+        (ret = cosem_getOctetString2(e->parameters.byteArr, (unsigned char*)ip, sizeof(IN6_ADDR), NULL)) == 0)
+#endif //DLMS_IGNORE_MALLOC
+    {
+        if (e->index == 1)
+        {
+            //Add IP address.
+            switch (type)
+            {
+            case DLMS_IPV6_ADDRESS_TYPE_UNICAST:
+                ret = invoke_appendToIps(&object->unicastIPAddress, ip);
+                break;
+            case DLMS_IPV6_ADDRESS_TYPE_MULTICAST:
+                ret = invoke_appendToIps(&object->multicastIPAddress, ip);
+                break;
+            case DLMS_IPV6_ADDRESS_TYPE_GATEWAY:
+                ret = invoke_appendToIps(&object->gatewayIPAddress, ip);
+                break;
+            default:
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                break;
+            }
+        }
+        else if (e->index == 2)
+        {
+            switch (type)
+            {
+            case DLMS_IPV6_ADDRESS_TYPE_UNICAST:
+                ret = invoke_removeFromIps(&object->unicastIPAddress, ip);
+                break;
+            case DLMS_IPV6_ADDRESS_TYPE_MULTICAST:
+                ret = invoke_removeFromIps(&object->multicastIPAddress, ip);
+                break;
+            case DLMS_IPV6_ADDRESS_TYPE_GATEWAY:
+                ret = invoke_removeFromIps(&object->gatewayIPAddress, ip);
+                break;
+            default:
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                break;
+            }
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+    }
+    return ret;
+}
+#endif //DLMS_IGNORE_IP6_SETUP
 
 int cosem_invoke(
     dlmsServerSettings* settings,
@@ -4122,6 +4288,11 @@ int cosem_invoke(
         ret = invoke_NtpSetup(settings, (gxNtpSetup*)e->target, e);
         break;
 #endif //DLMS_IGNORE_NTP_SETUP
+#ifndef DLMS_IGNORE_IP6_SETUP
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        ret = invoke_Ip6Setup(settings, (gxIp6Setup*)e->target, e);
+        break;
+#endif //DLMS_IGNORE_IP6_SETUP
     default:
         //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

@@ -174,6 +174,7 @@ gxModemConfiguration modemConfiguration;
 gxMacAddressSetup macAddressSetup;
 gxTcpUdpSetup udpSetup;
 gxIp4Setup ip4Setup;
+gxIp6Setup ip6Setup;
 gxPppSetup pppSetup;
 gxGPRSSetup gprsSetup;
 gxScriptTable tarifficationScriptTable;
@@ -245,6 +246,7 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(lteMonitoring),
     BASE(account),
     BASE(ntpSetup),
+    BASE(ip6Setup),
     #ifdef DLMS_ITALIAN_STANDARD
     BASE(activeTariffPlan),
     BASE(passiveTariffPlan),
@@ -1945,6 +1947,53 @@ int addIP4Setup()
         ip4Setup.gatewayIPAddress = 0x0A000001;
         ip4Setup.primaryDNSAddress = 0x0A0B0C0D;
         ip4Setup.secondaryDNSAddress = 0x0C0D0E0F;
+    }
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+//Add IPv6 Setup object.
+///////////////////////////////////////////////////////////////////////
+int addIP6Setup()
+{
+    int ret;
+    IN6_ADDR* it;
+    const unsigned char ln[6] = { 0,0,25,7,0,255 };
+    if ((ret = INIT_OBJECT(ip6Setup, DLMS_OBJECT_TYPE_IP6_SETUP, ln)) == 0)
+    {
+        ip6Setup.dataLinkLayer = BASE(pppSetup);
+        //Add unicast IP address.
+        char* ip_str = "2001:db8::1";
+        it = (IN6_ADDR*)malloc(sizeof(IN6_ADDR));
+        memset(it, 0, sizeof(IN6_ADDR));
+        if (inet_pton(AF_INET6, ip_str, it) != 1)
+        {
+            return 1;
+        }
+        arr_push(&ip6Setup.unicastIPAddress, it);
+        //Add multicast IP address
+        ip_str = "2001:db8::2";
+        it = (IN6_ADDR*)malloc(sizeof(IN6_ADDR));
+        memset(it, 0, sizeof(IN6_ADDR));
+        if (inet_pton(AF_INET6, ip_str, it) != 1)
+        {
+            return 1;
+        }
+        arr_push(&ip6Setup.multicastIPAddress, it);
+        //Add gateway IP address
+        ip_str = "fd7f:ec84:94bb:800f:a278:edc4:65bd:0001";
+        it = (IN6_ADDR*)malloc(sizeof(IN6_ADDR));
+        memset(it, 0, sizeof(IN6_ADDR));
+        if (inet_pton(AF_INET6, ip_str, it) != 1)
+        {
+            return 1;
+        }
+        arr_push(&ip6Setup.gatewayIPAddress, it);
+        ip_str = "2001:db8::3";
+        if (inet_pton(AF_INET6, ip_str, &ip6Setup.primaryDNSAddress) != 1)
+        {
+            return 1;
+        }
     }
     return 0;
 }
@@ -3751,6 +3800,7 @@ int svr_InitObjects(
         (ret = addModemConfiguration()) != 0 ||
         (ret = addMacAddressSetup()) != 0 ||
         (ret = addIP4Setup()) != 0 ||
+        (ret = addIP6Setup()) != 0 ||
         (ret = addPppSetup()) != 0 ||
         (ret = addGprsSetup()) != 0 ||
         (ret = addImageTransfer()) != 0 ||

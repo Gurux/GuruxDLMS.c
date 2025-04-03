@@ -678,8 +678,12 @@ int cosem_init4(
         break;
     case DLMS_OBJECT_TYPE_IP4_SETUP:
         break;
+#ifndef DLMS_IGNORE_IP6_SETUP
     case DLMS_OBJECT_TYPE_IP6_SETUP:
+        memset(&((gxIp6Setup*)object)->primaryDNSAddress, 0, sizeof(IN6_ADDR));
+        memset(&((gxIp6Setup*)object)->secondaryDNSAddress, 0, sizeof(IN6_ADDR));
         break;
+#endif //DLMS_IGNORE_IP6_SETUP
     case DLMS_OBJECT_TYPE_MBUS_SLAVE_PORT_SETUP:
         break;
     case DLMS_OBJECT_TYPE_IMAGE_TRANSFER:

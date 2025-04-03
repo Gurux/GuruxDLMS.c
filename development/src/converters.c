@@ -1912,6 +1912,31 @@ int obj_ip4SetupToString(gxIp4Setup* object, char** buff)
 
 #ifndef DLMS_IGNORE_IP6_SETUP
 
+#if !__has_include(<netinet/in.h>)
+
+int obj_in6AddrToString(gxByteBuffer* ba, const IN6_ADDR* addr)
+{
+    int ret = 0;
+    uint_fast16_t pos;
+    char tmp[3];
+    for (pos = 0; pos < sizeof(IN6_ADDR); pos += 2)
+    {
+        if ((ret = hlp_bytesToHex2(addr->u.Byte[pos], 2, tmp, sizeof(tmp))) != 0 ||
+            (ret == bb_addString(ba, tmp)) != 0)
+        {
+            break;
+        }
+        bb_addString(ba, ":");
+    }
+    if (ret == 0)
+    {
+        //Remove last ":"
+        --ba->size;
+    }
+    return ret;
+}
+#endif //!__has_include(<netinet/in.h>)
+
 int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
 {
 #if __has_include(<netinet/in.h>)
@@ -1936,6 +1961,11 @@ int obj_getIPAddress(gxByteBuffer* ba, gxArray* arr)
             //Add Ws2_32.lib for LabWindows/CVI.
             inet_ntop(AF_INET6, &ip, tmp, sizeof(tmp));
             bb_addString(ba, tmp);
+#else
+            if ((ret = obj_in6AddrToString(ba, ip)) != 0)
+            {
+                break;
+            }
 #endif //
         }
         if (ret == 0)
@@ -2015,6 +2045,12 @@ int obj_ip6SetupToString(gxIp6Setup* object, char** buff)
         bb_addString(&ba, tmp);
         inet_ntop(AF_INET6, &object->secondaryDNSAddress, tmp, sizeof(tmp));
         bb_addString(&ba, tmp);
+#else
+        if ((ret = obj_in6AddrToString(&ba, &object->primaryDNSAddress)) != 0 ||
+            (ret = obj_in6AddrToString(&ba, &object->secondaryDNSAddress)) != 0)
+        {
+
+        }
 #endif
         if ((ret = bb_addIntAsString(&ba, object->trafficClass)) == 0 &&
             (ret = obj_getNeighborDiscoverySetupAsString(&ba, &object->neighborDiscoverySetup)) == 0 &&

@@ -1836,6 +1836,7 @@ int cosem_getIP4Setup(
 int getIpv6Address(IN6_ADDR* address, gxValueEventArg* e)
 {
     unsigned char* tmp;
+    IN6_ADDR empty = { 0 };
 #if defined(_WIN32) || defined(_WIN64)//Windows includes
     tmp = address->u.Byte;
 #else //Linux includes.
@@ -1845,6 +1846,11 @@ int getIpv6Address(IN6_ADDR* address, gxValueEventArg* e)
     tmp = address->u.Byte;
 #endif
 #endif
+    if (memcmp(tmp, &empty, sizeof(IN6_ADDR)) == 0)
+    {
+        //According to the Blue Book, an empty octet string must be returned when the IP address is unset.
+        return cosem_setOctetString2(e->value.byteArr, tmp, 0);
+    }
     return cosem_setOctetString2(e->value.byteArr, tmp, 16);
 }
 

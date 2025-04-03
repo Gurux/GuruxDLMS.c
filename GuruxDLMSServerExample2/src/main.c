@@ -217,6 +217,7 @@ gxModemConfiguration modemConfiguration;
 gxMacAddressSetup macAddressSetup;
 gxTcpUdpSetup udpSetup;
 gxIp4Setup ip4Setup;
+gxIp6Setup ip6Setup;
 gxPppSetup pppSetup;
 gxGPRSSetup gprsSetup;
 gxPrimeNbOfdmPlcMacFunctionalParameters primeNbOfdmPlcMacFunctionalParameters;
@@ -269,7 +270,8 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(lteMonitoring),
     BASE(compactDataExample),
     BASE(ntpSetup),
-    BASE(eventStatusWord)
+    BASE(eventStatusWord),
+    BASE(ip6Setup),
 #ifdef DLMS_ITALIAN_STANDARD
     BASE(tariffPlan),
     BASE(passiveTariffPlan),
@@ -1657,6 +1659,50 @@ int addIP4Setup()
 }
 
 ///////////////////////////////////////////////////////////////////////
+//Add IPv6 Setup object.
+///////////////////////////////////////////////////////////////////////
+int addIP6Setup()
+{
+    int ret;
+    static IN6_ADDR UNICAST_IP_ADDRESS[10];
+    static IN6_ADDR MULTICAST_IP_ADDRESS[10];
+    static IN6_ADDR GATEWAY_IP_ADDRESS[10];
+    const unsigned char ln[6] = { 0,0,25,7,0,255 };
+    if ((ret = INIT_OBJECT(ip6Setup, DLMS_OBJECT_TYPE_IP6_SETUP, ln)) == 0)
+    {
+        ARR_ATTACH(ip6Setup.unicastIPAddress, UNICAST_IP_ADDRESS, 1);
+        ARR_ATTACH(ip6Setup.multicastIPAddress, MULTICAST_IP_ADDRESS, 1);
+        ARR_ATTACH(ip6Setup.gatewayIPAddress, GATEWAY_IP_ADDRESS, 1);
+        ip6Setup.dataLinkLayer = BASE(pppSetup);
+
+        //Add unicast IP address.
+        char* ip_str = "2001:db8::1";
+        if (inet_pton(AF_INET6, ip_str, &UNICAST_IP_ADDRESS[0]) != 1)
+        {
+            return 1;
+        }
+        //Add multicast IP address
+        ip_str = "2001:db8::2";
+        if (inet_pton(AF_INET6, ip_str, &MULTICAST_IP_ADDRESS[0]) != 1)
+        {
+            return 1;
+        }
+        //Add gateway IP address
+        ip_str = "fd7f:ec84:94bb:800f:a278:edc4:65bd:0001";
+        if (inet_pton(AF_INET6, ip_str, &GATEWAY_IP_ADDRESS[0]) != 1)
+        {
+            return 1;
+        }
+        ip_str = "2001:db8::3";
+        if (inet_pton(AF_INET6, ip_str, &ip6Setup.primaryDNSAddress) != 1)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////
 //Add PPP Setup object.
 ///////////////////////////////////////////////////////////////////////
 int addPppSetup()
@@ -3022,6 +3068,7 @@ int createObjects()
         (ret = addModemConfiguration()) != 0 ||
         (ret = addMacAddressSetup()) != 0 ||
         (ret = addIP4Setup()) != 0 ||
+        (ret = addIP6Setup()) != 0 ||
         (ret = addPppSetup()) != 0 ||
         (ret = addGprsSetup()) != 0 ||
         (ret = addPrimeNbOfdmPlcMacFunctionalParameters()) != 0 ||
@@ -4125,7 +4172,7 @@ void svr_postAction(
             {
                 //Save meter Invocation counter value.
                 saveSettings(BASE(serverInvocationCounter), 2);
-                saveSettings(e->target, attribute);
+                saveSettings(e->target, 0xFF);
                 if ((ret = loadSettings()) != 0)
                 {
                     GXTRACE_INT(("Failed to load settings!"), ret);

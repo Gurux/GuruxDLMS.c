@@ -3566,6 +3566,17 @@ static const unsigned char DEFAULT_AUTHENTICATION_KEY[] = { 0xD0, 0xD1, 0xD2, 0x
     }
     DLMS_NTP_AUTHENTICATION_METHOD;
 
+    /*IPv6 Address type to add.*/
+    typedef enum
+    {
+        // Unicast address.
+        DLMS_IPV6_ADDRESS_TYPE_UNICAST,
+        // Multicast address.
+        DLMS_IPV6_ADDRESS_TYPE_MULTICAST,
+        // Gateway address.
+        DLMS_IPV6_ADDRESS_TYPE_GATEWAY
+    }
+    DLMS_IPV6_ADDRESS_TYPE;
 #ifdef  __cplusplus
 }
 #endif

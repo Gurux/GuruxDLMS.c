@@ -2865,7 +2865,7 @@ int svr_handleMethodRequest(
             return bb_clear(data);
         }
         // Set default action reply if not given.
-        if (e->error == DLMS_ERROR_CODE_OK && 
+        if (e->error == DLMS_ERROR_CODE_OK &&
             (e->byteArray || e->value.vt != DLMS_DATA_TYPE_NONE))
         {
             if (// Add return parameters
@@ -4838,6 +4838,19 @@ uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char meth
         }
         break;
 #endif //DLMS_IGNORE_NTP_SETUP
+#ifndef DLMS_IGNORE_IP6_SETUP
+    case DLMS_OBJECT_TYPE_IP6_SETUP:
+        switch (methodIndex)
+        {
+        case 1:
+        case 2:
+            ret = GET_ATTRIBUTE(3);
+            break;
+        default:
+            break;
+        }
+        break;
+#endif //DLMS_IGNORE_IP6_SETUP
     default:
         break;
     }

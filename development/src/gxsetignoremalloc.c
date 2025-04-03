@@ -1856,6 +1856,21 @@ int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char 
 #endif //DLMS_IGNORE_IP4_SETUP
 
 #ifndef DLMS_IGNORE_IP6_SETUP
+
+int cosem_copyIP6Address(IN6_ADDR* target, gxByteBuffer* bb)
+{
+    if (target == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    memset(target, 0, sizeof(IN6_ADDR));
+    if (bb_size(bb) != 0)
+    {
+        memcpy(target, bb->data, bb->size);
+    }
+    return 0;
+}
+
 int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char index, dlmsVARIANT* value)
 {
     unsigned char ch;

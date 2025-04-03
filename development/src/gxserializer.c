@@ -6906,9 +6906,6 @@ int ser_loadIp6Setup(
                     break;
                 }
             }
-#ifdef DLMS_IGNORE_MALLOC
-            object->multicastIPAddress.size = count;
-#endif //DLMS_IGNORE_MALLOC
         }
     }
     if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 6))

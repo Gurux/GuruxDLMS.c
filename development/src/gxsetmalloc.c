@@ -2651,6 +2651,21 @@ int cosem_setIP4Setup(dlmsSettings* settings, gxIp4Setup* object, unsigned char 
 #endif //DLMS_IGNORE_IP4_SETUP
 
 #ifndef DLMS_IGNORE_IP6_SETUP
+
+int cosem_copyIP6Address(IN6_ADDR* target, gxByteBuffer* bb)
+{
+    if (target == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    memset(target, 0, sizeof(IN6_ADDR));
+    if (bb_size(bb) != 0)
+    {
+        memcpy(target, bb->data, bb->size);
+    }
+    return 0;
+}
+
 int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char index, dlmsVARIANT* value)
 {
     int ret = 0, pos;
@@ -2683,14 +2698,9 @@ int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char 
                 {
                     break;
                 }
-                if (tmp->byteArr->size != 16)
-                {
-                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
-                    break;
-                }
                 ip = (IN6_ADDR*)gxmalloc(sizeof(IN6_ADDR));
-                memcpy(ip, tmp->byteArr->data, tmp->byteArr->size);
-                if ((ret = arr_push(&object->unicastIPAddress, ip)) != 0)
+                if ((ret = cosem_copyIP6Address(ip, tmp->byteArr)) != 0 ||
+                    (ret = arr_push(&object->unicastIPAddress, ip)) != 0)
                 {
                     break;
                 }
@@ -2708,14 +2718,9 @@ int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char 
                 {
                     break;
                 }
-                if (tmp->byteArr->size != 16)
-                {
-                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
-                    break;
-                }
                 ip = (IN6_ADDR*)gxmalloc(sizeof(IN6_ADDR));
-                memcpy(ip, tmp->byteArr->data, tmp->byteArr->size);
-                if ((ret = arr_push(&object->multicastIPAddress, ip)) != 0)
+                if ((ret = cosem_copyIP6Address(ip, tmp->byteArr)) != 0 ||
+                    (ret = arr_push(&object->multicastIPAddress, ip)) != 0)
                 {
                     break;
                 }
@@ -2733,15 +2738,11 @@ int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char 
                 {
                     break;
                 }
-                if (tmp->byteArr->size != 16)
-                {
-                    ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
-                    break;
-                }
                 ip = (IN6_ADDR*)gxmalloc(sizeof(IN6_ADDR));
-                memcpy(ip, tmp->byteArr->data, tmp->byteArr->size);
-                if ((ret = arr_push(&object->gatewayIPAddress, ip)) != 0)
+                if ((ret = cosem_copyIP6Address(ip, tmp->byteArr)) != 0 ||
+                    (ret = arr_push(&object->gatewayIPAddress, ip)) != 0)
                 {
+                    gxfree(ip);
                     break;
                 }
             }
@@ -2749,33 +2750,11 @@ int cosem_setIP6Setup(dlmsSettings* settings, gxIp6Setup* object, unsigned char 
     }
     else if (index == 7)
     {
-        if (bb_size(value->byteArr) == 0)
-        {
-            memset(&object->primaryDNSAddress, 0, sizeof(IN6_ADDR));
-        }
-        else if (bb_size(value->byteArr) != 16)
-        {
-            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
-        }
-        else
-        {
-            memcpy(&object->primaryDNSAddress, value->byteArr->data, value->byteArr->size);
-        }
+        ret = cosem_copyIP6Address(&object->primaryDNSAddress, value->byteArr);
     }
     else if (index == 8)
     {
-        if (bb_size(value->byteArr) == 0)
-        {
-            memset(&object->secondaryDNSAddress, 0, sizeof(IN6_ADDR));
-        }
-        else if (bb_size(value->byteArr) != 16)
-        {
-            ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
-        }
-        else
-        {
-            memcpy(&object->secondaryDNSAddress, value->byteArr->data, value->byteArr->size);
-        }
+        ret = cosem_copyIP6Address(&object->secondaryDNSAddress, value->byteArr);
     }
     else if (index == 9)
     {

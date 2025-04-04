@@ -977,7 +977,7 @@ int svr_handleSetRequest2(
                 if (e->target == NULL)
                 {
                     // Device reports a undefined object.
-                    ret = DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
+                    ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
                 }
                 else
                 {
@@ -1506,8 +1506,9 @@ int svr_getRequestNormal(
     }
     if (e->target == NULL)
     {
-        // Access Error : Device reports a undefined object.
-        status = DLMS_ERROR_CODE_UNDEFINED_OBJECT;
+        // Access Error : Read write error must return 
+        // or CTT APPL_DATA_LN_N1 sub test 2 fails.
+        status = DLMS_ERROR_CODE_READ_WRITE_DENIED;
     }
     else
     {
@@ -1942,6 +1943,9 @@ int svr_handleGetRequest(
     }
     else
     {
+        bb_clear(data);
+        //Set service class or T_APPL_DATA_LN_N1 subtest #2 fails.
+        settings->base.serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
         type = DLMS_GET_COMMAND_TYPE_NORMAL;
     }

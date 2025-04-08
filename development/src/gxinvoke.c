@@ -1657,6 +1657,8 @@ int invoke_ScriptTable(
                         break;
                     }
                 }
+                //Stop looping once the script ID is found, since it is unique.
+                break;
             }
         }
         vec_clear(&args);

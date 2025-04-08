@@ -264,10 +264,9 @@ int apdu_getInitiateRequest(
         hlp_setObjectCount(settings->cipher.dedicatedKey->size, data);
         bb_set(data, settings->cipher.dedicatedKey->data, settings->cipher.dedicatedKey->size);
 #else
-        hlp_setObjectCount(8, data);
-        bb_set(data, settings->cipher.dedicatedKey, 8);
+        hlp_setObjectCount(settings->cipher.suite == DLMS_SECURITY_SUITE_V2 ? 32 : 16, data);
+        bb_set(data, settings->cipher.dedicatedKey, settings->cipher.suite == DLMS_SECURITY_SUITE_V2 ? 32 : 16);
 #endif //DLMS_IGNORE_MALLOC
-
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
 
@@ -662,19 +661,16 @@ int apdu_parseUserInformation(
     {
         return ret;
     }
-    uint32_t tmp;
-    if ((ret = bb_getUInt24(data, &tmp)) != 0)
+    bitArray ba;
+    ba_attach(&ba, data->data + data->position, 24, 24);
+    data->position += 3;
+    if ((ret = ba_toInteger(&ba, &v)) != 0)
     {
         return ret;
     }
-    v = hlp_swapBits((unsigned char)tmp);
-    v <<= 16;
-    tmp >>= 8;
-    v |= hlp_swapBits((unsigned char)tmp) << 8;
-    tmp >>= 8;
-    v |= hlp_swapBits((unsigned char)tmp);
     if (settings->server)
     {
+        settings->clientProposedConformance = (DLMS_CONFORMANCE)v;
         settings->negotiatedConformance = (DLMS_CONFORMANCE)(v & settings->proposedConformance);
         //Remove general protection if ciphered connection is not used.
         if (!ciphered && (settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
@@ -692,6 +688,7 @@ int apdu_parseUserInformation(
         {
             return ret;
         }
+        settings->clientPduSize = pduSize;
         //If client asks too high PDU.
         if (pduSize > settings->maxServerPDUSize)
         {
@@ -739,6 +736,248 @@ int apdu_parseUserInformation(
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
     }
+    return 0;
+}
+
+/**
+ * Verify User Information from PDU.
+ */
+int apdu_verifyUserInformation(
+    dlmsSettings* settings,
+    gxByteBuffer* data)
+{
+    int ret;
+    uint16_t pduSize;
+    unsigned char ch, len, tag;
+    uint32_t v;
+    if ((ret = bb_getUInt8(data, &len)) != 0)
+    {
+        return ret;
+    }
+    if (data->size - data->position < len)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    // Encoding the choice for user information
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    if (tag != 0x4)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    if ((ret = bb_getUInt8(data, &len)) != 0)
+    {
+        return ret;
+    }
+    // Tag for xDLMS-Initate.response
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+#ifndef DLMS_IGNORE_HIGH_GMAC
+    DLMS_SECURITY security;
+    DLMS_SECURITY_SUITE suite;
+    uint64_t invocationCounter;
+    if (tag == DLMS_COMMAND_GLO_INITIATE_RESPONSE ||
+        tag == DLMS_COMMAND_GLO_INITIATE_REQUEST ||
+        tag == DLMS_COMMAND_DED_INITIATE_RESPONSE ||
+        tag == DLMS_COMMAND_DED_INITIATE_REQUEST ||
+        tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
+        tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
+    {
+        data->position = (data->position - 1);
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = cip_decrypt(&settings->cipher,
+            settings->sourceSystemTitle,
+            &settings->cipher.blockCipherKey,
+            data,
+            &security,
+            &suite,
+            &invocationCounter)) != 0)
+        {
+            return ret;
+        }
+#else
+        if ((ret = cip_decrypt(&settings->cipher,
+            settings->sourceSystemTitle,
+            settings->cipher.blockCipherKey,
+            data,
+            &security,
+            &suite,
+            &invocationCounter)) != 0)
+        {
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
+#endif //DLMS_IGNORE_MALLOC
+
+        if (settings->cipher.security != security)
+        {
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
+        if (settings->cipher.suite != suite)
+        {
+            return DLMS_ERROR_CODE_INVALID_SECURITY_SUITE;
+        }
+#ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
+        if (svr_validateInvocationCounter(settings, invocationCounter) != 0)
+        {
+            return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+        }
+#else
+        if (settings->expectedInvocationCounter != NULL)
+        {
+            if (invocationCounter < *settings->expectedInvocationCounter)
+            {
+                return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+            }
+        }
+#endif //DLMS_INVOCATION_COUNTER_VALIDATOR
+    }
+#endif //DLMS_IGNORE_HIGH_GMAC
+    {
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
+        // Optional usage field of the proposed quality of service component
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
+        if (tag != 0)
+        {
+            if ((ret = bb_getUInt8(data, &settings->qualityOfService)) != 0)
+            {
+                return ret;
+            }
+        }
+        // Dedicated key.
+#ifdef DLMS_IGNORE_HIGH_GMAC
+
+#else
+        if (tag != 0)
+        {
+            if ((ret = bb_getUInt8(data, &len)) != 0)
+            {
+                return ret;
+            }
+            if (len != 16)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+#ifndef DLMS_IGNORE_MALLOC
+            if (settings->cipher.dedicatedKey == NULL)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            else if (memcmp(settings->cipher.dedicatedKey->data, data + data->position, len) != 0)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            data->position += len;
+#else
+            if (memcmp(settings->cipher.dedicatedKey, data + data->position, len) != 0)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            data->position += len;
+#endif //DLMS_IGNORE_MALLOC
+        }
+        else
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            if (settings->cipher.dedicatedKey != NULL)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+#else
+            memset(settings->cipher.dedicatedKey, 0, 8);
+#endif //DLMS_IGNORE_MALLOC
+        }
+#endif //DLMS_IGNORE_HIGH_GMAC
+        // Optional usage field of the negotiated quality of service
+        // component
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
+        // Skip if used.
+        if (tag != 0)
+        {
+            if ((ret = bb_getUInt8(data, &tag)) != 0)
+            {
+                return ret;
+            }
+        }
+        // Optional usage field of the proposed quality of service component
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
+        if (tag != 0)
+        {
+            if ((ret = bb_getUInt8(data, &settings->qualityOfService)) != 0)
+            {
+                return ret;
+            }
+        }
+    }
+    // Get DLMS version number.
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 6)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    // Tag for conformance block
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    if (tag != 0x5F)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    // Old Way...
+    tag = data->data[data->position];
+    if (tag == 0x1F)
+    {
+        data->position = (data->position + 1);
+    }
+    if ((ret = bb_getUInt8(data, &len)) != 0)
+    {
+        return ret;
+    }
+    // The number of unused bits in the bit string.
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    bitArray ba;
+    ba_attach(&ba, data->data + data->position, 24, 24);
+    data->position += 3;
+    if ((ret = ba_toInteger(&ba, &v)) != 0)
+    {
+        return ret;
+    }
+    if (settings->clientProposedConformance != v)
+    {
+        return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
+    }
+    settings->negotiatedConformance = settings->clientProposedConformance;
+    if ((ret = bb_getUInt16(data, &pduSize)) != 0)
+    {
+        return ret;
+    }
+    if (settings->clientPduSize != pduSize)
+    {
+        return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
+    }
+    settings->maxPduSize = settings->clientPduSize;
     return 0;
 }
 

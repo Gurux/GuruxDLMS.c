@@ -152,6 +152,11 @@ extern "C" {
         uint16_t maxPduSize;
 
         /**
+        * The PDU size proposed by the client.
+        */
+        uint16_t clientPduSize;
+
+        /**
         * Max PDU size that server uses. Client can ask anything, but server will decide.
         */
         uint16_t maxServerPDUSize;
@@ -165,17 +170,20 @@ extern "C" {
         * HDLC receiver block sequence number.
         */
         unsigned char receiverFrame;
-        /**
-        * Server functionality is not supported at the moment in ANSI C version.
-        */
         unsigned char server;
         unsigned char isAuthenticationRequired;
 
-        //When connection is made client tells what kind of services it want's to use.
+        // The client side defines which services the client wants to use.
+        // The server side defines available services.
         DLMS_CONFORMANCE proposedConformance;
 
-        // Functionality what server can offer.
+        // Defines the services agreed upon between the client and the server, 
+        // based on the client's needs and the server's capabilities.
         DLMS_CONFORMANCE negotiatedConformance;
+
+        // On the server side defines what conformances the client proposed.
+        // This information is needed with secure release.
+        DLMS_CONFORMANCE clientProposedConformance;
 
         //Used max info TX.
         uint16_t maxInfoTX;

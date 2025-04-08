@@ -90,6 +90,13 @@ extern "C" {
         gxByteBuffer* data,
         unsigned char command);
 
+    /**
+     * Verify User Information from PDU.
+     */
+    int apdu_verifyUserInformation(
+        dlmsSettings* settings,
+        gxByteBuffer* data);
+
 #ifdef  __cplusplus
 }
 #endif

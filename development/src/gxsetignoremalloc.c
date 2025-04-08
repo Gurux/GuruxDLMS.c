@@ -2518,6 +2518,8 @@ int cosem_setRegisterActivation(
 #endif //DLMS_IGNORE_OBJECT_POINTERS
         if ((ret = cosem_verifyArray(value->byteArr, &object->registerAssignment, &count)) == 0)
         {
+            //Size is set to zero because arr_setByIndexRef will increase the size.
+            object->registerAssignment.size = 0;
             for (pos = 0; pos != count; ++pos)
             {
                 if ((ret = cosem_checkStructure(value->byteArr, 2)) != 0 ||

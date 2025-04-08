@@ -3007,8 +3007,20 @@ int svr_handleReleaseRequest(
         //SYMSEC_REL_N1 subtest #1.
         return DLMS_ERROR_CODE_INVALID_COMMAND;
     }
-
-    bb_clear(data);
+    if (userInfo)
+    {
+        // get User Information. Tag 0xBE
+        if ((ret = bb_getUInt8(data, &ch)) != 0 ||
+            ch != (BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_USER_INFORMATION))
+        {
+            return DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        if ((ret = apdu_verifyUserInformation(&settings->base, data)) != 0)
+        {
+            return DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        bb_clear(data);
+    }
 
 #ifdef DLMS_IGNORE_MALLOC
     unsigned char offset = IS_HDLC(settings->base.interfaceType) ? 12 : 9;
@@ -3041,6 +3053,8 @@ int svr_handleReleaseRequest(
                 {
 #ifndef DLMS_IGNORE_MALLOC
                     ret = bb_set(data, tmp.data, tmp.size);
+#else
+                    data->size += tmp.size;
 #endif //DLMS_IGNORE_MALLOC
                 }
             }

@@ -618,6 +618,11 @@ int cosem_init4(
     }
     break;
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+#ifndef DLMS_IGNORE_PROFILE_GENERIC
+    case DLMS_OBJECT_TYPE_PROFILE_GENERIC:
+        ((gxObject*)object)->version = 1;
+        break;
+#endif //DLMS_IGNORE_PROFILE_GENERIC
     case DLMS_OBJECT_TYPE_AUTO_ANSWER:
         break;
     case DLMS_OBJECT_TYPE_AUTO_CONNECT:
@@ -701,10 +706,6 @@ int cosem_init4(
         break;
     case DLMS_OBJECT_TYPE_PPP_SETUP:
         break;
-#ifndef DLMS_IGNORE_PROFILE_GENERIC
-    case DLMS_OBJECT_TYPE_PROFILE_GENERIC:
-        break;
-#endif //DLMS_IGNORE_PROFILE_GENERIC
     case DLMS_OBJECT_TYPE_REGISTER_ACTIVATION:
         break;
     case DLMS_OBJECT_TYPE_REGISTER_MONITOR:

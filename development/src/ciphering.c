@@ -117,8 +117,8 @@ void cip_clear(ciphering* target)
 *            System title.
 * @return
 */
-static int cip_getNonse(uint32_t frameCounter, 
-    const unsigned char* systemTitle, 
+static int cip_getNonse(uint32_t frameCounter,
+    const unsigned char* systemTitle,
     gxByteBuffer* nonce)
 {
     int ret;
@@ -964,27 +964,35 @@ static const unsigned char __R_CON[11] PROGMEM = {
         case DLMS_COMMAND_DED_EVENT_NOTIFICATION:
             break;
         default:
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
         if ((ret = hlp_getObjectCount2(data, &length)) != 0)
         {
-            return ret;
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
         if ((ret = bb_getUInt8(data, &ch)) != 0)
         {
-            return ret;
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
         *security = (DLMS_SECURITY)(ch & 0x30);
         if (suite != NULL)
         {
             *suite = (DLMS_SECURITY_SUITE)(ch & 0x3);
+            if (settings->security != DLMS_SECURITY_NONE && 
+                *suite != settings->suite)
+            {
+                return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+            }
         }
         //If Key_Set or authentication or encryption is not used.
-        if ((settings->broadcast && (ch & 0x40) == 0) || 
+        if ((settings->broadcast && (ch & 0x40) == 0) ||
             (!settings->broadcast && (ch & 0x40) != 0) ||
-            *security == DLMS_SECURITY_NONE)
+            *security == DLMS_SECURITY_NONE ||
+            //If security level is set.
+            (settings->security != DLMS_SECURITY_NONE && 
+                *security != settings->security))
         {
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
         if ((ret = bb_getUInt32(data, &frameCounter)) != 0)
         {

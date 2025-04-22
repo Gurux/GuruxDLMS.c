@@ -105,10 +105,8 @@ int gx_hsmAesEncrypt(const DLMS_AES aes,
     gxByteBuffer* secret,
     gxByteBuffer* output)
 {
-    return gxaes_encrypt2(aes,
-        data,
-        secret,
-        output);
+    //Call HSM to encrypt the data.
+    return 0;
 }
 /*Called to decrypt the data using external AES Hardware Security Module.*/
 int gx_hsmAesDecrypt(const DLMS_AES aes,
@@ -116,9 +114,8 @@ int gx_hsmAesDecrypt(const DLMS_AES aes,
     gxByteBuffer* secret,
     gxByteBuffer* output)
 {
-    return gxaes_decrypt(aes,
-        data,
-        output);
+    //Call HSM to decrypt the data.
+    return 0;
 }
 #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
 

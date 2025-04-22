@@ -161,16 +161,6 @@ extern "C" {
     uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char methodIndex);
 #endif //DLMS_IGNORE_SERIALIZER
 
-#ifdef DLMS_NOTIFY_CIPHERING_ERROR
-    //Meter notifies from the ciphering error.
-    extern void svr_cipheringError();
-#endif //DLMS_NOTIFY_CIPHERING_ERROR
-
-#ifdef DLMS_NOTIFY_AUTHENTICATION_ERROR
-    //Meter notifies from the authentication error.
-    extern void svr_authenticationError();
-#endif //DLMS_NOTIFY_AUTHENTICATION_ERROR
-
 #ifdef  __cplusplus
 }
 #endif

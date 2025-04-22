@@ -93,6 +93,15 @@ uint32_t time_current(void)
     return (uint32_t)time(NULL);
 }
 
+#ifdef DLMS_NOTIFY_AUTHENTICATION_ERROR
+//Meter notifies from the authentication error.
+void svr_authenticationError()
+{
+    printf("Authentication error \r\n");
+}
+
+#endif //DLMS_NOTIFY_AUTHENTICATION_ERROR
+
 uint32_t time_elapsed(void)
 {
     return (uint32_t)clock() / (CLOCKS_PER_SEC / 1000);

@@ -417,6 +417,9 @@ static int cip_validateTag(
         {
             if (memcmp(input->data + input->size, ATag.data, 12) != 0)
             {
+#ifdef DLMS_NOTIFY_AUTHENTICATION_ERROR
+                svr_authenticationError();
+#endif //DLMS_NOTIFY_AUTHENTICATION_ERROR
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
             }
         }

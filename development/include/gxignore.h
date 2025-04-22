@@ -190,10 +190,8 @@ extern "C" {
     //#define DLMS_INVOCATION_COUNTER_VALIDATOR
 
     // Server notifies invalid authentication error.
-    //#define DLMS_NOTIFY_AUTHENTICATION_ERROR
+    // #define DLMS_NOTIFY_AUTHENTICATION_ERROR
 
-    // Server notifies invalid ciphering error.
-    // #define DLMS_NOTIFY_CIPHERING_ERROR
 
     //Security Suite 1 is used.
     // #define DLMS_SECURITY_SUITE_1

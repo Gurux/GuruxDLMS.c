@@ -262,6 +262,11 @@ extern "C" {
     */
 #endif //DLMS_INVOCATION_COUNTER_VALIDATOR
 
+#ifdef DLMS_NOTIFY_AUTHENTICATION_ERROR
+    //Meter notifies from the authentication error.
+    extern void svr_authenticationError();
+#endif //DLMS_NOTIFY_AUTHENTICATION_ERROR
+
 #ifdef  __cplusplus
 }
 #endif

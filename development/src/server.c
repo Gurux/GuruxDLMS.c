@@ -2986,7 +2986,7 @@ int svr_handleReleaseRequest(
     dlmsServerSettings* settings,
     gxByteBuffer* data) {
     int ret;
-    unsigned char ch, len;
+    unsigned char ch, ch2, len;
     gxByteBuffer tmp;
     //Initialize default settings.
     settings->base.serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
@@ -3010,8 +3010,8 @@ int svr_handleReleaseRequest(
     if (userInfo)
     {
         // get User Information. Tag 0xBE
-        if ((ret = bb_getUInt8(data, &ch)) != 0 ||
-            ch != (BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_USER_INFORMATION))
+        if ((ret = bb_getUInt8(data, &ch2)) != 0 ||
+            ch2 != (BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_USER_INFORMATION))
         {
             return DLMS_ERROR_CODE_INVALID_COMMAND;
         }

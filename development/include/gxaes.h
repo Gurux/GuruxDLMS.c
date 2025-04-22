@@ -30,44 +30,42 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-#ifndef GXAES1
-#define GXAES1
+#ifndef GXAES
+#define GXAES
 
 #include "gxignore.h"
 #ifndef DLMS_IGNORE_AES
+#include "bytebuffer.h"
+#include "enums.h"
 
 #ifdef  __cplusplus
 extern "C" {
-#endif
+#endif   
+    void gxaes_keyExpansion(
+        const DLMS_AES eas,
+        const unsigned char* key,
+        unsigned char* roundKeys);
 
+    void gxaes_cipher(const DLMS_AES eas, 
+        unsigned char encrypt,
+        const unsigned char* input,
+        const unsigned char* roundKeys,
+        unsigned char* output);
 
-#ifndef CBC
-#define CBC 1
-#endif
+    /* Encrypt the AES data.*/
+    int gxaes_encrypt(const DLMS_AES eas,
+        gxByteBuffer* data,
+        gxByteBuffer* secret, 
+        gxByteBuffer* output);
 
-#ifndef ECB
-#define ECB 1
-#endif
-
-#define AES128 1
-    //#define AES192 1
-    //#define AES256 1
-
-#if defined(ECB) && (ECB == 1)
-
-    void gxaes_ecb_encrypt(const unsigned char* input, const unsigned char* key, unsigned char *output, const size_t length);
-    void gxaes_ecb_decrypt(const unsigned char* input, const unsigned char* key, unsigned char *output, const size_t length);
-
-#endif // #if defined(ECB) && (ECB == !)
-
-#if defined(CBC) && (CBC == 1)
-    void gxaes_cbc_encrypt(unsigned char* output, unsigned char* input, uint32_t length, const unsigned char* key, const unsigned char* iv);
-    void gxaes_cbc_decrypt(unsigned char* output, unsigned char* input, uint32_t length, const unsigned char* key, const unsigned char* iv);
-
-#endif // #if defined(CBC) && (CBC == 1)
+    /* Decrypt the AES data.*/
+    int gxaes_decrypt(const DLMS_AES eas,
+        gxByteBuffer* data,
+        gxByteBuffer* secret,
+        gxByteBuffer* output);   
 
 #ifdef  __cplusplus
 }
 #endif
 #endif //DLMS_IGNORE_AES
-#endif //GXAES1
+#endif //GXAES

@@ -1921,7 +1921,7 @@ int obj_in6AddrToString(gxByteBuffer* ba, const IN6_ADDR* addr)
     char tmp[3];
     for (pos = 0; pos < sizeof(IN6_ADDR); pos += 2)
     {
-        if ((ret = hlp_bytesToHex2(addr->u.Byte[pos], 2, tmp, sizeof(tmp))) != 0 ||
+        if ((ret = hlp_bytesToHex2(&addr->u.Byte[pos], 2, tmp, sizeof(tmp))) != 0 ||
             (ret == bb_addString(ba, tmp)) != 0)
         {
             break;

@@ -206,10 +206,19 @@ extern "C" {
     // #define DLMS_USE_ACCESS_SELECTOR
 
     // Defined when the external AES Hardware Security Module using is used.
-    // The application must implement this method.
-    // extern int gx_hsmAes(const unsigned char* input, const unsigned char* key, unsigned char* output, const size_t length);
+    // The application must implement methods.
+    /* Called to encrypt the data using external AES Hardware Security Module.*/
+    // extern int gx_hsmAesEncrypt(const DLMS_AES aes,
+    // const unsigned char* data,
+    // const unsigned char* secret,
+    // unsigned char* output);
+    /*Called to decrypt the data using external AES Hardware Security Module.*/
+    // extern int gx_hsmAesDecrypt(const DLMS_AES aes,
+    // const unsigned char* data,
+    // const unsigned char* secret,
+    // unsigned char* output);
     // Add DLMS_IGNORE_AES is AES table is not needed.
-    // #define DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+    //#define DLMS_USE_AES_HARDWARE_SECURITY_MODULE
 
     // Defined when the external CRC Hardware Security Module is used.
     // The application must implement this method.

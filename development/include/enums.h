@@ -3577,6 +3577,15 @@ static const unsigned char DEFAULT_AUTHENTICATION_KEY[] = { 0xD0, 0xD1, 0xD2, 0x
         DLMS_IPV6_ADDRESS_TYPE_GATEWAY
     }
     DLMS_IPV6_ADDRESS_TYPE;
+   
+    /*Used AES encryption.*/
+    typedef enum
+    {
+        /*AES 128 is used.*/
+        DLMS_AES_128,
+        /*AES 256 is used.*/
+        DLMS_AES_256
+    }DLMS_AES;
 #ifdef  __cplusplus
 }
 #endif

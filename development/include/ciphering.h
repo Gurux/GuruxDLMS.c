@@ -116,7 +116,6 @@ extern "C" {
 #endif
     } ciphering;
 
-
     void cip_init(ciphering* target);
     void cip_clear(ciphering* target);
     /**
@@ -169,18 +168,14 @@ extern "C" {
 
     // Encrypt data using AES RFC3394.
     int cip_encryptKey(
-        unsigned char* kek,
-        //KEK size.
-        unsigned char size,
+        gxByteBuffer* kek,
         gxByteBuffer* data,
         gxByteBuffer* output);
 
     // Decrypt data using AES RFC3394.
     //Returns DLMS_ERROR_CODE_FALSE if data is not encrypted with the key.
     int cip_decryptKey(
-        unsigned char* kek,
-        //KEK size.
-        unsigned char size,
+        gxByteBuffer* kek,
         gxByteBuffer* data,
         gxByteBuffer* output);
 
@@ -200,8 +195,18 @@ extern "C" {
 #endif //DLMS_TRACE_PDU
 
 #ifdef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-    /*Called to encrypt or decrypt the data using external AES Hardware Security Module.*/
-    extern int gx_hsmAes(const unsigned char* input, const unsigned char* key, unsigned char* output, const size_t length);
+    /*Called to encrypt the data using external AES Hardware Security Module.*/
+    extern int gx_hsmAesEncrypt(const DLMS_AES aes, 
+        gxByteBuffer* data,
+        gxByteBuffer* secret,
+        gxByteBuffer* output);
+
+    /*Called to decrypt the data using external AES Hardware Security Module.*/
+    extern int gx_hsmAesDecrypt(const DLMS_AES aes,
+        gxByteBuffer* data,
+        gxByteBuffer* secret,
+        gxByteBuffer* output);
+
 #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
 
 #ifdef DLMS_USE_CRC_HARDWARE_SECURITY_MODULE

@@ -62,7 +62,7 @@
 //Add support for serialization.
 #include "../../development/include/gxserializer.h"
 
-#ifdef defined(DLMS_USE_AES_HARDWARE_SECURITY_MODULE) || defined(DLMS_USE_CRC_HARDWARE_SECURITY_MODULE)
+#if defined(DLMS_USE_AES_HARDWARE_SECURITY_MODULE) || defined(DLMS_USE_CRC_HARDWARE_SECURITY_MODULE)
 //If external AES or CRC Hardware Security Module is used.
 #include "../../development/include/ciphering.h"
 #endif //defined(DLMS_USE_AES_HARDWARE_SECURITY_MODULE) || defined(DLMS_USE_CRC_HARDWARE_SECURITY_MODULE)
@@ -70,15 +70,6 @@
 GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_OFF;
 
 const static char* FLAG_ID = "GRX";
-//Serialization version is increased every time when structure of serialized data is changed.
-const static uint16_t SERIALIZATION_VERSION = 2;
-
-//Space for client challenge.
-static unsigned char C2S_CHALLENGE[64];
-//Space for server challenge.
-static unsigned char S2C_CHALLENGE[64];
-//Allocate space for read list.
-static gxValueEventArg events[10];
 
 unsigned char testMode = 1;
 int socket1 = -1;
@@ -109,9 +100,25 @@ uint32_t time_elapsed(void)
 
 #ifdef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
 //If external AES Hardware Security Module is used.
-extern int gx_hsmAes(const unsigned char* input, const unsigned char* key, unsigned char* output, const size_t length)
+int gx_hsmAesEncrypt(const DLMS_AES aes,
+    gxByteBuffer* data,
+    gxByteBuffer* secret,
+    gxByteBuffer* output)
 {
-    return gxaes_ecb_encrypt(input, key, output, length);
+    return gxaes_encrypt2(aes,
+        data,
+        secret,
+        output);
+}
+/*Called to decrypt the data using external AES Hardware Security Module.*/
+int gx_hsmAesDecrypt(const DLMS_AES aes,
+    gxByteBuffer* data,
+    gxByteBuffer* secret,
+    gxByteBuffer* output)
+{
+    return gxaes_decrypt(aes,
+        data,
+        output);
 }
 #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
 
@@ -801,7 +808,7 @@ void GXTRACE(const char* str, const char* data)
 void GXTRACE_INT(const char* str, int32_t value)
 {
     char data[10];
-    sprintf(data, " %ld", value);
+    sprintf(data, " %d", value);
     GXTRACE(str, data);
 }
 
@@ -1239,7 +1246,6 @@ int addLimiter()
 int addscriptTableGlobalMeterReset()
 {
     int ret;
-    static gxScript SCRIPTS[1] = { 0 };
     const unsigned char ln[6] = { 0, 0, 10, 0, 0, 255 };
     if ((ret = INIT_OBJECT(scriptTableGlobalMeterReset, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
     {
@@ -1776,7 +1782,7 @@ int addSapAssignment()
         char tmp[17];
         gxSapItem* it = (gxSapItem*)malloc(sizeof(gxSapItem));
         bb_init(&it->name);
-        ret = sprintf(tmp, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
+        ret = sprintf(tmp, "%s%.13u", FLAG_ID, SERIAL_NUMBER);
         bb_addString(&it->name, tmp);
         it->id = 1;
         ret = arr_push(&sapAssignment.sapAssignmentList, it);

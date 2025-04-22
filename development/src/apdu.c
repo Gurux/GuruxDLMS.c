@@ -442,7 +442,7 @@ int apdu_parseUserInformation(
         tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
     {
         *command = (unsigned char)tag;
-        data->position = (data->position - 1);
+        --data->position;
 #ifndef DLMS_IGNORE_MALLOC
         if ((ret = cip_decrypt(&settings->cipher,
             settings->sourceSystemTitle,

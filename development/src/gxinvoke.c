@@ -804,8 +804,9 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
     }
     else if (e->index == 1)
     {
-        //The security policy can only be strengthened.
-        if (target->securityPolicy > var_toInteger(&e->parameters))
+        //The security policy can only be strengthened with version 1.
+        if (target->base.version > 0 &&
+            target->securityPolicy > var_toInteger(&e->parameters))
         {
             ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
@@ -826,6 +827,11 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
         }
         else
         {
+#ifdef DLMS_IGNORE_MALLOC
+            gxByteBuffer kek;
+            BB_ATTACH(kek, settings->base.kek,
+                settings->base.cipher.suite != DLMS_SECURITY_SUITE_V2 ? 16 : 32);
+#endif //DLMS_IGNORE_MALLOC
             unsigned char TMP[24];
             gxByteBuffer tmp;
             BB_ATTACH(tmp, TMP, 0);
@@ -841,7 +847,11 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
                         (ret = cosem_getEnum(e->parameters.byteArr, &type)) != 0 ||
                         (ret = cosem_getOctetString(e->parameters.byteArr, &tmp)) != 0 ||
-                        (ret = cip_decryptKey(settings->base.kek, sizeof(settings->base.kek), &tmp, &bb)) != 0)
+#ifdef DLMS_IGNORE_MALLOC
+                        (ret = cip_decryptKey(&kek, &tmp, &bb)) != 0)
+#else
+                        (ret = cip_decryptKey(&settings->base.kek, &tmp, &bb)) != 0)
+#endif //DLMS_IGNORE_MALLOC
                     {
                         break;
                     }
@@ -889,7 +899,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                 if ((ret = va_getByIndex(e->parameters.Arr, pos, &it)) != 0 ||
                     (ret = va_getByIndex(it->Arr, 0, &type)) != 0 ||
                     (ret = va_getByIndex(it->Arr, 1, &data)) != 0 ||
-                    (ret = cip_decryptKey(settings->base.kek.data, (unsigned char)settings->base.kek.size, data->byteArr, &bb)) != 0)
+                    (ret = cip_decryptKey(&settings->base.kek, data->byteArr, &bb)) != 0)
                 {
                     break;
                 }

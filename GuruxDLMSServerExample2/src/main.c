@@ -62,6 +62,12 @@ HANDLE comPort = INVALID_HANDLE_VALUE;
 int comPort = -1;
 #endif
 
+
+#if defined(DLMS_USE_AES_HARDWARE_SECURITY_MODULE) || defined(DLMS_USE_CRC_HARDWARE_SECURITY_MODULE)
+//If external AES or CRC Hardware Security Module is used.
+#include "../../development/include/ciphering.h"
+#endif //defined(DLMS_USE_AES_HARDWARE_SECURITY_MODULE) || defined(DLMS_USE_CRC_HARDWARE_SECURITY_MODULE)
+
 static unsigned char SERIALIZE_BUFFER[30000] = { 0 };
 
 uint32_t SERIALIZER_SIZE()
@@ -154,6 +160,30 @@ uint32_t time_elapsed(void)
     return (uint32_t)clock() / (CLOCKS_PER_SEC / 1000);
 }
 
+
+#ifdef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+//If external AES Hardware Security Module is used.
+int gx_hsmAesEncrypt(const DLMS_AES aes,
+    gxByteBuffer* data,
+    gxByteBuffer* secret,
+    gxByteBuffer* output)
+{
+    return gxaes_encrypt2(aes,
+        data,
+        secret,
+        output);
+}
+/*Called to decrypt the data using external AES Hardware Security Module.*/
+int gx_hsmAesDecrypt(const DLMS_AES aes,
+    gxByteBuffer* data,
+    gxByteBuffer* secret,
+    gxByteBuffer* output)
+{
+    return gxaes_decrypt(aes,
+        data,
+        output);
+}
+#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
 
 static gxByteBuffer reply;
 static gxClock clock1;

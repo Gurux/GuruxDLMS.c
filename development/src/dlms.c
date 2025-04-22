@@ -78,6 +78,8 @@ unsigned char dlms_useHdlc(DLMS_INTERFACE_TYPE type)
 #endif //DLMS_IGNORE_HDLC
 }
 
+#define GET_AUTH_TAG(s)(s.broadcast ? 0x40 : 0) | DLMS_SECURITY_AUTHENTICATION | s.suite
+
 //Makes sure that the basic settings are set.
 int dlms_checkInit(dlmsSettings* settings)
 {
@@ -5006,14 +5008,12 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
         DLMS_SECURITY security;
         --data->data.position;
         data->data.position = index;
-        gxByteBuffer bb;
-        bb_attach(&bb, data->data.data + index, bb_available(&data->data), bb_getCapacity(&data->data));
         if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0 && dlms_useDedicatedKey(settings))
         {
             if ((ret = cip_decrypt(&settings->cipher,
                 settings->sourceSystemTitle,
                 settings->cipher.dedicatedKey,
-                &bb,
+                &data->data,
                 &security,
                 &suite,
                 &invocationCounter)) != 0)
@@ -5030,7 +5030,7 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
 #else
                 settings->cipher.blockCipherKey,
 #endif //DLMS_IGNORE_MALLOC
-                & bb,
+                & data->data,
                 &security,
                 &suite,
                 &invocationCounter)) != 0)
@@ -5041,10 +5041,9 @@ int dlms_handleGloDedResponse(dlmsSettings* settings,
 #ifdef DLMS_TRACE_PDU
         if (ret == 0)
         {
-            cip_tracePdu(0, &bb);
+            cip_tracePdu(0, &data->data);
         }
 #endif //DLMS_TRACE_PDU
-        data->data.size = bb.size + index;
         //If target is sending data ciphered using different security policy.
         if (settings->cipher.security != security)
         {
@@ -6587,47 +6586,6 @@ int dlms_getActionInfo(
 }
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
-#ifndef DLMS_IGNORE_AES
-int aes(gxByteBuffer* data, gxByteBuffer* secret, gxByteBuffer* challenge, gxByteBuffer* reply)
-{
-    int ret = 0;
-    unsigned char tmp[16];
-    gxByteBuffer s;
-    uint16_t len = (uint16_t)data->size;
-    bb_attach(&s, tmp, 0, sizeof(tmp));
-    if (len % 16 != 0)
-    {
-        len += (16 - (data->size % 16));
-    }
-    if (secret->size > data->size)
-    {
-        len = (uint16_t)secret->size;
-        if (len % 16 != 0)
-        {
-            len += (16 - (secret->size % 16));
-        }
-    }
-    if ((ret = bb_set(&s, secret->data, secret->size)) == 0 &&
-        (ret = bb_zero(&s, s.size, len - s.size)) == 0 &&
-        (ret = bb_set(challenge, data->data, data->size)) == 0 &&
-        (ret = bb_zero(challenge, challenge->size, len - challenge->size)) == 0 &&
-        (ret = bb_capacity(reply, challenge->size)) == 0)
-    {
-#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-        gxaes_ecb_encrypt(challenge->data, s.data, reply->data, s.size);
-#else
-        gx_hsmAes(challenge->data, s.data, reply->data, s.size);
-#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-    }
-    reply->size = s.size;
-#ifndef DLMS_IGNORE_MALLOC
-    bb_clear(&s);
-    bb_clear(challenge);
-#endif //DLMS_IGNORE_MALLOC
-    return ret;
-}
-#endif //DLMS_IGNORE_AES
-
 int dlms_secure(
     dlmsSettings* settings,
     int32_t ic,
@@ -6646,7 +6604,8 @@ int dlms_secure(
     if (settings->authentication == DLMS_AUTHENTICATION_HIGH)
     {
 #ifndef DLMS_IGNORE_AES
-        return aes(data, secret, &challenge, reply);
+        return gxaes_encrypt(bb_size(data) == 16 ? DLMS_AES_128 : DLMS_AES_256,
+            data, secret, reply);
 #else
         return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
 #endif //DLMS_IGNORE_AES
@@ -6719,7 +6678,7 @@ int dlms_secure(
             DLMS_SECURITY_AUTHENTICATION,
             DLMS_COUNT_TYPE_TAG,
             ic,
-            0,
+            GET_AUTH_TAG(settings->cipher),
             secret->data,
 #ifdef DLMS_IGNORE_MALLOC
             settings->cipher.blockCipherKey,
@@ -6731,7 +6690,7 @@ int dlms_secure(
         {
             if ((ret = bb_setUInt8(reply, DLMS_SECURITY_AUTHENTICATION | settings->cipher.suite)) != 0 ||
                 (ret = bb_setUInt32(reply, ic)) != 0 ||
-                (ret = bb_set2(reply, data, data->size - 12, 12)) != 0)
+                (ret = bb_set(reply, data->data, 12)) != 0)
             {
 
             }

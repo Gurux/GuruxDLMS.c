@@ -193,7 +193,7 @@ int startServers(int port, int trace)
                     time_t tmp = lastMonitor;
                     printf("%s", ctime(&tmp));
                     tmp = executeTime;
-                    printf("%lu seconds before next invoke %s", executeTime - lastMonitor, ctime(&tmp));
+                    printf("%u seconds before next invoke %s", executeTime - lastMonitor, ctime(&tmp));
                 }
             }
         }

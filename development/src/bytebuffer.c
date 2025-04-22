@@ -1330,9 +1330,17 @@ int bb_print(gxByteBuffer* bb)
     hexChars[3] = '\0';
     for (pos = 0; pos != bb->size; ++pos)
     {
+        if (bb->position != 0 && bb->position == pos)
+        {
+            printf("%c", '[');
+        }
         hexChars[0] = hexArray[bb->data[pos] >> 4];
         hexChars[1] = hexArray[bb->data[pos] & 0x0F];
         printf("%s", hexChars);
+    }
+    if (bb->size != 0 && bb->position != 0)
+    {
+        printf("%c", ']');
     }
     return 0;
 }

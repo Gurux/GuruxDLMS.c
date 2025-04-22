@@ -1556,17 +1556,39 @@ unsigned char obj_attributeCount(gxObject* object)
         ret = 10;
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_MAC_SETUP:
-        if (object->version < 3)
+        if (object->version > 2)
+        {
+            ret = 26;
+        }
+        else if (object->version == 2)
         {
             ret = 25;
         }
         else
         {
-            ret = 26;
+            //Object version is one or zero.
+            ret = 22;
         }
         break;
     case DLMS_OBJECT_TYPE_G3_PLC_6LO_WPAN:
-        ret = 21;
+        if (object->version > 2)
+        {
+            //Version #3.
+            ret = 23;
+        }
+        else if (object->version == 2)
+        {
+            ret = 21;
+        }
+        else if (object->version == 1)
+        {
+            ret = 19;
+        }
+        else
+        {
+            //Object version is zero.
+            ret = 16;
+        }
         break;
     case DLMS_OBJECT_TYPE_FUNCTION_CONTROL:
         ret = 3;

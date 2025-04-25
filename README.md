@@ -29,7 +29,7 @@ Reporting issues and feature requests
 
 DLMS is a complex protocol, and an idea that seems good in theory may not work with all meters. Before reposting the issue it's good to talk from the problem in [Gurux forum](https://www.gurux.fi/forum).
 Inability to read the meter is not an issue.
-You can report the [issues](https://www.gurux.fi/project/issues/gurux.dlms.c). 
+You can report the [issues](https://www.gurux.fi/project/issues/guruxdlms.c). 
 
 Dual license
 =========================== 
@@ -42,13 +42,13 @@ You do not necessary need to use Gurux media component like gurux.net.c or gurux
 You can use any connection library you want to.
 Gurux.DLMS classes only generate and parse the DLMS data.
 
-You can get [source codes](https://www.github.com/gurux/gurux.dlms.c) 
+You can get [source codes](https://www.github.com/gurux/guruxdlms.c) 
 
 Reading the meter
 =========================== 
 
 Read this first.
-https://www.gurux.fi/Gurux.DLMS.Client
+https://www.gurux.fi/guruxdlms.client
 
 COSEM objects are described here:
 https://www.gurux.fi/Gurux.DLMS.Objects

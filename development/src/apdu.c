@@ -1478,7 +1478,7 @@ int apdu_parsePDU(
     }
     if (size > buff->size - buff->position)
     {
-        //Encoding failed. Not enough data->
+        //Encoding failed. Not enough data.
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     while (ret == 0 && buff->position < buff->size)

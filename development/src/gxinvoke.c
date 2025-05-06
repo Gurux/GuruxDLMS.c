@@ -804,15 +804,14 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
     }
     else if (e->index == 1)
     {
-        //The security policy can only be strengthened with version 1.
-        if (target->base.version > 0 &&
-            target->securityPolicy > var_toInteger(&e->parameters))
+        //The security policy can only be strengthened.
+        if (target->securityPolicy > var_toInteger(&e->parameters))
         {
             ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
         else
         {
-            target->securityPolicy = var_toInteger(&e->parameters);
+            target->securityPolicy = (DLMS_SECURITY_POLICY) var_toInteger(&e->parameters);
         }
     }
     else if (e->index == 2)

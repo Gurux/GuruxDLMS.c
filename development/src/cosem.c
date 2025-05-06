@@ -1848,10 +1848,9 @@ int cosem_getColumns(
         else
         {
             int pos2;
-            uint16_t ot;
+            uint16_t ot, dIndex;
             unsigned char ln[6];
             signed char aIndex;
-            int16_t dIndex;
             columns->size = 0;
             for (pos = 0; pos != count; ++pos)
             {
@@ -1859,7 +1858,7 @@ int cosem_getColumns(
                     (ret = cosem_getUInt16(parameters->byteArr, &ot)) != 0 ||
                     (ret = cosem_getOctetString2(parameters->byteArr, ln, 6, NULL)) != 0 ||
                     (ret = cosem_getInt8(parameters->byteArr, &aIndex)) != 0 ||
-                    (ret = cosem_getInt16(parameters->byteArr, &dIndex)) != 0)
+                    (ret = cosem_getUInt16(parameters->byteArr, &dIndex)) != 0)
                 {
                     break;
                 }

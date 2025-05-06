@@ -3290,6 +3290,12 @@ int svr_handleCommand(
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
+        else if (settings->base.cipher.security > DLMS_SECURITY_NONE
+            && settings->info.encryptedCommand == DLMS_COMMAND_NONE)
+        {
+            //If client try to write value without ciphering.
+            ret = DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
         else
         {
             ret = svr_handleSetRequest(settings, data);
@@ -3317,6 +3323,12 @@ int svr_handleCommand(
                 (settings->base.negotiatedConformance & DLMS_CONFORMANCE_GET) == 0))
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        else if (settings->base.cipher.security > DLMS_SECURITY_NONE
+            && settings->info.encryptedCommand == DLMS_COMMAND_NONE)
+        {
+            //If client try to read value without ciphering.
+            ret = DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
         else
         {
@@ -3364,6 +3376,12 @@ int svr_handleCommand(
             (settings->base.negotiatedConformance & DLMS_CONFORMANCE_ACTION) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        else if (settings->base.cipher.security > DLMS_SECURITY_NONE
+            && settings->info.encryptedCommand == DLMS_COMMAND_NONE)
+        {
+            //If client try to invoke action without ciphering.
+            ret = DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
         else
         {
@@ -3469,6 +3487,14 @@ int svr_handleCommand(
                 DLMS_SERVICE_ERROR_SERVICE, DLMS_SERVICE_UNSUPPORTED,
                 data);
         }
+    }
+    if (ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR)
+    {
+        bb_clear(data);
+        ret = svr_generateExceptionResponse(&settings->base,
+                DLMS_EXCEPTION_STATE_ERROR_SERVICE_NOT_ALLOWED,
+                DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR,
+                data);        
     }
     if (ret != 0)
     {

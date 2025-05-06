@@ -4968,15 +4968,15 @@ int dlms_handleGloDedRequest(dlmsSettings* settings,
 #else
         if (settings->expectedInvocationCounter != NULL)
         {
-            if (invocationCounter <= *settings->expectedInvocationCounter)
+            if (invocationCounter < *settings->expectedInvocationCounter)
             {
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
             //Update IC.
 #ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-            * settings->expectedInvocationCounter = (invocationCounter);
+            * settings->expectedInvocationCounter = (1 + invocationCounter);
 #else
-            * settings->expectedInvocationCounter = (uint32_t)(invocationCounter);
+            * settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
 #endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
         }
 #endif //DLMS_INVOCATION_COUNTER_VALIDATOR

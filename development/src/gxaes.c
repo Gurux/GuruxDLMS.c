@@ -34,7 +34,7 @@
 #ifndef DLMS_IGNORE_AES
 #include <string.h> // CBC mode, for memset
 #include <stdint.h>
-#include "../include/errorCodes.h"
+#include "../include/errorcodes.h"
 #include "../include/gxaes.h"
 
 #if defined(USE_AVR) || defined(ARDUINO_ARCH_AVR)

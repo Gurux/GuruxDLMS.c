@@ -792,11 +792,11 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
     gxCertificateInfo* it;
 #endif //defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
     gxByteBuffer sn2;
-    bb_init(&sn2);
+    BYTE_BUFFER_INIT(&sn2);
 #ifdef DLMS_IGNORE_MALLOC
     gxByteBuffer sn, issuer;
-    bb_init(&sn);
-    bb_init(&issuer);
+    BYTE_BUFFER_INIT(&sn);
+    BYTE_BUFFER_INIT(&issuer);
 #endif //DLMS_IGNORE_MALLOC
     if (target->securitySuite == 0 && e->index > 3)
     {
@@ -1162,7 +1162,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
             {
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
-            bb_init(&cInfo->cert);
+            BYTE_BUFFER_INIT(&cInfo->cert);
             if ((ret = bb_set(&cInfo->cert, e->parameters.byteArr->data, e->parameters.byteArr->size)) == 0)
             {
                 gx509Certificate_init(&cert);
@@ -3726,14 +3726,14 @@ int invoke_FunctionControl(
         }
         if (ret == 0)
         {
-            bb_init(&fb->name);
+            BYTE_BUFFER_INIT(&fb->name);
             bb_set(&fb->name, name, len);
             oa_init(&fb->functionSpecifications);
             if ((ret = arr_push(&object->functions, fb)) != 0)
             {
                 gxfree(fb);
             }
-            bb_init(&fs->name);
+            BYTE_BUFFER_INIT(&fs->name);
             bb_set(&fs->name, name, len);
             if ((ret = arr_push(&object->activationStatus, fb)) != 0)
             {
@@ -3936,7 +3936,7 @@ int invoke_NtpSetup(
 #ifndef DLMS_IGNORE_MALLOC
             it = (gxKey3*)gxmalloc(sizeof(gxKey3));
             it->value = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-            bb_init(it->value);
+            BYTE_BUFFER_INIT(it->value);
             if ((ret = cosem_getUInt32(e->parameters.byteArr, &it->key)) != 0 ||
                 (ret = cosem_getOctetString(e->parameters.byteArr, (gxByteBuffer*)it->value)) != 0 ||
                 (ret = arr_push(&object->keys, it)) != 0)

@@ -50,8 +50,8 @@ int shamirs_trick(gxCurve* curve,
     gxByteBuffer x, y;
     gxEccPoint op2;
     gxEccPoint tmp;
-    if ((ret = bb_init(&x)) == 0 &&
-        (ret = bb_init(&y)) == 0 &&
+    if ((ret = BYTE_BUFFER_INIT(&x)) == 0 &&
+        (ret = BYTE_BUFFER_INIT(&y)) == 0 &&
         (ret = pub_getX(pub, &x)) == 0 &&
         (ret = pub_getY(pub, &y)) == 0 &&
         (ret = eccPoint_init(&sum)) == 0 &&

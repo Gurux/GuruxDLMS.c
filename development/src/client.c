@@ -418,7 +418,7 @@ int cl_getApplicationAssociationRequest(
     dlmsVARIANT data;
 #if !defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
     gxByteBuffer pw2;
-    bb_init(&pw2);
+    BYTE_BUFFER_INIT(&pw2);
 #endif //DLMS_IGNORE_HIGH_GMAC
 #ifndef GX_DLMS_MICROCONTROLLER
     unsigned char APPLICATION_ASSOCIATION_REQUEST[64];

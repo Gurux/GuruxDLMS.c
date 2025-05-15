@@ -1119,7 +1119,7 @@ int svr_handleSetRequestWithList(
     unsigned char ch;
     uint16_t pos, count, targetPos, tmp;
     gxByteBuffer status;
-    bb_init(&status);
+    BYTE_BUFFER_INIT(&status);
 #ifdef DLMS_IGNORE_MALLOC
     unsigned char STATUS_BUFF[20];
     bb_attach(&status, STATUS_BUFF, 0, sizeof(STATUS_BUFF));

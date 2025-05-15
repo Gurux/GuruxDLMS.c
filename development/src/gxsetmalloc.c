@@ -5295,7 +5295,7 @@ int cosem_setFunctionControl(
                 {
                     break;
                 }
-                bb_init(&it->name);
+                BYTE_BUFFER_INIT(&it->name);
                 bb_set2(&it->name, tmp2->byteArr, 0, bb_size(tmp2->byteArr));
                 if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
                 {
@@ -5332,7 +5332,7 @@ int cosem_setFunctionControl(
                 {
                     break;
                 }
-                bb_init(&it->name);
+                BYTE_BUFFER_INIT(&it->name);
                 bb_set2(&it->name, tmp2->byteArr, 0, bb_size(tmp2->byteArr));
                 if ((ret = va_getByIndex(tmp->Arr, 1, &tmp2)) != DLMS_ERROR_CODE_OK)
                 {
@@ -5674,10 +5674,10 @@ int cosem_setPushSetup(dlmsSettings* settings,
                     gxfree(p);
                     break;
                 }
-                bb_init(&p->transactionId);
-                bb_init(&p->otherInformation);
-                bb_init(&p->keyInfo.agreedKey.parameters);
-                bb_init(&p->keyInfo.agreedKey.data);
+                BYTE_BUFFER_INIT(&p->transactionId);
+                BYTE_BUFFER_INIT(&p->otherInformation);
+                BYTE_BUFFER_INIT(&p->keyInfo.agreedKey.parameters);
+                BYTE_BUFFER_INIT(&p->keyInfo.agreedKey.data);
 
                 p->protectionType = (DLMS_PROTECTION_TYPE)var_toInteger(tmp3);
 
@@ -8625,7 +8625,7 @@ int cosem_setNtpSetup(gxNtpSetup* object, unsigned char index, dlmsVARIANT* valu
                     ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                     break;
                 }
-                bb_init((gxByteBuffer*)k->value);
+                BYTE_BUFFER_INIT((gxByteBuffer*)k->value);
                 bb_set(k->value, tmp2->byteArr->data, tmp2->byteArr->size);
                 if ((ret = arr_push(&object->keys, k)) != 0)
                 {

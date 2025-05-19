@@ -881,6 +881,9 @@ void obj_clear(gxObject* object)
         case DLMS_OBJECT_TYPE_SECURITY_SETUP:
             bb_clear(&((gxSecuritySetup*)object)->clientSystemTitle);
             bb_clear(&((gxSecuritySetup*)object)->serverSystemTitle);
+            bb_clear(&((gxSecuritySetup*)object)->guek);
+            bb_clear(&((gxSecuritySetup*)object)->gbek);
+            bb_clear(&((gxSecuritySetup*)object)->gak);
             obj_clearCertificateInfo(&((gxSecuritySetup*)object)->certificates);
 #if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
             priv_clear(&((gxSecuritySetup*)object)->signingKey);
@@ -1042,6 +1045,7 @@ void obj_clear(gxObject* object)
 #ifndef DLMS_IGNORE_REGISTER_MONITOR
         case DLMS_OBJECT_TYPE_REGISTER_MONITOR:
             va_clear(&((gxRegisterMonitor*)object)->thresholds);
+            va_clear(&((gxRegisterMonitor*)object)->lastValues);
             obj_clearRegisterMonitorActions(&((gxRegisterMonitor*)object)->actions);
             break;
 #endif //DLMS_IGNORE_REGISTER_MONITOR

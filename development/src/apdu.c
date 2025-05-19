@@ -1730,7 +1730,14 @@ int apdu_parsePDU(
                 svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid client system title. "), -1);
 #endif //DLMS_DEBUG
                 settings->cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
-                *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
+                if (len > 8)
+                {
+                    *diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
+                }
+                else
+                {
+                    *diagnostic = DLMS_SOURCE_DIAGNOSTIC_CALLING_AP_TITLE_NOT_RECOGNIZED;
+                }
                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                 return 0;
             }

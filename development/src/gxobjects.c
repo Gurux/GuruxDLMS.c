@@ -881,9 +881,11 @@ void obj_clear(gxObject* object)
         case DLMS_OBJECT_TYPE_SECURITY_SETUP:
             bb_clear(&((gxSecuritySetup*)object)->clientSystemTitle);
             bb_clear(&((gxSecuritySetup*)object)->serverSystemTitle);
+#ifndef DLMS_IGNORE_MALLOC
             bb_clear(&((gxSecuritySetup*)object)->guek);
             bb_clear(&((gxSecuritySetup*)object)->gbek);
             bb_clear(&((gxSecuritySetup*)object)->gak);
+#endif //DLMS_IGNORE_MALLOC
             obj_clearCertificateInfo(&((gxSecuritySetup*)object)->certificates);
 #if defined(DLMS_SECURITY_SUITE_1) || defined(DLMS_SECURITY_SUITE_2)
             priv_clear(&((gxSecuritySetup*)object)->signingKey);

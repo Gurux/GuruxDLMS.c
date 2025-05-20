@@ -53,9 +53,9 @@
 #include "../include/helpers.h"
 #include "../include/gxaes.h"
 
-#ifdef DLMS_DEBUG
+#if defined(DLMS_DEBUG) || defined(DLMS_NOTIFY_AUTHENTICATION_ERROR)
 #include "../include/serverevents.h"
-#endif //DLMS_DEBUG
+#endif //defined(DLMS_DEBUG) || defined(DLMS_NOTIFY_AUTHENTICATION_ERROR)
 
 static unsigned char AUTHENTICATION_KEY_SIZE(DLMS_AES aes)
 {

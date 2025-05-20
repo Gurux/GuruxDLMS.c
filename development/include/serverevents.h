@@ -34,7 +34,7 @@
 #define SERVER_EVENTS_H
 
 #include "gxignore.h"
-#if !defined(DLMS_IGNORE_SERVER) || defined(DLMS_DEBUG)
+#if !defined(DLMS_IGNORE_SERVER) && (defined(DLMS_DEBUG) || defined(DLMS_NOTIFY_AUTHENTICATION_ERROR))
 #include "dlmssettings.h"
 #include "bytebuffer.h"
 
@@ -270,5 +270,5 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
-#endif //DLMS_IGNORE_SERVER
+#endif //!defined(DLMS_IGNORE_SERVER) && (defined(DLMS_DEBUG) || defined(DLMS_NOTIFY_AUTHENTICATION_ERROR))
 #endif //SERVER_EVENTS_H

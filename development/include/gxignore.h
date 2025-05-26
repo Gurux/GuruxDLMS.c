@@ -223,6 +223,10 @@ extern "C" {
     // extern uint16_t gx_hsmCrc(const unsigned char* data, const uint16_t length);
     // #define DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
 
+    // #define DLMS_MULTIPLE_ASSOCIATION_VIEWS
+    // Defined when multiple associations are shown in the association view.
+    // In default, only currect association is included to the association view.
+
 #ifdef ARDUINO
 /////////////////////////////////////////////////////////////////////////////
 //If Arduino is used.

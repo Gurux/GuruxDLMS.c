@@ -591,8 +591,10 @@ int getLNObjects(
                 }
                 else
                 {
+#ifndef DLMS_MULTIPLE_ASSOCIATION_VIEWS
                     //Remove extra association view.
                     --count;
+#endif //DLMS_MULTIPLE_ASSOCIATION_VIEWS
                 }
             }
         }
@@ -655,6 +657,7 @@ int getLNObjects(
         //If this is not ignored.
         if (it2 == NULL)
         {
+#ifndef DLMS_MULTIPLE_ASSOCIATION_VIEWS
             if (it->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
             {
                 if (!(it == e->target || memcmp(ln, it->logicalName, 6) == 0))
@@ -662,6 +665,7 @@ int getLNObjects(
                     continue;
                 }
             }
+#endif //DLMS_MULTIPLE_ASSOCIATION_VIEWS
             if (!(pos2 < (uint16_t)e->transactionStartIndex))
             {
                 pduSize = (uint16_t)data->size;

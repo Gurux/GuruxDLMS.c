@@ -4244,7 +4244,7 @@ int ser_saveAssociationLogicalName(
 #else
                 if ((ret = arr_getByIndex3(&object->userList, pos, (void**)&it, 0)) != 0 ||
                     (ret = ser_saveUInt8(serializeSettings, it->key)) != 0 ||
-                    (ret = ser_saveOctetString2(serializeSettings, it->value, (uint16_t)((gxByteBuffer*)it->value)->size)) != 0)
+                    (ret = ser_saveOctetString2(serializeSettings, it->value, (uint16_t)strlen((char*)it->value))) != 0)
                 {
                     break;
                 }
@@ -4338,7 +4338,7 @@ int ser_saveAssociationShortName(
 #else
                 if ((ret = arr_getByIndex3(&object->userList, pos, (void**)&it, 0)) != 0 ||
                     (ret = ser_saveUInt8(serializeSettings, it->key)) != 0 ||
-                    (ret = ser_saveOctetString2(serializeSettings, it->value, (uint16_t)((gxByteBuffer*)it->value)->size)) != 0)
+                    (ret = ser_saveOctetString2(serializeSettings, it->value, (uint16_t)strlen((char*)it->value))) != 0)
                 {
                     break;
                 }
@@ -8299,13 +8299,9 @@ int ser_loadAssociationLogicalName(
                     }
 #else
                     uint8_t id;
-                    gxByteBuffer* value = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                    if (value == NULL)
-                    {
-                        return DLMS_ERROR_CODE_OUTOFMEMORY;
-                    }
+                    char* value = NULL;
                     if ((ret = ser_loadUInt8(serializeSettings, &id)) != 0 ||
-                        (ret = ser_loadOctetString(serializeSettings, value)) != 0)
+                        (ret = ser_loadOctetString2(serializeSettings, &value)) != 0)
                     {
                         break;
                     }

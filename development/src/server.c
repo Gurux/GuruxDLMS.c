@@ -540,6 +540,56 @@ int svr_HandleAarqRequest(
 #endif //DLMS_IGNORE_HIGH_GMAC
                     it->authenticationMechanismName.mechanismId = settings->base.authentication;
                     it->associationStatus = DLMS_ASSOCIATION_STATUS_ASSOCIATION_PENDING;
+                    if (it->userList.size != 0)
+                    {
+                        unsigned char found = 0;
+                        uint16_t pos;
+#ifndef DLMS_IGNORE_MALLOC
+                        gxKey2* user;
+#else
+                        gxUser* user;
+#endif //DLMS_IGNORE_MALLOC
+                        //If user list is used and the client is not send the user ID.
+                        if (settings->base.userId != -1)
+                        {
+                            for (pos = 0; pos != it->userList.size; ++pos)
+                            {
+#ifndef DLMS_IGNORE_MALLOC
+                                if ((ret = arr_getByIndex(&it->userList, pos, (void**)&user)) != 0)
+                                {
+                                    break;
+                                }
+                                if (user->key == settings->base.userId)
+                                {
+                                    found = 1;
+                                    break;
+                                }
+#else
+                                if ((ret = arr_getByIndex(&it->userList, pos, (void**)&user, sizeof(gxUser))) != 0)
+                                {
+                                    break;
+                                }
+                                if (it->id == settings->base.userId)
+                                {
+                                    found = 1;
+                                    break;
+                                }
+#endif //DLMS_IGNORE_MALLOC
+                            }
+                        }
+                        if (!found)
+                        {
+#ifdef DLMS_DEBUG
+                            svr_notifyTrace("Permanent rejected.", -1);
+#endif //DLMS_DEBUG
+                            result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                            diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
+                            bb_setUInt8(&error, 0xE);
+                            bb_setUInt8(&error, DLMS_CONFIRMED_SERVICE_ERROR_INITIATE_ERROR);
+                            bb_setUInt8(&error, DLMS_SERVICE_ERROR_INITIATE);
+                            bb_setUInt8(&error, DLMS_INITIATE_OTHER);
+                        }
+                    }
                 }
                 else
                 {
@@ -3492,9 +3542,9 @@ int svr_handleCommand(
     {
         bb_clear(data);
         ret = svr_generateExceptionResponse(&settings->base,
-                DLMS_EXCEPTION_STATE_ERROR_SERVICE_NOT_ALLOWED,
-                DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR,
-                data);        
+            DLMS_EXCEPTION_STATE_ERROR_SERVICE_NOT_ALLOWED,
+            DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR,
+            data);
     }
     if (ret != 0)
     {

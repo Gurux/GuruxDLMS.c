@@ -1454,6 +1454,7 @@ int apdu_parsePDU(
     unsigned char len;
     unsigned char tag;
     int ret;
+    settings->userId = -1;
     *result = DLMS_ASSOCIATION_RESULT_ACCEPTED;
     *diagnostic = DLMS_SOURCE_DIAGNOSTIC_NONE;
 #ifndef DLMS_IGNORE_SERVER
@@ -1771,6 +1772,10 @@ int apdu_parsePDU(
                 svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid AE Invocation ID. "), -1);
 #endif //DLMS_DEBUG
                 break;
+            }
+            if (ciphered)
+            {
+                settings->userId = len;
             }
             break;
             //Client CalledAeInvocationId.

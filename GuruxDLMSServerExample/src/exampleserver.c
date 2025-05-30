@@ -5419,24 +5419,23 @@ unsigned char svr_isTarget(
                         if (a->securitySetup->clientSystemTitle.size == 8)
                         {
                             settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
-                            if (a->securitySetup->clientSystemTitle.size == 8)
+                            if (settings->preEstablishedSystemTitle == NULL)
                             {
-                                if (settings->preEstablishedSystemTitle == NULL)
-                                {
-                                    settings->preEstablishedSystemTitle = malloc(sizeof(gxByteBuffer));
-                                }
-                                bb_set(settings->preEstablishedSystemTitle, a->securitySetup->clientSystemTitle.data,
-                                    a->securitySetup->clientSystemTitle.size);
+                                settings->preEstablishedSystemTitle = malloc(sizeof(gxByteBuffer));
+                                bb_init(settings->preEstablishedSystemTitle);
                             }
                             else
                             {
-                                settings->preEstablishedSystemTitle = NULL;
+                                bb_clear(settings->preEstablishedSystemTitle);
                             }
+                            bb_set(settings->preEstablishedSystemTitle, a->securitySetup->clientSystemTitle.data,
+                                a->securitySetup->clientSystemTitle.size);
                             //Authentication is updated.
                             settings->authentication = a->authenticationMechanismName.mechanismId;
                         }
-                        else
+                        else if (settings->preEstablishedSystemTitle != NULL)
                         {
+                            bb_clear(settings->preEstablishedSystemTitle);
                             settings->preEstablishedSystemTitle = NULL;
                         }
                         //GMac authentication uses innocation counter.

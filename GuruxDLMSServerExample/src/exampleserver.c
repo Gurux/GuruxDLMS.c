@@ -5419,7 +5419,19 @@ unsigned char svr_isTarget(
                         if (a->securitySetup->clientSystemTitle.size == 8)
                         {
                             settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
-                            settings->preEstablishedSystemTitle = &a->securitySetup->clientSystemTitle;
+                            if (a->securitySetup->clientSystemTitle.size == 8)
+                            {
+                                if (settings->preEstablishedSystemTitle == NULL)
+                                {
+                                    settings->preEstablishedSystemTitle = malloc(sizeof(gxByteBuffer));
+                                }
+                                bb_set(settings->preEstablishedSystemTitle, a->securitySetup->clientSystemTitle.data,
+                                    a->securitySetup->clientSystemTitle.size);
+                            }
+                            else
+                            {
+                                settings->preEstablishedSystemTitle = NULL;
+                            }
                             //Authentication is updated.
                             settings->authentication = a->authenticationMechanismName.mechanismId;
                         }

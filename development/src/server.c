@@ -2855,8 +2855,9 @@ int svr_handleMethodRequest(
             return ret;
         }
     }
-    if (ci == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
+    if (ci == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME && id == 1)
     {
+        //If Association Logical Name object is accessed, it must be handled by server.
         e->target = NULL;
     }
     else

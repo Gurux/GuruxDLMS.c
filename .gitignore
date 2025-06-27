@@ -256,3 +256,5 @@ GuruxDLMSClientExample/VS/.vs/
 *.json
 *.bin
 *.hex
+/Espressif/GuruxDLMSServerExample/dlms/include
+/Espressif/GuruxDLMSServerExample/dlms/src

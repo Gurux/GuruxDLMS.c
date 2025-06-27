@@ -3062,7 +3062,7 @@ int svr_handleReleaseRequest(
     {
         // get User Information. Tag 0xBE
         if ((ret = bb_getUInt8(data, &ch2)) != 0 ||
-            ch2 != (BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | PDU_TYPE_USER_INFORMATION))
+            ch2 != (BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_USER_INFORMATION))
         {
             return DLMS_ERROR_CODE_INVALID_COMMAND;
         }
@@ -3070,8 +3070,8 @@ int svr_handleReleaseRequest(
         {
             return DLMS_ERROR_CODE_INVALID_COMMAND;
         }
-        bb_clear(data);
     }
+    bb_clear(data);
 
 #ifdef DLMS_IGNORE_MALLOC
     unsigned char offset = IS_HDLC(settings->base.interfaceType) ? 12 : 9;

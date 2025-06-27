@@ -5352,12 +5352,21 @@ int ser_saveObjects(
         {
             ret = ser_seek(serializeSettings, -1);
         }
-        if ((ret = ser_saveUInt8(serializeSettings, SERIALIZATION_VERSION)) != 0 ||
-            //Data size.
-            (ret = ser_saveUInt32(serializeSettings, 0)) != 0)
+        if ((ret = ser_saveUInt8(serializeSettings, SERIALIZATION_VERSION)) != 0)
         {
             return ret;
         }
+#if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
+            //Data size.
+            if ((ret = ser_saveUInt32(serializeSettings, 0)) != 0)
+            {
+                return ret;
+            }
+#else
+        //Data size is set after all data is serialized.
+        serializeSettings->position += 4;
+#endif //!(!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+
 #ifdef DLMS_IGNORE_MALLOC
         //All objects are saved on the first time.
         serializeSettings->savedAttributes = 0xFFFF;

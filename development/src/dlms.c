@@ -6688,7 +6688,7 @@ int dlms_secure(
             data);
         if (ret == 0)
         {
-            if ((ret = bb_setUInt8(reply, DLMS_SECURITY_AUTHENTICATION | settings->cipher.suite)) != 0 ||
+            if ((ret = bb_setUInt8(reply, (unsigned char)DLMS_SECURITY_AUTHENTICATION | (unsigned char)settings->cipher.suite)) != 0 ||
                 (ret = bb_setUInt32(reply, ic)) != 0 ||
                 (ret = bb_set(reply, data->data, 12)) != 0)
             {

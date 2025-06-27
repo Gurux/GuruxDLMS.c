@@ -1500,7 +1500,7 @@ void sendPush_task(void *pvParameter)
                 }
             }
         }
-        if (ret != 0)
+        else
         {
             GXTRACE(("generatePushSetupMessages Failed."), NULL);
         }

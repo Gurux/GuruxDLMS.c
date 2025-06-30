@@ -154,11 +154,13 @@ static gxAssociationLogicalName associationHighGMac;
 static gxAssociationLogicalName associationHighGMacPreEstablished;
 static gxAssociationLogicalName associationHighEcdsa;
 static gxRegister activePowerL1;
+static gxScriptTable scriptTablePush;
 static gxScriptTable scriptTableGlobalMeterReset;
 static gxScriptTable scriptTableDisconnectControl;
 static gxScriptTable scriptTableActivateTestMode;
 static gxScriptTable scriptTableActivateNormalMode;
 static gxProfileGeneric eventLog;
+static gxActionSchedule actionSchedulePush;
 static gxActionSchedule actionScheduleDisconnectOpen;
 static gxActionSchedule actionScheduleDisconnectClose;
 static gxPushSetup pushSetup;
@@ -248,9 +250,9 @@ static gxObject* ALL_OBJECTS[] = {
     BASE(securitySetupHigh), BASE(securitySetupHighGMac),BASE(securitySetupHighGMacPreEstablished),
     BASE(securitySetupHighEcdsa),
     BASE(ldn), BASE(sapAssignment), BASE(eventCode),
-    BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
+    BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTablePush), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
     BASE(scriptTableActivateTestMode), BASE(scriptTableActivateNormalMode), BASE(loadProfile), BASE(eventLog), BASE(hdlc),
-    BASE(disconnectControl), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
+    BASE(disconnectControl), BASE(actionSchedulePush), BASE(actionScheduleDisconnectOpen), BASE(actionScheduleDisconnectClose), BASE(unixTime), BASE(invocationCounter),
     BASE(imageTransfer), BASE(udpSetup), BASE(autoConnect), BASE(activityCalendar), BASE(localPortSetup), BASE(demandRegister),
     BASE(registerMonitor), BASE(autoAnswer), BASE(modemConfiguration), BASE(macAddressSetup), BASE(ip4Setup), BASE(pppSetup), BASE(gprsSetup),
     BASE(tarifficationScriptTable), BASE(registerActivation), BASE(limiter),
@@ -1247,6 +1249,32 @@ int addLimiter()
 }
 
 ///////////////////////////////////////////////////////////////////////
+//Add script table object for push.
+///////////////////////////////////////////////////////////////////////
+int addscriptTablePush()
+{
+    int ret;
+    const unsigned char ln[6] = { 0, 0, 10, 0, 108, 255 };
+    if ((ret = INIT_OBJECT(scriptTablePush, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln)) == 0)
+    {
+        gxScript* s = (gxScript*)malloc(sizeof(gxScript));
+        s->id = 1;
+        arr_init(&s->actions);
+        gxScriptAction* a = (gxScriptAction*)malloc(sizeof(gxScriptAction));
+        a->type = DLMS_SCRIPT_ACTION_TYPE_EXECUTE;
+        a->target = BASE(pushSetup);
+        a->index = 1;
+        var_init(&a->parameter);
+        //Action data is Int8 zero.
+        GX_INT8(a->parameter) = 0;
+        arr_push(&s->actions, a);
+        //Add executed script to script list.
+        arr_push(&scriptTablePush.scripts, s);
+    }
+    return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
 //Add script table object for meter reset. This will erase the EEPROM.
 ///////////////////////////////////////////////////////////////////////
 int addscriptTableGlobalMeterReset()
@@ -1655,6 +1683,22 @@ int addRegisterMonitor()
     return 0;
 }
 
+///////////////////////////////////////////////////////////////////////
+//Add action schedule object for push message.
+///////////////////////////////////////////////////////////////////////
+int addActionSchedulePush()
+{
+    int ret;
+    const unsigned char ln[6] = { 0,0,15,0,4,255 };
+    //Action schedule execution times.
+    if ((ret = INIT_OBJECT(actionSchedulePush, DLMS_OBJECT_TYPE_ACTION_SCHEDULE, ln)) == 0)
+    {
+        actionSchedulePush.executedScript = &scriptTablePush;
+        actionSchedulePush.executedScriptSelector = 1;
+        actionSchedulePush.type = DLMS_SINGLE_ACTION_SCHEDULE_TYPE1;
+    }
+    return ret;
+}
 
 ///////////////////////////////////////////////////////////////////////
 //Add action schedule object for disconnect control to close the led.
@@ -3790,6 +3834,7 @@ int svr_InitObjects(
         (ret = addG3Plc6LoWPAN()) != 0 ||
         (ret = addArrayManager()) != 0 ||
         (ret = addPushSetup()) != 0 ||
+        (ret = addscriptTablePush()) != 0 ||
         (ret = addscriptTableGlobalMeterReset()) != 0 ||
         (ret = addscriptTableDisconnectControl()) != 0 ||
         (ret = addscriptTableActivateTestMode()) != 0 ||
@@ -3797,7 +3842,8 @@ int svr_InitObjects(
         (ret = addTarifficationScriptTable()) != 0 ||
         (ret = addRegisterActivation(settings)) != 0 ||
         (ret = addLoadProfileProfileGeneric(&settings->base)) != 0 ||
-        (ret = addEventLogProfileGeneric(&settings->base)) != 0 ||
+        (ret = addEventLogProfileGeneric(&settings->base)) != 0 ||        
+        (ret = addActionSchedulePush()) != 0 ||
         (ret = addActionScheduleDisconnectOpen()) != 0 ||
         (ret = addActionScheduleDisconnectClose()) != 0 ||
         (ret = addDisconnectControl()) != 0 ||

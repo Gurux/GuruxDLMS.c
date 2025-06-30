@@ -4160,6 +4160,54 @@ int svr_handleInactivityTimeout(
     return 0;
 }
 
+#ifndef DLMS_IGNORE_PUSH_SETUP
+
+//Returns true if push communication window is active.
+unsigned char svr_isPushCommunicationWindowActive(
+    gxPushSetup* object,
+    uint32_t time)
+{
+    gxtime* s, * e;
+#ifndef DLMS_IGNORE_MALLOC
+    gxKey* k;
+#else
+    gxTimePair* k;
+#endif //DLMS_IGNORE_MALLOC
+    int ret = 0;
+    int pos;
+    if (object->communicationWindow.size == 0)
+    {
+        //Push is send if communication window is empty.
+        return 1;
+    }
+    for (pos = 0; pos != object->communicationWindow.size; ++pos)
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&k)) != 0)
+        {
+            break;
+        }
+        s = (gxtime*)k->key;
+        e = (gxtime*)k->value;
+#else
+        if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&k, sizeof(gxTimePair))) != 0)
+        {
+            break;
+        }
+        s = &k->first;
+        e = &k->second;
+#endif //DLMS_IGNORE_MALLOC     
+        if (time_compare2(s, time) != 1 && time_compare2(e, time) == 1)
+        {
+            //If communication window is active.
+            return 1;
+        }
+    }
+    //Push window is not active.
+    return 0;
+}
+#endif //DLMS_IGNORE_PUSH_SETUP
+
 int svr_invoke(
     dlmsServerSettings* settings,
     unsigned char isAction,
@@ -4188,8 +4236,14 @@ int svr_invoke(
         }
         if (exec && target->objectType == DLMS_OBJECT_TYPE_PUSH_SETUP)
         {
+            //If communication window is not active
+            if (!svr_isPushCommunicationWindowActive((gxPushSetup*)target, time))
+            {
+                *executed = time;
+                exec = 0;
+            }
             //Check that push message is not send yet in the given time window.
-            if (*executed != 0)
+            else if (*executed != 0)
             {
                 if (time < time_getNextScheduledDate(*executed, start))
                 {
@@ -4639,58 +4693,6 @@ int svr_handleActivityCalendar(
 }
 #endif //!defined(DLMS_IGNORE_ACTIVITY_CALENDAR) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
 
-#ifndef DLMS_IGNORE_PUSH_SETUP
-
-int svr_handlePushSetup(
-    dlmsServerSettings* settings,
-    gxPushSetup* object,
-    uint32_t time,
-    uint32_t* next)
-{
-    gxtime* s, * e;
-#ifndef DLMS_IGNORE_MALLOC
-    gxKey* k;
-#else
-    gxTimePair* k;
-#endif //DLMS_IGNORE_MALLOC
-    int ret = 0;
-    int pos;
-    for (pos = 0; pos != object->communicationWindow.size; ++pos)
-    {
-#ifndef DLMS_IGNORE_MALLOC
-        if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&k)) != 0)
-        {
-            break;
-        }
-        s = (gxtime*)k->key;
-        e = (gxtime*)k->value;
-#else
-        if ((ret = arr_getByIndex(&object->communicationWindow, pos, (void**)&k, sizeof(gxTimePair))) != 0)
-        {
-            break;
-        }
-        s = &k->first;
-        e = &k->second;
-#endif //DLMS_IGNORE_MALLOC
-        if ((ret = svr_invoke(
-            settings,
-            1,
-            (gxObject*)object,
-            1,
-            NULL,
-            time,
-            s,
-            e,
-            &object->executedTime,
-            next)) != 0)
-        {
-            //Save information that invoke failed.
-        }
-    }
-    return ret;
-}
-#endif //DLMS_IGNORE_PUSH_SETUP
-
 #ifndef DLMS_IGNORE_AUTO_CONNECT
 int svr_handleAutoConnect(
     dlmsServerSettings* settings,
@@ -4795,21 +4797,6 @@ int svr_run(
         }
     }
 #endif //!defined(DLMS_IGNORE_ACTIVITY_CALENDAR) && !defined(DLMS_IGNORE_OBJECT_POINTERS)
-
-#ifndef DLMS_IGNORE_PUSH_SETUP
-    //Push objects.
-    for (pos = 0; pos != settings->base.objects.size; ++pos)
-    {
-        if ((ret = oa_getByIndex(&settings->base.objects, pos, &obj)) != DLMS_ERROR_CODE_OK)
-        {
-            return ret;
-        }
-        if (obj->objectType == DLMS_OBJECT_TYPE_PUSH_SETUP)
-        {
-            svr_handlePushSetup(settings, (gxPushSetup*)obj, time, next);
-        }
-    }
-#endif //DLMS_IGNORE_PUSH_SETUP
 #ifndef DLMS_IGNORE_AUTO_CONNECT
     //Get auto connect objects.
     for (pos = 0; pos != settings->base.objects.size; ++pos)

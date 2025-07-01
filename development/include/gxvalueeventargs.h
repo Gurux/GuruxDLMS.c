@@ -151,9 +151,12 @@ extern "C" {
     char vec_isAttached(
         gxValueEventCollection* arr);
 
-    //Bit array capacity.
+    //Value event collection capacity.
     unsigned char vec_getCapacity(
         gxValueEventCollection* arr);
+
+    //Allocate new size for the value event collection.
+    int vec_capacity(gxValueEventCollection* arr, unsigned char capacity);
 
 #ifndef DLMS_IGNORE_MALLOC
     //Push new data to the value event collection.

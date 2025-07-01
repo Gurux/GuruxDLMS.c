@@ -569,7 +569,7 @@ int svr_HandleAarqRequest(
                                 {
                                     break;
                                 }
-                                if (it->id == settings->base.userId)
+                                if (user->id == settings->base.userId)
                                 {
                                     found = 1;
                                     break;
@@ -1784,7 +1784,7 @@ int svr_getRequestWithList(
     }
     arr = &settings->transaction.targets;
     arr->size = (unsigned char)cnt;
-#else
+#else 
     gxValueEventCollection list;
     if (hlp_getObjectCount2(data, &cnt) != 0)
     {
@@ -1818,7 +1818,6 @@ int svr_getRequestWithList(
         ve_init(e);
         vec_push(&list, e);
 #endif //DLMS_IGNORE_MALLOC
-
         e->index = attributeIndex;
         if ((ret = oa_findByLN(&settings->base.objects, ci, ln, &e->target)) != 0)
         {
@@ -1865,9 +1864,13 @@ int svr_getRequestWithList(
         }
     }
     bb_clear(data);
-    svr_preRead(&settings->base, arr);
     hlp_setObjectCount(cnt, data);
     unsigned char moreData = 0;
+    gxValueEventCollection args;
+    vec_init(&args);
+#ifndef DLMS_IGNORE_MALLOC
+    vec_capacity(&args, 1);
+#endif //DLMS_IGNORE_MALLOC
     for (pos = 0; pos != arr->size; ++pos)
     {
         if ((ret = vec_getByIndex(arr, pos, &e)) != 0)
@@ -1875,17 +1878,24 @@ int svr_getRequestWithList(
             break;
         }
 #ifdef DLMS_IGNORE_MALLOC
+        vec_attach(&args, e, 1, 1);
         e->value.byteArr = data;
         e->value.vt = DLMS_DATA_TYPE_OCTET_STRING;
+#else
+        args.size = 0;
+        args.position = 0;
+        vec_push(&args, e);
 #endif //DLMS_IGNORE_MALLOC
+
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+        uint32_t pos2 = data->size;
+#else
+        uint16_t pos2 = data->size;
+#endif
         if (e->error == 0)
         {
-#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-            uint32_t pos2 = data->size;
-#else
-            uint16_t pos2 = data->size;
-#endif
             bb_setUInt8(data, (unsigned char)e->error);
+            svr_preRead(&settings->base, &args);
             if (!e->handled)
             {
                 if ((ret = cosem_getValue(&settings->base, e)) != 0)
@@ -1893,15 +1903,27 @@ int svr_getRequestWithList(
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     bb_setUInt8ByIndex(data, pos2, (unsigned char)e->error);
                 }
+                svr_postRead(&settings->base, &args);
             }
         }
         if (e->error == 0)
         {
+#ifdef DLMS_IGNORE_MALLOC
+            if (e->value.vt != DLMS_DATA_TYPE_OCTET_STRING)
+            {
+                if ((ret = dlms_setData(data, e->value.vt, &e->value)) != 0)
+                {
+                    e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    bb_setUInt8ByIndex(data, pos2, (unsigned char)e->error);
+                }
+            }
+#else
             if (!e->byteArray)
             {
                 if ((ret = dlms_setData(data, e->value.vt, &e->value)) != 0)
                 {
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    bb_setUInt8ByIndex(data, pos2, (unsigned char)e->error);
                 }
             }
             else if (!bb_isAttached(e->value.byteArr))
@@ -1909,9 +1931,11 @@ int svr_getRequestWithList(
                 if ((ret = bb_set2(data, e->value.byteArr, 0, e->value.byteArr->size)) != 0)
                 {
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
+                    bb_setUInt8ByIndex(data, pos2, (unsigned char)e->error);
                 }
                 var_clear(&e->value);
             }
+#endif
         }
         else
         {
@@ -1940,10 +1964,10 @@ int svr_getRequestWithList(
 #endif //DLMS_IGNORE_MALLOC
         }
     }
-    svr_postRead(&settings->base, arr);
     params_initLN(&p, &settings->base, invokeId, DLMS_COMMAND_GET_RESPONSE, 3, NULL, data, 0xFF, settings->info.encryptedCommand, moreData, !moreData);
     ret = dlms_getLNPdu(&p, data);
 #ifndef DLMS_IGNORE_MALLOC
+    vec_empty(&args);
     vec_clear(&list);
 #endif //DLMS_IGNORE_MALLOC
     return ret;

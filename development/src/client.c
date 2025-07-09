@@ -1456,6 +1456,8 @@ int cl_releaseRequest2(dlmsSettings* settings, message* packets, unsigned char u
         {
             return ret;
         }
+        //Restore default values.
+        settings->maxPduSize = settings->initializePduSize;
         apdu_generateUserInformation(settings, &bb);
         bb.data[0] = (unsigned char)(bb.size - 1);
     }

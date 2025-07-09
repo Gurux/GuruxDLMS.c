@@ -1313,6 +1313,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                         if (bb_size(sn->byteArr) == bb_size(&sn2) &&
                             bb_compare(sn->byteArr, sn2.data, sn2.size))
                         {
+                            e->byteArray = 1;
                             bb_empty(&settings->info.data);
                             if ((ret = bb_setUInt8(&settings->info.data, DLMS_DATA_TYPE_OCTET_STRING)) == 0 &&
                                 (ret = hlp_setObjectCount(it->cert.size, &settings->info.data)) == 0 &&

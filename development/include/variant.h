@@ -114,10 +114,10 @@ extern "C" {
 #define GX_GET_UINT16(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.uiVal : *X.puiVal
 
 /*Get UInt32 value from variant.*/
-#define GX_GET_UINT32(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.culVal : *X.pulVal
+#define GX_GET_UINT32(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.ulVal : *X.pulVal
 
 /*Get UInt64 value from variant.*/
-#define GX_GET_UINT64(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.cullVal : *X.pullVal
+#define GX_GET_UINT64(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.ullVal : *X.pullVal
 
 /*Get Int8 value from variant.*/
 #define GX_GET_INT8(X) (X.vt & DLMS_DATA_TYPE_BYREF) == 0 ? X.cVal : *X.pcVal

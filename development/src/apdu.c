@@ -1260,6 +1260,9 @@ int apdu_updateAuthentication(
 #ifndef DLMS_IGNORE_HIGH_GMAC
     case DLMS_AUTHENTICATION_HIGH_GMAC:
 #endif //DLMS_IGNORE_HIGH_GMAC
+#ifndef DLMS_IGNORE_HIGH_ECDSA
+    case DLMS_AUTHENTICATION_HIGH_ECDSA:
+#endif //DLMS_IGNORE_HIGH_GMAC
         break;
     default:
         return DLMS_ERROR_CODE_INVALID_TAG;

@@ -267,6 +267,34 @@ extern "C" {
     extern void svr_authenticationError();
 #endif //DLMS_NOTIFY_AUTHENTICATION_ERROR
 
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+    /*The client is writing a value that does not fit into a single PDU, so the meter
+    must temporarily store it in flash or RAM before updating the corresponding COSEM object.
+    DLMS_ERROR_CODE_FALSE is returned if value is already updated.
+    svr_preWrite and svr_postWrite are not called when custom write is used.
+    */
+    extern int svr_storePartialPDU(
+        dlmsSettings* settings,
+        gxObject* obj,
+        unsigned char index,
+        gxByteBuffer* value);
+
+    /*Partical PDU is removed when the first PDU is received.*/
+    extern int svr_clearPartialPDU(
+        dlmsSettings* settings,
+        gxObject* obj,
+        unsigned char index);
+
+    /*Server asks the complete data after all PDUs are received. This value is updated.
+    DLMS_ERROR_CODE_FALSE is returned if value is already updated.
+    */
+    extern int svr_getCompletePDU(
+        dlmsSettings* settings,
+        gxObject* obj,
+        unsigned char index,
+        gxByteBuffer* value);
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
+
 #ifdef  __cplusplus
 }
 #endif

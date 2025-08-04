@@ -997,6 +997,12 @@ int svr_handleSetRequest2(
             vec_clear(&list);
             return DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE;
         }
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+        ret = svr_clearPartialPDU(
+            &settings->base,
+            e->target,
+            e->index);
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
     }
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
     e->value.byteArr = data;
@@ -1018,9 +1024,6 @@ int svr_handleSetRequest2(
             {
                 ret = svr_findObject(&settings->base, ci, 0, ln, e);
             }
-#ifndef DLMS_IGNORE_MALLOC
-            bb_clear(data);
-#endif //DLMS_IGNORE_MALLOC
             if (ret == 0)
             {
                 // If target is unknown.
@@ -1040,6 +1043,30 @@ int svr_handleSetRequest2(
                     }
                     else
                     {
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+                        ret = svr_storePartialPDU(
+                            &settings->base,
+                            e->target,
+                            e->index,
+                            data);
+                        if (ret == DLMS_ERROR_CODE_FALSE)
+                        {
+#ifdef DLMS_IGNORE_MALLOC
+                            settings->transaction.targets.size = 1;
+                            bb_clear(data);
+#else
+                            bb_clear(&settings->transaction.data);
+                            vec_clear(&settings->transaction.targets);
+                            settings->transaction.targets = list;
+                            var_clear(&e->value);
+#endif //DLMS_IGNORE_MALLOC
+#ifndef DLMS_IGNORE_MALLOC
+                            bb_clear(data);
+#endif //DLMS_IGNORE_MALLOC
+                            return DLMS_ERROR_CODE_OK;
+                        }
+                        ret = 0;
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
                         svr_preWrite(&settings->base, &list);
                         if (p->multipleBlocks)
                         {
@@ -1286,7 +1313,7 @@ int svr_handleSetRequestWithList(
 }
 #endif //DLMS_IGNORE_SET
 
-#ifndef DLMS_IGNORE_MALLOC
+#if !defined(DLMS_IGNORE_MALLOC) || defined(DLMS_WRITE_MULTIPLE_DATABLOCKS)
 int svr_hanleSetRequestWithDataBlock(
     dlmsServerSettings* settings,
     gxByteBuffer* data,
@@ -1318,6 +1345,49 @@ int svr_hanleSetRequestWithDataBlock(
             {
                 ret = DLMS_ERROR_CODE_DATA_BLOCK_UNAVAILABLE;
             }
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+            gxValueEventArg* e;
+#ifdef DLMS_IGNORE_MALLOC
+            e = &settings->transaction.targets.data[0];
+#else
+            ret = vec_getByIndex(&settings->transaction.targets, 0, &e);
+#endif //DLMS_IGNORE_MALLOC
+            if (ret == 0)
+            {
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+                ret = svr_storePartialPDU(&settings->base, e->target, e->index, data);
+                if (ret == DLMS_ERROR_CODE_FALSE)
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
+                {
+#ifndef DLMS_IGNORE_MALLOC
+                    bb_clear(data);
+#endif //DLMS_IGNORE_MALLOC
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+                    ret = svr_getCompletePDU(&settings->base, e->target, e->index, data);
+#ifdef DLMS_IGNORE_MALLOC
+                    bb_clear(data);
+#endif //DLMS_IGNORE_MALLOC
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
+                    if (ret == DLMS_ERROR_CODE_OK)
+                    {
+                        ret = cosem_setValue(&settings->base, e);
+                    }
+                    else if (ret == DLMS_ERROR_CODE_FALSE)
+                    {
+                        ret = DLMS_ERROR_CODE_OK;
+                    }
+                }
+                // If all data is received.
+                if (!p->multipleBlocks)
+                {
+                    trans_clear(&settings->transaction);
+                    resetBlockIndex(&settings->base);
+                }
+                p->multipleBlocks = 1;
+                return ret;
+            }
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
+#if !defined(DLMS_IGNORE_MALLOC)
             if (ret == 0 && (ret = bb_set2(&settings->transaction.data, data, data->position, data->size - data->position)) == 0)
             {
                 // If all data is received.
@@ -1343,12 +1413,13 @@ int svr_hanleSetRequestWithDataBlock(
                     resetBlockIndex(&settings->base);
                 }
             }
+#endif //!defined(DLMS_IGNORE_MALLOC)
         }
     }
     p->multipleBlocks = 1;
     return ret;
 }
-#endif //DLMS_IGNORE_MALLOC
+#endif //!defined(DLMS_IGNORE_MALLOC) || defined(DLMS_WRITE_MULTIPLE_DATABLOCKS)
 
 /**
     * Generate confirmed service error.
@@ -1409,13 +1480,13 @@ int svr_handleSetRequest(
         ret = svr_handleSetRequest2(settings, data, type, &p);
         break;
     case DLMS_SET_COMMAND_TYPE_WITH_DATABLOCK:
-#ifdef DLMS_IGNORE_MALLOC
+#if defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_WRITE_MULTIPLE_DATABLOCKS)
         //All data must fit to one PDU at the moment if malloc is not used.
         ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
 #else
         // Set Request With Data Block
         ret = svr_hanleSetRequestWithDataBlock(settings, data, &p);
-#endif //DLMS_IGNORE_MALLOC
+#endif //defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_WRITE_MULTIPLE_DATABLOCKS)
         break;
     case DLMS_SET_COMMAND_TYPE_WITH_LIST:
         ret = svr_handleSetRequestWithList(settings, data, &p);

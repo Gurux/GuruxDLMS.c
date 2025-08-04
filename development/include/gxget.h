@@ -66,6 +66,7 @@ extern "C" {
         gxValueEventArg* e);
 
     int cosem_getActivityCalendar(
+        dlmsSettings* settings, 
         gxValueEventArg* e);
 
     int cosem_getAssociationLogicalName(

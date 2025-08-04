@@ -227,6 +227,10 @@ extern "C" {
     // Defined when multiple associations are shown in the association view.
     // In default, only currect association is included to the association view.
 
+    // #define DLMS_WRITE_MULTIPLE_DATABLOCKS
+    // Used when the client sends data larger than the allowed PDU size.
+    // The meter is capable of writing such data directly to flash memory.
+
 #ifdef ARDUINO
 /////////////////////////////////////////////////////////////////////////////
 //If Arduino is used.

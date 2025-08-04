@@ -6851,7 +6851,7 @@ int dlms_isPduFull(
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (settings->cipher.security != DLMS_SECURITY_NONE)
         {
-            len += 20 + CIPHERING_HEADER_SIZE + (uint16_t)data->size;
+            len += 22 + CIPHERING_HEADER_SIZE + (uint16_t)data->size;
             if ((settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0)
             {
                 //System title is sent when General Protection is used.
@@ -6861,7 +6861,7 @@ int dlms_isPduFull(
         else
 #endif //DLMS_IGNORE_HIGH_GMAC
         {
-            len += 20 + (uint16_t)data->size;
+            len += 22 + (uint16_t)data->size;
         }
         ret = settings->maxPduSize < len;
     }

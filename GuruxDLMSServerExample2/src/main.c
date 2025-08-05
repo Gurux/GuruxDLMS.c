@@ -62,6 +62,9 @@ HANDLE comPort = INVALID_HANDLE_VALUE;
 int comPort = -1;
 #endif
 
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+const char* partialFileName = "partial.hex";
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
 
 #if defined(DLMS_USE_AES_HARDWARE_SECURITY_MODULE) || defined(DLMS_USE_CRC_HARDWARE_SECURITY_MODULE)
 //If external AES or CRC Hardware Security Module is used.
@@ -281,7 +284,7 @@ static gxCompactData cf6;
 #endif //DLMS_ITALIAN_STANDARD
 
 
-//static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
+static gxObject* NONE_OBJECTS[] = { BASE(associationNone), BASE(ldn) };
 
 //Append new COSEM object to the end so serialization will work correctly.
 static gxObject* ALL_OBJECTS[] = {
@@ -801,9 +804,9 @@ int addAssociationNone()
     if ((ret = INIT_OBJECT(associationNone, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln)) == 0)
     {
         //All objects are shown also without authentication.
-        OA_ATTACH(associationNone.objectList, ALL_OBJECTS);
+        //OA_ATTACH(associationNone.objectList, ALL_OBJECTS);
         //Uncomment this if you want to show only part of the objects without authentication.
-        //OA_ATTACH(associationNone.objectList, NONE_OBJECTS);
+        OA_ATTACH(associationNone.objectList, NONE_OBJECTS);
         associationNone.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_NONE;
         associationNone.clientSAP = 0x10;
         //Max PDU is half of PDU size. This is for demonstration purposes only.
@@ -1343,10 +1346,10 @@ int addActivityCalendar()
     static gxDayProfile ACTIVE_DAY_PROFILE[3];
     static gxDayProfile PASSIVE_DAY_PROFILE[3];
     //Own day profile action for each day profile.
-    static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS1[10];
+    static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS1[50];
     static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS2[10];
     static gxDayProfileAction ACTIVE_DAY_PROFILE_ACTIONS3[10];
-    static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS1[10];
+    static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS1[50];
     static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS2[10];
     static gxDayProfileAction PASSIVE_DAY_PROFILE_ACTIONS3[10];
 
@@ -4783,6 +4786,160 @@ void svr_postGet(
 
 }
 
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+/*The client is writing a value that does not fit into a single PDU, so the meter
+must temporarily store it in flash or RAM before updating the corresponding COSEM object.*/
+int svr_storePartialPDU(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index,
+    gxByteBuffer* value)
+{
+    if (obj->objectType == DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR)
+    {
+        //Save activity calendar DayProfileTablePassive to the file.
+#if _MSC_VER > 1400
+        FILE* f = NULL;
+        fopen_s(&f, partialFileName, "ab");
+#else
+        FILE* f = fopen(partialFileName, "ab");
+#endif
+        if (f != NULL)
+        {
+            fwrite(value->data + value->position, 1, bb_available(value), f);
+            fclose(f);
+        }
+        else
+        {
+            printf("%s\r\n", "Failed to save activity calendar.");
+        }
+        return DLMS_ERROR_CODE_FALSE;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+/*Partical PDU is removed when the first PDU is received.*/
+int svr_clearPartialPDU(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index)
+{
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, partialFileName, "wb");
+#else
+    f = fopen(partialFileName, "wb");
+#endif
+    if (f != NULL)
+    {
+        fclose(f);
+    }
+    return 0;
+}
+
+/*Update dayProfileTablePassive after all blocks are written to the meter.*/
+int svr_updateDayProfileTablePassive(dlmsSettings* settings, gxActivityCalendar* ac)
+{
+    int ret = 0;
+    obj_clearDayProfileTable(&ac->dayProfileTablePassive);
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, partialFileName, "r+b");
+#else
+    f = fopen(partialFileName, "r+b");
+#endif
+    if (f != NULL)
+    {
+        size_t bytes;
+        char buffer[20];
+        gxByteBuffer bb;
+        BB_ATTACH(bb, buffer, 0);
+        //Read object type and array size that is two bytes.
+        bb.size = fread(buffer, 1, sizeof(buffer), f);
+        if (bb.size == sizeof(buffer))
+        {
+            uint16_t size = arr_getCapacity(&ac->dayProfileTablePassive);
+            if (cosem_checkArray(&bb, &size) != 0)
+            {
+                size = 0;
+            }
+            else
+            {
+                uint16_t pos, pos2, count = 0xFFFF;
+                ac->dayProfileTablePassive.size = size;
+                for (pos = 0; pos != size; ++pos)
+                {
+                    gxDayProfile* sp;
+                    if ((ret = arr_getByIndex(&ac->dayProfileTablePassive, pos, &sp, sizeof(gxDayProfile))) != 0 ||
+                        (ret = cosem_checkStructure(&bb, 2)) != 0 ||
+                        (ret = cosem_getUInt8(&bb, &sp->dayId)) != 0 ||
+                        (ret = cosem_checkArray(&bb, &count)) != 0)
+                    {
+                        break;
+                    }
+                    if (arr_getCapacity(&sp->daySchedules) < count)
+                    {
+                        //If client try to add more rows than the meter can handle.
+                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                        break;
+                    }
+                    sp->daySchedules.size = count;
+                    //Loop day profile actions.
+                    unsigned char ln[6];
+                    for (pos2 = 0; pos2 != count; ++pos2)
+                    {
+                        gxDayProfileAction* ac;
+                        if ((ret = arr_getByIndex(&sp->daySchedules, pos2, &ac, sizeof(gxDayProfileAction))) != 0)
+                        {
+                            break;
+                        }
+                        time_initUnix(&ac->startTime, 0);
+                        bb_trim(&bb);
+                        bb.size += fread(buffer + bb.size, 1, sizeof(buffer) - bb.size, f);
+                        if ((ret = cosem_checkStructure(&bb, 3)) != 0 ||
+                            (ret = cosem_getTimeFromOctetString(&bb, &ac->startTime)) != 0 ||
+                            (ret = cosem_getOctetString2(&bb, ln, 6, NULL)) != 0 ||
+                            (ret = cosem_getUInt16(&bb, &ac->scriptSelector)) != 0)
+                        {
+                            break;
+                        }
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+                        if ((ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln, &ac->script)) != 0)
+                        {
+                            break;
+                        }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+                    }
+                }
+            }
+        }
+        fclose(f);
+    }
+    if (ret == DLMS_ERROR_CODE_OK)
+    {
+        //Return FALSE to indicate that data is updated.
+        ret = DLMS_ERROR_CODE_FALSE;
+    }
+    return ret;
+}
+
+/*Update passive day profile table after the last block is received.
+* This is a simple example and it doesn't check the content of the passive day profile table.
+*/
+int svr_getCompletePDU(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index,
+    gxByteBuffer* value)
+{
+    if (obj->objectType == DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR &&
+        index == 9)
+    {
+        return svr_updateDayProfileTablePassive(settings, (gxActivityCalendar*)obj);
+    }
+    return 0;
+}
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
 
 #if !defined(_WIN32) && !defined(_WIN64)//Windows
 

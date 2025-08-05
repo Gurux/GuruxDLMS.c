@@ -87,6 +87,10 @@ static unsigned char SERVER_SYSTEM_TITLE[8] = { 0x47, 0x52, 0x58, 0x00, 0x00, 0x
 time_t imageActionStartTime = 0;
 static gxByteBuffer reply;
 
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+const char* partialFileName = "partial.hex";
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
+
 uint32_t time_current(void)
 {
     //Get current time somewhere.
@@ -3842,7 +3846,7 @@ int svr_InitObjects(
         (ret = addTarifficationScriptTable()) != 0 ||
         (ret = addRegisterActivation(settings)) != 0 ||
         (ret = addLoadProfileProfileGeneric(&settings->base)) != 0 ||
-        (ret = addEventLogProfileGeneric(&settings->base)) != 0 ||        
+        (ret = addEventLogProfileGeneric(&settings->base)) != 0 ||
         (ret = addActionSchedulePush()) != 0 ||
         (ret = addActionScheduleDisconnectOpen()) != 0 ||
         (ret = addActionScheduleDisconnectClose()) != 0 ||
@@ -4948,6 +4952,39 @@ void svr_preAction(
             sendPush(settings, (gxPushSetup*)e->target);
             e->handled = 1;
         }
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+        else if (e->target == BASE(activityCalendar) && e->index == 1)
+        {
+            //If activity calendar is not loaded to RAM and used directly from the EEPROM/Flash.
+            obj_clearDayProfileTable(&activityCalendar.dayProfileTableActive);
+            FILE* source = NULL, * dest = NULL;
+#if _MSC_VER > 1400
+            fopen_s(&source, DayProfileTablePassiveFileName, "r+b");
+            fopen_s(&dest, DayProfileTableActiveFileName, "wb");
+#else
+            source = source(DayProfileTablePassiveFileName, "r+b");
+            dest = fopen(DayProfileTableActiveFileName, "wb");
+#endif
+            char buffer[20];
+            size_t bytes;
+            if (source != NULL && dest != NULL)
+            {
+                while ((bytes = fread(buffer, 1, sizeof(buffer), source)) > 0)
+                {
+                    fwrite(buffer, 1, bytes, dest);
+                }
+            }
+            if (source != NULL)
+            {
+                fclose(source);
+            }
+            if (dest != NULL)
+            {
+                fclose(dest);
+            }
+            e->handled = 1;
+        }
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS
         //If client wants to clear EEPROM data using Global meter reset script.
         else if (e->target == BASE(scriptTableGlobalMeterReset) && e->index == 1)
         {
@@ -6022,3 +6059,153 @@ void svr_getDataType(
 {
 
 }
+
+#ifdef DLMS_WRITE_MULTIPLE_DATABLOCKS
+/*The client is writing a value that does not fit into a single PDU, so the meter
+must temporarily store it in flash or RAM before updating the corresponding COSEM object.*/
+int svr_storePartialPDU(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index,
+    gxByteBuffer* value)
+{
+    if (obj->objectType == DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR)
+    {
+        //Save activity calendar DayProfileTablePassive to the file.
+#if _MSC_VER > 1400
+        FILE* f = NULL;
+        fopen_s(&f, partialFileName, "ab");
+#else
+        FILE* f = fopen(partialFileName, "ab");
+#endif
+        if (f != NULL)
+        {
+            fwrite(value->data + value->position, 1, bb_available(value), f);
+            fclose(f);
+        }
+        else
+        {
+            printf("%s\r\n", "Failed to save activity calendar.");
+        }
+        return DLMS_ERROR_CODE_FALSE;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+/*Partical PDU is removed when the first PDU is received.*/
+int svr_clearPartialPDU(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index)
+{
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, partialFileName, "wb");
+#else
+    f = fopen(partialFileName, "wb");
+#endif
+    if (f != NULL)
+    {
+        fclose(f);
+    }
+    return 0;
+}
+
+/*Update dayProfileTablePassive after all blocks are written to the meter.*/
+int svr_updateDayProfileTablePassive(dlmsSettings* settings, gxActivityCalendar* ac)
+{
+    int ret = 0;
+    obj_clearDayProfileTable(&ac->dayProfileTablePassive);
+    FILE* f = NULL;
+#if _MSC_VER > 1400
+    fopen_s(&f, partialFileName, "r+b");
+#else
+    f = fopen(partialFileName, "r+b");
+#endif
+    if (f != NULL)
+    {
+        size_t bytes;
+        char buffer[20];
+        gxByteBuffer bb;
+        BB_ATTACH(bb, buffer, 0);
+        //Read object type and array size that is two bytes.
+        bb.size = fread(buffer, 1, sizeof(buffer), f);
+        if (bb.size == sizeof(buffer))
+        {
+            uint16_t size = 0xFFFF;
+            if (cosem_checkArray(&bb, &size) != 0)
+            {
+                size = 0;
+            }
+            else
+            {
+                uint16_t pos, pos2, count = 0xFFFF;
+                for (pos = 0; pos != size; ++pos)
+                {
+                    gxDayProfile* sp = (gxDayProfile*)malloc(sizeof(gxDayProfile));
+                    if (sp == NULL)
+                    {
+                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                        break;
+                    }
+                    arr_init(&sp->daySchedules);
+                    if ((ret = arr_push(&ac->dayProfileTablePassive, sp)) != 0 ||
+                        (ret = cosem_checkStructure(&bb, 2)) != 0 ||
+                        (ret = cosem_getUInt8(&bb, &sp->dayId)) != 0 ||
+                        (ret = cosem_checkArray(&bb, &count)) != 0)
+                    {
+                        break;
+                    }
+                    //Loop day profile actions.
+                    unsigned char ln[6];
+                    for (pos2 = 0; pos2 != count; ++pos2)
+                    {
+                        gxDayProfileAction* ac = (gxDayProfileAction*)malloc(sizeof(gxDayProfileAction));
+                        arr_push(&sp->daySchedules, ac);
+                        time_initUnix(&ac->startTime, 0);
+                        bb_trim(&bb);
+                        bb.size += fread(buffer + bb.size, 1, sizeof(buffer) - bb.size, f);
+                        if ((ret = cosem_checkStructure(&bb, 3)) != 0 ||
+                            (ret = cosem_getTimeFromOctetString(&bb, &ac->startTime)) != 0 ||
+                            (ret = cosem_getOctetString2(&bb, ln, 6, NULL)) != 0 ||
+                            (ret = cosem_getUInt16(&bb, &ac->scriptSelector)) != 0)
+                        {
+                            break;
+                        }
+#ifndef DLMS_IGNORE_OBJECT_POINTERS
+                        if ((ret = cosem_findObjectByLN(settings, DLMS_OBJECT_TYPE_SCRIPT_TABLE, ln, &ac->script)) != 0)
+                        {
+                            break;
+                        }
+#endif //DLMS_IGNORE_OBJECT_POINTERS
+                    }
+                }
+            }
+        }
+        fclose(f);
+    }
+    if (ret == DLMS_ERROR_CODE_OK)
+    {
+        //Return FALSE to indicate that data is updated.
+        ret = DLMS_ERROR_CODE_FALSE;
+    }
+    return ret;
+}
+
+/*Update passive day profile table after the last block is received.
+* This is a simple example and it doesn't check the content of the passive day profile table.
+*/
+int svr_getCompletePDU(
+    dlmsSettings* settings,
+    gxObject* obj,
+    unsigned char index,
+    gxByteBuffer* value)
+{
+    if (obj->objectType == DLMS_OBJECT_TYPE_ACTIVITY_CALENDAR &&
+        index == 9)
+    {
+        return svr_updateDayProfileTablePassive(settings, (gxActivityCalendar*)obj);
+    }
+    return 0;
+}
+#endif //DLMS_WRITE_MULTIPLE_DATABLOCKS

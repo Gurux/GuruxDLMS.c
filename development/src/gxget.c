@@ -285,6 +285,8 @@ int getActivityCalendarDayProfileTable(dlmsSettings* settings,
     gxByteBuffer* ba)
 {
     uint16_t pduSize = 0;
+    //ignoreCount is used to skip already read items.
+    uint16_t ignoreCount = e->transactionStartIndex;
     gxDayProfile* dp;
     gxDayProfileAction* action;
     int ret;
@@ -331,7 +333,7 @@ int getActivityCalendarDayProfileTable(dlmsSettings* settings,
             break;
         }
 #endif //DLMS_IGNORE_MALLOC
-        if (!(pos < (uint16_t)e->transactionStartIndex))
+        if (ignoreCount == 0)
         {
             if ((ret = cosem_setStructure(ba, 2)) != 0 ||
                 (ret = cosem_setUInt8(ba, dp->dayId)) != 0 ||
@@ -351,40 +353,59 @@ int getActivityCalendarDayProfileTable(dlmsSettings* settings,
             }
             ++e->transactionStartIndex;
         }
+        else
+        {
+            --ignoreCount;
+        }
         if (ret == 0)
         {
             for (pos2 = 0; pos2 != dp->daySchedules.size; ++pos2)
             {
-                pduSize = (uint16_t)ba->size;
+                if (ignoreCount == 0)
+                {
+                    pduSize = (uint16_t)ba->size;
 #ifndef DLMS_IGNORE_MALLOC
-                if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action)) != 0)
-                {
-                    break;
-                }
-#else
-                if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action, sizeof(gxDayProfileAction))) != 0)
-                {
-                    break;
-                }
-#endif //DLMS_IGNORE_MALLOC
-                if ((ret = cosem_setStructure(ba, 3)) != 0 ||
-                    (ret = cosem_setTimeAsOctetString(ba, &action->startTime)) != 0 ||
-                    (ret = cosem_setOctetString2(ba, SCRIPT_LOGICAL_NAME, 6)) != 0 ||
-                    (ret = cosem_setUInt16(ba, action->scriptSelector)) != 0)
-                {
-                    break;
-                }
-                if (settings->server)
-                {
-                    //If PDU is full.
-                    if (!e->skipMaxPduSize && dlms_isPduFull(settings, ba, NULL))
+                    if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action)) != 0)
                     {
-                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
                         break;
                     }
+#else
+                    if ((ret = arr_getByIndex(&dp->daySchedules, pos2, (void**)&action, sizeof(gxDayProfileAction))) != 0)
+                    {
+                        break;
+                    }
+#endif //DLMS_IGNORE_MALLOC
+                    if ((ret = cosem_setStructure(ba, 3)) != 0 ||
+                        (ret = cosem_setTimeAsOctetString(ba, &action->startTime)) != 0 ||
+                        (ret = cosem_setOctetString2(ba, SCRIPT_LOGICAL_NAME, 6)) != 0 ||
+                        (ret = cosem_setUInt16(ba, action->scriptSelector)) != 0)
+                    {
+                        break;
+                    }
+                    if (settings->server)
+                    {
+                        //If PDU is full.
+                        if (!e->skipMaxPduSize && dlms_isPduFull(settings, ba, NULL))
+                        {
+                            ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                            break;
+                        }
+                    }
+                    ++e->transactionStartIndex;
                 }
-                ++e->transactionStartIndex;
+                else
+                {
+                    --ignoreCount;
+                }
             }
+            if (ret != 0)
+            {
+                break;
+            }
+        }
+        if (ret != 0)
+        {
+            break;
         }
     }
     if (ret == DLMS_ERROR_CODE_OUTOFMEMORY)

@@ -65,6 +65,16 @@ class GXDLMSClient
       const char* password,
       DLMS_INTERFACE_TYPE interfaceType);
 
+
+    int init(
+      bool useLogicalNameReferencing,
+      int clientAddress,
+      int serverAddress,
+      DLMS_AUTHENTICATION authentication,
+      const unsigned char* password,
+      uint16_t passwordSize,
+      DLMS_INTERFACE_TYPE interfaceType);
+
     //Return collection of objects.
     objectArray* GetObjects();
 

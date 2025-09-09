@@ -91,6 +91,21 @@ int GXDLMSClient::init(
   return 0;
 }
 
+int GXDLMSClient::init(
+  bool useLogicalNameReferencing,
+  int clientAddress,
+  int serverAddress,
+  DLMS_AUTHENTICATION authentication,
+  const unsigned char* password,
+  uint16_t passwordSize,
+  DLMS_INTERFACE_TYPE interfaceType)
+{
+  //Initialize DLMS settings.
+  cl_init(&settings, useLogicalNameReferencing, clientAddress, serverAddress, authentication, NULL, interfaceType);
+  bb_set(&settings.password, password, passwordSize);
+  return 0;
+}
+
 //Return collection of objects.
 objectArray* GXDLMSClient::GetObjects()
 {

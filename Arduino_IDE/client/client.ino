@@ -118,10 +118,10 @@ void GXTRACE_BB(const char* str, gxByteBuffer* value)
   GXTRACE(str, NULL);
   for (pos = 0; pos < bb_size(value); ++pos)
   {
-      sprintf(data, "%02X ", value->data[pos]);
-      GXTRACE(NULL, data);
+    sprintf(data, "%02X ", value->data[pos]);
+    GXTRACE(NULL, data);
   }
-  Serial1.write("\0");  
+  Serial1.write("\0");
 }
 
 uint32_t runTime = 0;
@@ -1026,20 +1026,31 @@ int com_readAllObjects(const char* invocationCounter)
   //Read Logical Device Name
   gxData ldn;
   cosem_init(BASE(ldn), DLMS_OBJECT_TYPE_DATA, "0.0.42.0.0.255");
-  com_read(BASE(ldn), 2);
-  obj_toString(BASE(ldn), &data);
-  GXTRACE(GET_STR_FROM_EEPROM("Logical Device Name"), data);
-  obj_clear(BASE(ldn));
-  free(data);
+  if (com_read(BASE(ldn), 2) == 0)
+  {
+    obj_toString(BASE(ldn), &data);
+    GXTRACE(GET_STR_FROM_EEPROM("Logical Device Name"), data);
+    obj_clear(BASE(ldn));
+    free(data);
+  }
+  else
+  {
+    GXTRACE(GET_STR_FROM_EEPROM("Failed to read Logical Device Name"), NULL);
+  }
   //Read clock
   gxClock clock1;
   cosem_init(BASE(clock1), DLMS_OBJECT_TYPE_CLOCK, "0.0.1.0.0.255");
-  com_read(BASE(clock1), 3);
-  com_read(BASE(clock1), 2);
-  obj_toString(BASE(clock1), &data);
-  GXTRACE(GET_STR_FROM_EEPROM("Clock"), data);
-  obj_clear(BASE(clock1));
-  free(data);
+  if (com_read(BASE(clock1), 3) == 0 && com_read(BASE(clock1), 2) == 0)
+  {
+    obj_toString(BASE(clock1), &data);
+    GXTRACE(GET_STR_FROM_EEPROM("Clock"), data);
+    obj_clear(BASE(clock1));
+    free(data);
+  }
+  else
+  {
+    GXTRACE(GET_STR_FROM_EEPROM("Failed to read clock."), NULL);
+  }
   /*
      TODO: This is an example how to read profile generic.
     //Read Profile generic.
@@ -1063,7 +1074,12 @@ void setup() {
   //Set frame capacity.
   bb_capacity(&frameData, 128);
   Client.init(true, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
-  //Un-comment this if you want to set system title, block cipher key or authentication key.
+
+  //Enable this for passwords with non-ASCII characters.
+  //unsigned char password[] = {0, 0, 0, 0, 0, 0, 0, 0};  
+  //Client.init(true, 16, 1, DLMS_AUTHENTICATION_LOW, password, sizeof(password), DLMS_INTERFACE_TYPE_HDLC);
+
+  //Uncomment to enable secure connection and set the system title, block cipher key, or authentication key.
   /*
     Client.SetSecurity(DLMS_SECURITY_AUTHENTICATION_ENCRYPTION);
     //TODO: Change logical name of the frame counter if it's used to com_readAllObjects.
@@ -1083,14 +1099,14 @@ void setup() {
   Serial1.begin(115200);
 
   // start serial port at 9600 bps:
- if (Client.GetInterfaceType() == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
+  if (Client.GetInterfaceType() == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
   {
     // Optical probes work with 300 bps 7E1:
     Serial.begin(300, SERIAL_7E1);
   }
   else
   {
-    Serial.begin(9600, SERIAL_8N1);    
+    Serial.begin(9600, SERIAL_8N1);
   }
   while (!Serial1) {
     ; // wait for serial port to connect. Needed for native USB port only

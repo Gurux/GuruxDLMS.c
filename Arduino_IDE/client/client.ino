@@ -1075,7 +1075,7 @@ void setup() {
   bb_capacity(&frameData, 128);
   Client.init(true, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
 
-  //Enable this for passwords with non-ASCII characters.
+  //Use this for passwords with non-ASCII characters.
   //unsigned char password[] = {0, 0, 0, 0, 0, 0, 0, 0};  
   //Client.init(true, 16, 1, DLMS_AUTHENTICATION_LOW, password, sizeof(password), DLMS_INTERFACE_TYPE_HDLC);
 

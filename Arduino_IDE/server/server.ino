@@ -177,8 +177,9 @@ static gxPushSetup pushSetup;
 static gxDisconnectControl disconnectControl;
 static gxProfileGeneric profileGeneric;
 //static gxSapAssignment sapAssignment;
-static gxSecuritySetup securitySetupLow;
 static gxSecuritySetup securitySetupHigh;
+//Security Setup HighGMac is for GMac authentication.
+static gxSecuritySetup securitySetupHighGMac;
 
 static gxSerializerSettings serializerSettings;
 
@@ -186,7 +187,7 @@ static gxSerializerSettings serializerSettings;
 
 /////////////////////////////////////////////////////////////////
 //Append new COSEM object to the end so serialization will work correctly.
-static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupLow), BASE(securitySetupHigh),
+static gxObject* ALL_OBJECTS[] = { BASE(associationNone), BASE(associationLow), BASE(associationHigh), BASE(associationHighGMac), BASE(securitySetupHighGMac), BASE(securitySetupHigh),
                                    BASE(ldn), BASE(eeprom), BASE(testMode), BASE(eventCode),
                                    BASE(clock1), BASE(activePowerL1), BASE(pushSetup), BASE(scriptTableGlobalMeterReset), BASE(scriptTableDisconnectControl),
                                    BASE(scriptTableActivatetestMode), BASE(scriptTableActivateNormalMode), BASE(profileGeneric), BASE(eventLog), BASE(hdlc),
@@ -458,11 +459,6 @@ int addAssociationLow()
         DLMS_CONFORMANCE_GET);
     memcpy((char*) SECRET, "Gurux", 5);
     associationLow.secret.size = 5;
-#ifndef DLMS_IGNORE_OBJECT_POINTERS
-    associationLow.securitySetup = &securitySetupLow;
-#else
-    memcpy(associationLow.securitySetupReference, securitySetupLow.base.logicalName, 6);
-#endif //DLMS_IGNORE_OBJECT_POINTERS
   }
   return ret;
 }
@@ -538,33 +534,13 @@ int addAssociationHighGMac()
         DLMS_CONFORMANCE_GET);
     //GMAC authentication don't need password.
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
-    associationHighGMac.securitySetup = &securitySetupHigh;
+    associationHighGMac.securitySetup = &securitySetupHighGMac;
 #else
-    memcpy(associationHighGMac.securitySetupReference, securitySetupHigh.base.logicalName, 6);
+    memcpy(associationHighGMac.securitySetupReference, securitySetupHighGMac.base.logicalName, 6);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
   }
   return ret;
 }
-
-///////////////////////////////////////////////////////////////////////
-//This method adds security setup object for Low authentication.
-///////////////////////////////////////////////////////////////////////
-int addSecuritySetupLow()
-{
-  int ret;
-  //Define client system title.
-  static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0 };
-  const unsigned char ln[6] = { 0, 0, 43, 0, 1, 255 };
-  if ((ret = INIT_OBJECT(securitySetupLow, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
-  {
-    BB_ATTACH(securitySetupLow.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
-    BB_ATTACH(securitySetupLow.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
-    securitySetupLow.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
-    securitySetupLow.securitySuite = DLMS_SECURITY_SUITE_V0;
-  }
-  return ret;
-}
-
 
 ///////////////////////////////////////////////////////////////////////
 //This method adds security setup object for High authentication.
@@ -574,13 +550,33 @@ int addSecuritySetupHigh()
   int ret;
   //Define client system title.
   static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0 };
-  const unsigned char ln[6] = { 0, 0, 43, 0, 2, 255 };
+  const unsigned char ln[6] = { 0, 0, 43, 0, 1, 255 };
   if ((ret = INIT_OBJECT(securitySetupHigh, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
   {
     BB_ATTACH(securitySetupHigh.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
     BB_ATTACH(securitySetupHigh.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
     securitySetupHigh.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
     securitySetupHigh.securitySuite = DLMS_SECURITY_SUITE_V0;
+  }
+  return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+//This method adds security setup object for High GMAC authentication.
+///////////////////////////////////////////////////////////////////////
+int addSecuritySetupHighGMac()
+{
+  int ret;
+  //Define client system title.
+  static unsigned char CLIENT_SYSTEM_TITLE[8] = { 0 };
+  const unsigned char ln[6] = { 0, 0, 43, 0, 2, 255 };
+  if ((ret = INIT_OBJECT(securitySetupHighGMac, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
+  {
+    BB_ATTACH(securitySetupHighGMac.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+    BB_ATTACH(securitySetupHighGMac.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
+    //Only Authenticated encrypted connections are allowed.
+    securitySetupHighGMac.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
+    securitySetupHighGMac.securitySuite = DLMS_SECURITY_SUITE_V0;
   }
   return ret;
 }
@@ -1106,8 +1102,8 @@ void createObjects()
       (ret = addAssociationLow()) != 0 ||
       (ret = addAssociationHigh()) != 0 ||
       (ret = addAssociationHighGMac()) != 0 ||
-      (ret = addSecuritySetupLow()) != 0 ||
       (ret = addSecuritySetupHigh()) != 0 ||
+      (ret = addSecuritySetupHighGMac()) != 0 ||
       (ret = addPushSetup()) != 0 ||
       (ret = addscriptTableGlobalMeterReset()) != 0 ||
       (ret = addscriptTableDisconnectControl()) != 0 ||
@@ -1758,7 +1754,7 @@ void handleEventLogActions(
   {
     // Profile generic clear is called. Clear data.
     eventLog.entriesInUse = 0;
-     eventLogRowIndex = 0;
+    eventLogRowIndex = 0;
   }
   else if (it->index == 2)
   {
@@ -1949,21 +1945,18 @@ unsigned char svr_isTarget(
   uint32_t clientAddress)
 {
   GXTRACE(GET_STR_FROM_EEPROM("svr_isTarget."), NULL);
-  objectArray objects;
-  oa_init(&objects);
   unsigned char ret = 0;
   uint16_t pos;
-  gxObject* tmp[6];
-  oa_attach(&objects, tmp, sizeof(tmp) / sizeof(tmp[0]));
-  objects.size = 0;
-  if (oa_getObjects(&settings->objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, &objects) == 0)
+  gxObject* obj;
+  gxAssociationLogicalName* a;
+  for (pos = 0; pos != settings->objects.size; ++pos)
   {
-    gxAssociationLogicalName* a;
-    for (pos = 0; pos != objects.size; ++pos)
+    if (oa_getByIndex(&settings->objects, pos, &obj) == 0)
     {
-      if (oa_getByIndex(&objects, pos, (gxObject**)&a) == 0)
+      if (obj->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME)
       {
-        if (a->clientSAP == clientAddress)
+        a = (gxAssociationLogicalName*)obj;
+        if (a->clientSAP == (uint16_t) clientAddress)
         {
           ret = 1;
           switch (a->authenticationMechanismName.mechanismId)
@@ -1980,6 +1973,36 @@ unsigned char svr_isTarget(
               //Client connects using High authentication.
               GXTRACE(GET_STR_FROM_EEPROM("Connecting using High authentication."), NULL);
               break;
+          }
+          settings->proposedConformance = a->xDLMSContextInfo.conformance;
+          settings->expectedClientSystemTitle = NULL;
+          //Set Invocation counter value.
+          settings->expectedInvocationCounter = NULL;
+          //Client can establish a ciphered connection only with Security Suite 1.
+          settings->expectedSecuritySuite = 0;
+          //Security policy is not defined by default. Client can connect using any security policy.
+          settings->expectedSecurityPolicy = 0xFF;
+          if (a->securitySetup != NULL)
+          {
+            //Set expected client system title. If this is set only client that is using expected client system title can connect to the meter.
+            if (a->securitySetup->clientSystemTitle.size == 8)
+            {
+              settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
+            }
+            //GMac authentication uses innocation counter.
+            if (a->securitySetup == &securitySetupHighGMac)
+            {
+              //Set invocation counter value. If this is set client's invocation counter must match with server IC.
+              settings->expectedInvocationCounter = &securitySetupHighGMac.minimumInvocationCounter;
+            }
+
+            //Set security suite that client must use.
+            settings->expectedSecuritySuite = a->securitySetup->securitySuite;
+            //Set security policy that client must use if it is set.
+            if (a->securitySetup->securityPolicy != 0)
+            {
+              settings->expectedSecurityPolicy = a->securitySetup->securityPolicy;
+            }
           }
           break;
         }

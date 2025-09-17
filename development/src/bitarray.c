@@ -312,14 +312,18 @@ int ba_toInteger(bitArray* arr, uint32_t* value)
 {
     *value = 0;
     unsigned char ch;
-    int pos, ret;
+    uint32_t tmp;
+    uint16_t pos;
+    int ret;
     for (pos = 0; pos != arr->size; ++pos)
     {
         if ((ret = ba_getByIndex(arr, pos, &ch)) != 0)
         {
             return ret;
         }
-        *value |= ch << pos;
+        tmp = ch;
+        tmp <<= pos;
+        *value |= tmp;
     }
     return 0;
 }

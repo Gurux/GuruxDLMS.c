@@ -227,10 +227,10 @@ extern "C" {
 #endif //DLMS_DEBUG
 
     //Server uses notify trace if DLMS_DEBUG is defined.
-    void svr_notifyTrace(const char* str, int err);
+    void svr_notifyTrace(const char* str, int32_t err);
 
     //Server uses notify trace if DLMS_DEBUG is defined.
-    void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, int err);
+    void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, int32_t err);
 
     //Server uses notify trace if DLMS_DEBUG is defined.
     void svr_notifyTrace3(const char* str, const char* value);

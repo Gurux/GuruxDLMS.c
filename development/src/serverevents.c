@@ -34,15 +34,16 @@
 
 #ifdef DLMS_DEBUG
 #include <stdio.h>
+#include <inttypes.h>
 #endif //DLMS_DEBUG
 
-void svr_notifyTrace(const char* str, int err)
+void svr_notifyTrace(const char* str, int32_t err)
 {
 #ifdef DLMS_DEBUG
     if (err != 0)
     {
         char tmp[20];
-        sprintf(tmp, " Error: %d", err);
+        sprintf(tmp, " Error: %" PRId32, err);
         svr_trace(str, tmp);
     }
     else
@@ -52,7 +53,7 @@ void svr_notifyTrace(const char* str, int err)
 #endif// DLMS_DEBUG
 }
 
-void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, int err)
+void svr_notifyTrace2(const char* str, const short ot, const unsigned char* ln, int32_t err)
 {
 #ifdef DLMS_DEBUG
     if (err != 0)

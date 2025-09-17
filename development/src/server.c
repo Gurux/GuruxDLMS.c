@@ -405,7 +405,7 @@ int svr_HandleAarqRequest(
 #endif //DLMS_IGNORE_HDLC
     ret = apdu_parsePDU(&settings->base, data, &result, &diagnostic, &command);
 #ifdef DLMS_DEBUG
-    svr_notifyTrace("parsePDU", ret);
+    svr_notifyTrace(GET_STR_FROM_EEPROM("parsePDU"), ret);
 #endif //DLMS_DEBUG
     bb_clear(data);
     if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL ||
@@ -423,7 +423,7 @@ int svr_HandleAarqRequest(
         if (settings->base.dlmsVersionNumber < 6)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("Invalid DLMS version number.", DLMS_INITIATE_DLMS_VERSION_TOO_LOW);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid DLMS version number."), DLMS_INITIATE_DLMS_VERSION_TOO_LOW);
 #endif //DLMS_DEBUG
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
@@ -436,7 +436,7 @@ int svr_HandleAarqRequest(
         else if (settings->base.maxPduSize < 64)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("Max PDU size is too short.", DLMS_INITIATE_PDU_SIZE_TOOSHORT);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("Max PDU size is too short."), DLMS_INITIATE_PDU_SIZE_TOOSHORT);
 #endif //DLMS_DEBUG
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
@@ -449,7 +449,7 @@ int svr_HandleAarqRequest(
         else if (settings->base.negotiatedConformance == 0)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("Invalid negotiated conformance.", DLMS_INITIATE_INCOMPATIBLE_CONFORMANCE);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid negotiated conformance."), DLMS_INITIATE_INCOMPATIBLE_CONFORMANCE);
 #endif //DLMS_DEBUG
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
@@ -461,7 +461,7 @@ int svr_HandleAarqRequest(
         else if (diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("Connection rejected.", -1);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("Connection rejected."), -1);
 #endif //DLMS_DEBUG
             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
             diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
@@ -469,7 +469,7 @@ int svr_HandleAarqRequest(
         else
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("svr_validateAuthentication.", 0);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("svr_validateAuthentication."), 0);
 #endif //DLMS_DEBUG
             diagnostic = svr_validateAuthentication(
                 settings,
@@ -478,7 +478,7 @@ int svr_HandleAarqRequest(
             if (diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
             {
 #ifdef DLMS_DEBUG
-                svr_notifyTrace("Connection rejected.", -1);
+                svr_notifyTrace(GET_STR_FROM_EEPROM("Connection rejected."), -1);
 #endif //DLMS_DEBUG
                 svr_invalidConnection(settings);
                 result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
@@ -486,7 +486,7 @@ int svr_HandleAarqRequest(
             else if (settings->base.authentication > DLMS_AUTHENTICATION_LOW)
             {
 #ifdef DLMS_DEBUG
-                svr_notifyTrace("High authentication is used.", 0);
+                svr_notifyTrace(GET_STR_FROM_EEPROM("High authentication is used."), 0);
 #endif //DLMS_DEBUG
                 // If High authentication is used.
                 result = DLMS_ASSOCIATION_RESULT_ACCEPTED;
@@ -500,7 +500,7 @@ int svr_HandleAarqRequest(
             if ((ret = dlms_generateChallenge(&settings->base.stoCChallenge)) != 0)
             {
 #ifdef DLMS_DEBUG
-                svr_notifyTrace("generateChallenge ", ret);
+                svr_notifyTrace(GET_STR_FROM_EEPROM("generateChallenge "), ret);
 #endif //DLMS_DEBUG
                 bb_clear(&error);
                 return ret;
@@ -513,7 +513,7 @@ int svr_HandleAarqRequest(
                 if ((ret = oa_findByLN(&settings->base.objects, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, ln, (gxObject**)&it)) != 0)
                 {
 #ifdef DLMS_DEBUG
-                    svr_notifyTrace("oa_findByLN ", ret);
+                    svr_notifyTrace(GET_STR_FROM_EEPROM("oa_findByLN "), ret);
 #endif //DLMS_DEBUG
                     return ret;
                 }
@@ -580,7 +580,7 @@ int svr_HandleAarqRequest(
                         if (!found)
                         {
 #ifdef DLMS_DEBUG
-                            svr_notifyTrace("Permanent rejected.", -1);
+                            svr_notifyTrace(GET_STR_FROM_EEPROM("Permanent rejected."), -1);
 #endif //DLMS_DEBUG
                             result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
                             diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
@@ -594,7 +594,7 @@ int svr_HandleAarqRequest(
                 else
                 {
 #ifdef DLMS_DEBUG
-                    svr_notifyTrace("Association logical name not found. ", -1);
+                    svr_notifyTrace(GET_STR_FROM_EEPROM("Association logical name not found. "), -1);
 #endif //DLMS_DEBUG
                 }
 #endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME
@@ -642,7 +642,7 @@ int svr_HandleAarqRequest(
     else if (diagnostic == DLMS_SOURCE_DIAGNOSTIC_NONE)
     {
 #ifdef DLMS_DEBUG
-        svr_notifyTrace("Permanent rejected.", -1);
+        svr_notifyTrace(GET_STR_FROM_EEPROM("Permanent rejected."), -1);
 #endif //DLMS_DEBUG
         result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
         diagnostic = DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN;
@@ -660,7 +660,7 @@ int svr_HandleAarqRequest(
 #endif //DLMS_IGNORE_HDLC
     ret = apdu_generateAARE(&settings->base, data, result, diagnostic, &error, NULL, command);
 #ifdef DLMS_DEBUG
-    svr_notifyTrace("apdu_generateAARE.", ret);
+    svr_notifyTrace(GET_STR_FROM_EEPROM("apdu_generateAARE."), ret);
 #endif //DLMS_DEBUG
     bb_clear(&error);
     return ret;
@@ -805,7 +805,7 @@ int dlms_addFrame(
         if ((ret = dlms_getHdlcFrame(settings, frame, data, reply)) != 0)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("getHdlcFrame failed. ", ret);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("getHdlcFrame failed. "), ret);
 #endif //DLMS_DEBUG
         }
     }
@@ -816,7 +816,7 @@ int dlms_addFrame(
         if ((ret = dlms_getWrapperFrame(settings, command, data, reply)) != 0)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("dlms_getWrapperFrame failed. ", ret);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("dlms_getWrapperFrame failed. "), ret);
 #endif //DLMS_DEBUG
         }
         break;
@@ -832,7 +832,7 @@ int dlms_addFrame(
         break;
     default:
 #ifdef DLMS_DEBUG
-        svr_notifyTrace("Unknown frame type. ", -1);
+        svr_notifyTrace(GET_STR_FROM_EEPROM("Unknown frame type. "), -1);
 #endif //DLMS_DEBUG
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;
@@ -3535,7 +3535,7 @@ int svr_handleCommand(
             if (ret != 0)
             {
 #ifdef DLMS_DEBUG
-                svr_notifyTrace("handleMethodRequest failed. ", ret);
+                svr_notifyTrace(GET_STR_FROM_EEPROM("handleMethodRequest failed. "), ret);
 #endif //DLMS_DEBUG
             }
         }
@@ -3551,7 +3551,7 @@ int svr_handleCommand(
         else
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("handleSnrmRequest failed. ", ret);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("handleSnrmRequest failed. "), ret);
 #endif //DLMS_DEBUG
         }
         break;
@@ -3566,7 +3566,7 @@ int svr_handleCommand(
         else
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("HandleAarqRequest failed. ", ret);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("HandleAarqRequest failed. "), ret);
 #endif //DLMS_DEBUG
         }
         break;
@@ -3611,7 +3611,7 @@ int svr_handleCommand(
     default:
         //Invalid command.
 #ifdef DLMS_DEBUG
-        svr_notifyTrace("Unknown command. ", cmd);
+        svr_notifyTrace(GET_STR_FROM_EEPROM("Unknown command. "), cmd);
 #endif //DLMS_DEBUG
         ret = DLMS_ERROR_CODE_INVALID_COMMAND;
     }
@@ -3669,7 +3669,7 @@ int svr_handleCommand(
 #ifdef DLMS_DEBUG
     if (ret != 0)
     {
-        svr_notifyTrace("svr_handleCommand", ret);
+        svr_notifyTrace(GET_STR_FROM_EEPROM("svr_handleCommand"), ret);
     }
 #endif //DLMS_DEBUG
     return ret;
@@ -3785,7 +3785,7 @@ int svr_handleRequest4(
     if (!settings->initialized)
     {
 #ifdef DLMS_DEBUG
-        svr_notifyTrace("Server not Initialized.", -1);
+        svr_notifyTrace(GET_STR_FROM_EEPROM("Server not Initialized."), -1);
 #endif //DLMS_DEBUG
         //Server not Initialized.
         return DLMS_ERROR_CODE_NOT_INITIALIZED;
@@ -3808,7 +3808,7 @@ int svr_handleRequest4(
         settings->receivedData.size + sr->dataSize > bb_getCapacity(&settings->receivedData))
     {
 #ifdef DLMS_DEBUG
-        svr_notifyTrace("svr_handleRequest2 bb_isAttached failed. ", -1);
+        svr_notifyTrace(GET_STR_FROM_EEPROM("svr_handleRequest2 bb_isAttached failed. "), -1);
 #endif //DLMS_DEBUG
 #ifndef DLMS_IGNORE_HDLC
         //Send U-Frame Frame Reject if we have received more data that can fit to one HDLC frame.
@@ -3924,7 +3924,7 @@ int svr_handleRequest4(
     if ((ret = dlms_getData2(&settings->base, &settings->receivedData, &settings->info, first)) != 0)
     {
 #ifdef DLMS_DEBUG
-        svr_notifyTrace("svr_handleRequest2 dlms_getData2 failed. ", ret);
+        svr_notifyTrace(GET_STR_FROM_EEPROM("svr_handleRequest2 dlms_getData2 failed. "), ret);
 #endif //DLMS_DEBUG
         if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL ||
             ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
@@ -3951,14 +3951,14 @@ int svr_handleRequest4(
         else if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("Invalid server address. ", -1);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid server address. "), -1);
 #endif //DLMS_DEBUG
             return 0;
         }
         else if (ret == DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("Invalid client address. ", -1);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid client address. "), -1);
 #endif //DLMS_DEBUG
             if (settings->info.preEstablished)
             {
@@ -3988,7 +3988,7 @@ int svr_handleRequest4(
         else if (ret == DLMS_ERROR_CODE_INVALID_FRAME_NUMBER)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("Invalid frame number. ", -1);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid frame number. "), -1);
 #endif //DLMS_DEBUG
 #ifndef DLMS_IGNORE_HDLC
             if ((settings->base.connected & DLMS_CONNECTION_STATE_HDLC) != 0)
@@ -4028,7 +4028,7 @@ int svr_handleRequest4(
     if (settings->info.command == DLMS_COMMAND_DISC && (settings->base.connected & DLMS_CONNECTION_STATE_HDLC) == 0)
     {
 #ifdef DLMS_DEBUG
-        svr_notifyTrace("Disconnecting from the meter. ", -1);
+        svr_notifyTrace(GET_STR_FROM_EEPROM("Disconnecting from the meter. "), -1);
 #endif //DLMS_DEBUG
 #ifndef DLMS_IGNORE_HDLC
         ret = dlms_getHdlcFrame(&settings->base, DLMS_COMMAND_DISCONNECT_MODE, NULL, sr->reply);
@@ -4117,7 +4117,7 @@ int svr_handleRequest4(
             if (elapsed >= settings->hdlc->inactivityTimeout)
             {
 #ifdef DLMS_DEBUG
-                svr_notifyTrace("Inactivity timeout. ", 0);
+                svr_notifyTrace(GET_STR_FROM_EEPROM("Inactivity timeout. "), 0);
 #endif //DLMS_DEBUG
                 if (!settings->info.preEstablished)
                 {
@@ -4151,7 +4151,7 @@ int svr_handleRequest4(
             if (elapsed >= settings->wrapper->inactivityTimeout)
             {
 #ifdef DLMS_DEBUG
-                svr_notifyTrace("Inactivity timeout. ", 0);
+                svr_notifyTrace(GET_STR_FROM_EEPROM("Inactivity timeout. "), 0);
 #endif //DLMS_DEBUG
                 if (!settings->info.preEstablished)
                 {

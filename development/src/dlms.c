@@ -3027,7 +3027,7 @@ int dlms_getHdlcData(
             return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
         }
 #ifdef DLMS_DEBUG
-        svr_notifyTrace("Invalid CRC. ", -1);
+        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid CRC. "), -1);
 #endif //DLMS_DEBUG
         return DLMS_ERROR_CODE_WRONG_CRC;
     }
@@ -3042,7 +3042,7 @@ int dlms_getHdlcData(
         if (crc != crcRead)
         {
 #ifdef DLMS_DEBUG
-            svr_notifyTrace("Invalid CRC. ", -1);
+            svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid CRC. "), -1);
 #endif //DLMS_DEBUG
             return DLMS_ERROR_CODE_WRONG_CRC;
         }

@@ -3769,13 +3769,13 @@ int cosem_setPushSetup(dlmsSettings* settings, gxPushSetup* object, unsigned cha
                     if (it->target == NULL)
                     {
 #ifdef DLMS_DEBUG
-                        svr_notifyTrace2("Invalid object", type, ln, -1);
+                        svr_notifyTrace2(GET_STR_FROM_EEPROM("Invalid object"), type, ln, -1);
 #endif //DLMS_DEBUG
                         object->pushObjectList.size = pos;
                         return DLMS_ERROR_CODE_INVALID_PARAMETER;
                     }
 #ifdef DLMS_DEBUG
-                    svr_notifyTrace2("Adding object ", type, ln, 0);
+                    svr_notifyTrace2(GET_STR_FROM_EEPROM("Adding object "), type, ln, 0);
 #endif //DLMS_DEBUG
 #endif //DLMS_IGNORE_OBJECT_POINTERS
                 }

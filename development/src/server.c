@@ -412,11 +412,7 @@ int svr_HandleAarqRequest(
         ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
         ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE)
     {
-        return svr_generateExceptionResponse(
-            &settings->base,
-            DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN,
-            ret,
-            data);
+        return ret;
     }
     else if (ret == 0 && result == DLMS_ASSOCIATION_RESULT_ACCEPTED)
     {
@@ -3159,10 +3155,12 @@ int svr_handleReleaseRequest(
         if ((ret = bb_getUInt8(data, &ch2)) != 0 ||
             ch2 != (BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_USER_INFORMATION))
         {
+            bb_clear(data);
             return DLMS_ERROR_CODE_INVALID_COMMAND;
         }
         if ((ret = apdu_verifyUserInformation(&settings->base, data)) != 0)
         {
+            bb_clear(data);
             return DLMS_ERROR_CODE_INVALID_COMMAND;
         }
     }
@@ -3634,13 +3632,20 @@ int svr_handleCommand(
                 data);
         }
     }
-    if (ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR)
+    if (ret == DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL ||
+        ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
+        ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE)
     {
         bb_clear(data);
         ret = svr_generateExceptionResponse(&settings->base,
             DLMS_EXCEPTION_STATE_ERROR_SERVICE_NOT_ALLOWED,
-            DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR,
+            ret,
             data);
+        if (cmd == DLMS_COMMAND_AARQ)
+        {
+            //Meter is asked to reset the settings after the reply message is generated.
+            cmd = DLMS_COMMAND_RELEASE_REQUEST;
+        }
     }
     if (ret != 0)
     {

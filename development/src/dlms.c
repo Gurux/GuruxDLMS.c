@@ -2349,19 +2349,22 @@ int dlms_checkHdlcAddress(
     }
     if (server)
     {
-        // Check that server addresses match.
-        if (settings->serverAddress != 0 && settings->serverAddress != target)
+        // Check that server addresses match if data is not send as a broadcast.
+        if (!settings->cipher.broadcast)
         {
-            // Get frame command.
-            if (bb_getUInt8ByIndex(reply, reply->position, &ch) != 0)
+            if (settings->serverAddress != 0 && settings->serverAddress != target)
             {
+                // Get frame command.
+                if (bb_getUInt8ByIndex(reply, reply->position, &ch) != 0)
+                {
+                    return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
+                }
                 return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
             }
-            return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
-        }
-        else
-        {
-            settings->serverAddress = target;
+            else
+            {
+                settings->serverAddress = target;
+            }
         }
 
         // Check that client addresses match.

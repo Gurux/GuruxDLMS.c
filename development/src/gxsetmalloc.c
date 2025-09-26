@@ -8423,24 +8423,21 @@ int cosem_setSFSKReportingSystemList(
         obj_clearByteBufferList(&object->reportingSystemList);
         if (value->vt == DLMS_DATA_TYPE_ARRAY)
         {
-            if (value->vt == DLMS_DATA_TYPE_ARRAY)
+            for (pos = 0; pos != value->Arr->size; ++pos)
             {
-                for (pos = 0; pos != value->Arr->size; ++pos)
+                if ((ret = va_getByIndex(value->Arr, pos, &tmp)) != DLMS_ERROR_CODE_OK)
                 {
-                    if ((ret = va_getByIndex(value->Arr, pos, &tmp)) != DLMS_ERROR_CODE_OK)
-                    {
-                        break;
-                    }
-                    it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
-                    BYTE_BUFFER_INIT(it);
-                    bb_set(it, tmp->byteArr->data, tmp->byteArr->size);
-                    if (it == NULL)
-                    {
-                        ret = DLMS_ERROR_CODE_OUTOFMEMORY;
-                        break;
-                    }
-                    arr_push(&object->reportingSystemList, it);
+                    break;
                 }
+                it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+                BYTE_BUFFER_INIT(it);
+                bb_set(it, tmp->byteArr->data, tmp->byteArr->size);
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                arr_push(&object->reportingSystemList, it);
             }
         }
     }

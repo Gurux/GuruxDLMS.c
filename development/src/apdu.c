@@ -834,96 +834,86 @@ int apdu_verifyUserInformation(
             }
         }
 #endif //DLMS_INVOCATION_COUNTER_VALIDATOR
+        // Tag for xDLMS-Initate.response
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
     }
 #endif //DLMS_IGNORE_HIGH_GMAC
+    //Usage field for dedicated-key component.
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    if (tag != 0)
+    {
+        if ((ret = bb_getUInt8(data, &len)) != 0)
+        {
+            return ret;
+        }
+        if (len != 16)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        if (settings->cipher.dedicatedKey == NULL)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        else if (memcmp(settings->cipher.dedicatedKey->data, data + data->position, len) != 0)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        data->position += len;
+#else
+        if (memcmp(settings->cipher.dedicatedKey, data + data->position, len) != 0)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        data->position += len;
+#endif //DLMS_IGNORE_MALLOC
+    }
+    else
+    {
+#ifndef DLMS_IGNORE_MALLOC
+        if (settings->cipher.dedicatedKey != NULL)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+#else
+        memset(settings->cipher.dedicatedKey, 0, 8);
+#endif //DLMS_IGNORE_MALLOC
+    }
+    // Optional response-allowed component.
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    // Skip if used.
+    if (tag != 0)
     {
         if ((ret = bb_getUInt8(data, &tag)) != 0)
         {
             return ret;
         }
-        // Optional usage field of the proposed quality of service component
-        if ((ret = bb_getUInt8(data, &tag)) != 0)
-        {
-            return ret;
-        }
-        if (tag != 0)
-        {
-            if ((ret = bb_getUInt8(data, &settings->qualityOfService)) != 0)
-            {
-                return ret;
-            }
-        }
-        // Dedicated key.
-#ifdef DLMS_IGNORE_HIGH_GMAC
-
-#else
-        if (tag != 0)
-        {
-            if ((ret = bb_getUInt8(data, &len)) != 0)
-            {
-                return ret;
-            }
-            if (len != 16)
-            {
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
-#ifndef DLMS_IGNORE_MALLOC
-            if (settings->cipher.dedicatedKey == NULL)
-            {
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
-            else if (memcmp(settings->cipher.dedicatedKey->data, data + data->position, len) != 0)
-            {
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
-            data->position += len;
-#else
-            if (memcmp(settings->cipher.dedicatedKey, data + data->position, len) != 0)
-            {
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
-            data->position += len;
-#endif //DLMS_IGNORE_MALLOC
-        }
-        else
-        {
-#ifndef DLMS_IGNORE_MALLOC
-            if (settings->cipher.dedicatedKey != NULL)
-            {
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
-#else
-            memset(settings->cipher.dedicatedKey, 0, 8);
-#endif //DLMS_IGNORE_MALLOC
-        }
-#endif //DLMS_IGNORE_HIGH_GMAC
-        // Optional usage field of the negotiated quality of service
-        // component
-        if ((ret = bb_getUInt8(data, &tag)) != 0)
-        {
-            return ret;
-        }
-        // Skip if used.
-        if (tag != 0)
-        {
-            if ((ret = bb_getUInt8(data, &tag)) != 0)
-            {
-                return ret;
-            }
-        }
-        // Optional usage field of the proposed quality of service component
-        if ((ret = bb_getUInt8(data, &tag)) != 0)
-        {
-            return ret;
-        }
-        if (tag != 0)
-        {
-            if ((ret = bb_getUInt8(data, &settings->qualityOfService)) != 0)
-            {
-                return ret;
-            }
-        }
     }
+    // Optional usage field of the proposed quality of service component
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    if (tag != 0)
+    {
+        if ((ret = bb_getUInt8(data, &len)) != 0)
+        {
+            return ret;
+        }
+        if ((ret = bb_getUInt8(data, &settings->qualityOfService)) != 0)
+        {
+            return ret;
+        }
+    }   
     // Get DLMS version number.
     if ((ret = bb_getUInt8(data, &ch)) != 0)
     {
@@ -968,7 +958,6 @@ int apdu_verifyUserInformation(
     {
         return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
     }
-    settings->negotiatedConformance = settings->clientProposedConformance;
     if ((ret = bb_getUInt16(data, &pduSize)) != 0)
     {
         return ret;

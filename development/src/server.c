@@ -1963,10 +1963,20 @@ int svr_getRequestWithList(
         {
             bb_setUInt8(data, (unsigned char)e->error);
             svr_preRead(&settings->base, &args);
-            if (!e->handled)
+            if (e->error != 0)
+            {
+                //Remove OK. It's replaced with the error code.
+                --data->size;
+            }
+            else if (!e->handled)
             {
                 if ((ret = cosem_getValue(&settings->base, e)) != 0)
                 {
+                    if (e->error != 0)
+                    {
+                        //Remove OK. It's replaced with the error code.
+                        --data->size;
+                    }
                     e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
                     bb_setUInt8ByIndex(data, pos2, (unsigned char)e->error);
                 }

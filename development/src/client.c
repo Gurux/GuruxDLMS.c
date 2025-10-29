@@ -564,24 +564,24 @@ int cl_parseApplicationAssociationResponse(
         else
 #endif //DLMS_IGNORE_HIGH_GMAC
 #ifndef DLMS_IGNORE_HIGH_SHA256
-        if (settings->authentication == DLMS_AUTHENTICATION_HIGH_SHA256)
-        {
-            bb_attach(&bb2, CHALLENGE_BUFF, 0, sizeof(CHALLENGE_BUFF));
-            secret = &bb2;
-            if ((ret = bb_set(secret, settings->password.data, settings->password.size)) != 0 ||
-                (ret = bb_set(secret, settings->sourceSystemTitle, 8)) != 0 ||
-                (ret = bb_set(secret, settings->cipher.systemTitle.data, settings->cipher.systemTitle.size)) != 0 ||
-                (ret = bb_set(secret, settings->ctoSChallenge.data, settings->ctoSChallenge.size)) != 0 ||
-                (ret = bb_set(secret, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0)
+            if (settings->authentication == DLMS_AUTHENTICATION_HIGH_SHA256)
             {
-                return ret;
+                bb_attach(&bb2, CHALLENGE_BUFF, 0, sizeof(CHALLENGE_BUFF));
+                secret = &bb2;
+                if ((ret = bb_set(secret, settings->password.data, settings->password.size)) != 0 ||
+                    (ret = bb_set(secret, settings->sourceSystemTitle, 8)) != 0 ||
+                    (ret = bb_set(secret, settings->cipher.systemTitle.data, settings->cipher.systemTitle.size)) != 0 ||
+                    (ret = bb_set(secret, settings->ctoSChallenge.data, settings->ctoSChallenge.size)) != 0 ||
+                    (ret = bb_set(secret, settings->stoCChallenge.data, settings->stoCChallenge.size)) != 0)
+                {
+                    return ret;
+                }
             }
-        }
-        else
+            else
 #endif //DLMS_IGNORE_HIGH_SHA256        
-        {
-            secret = &settings->password;
-        }
+            {
+                secret = &settings->password;
+            }
         if ((ret = dlms_secure(
             settings,
             ic,
@@ -1105,7 +1105,13 @@ int cl_readRowsByRange2(
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    if (object->captureObjects.size != 0)
+    if (object->sortObject != NULL && object->sortObject->objectType != 0 &&
+        memcmp(object->sortObject->logicalName, EMPTY_LN, sizeof(EMPTY_LN)) != 0)
+    {
+        type = object->sortObject->objectType;
+        ln = object->sortObject->logicalName;
+    }
+    else if (object->captureObjects.size != 0)
     {
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
         gxTarget* kv;

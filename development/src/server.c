@@ -933,6 +933,7 @@ int svr_handleSetRequest2(
     list = settings->transaction.targets;
     e = &list.data[0];
     ve_clear(e);
+    list.size = 1;
 #else
     e = (gxValueEventArg*)gxmalloc(sizeof(gxValueEventArg));
     ve_init(e);

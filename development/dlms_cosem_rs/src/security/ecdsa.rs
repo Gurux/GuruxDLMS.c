@@ -119,3 +119,27 @@ pub fn public_key_to_sec1_p256(verifying_key: &P256VerifyingKey) -> Vec<u8> {
 pub fn public_key_to_sec1_p384(verifying_key: &P384VerifyingKey) -> Vec<u8> {
     verifying_key.to_encoded_point(false).as_bytes().to_vec()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::SecuritySuite;
+    use p256::ecdsa::SigningKey as P256SigningKey;
+    use rand::SeedableRng;
+    use rand_chacha::ChaCha20Rng;
+
+    #[test]
+    fn sign_and_verify_with_shared_security_suite() {
+        let private_key = [0x01u8; 32];
+        let signing_key = P256SigningKey::from_slice(&private_key).expect("valid private key");
+        let public_key = public_key_to_sec1_p256(signing_key.verifying_key());
+
+        let message = b"security-suite-shared";
+        let mut rng = ChaCha20Rng::from_seed([0u8; 32]);
+        let signature = sign_message(SecuritySuite::V1, &private_key, message, &mut rng)
+            .expect("signing succeeds");
+
+        verify_message(SecuritySuite::V1, &public_key, message, &signature)
+            .expect("verification succeeds");
+    }
+}

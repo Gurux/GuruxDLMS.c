@@ -44,3 +44,20 @@ clean:
 remove: clean
 	@$(rm) $(BINDIR)/$(TARGET)
 	@echo "Executable removed!"
+CARGO_MANIFEST := dlms_cosem_rs/Cargo.toml
+
+.PHONY: cargo-fmt
+cargo-fmt:
+	@cargo fmt --manifest-path $(CARGO_MANIFEST)
+
+.PHONY: cargo-clippy
+cargo-clippy:
+	@cargo clippy --manifest-path $(CARGO_MANIFEST) --all-targets --all-features
+
+.PHONY: cargo-test
+cargo-test:
+	@cargo test --manifest-path $(CARGO_MANIFEST) --all-features
+
+.PHONY: cargo-doc
+cargo-doc:
+	@cargo doc --manifest-path $(CARGO_MANIFEST) --all-features --no-deps

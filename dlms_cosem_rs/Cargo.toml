@@ -1,0 +1,13 @@
+[package]
+name = "dlms_cosem_rs"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["std"]
+std = []
+
+[lib]
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]

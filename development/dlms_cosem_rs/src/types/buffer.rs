@@ -1,5 +1,7 @@
 use bytes::{BufMut, Bytes, BytesMut};
 
+use crate::error::{Error, Result};
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "serde")]
@@ -57,9 +59,37 @@ impl ByteBuffer {
         self.inner.put_u8(value);
     }
 
+    /// Appends a 16-bit unsigned integer in big endian order.
+    pub fn push_u16(&mut self, value: u16) {
+        self.inner.put_u16(value);
+    }
+
+    /// Appends a 32-bit unsigned integer in big endian order.
+    pub fn push_u32(&mut self, value: u32) {
+        self.inner.put_u32(value);
+    }
+
+    /// Appends a 64-bit unsigned integer in big endian order.
+    pub fn push_u64(&mut self, value: u64) {
+        self.inner.put_u64(value);
+    }
+
     /// Extends the buffer from the provided slice.
     pub fn extend_from_slice(&mut self, data: &[u8]) {
         self.inner.extend_from_slice(data);
+    }
+
+    /// Writes a byte at the given index if it is within bounds.
+    pub fn set(&mut self, index: usize, value: u8) -> Result<()> {
+        if index < self.inner.len() {
+            self.inner[index] = value;
+            Ok(())
+        } else {
+            Err(Error::BufferTooSmall {
+                requested: index + 1,
+                available: self.inner.len(),
+            })
+        }
     }
 
     /// Provides an immutable view of the underlying bytes.

@@ -7,6 +7,7 @@ pub mod objects;
 pub mod security;
 pub mod server;
 pub mod transport;
+pub mod types;
 
 /// Feature flag helpers mirroring the legacy `DLMS_IGNORE_*` defines.
 pub mod features {

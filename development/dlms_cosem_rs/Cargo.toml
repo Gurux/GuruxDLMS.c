@@ -13,6 +13,8 @@ crate-type = ["staticlib", "cdylib"]
 
 [features]
 default = []
+# Enables serde serialization support for the strongly typed DLMS helpers.
+serde = ["dep:serde", "dep:serde_bytes"]
 dlms_ignore_account = []
 dlms_ignore_action = []
 dlms_ignore_action_schedule = []
@@ -125,5 +127,11 @@ dlms_ignore_zig_bee_network_control = []
 dlms_ignore_zig_bee_sas_aps_fragmentation = []
 dlms_ignore_zig_bee_sas_join = []
 dlms_ignore_zig_bee_sas_startup = []
+
+[dependencies]
+bitflags = "2.4"
+bytes = "1.5"
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_bytes = { version = "0.11", optional = true }
 
 [dev-dependencies]

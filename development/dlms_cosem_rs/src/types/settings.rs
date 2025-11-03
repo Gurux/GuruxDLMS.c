@@ -14,14 +14,23 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PlcSettings {
+    /// System title used by the PLC medium.
     pub system_title: ByteBuffer,
+    /// Initial credit allocated for PLC sessions.
     pub initial_credit: u8,
+    /// Current credit available for PLC sessions.
     pub current_credit: u8,
+    /// Delta credit requested from peers.
     pub delta_credit: u8,
+    /// MAC source address used on the PLC network.
     pub mac_source_address: u16,
+    /// MAC destination address used on the PLC network.
     pub mac_destination_address: u16,
+    /// Probability for responding to contention slots.
     pub response_probability: u8,
+    /// Allowed PLC time slots expressed in bitmap form.
     pub allowed_time_slots: u16,
+    /// Client system title used for PLC communication.
     pub client_system_title: ByteBuffer,
 }
 
@@ -302,4 +311,58 @@ impl<O> DlmsSettings<O> {
         self.authentication = authentication;
         self
     }
+
+    /// Resets the HDLC frame sequence counters to their initial values.
+    pub fn reset_frame_sequence(&mut self) {
+        if self.server {
+            self.sender_frame = SERVER_START_SENDER_FRAME_SEQUENCE;
+            self.receiver_frame = SERVER_START_RECEIVER_FRAME_SEQUENCE;
+        } else {
+            self.sender_frame = CLIENT_START_SENDER_FRAME_SEQUENCE;
+            self.receiver_frame = CLIENT_START_RECEIVER_FRAME_SEQUENCE;
+        }
+    }
+
+    /// Returns the next send frame according to the HDLC rules.
+    pub fn next_send_frame(&mut self, first: bool) -> u8 {
+        if first {
+            self.sender_frame =
+                increase_receiver_sequence(increase_send_sequence(self.sender_frame));
+        } else {
+            self.sender_frame = increase_send_sequence(self.sender_frame);
+        }
+        self.sender_frame
+    }
+
+    /// Returns the receiver ready control field value updating internal state.
+    pub fn receiver_ready(&mut self) -> u8 {
+        self.sender_frame = increase_receiver_sequence(self.sender_frame | 1);
+        self.sender_frame & 0xF1
+    }
+
+    /// Resets the block index used for block transfers.
+    pub fn reset_block_index(&mut self) {
+        self.block_index = 1;
+    }
 }
+
+const SERVER_START_SENDER_FRAME_SEQUENCE: u8 = 0x1E;
+const SERVER_START_RECEIVER_FRAME_SEQUENCE: u8 = 0xFE;
+const CLIENT_START_SENDER_FRAME_SEQUENCE: u8 = 0xFE;
+const CLIENT_START_RECEIVER_FRAME_SEQUENCE: u8 = 0x0E;
+
+fn increase_send_sequence(value: u8) -> u8 {
+    (value & 0xF0) | ((value.wrapping_add(0x02)) & 0x0E)
+}
+
+fn increase_receiver_sequence(value: u8) -> u8 {
+    (value.wrapping_add(0x20)) | 0x10 | (value & 0x0E)
+}
+/// Default maximum HDLC information field for transmitted frames.
+pub const DEFAULT_MAX_INFO_TX: u16 = 128;
+/// Default maximum HDLC information field for received frames.
+pub const DEFAULT_MAX_INFO_RX: u16 = 128;
+/// Default HDLC transmit window size.
+pub const DEFAULT_MAX_WINDOW_SIZE_TX: u8 = 1;
+/// Default HDLC receive window size.
+pub const DEFAULT_MAX_WINDOW_SIZE_RX: u8 = 1;

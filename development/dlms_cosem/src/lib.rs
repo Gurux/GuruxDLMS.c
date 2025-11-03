@@ -1,14 +1,17 @@
 #![doc = "Core crates for building DLMS/COSEM compatible applications in Rust."]
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod client;
+pub mod crc;
 pub mod error;
 pub mod objects;
+pub mod reply_data;
 pub mod security;
 pub mod server;
 pub mod transport;
 pub mod types;
+pub mod variant;
 
 /// Feature flag helpers mirroring the legacy `DLMS_IGNORE_*` defines.
 pub mod features {
@@ -26,7 +29,7 @@ pub mod features {
     pub const IGNORE_GENERAL_CIPHERING: bool = cfg!(feature = "dlms_ignore_general_ciphering");
 }
 
-/// Representation of a Gurux DLMS/COSEM stack assembled from feature gated modules.
+/// Representation of a DLMS/COSEM stack assembled from feature gated modules.
 #[derive(Debug, Default)]
 pub struct Stack {
     /// Tracks whether client functionality is part of the current build.
@@ -45,5 +48,17 @@ impl Stack {
             server_enabled: !features::IGNORE_SERVER,
             security_enabled: !features::IGNORE_SECURITY_SETUP,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_reply_data() {
+        let mut reply_data = reply_data::ReplyData::new();
+        assert_eq!(reply_data.command, types::Command::None);
+        reply_data.clear();
     }
 }

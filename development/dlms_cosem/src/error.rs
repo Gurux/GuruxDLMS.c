@@ -8,7 +8,7 @@ use crate::types::Command;
 pub type Result<T> = core::result::Result<T, Error>;
 
 /// Errors that can be emitted by the safe Rust re-implementation of the
-/// Gurux DLMS/COSEM helpers.
+/// DLMS/COSEM helpers.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
     /// Attempted to access or reserve more space than available in a buffer.
@@ -61,6 +61,8 @@ pub enum Error {
     InvalidConfiguration(&'static str),
     /// Encountered a DLMS command that is not implemented by the safe bindings.
     UnsupportedCommand(Command),
+    /// A parsing error occurred.
+    Parse,
 }
 
 impl fmt::Display for Error {
@@ -118,6 +120,7 @@ impl fmt::Display for Error {
             Error::UnsupportedCommand(command) => {
                 write!(f, "unsupported command {:?}", command)
             }
+            Error::Parse => write!(f, "parsing error"),
         }
     }
 }

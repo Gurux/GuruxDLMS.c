@@ -574,7 +574,7 @@ impl MethodRequest {
     }
 }
 
-/// Placeholder description of a DLMS/COSEM logical device served by Gurux stacks.
+/// Placeholder description of a DLMS/COSEM logical device.
 #[derive(Debug, Default)]
 pub struct LogicalDevice {
     /// Optional name for documentation and diagnostics.

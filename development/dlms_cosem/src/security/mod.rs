@@ -2,6 +2,7 @@
 
 pub mod aes_gcm;
 pub mod ecdsa;
+pub mod high_gmac;
 pub mod keys;
 
 pub use crate::types::SecuritySuite;

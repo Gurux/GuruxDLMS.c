@@ -1,6 +1,8 @@
-//! Transport profiles for Gurux DLMS/COSEM integrations.
+//! Transport profiles for DLMS/COSEM integrations.
 
 pub mod framing;
+pub mod hdlc;
+pub mod wrapper;
 
 /// Supported link layer profiles.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,14 +1,14 @@
-# dlms_cosem_rs
+# dlms_cosem
 
-`dlms_cosem_rs` provides a Rust centric façade for the Gurux DLMS/COSEM toolchain.
+`dlms_cosem` is a Rust implementation of the DLMS/COSEM protocol.
 The crate mirrors the original C feature switches (`DLMS_IGNORE_*`) via Cargo
-features so that downstream users can gradually migrate embedded and server
-applications without losing configurability.
+features so that downstream users can build highly configurable embedded and
+server applications.
 
 ## Goals
 
 - Offer a modular Rust API for building DLMS/COSEM clients, servers and security
-  services that interoperate with the existing Gurux C libraries.
+  services.
 - Preserve the extensive feature gating capabilities exposed by the
   `DLMS_IGNORE_*` preprocessor switches.
 - Integrate seamlessly with the repository's build system and documentation

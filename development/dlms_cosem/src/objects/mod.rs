@@ -1,5 +1,7 @@
 //! DLMS/COSEM object metadata and utilities.
 
+pub mod cosem;
+
 /// Common object identification used throughout DLMS/COSEM stacks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ObisCode(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);

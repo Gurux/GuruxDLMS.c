@@ -2,6 +2,8 @@
 
 use core::fmt;
 
+use crate::types::Command;
+
 /// Convenience result type for DLMS/COSEM operations.
 pub type Result<T> = core::result::Result<T, Error>;
 
@@ -55,6 +57,10 @@ pub enum Error {
     SignatureVerificationFailed,
     /// The requested security suite is not supported by the active configuration.
     UnsupportedSecuritySuite(u8),
+    /// Server or client configuration violated fundamental expectations.
+    InvalidConfiguration(&'static str),
+    /// Encountered a DLMS command that is not implemented by the safe bindings.
+    UnsupportedCommand(Command),
 }
 
 impl fmt::Display for Error {
@@ -105,6 +111,12 @@ impl fmt::Display for Error {
             }
             Error::UnsupportedSecuritySuite(value) => {
                 write!(f, "unsupported security suite {value}")
+            }
+            Error::InvalidConfiguration(reason) => {
+                write!(f, "invalid configuration: {reason}")
+            }
+            Error::UnsupportedCommand(command) => {
+                write!(f, "unsupported command {:?}", command)
             }
         }
     }

@@ -16,11 +16,20 @@ applications without losing configurability.
 
 ## Workspace integration
 
-The crate lives under `development/dlms_cosem_rs` and can be built directly as
-a static or dynamic library for linking into the existing C toolchain:
+The crate lives under `development/dlms_cosem_rs` and builds as a standard Rust
+library (an `rlib`) when invoked through Cargo:
 
 ```shell
 cargo build --manifest-path development/dlms_cosem_rs/Cargo.toml
+```
+
+Downstream components that still require native artifacts can request them on
+demand without modifying the manifest by forcing the desired crate type during
+the build:
+
+```shell
+cargo rustc --manifest-path development/dlms_cosem_rs/Cargo.toml --release -- --crate-type staticlib
+cargo rustc --manifest-path development/dlms_cosem_rs/Cargo.toml --release -- --crate-type cdylib
 ```
 
 Formatting, linting, testing and documentation generation have corresponding

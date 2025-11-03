@@ -31,6 +31,30 @@ pub enum Error {
         /// Actual payload length.
         actual: usize,
     },
+    /// Encountered a cryptographic key with an unsupported length.
+    InvalidKeyLength {
+        /// Supported key sizes in bytes.
+        expected: &'static [usize],
+        /// Actual key length encountered.
+        actual: usize,
+    },
+    /// Encountered an authentication tag with an unexpected length.
+    InvalidTagLength {
+        /// Supported tag sizes in bytes.
+        expected: &'static [usize],
+        /// Actual tag length encountered.
+        actual: usize,
+    },
+    /// Authentication tag verification failed.
+    AuthenticationFailed,
+    /// Encryption failed due to invalid inputs.
+    EncryptionFailed,
+    /// Signing failed because the provided key or message was invalid.
+    SigningFailed,
+    /// Signature verification failed.
+    SignatureVerificationFailed,
+    /// The requested security suite is not supported by the active configuration.
+    UnsupportedSecuritySuite(u8),
 }
 
 impl fmt::Display for Error {
@@ -50,6 +74,37 @@ impl fmt::Display for Error {
             Error::UnknownDataType(tag) => write!(f, "unknown DLMS data type tag 0x{tag:02X}"),
             Error::PayloadTooLarge { max, actual } => {
                 write!(f, "payload too large: {actual} bytes (max {max})")
+            }
+            Error::InvalidKeyLength { expected, actual } => {
+                write!(
+                    f,
+                    "invalid key length {actual} bytes (expected one of {})",
+                    expected
+                        .iter()
+                        .map(|len| len.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            }
+            Error::InvalidTagLength { expected, actual } => {
+                write!(
+                    f,
+                    "invalid authentication tag length {actual} bytes (expected one of {})",
+                    expected
+                        .iter()
+                        .map(|len| len.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            }
+            Error::AuthenticationFailed => write!(f, "authentication failed"),
+            Error::EncryptionFailed => write!(f, "encryption failed"),
+            Error::SigningFailed => write!(f, "failed to create signature"),
+            Error::SignatureVerificationFailed => {
+                write!(f, "failed to verify signature")
+            }
+            Error::UnsupportedSecuritySuite(value) => {
+                write!(f, "unsupported security suite {value}")
             }
         }
     }

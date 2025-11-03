@@ -131,6 +131,16 @@ dlms_ignore_zig_bee_sas_startup = []
 [dependencies]
 bitflags = "2.4"
 bytes = "1.5"
+aes-gcm = { version = "0.10", default-features = false, features = ["aes", "std"] }
+digest = "0.10"
+elliptic-curve = { version = "0.13", features = ["sec1"] }
+p256 = { version = "0.13", features = ["ecdsa"] }
+p384 = { version = "0.13", features = ["ecdsa"] }
+rand = { version = "0.8", default-features = false, features = ["std"] }
+rand_core = "0.6"
+sha2 = "0.10"
+sha3 = "0.10"
+signature = "2.2"
 serde = { version = "1.0", features = ["derive"], optional = true }
 serde_bytes = { version = "0.11", optional = true }
 

@@ -1,5 +1,18 @@
 //! Security primitives shared by the client and server stacks.
 
+pub mod aes_gcm;
+pub mod ecdsa;
+pub mod keys;
+
+pub use aes_gcm::{
+    append_authenticated_payload, build_authenticated_data, decrypt_payload, encrypt_payload,
+    nonce_from, security_control_byte, AUTH_TAG_LEN,
+};
+pub use ecdsa::{public_key_to_sec1_p256, public_key_to_sec1_p384, sign_message, verify_message};
+pub use keys::{
+    derive_key, derive_suite_key, system_random_generator, KeyDerivationAlgorithm, RandomGenerator,
+};
+
 /// High level security suites supported by the Gurux ecosystem.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SecuritySuite {

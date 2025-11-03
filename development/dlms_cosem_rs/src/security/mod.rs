@@ -4,6 +4,7 @@ pub mod aes_gcm;
 pub mod ecdsa;
 pub mod keys;
 
+pub use crate::types::SecuritySuite;
 pub use aes_gcm::{
     append_authenticated_payload, build_authenticated_data, decrypt_payload, encrypt_payload,
     nonce_from, security_control_byte, AUTH_TAG_LEN,
@@ -13,9 +14,9 @@ pub use keys::{
     derive_key, derive_suite_key, system_random_generator, KeyDerivationAlgorithm, RandomGenerator,
 };
 
-/// High level security suites supported by the Gurux ecosystem.
+/// Security profiles grouped by the required feature set.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SecuritySuite {
+pub enum SecurityProfile {
     /// Basic authentication without link-layer encryption.
     Low,
     /// High security suite applying authenticated encryption.
@@ -24,13 +25,13 @@ pub enum SecuritySuite {
     HighEcdsa,
 }
 
-impl SecuritySuite {
+impl SecurityProfile {
     /// Returns `true` when the selected suite requires features that are disabled.
     pub const fn is_conflicting(self) -> bool {
         match self {
-            SecuritySuite::Low => false,
-            SecuritySuite::HighGmac => cfg!(feature = "dlms_ignore_high_gmac"),
-            SecuritySuite::HighEcdsa => cfg!(feature = "dlms_ignore_high_ecdsa"),
+            SecurityProfile::Low => false,
+            SecurityProfile::HighGmac => cfg!(feature = "dlms_ignore_high_gmac"),
+            SecurityProfile::HighEcdsa => cfg!(feature = "dlms_ignore_high_ecdsa"),
         }
     }
 }

@@ -7,11 +7,6 @@ pub trait CosemObject {
     fn set_attribute(&mut self, attribute_id: u8, value: Variant) -> Result<(), ()>;
 }
 
-pub struct CosemObjectFactory;
-
-impl CosemObjectFactory {
-    pub fn create(_object_type: u16) -> Option<Box<dyn CosemObject>> {
-        // Implementation to create COSEM objects based on type
-        None
-    }
-}
+pub mod data;
+pub mod clock;
+pub mod register;

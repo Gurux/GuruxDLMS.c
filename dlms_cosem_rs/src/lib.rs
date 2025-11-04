@@ -12,3 +12,4 @@ pub mod cosem;
 pub mod apdu;
 pub mod client;
 pub mod server;
+pub mod crypto;

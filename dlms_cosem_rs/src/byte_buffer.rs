@@ -6,6 +6,7 @@ pub enum Error {
     Io(#[cfg(feature = "std")] std::io::Error),
     UnexpectedEof,
     WriteZero,
+    InvalidData,
 }
 
 #[cfg(feature = "std")]
@@ -22,10 +23,12 @@ impl fmt::Display for Error {
             Error::Io(err) => write!(f, "I/O error: {}", err),
             Error::UnexpectedEof => write!(f, "Unexpected end of file"),
             Error::WriteZero => write!(f, "Write zero"),
+            Error::InvalidData => write!(f, "Invalid data"),
         }
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct ByteBuffer {
     inner: Vec<u8>,
     pos: usize,
@@ -80,6 +83,14 @@ impl ByteBuffer {
 
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
+    }
+
+    pub fn set_u8(&mut self, pos: usize, value: u8) -> Result<(), Error> {
+        if pos >= self.inner.len() {
+            return Err(Error::UnexpectedEof);
+        }
+        self.inner[pos] = value;
+        Ok(())
     }
 
     pub fn get_u8(&mut self) -> Result<u8, Error> {

@@ -1,6 +1,7 @@
-use crate::byte_buffer::ByteBuffer;
+use crate::asn1;
+use crate::byte_buffer::{ByteBuffer, Error};
 use crate::bit_array::BitArray;
-use alloc::string::String;
+use alloc::string::{String, FromUtf8Error};
 use alloc::vec::Vec;
 
 
@@ -12,6 +13,7 @@ use std::time::SystemTime;
 pub struct SystemTime;
 
 
+#[derive(Clone, Debug)]
 pub enum Variant {
     None,
     Boolean(bool),
@@ -34,4 +36,41 @@ pub enum Variant {
     Time,
     Array(Vec<Variant>),
     Struct(Vec<Variant>),
+}
+
+impl Variant {
+    pub fn from_bytes(buffer: &mut ByteBuffer) -> Result<Self, Error> {
+        let obj = asn1::parse(buffer)?;
+
+        match obj.tag.number {
+            // Boolean
+            3 => Ok(Variant::Boolean(obj.value[0] != 0)),
+            // Integer
+            5 => Ok(Variant::Int8(obj.value[0] as i8)),
+            6 => Ok(Variant::Int16(i16::from_be_bytes(
+                obj.value.as_slice().try_into().map_err(|_| Error::InvalidData)?,
+            ))),
+            // Octet String
+            9 => Ok(Variant::OctetString(ByteBuffer::from_vec(obj.value))),
+            // UTF8String
+            12 => Ok(Variant::String(String::from_utf8(obj.value)?)),
+            // Sequence for Array/Struct
+            16 => {
+                let mut items = Vec::new();
+                let mut inner_buffer = ByteBuffer::from_vec(obj.value);
+                while inner_buffer.remaining() > 0 {
+                    items.push(Variant::from_bytes(&mut inner_buffer)?);
+                }
+                // Differentiate based on context, for now assume Array
+                Ok(Variant::Array(items))
+            }
+            _ => Err(Error::InvalidData),
+        }
+    }
+}
+
+impl From<FromUtf8Error> for Error {
+    fn from(_: FromUtf8Error) -> Self {
+        Error::InvalidData
+    }
 }

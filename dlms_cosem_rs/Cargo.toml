@@ -11,3 +11,4 @@ std = []
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
+aes-gcm = { version = "0.10.3", default-features = false, features = ["aes", "alloc"] }

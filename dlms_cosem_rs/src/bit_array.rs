@@ -1,3 +1,6 @@
+use alloc::vec::Vec;
+
+#[derive(Clone, Debug)]
 pub struct BitArray {
     data: Vec<u8>,
     bit_count: usize,

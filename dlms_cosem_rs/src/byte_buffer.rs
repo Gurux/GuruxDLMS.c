@@ -50,10 +50,7 @@ impl ByteBuffer {
     }
 
     pub fn from_vec(vec: Vec<u8>) -> Self {
-        Self {
-            inner: vec,
-            pos: 0,
-        }
+        Self { inner: vec, pos: 0 }
     }
 
     pub fn len(&self) -> usize {
@@ -165,5 +162,9 @@ impl ByteBuffer {
     pub fn put_bytes(&mut self, value: &[u8]) -> Result<(), Error> {
         self.inner.extend_from_slice(value);
         Ok(())
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+        &self.inner
     }
 }

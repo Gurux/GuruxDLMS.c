@@ -32,7 +32,10 @@ pub fn get_object_count(buff: &mut ByteBuffer) -> Result<u32, crate::byte_buffer
     }
 }
 
-pub fn set_object_count(count: u32, buff: &mut ByteBuffer) -> Result<(), crate::byte_buffer::Error> {
+pub fn set_object_count(
+    count: u32,
+    buff: &mut ByteBuffer,
+) -> Result<(), crate::byte_buffer::Error> {
     if count < 0x80 {
         buff.put_u8(count as u8)?;
     } else if count < 0x100 {

@@ -94,7 +94,6 @@ pub fn parse(buffer: &mut ByteBuffer) -> Result<Asn1Object, Error> {
     Ok(Asn1Object { tag, value })
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,10 +1,10 @@
 extern crate alloc;
 
-use dlms_cosem_rs::client::{Client, Transport};
+use alloc::boxed::Box;
 use dlms_cosem_rs::byte_buffer::{ByteBuffer, Error};
+use dlms_cosem_rs::client::{Client, Transport};
 use dlms_cosem_rs::cosem::data::Data;
 use dlms_cosem_rs::variant::Variant;
-use alloc::boxed::Box;
 
 /// A mock transport layer that simulates a meter, switching its response based on client state.
 struct MockTransport {
@@ -32,27 +32,20 @@ impl Transport for MockTransport {
 
             let aare_pdu = vec![
                 0x61, 0x1D, // AARE APDU, total length 29
-                    // [1] Application Context Name (length 9)
-                    0xA1, 0x09,
-                        0x06, 0x07, 0x60, 0x85, 0x74, 0x05, 0x08, 0x01, 0x01,
-                    // [2] Association Result (length 3)
-                    0xA2, 0x03,
-                        0x02, 0x01, 0x00, // INTEGER 0 (Accepted)
-                    // [30] User Information (length 11)
-                    0xBE, 0x0B,
-                        // OCTET STRING (length 9)
-                        0x04, 0x09,
-                            // SEQUENCE (length 7)
-                            0x30, 0x07,
-                                // Conformance (INTEGER 1, dummy)
-                                0x02, 0x01, 0x01,
-                                // Max PDU size (INTEGER 1024)
-                                0x02, 0x02, 0x04, 0x00,
+                // [1] Application Context Name (length 9)
+                0xA1, 0x09, 0x06, 0x07, 0x60, 0x85, 0x74, 0x05, 0x08, 0x01, 0x01,
+                // [2] Association Result (length 3)
+                0xA2, 0x03, 0x02, 0x01, 0x00, // INTEGER 0 (Accepted)
+                // [30] User Information (length 11)
+                0xBE, 0x0B, // OCTET STRING (length 9)
+                0x04, 0x09, // SEQUENCE (length 7)
+                0x30, 0x07, // Conformance (INTEGER 1, dummy)
+                0x02, 0x01, 0x01, // Max PDU size (INTEGER 1024)
+                0x02, 0x02, 0x04, 0x00,
             ];
 
             println!("<- Receiving AARE: {:?}", aare_pdu);
             Ok(ByteBuffer::from_vec(aare_pdu))
-
         } else {
             // Subsequent calls are for data. Reply with a GetResponse.
             let response_data = vec![
@@ -80,7 +73,7 @@ fn main() {
     // Create a COSEM Data object representing a value we want to read.
     let obj = Data::new(
         [0, 0, 1, 0, 0, 255], // Logical name (OBIS code)
-        Variant::None,       // The client doesn't need the value, just the definition.
+        Variant::None,        // The client doesn't need the value, just the definition.
     );
 
     // Read attribute 2 (value) of the Data object.

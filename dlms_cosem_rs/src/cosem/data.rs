@@ -8,7 +8,10 @@ pub struct Data {
 
 impl Data {
     pub fn new(logical_name: [u8; 6], value: Variant) -> Self {
-        Self { logical_name, value }
+        Self {
+            logical_name,
+            value,
+        }
     }
 }
 

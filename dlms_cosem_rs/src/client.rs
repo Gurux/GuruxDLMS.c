@@ -1,13 +1,12 @@
+use crate::apdu::{
+    Aare, Aarq, ApplicationContextName, AssociationResult, CosemAttributeDescriptor,
+    DataAccessResult, GetRequest, GetResponse,
+};
+use crate::byte_buffer::{ByteBuffer, Error};
 use crate::cosem::CosemObject;
 use crate::variant::Variant;
-use crate::byte_buffer::{ByteBuffer, Error};
-use crate::apdu::{
-    GetRequest, GetResponse, CosemAttributeDescriptor, DataAccessResult,
-    Aarq, Aare, ApplicationContextName, AssociationResult,
-};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-
 
 pub trait Transport {
     fn send(&mut self, data: &[u8]) -> Result<(), Error>;
@@ -43,8 +42,8 @@ impl Client {
         vec.extend_from_slice(&bytes);
         self.transport.send(&vec)?;
 
-        let mut response_buffer = self.transport.receive()?;
-        let aare = Aare::from_bytes(&mut response_buffer)?;
+        let response_buffer = self.transport.receive()?;
+        let aare = Aare::from_bytes(response_buffer.as_slice())?;
 
         if aare.association_result == AssociationResult::Accepted {
             Ok(())
@@ -56,7 +55,10 @@ impl Client {
     pub fn read(&mut self, object: &dyn CosemObject, attribute_id: u8) -> Result<Variant, Error> {
         let attribute_descriptor = CosemAttributeDescriptor {
             class_id: object.object_type(),
-            instance_id: object.logical_name().try_into().map_err(|_| Error::InvalidData)?,
+            instance_id: object
+                .logical_name()
+                .try_into()
+                .map_err(|_| Error::InvalidData)?,
             attribute_id: attribute_id as i8,
         };
 

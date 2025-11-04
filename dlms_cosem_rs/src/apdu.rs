@@ -96,7 +96,7 @@ impl AssociationResult {
 impl Aare {
     pub fn from_bytes(buffer: &mut ByteBuffer) -> Result<Self, Error> {
         let aare_apdu = asn1::parse(buffer)?;
-        if aare_apdu.tag.number != 61 {
+        if aare_apdu.tag.class != asn1::TagClass::Application || aare_apdu.tag.number != 1 {
             return Err(Error::InvalidData);
         }
 
@@ -116,6 +116,9 @@ impl Aare {
                     let result_obj = asn1::parse(&mut result_buffer)?;
                     association_result = Some(AssociationResult::from_u8(result_obj.value[0])?);
                 },
+                3 => {
+                    // Result Source Diagnostic, just ignore it for now
+                },
                 30 => {
                     let mut user_info_buffer = ByteBuffer::from_vec(obj.value);
                     let user_info_octet_string = asn1::parse(&mut user_info_buffer)?;
@@ -125,9 +128,7 @@ impl Aare {
                     let mut seq_content_buffer = ByteBuffer::from_vec(initiate_response_seq.value);
 
                     let _conformance_obj = asn1::parse(&mut seq_content_buffer)?;
-                    println!("_conformance_obj: {:?}", _conformance_obj);
                     let pdu_size_obj = asn1::parse(&mut seq_content_buffer)?;
-                    println!("pdu_size_obj: {:?}", pdu_size_obj);
                     negotiated_max_pdu_size = Some(u16::from_be_bytes(
                         pdu_size_obj.value.as_slice().try_into().map_err(|_| Error::InvalidData)?
                     ));

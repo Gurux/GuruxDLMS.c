@@ -26,7 +26,11 @@ impl Asn1Tag {
             _ => unreachable!(),
         };
         let constructed = (byte & 0b0010_0000) != 0;
-        let number = (byte & 0b0001_1111) as u32;
+        let number = if class == TagClass::Universal {
+            (byte & 0b0001_1111) as u32
+        } else {
+            byte as u32
+        };
         let is_long_tag = number == 0b0001_1111;
 
         (
@@ -89,7 +93,6 @@ pub fn parse(buffer: &mut ByteBuffer) -> Result<Asn1Object, Error> {
 
     Ok(Asn1Object { tag, value })
 }
-
 
 #[cfg(test)]
 mod tests {

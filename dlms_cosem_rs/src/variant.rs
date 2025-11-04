@@ -1,9 +1,8 @@
 use crate::asn1;
-use crate::byte_buffer::{ByteBuffer, Error};
 use crate::bit_array::BitArray;
-use alloc::string::{String, FromUtf8Error};
+use crate::byte_buffer::{ByteBuffer, Error};
+use alloc::string::{FromUtf8Error, String};
 use alloc::vec::Vec;
-
 
 #[cfg(feature = "std")]
 use std::time::SystemTime;
@@ -11,7 +10,6 @@ use std::time::SystemTime;
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SystemTime;
-
 
 #[derive(Clone, Debug)]
 pub enum Variant {
@@ -48,7 +46,10 @@ impl Variant {
             // Integer
             5 => Ok(Variant::Int8(obj.value[0] as i8)),
             6 => Ok(Variant::Int16(i16::from_be_bytes(
-                obj.value.as_slice().try_into().map_err(|_| Error::InvalidData)?,
+                obj.value
+                    .as_slice()
+                    .try_into()
+                    .map_err(|_| Error::InvalidData)?,
             ))),
             // Octet String
             9 => Ok(Variant::OctetString(ByteBuffer::from_vec(obj.value))),

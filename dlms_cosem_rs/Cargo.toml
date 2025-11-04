@@ -1,7 +1,7 @@
 [package]
 name = "dlms_cosem_rs"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [features]
 default = ["std"]
@@ -12,3 +12,4 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
 aes-gcm = { version = "0.10.3", default-features = false, features = ["aes", "alloc"] }
+asn1-rs = "0.6.2"

@@ -7,6 +7,6 @@ pub trait CosemObject {
     fn set_attribute(&mut self, attribute_id: u8, value: Variant) -> Result<(), ()>;
 }
 
-pub mod data;
 pub mod clock;
+pub mod data;
 pub mod register;

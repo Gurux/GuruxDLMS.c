@@ -1,6 +1,6 @@
-use crate::cosem::CosemObject;
+use crate::apdu::{Command, GetRequest};
 use crate::byte_buffer::{ByteBuffer, Error};
-use crate::apdu::{GetRequest, Command};
+use crate::cosem::CosemObject;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
@@ -45,10 +45,10 @@ impl Command {
     pub fn from_bytes(buffer: &mut ByteBuffer) -> Result<Self, Error> {
         let command_byte = buffer.get_u8()?;
         match command_byte {
-            192 => Ok(Command::GetRequest), // C0 GetRequest
-            193 => Ok(Command::SetRequest), // C1 SetRequest
+            192 => Ok(Command::GetRequest),    // C0 GetRequest
+            193 => Ok(Command::SetRequest),    // C1 SetRequest
             195 => Ok(Command::ActionRequest), // C3 ActionRequest
-            _ => Err(Error::UnexpectedEof), // Placeholder
+            _ => Err(Error::UnexpectedEof),    // Placeholder
         }
     }
 }

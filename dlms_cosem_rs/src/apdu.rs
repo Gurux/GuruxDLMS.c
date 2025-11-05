@@ -1,6 +1,5 @@
 use crate::axdr::InitiateResponse;
 use crate::byte_buffer::{ByteBuffer, Error};
-use crate::variant::Variant;
 use asn1_rs::{Any, FromBer, Integer, OctetString, Oid, Tag, TaggedExplicit};
 
 // Re-add user_information

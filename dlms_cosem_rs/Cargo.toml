@@ -13,3 +13,4 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [dependencies]
 aes-gcm = { version = "0.10.3", default-features = false, features = ["aes", "alloc"] }
 asn1-rs = "0.6.2"
+bitflags = "2.4.1"

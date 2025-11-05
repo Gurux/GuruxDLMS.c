@@ -11,6 +11,7 @@ pub mod client;
 pub mod converters;
 pub mod cosem;
 pub mod crypto;
+pub mod enums;
 pub mod helpers;
 pub mod server;
 pub mod variant;

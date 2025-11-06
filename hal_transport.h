@@ -75,7 +75,34 @@ typedef struct {
     uint16_t port; /**< TCP порт для прослушивания. */
 } transport_tcp_listen_config_t;
 
-// ... (Doxygen для Serial config)
+/** @enum transport_serial_parity_t
+ *  @brief Опции контроля четности для последовательного порта.
+ */
+typedef enum {
+    SERIAL_PARITY_NONE, /**< Без контроля четности. */
+    SERIAL_PARITY_EVEN, /**< Контроль по четности. */
+    SERIAL_PARITY_ODD   /**< Контроль по нечетности. */
+} transport_serial_parity_t;
+
+/** @enum transport_serial_stopbits_t
+ *  @brief Опции стоповых бит для последовательного порта.
+ */
+typedef enum {
+    SERIAL_STOPBITS_1, /**< 1 стоповый бит. */
+    SERIAL_STOPBITS_2  /**< 2 стоповых бита. */
+} transport_serial_stopbits_t;
+
+/** @struct transport_serial_listen_config_t
+ *  @brief Конфигурация для последовательного порта.
+ */
+typedef struct {
+    const char* port_name;          /**< Имя порта (например, "UART1"). */
+    uint32_t baud_rate;             /**< Скорость передачи данных. */
+    uint8_t databits;               /**< Количество бит данных (обычно 8). */
+    transport_serial_parity_t parity; /**< Контроль четности. */
+    transport_serial_stopbits_t stopbits; /**< Количество стоповых бит. */
+} transport_serial_listen_config_t;
+
 
 /**
  * @brief Создает и запускает лисенер (сервер).
@@ -88,6 +115,13 @@ typedef struct {
 transport_listener_t transport_listen(transport_type_t type, void* config, transport_on_new_connection_t on_connection, void* user_data);
 
 /**
+ * @brief Останавливает лисенер и прекращает прием новых подключений.
+ * @param listener Лисенер для остановки.
+ * @return HAL_SUCCESS в случае успеха.
+ */
+int transport_listener_stop(transport_listener_t listener);
+
+/**
  * @brief Регистрирует коллбэки для событий на конкретном канале.
  * @param channel Канал.
  * @param on_data Callback на получение данных.
@@ -98,6 +132,13 @@ transport_listener_t transport_listen(transport_type_t type, void* config, trans
 int transport_channel_register_callbacks(transport_channel_t channel, transport_on_data_received_t on_data, transport_on_state_changed_t on_state, void* user_data);
 
 /**
+ * @brief Закрывает соединение со стороны сервера.
+ * @param channel Канал для закрытия.
+ * @return HAL_SUCCESS в случае успеха.
+ */
+int transport_channel_disconnect(transport_channel_t channel);
+
+/**
  * @brief Асинхронно отправляет данные через канал.
  * @param channel Канал для отправки.
  * @param data Указатель на буфер с данными.
@@ -105,6 +146,5 @@ int transport_channel_register_callbacks(transport_channel_t channel, transport_
  * @return HAL_SUCCESS, если отправка успешно начата.
  */
 int transport_channel_write(transport_channel_t channel, const uint8_t* data, size_t len);
-
 
 #endif // HAL_TRANSPORT_H

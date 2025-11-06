@@ -1,21 +1,16 @@
 /**
  * @file hal_timers.h
- * @brief Аппаратный уровень (HAL) для аппаратных таймеров.
+ * @brief Аппаратный уровень (HAL) для системных таймеров.
+ *
+ * Этот модуль предоставляет интерфейс для создания и управления таймерами,
+ * которые вызывают заданную callback-функцию по истечении заданного интервала.
  */
 
 #ifndef HAL_TIMERS_H
 #define HAL_TIMERS_H
 
 #include <stdint.h>
-
-/**
- * @enum timer_type_t
- * @brief Определяет тип таймера.
- */
-typedef enum {
-    TIMER_TYPE_ONE_SHOT, /**< Таймер сработает один раз и остановится. */
-    TIMER_TYPE_PERIODIC  /**< Таймер будет перезапускаться автоматически. */
-} timer_type_t;
+#include <stddef.h>
 
 /**
  * @typedef timer_t
@@ -24,47 +19,49 @@ typedef enum {
 typedef struct timer_s* timer_t;
 
 /**
- * @brief Callback, вызываемый по истечении времени таймера.
- * @param timer Таймер, который вызвал callback.
+ * @brief Callback-функция, вызываемая по истечении времени таймера.
+ * @param timer Сработавший таймер.
  * @param user_data Пользовательские данные, связанные с таймером.
  */
 typedef void (*timer_callback_t)(timer_t timer, void* user_data);
 
 /**
- * @brief Инициализирует модуль таймеров.
- * @return HAL_SUCCESS в случае успеха.
- */
-int timers_init();
-
-/**
  * @brief Создает новый таймер.
- * @param type Тип таймера (однократный или периодический).
- * @param callback Функция, которая будет вызвана по истечении интервала.
- * @param user_data Указатель на пользовательские данные для передачи в callback.
+ *
+ * Таймер не запускается автоматически после создания. Для запуска необходимо
+ * вызвать функцию `timer_start`.
+ *
+ * @param callback Функция, которая будет вызвана по истечении времени.
+ * @param user_data Указатель на пользовательские данные, который будет передан в callback.
  * @return Указатель на созданный таймер или NULL в случае ошибки.
  */
-timer_t timer_create(timer_type_t type, timer_callback_t callback, void* user_data);
+timer_t timer_create(timer_callback_t callback, void* user_data);
 
 /**
- * @brief Запускает таймер.
- * @param timer Указатель на таймер.
- * @param interval_ms Интервал в миллисекундах.
+ * @brief Запускает или перезапускает таймер.
+ *
+ * @param timer Таймер для запуска.
+ * @param timeout_ms Интервал в миллисекундах, через который таймер должен сработать.
+ * @param periodic Если true, таймер будет автоматически перезапускаться после каждого срабатывания.
+ *                 Если false, таймер сработает один раз.
  * @return HAL_SUCCESS в случае успеха.
  */
-int timer_start(timer_t timer, uint32_t interval_ms);
+int timer_start(timer_t timer, uint32_t timeout_ms, uint8_t periodic);
 
 /**
  * @brief Останавливает таймер.
- * @param timer Указатель на таймер.
+ *
+ * @param timer Таймер для остановки.
  * @return HAL_SUCCESS в случае успеха.
  */
 int timer_stop(timer_t timer);
 
 /**
- * @brief Удаляет таймер и освобождает связанные с ним ресурсы.
- * @param timer Указатель на таймер.
+ * @brief Уничтожает таймер и освобождает связанные с ним ресурсы.
+ *
+ * @param timer Таймер для уничтожения.
  * @return HAL_SUCCESS в случае успеха.
  */
-int timer_delete(timer_t timer);
+int timer_destroy(timer_t timer);
 
 #endif // HAL_TIMERS_H

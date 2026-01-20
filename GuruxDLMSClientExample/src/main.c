@@ -317,6 +317,8 @@ int imageUpdate(connection* connection, const unsigned char* identification, uin
                 {
                     break;
                 }
+                //Get next block.
+                image += count;
                 imageSize -= count;
                 ++blockNumber;
             }

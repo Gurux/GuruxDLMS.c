@@ -62,9 +62,9 @@ extern "C" {
         gxValueEventArg* e);
 #endif //DLMS_IGNORE_SCRIPT_TABLE
 
+#endif //DLMS_IGNORE_SERVER
 #ifdef  __cplusplus
 }
 #endif
-#endif //DLMS_IGNORE_SERVER
 
 #endif //COSEM_INVOKE_H

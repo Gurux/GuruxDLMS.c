@@ -30,8 +30,8 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-#ifndef VARIANT_H
-#define VARIANT_H
+#ifndef GX_VARIANT_H
+#define GX_VARIANT_H
 
 #ifdef  __cplusplus
 extern "C" {
@@ -608,4 +608,4 @@ extern "C" {
 }
 #endif
 
-#endif //VARIANT_H
+#endif //GX_VARIANT_H

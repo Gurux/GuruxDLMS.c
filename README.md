@@ -19,6 +19,15 @@ Ideas and discussions
 If you have problems or ideas you can ask your questions in Gurux [Forum](https://www.gurux.fi/forum). Please, create a new topic when you have a new question.
 This is the best place for bringing opinions and contributions. 
 
+> [!IMPORTANT]
+> GitHub is used primarily for publishing and distributing our open-source code.
+>
+> For technical questions, support requests, and bug reports, please use the
+> **Gurux Forum: https://www.gurux.fi/forum/**
+>
+> GitHub issues and discussions are not monitored regularly, so messages posted
+> here may not receive a timely response.
+
 Contribute
 =========================== 
 

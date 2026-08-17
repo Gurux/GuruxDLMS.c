@@ -6395,9 +6395,9 @@ int dlms_getData3(
 {
     int ret;
     unsigned char frame = 0;
-    if (isNotify != NULL)
+    if (isNotify == NULL)
     {
-        *isNotify = 0;
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     switch (settings->interfaceType)
     {
@@ -6477,7 +6477,7 @@ int dlms_getData3(
         return DLMS_ERROR_CODE_OK;
     }
     ret = dlms_getPdu(settings, data, first);
-    if (ret == 0 && notify != NULL && !isNotify)
+    if (ret == 0 && notify != NULL && !*isNotify)
     {
         //Check command to make sure it's not notify message.
         switch (data->command)

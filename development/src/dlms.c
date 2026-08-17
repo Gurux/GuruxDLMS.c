@@ -6194,6 +6194,15 @@ int dlms_getLnMessages(
             {
                 ++p->settings->blockIndex;
             }
+            else
+            {
+                // Attribute descriptor is included only in the first data block
+                // (SET-Request-First-DataBlock). Clear the reference so that
+                // subsequent blocks (SET-Request-With-DataBlock) do not attempt
+                // to re-add it, which would cause an out-of-bounds read because
+                // bb_set2 has already advanced the buffer position past its end.
+                p->attributeDescriptor = NULL;
+            }
         }
         while (ret == 0 && pdu->position != pdu->size)
         {

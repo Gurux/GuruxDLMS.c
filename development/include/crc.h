@@ -85,12 +85,20 @@ extern "C" {
     };
 #endif //DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
 
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     static uint16_t countCRC(gxByteBuffer* Buff, uint32_t index, uint32_t count)
+#else
+    static uint16_t countCRC(gxByteBuffer* Buff, uint16_t index, uint16_t count)
+#endif
     {
 #ifndef DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
         uint16_t tmp;
         uint16_t FCS16 = 0xFFFF;
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+        uint32_t pos;
+#else
         uint16_t pos;
+#endif
         for (pos = 0; pos < count; ++pos)
         {
 #ifdef ARDUINO_ARCH_AVR
@@ -108,7 +116,7 @@ extern "C" {
                     FCS16 |= tmp << 8;
                     return FCS16;
 #else
-        return gx_hsmCrc(Buff->data + index, count);
+        return gx_hsmCrc(Buff->data + index, (uint16_t) count);
 #endif //DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
     }
 

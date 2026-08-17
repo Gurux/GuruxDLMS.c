@@ -1717,7 +1717,7 @@ int apdu_parsePDU(
 #endif //DLMS_DEBUG
                 break;
             }
-            if (ciphered && len != 8)
+            if (len != 8)
             {
 #ifdef DLMS_DEBUG
                 svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid client system title. "), -1);

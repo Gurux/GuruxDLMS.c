@@ -4287,7 +4287,11 @@ int cosem_getUInt16Array(variantArray* arr, gxByteBuffer* byteArr)
 int cosem_getG3Plc6LoWPAN(
     gxValueEventArg* e)
 {
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    uint32_t pos;
+#else
     uint16_t pos;
+#endif
     int ret = 0;
     gxG3Plc6LoWPAN* object = (gxG3Plc6LoWPAN*)e->target;
     if (e->index == 2)

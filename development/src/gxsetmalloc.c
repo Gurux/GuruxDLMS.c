@@ -2661,6 +2661,10 @@ int cosem_copyIP6Address(IN6_ADDR* target, gxByteBuffer* bb)
     memset(target, 0, sizeof(IN6_ADDR));
     if (bb_size(bb) != 0)
     {
+        if (bb->size != sizeof(IN6_ADDR))
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
         memcpy(target, bb->data, bb->size);
     }
     return 0;
@@ -5692,13 +5696,25 @@ int cosem_setPushSetup(dlmsSettings* settings,
                     gxfree(p);
                     break;
                 }
+                if (bb_size(tmp->byteArr) != 8)
+                {
+                    gxfree(p);
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
+                }
                 memcpy(p->originatorSystemTitle, tmp->byteArr->data, bb_size(tmp->byteArr));
                 if ((ret = va_getByIndex(options->Arr, 2, &tmp)) != 0)
                 {
                     gxfree(p);
                     break;
                 }
-                memcpy(p->recipientSystemTitle, tmp->byteArr, bb_size(tmp->byteArr));
+                if (bb_size(tmp->byteArr) != 8)
+                {
+                    gxfree(p);
+                    ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                    break;
+                }
+                memcpy(p->recipientSystemTitle, tmp->byteArr->data, bb_size(tmp->byteArr));
                 if ((ret = va_getByIndex(options->Arr, 3, &tmp)) != 0 ||
                     (ret = bb_set(&p->otherInformation, tmp->byteArr->data, bb_size(tmp->byteArr))) != 0)
                 {

@@ -2739,10 +2739,15 @@ int dlms_getPlcFrame(
 }
 
 // Reserved for internal use.
-const uint32_t CRCPOLY = 0xD3B6BA00;
-uint32_t dlms_countFCS24(unsigned char* buff, int index, int count)
+static const uint32_t CRCPOLY = 0xD3B6BA00;
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+static uint32_t dlms_countFCS24(unsigned char* buff, uint32_t index, uint32_t count)
+#else
+static uint32_t dlms_countFCS24(unsigned char* buff, uint16_t index, uint16_t count)
+#endif
 {
-    unsigned char i, j;
+    uint32_t j;
+    unsigned char i;
     uint32_t crcreg = 0;
     for (j = 0; j < count; ++j)
     {
@@ -3473,8 +3478,13 @@ int dlms_getPlcData(
     }
     unsigned char ch;
     int ret;
-    unsigned short pos;
-    int packetStartID = buff->position;
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    uint32_t pos;
+    uint32_t packetStartID = buff->position;
+#else
+    uint16_t pos;
+    uint16_t packetStartID = buff->position;
+#endif
     // Find STX.
     unsigned char stx;
     for (pos = (unsigned short)buff->position; pos < buff->size; ++pos)
@@ -3651,7 +3661,11 @@ int dlms_getPlcHdlcData(
     }
     else
     {
-        unsigned long index = buff->position;
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+        uint32_t index = buff->position;
+#else
+        uint16_t index = buff->position;
+#endif
         //Credit fields.  IC, CC, DC
         unsigned char credit;
         if ((ret = bb_getUInt8(buff, &credit)) != 0)

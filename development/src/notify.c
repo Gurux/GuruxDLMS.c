@@ -426,7 +426,7 @@ int notify_parsePush(
                 {
                     return ret;
                 }
-                memcpy(obj->logicalName, tmp->byteArr, 6);
+                memcpy(obj->logicalName, tmp->byteArr->data, 6);
                 oa_push(&settings->objects, obj);
                 //Add object to released objects list.
                 ret = oa_push(&settings->releasedObjects, obj);

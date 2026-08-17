@@ -1866,6 +1866,10 @@ int cosem_copyIP6Address(IN6_ADDR* target, gxByteBuffer* bb)
     memset(target, 0, sizeof(IN6_ADDR));
     if (bb_size(bb) != 0)
     {
+        if (bb->size != sizeof(IN6_ADDR))
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
         memcpy(target, bb->data, bb->size);
     }
     return 0;

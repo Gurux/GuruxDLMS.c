@@ -1846,7 +1846,7 @@ int svr_getRequestWithList(
     uint16_t pos, cnt;
     unsigned char* ln;
 #ifdef DLMS_IGNORE_MALLOC
-    if (hlp_getObjectCount2(data, &cnt) != 0 || cnt > settings->transaction.targets.capacity)
+    if (hlp_getObjectCount2(data, &cnt) != 0 || cnt > vec_getCapacity(&settings->transaction.targets))
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }

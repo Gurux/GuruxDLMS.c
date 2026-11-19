@@ -493,7 +493,7 @@ int svr_HandleAarqRequest(
         if (settings->base.authentication > DLMS_AUTHENTICATION_LOW && settings->base.customChallenges == 0)
         {
             // If High authentication is used.
-            if ((ret = dlms_generateChallenge(&settings->base.stoCChallenge)) != 0)
+            if ((ret = dlms_generateChallenge(settings->base.authentication, &settings->base.stoCChallenge)) != 0)
             {
 #ifdef DLMS_DEBUG
                 svr_notifyTrace(GET_STR_FROM_EEPROM("generateChallenge "), ret);
@@ -681,6 +681,7 @@ int svr_handleSnrmRequest(
 #endif
     //Initialize default settings.
     settings->base.serviceClass = DLMS_SERVICE_CLASS_CONFIRMED;
+#ifndef DLMS_IGNORE_IEC_HDLC_SETUP
     if (settings->hdlc != NULL)
     {
         settings->base.maxInfoRX = settings->hdlc->maximumInfoLengthReceive;
@@ -689,6 +690,7 @@ int svr_handleSnrmRequest(
         settings->base.windowSizeTX = settings->hdlc->windowSizeTransmit;
     }
     else
+#endif
     {
         settings->base.maxInfoRX = DEFAULT_MAX_INFO_RX;
         settings->base.maxInfoTX = DEFAULT_MAX_INFO_TX;
@@ -1031,7 +1033,7 @@ int svr_handleSetRequest2(
                 }
                 else
                 {
-                    DLMS_ACCESS_MODE am = svr_getAttributeAccess(&settings->base, e->target, e->index);
+                    DLMS_ACCESS_MODE am = e->action ? (svr_getMethodAccess(&settings->base, e->target, e->index) != DLMS_METHOD_ACCESS_MODE_NONE ? DLMS_ACCESS_MODE_READ_WRITE : DLMS_ACCESS_MODE_NONE) : svr_getAttributeAccess(&settings->base, e->target, e->index);
                     // If write is denied.
                     if (am != DLMS_ACCESS_MODE_WRITE && am != DLMS_ACCESS_MODE_READ_WRITE)
                     {
@@ -1159,7 +1161,7 @@ int svr_getTarget(
                     }
                     else
                     {
-                        DLMS_ACCESS_MODE am = svr_getAttributeAccess(&settings->base, e->target, e->index);
+                        DLMS_ACCESS_MODE am = e->action ? (svr_getMethodAccess(&settings->base, e->target, e->index) != DLMS_METHOD_ACCESS_MODE_NONE ? DLMS_ACCESS_MODE_READ_WRITE : DLMS_ACCESS_MODE_NONE) : svr_getAttributeAccess(&settings->base, e->target, e->index);
                         // If write is denied.
                         if (am != DLMS_ACCESS_MODE_WRITE && am != DLMS_ACCESS_MODE_READ_WRITE)
                         {
@@ -1279,6 +1281,7 @@ int svr_handleSetRequestWithList(
                         ret = cosem_setValue(&settings->base, e);
                         if (ret != 0 && e->error == 0)
                         {
+                            e->error = ret;
                             bb_setUInt8ByIndex(&status, pos, ret);
                         }
                         svr_postWrite(&settings->base, &list);
@@ -1402,6 +1405,8 @@ int svr_hanleSetRequestWithDataBlock(
                     {
                         if ((ret = cosem_setValue(&settings->base, e)) != 0)
                         {
+                            e->error = ret;
+                            svr_postWrite(&settings->base, &settings->transaction.targets);
                             return ret;
                         }
                         svr_postWrite(&settings->base, &settings->transaction.targets);
@@ -1902,7 +1907,7 @@ int svr_getRequestWithList(
         }
         else
         {
-            if (svr_getAttributeAccess(&settings->base, e->target, attributeIndex) == DLMS_ACCESS_MODE_NONE)
+            if ((svr_getAttributeAccess(&settings->base, e->target, attributeIndex) & DLMS_ACCESS_MODE_READ) == 0)
             {
                 // Read Write denied.
                 e->error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
@@ -2219,7 +2224,7 @@ int svr_handleRead(
             return ret;
         }
     }
-    if (svr_getAttributeAccess(&settings->base, info.item, info.index) == DLMS_ACCESS_MODE_NONE)
+    if (info.action ? svr_getMethodAccess(&settings->base, info.item, info.index) == DLMS_METHOD_ACCESS_MODE_NONE : (svr_getAttributeAccess(&settings->base, info.item, info.index) != DLMS_ACCESS_MODE_READ && svr_getAttributeAccess(&settings->base, info.item, info.index) != DLMS_ACCESS_MODE_READ_WRITE))
     {
         e->error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
         e->handled = 1;
@@ -2290,7 +2295,16 @@ int svr_getReadData(
             }
             if (e->byteArray)
             {
-                e->value.vt = DLMS_DATA_TYPE_NONE;
+                if (e->value.byteArr != data)
+                {
+                    ret = bb_set2(data, e->value.byteArr, 0, e->value.byteArr->size);
+                    var_clear(&e->value);
+                    if (ret != 0) return ret;
+                }
+                else
+                {
+                    e->value.vt = DLMS_DATA_TYPE_NONE;
+                }
             }
             else
             {
@@ -2307,7 +2321,7 @@ int svr_getReadData(
             {
                 bb_insertUInt8(data, statusindex, DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR);
             }
-            bb_insertUInt8(data, statusindex + 1, e->error);
+            bb_insertUInt8(data, statusindex + ((!first && list->size != 1) ? 1 : 0), e->error);
             *type = DLMS_SINGLE_READ_RESPONSE_DATA_ACCESS_ERROR;
         }
         var_clear(&e->value);
@@ -2753,12 +2767,13 @@ int svr_handleWriteRequest(
                         break;
                     }
                 }
-                else if ((ret = dlms_getData(data, &di, &e->value)) != 0)
+                else if ((ret = dlms_getData(data, &di, &e->value)) != 0 || !di.complete)
                 {
+                    if (ret == 0) ret = DLMS_ERROR_CODE_READ_WRITE_DENIED;
                     break;
                 }
                 di_init(&di);
-                am = svr_getAttributeAccess(&settings->base, e->target, e->index);
+                am = e->action ? (svr_getMethodAccess(&settings->base, e->target, e->index) != DLMS_METHOD_ACCESS_MODE_NONE ? DLMS_ACCESS_MODE_READ_WRITE : DLMS_ACCESS_MODE_NONE) : svr_getAttributeAccess(&settings->base, e->target, e->index);
                 // If write is denied.
                 if (am != DLMS_ACCESS_MODE_WRITE && am != DLMS_ACCESS_MODE_READ_WRITE)
                 {
@@ -2780,16 +2795,8 @@ int svr_handleWriteRequest(
                         {
                             if ((ret = cosem_setValue(&settings->base, e)) != 0)
                             {
+                                e->error = ret;
                                 break;
-                            }
-                            //Call post write after all values are written.
-                            if (pos == cnt - 1)
-                            {
-                                svr_postWrite(&settings->base, &list);
-                                if (e->error != 0)
-                                {
-                                    bb_setUInt8ByIndex(&results, pos, e->error);
-                                }
                             }
                         }
                     }
@@ -2836,6 +2843,26 @@ int svr_handleWriteRequest(
             {
                 bb_setUInt8ByIndex(&results, pos, DLMS_ERROR_CODE_READ_WRITE_DENIED);
             }
+        }
+        if (ret != 0) {
+            uint16_t gx_settings_pending;
+            if (pos < list.size&& vec_getByIndex(&list, pos, &e) == 0 && e->error == 0)
+            {
+                e->error = ret > 0 && ret <= DLMS_ERROR_CODE_OTHER_REASON ? ret : DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            }
+            for (gx_settings_pending = pos + 1; gx_settings_pending < list.size; ++gx_settings_pending)
+            {
+                if (vec_getByIndex(&list, gx_settings_pending, &e) == 0) {
+                    e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE; e->handled = 1;
+                }
+            }
+        }
+        if (writes.size != 0) {
+            uint16_t gx_settings_pos;
+            svr_postWrite(&settings->base, &writes);
+            for (gx_settings_pos = 0; gx_settings_pos < list.size; ++gx_settings_pos)
+                if (vec_getByIndex(&list, gx_settings_pos, &e) == 0 && !e->action && e->error != 0)
+                    bb_setUInt8ByIndex(&results, gx_settings_pos, e->error);
         }
         gxByteBuffer bb;
         BYTE_BUFFER_INIT(&bb);
@@ -2999,6 +3026,7 @@ int svr_handleMethodRequest(
         else
         {
             svr_preAction(&settings->base, list);
+            if (e->handled && e->target->objectType == DLMS_OBJECT_TYPE_IMAGE_TRANSFER) svr_postAction(&settings->base, list);
             if (!e->handled)
             {
                 if ((ret = cosem_invoke(settings, e)) != 0)
@@ -3412,6 +3440,299 @@ int svr_discoverReport(
 
 #endif //DLMS_IGNORE_PLC
 
+/* Access service ported from GXDLMSLNCommandHandler.HandleAccessRequest.
+ * SET/ACTION execute through the standard C callbacks, rather than success placeholders.
+ */
+#ifndef DLMS_ACCESS_MAX_ITEMS
+#define DLMS_ACCESS_MAX_ITEMS 16
+#endif
+#ifndef DLMS_IGNORE_MALLOC
+typedef struct {
+    unsigned char kind;
+    unsigned char index;
+    uint16_t class_id;
+    unsigned char ln[6];
+    dlmsVARIANT input;
+} access_operation;
+
+/* AXDR counts must not wrap through the vendor's uint16_t count API. */
+static int svr_access_count(gxByteBuffer* input, uint16_t* count)
+{
+    unsigned char first, octets, value;
+    uint32_t total = 0;
+    int ret;
+    if ((ret = bb_getUInt8(input, &first)) != 0) return ret;
+    if (first < 0x80) { *count = first; return 0; }
+    octets = first & 0x7F;
+    if (octets == 0 || octets > 4) return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    while (octets-- != 0)
+    {
+        if ((ret = bb_getUInt8(input, &value)) != 0) return ret;
+        total = (total << 8) | value;
+    }
+    if (total > 65535) return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    *count = (uint16_t)total;
+    return 0;
+}
+/* Bound recursive AXDR before the vendor decoder allocates or enters callbacks. */
+static int svr_access_scan_value(gxByteBuffer* input, unsigned int depth)
+{
+    unsigned char type;
+    uint16_t count, i, bytes;
+    int ret;
+    if (depth > 12 || (ret = bb_getUInt8(input, &type)) != 0) return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    switch (type)
+    {
+    case 0: return 0;
+    case 1: case 2:
+        if ((ret = svr_access_count(input, &count)) != 0 || count > 1024) return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        for (i = 0; i < count; ++i) if ((ret = svr_access_scan_value(input, depth + 1)) != 0) return ret;
+        return 0;
+    case 3: case 15: case 17: case 22: bytes = 1; break;
+    case 16: case 18: bytes = 2; break;
+    case 5: case 6: case 23: case 27: bytes = 4; break;
+    case 20: case 21: case 24: bytes = 8; break;
+    case 25: bytes = 12; break;
+    case 26: bytes = 5; break;
+    case 4: case 9: case 10: case 12:
+        if ((ret = svr_access_count(input, &count)) != 0) return ret;
+        bytes = type == 4 ? (uint16_t)(((uint32_t)count + 7) / 8) : count;
+        break;
+    default: return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (bb_available(input) < bytes) return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    input->position += bytes;
+    return 0;
+}
+
+static int svr_access_run_operation(dlmsServerSettings* settings, access_operation* op, gxByteBuffer* values, unsigned char* status, uint32_t value_limit)
+{
+    gxValueEventArg event;
+    gxValueEventCollection args;
+    int ret = 0;
+    uint32_t value_start = values->size;
+    ve_init(&event); vec_init(&args);
+    event.index = op->index;
+    ret = oa_findByLN(&settings->base.objects, (DLMS_OBJECT_TYPE)op->class_id, op->ln, &event.target);
+    if (ret == 0 && event.target == NULL) ret = svr_findObject(&settings->base, (DLMS_OBJECT_TYPE)op->class_id, 0, op->ln, &event);
+    if (ret == 0 && event.target == NULL) event.error = DLMS_ERROR_CODE_UNAVAILABLE_OBJECT;
+    if (ret == 0 && event.error == 0 && op->index == 0) event.error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+    if (ret == 0 && event.error == 0)
+    {
+        unsigned char access = op->kind == 3 ? (unsigned char)svr_getMethodAccess(&settings->base, event.target, op->index)
+            : (unsigned char)svr_getAttributeAccess(&settings->base, event.target, op->index);
+        unsigned char allowed = 0;
+        unsigned char authenticated = settings->base.authentication != DLMS_AUTHENTICATION_NONE ||
+            ((settings->base.cipher.security & DLMS_SECURITY_AUTHENTICATION) != 0 && settings->info.encryptedCommand != DLMS_COMMAND_NONE);
+        if (op->kind == 3)
+            allowed = access == DLMS_METHOD_ACCESS_MODE_ACCESS ||
+            (access == DLMS_METHOD_ACCESS_MODE_AUTHENTICATED_ACCESS && authenticated);
+        else if (op->kind == 1)
+            allowed = access == DLMS_ACCESS_MODE_READ || access == DLMS_ACCESS_MODE_READ_WRITE ||
+            (authenticated && (access == DLMS_ACCESS_MODE_AUTHENTICATED_READ || access == DLMS_ACCESS_MODE_AUTHENTICATED_READ_WRITE));
+        else
+            allowed = access == DLMS_ACCESS_MODE_WRITE || access == DLMS_ACCESS_MODE_READ_WRITE ||
+            (authenticated && (access == DLMS_ACCESS_MODE_AUTHENTICATED_WRITE || access == DLMS_ACCESS_MODE_AUTHENTICATED_READ_WRITE));
+#ifdef DLMS_IGNORE_SET
+        if (op->kind == 2) allowed = 0;
+#endif
+#ifdef DLMS_IGNORE_ACTION
+        if (op->kind == 3) allowed = 0;
+#endif
+        if (!allowed) event.error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+    }
+    if (ret == 0 && event.error == 0) ret = vec_push(&args, &event);
+    if (ret == 0 && event.error == 0)
+    {
+        if (op->kind == 1)
+        {
+            svr_preRead(&settings->base, &args);
+            if (event.error == 0 && !event.handled) ret = cosem_getValue(&settings->base, &event);
+            if (ret != 0 && event.error == 0) event.error = ret;
+            if (event.transactionStartIndex != event.transactionEndIndex) event.error = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+            svr_postRead(&settings->base, &args);
+        }
+        else if (op->kind == 2)
+        {
+            ret = var_copy(&event.value, &op->input);
+            if (ret == 0) svr_preWrite(&settings->base, &args);
+            if (ret == 0 && event.error == 0 && !event.handled) ret = cosem_setValue(&settings->base, &event);
+            if (ret != 0 && event.error == 0) event.error = ret;
+            svr_postWrite(&settings->base, &args);
+            /* SET has no return data. */
+            var_clear(&event.value);
+        }
+        else
+        {
+            event.action = 1;
+            ret = var_copy(&event.parameters, &op->input);
+            if (ret == 0) svr_preAction(&settings->base, &args);
+            if (ret == 0 && event.error == 0 && !event.handled) ret = cosem_invoke(settings, &event);
+            if (ret != 0 && event.error == 0) event.error = ret;
+            svr_postAction(&settings->base, &args);
+        }
+    }
+    if (ret != 0) event.error = ret <= DLMS_ERROR_CODE_OTHER_REASON && ret > 0 ? (DLMS_ERROR_CODE)ret : DLMS_ERROR_CODE_OTHER_REASON;
+    *status = (unsigned char)event.error;
+    if (event.error == 0 && event.value.vt != DLMS_DATA_TYPE_NONE)
+    {
+        if (event.byteArray && event.value.byteArr != NULL) ret = bb_set(values, event.value.byteArr->data, event.value.byteArr->size);
+        else ret = var_getBytes(&event.value, values);
+    }
+    else ret = bb_setUInt8(values, DLMS_DATA_TYPE_NONE);
+    if (ret == 0 && values->size > value_limit)
+    {
+        values->size = value_start;
+        *status = DLMS_ERROR_CODE_READ_WRITE_DENIED;
+        ret = bb_setUInt8(values, DLMS_DATA_TYPE_NONE);
+    }
+    vec_empty(&args); /* Free collection storage without freeing the stack event. */
+    ve_clear(&event);
+    return ret;
+}
+#endif
+
+int svr_handleAccessRequest(dlmsServerSettings* settings, gxByteBuffer* request)
+{
+#ifdef DLMS_IGNORE_MALLOC
+    (void)settings; (void)request;
+    return DLMS_ERROR_CODE_READ_WRITE_DENIED;
+#else
+    access_operation operations[DLMS_ACCESS_MAX_ITEMS];
+    uint16_t date_size, count, data_count, i;
+    uint32_t invoke, data_limit, overhead;
+    unsigned char statuses[DLMS_ACCESS_MAX_ITEMS];
+    gxDataInfo info;
+    gxByteBuffer body, response;
+    gxLNParameters parameters;
+    int ret = 0;
+    memset(operations, 0, sizeof(operations));
+    bb_init(&body); bb_init(&response);
+    for (i = 0; i < DLMS_ACCESS_MAX_ITEMS; ++i) var_init(&operations[i].input);
+    if (request->size > settings->base.maxServerPDUSize)
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (ret == 0)
+    {
+        if ((ret = bb_getUInt32(request, &invoke)) == 0)
+        {
+            ret = svr_access_count(request, &date_size);
+        }
+    }
+    if (ret == 0 && ((date_size != 0 && date_size != 4 && date_size != 5 && date_size != 12) ||
+        bb_available(request) < date_size))
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (ret == 0)
+    {
+        request->position += date_size;
+        ret = svr_access_count(request, &count);
+        if (ret == 0 && (count == 0 || count > DLMS_ACCESS_MAX_ITEMS))
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+    }
+    for (i = 0; ret == 0 && i < count; ++i)
+    {
+        if ((ret = bb_getUInt8(request, &operations[i].kind)) == 0 &&
+            (ret = bb_getUInt16(request, &operations[i].class_id)) == 0 &&
+            (ret = bb_get(request, operations[i].ln, 6)) == 0 &&
+            (ret = bb_getUInt8(request, &operations[i].index)) == 0)
+        {
+            if (operations[i].kind < 1 || operations[i].kind > 3)
+            {
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+        }
+    }
+    if (ret == 0)
+    {
+        ret = svr_access_count(request, &data_count);
+        if (ret == 0 && count != data_count)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+    }
+    for (i = 0; ret == 0 && i < count; ++i)
+    {
+        uint16_t start = request->position;
+        if ((ret = svr_access_scan_value(request, 0)) == 0)
+        {
+            request->position = start;
+            di_init(&info);
+            ret = dlms_getData(request, &info, &operations[i].input);
+            if (ret == 0 && (!info.complete ||
+                (operations[i].kind == 1 && operations[i].input.vt != DLMS_DATA_TYPE_NONE)))
+            {
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+        }
+    }
+    if (ret == 0 && request->position != request->size)
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (ret == 0)
+    {
+        /* Reserve Access header, both count encodings, statuses and cipher envelope.
+         * ACCESS has no GET-next continuation: return per-item failure for data that cannot fit. */
+        overhead = 12u + 2u * count + (settings->base.cipher.security != DLMS_SECURITY_NONE ? 40u : 0u);
+        if (settings->base.maxPduSize < overhead + count)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        else
+        {
+            data_limit = settings->base.maxPduSize - overhead;
+            settings->base.longInvokeID = invoke & 0xFFFFFF;
+            settings->base.serviceClass = (invoke & 0x40000000) != 0 ? DLMS_SERVICE_CLASS_CONFIRMED : DLMS_SERVICE_CLASS_UN_CONFIRMED;
+            if ((ret = bb_setUInt8(&body, 0)) == 0)
+            {
+                ret = hlp_setObjectCount(count, &body);
+            }
+            for (i = 0; ret == 0 && i < count; ++i)
+            {
+                ret = svr_access_run_operation(settings, &operations[i], &body, &statuses[i], data_limit - (count - i - 1));
+            }
+        }
+    }
+    if (ret == 0)
+    {
+        ret = hlp_setObjectCount(count, &body);
+    }
+    for (i = 0; ret == 0 && i < count; ++i)
+    {
+        if ((ret = bb_setUInt8(&body, operations[i].kind)) == 0)
+        {
+            ret = bb_setUInt8(&body, statuses[i]);
+        }
+    }
+    if (ret == 0)
+    {
+        ret = bb_set(&response, body.data, body.size);
+    }
+    if (ret == 0)
+    {
+        params_initLN(&parameters, &settings->base, invoke, DLMS_COMMAND_ACCESS_RESPONSE, 0xFF, NULL, &response, 0xFF, settings->info.encryptedCommand, 0, 1);
+        ret = dlms_getLNPdu(&parameters, &response);
+        if (ret == 0 && response.size > settings->base.maxPduSize)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        if (ret == 0)
+        {
+            bb_clear(request);
+            ret = bb_set(request, response.data, response.size);
+        }
+    }
+    for (i = 0; i < DLMS_ACCESS_MAX_ITEMS; ++i) var_clear(&operations[i].input);
+    bb_clear(&body); bb_clear(&response);
+    return ret;
+#endif
+}
+
 int svr_handleCommand(
     dlmsServerSettings* settings,
     DLMS_COMMAND cmd,
@@ -3435,6 +3756,24 @@ int svr_handleCommand(
 #endif //DLMS_IGNORE_MALLOC
     switch (cmd)
     {
+    case DLMS_COMMAND_ACCESS_REQUEST:
+        if (!settings->base.useLogicalNameReferencing ||
+            (!settings->info.preEstablished &&
+                ((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
+                    (settings->base.negotiatedConformance & DLMS_CONFORMANCE_ACCESS) == 0)))
+        {
+            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        }
+        else if (settings->base.cipher.security > DLMS_SECURITY_NONE &&
+            settings->info.encryptedCommand == DLMS_COMMAND_NONE)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
+        else
+        {
+            ret = svr_handleAccessRequest(settings, data);
+        }
+        break;
 #ifndef DLMS_IGNORE_SET
     case DLMS_COMMAND_SET_REQUEST:
         //If connection is not established.
@@ -3459,6 +3798,11 @@ int svr_handleCommand(
 #endif //DLMS_IGNORE_SET
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_WRITE_REQUEST:
+        if (settings->base.cipher.security > DLMS_SECURITY_NONE && settings->info.encryptedCommand == DLMS_COMMAND_NONE)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+            break;
+        }
         //Connection establised is checked inside of the function because of HLS.
         if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_WRITE) == 0)
         {
@@ -3501,6 +3845,11 @@ int svr_handleCommand(
         break;
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_READ_REQUEST:
+        if (settings->base.cipher.security > DLMS_SECURITY_NONE && settings->info.encryptedCommand == DLMS_COMMAND_NONE)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+            break;
+        }
         //If connection is not established.
         if (!settings->info.preEstablished &&
             ((settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0 ||
@@ -3695,12 +4044,15 @@ int svr_handleCommand(
     {
         return ret;
     }
+#ifndef DLMS_IGNORE_IEC_HDLC_SETUP 
     if ((settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC ||
         settings->base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E) &&
         bb_available(data) > settings->hdlc->maximumInfoLengthTransmit)
     {
         settings->info.moreData |= DLMS_DATA_REQUEST_TYPES_FRAME;
     }
+#endif
+
     if (settings->base.serviceClass == DLMS_SERVICE_CLASS_CONFIRMED)
     {
         //Reply is not send if serviceClass is DLMS_SERVICE_CLASS_UN_CONFIRMED.
@@ -4378,6 +4730,7 @@ int svr_invoke(
         {
             exec = time_compare2(start, time) != 1 && time_compare2(end, time) != -1;
         }
+#ifndef DLMS_IGNORE_PUSH_SETUP
         if (exec && target->objectType == DLMS_OBJECT_TYPE_PUSH_SETUP)
         {
             //If communication window is not active
@@ -4395,6 +4748,7 @@ int svr_invoke(
                 }
             }
         }
+#endif
     }
     if (exec)
     {

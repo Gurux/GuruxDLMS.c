@@ -811,7 +811,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
         }
         else
         {
-            target->securityPolicy = (DLMS_SECURITY_POLICY) var_toInteger(&e->parameters);
+            target->securityPolicy = (DLMS_SECURITY_POLICY)var_toInteger(&e->parameters);
         }
     }
     else if (e->index == 2)
@@ -1806,11 +1806,13 @@ int invoke_ExtendedRegister(
         {
             return ret;
         }
+#ifndef DLMS_IGNORE_CLOCK
         if (settings->defaultClock != NULL)
         {
             object->captureTime = settings->defaultClock->time;
         }
         else
+#endif
         {
             time_clear(&object->captureTime);
         }

@@ -74,6 +74,11 @@ extern "C" {
     int svr_initialize(
         dlmsServerSettings* settings);
 
+    /* Handle a complete Access request body (after the command byte).
+     * The response APDU replaces data. Requires malloc-backed variants.
+     * DLMS_ACCESS_MAX_ITEMS defaults to 16; override at compilation if needed. */
+    int svr_handleAccessRequest(dlmsServerSettings* settings, gxByteBuffer* data);
+
     /*Server handles received bytes from the client.*/
     int svr_handleRequest(
         dlmsServerSettings* settings,

@@ -3586,6 +3586,1443 @@ static const unsigned char DEFAULT_AUTHENTICATION_KEY[] = { 0xD0, 0xD1, 0xD2, 0x
         /*AES 256 is used.*/
         DLMS_AES_256
     }DLMS_AES;
+
+    /* ACESM ESMP event definitions and assignments.
+     * Encode the value as DLMS long_unsigned (DLMS_DATA_TYPE_UINT16).
+     */
+    typedef enum
+    {
+        /* Power Down. Indicates a complete power down of the device. Please note that this is related
+         * to the device and not necessarily to the network. */
+        DLMS_ESMP_EVENT_CODE_POWER_DOWN = 1,
+        /* Power Up. Indicates that the device is powered again after a complete power down. */
+        DLMS_ESMP_EVENT_CODE_POWER_UP = 2,
+        /* Daylight saving time enabled or disabled. Indicates the regular change from and to daylight
+         * saving time. The time stamp shows the time before the change. This event is not set in case
+         * of manual clock changes and in case of power failures. */
+        DLMS_ESMP_EVENT_CODE_DAYLIGHT_SAVING_TIME_ENABLED_OR_DISABLED = 3,
+        /* Clock adjusted (old date/time). Indicates that the clock has been adjusted. The date/time
+         * that is stored in the event log is the old date/time before adjusting the clock. */
+        DLMS_ESMP_EVENT_CODE_CLOCK_ADJUSTED_OLD_DATE_TIME = 4,
+        /* Clock adjusted (new date/time). Indicates that the clock has been adjusted. The date/time
+         * that is stored in the event log is the new date/time after adjusting the clock. */
+        DLMS_ESMP_EVENT_CODE_CLOCK_ADJUSTED_NEW_DATE_TIME = 5,
+        /* Clock invalid. Indicates that clock may be invalid, i.e. if the power reserve of the clock
+         * has exhausted. It is set at power up. */
+        DLMS_ESMP_EVENT_CODE_CLOCK_INVALID = 6,
+        /* Replace Battery. Indicates that the battery must be exchanged due to the expected end of
+         * life time. */
+        DLMS_ESMP_EVENT_CODE_REPLACE_BATTERY = 7,
+        /* Battery voltage low. Indicates that the current battery voltage is low. */
+        DLMS_ESMP_EVENT_CODE_BATTERY_VOLTAGE_LOW = 8,
+        /* TOU activated. Indicates that the passive TOU has been activated. */
+        DLMS_ESMP_EVENT_CODE_TOU_ACTIVATED = 9,
+        /* Error register cleared. Indicates that the error register was cleared. */
+        DLMS_ESMP_EVENT_CODE_ERROR_REGISTER_CLEARED = 10,
+        /* Alarm register cleared. Indicates that the alarm register was cleared. */
+        DLMS_ESMP_EVENT_CODE_ALARM_REGISTER_CLEARED = 11,
+        /* Program memory error. Indicates a physical or a logical error in the program memory. */
+        DLMS_ESMP_EVENT_CODE_PROGRAM_MEMORY_ERROR = 12,
+        /* RAM error. Indicates a physical or a logical error in the RAM. */
+        DLMS_ESMP_EVENT_CODE_RAM_ERROR = 13,
+        /* NV memory error. Indicates a physical or a logical error in the non volatile memory */
+        DLMS_ESMP_EVENT_CODE_NV_MEMORY_ERROR = 14,
+        /* Watchdog error. Indicates a watch dog reset or a hardware reset of the microcontroller. */
+        DLMS_ESMP_EVENT_CODE_WATCHDOG_ERROR = 15,
+        /* Measurement system error. Indicates a logical or physical error in the measurement system */
+        DLMS_ESMP_EVENT_CODE_MEASUREMENT_SYSTEM_ERROR = 16,
+        /* Firmware ready for activation. Indicates that the new firmware has been successfully
+         * downloaded and verified, i.e. it is ready for activation */
+        DLMS_ESMP_EVENT_CODE_FIRMWARE_READY_FOR_ACTIVATION = 17,
+        /* Firmware activated. Indicates that a new firmware has been activated */
+        DLMS_ESMP_EVENT_CODE_FIRMWARE_ACTIVATED = 18,
+        /* Passive TOU programmed. The passive structures of TOU or a new activation date/time were
+         * programmed */
+        DLMS_ESMP_EVENT_CODE_PASSIVE_TOU_PROGRAMMED = 19,
+        /* External alert detected. Indicates a signal detected on the meter's input terminal */
+        DLMS_ESMP_EVENT_CODE_EXTERNAL_ALERT_DETECTED = 20,
+        /* End of non-periodic billing interval. Indicates the end of a non-periodic billing interval */
+        DLMS_ESMP_EVENT_CODE_END_OF_NON_PERIODIC_BILLING_INTERVAL = 21,
+        /* IF_LO_2W enabled. 2 way communication on local port enabled */
+        DLMS_ESMP_EVENT_CODE_IF_LO_2W_ENABLED = 22,
+        /* IF_LO_2W disabled. 2 way communication on local port disabled */
+        DLMS_ESMP_EVENT_CODE_IF_LO_2W_DISABLED = 23,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_24 = 24,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_25 = 25,
+        /* Communication start on remote interface I3 or I3.1. Indicates that the communication was
+         * started on the remote interface I3 or I3.1 */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_START_ON_REMOTE_INTERFACE_I3_OR_I3_1 = 26,
+        /* Communication end on remote interface I3 or I3.1. Indicates that the communication has ended
+         * on the remote interface I3 or I3.1 */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_END_ON_REMOTE_INTERFACE_I3_OR_I3_1 = 27,
+        /* Communication start on local interface IE-M. Indicates that the communication was started on
+         * the local interface IE-M */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_START_ON_LOCAL_INTERFACE_IE_M = 28,
+        /* Communication end on local interface IE-M. Indicates that the communication has ended on the
+         * local interface IE-M */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_END_ON_LOCAL_INTERFACE_IE_M = 29,
+        /* M-Bus ch1 Disconnector activity calendar activated. Indicates that the passive Disconnector
+         * activity calendar has been activated */
+        DLMS_ESMP_EVENT_CODE_M_BUS_CH1_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 30,
+        /* M-Bus ch1 Disconnector passive activity calendar programmed. Indicates that the passive
+         * Disconnector activity calendar has been programmed */
+        DLMS_ESMP_EVENT_CODE_M_BUS_CH1_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 31,
+        /* M-Bus ch2 Disconnector activity calendar activated. Indicates that the passive Disconnector
+         * activity calendar has been activated */
+        DLMS_ESMP_EVENT_CODE_M_BUS_CH2_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 32,
+        /* M-Bus ch2 Disconnector passive activity calendar programmed. Indicates that the passive
+         * Disconnector activity calendar has been programmed */
+        DLMS_ESMP_EVENT_CODE_M_BUS_CH2_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 33,
+        /* M-Bus ch3 Disconnector activity calendar activated. Indicates that the passive Disconnector
+         * activity calendar has been activated */
+        DLMS_ESMP_EVENT_CODE_M_BUS_CH3_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 34,
+        /* M-Bus ch3 Disconnector passive activity calendar programmed. Indicates that the passive
+         * Disconnector activity calendar has been programmed */
+        DLMS_ESMP_EVENT_CODE_M_BUS_CH3_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 35,
+        /* M-Bus ch4 Disconnector activity calendar activated. Indicates that the passive Disconnector
+         * activity calendar has been activated */
+        DLMS_ESMP_EVENT_CODE_M_BUS_CH4_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 36,
+        /* M-Bus ch4 Disconnector passive activity calendar programmed. Indicates that the passive
+         * Disconnector activity calendar has been programmed */
+        DLMS_ESMP_EVENT_CODE_M_BUS_CH4_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 37,
+        /* M-Bus FW ready for activation. Indicates that on M-Bus channel x the FW has been
+         * successfully downloaded and verified; i.e. it is ready for activation. */
+        DLMS_ESMP_EVENT_CODE_M_BUS_FW_READY_FOR_ACTIVATION = 38,
+        /* M-Bus FW activated. Indicates that on an M-Bus channel x the FW has been activated */
+        DLMS_ESMP_EVENT_CODE_M_BUS_FW_ACTIVATED = 39,
+        /* Terminal cover removed. Indicates that the terminal cover has been removed. */
+        DLMS_ESMP_EVENT_CODE_TERMINAL_COVER_REMOVED = 40,
+        /* Terminal cover closed. Indicates that the terminal cover has been closed. */
+        DLMS_ESMP_EVENT_CODE_TERMINAL_COVER_CLOSED = 41,
+        /* Strong DC field detected. Indicates that a strong magnetic DC field has been detected. */
+        DLMS_ESMP_EVENT_CODE_STRONG_DC_FIELD_DETECTED = 42,
+        /* No strong DC field anymore. Indicates that the strong magnetic DC field has disappeared. */
+        DLMS_ESMP_EVENT_CODE_NO_STRONG_DC_FIELD_ANYMORE = 43,
+        /* Meter cover removed. Indicates that the meter cover has been removed. */
+        DLMS_ESMP_EVENT_CODE_METER_COVER_REMOVED = 44,
+        /* Meter cover closed. Indicates that the meter cover has been closed. */
+        DLMS_ESMP_EVENT_CODE_METER_COVER_CLOSED = 45,
+        /* Association authentication failure (n time failed authentication). Indicates that a user
+         * tried to gain LLS access with wrong password (intrusion detection) or HLS access challenge
+         * processing failed n-times */
+        DLMS_ESMP_EVENT_CODE_ASSOCIATION_AUTHENTICATION_FAILURE_N_TIME_FAILED_AUTHENTICATION = 46,
+        /* One or more parameters changed. Indicates the change of at least one parameter */
+        DLMS_ESMP_EVENT_CODE_ONE_OR_MORE_PARAMETERS_CHANGED = 47,
+        /* Global key(s) changed. One or more global keys changed */
+        DLMS_ESMP_EVENT_CODE_GLOBAL_KEY_S_CHANGED = 48,
+        /* Decryption or authentication failure (n time failure). Decryption with currently valid key
+         * (global or dedicated) failed to generate a valid APDU or authentication tag */
+        DLMS_ESMP_EVENT_CODE_DECRYPTION_OR_AUTHENTICATION_FAILURE_N_TIME_FAILURE = 49,
+        /* Replay attack. Receive frame counter value less or equal to the last successfully received
+         * frame counter in the received APDU Event signalizes as well the situation when the DC has
+         * lost the frame counter synchronization. */
+        DLMS_ESMP_EVENT_CODE_REPLAY_ATTACK = 50,
+        /* FW verification failed. Indicates the transferred firmware verification failed i.e. cannot
+         * be activated. */
+        DLMS_ESMP_EVENT_CODE_FW_VERIFICATION_FAILED = 51,
+        /* Unexpected consumption. Indicates consumption is detected at least on one phase when the
+         * disconnector has been disconnected */
+        DLMS_ESMP_EVENT_CODE_UNEXPECTED_CONSUMPTION = 52,
+        /* LPCAP_M1 enabled. Capturing of M-Bus profile 1 has been enabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_M1_ENABLED = 53,
+        /* LPCAP_M1 disabled. Capturing of M-Bus profile 1 has been disabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_M1_DISABLED = 54,
+        /* LPCAP_M2 enabled. Capturing of M-Bus profile 2 has been enabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_M2_ENABLED = 55,
+        /* LPCAP_M2 disabled. Capturing of M-Bus profile 2 has been disabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_M2_DISABLED = 56,
+        /* LPCAP_M3 enabled. Capturing of M-Bus profile 3 has been enabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_M3_ENABLED = 57,
+        /* LPCAP_M3 disabled. Capturing of M-Bus profile 3 has been disabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_M3_DISABLED = 58,
+        /* Disconnector ready for manual reconnection. Indicates that the disconnector has been set
+         * into the Ready_for_reconnection state and can be manually reconnected */
+        DLMS_ESMP_EVENT_CODE_DISCONNECTOR_READY_FOR_MANUAL_RECONNECTION = 59,
+        /* Manual disconnection. Indicates that the disconnector has been manually disconnected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_DISCONNECTION = 60,
+        /* Manual connection. Indicates that the disconnector has been manually connected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_CONNECTION = 61,
+        /* Remote disconnection. Indicates that the disconnector has been remotely disconnected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_DISCONNECTION = 62,
+        /* Remote connection. Indicates that the disconnector has been remotely connected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_CONNECTION = 63,
+        /* Local disconnection. Indicates that the disconnector has been locally disconnected (i.e. via
+         * the limiter or current supervision monitors). */
+        DLMS_ESMP_EVENT_CODE_LOCAL_DISCONNECTION = 64,
+        /* Limiter threshold exceeded. Indicates that the limiter threshold has been exceeded. */
+        DLMS_ESMP_EVENT_CODE_LIMITER_THRESHOLD_EXCEEDED = 65,
+        /* Limiter threshold ok. Indicates that the monitored value of the limiter dropped below the
+         * threshold. */
+        DLMS_ESMP_EVENT_CODE_LIMITER_THRESHOLD_OK = 66,
+        /* Limiter threshold changed. Indicates that the limiter threshold has been changed */
+        DLMS_ESMP_EVENT_CODE_LIMITER_THRESHOLD_CHANGED = 67,
+        /* Disconnect/Reconnect failure. Indicates that the a failure of disconnection or reconnection
+         * has happened (control state does not match output state) */
+        DLMS_ESMP_EVENT_CODE_DISCONNECT_RECONNECT_FAILURE = 68,
+        /* Local reconnection. Indicates that the disconnector has been locally re-connected (i.e. via
+         * the limiter or current supervision monitors). */
+        DLMS_ESMP_EVENT_CODE_LOCAL_RECONNECTION = 69,
+        /* Supervision monitor 1 threshold exceeded. Indicates that the supervision monitor threshold
+         * has been exceeded. */
+        DLMS_ESMP_EVENT_CODE_SUPERVISION_MONITOR_1_THRESHOLD_EXCEEDED = 70,
+        /* Supervision monitor 1 threshold ok. Indicates that the monitored value dropped below the
+         * threshold. */
+        DLMS_ESMP_EVENT_CODE_SUPERVISION_MONITOR_1_THRESHOLD_OK = 71,
+        /* Supervision monitor 2 threshold exceeded. Indicates that the supervision monitor threshold
+         * has been exceeded. */
+        DLMS_ESMP_EVENT_CODE_SUPERVISION_MONITOR_2_THRESHOLD_EXCEEDED = 72,
+        /* Supervision monitor 2 threshold ok. Indicates that the monitored value dropped below the
+         * threshold. */
+        DLMS_ESMP_EVENT_CODE_SUPERVISION_MONITOR_2_THRESHOLD_OK = 73,
+        /* Supervision monitor 3 threshold exceeded. Indicates that the supervision monitor threshold
+         * has been exceeded. */
+        DLMS_ESMP_EVENT_CODE_SUPERVISION_MONITOR_3_THRESHOLD_EXCEEDED = 74,
+        /* Supervision monitor 3 threshold ok. Indicates that the monitored value dropped below the
+         * threshold. */
+        DLMS_ESMP_EVENT_CODE_SUPERVISION_MONITOR_3_THRESHOLD_OK = 75,
+        /* Undervoltage L1. Indicates undervoltage on at least L1 phase was detected. */
+        DLMS_ESMP_EVENT_CODE_UNDERVOLTAGE_L1 = 76,
+        /* Undervoltage L2. Indicates undervoltage on at least L2 phase was detected. */
+        DLMS_ESMP_EVENT_CODE_UNDERVOLTAGE_L2 = 77,
+        /* Undervoltage L3. Indicates undervoltage on at least L3 phase was detected. */
+        DLMS_ESMP_EVENT_CODE_UNDERVOLTAGE_L3 = 78,
+        /* Overvoltage L1. Indicates overvoltage on at least L1 phase was detected. */
+        DLMS_ESMP_EVENT_CODE_OVERVOLTAGE_L1 = 79,
+        /* Overvoltage L2. Indicates overvoltage on at least L2 phase was detected. */
+        DLMS_ESMP_EVENT_CODE_OVERVOLTAGE_L2 = 80,
+        /* Overvoltage L3. Indicates overvoltage on at least L3 phase was detected. */
+        DLMS_ESMP_EVENT_CODE_OVERVOLTAGE_L3 = 81,
+        /* Missing voltage L1. Indicates that the voltage on at least L1 phase has fallen below the
+         * Umin threshold for longer than the time delay. */
+        DLMS_ESMP_EVENT_CODE_MISSING_VOLTAGE_L1 = 82,
+        /* Missing voltage L2. Indicates that the voltage on at least L2 phase has fallen below the
+         * Umin threshold for longer than the time delay. */
+        DLMS_ESMP_EVENT_CODE_MISSING_VOLTAGE_L2 = 83,
+        /* Missing voltage L3. Indicates that the voltage on at least L3 phase has fallen below the
+         * Umin threshold for longer than the time delay. */
+        DLMS_ESMP_EVENT_CODE_MISSING_VOLTAGE_L3 = 84,
+        /* Voltage L1 normal. Indicates that the mains voltage is in normal limits again, e.g. after
+         * overvoltage. */
+        DLMS_ESMP_EVENT_CODE_VOLTAGE_L1_NORMAL = 85,
+        /* Voltage L2 normal. Indicates that the mains voltage is in normal limits again, e.g. after
+         * overvoltage. */
+        DLMS_ESMP_EVENT_CODE_VOLTAGE_L2_NORMAL = 86,
+        /* Voltage L3 normal. Indicates that the mains voltage is in normal limits again, e.g. after
+         * overvoltage. */
+        DLMS_ESMP_EVENT_CODE_VOLTAGE_L3_NORMAL = 87,
+        /* Phase sequence reversal. Indicates wrong mains connection. Usually indicates fraud or wrong
+         * installation. For poly phase connection only! */
+        DLMS_ESMP_EVENT_CODE_PHASE_SEQUENCE_REVERSAL = 88,
+        /* Missing neutral. Indicates that the neutral connection from the supplier to the meter is
+         * interrupted (but the neutral connection to the load prevails). The phase voltages measured
+         * by the meter may differ from their nominal values */
+        DLMS_ESMP_EVENT_CODE_MISSING_NEUTRAL = 89,
+        /* Phase Asymmetry. Indicates phase asymmetry due to large unbalance of loads connected */
+        DLMS_ESMP_EVENT_CODE_PHASE_ASYMMETRY = 90,
+        /* Current Reversal. Indicates unexpected energy export (for devices which are configured for
+         * energy import measurement only) */
+        DLMS_ESMP_EVENT_CODE_CURRENT_REVERSAL = 91,
+        /* Bad Voltage Quality L1. Indicates that during each period of one week 95 % of the 10 min
+         * mean r.m.s, values of the supply voltage are within the range of Un+/- 10 % and all 10 min
+         * mean r.m.s. values of the supply voltage shall be within the range of Un + 10%/- 15%. (acc.
+         * EN50160:2010, section 4.2.2) */
+        DLMS_ESMP_EVENT_CODE_BAD_VOLTAGE_QUALITY_L1 = 92,
+        /* Bad Voltage Quality L2. Indicates that during each period of one week 95 % of the 10 min
+         * mean r.m.s, values of the supply voltage are within the range of Un+/- 10 % and all 10 min
+         * mean r.m.s. values of the supply voltage shall be within the range of Un + 10%/- 15%. (acc.
+         * EN50160:2010, section 4.2.2) */
+        DLMS_ESMP_EVENT_CODE_BAD_VOLTAGE_QUALITY_L2 = 93,
+        /* Bad Voltage Quality L3. Indicates that during each period of one week 95 % of the 10 min
+         * mean r.m.s, values of the supply voltage are within the range of Un+/- 10 % and all 10 min
+         * mean r.m.s. values of the supply voltage shall be within the range of Un + 10%/- 15%. (acc.
+         * EN50160:2010, section 4.2.2) */
+        DLMS_ESMP_EVENT_CODE_BAD_VOLTAGE_QUALITY_L3 = 94,
+        /* Disconnector activity calendar activated. Indicates that the passive Disconnector activity
+         * calendar has been activated */
+        DLMS_ESMP_EVENT_CODE_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 95,
+        /* Disconnector passive activity calendar programmed. Indicates that the passive Disconnector
+         * activity calendar has been programmed */
+        DLMS_ESMP_EVENT_CODE_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 96,
+        /* Load Mgmt activity calendar activated. Indicates that the passive load management activity
+         * calendar has been activated */
+        DLMS_ESMP_EVENT_CODE_LOAD_MGMT_ACTIVITY_CALENDAR_ACTIVATED = 97,
+        /* Load Mgmt passive activity calendar programmed. Indicates that the passive load management
+         * activity calendar has been programmed */
+        DLMS_ESMP_EVENT_CODE_LOAD_MGMT_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 98,
+        /* M-Bus FW verification failed. M-Bus FW verification failed */
+        DLMS_ESMP_EVENT_CODE_M_BUS_FW_VERIFICATION_FAILED = 99,
+        /* Communication error M-Bus channel 1. Indicates a communication problem when reading the
+         * meter connected to channel 1 of the M-Bus */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_ERROR_M_BUS_CHANNEL_1 = 100,
+        /* Communication ok M-Bus channel 1. Indicates that the communication with the M-Bus meter
+         * connected to channel 1 of the M-Bus is ok again. */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_OK_M_BUS_CHANNEL_1 = 101,
+        /* Replace Battery M-Bus channel 1. Indicates that the battery must be exchanged due to the
+         * expected end of life time. */
+        DLMS_ESMP_EVENT_CODE_REPLACE_BATTERY_M_BUS_CHANNEL_1 = 102,
+        /* Fraud attempt M-Bus channel 1. Indicates that a fraud attempt has been registered. */
+        DLMS_ESMP_EVENT_CODE_FRAUD_ATTEMPT_M_BUS_CHANNEL_1 = 103,
+        /* Clock adjusted M-Bus channel 1. Indicates that the clock has been adjusted. */
+        DLMS_ESMP_EVENT_CODE_CLOCK_ADJUSTED_M_BUS_CHANNEL_1 = 104,
+        /* New M-Bus device installed channel 1. Indicated the meter (M-Bus master) has registered a
+         * M-Bus device connected to channel 1 with a new serial number */
+        DLMS_ESMP_EVENT_CODE_NEW_M_BUS_DEVICE_INSTALLED_CHANNEL_1 = 105,
+        /* Permanent Error M-Bus channel 1. Severe error reported by M-Bus device */
+        DLMS_ESMP_EVENT_CODE_PERMANENT_ERROR_M_BUS_CHANNEL_1 = 106,
+        /* LPCAP_M4 enabled. Capturing of M-Bus profile 4 has been enabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_M4_ENABLED = 107,
+        /* LPCAP_M4 disabled. Capturing of M-Bus profile 4 has been disabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_M4_DISABLED = 108,
+        /* LPCAP_1 enabled. Capturing of load profile 1 has been enabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_1_ENABLED = 109,
+        /* Communication error M-bus channel 2. Indicates a communication problem when reading the
+         * meter connected to channel 2 of the M-Bus */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_ERROR_M_BUS_CHANNEL_2 = 110,
+        /* Communication ok M-bus channel 2. Indicates that the communication with the M-Bus meter
+         * connected to channel 2 of the M-Bus is ok again. */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_OK_M_BUS_CHANNEL_2 = 111,
+        /* Replace Battery M-Bus channel 2. Indicates that the battery must be exchanged due to the
+         * expected end of life time. */
+        DLMS_ESMP_EVENT_CODE_REPLACE_BATTERY_M_BUS_CHANNEL_2 = 112,
+        /* Fraud attempt M-Bus channel 2. Indicates that a fraud attempt has been registered in the
+         * M-Bus device. */
+        DLMS_ESMP_EVENT_CODE_FRAUD_ATTEMPT_M_BUS_CHANNEL_2 = 113,
+        /* Clock adjusted M-Bus channel 2. Indicates that the clock has been adjusted. */
+        DLMS_ESMP_EVENT_CODE_CLOCK_ADJUSTED_M_BUS_CHANNEL_2 = 114,
+        /* New M-Bus device installed channel 2. Indicated the meter (M-Bus master) has registered a
+         * M-Bus device connected to channel 2 with a new serial number */
+        DLMS_ESMP_EVENT_CODE_NEW_M_BUS_DEVICE_INSTALLED_CHANNEL_2 = 115,
+        /* Permanent Error M-Bus channel 2. Severe error reported by M-Bus device (Bit 3 in MBUS status
+         * EN13757) */
+        DLMS_ESMP_EVENT_CODE_PERMANENT_ERROR_M_BUS_CHANNEL_2 = 116,
+        /* LPCAP_1 disabled. Capturing of load profile 1 has been disabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_1_DISABLED = 117,
+        /* LPCAP_2 enabled. Capturing of load profile 2 has been enabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_2_ENABLED = 118,
+        /* LPCAP_2 disabled. Capturing of load profile 2 has been disabled */
+        DLMS_ESMP_EVENT_CODE_LPCAP_2_DISABLED = 119,
+        /* Communication error M-bus channel 3. Indicates a communication problem when reading the
+         * meter connected to channel 3 of the M-Bus */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_ERROR_M_BUS_CHANNEL_3 = 120,
+        /* Communication ok M-bus channel 3. Indicates that the communication with the M-Bus meter
+         * connected to channel 3 of the M-Bus is ok again. */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_OK_M_BUS_CHANNEL_3 = 121,
+        /* Replace Battery M-Bus channel 3. Indicates that the battery must be exchanged due to the
+         * expected end of life time. */
+        DLMS_ESMP_EVENT_CODE_REPLACE_BATTERY_M_BUS_CHANNEL_3 = 122,
+        /* Fraud attempt M-Bus channel 3. Indicates that a fraud attempt has been registered. */
+        DLMS_ESMP_EVENT_CODE_FRAUD_ATTEMPT_M_BUS_CHANNEL_3 = 123,
+        /* Clock adjusted M-Bus channel 3. Indicates that the clock has been adjusted. */
+        DLMS_ESMP_EVENT_CODE_CLOCK_ADJUSTED_M_BUS_CHANNEL_3 = 124,
+        /* New M-Bus device installed channel 3. Indicated the meter (M-Bus master) has registered a
+         * M-Bus device connected to channel 3 with a new serial number */
+        DLMS_ESMP_EVENT_CODE_NEW_M_BUS_DEVICE_INSTALLED_CHANNEL_3 = 125,
+        /* Permanent Error M-Bus channel 3. Severe error reported by M-Bus device (Bit 3 in MBUS status
+         * EN13757) */
+        DLMS_ESMP_EVENT_CODE_PERMANENT_ERROR_M_BUS_CHANNEL_3 = 126,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_127 = 127,
+        /* reserved for future use. Indicates that on M-Bus channel x the FW verification failed */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_128 = 128,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_129 = 129,
+        /* Communication error M-bus channel 4. Indicates a communication problem when reading the
+         * meter connected to channel 4 of the M-Bus */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_ERROR_M_BUS_CHANNEL_4 = 130,
+        /* Communication ok M-bus channel 4. Indicates that the communication with the M-Bus meter
+         * connected to channel 4 of the M-Bus is ok again. */
+        DLMS_ESMP_EVENT_CODE_COMMUNICATION_OK_M_BUS_CHANNEL_4 = 131,
+        /* Replace Battery M-Bus channel 4. Indicates that the battery must be exchanged due to the
+         * expected end of life time. */
+        DLMS_ESMP_EVENT_CODE_REPLACE_BATTERY_M_BUS_CHANNEL_4 = 132,
+        /* Fraud attempt M-Bus channel 4. Indicates that a fraud attempt has been registered. */
+        DLMS_ESMP_EVENT_CODE_FRAUD_ATTEMPT_M_BUS_CHANNEL_4 = 133,
+        /* Clock adjusted M-Bus channel 4. Indicates that the clock has been adjusted. */
+        DLMS_ESMP_EVENT_CODE_CLOCK_ADJUSTED_M_BUS_CHANNEL_4 = 134,
+        /* New M-Bus device installed channel 4. Indicated the meter (M-Bus master) has registered a
+         * M-Bus device connected to channel 4 with a new serial number */
+        DLMS_ESMP_EVENT_CODE_NEW_M_BUS_DEVICE_INSTALLED_CHANNEL_4 = 135,
+        /* Permanent Error M-Bus channel 4. Severe error reported by M-Bus device (Bit 3 in MBUS status
+         * EN13757) */
+        DLMS_ESMP_EVENT_CODE_PERMANENT_ERROR_M_BUS_CHANNEL_4 = 136,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_137 = 137,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_138 = 138,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_139 = 139,
+        /* No connection timeout. There has been no remote communication on application layer for a
+         * predefined period of time; i.e. meter could not be reached remotely. */
+        DLMS_ESMP_EVENT_CODE_NO_CONNECTION_TIMEOUT = 140,
+        /* Modem Initialization failure. Modem's response to initialization AT command(s) is invalid or
+         * ERROR or no response received */
+        DLMS_ESMP_EVENT_CODE_MODEM_INITIALIZATION_FAILURE = 141,
+        /* SIM Card failure. SIM card is not inserted or is not recognized. The detection of the SIM
+         * card status is supported by the corresponding AT commands as listed in 3GPP TS 27.007 */
+        DLMS_ESMP_EVENT_CODE_SIM_CARD_FAILURE = 142,
+        /* SIM Card ok. SIM card has been correctly detected */
+        DLMS_ESMP_EVENT_CODE_SIM_CARD_OK = 143,
+        /* GSM registration failure. Modem's registration on GSM network was not successful */
+        DLMS_ESMP_EVENT_CODE_GSM_REGISTRATION_FAILURE = 144,
+        /* GPRS registration failure. Modem's registration on GPRS network was not successful */
+        DLMS_ESMP_EVENT_CODE_GPRS_REGISTRATION_FAILURE = 145,
+        /* PDP context established. PDP context is established */
+        DLMS_ESMP_EVENT_CODE_PDP_CONTEXT_ESTABLISHED = 146,
+        /* PDP context destroyed. PDP context is destroyed */
+        DLMS_ESMP_EVENT_CODE_PDP_CONTEXT_DESTROYED = 147,
+        /* PDP context failure. No Valid PDP context(s) retrieved */
+        DLMS_ESMP_EVENT_CODE_PDP_CONTEXT_FAILURE = 148,
+        /* Modem SW reset. Modem restarted by SW reset */
+        DLMS_ESMP_EVENT_CODE_MODEM_SW_RESET = 149,
+        /* Modem HW reset. Modem restarted by HW reset (this event is not issued after a general power
+         * resume) */
+        DLMS_ESMP_EVENT_CODE_MODEM_HW_RESET = 150,
+        /* GSM outgoing connection. Modem is successfully connected, initiated by an outgoing call. */
+        DLMS_ESMP_EVENT_CODE_GSM_OUTGOING_CONNECTION = 151,
+        /* GSM incoming connection. Modem is successfully connected, initiated by an incoming call */
+        DLMS_ESMP_EVENT_CODE_GSM_INCOMING_CONNECTION = 152,
+        /* GSM hang-up. Modem is disconnected */
+        DLMS_ESMP_EVENT_CODE_GSM_HANG_UP = 153,
+        /* Diagnostic failure. Modem's response to diagnostic AT command(s) ("+CPIN?", "+CSQ",
+         * "+CREG?", "+CGREG?", "+COPS?", "+CGACT?", "+CPMS?") is invalid or ERROR or no response
+         * received. */
+        DLMS_ESMP_EVENT_CODE_DIAGNOSTIC_FAILURE = 154,
+        /* User initialization failure. Modem's initialization AT command(s ) &#8211; specified in
+         * attribute 3 of the modem configuration object - is invalid. Error message or no response
+         * from the modem. */
+        DLMS_ESMP_EVENT_CODE_USER_INITIALIZATION_FAILURE = 155,
+        /* Signal quality low. Signal strength too low, not known, or not detectable */
+        DLMS_ESMP_EVENT_CODE_SIGNAL_QUALITY_LOW = 156,
+        /* Auto Answer Number of calls exceeded. Number of calls has exceeded (in mode(1) or mode(2) )
+         * the values given in the attribute number_of_calls. */
+        DLMS_ESMP_EVENT_CODE_AUTO_ANSWER_NUMBER_OF_CALLS_EXCEEDED = 157,
+        /* Local communication attempt. Indicates a successful communication on any local port has been
+         * initiated. */
+        DLMS_ESMP_EVENT_CODE_LOCAL_COMMUNICATION_ATTEMPT = 158,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_159 = 159,
+        /* Manual disconnection M-Bus channel 1. Indicates that the disconnector has been manually
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_DISCONNECTION_M_BUS_CHANNEL_1 = 160,
+        /* Manual connection M-Bus channel 1. Indicates that the disconnector has been manually
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_CONNECTION_M_BUS_CHANNEL_1 = 161,
+        /* Remote disconnection M-Bus channel 1. Indicates that the disconnector has been remotely
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_DISCONNECTION_M_BUS_CHANNEL_1 = 162,
+        /* Remote connection M-Bus channel 1. Indicates that the disconnector has been remotely
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_CONNECTION_M_BUS_CHANNEL_1 = 163,
+        /* Valve alarm M-Bus channel 1. Indicates that a valve alarm has been registered. */
+        DLMS_ESMP_EVENT_CODE_VALVE_ALARM_M_BUS_CHANNEL_1 = 164,
+        /* Local disconnection M-Bus channel 1. Indicates that the disconnector has been locally
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_LOCAL_DISCONNECTION_M_BUS_CHANNEL_1 = 165,
+        /* Local connection M-Bus channel 1. Indicates that the disconnector has been locally
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_LOCAL_CONNECTION_M_BUS_CHANNEL_1 = 166,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_167 = 167,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_168 = 168,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_169 = 169,
+        /* Manual disconnection M-Bus channel 2. Indicates that the disconnector has been manually
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_DISCONNECTION_M_BUS_CHANNEL_2 = 170,
+        /* Manual connection M-Bus channel 2. Indicates that the disconnector has been manually
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_CONNECTION_M_BUS_CHANNEL_2 = 171,
+        /* Remote disconnection M-Bus channel 2. Indicates that the disconnector has been remotely
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_DISCONNECTION_M_BUS_CHANNEL_2 = 172,
+        /* Remote connection M-Bus channel 2. Indicates that the disconnector has been remotely
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_CONNECTION_M_BUS_CHANNEL_2 = 173,
+        /* Valve alarm M-Bus channel 2. Indicates that a valve alarm has been registered. */
+        DLMS_ESMP_EVENT_CODE_VALVE_ALARM_M_BUS_CHANNEL_2 = 174,
+        /* Local disconnection M-Bus channel 2. Indicates that the disconnector has been locally
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_LOCAL_DISCONNECTION_M_BUS_CHANNEL_2 = 175,
+        /* Local connection M-Bus channel 2. Indicates that the disconnector has been locally
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_LOCAL_CONNECTION_M_BUS_CHANNEL_2 = 176,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_177 = 177,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_178 = 178,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_179 = 179,
+        /* Manual disconnection M-Bus channel 3. Indicates that the disconnector has been manually
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_DISCONNECTION_M_BUS_CHANNEL_3 = 180,
+        /* Manual connection M-Bus channel 3. Indicates that the disconnector has been manually
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_CONNECTION_M_BUS_CHANNEL_3 = 181,
+        /* Remote disconnection M-Bus channel 3. Indicates that the disconnector has been remotely
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_DISCONNECTION_M_BUS_CHANNEL_3 = 182,
+        /* Remote connection M-Bus channel 3. Indicates that the disconnector has been remotely
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_CONNECTION_M_BUS_CHANNEL_3 = 183,
+        /* Valve alarm M-Bus channel 3. Indicates that a valve alarm has been registered. */
+        DLMS_ESMP_EVENT_CODE_VALVE_ALARM_M_BUS_CHANNEL_3 = 184,
+        /* Local disconnection M-Bus channel 3. Indicates that the disconnector has been locally
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_LOCAL_DISCONNECTION_M_BUS_CHANNEL_3 = 185,
+        /* Local connection M-Bus channel 3. Indicates that the disconnector has been locally
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_LOCAL_CONNECTION_M_BUS_CHANNEL_3 = 186,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_187 = 187,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_188 = 188,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_189 = 189,
+        /* Manual disconnection M-Bus channel 4. Indicates that the disconnector has been manually
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_DISCONNECTION_M_BUS_CHANNEL_4 = 190,
+        /* Manual connection M-Bus channel 4. Indicates that the disconnector has been manually
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_MANUAL_CONNECTION_M_BUS_CHANNEL_4 = 191,
+        /* Remote disconnection M-Bus channel 4. Indicates that the disconnector has been remotely
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_DISCONNECTION_M_BUS_CHANNEL_4 = 192,
+        /* Remote connection M-Bus channel 4. Indicates that the disconnector has been remotely
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_REMOTE_CONNECTION_M_BUS_CHANNEL_4 = 193,
+        /* Valve alarm M-Bus channel 4. Indicates that a valve alarm has been registered. */
+        DLMS_ESMP_EVENT_CODE_VALVE_ALARM_M_BUS_CHANNEL_4 = 194,
+        /* Local disconnection M-Bus channel 4. Indicates that the disconnector has been locally
+         * disconnected. */
+        DLMS_ESMP_EVENT_CODE_LOCAL_DISCONNECTION_M_BUS_CHANNEL_4 = 195,
+        /* Local connection M-Bus channel 4. Indicates that the disconnector has been locally
+         * connected. */
+        DLMS_ESMP_EVENT_CODE_LOCAL_CONNECTION_M_BUS_CHANNEL_4 = 196,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_197 = 197,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_198 = 198,
+        /* reserved for future use. */
+        DLMS_ESMP_EVENT_CODE_RESERVED_FOR_FUTURE_USE_199 = 199,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_200 = 200,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_201 = 201,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_202 = 202,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_203 = 203,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_204 = 204,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_205 = 205,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_206 = 206,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_207 = 207,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_208 = 208,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_209 = 209,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_210 = 210,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_211 = 211,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_212 = 212,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_213 = 213,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_214 = 214,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_215 = 215,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_216 = 216,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_217 = 217,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_218 = 218,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_219 = 219,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_220 = 220,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_221 = 221,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_222 = 222,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_223 = 223,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_224 = 224,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_225 = 225,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_226 = 226,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_227 = 227,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_228 = 228,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_229 = 229,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_230 = 230,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_231 = 231,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_232 = 232,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_233 = 233,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_234 = 234,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_235 = 235,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_236 = 236,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_237 = 237,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_238 = 238,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_239 = 239,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_240 = 240,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_241 = 241,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_242 = 242,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_243 = 243,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_244 = 244,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_245 = 245,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_246 = 246,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_247 = 247,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_248 = 248,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_249 = 249,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_250 = 250,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_251 = 251,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_252 = 252,
+        /* manufacturer specific. */
+        DLMS_ESMP_EVENT_CODE_MANUFACTURER_SPECIFIC_253 = 253,
+        /* Load profile cleared. Any of the profiles cleared. NOTE: If it appears in Standard Event Log
+         * then any of the E-load profiles was cleared. If the event appears in the M-Bus Event log
+         * then one of the M-Bus load profiles was cleared */
+        DLMS_ESMP_EVENT_CODE_LOAD_PROFILE_CLEARED = 254,
+        /* Event log cleared. Indicates that the event log was cleared. This is always the first entry
+         * in an event log. It is only stored in the affected event log. */
+        DLMS_ESMP_EVENT_CODE_EVENT_LOG_CLEARED = 255
+    } DLMS_ESMP_EVENT_CODE;
+
+    /* ACESM ESMP North America Annex event definitions and assignments.
+     * Encode the value as DLMS long_unsigned (DLMS_DATA_TYPE_UINT16).
+     */
+    typedef enum
+    {
+        /* Power Down. Indicates a complete power down of the device. Please note that this is related
+         * to the device and not necessarily to the network. */
+        DLMS_ESMP_NA_EVENT_CODE_POWER_DOWN = 1,
+        /* Power Up. Indicates that the device is powered again after a complete power down. */
+        DLMS_ESMP_NA_EVENT_CODE_POWER_UP = 2,
+        /* Daylight saving time enabled or disabled. Indicates the regular change from and to daylight
+         * saving time. The time stamp shows the time before the change. This event is not set in case
+         * of manual clock changes and in case of power failures. */
+        DLMS_ESMP_NA_EVENT_CODE_DAYLIGHT_SAVING_TIME_ENABLED_OR_DISABLED = 3,
+        /* Clock adjusted (old date/time). Indicates that the clock has been adjusted. The date/time
+         * that is stored in the event log is the old date/time before adjusting the clock. */
+        DLMS_ESMP_NA_EVENT_CODE_CLOCK_ADJUSTED_OLD_DATE_TIME = 4,
+        /* Clock adjusted (new date/time). Indicates that the clock has been adjusted. The date/time
+         * that is stored in the event log is the new date/time after adjusting the clock. */
+        DLMS_ESMP_NA_EVENT_CODE_CLOCK_ADJUSTED_NEW_DATE_TIME = 5,
+        /* Clock invalid. Indicates that clock may be invalid, i.e. if the power reserve of the clock
+         * has exhausted. It is set at power up. */
+        DLMS_ESMP_NA_EVENT_CODE_CLOCK_INVALID = 6,
+        /* Replace Battery. Indicates that the battery must be exchanged due to the expected end of
+         * life time. */
+        DLMS_ESMP_NA_EVENT_CODE_REPLACE_BATTERY = 7,
+        /* Battery voltage low. Indicates that the current battery voltage is low. */
+        DLMS_ESMP_NA_EVENT_CODE_BATTERY_VOLTAGE_LOW = 8,
+        /* TOU activated. Indicates that the passive TOU has been activated. */
+        DLMS_ESMP_NA_EVENT_CODE_TOU_ACTIVATED = 9,
+        /* Error register cleared. Indicates that the error register was cleared. */
+        DLMS_ESMP_NA_EVENT_CODE_ERROR_REGISTER_CLEARED = 10,
+        /* Alarm register cleared. Indicates that the alarm register was cleared. */
+        DLMS_ESMP_NA_EVENT_CODE_ALARM_REGISTER_CLEARED = 11,
+        /* Program memory error. Indicates a physical or a logical error in the program memory. */
+        DLMS_ESMP_NA_EVENT_CODE_PROGRAM_MEMORY_ERROR = 12,
+        /* RAM error. Indicates a physical or a logical error in the RAM. */
+        DLMS_ESMP_NA_EVENT_CODE_RAM_ERROR = 13,
+        /* NV memory error. Indicates a physical or a logical error in the non volatile memory */
+        DLMS_ESMP_NA_EVENT_CODE_NV_MEMORY_ERROR = 14,
+        /* Watchdog error. Indicates a watch dog reset or a hardware reset of the microcontroller. */
+        DLMS_ESMP_NA_EVENT_CODE_WATCHDOG_ERROR = 15,
+        /* Measurement system error. Indicates a logical or physical error in the measurement system */
+        DLMS_ESMP_NA_EVENT_CODE_MEASUREMENT_SYSTEM_ERROR = 16,
+        /* Firmware ready for activation. Indicates that the new firmware has been successfully
+         * downloaded and verified, i.e. it is ready for activation */
+        DLMS_ESMP_NA_EVENT_CODE_FIRMWARE_READY_FOR_ACTIVATION = 17,
+        /* Firmware activated. Indicates that a new firmware has been activated */
+        DLMS_ESMP_NA_EVENT_CODE_FIRMWARE_ACTIVATED = 18,
+        /* Passive TOU programmed. The passive structures of TOU or a new activation date/time were
+         * programmed */
+        DLMS_ESMP_NA_EVENT_CODE_PASSIVE_TOU_PROGRAMMED = 19,
+        /* External alert detected. Indicates a signal detected on the meter's input terminal */
+        DLMS_ESMP_NA_EVENT_CODE_EXTERNAL_ALERT_DETECTED = 20,
+        /* End of non-periodic billing interval. Indicates the end of a non-periodic billing interval */
+        DLMS_ESMP_NA_EVENT_CODE_END_OF_NON_PERIODIC_BILLING_INTERVAL = 21,
+        /* IF_LO_2W enabled. 2 way communication on local port enabled */
+        DLMS_ESMP_NA_EVENT_CODE_IF_LO_2W_ENABLED = 22,
+        /* IF_LO_2W disabled. 2 way communication on local port disabled */
+        DLMS_ESMP_NA_EVENT_CODE_IF_LO_2W_DISABLED = 23,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_24 = 24,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_25 = 25,
+        /* Communication start on remote interface I3 or I3.1. Indicates that the communication was
+         * started on the remote interface I3 or I3.1 */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_START_ON_REMOTE_INTERFACE_I3_OR_I3_1 = 26,
+        /* Communication end on remote interface I3 or I3.1. Indicates that the communication has ended
+         * on the remote interface I3 or I3.1 */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_END_ON_REMOTE_INTERFACE_I3_OR_I3_1 = 27,
+        /* Communication start on local interface IE-M. Indicates that the communication was started on
+         * the local interface IE-M */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_START_ON_LOCAL_INTERFACE_IE_M = 28,
+        /* Communication end on local interface IE-M. Indicates that the communication has ended on the
+         * local interface IE-M */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_END_ON_LOCAL_INTERFACE_IE_M = 29,
+        /* M-Bus ch1 Disconnector activity calendar activated. Indicates that the passive Disconnector
+         * activity calendar has been activated */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_CH1_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 30,
+        /* M-Bus ch1 Disconnector passive activity calendar programmed. Indicates that the passive
+         * Disconnector activity calendar has been programmed */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_CH1_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 31,
+        /* M-Bus ch2 Disconnector activity calendar activated. Indicates that the passive Disconnector
+         * activity calendar has been activated */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_CH2_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 32,
+        /* M-Bus ch2 Disconnector passive activity calendar programmed. Indicates that the passive
+         * Disconnector activity calendar has been programmed */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_CH2_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 33,
+        /* M-Bus ch3 Disconnector activity calendar activated. Indicates that the passive Disconnector
+         * activity calendar has been activated */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_CH3_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 34,
+        /* M-Bus ch3 Disconnector passive activity calendar programmed. Indicates that the passive
+         * Disconnector activity calendar has been programmed */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_CH3_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 35,
+        /* M-Bus ch4 Disconnector activity calendar activated. Indicates that the passive Disconnector
+         * activity calendar has been activated */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_CH4_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 36,
+        /* M-Bus ch4 Disconnector passive activity calendar programmed. Indicates that the passive
+         * Disconnector activity calendar has been programmed */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_CH4_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 37,
+        /* M-Bus FW ready for activation. Indicates that on M-Bus channel x the FW has been
+         * successfully downloaded and verified; i.e. it is ready for activation. */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_FW_READY_FOR_ACTIVATION = 38,
+        /* M-Bus FW activated. Indicates that on an M-Bus channel x the FW has been activated */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_FW_ACTIVATED = 39,
+        /* Terminal cover removed. Indicates that the terminal cover has been removed. */
+        DLMS_ESMP_NA_EVENT_CODE_TERMINAL_COVER_REMOVED = 40,
+        /* Terminal cover closed. Indicates that the terminal cover has been closed. */
+        DLMS_ESMP_NA_EVENT_CODE_TERMINAL_COVER_CLOSED = 41,
+        /* Strong DC field detected. Indicates that a strong magnetic DC field has been detected. */
+        DLMS_ESMP_NA_EVENT_CODE_STRONG_DC_FIELD_DETECTED = 42,
+        /* No strong DC field anymore. Indicates that the strong magnetic DC field has disappeared. */
+        DLMS_ESMP_NA_EVENT_CODE_NO_STRONG_DC_FIELD_ANYMORE = 43,
+        /* Meter cover removed. Indicates that the meter cover has been removed. */
+        DLMS_ESMP_NA_EVENT_CODE_METER_COVER_REMOVED = 44,
+        /* Meter cover closed. Indicates that the meter cover has been closed. */
+        DLMS_ESMP_NA_EVENT_CODE_METER_COVER_CLOSED = 45,
+        /* Association authentication failure (n time failed authentication). Indicates that a user
+         * tried to gain LLS access with wrong password (intrusion detection) or HLS access challenge
+         * processing failed n-times */
+        DLMS_ESMP_NA_EVENT_CODE_ASSOCIATION_AUTHENTICATION_FAILURE_N_TIME_FAILED_AUTHENTICATION = 46,
+        /* One or more parameters changed. Indicates the change of at least one parameter */
+        DLMS_ESMP_NA_EVENT_CODE_ONE_OR_MORE_PARAMETERS_CHANGED = 47,
+        /* Global key(s) changed. One or more global keys changed */
+        DLMS_ESMP_NA_EVENT_CODE_GLOBAL_KEY_S_CHANGED = 48,
+        /* Decryption or authentication failure (n time failure). Decryption with currently valid key
+         * (global or dedicated) failed to generate a valid APDU or authentication tag */
+        DLMS_ESMP_NA_EVENT_CODE_DECRYPTION_OR_AUTHENTICATION_FAILURE_N_TIME_FAILURE = 49,
+        /* Replay attack. Receive frame counter value less or equal to the last successfully received
+         * frame counter in the received APDU Event signalizes as well the situation when the DC has
+         * lost the frame counter synchronization. */
+        DLMS_ESMP_NA_EVENT_CODE_REPLAY_ATTACK = 50,
+        /* FW verification failed. Indicates the transferred firmware verification failed i.e. cannot
+         * be activated. */
+        DLMS_ESMP_NA_EVENT_CODE_FW_VERIFICATION_FAILED = 51,
+        /* Unexpected consumption. Indicates consumption is detected at least on one phase when the
+         * disconnector has been disconnected */
+        DLMS_ESMP_NA_EVENT_CODE_UNEXPECTED_CONSUMPTION = 52,
+        /* LPCAP_M1 enabled. Capturing of M-Bus profile 1 has been enabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_M1_ENABLED = 53,
+        /* LPCAP_M1 disabled. Capturing of M-Bus profile 1 has been disabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_M1_DISABLED = 54,
+        /* LPCAP_M2 enabled. Capturing of M-Bus profile 2 has been enabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_M2_ENABLED = 55,
+        /* LPCAP_M2 disabled. Capturing of M-Bus profile 2 has been disabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_M2_DISABLED = 56,
+        /* LPCAP_M3 enabled. Capturing of M-Bus profile 3 has been enabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_M3_ENABLED = 57,
+        /* LPCAP_M3 disabled. Capturing of M-Bus profile 3 has been disabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_M3_DISABLED = 58,
+        /* Disconnector ready for manual reconnection. Indicates that the disconnector has been set
+         * into the Ready_for_reconnection state and can be manually reconnected */
+        DLMS_ESMP_NA_EVENT_CODE_DISCONNECTOR_READY_FOR_MANUAL_RECONNECTION = 59,
+        /* Manual disconnection. Indicates that the disconnector has been manually disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_DISCONNECTION = 60,
+        /* Manual connection. Indicates that the disconnector has been manually connected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_CONNECTION = 61,
+        /* Remote disconnection. Indicates that the disconnector has been remotely disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_DISCONNECTION = 62,
+        /* Remote connection. Indicates that the disconnector has been remotely connected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_CONNECTION = 63,
+        /* Local disconnection. Indicates that the disconnector has been locally disconnected (i.e. via
+         * the limiter or current supervision monitors). */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_DISCONNECTION = 64,
+        /* Limiter threshold exceeded. Indicates that the limiter threshold has been exceeded. */
+        DLMS_ESMP_NA_EVENT_CODE_LIMITER_THRESHOLD_EXCEEDED = 65,
+        /* Limiter threshold ok. Indicates that the monitored value of the limiter dropped below the
+         * threshold. */
+        DLMS_ESMP_NA_EVENT_CODE_LIMITER_THRESHOLD_OK = 66,
+        /* Limiter threshold changed. Indicates that the limiter threshold has been changed */
+        DLMS_ESMP_NA_EVENT_CODE_LIMITER_THRESHOLD_CHANGED = 67,
+        /* Disconnect/Reconnect failure. Indicates that the a failure of disconnection or reconnection
+         * has happened (control state does not match output state) */
+        DLMS_ESMP_NA_EVENT_CODE_DISCONNECT_RECONNECT_FAILURE = 68,
+        /* Local reconnection. Indicates that the disconnector has been locally re-connected (i.e. via
+         * the limiter or current supervision monitors). */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_RECONNECTION = 69,
+        /* Supervision monitor 1 threshold exceeded. Indicates that the supervision monitor threshold
+         * has been exceeded. */
+        DLMS_ESMP_NA_EVENT_CODE_SUPERVISION_MONITOR_1_THRESHOLD_EXCEEDED = 70,
+        /* Supervision monitor 1 threshold ok. Indicates that the monitored value dropped below the
+         * threshold. */
+        DLMS_ESMP_NA_EVENT_CODE_SUPERVISION_MONITOR_1_THRESHOLD_OK = 71,
+        /* Supervision monitor 2 threshold exceeded. Indicates that the supervision monitor threshold
+         * has been exceeded. */
+        DLMS_ESMP_NA_EVENT_CODE_SUPERVISION_MONITOR_2_THRESHOLD_EXCEEDED = 72,
+        /* Supervision monitor 2 threshold ok. Indicates that the monitored value dropped below the
+         * threshold. */
+        DLMS_ESMP_NA_EVENT_CODE_SUPERVISION_MONITOR_2_THRESHOLD_OK = 73,
+        /* Supervision monitor 3 threshold exceeded. Indicates that the supervision monitor threshold
+         * has been exceeded. */
+        DLMS_ESMP_NA_EVENT_CODE_SUPERVISION_MONITOR_3_THRESHOLD_EXCEEDED = 74,
+        /* Supervision monitor 3 threshold ok. Indicates that the monitored value dropped below the
+         * threshold. */
+        DLMS_ESMP_NA_EVENT_CODE_SUPERVISION_MONITOR_3_THRESHOLD_OK = 75,
+        /* Undervoltage L1. Indicates undervoltage on at least L1 phase was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_UNDERVOLTAGE_L1 = 76,
+        /* Undervoltage L2. Indicates undervoltage on at least L2 phase was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_UNDERVOLTAGE_L2 = 77,
+        /* Undervoltage L3. Indicates undervoltage on at least L3 phase was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_UNDERVOLTAGE_L3 = 78,
+        /* Overvoltage L1. Indicates overvoltage on at least L1 phase was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_OVERVOLTAGE_L1 = 79,
+        /* Overvoltage L2. Indicates overvoltage on at least L2 phase was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_OVERVOLTAGE_L2 = 80,
+        /* Overvoltage L3. Indicates overvoltage on at least L3 phase was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_OVERVOLTAGE_L3 = 81,
+        /* Missing voltage L1. Indicates that the voltage on at least L1 phase has fallen below the
+         * Umin threshold for longer than the time delay. */
+        DLMS_ESMP_NA_EVENT_CODE_MISSING_VOLTAGE_L1 = 82,
+        /* Missing voltage L2. Indicates that the voltage on at least L2 phase has fallen below the
+         * Umin threshold for longer than the time delay. */
+        DLMS_ESMP_NA_EVENT_CODE_MISSING_VOLTAGE_L2 = 83,
+        /* Missing voltage L3. Indicates that the voltage on at least L3 phase has fallen below the
+         * Umin threshold for longer than the time delay. */
+        DLMS_ESMP_NA_EVENT_CODE_MISSING_VOLTAGE_L3 = 84,
+        /* Voltage L1 normal. Indicates that the mains voltage is in normal limits again, e.g. after
+         * overvoltage. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_L1_NORMAL = 85,
+        /* Voltage L2 normal. Indicates that the mains voltage is in normal limits again, e.g. after
+         * overvoltage. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_L2_NORMAL = 86,
+        /* Voltage L3 normal. Indicates that the mains voltage is in normal limits again, e.g. after
+         * overvoltage. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_L3_NORMAL = 87,
+        /* Phase sequence reversal. Indicates wrong mains connection. Usually indicates fraud or wrong
+         * installation. For poly phase connection only! */
+        DLMS_ESMP_NA_EVENT_CODE_PHASE_SEQUENCE_REVERSAL = 88,
+        /* Missing neutral. Indicates that the neutral connection from the supplier to the meter is
+         * interrupted (but the neutral connection to the load prevails). The phase voltages measured
+         * by the meter may differ from their nominal values */
+        DLMS_ESMP_NA_EVENT_CODE_MISSING_NEUTRAL = 89,
+        /* Phase Asymmetry. Indicates phase asymmetry due to large unbalance of loads connected */
+        DLMS_ESMP_NA_EVENT_CODE_PHASE_ASYMMETRY = 90,
+        /* Current Reversal. Indicates unexpected energy export (for devices which are configured for
+         * energy import measurement only) */
+        DLMS_ESMP_NA_EVENT_CODE_CURRENT_REVERSAL = 91,
+        /* Bad Voltage Quality L1. Indicates that during each period of one week 95 % of the 10 min
+         * mean r.m.s, values of the supply voltage are within the range of Un+/- 10 % and all 10 min
+         * mean r.m.s. values of the supply voltage shall be within the range of Un + 10%/- 15%. (acc.
+         * EN50160:2010, section 4.2.2) */
+        DLMS_ESMP_NA_EVENT_CODE_BAD_VOLTAGE_QUALITY_L1 = 92,
+        /* Bad Voltage Quality L2. Indicates that during each period of one week 95 % of the 10 min
+         * mean r.m.s, values of the supply voltage are within the range of Un+/- 10 % and all 10 min
+         * mean r.m.s. values of the supply voltage shall be within the range of Un + 10%/- 15%. (acc.
+         * EN50160:2010, section 4.2.2) */
+        DLMS_ESMP_NA_EVENT_CODE_BAD_VOLTAGE_QUALITY_L2 = 93,
+        /* Bad Voltage Quality L3. Indicates that during each period of one week 95 % of the 10 min
+         * mean r.m.s, values of the supply voltage are within the range of Un+/- 10 % and all 10 min
+         * mean r.m.s. values of the supply voltage shall be within the range of Un + 10%/- 15%. (acc.
+         * EN50160:2010, section 4.2.2) */
+        DLMS_ESMP_NA_EVENT_CODE_BAD_VOLTAGE_QUALITY_L3 = 94,
+        /* Disconnector activity calendar activated. Indicates that the passive Disconnector activity
+         * calendar has been activated */
+        DLMS_ESMP_NA_EVENT_CODE_DISCONNECTOR_ACTIVITY_CALENDAR_ACTIVATED = 95,
+        /* Disconnector passive activity calendar programmed. Indicates that the passive Disconnector
+         * activity calendar has been programmed */
+        DLMS_ESMP_NA_EVENT_CODE_DISCONNECTOR_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 96,
+        /* Load Mgmt activity calendar activated. Indicates that the passive load management activity
+         * calendar has been activated */
+        DLMS_ESMP_NA_EVENT_CODE_LOAD_MGMT_ACTIVITY_CALENDAR_ACTIVATED = 97,
+        /* Load Mgmt passive activity calendar programmed. Indicates that the passive load management
+         * activity calendar has been programmed */
+        DLMS_ESMP_NA_EVENT_CODE_LOAD_MGMT_PASSIVE_ACTIVITY_CALENDAR_PROGRAMMED = 98,
+        /* M-Bus FW verification failed. M-Bus FW verification failed */
+        DLMS_ESMP_NA_EVENT_CODE_M_BUS_FW_VERIFICATION_FAILED = 99,
+        /* Communication error M-Bus channel 1. Indicates a communication problem when reading the
+         * meter connected to channel 1 of the M-Bus */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_ERROR_M_BUS_CHANNEL_1 = 100,
+        /* Communication ok M-Bus channel 1. Indicates that the communication with the M-Bus meter
+         * connected to channel 1 of the M-Bus is ok again. */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_OK_M_BUS_CHANNEL_1 = 101,
+        /* Replace Battery M-Bus channel 1. Indicates that the battery must be exchanged due to the
+         * expected end of life time. */
+        DLMS_ESMP_NA_EVENT_CODE_REPLACE_BATTERY_M_BUS_CHANNEL_1 = 102,
+        /* Fraud attempt M-Bus channel 1. Indicates that a fraud attempt has been registered. */
+        DLMS_ESMP_NA_EVENT_CODE_FRAUD_ATTEMPT_M_BUS_CHANNEL_1 = 103,
+        /* Clock adjusted M-Bus channel 1. Indicates that the clock has been adjusted. */
+        DLMS_ESMP_NA_EVENT_CODE_CLOCK_ADJUSTED_M_BUS_CHANNEL_1 = 104,
+        /* New M-Bus device installed channel 1. Indicated the meter (M-Bus master) has registered a
+         * M-Bus device connected to channel 1 with a new serial number */
+        DLMS_ESMP_NA_EVENT_CODE_NEW_M_BUS_DEVICE_INSTALLED_CHANNEL_1 = 105,
+        /* Permanent Error M-Bus channel 1. Severe error reported by M-Bus device */
+        DLMS_ESMP_NA_EVENT_CODE_PERMANENT_ERROR_M_BUS_CHANNEL_1 = 106,
+        /* LPCAP_M4 enabled. Capturing of M-Bus profile 4 has been enabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_M4_ENABLED = 107,
+        /* LPCAP_M4 disabled. Capturing of M-Bus profile 4 has been disabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_M4_DISABLED = 108,
+        /* LPCAP_1 enabled. Capturing of load profile 1 has been enabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_1_ENABLED = 109,
+        /* Communication error M-bus channel 2. Indicates a communication problem when reading the
+         * meter connected to channel 2 of the M-Bus */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_ERROR_M_BUS_CHANNEL_2 = 110,
+        /* Communication ok M-bus channel 2. Indicates that the communication with the M-Bus meter
+         * connected to channel 2 of the M-Bus is ok again. */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_OK_M_BUS_CHANNEL_2 = 111,
+        /* Replace Battery M-Bus channel 2. Indicates that the battery must be exchanged due to the
+         * expected end of life time. */
+        DLMS_ESMP_NA_EVENT_CODE_REPLACE_BATTERY_M_BUS_CHANNEL_2 = 112,
+        /* Fraud attempt M-Bus channel 2. Indicates that a fraud attempt has been registered in the
+         * M-Bus device. */
+        DLMS_ESMP_NA_EVENT_CODE_FRAUD_ATTEMPT_M_BUS_CHANNEL_2 = 113,
+        /* Clock adjusted M-Bus channel 2. Indicates that the clock has been adjusted. */
+        DLMS_ESMP_NA_EVENT_CODE_CLOCK_ADJUSTED_M_BUS_CHANNEL_2 = 114,
+        /* New M-Bus device installed channel 2. Indicated the meter (M-Bus master) has registered a
+         * M-Bus device connected to channel 2 with a new serial number */
+        DLMS_ESMP_NA_EVENT_CODE_NEW_M_BUS_DEVICE_INSTALLED_CHANNEL_2 = 115,
+        /* Permanent Error M-Bus channel 2. Severe error reported by M-Bus device (Bit 3 in MBUS status
+         * EN13757) */
+        DLMS_ESMP_NA_EVENT_CODE_PERMANENT_ERROR_M_BUS_CHANNEL_2 = 116,
+        /* LPCAP_1 disabled. Capturing of load profile 1 has been disabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_1_DISABLED = 117,
+        /* LPCAP_2 enabled. Capturing of load profile 2 has been enabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_2_ENABLED = 118,
+        /* LPCAP_2 disabled. Capturing of load profile 2 has been disabled */
+        DLMS_ESMP_NA_EVENT_CODE_LPCAP_2_DISABLED = 119,
+        /* Communication error M-bus channel 3. Indicates a communication problem when reading the
+         * meter connected to channel 3 of the M-Bus */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_ERROR_M_BUS_CHANNEL_3 = 120,
+        /* Communication ok M-bus channel 3. Indicates that the communication with the M-Bus meter
+         * connected to channel 3 of the M-Bus is ok again. */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_OK_M_BUS_CHANNEL_3 = 121,
+        /* Replace Battery M-Bus channel 3. Indicates that the battery must be exchanged due to the
+         * expected end of life time. */
+        DLMS_ESMP_NA_EVENT_CODE_REPLACE_BATTERY_M_BUS_CHANNEL_3 = 122,
+        /* Fraud attempt M-Bus channel 3. Indicates that a fraud attempt has been registered. */
+        DLMS_ESMP_NA_EVENT_CODE_FRAUD_ATTEMPT_M_BUS_CHANNEL_3 = 123,
+        /* Clock adjusted M-Bus channel 3. Indicates that the clock has been adjusted. */
+        DLMS_ESMP_NA_EVENT_CODE_CLOCK_ADJUSTED_M_BUS_CHANNEL_3 = 124,
+        /* New M-Bus device installed channel 3. Indicated the meter (M-Bus master) has registered a
+         * M-Bus device connected to channel 3 with a new serial number */
+        DLMS_ESMP_NA_EVENT_CODE_NEW_M_BUS_DEVICE_INSTALLED_CHANNEL_3 = 125,
+        /* Permanent Error M-Bus channel 3. Severe error reported by M-Bus device (Bit 3 in MBUS status
+         * EN13757) */
+        DLMS_ESMP_NA_EVENT_CODE_PERMANENT_ERROR_M_BUS_CHANNEL_3 = 126,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_127 = 127,
+        /* reserved for future use. Indicates that on M-Bus channel x the FW verification failed */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_128 = 128,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_129 = 129,
+        /* Communication error M-bus channel 4. Indicates a communication problem when reading the
+         * meter connected to channel 4 of the M-Bus */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_ERROR_M_BUS_CHANNEL_4 = 130,
+        /* Communication ok M-bus channel 4. Indicates that the communication with the M-Bus meter
+         * connected to channel 4 of the M-Bus is ok again. */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATION_OK_M_BUS_CHANNEL_4 = 131,
+        /* Replace Battery M-Bus channel 4. Indicates that the battery must be exchanged due to the
+         * expected end of life time. */
+        DLMS_ESMP_NA_EVENT_CODE_REPLACE_BATTERY_M_BUS_CHANNEL_4 = 132,
+        /* Fraud attempt M-Bus channel 4. Indicates that a fraud attempt has been registered. */
+        DLMS_ESMP_NA_EVENT_CODE_FRAUD_ATTEMPT_M_BUS_CHANNEL_4 = 133,
+        /* Clock adjusted M-Bus channel 4. Indicates that the clock has been adjusted. */
+        DLMS_ESMP_NA_EVENT_CODE_CLOCK_ADJUSTED_M_BUS_CHANNEL_4 = 134,
+        /* New M-Bus device installed channel 4. Indicated the meter (M-Bus master) has registered a
+         * M-Bus device connected to channel 4 with a new serial number */
+        DLMS_ESMP_NA_EVENT_CODE_NEW_M_BUS_DEVICE_INSTALLED_CHANNEL_4 = 135,
+        /* Permanent Error M-Bus channel 4. Severe error reported by M-Bus device (Bit 3 in MBUS status
+         * EN13757) */
+        DLMS_ESMP_NA_EVENT_CODE_PERMANENT_ERROR_M_BUS_CHANNEL_4 = 136,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_137 = 137,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_138 = 138,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_139 = 139,
+        /* No connection timeout. There has been no remote communication on application layer for a
+         * predefined period of time; i.e. meter could not be reached remotely. */
+        DLMS_ESMP_NA_EVENT_CODE_NO_CONNECTION_TIMEOUT = 140,
+        /* Modem Initialization failure. Modem's response to initialization AT command(s) is invalid or
+         * ERROR or no response received */
+        DLMS_ESMP_NA_EVENT_CODE_MODEM_INITIALIZATION_FAILURE = 141,
+        /* SIM Card failure. SIM card is not inserted or is not recognized. The detection of the SIM
+         * card status is supported by the corresponding AT commands as listed in 3GPP TS 27.007 */
+        DLMS_ESMP_NA_EVENT_CODE_SIM_CARD_FAILURE = 142,
+        /* SIM Card ok. SIM card has been correctly detected */
+        DLMS_ESMP_NA_EVENT_CODE_SIM_CARD_OK = 143,
+        /* GSM registration failure. Modem's registration on GSM network was not successful */
+        DLMS_ESMP_NA_EVENT_CODE_GSM_REGISTRATION_FAILURE = 144,
+        /* GPRS registration failure. Modem's registration on GPRS network was not successful */
+        DLMS_ESMP_NA_EVENT_CODE_GPRS_REGISTRATION_FAILURE = 145,
+        /* PDP context established. PDP context is established */
+        DLMS_ESMP_NA_EVENT_CODE_PDP_CONTEXT_ESTABLISHED = 146,
+        /* PDP context destroyed. PDP context is destroyed */
+        DLMS_ESMP_NA_EVENT_CODE_PDP_CONTEXT_DESTROYED = 147,
+        /* PDP context failure. No Valid PDP context(s) retrieved */
+        DLMS_ESMP_NA_EVENT_CODE_PDP_CONTEXT_FAILURE = 148,
+        /* Modem SW reset. Modem restarted by SW reset */
+        DLMS_ESMP_NA_EVENT_CODE_MODEM_SW_RESET = 149,
+        /* Modem HW reset. Modem restarted by HW reset (this event is not issued after a general power
+         * resume) */
+        DLMS_ESMP_NA_EVENT_CODE_MODEM_HW_RESET = 150,
+        /* GSM outgoing connection. Modem is successfully connected, initiated by an outgoing call. */
+        DLMS_ESMP_NA_EVENT_CODE_GSM_OUTGOING_CONNECTION = 151,
+        /* GSM incoming connection. Modem is successfully connected, initiated by an incoming call */
+        DLMS_ESMP_NA_EVENT_CODE_GSM_INCOMING_CONNECTION = 152,
+        /* GSM hang-up. Modem is disconnected */
+        DLMS_ESMP_NA_EVENT_CODE_GSM_HANG_UP = 153,
+        /* Diagnostic failure. Modem's response to diagnostic AT command(s) ("+CPIN?", "+CSQ",
+         * "+CREG?", "+CGREG?", "+COPS?", "+CGACT?", "+CPMS?") is invalid or ERROR or no response
+         * received. */
+        DLMS_ESMP_NA_EVENT_CODE_DIAGNOSTIC_FAILURE = 154,
+        /* User initialization failure. Modem's initialization AT command(s ) &#8211; specified in
+         * attribute 3 of the modem configuration object - is invalid. Error message or no response
+         * from the modem. */
+        DLMS_ESMP_NA_EVENT_CODE_USER_INITIALIZATION_FAILURE = 155,
+        /* Signal quality low. Signal strength too low, not known, or not detectable */
+        DLMS_ESMP_NA_EVENT_CODE_SIGNAL_QUALITY_LOW = 156,
+        /* Auto Answer Number of calls exceeded. Number of calls has exceeded (in mode(1) or mode(2) )
+         * the values given in the attribute number_of_calls. */
+        DLMS_ESMP_NA_EVENT_CODE_AUTO_ANSWER_NUMBER_OF_CALLS_EXCEEDED = 157,
+        /* Local communication attempt. Indicates a successful communication on any local port has been
+         * initiated. */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_COMMUNICATION_ATTEMPT = 158,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_159 = 159,
+        /* Manual disconnection M-Bus channel 1. Indicates that the disconnector has been manually
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_DISCONNECTION_M_BUS_CHANNEL_1 = 160,
+        /* Manual connection M-Bus channel 1. Indicates that the disconnector has been manually
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_CONNECTION_M_BUS_CHANNEL_1 = 161,
+        /* Remote disconnection M-Bus channel 1. Indicates that the disconnector has been remotely
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_DISCONNECTION_M_BUS_CHANNEL_1 = 162,
+        /* Remote connection M-Bus channel 1. Indicates that the disconnector has been remotely
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_CONNECTION_M_BUS_CHANNEL_1 = 163,
+        /* Valve alarm M-Bus channel 1. Indicates that a valve alarm has been registered. */
+        DLMS_ESMP_NA_EVENT_CODE_VALVE_ALARM_M_BUS_CHANNEL_1 = 164,
+        /* Local disconnection M-Bus channel 1. Indicates that the disconnector has been locally
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_DISCONNECTION_M_BUS_CHANNEL_1 = 165,
+        /* Local connection M-Bus channel 1. Indicates that the disconnector has been locally
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_CONNECTION_M_BUS_CHANNEL_1 = 166,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_167 = 167,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_168 = 168,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_169 = 169,
+        /* Manual disconnection M-Bus channel 2. Indicates that the disconnector has been manually
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_DISCONNECTION_M_BUS_CHANNEL_2 = 170,
+        /* Manual connection M-Bus channel 2. Indicates that the disconnector has been manually
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_CONNECTION_M_BUS_CHANNEL_2 = 171,
+        /* Remote disconnection M-Bus channel 2. Indicates that the disconnector has been remotely
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_DISCONNECTION_M_BUS_CHANNEL_2 = 172,
+        /* Remote connection M-Bus channel 2. Indicates that the disconnector has been remotely
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_CONNECTION_M_BUS_CHANNEL_2 = 173,
+        /* Valve alarm M-Bus channel 2. Indicates that a valve alarm has been registered. */
+        DLMS_ESMP_NA_EVENT_CODE_VALVE_ALARM_M_BUS_CHANNEL_2 = 174,
+        /* Local disconnection M-Bus channel 2. Indicates that the disconnector has been locally
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_DISCONNECTION_M_BUS_CHANNEL_2 = 175,
+        /* Local connection M-Bus channel 2. Indicates that the disconnector has been locally
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_CONNECTION_M_BUS_CHANNEL_2 = 176,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_177 = 177,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_178 = 178,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_179 = 179,
+        /* Manual disconnection M-Bus channel 3. Indicates that the disconnector has been manually
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_DISCONNECTION_M_BUS_CHANNEL_3 = 180,
+        /* Manual connection M-Bus channel 3. Indicates that the disconnector has been manually
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_CONNECTION_M_BUS_CHANNEL_3 = 181,
+        /* Remote disconnection M-Bus channel 3. Indicates that the disconnector has been remotely
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_DISCONNECTION_M_BUS_CHANNEL_3 = 182,
+        /* Remote connection M-Bus channel 3. Indicates that the disconnector has been remotely
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_CONNECTION_M_BUS_CHANNEL_3 = 183,
+        /* Valve alarm M-Bus channel 3. Indicates that a valve alarm has been registered. */
+        DLMS_ESMP_NA_EVENT_CODE_VALVE_ALARM_M_BUS_CHANNEL_3 = 184,
+        /* Local disconnection M-Bus channel 3. Indicates that the disconnector has been locally
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_DISCONNECTION_M_BUS_CHANNEL_3 = 185,
+        /* Local connection M-Bus channel 3. Indicates that the disconnector has been locally
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_CONNECTION_M_BUS_CHANNEL_3 = 186,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_187 = 187,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_188 = 188,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_189 = 189,
+        /* Manual disconnection M-Bus channel 4. Indicates that the disconnector has been manually
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_DISCONNECTION_M_BUS_CHANNEL_4 = 190,
+        /* Manual connection M-Bus channel 4. Indicates that the disconnector has been manually
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUAL_CONNECTION_M_BUS_CHANNEL_4 = 191,
+        /* Remote disconnection M-Bus channel 4. Indicates that the disconnector has been remotely
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_DISCONNECTION_M_BUS_CHANNEL_4 = 192,
+        /* Remote connection M-Bus channel 4. Indicates that the disconnector has been remotely
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_REMOTE_CONNECTION_M_BUS_CHANNEL_4 = 193,
+        /* Valve alarm M-Bus channel 4. Indicates that a valve alarm has been registered. */
+        DLMS_ESMP_NA_EVENT_CODE_VALVE_ALARM_M_BUS_CHANNEL_4 = 194,
+        /* Local disconnection M-Bus channel 4. Indicates that the disconnector has been locally
+         * disconnected. */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_DISCONNECTION_M_BUS_CHANNEL_4 = 195,
+        /* Local connection M-Bus channel 4. Indicates that the disconnector has been locally
+         * connected. */
+        DLMS_ESMP_NA_EVENT_CODE_LOCAL_CONNECTION_M_BUS_CHANNEL_4 = 196,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_197 = 197,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_198 = 198,
+        /* reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_199 = 199,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_200 = 200,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_201 = 201,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_202 = 202,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_203 = 203,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_204 = 204,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_205 = 205,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_206 = 206,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_207 = 207,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_208 = 208,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_209 = 209,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_210 = 210,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_211 = 211,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_212 = 212,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_213 = 213,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_214 = 214,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_215 = 215,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_216 = 216,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_217 = 217,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_218 = 218,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_219 = 219,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_220 = 220,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_221 = 221,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_222 = 222,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_223 = 223,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_224 = 224,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_225 = 225,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_226 = 226,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_227 = 227,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_228 = 228,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_229 = 229,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_230 = 230,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_231 = 231,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_232 = 232,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_233 = 233,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_234 = 234,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_235 = 235,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_236 = 236,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_237 = 237,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_238 = 238,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_239 = 239,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_240 = 240,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_241 = 241,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_242 = 242,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_243 = 243,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_244 = 244,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_245 = 245,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_246 = 246,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_247 = 247,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_248 = 248,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_249 = 249,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_250 = 250,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_251 = 251,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_252 = 252,
+        /* manufacturer specific. */
+        DLMS_ESMP_NA_EVENT_CODE_MANUFACTURER_SPECIFIC_253 = 253,
+        /* Load profile cleared. Any of the profiles cleared. NOTE: If it appears in Standard Event Log
+         * then any of the E-load profiles was cleared. If the event appears in the M-Bus Event log
+         * then one of the M-Bus load profiles was cleared */
+        DLMS_ESMP_NA_EVENT_CODE_LOAD_PROFILE_CLEARED = 254,
+        /* Event log cleared. Indicates that the event log was cleared. This is always the first entry
+         * in an event log. It is only stored in the affected event log. */
+        DLMS_ESMP_NA_EVENT_CODE_EVENT_LOG_CLEARED = 255,
+        /* Neutral Fault. Indicates the detection of Neutral Fault event occurrence. */
+        DLMS_ESMP_NA_EVENT_CODE_NEUTRAL_FAULT = 256,
+        /* End Neutral Fault. Indicates the end of the occurrence of Neutral Fault */
+        DLMS_ESMP_NA_EVENT_CODE_END_NEUTRAL_FAULT = 257,
+        /* Over current L1. Indicates an occurrence of Over current on Phase L1 */
+        DLMS_ESMP_NA_EVENT_CODE_OVER_CURRENT_L1 = 258,
+        /* Over current L2. Indicates an occurrence of Over current on Phase L2 */
+        DLMS_ESMP_NA_EVENT_CODE_OVER_CURRENT_L2 = 259,
+        /* Over current L3. Indicates an occurrence of Over current on Phase L3 */
+        DLMS_ESMP_NA_EVENT_CODE_OVER_CURRENT_L3 = 260,
+        /* End Over current L1. Indicates the end of the occurrence of Over current on Phase L1 */
+        DLMS_ESMP_NA_EVENT_CODE_END_OVER_CURRENT_L1 = 261,
+        /* End Over current L2. Indicates the end of the occurrence of Over current on Phase L2 */
+        DLMS_ESMP_NA_EVENT_CODE_END_OVER_CURRENT_L2 = 262,
+        /* End Over current L3. Indicates the end of the occurrence of Over current on Phase L3 */
+        DLMS_ESMP_NA_EVENT_CODE_END_OVER_CURRENT_L3 = 263,
+        /* Power Factor deviation on L1. Indicates an occurrence of Power Factor deviation on Phase L1 */
+        DLMS_ESMP_NA_EVENT_CODE_POWER_FACTOR_DEVIATION_ON_L1 = 264,
+        /* Power Factor deviation on L2. Indicates an occurrence of Power Factor deviation on Phase L2 */
+        DLMS_ESMP_NA_EVENT_CODE_POWER_FACTOR_DEVIATION_ON_L2 = 265,
+        /* Power Factor deviation on L3. Indicates an occurrence of Power Factor deviation on Phase L3 */
+        DLMS_ESMP_NA_EVENT_CODE_POWER_FACTOR_DEVIATION_ON_L3 = 266,
+        /* End Power Factor deviation on L1. Indicates the end of the occurrence of Power Factor
+         * deviation on Phase L1 */
+        DLMS_ESMP_NA_EVENT_CODE_END_POWER_FACTOR_DEVIATION_ON_L1 = 267,
+        /* End Power Factor deviation on L2. Indicates the end of the occurrence of Power Factor
+         * deviation on Phase L2 */
+        DLMS_ESMP_NA_EVENT_CODE_END_POWER_FACTOR_DEVIATION_ON_L2 = 268,
+        /* End Power Factor deviation on L3. Indicates the end of the occurrence of Power Factor
+         * deviation on Phase L3 */
+        DLMS_ESMP_NA_EVENT_CODE_END_POWER_FACTOR_DEVIATION_ON_L3 = 269,
+        /* Current Reversal L1. Indicates an occurrence of Current Reversal on Phase L1 was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_CURRENT_REVERSAL_L1 = 270,
+        /* Current Reversal L2. Indicates an occurrence of Current Reversal on Phase L2 was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_CURRENT_REVERSAL_L2 = 271,
+        /* Current Reversal L3. Indicates an occurrence of Current Reversal on Phase L2 was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_CURRENT_REVERSAL_L3 = 272,
+        /* Current Reversal L1 End. Indicates the end of the occurrence of Current Reversal on Phase L1
+         * was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_CURRENT_REVERSAL_L1_END = 273,
+        /* Current Reversal L2 End. Indicates the end of the occurrence of Current Reversal on Phase L2
+         * was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_CURRENT_REVERSAL_L2_END = 274,
+        /* Current Reversal L3 End. Indicates the end of the occurrence of Current Reversal on Phase L3
+         * was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_CURRENT_REVERSAL_L3_END = 275,
+        /* Voltage Sag L1. Indicates an occurrence of short duration undervoltage or also called
+         * voltage sag on Phase L1 was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SAG_L1 = 276,
+        /* Voltage Sag L2. Indicates an occurrence of short duration undervoltage or also called
+         * voltage sag on Phase L2 was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SAG_L2 = 277,
+        /* Voltage Sag L3. Indicates an occurrence of short duration undervoltage or also called
+         * voltage sag on Phase L3 was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SAG_L3 = 278,
+        /* Voltage Sag L1 end. Indicates the end of short duration undervoltage event or also called
+         * Voltage Sag end on phase 1. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SAG_L1_END = 279,
+        /* Voltage Sag L2 end. Indicates the end of short duration undervoltage event or also called
+         * Voltage Sag end on phase 2. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SAG_L2_END = 280,
+        /* Voltage Sag L3 end. Indicates the end of short duration undervoltage event or also called
+         * Voltage Sag end on phase 3. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SAG_L3_END = 281,
+        /* Voltage Swell L1. Indicates an occurrence of short duration overvoltage or also called
+         * voltage swell on Phase L1 was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SWELL_L1 = 282,
+        /* Voltage Swell L2. Indicates an occurrence of short duration overvoltage or also called
+         * voltage swell on Phase L2 was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SWELL_L2 = 283,
+        /* Voltage Swell L3. Indicates an occurrence of short duration overvoltage or also called
+         * voltage swell on Phase L3 was detected. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SWELL_L3 = 284,
+        /* Voltage Swell L1 end. Indicates the end of short duration overvoltage event or also called
+         * Voltage Swell end on phase 1. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SWELL_L1_END = 285,
+        /* Voltage Swell L2 end. Indicates the end of short duration overvoltage event or also called
+         * Voltage Swell end on phase 2. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SWELL_L2_END = 286,
+        /* Voltage Swell L3 end. Indicates the end of short duration overvoltage event or also called
+         * Voltage Swell end on phase 3. */
+        DLMS_ESMP_NA_EVENT_CODE_VOLTAGE_SWELL_L3_END = 287,
+        /* Underfrequency. Indicates that the network frequency has dropped below the configured limit
+         * (typically -2% from nominal). */
+        DLMS_ESMP_NA_EVENT_CODE_UNDERFREQUENCY = 288,
+        /* Overfrequency. Indicates that the network frequency has exceeded the configured limit
+         * (typically +2% from nominal). */
+        DLMS_ESMP_NA_EVENT_CODE_OVERFREQUENCY = 289,
+        /* Frequency Normal. Indicates that the network frequency is in normal limits again (eg. After
+         * over or under frequency event) */
+        DLMS_ESMP_NA_EVENT_CODE_FREQUENCY_NORMAL = 290,
+        /* Communications Module Removed. Indicates that the communication module fitted on top of the
+         * meter was removed. This even is applicable only for modular meters. */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATIONS_MODULE_REMOVED = 291,
+        /* Communications Module Replaced. Indicates that the communication module fitted on top of the
+         * meter was replaced (put back to its original place). This even is applicable only for
+         * modular meters. */
+        DLMS_ESMP_NA_EVENT_CODE_COMMUNICATIONS_MODULE_REPLACED = 292,
+        /* Measurement Canada Log full. Indicates that the measurement Canada Event Log if full and not
+         * more events can be stored. */
+        DLMS_ESMP_NA_EVENT_CODE_MEASUREMENT_CANADA_LOG_FULL = 293,
+        /* Measurement Canada Log Reset. */
+        DLMS_ESMP_NA_EVENT_CODE_MEASUREMENT_CANADA_LOG_RESET = 294,
+        /* Temperature high warning level 1. Indicates that temperature high warning level 1 was
+         * reached */
+        DLMS_ESMP_NA_EVENT_CODE_TEMPERATURE_HIGH_WARNING_LEVEL_1 = 295,
+        /* Temperature high warning level 2. Indicates that temperature high warning level 2 was
+         * reached */
+        DLMS_ESMP_NA_EVENT_CODE_TEMPERATURE_HIGH_WARNING_LEVEL_2 = 296,
+        /* Reconnect blocked due to load side potential. Indicates that reconnect was blocked due to
+         * load side potential */
+        DLMS_ESMP_NA_EVENT_CODE_RECONNECT_BLOCKED_DUE_TO_LOAD_SIDE_POTENTIAL = 297,
+        /* Disconnected due to unauthorised generation. Indicates that unauthorized generation was
+         * detected */
+        DLMS_ESMP_NA_EVENT_CODE_DISCONNECTED_DUE_TO_UNAUTHORISED_GENERATION = 298,
+        /* Firmware failed due to download failure. Indicates that firmware updated failed due to
+         * download failure */
+        DLMS_ESMP_NA_EVENT_CODE_FIRMWARE_FAILED_DUE_TO_DOWNLOAD_FAILURE = 299,
+        /* Firmware failed due to authentication failure. Indicates that firmware update failed due to
+         * authentication failure */
+        DLMS_ESMP_NA_EVENT_CODE_FIRMWARE_FAILED_DUE_TO_AUTHENTICATION_FAILURE = 300,
+        /* Arc detection started. Indicates that an arc was detected */
+        DLMS_ESMP_NA_EVENT_CODE_ARC_DETECTION_STARTED = 301,
+        /* Arc detection ended. Indicates that arcing is no longer detected */
+        DLMS_ESMP_NA_EVENT_CODE_ARC_DETECTION_ENDED = 302,
+        /* Optical port locked. Indicates that the optical port was locked */
+        DLMS_ESMP_NA_EVENT_CODE_OPTICAL_PORT_LOCKED = 303,
+        /* Optical port unlocked. Indicates that the optical port was unlocked */
+        DLMS_ESMP_NA_EVENT_CODE_OPTICAL_PORT_UNLOCKED = 304,
+        /* Canadian Log cleared. Indicates that the log was cleared */
+        DLMS_ESMP_NA_EVENT_CODE_CANADIAN_LOG_CLEARED = 305,
+        /* Canadian load profile cleared. Indicates that load profile was cleared */
+        DLMS_ESMP_NA_EVENT_CODE_CANADIAN_LOAD_PROFILE_CLEARED = 306,
+        /* Season changed. Indicates that the season has changed */
+        DLMS_ESMP_NA_EVENT_CODE_SEASON_CHANGED = 307,
+        /* Test mode start. Indicates that test mode was started */
+        DLMS_ESMP_NA_EVENT_CODE_TEST_MODE_START = 308,
+        /* Test mode end. Indicates that test mode was ended */
+        DLMS_ESMP_NA_EVENT_CODE_TEST_MODE_END = 309,
+        /* Canadian Clock error. Indicates that a clock error was detected */
+        DLMS_ESMP_NA_EVENT_CODE_CANADIAN_CLOCK_ERROR = 310,
+        /* Canadian Measurement error. Indicates that a measurement error was detected */
+        DLMS_ESMP_NA_EVENT_CODE_CANADIAN_MEASUREMENT_ERROR = 311,
+        /* Demand error. Indicates that a demand error was detected */
+        DLMS_ESMP_NA_EVENT_CODE_DEMAND_ERROR = 312,
+        /* Tamper. Indicates that a tamper was detected */
+        DLMS_ESMP_NA_EVENT_CODE_TAMPER = 313,
+        /* Meter Inverted. Indicates that the meter was inverted */
+        DLMS_ESMP_NA_EVENT_CODE_METER_INVERTED = 314,
+        /* Magnetic field related power failure. Indicates that a magnetic field related power failure
+         * was detected */
+        DLMS_ESMP_NA_EVENT_CODE_MAGNETIC_FIELD_RELATED_POWER_FAILURE = 315,
+        /* Meter removed from socket. Indicates that the meter was removed from the socket */
+        DLMS_ESMP_NA_EVENT_CODE_METER_REMOVED_FROM_SOCKET = 316,
+        /* Reserved for future use. */
+        DLMS_ESMP_NA_EVENT_CODE_RESERVED_FOR_FUTURE_USE_317 = 317,
+        /* Billing data cleared. Indicates that billing data was cleared */
+        DLMS_ESMP_NA_EVENT_CODE_BILLING_DATA_CLEARED = 318,
+        /* Program log near full warning. Indicates that the programming log was nearly full */
+        DLMS_ESMP_NA_EVENT_CODE_PROGRAM_LOG_NEAR_FULL_WARNING = 319,
+        /* Configuration changed via local port. Indicates that the configuration was changed via the
+         * local port */
+        DLMS_ESMP_NA_EVENT_CODE_CONFIGURATION_CHANGED_VIA_LOCAL_PORT = 320
+    } DLMS_ESMP_NA_EVENT_CODE;
 #ifdef  __cplusplus
 }
 #endif

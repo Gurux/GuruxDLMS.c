@@ -1260,7 +1260,7 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 {
     uint16_t year;
 #ifdef DLMS_USE_EPOCH_TIME
-    int ret, status;
+    int ret, ms, status;
 #else
     int ret, ms, status;
 #endif // DLMS_USE_EPOCH_TIME
@@ -1292,7 +1292,8 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
 #endif //DLMS_IGNORE_MALLOC
 #ifdef DLMS_USE_EPOCH_TIME
     int16_t deviation;
-    unsigned char mon = 0, day = 0, hour = 0, min = 0, sec = 0, wday = 0, skip = 0;
+    unsigned char mon = 0, day = 0, hour = 0, min = 0, sec = 0, wday = 0;
+    uint16_t skip = 0;
     // Get month
     if ((ret = bb_getUInt8(buff, &mon)) != 0)
     {
@@ -1304,7 +1305,7 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         return ret;
     }
     // Skip week day
-    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    if ((ret = bb_getUInt8(buff, &wday)) != 0)
     {
         return ret;
     }
@@ -1326,6 +1327,7 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     {
         return ret;
     }
+    ms = ch;
     if ((ret = bb_getInt16(buff, &deviation)) != 0)
     {
         return ret;
@@ -1336,7 +1338,8 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
     }
     status = ch;
     t->status = (DLMS_CLOCK_STATUS)status;
-    skip = DATETIME_SKIPS_MS;
+    skip = ms == 0xFF ? DATETIME_SKIPS_MS : 0;
+    if (deviation == (int16_t)0x8000) skip |= DATETIME_SKIPS_DEVITATION;
     if (year < 1 || year == 0xFFFF)
     {
         skip |= DATETIME_SKIPS_YEAR;
@@ -1372,7 +1375,7 @@ int getDateTime(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
         skip |= DATETIME_SKIPS_SECOND;
         sec = 0;
     }
-    time_init(t, year, mon, day, hour, min, sec, 0, deviation);
+    time_init(t, year, mon, day, hour, min, sec, ms == 0xFF ? 0 : (uint16_t)(ms * 10), deviation);
     t->skip = skip;
     t->status = status;
     if (status == 0xFF)
@@ -5311,6 +5314,7 @@ int dlms_getPdu(
         case DLMS_COMMAND_RELEASE_RESPONSE:
             break;
 #if !defined(DLMS_IGNORE_SERVER)
+        case DLMS_COMMAND_ACCESS_REQUEST:
         case DLMS_COMMAND_GET_REQUEST:
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_READ_REQUEST:
@@ -5891,7 +5895,7 @@ int dlms_getLNPdu(
             // Add Long-Invoke-Id-And-Priority
             if (p->command != DLMS_COMMAND_EVENT_NOTIFICATION)
             {
-                if (p->invokeId != 0)
+                if (p->invokeId != 0 || p->command == DLMS_COMMAND_ACCESS_RESPONSE)
                 {
                     ret = bb_setUInt32(h, p->invokeId);
                 }
@@ -6513,13 +6517,23 @@ int dlms_getData3(
 }
 
 int dlms_generateChallenge(
+    DLMS_AUTHENTICATION auth,
     gxByteBuffer* challenge)
 {
     // Random challenge is 8 to 64 bytes.
     // Texas Instruments accepts only 16 byte long challenge.
     // For this reason challenge size is 16 bytes at the moment.
-    int ret = 0, pos, len = 16;
+    int ret = 0;
+    unsigned char len = auth == DLMS_AUTHENTICATION_HIGH_ECDSA ? 32 : 16;
     bb_clear(challenge);
+#ifdef DLMS_SECURE_RANDOM_GENERATOR
+    if ((ret = bb_capacity(challenge, len) == 0) &&
+        (ret = gx_secureRandomBytes(challenge->data, len)) == 0)
+    {
+        challenge->size += 16;
+    }
+#else
+    unsigned char pos;
     for (pos = 0; pos != len; ++pos)
     {
         if ((ret = bb_setUInt8(challenge, hlp_rand())) != 0)
@@ -6527,6 +6541,7 @@ int dlms_generateChallenge(
             break;
         }
     }
+#endif
     return ret;
 }
 
@@ -6554,7 +6569,9 @@ int dlms_getActionInfo(
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_JOIN:
     case DLMS_OBJECT_TYPE_ZIG_BEE_SAS_APS_FRAGMENTATION:
     case DLMS_OBJECT_TYPE_ZIG_BEE_NETWORK_CONTROL:
+#ifndef DLMS_IGNORE_SCHEDULE
     case DLMS_OBJECT_TYPE_SCHEDULE:
+#endif
     case DLMS_OBJECT_TYPE_SMTP_SETUP:
     case DLMS_OBJECT_TYPE_STATUS_MAPPING:
     case DLMS_OBJECT_TYPE_TCP_UDP_SETUP:
@@ -6619,8 +6636,10 @@ int dlms_getActionInfo(
         *count = 2;
         break;
     case DLMS_OBJECT_TYPE_SAP_ASSIGNMENT:
+#ifndef DLMS_IGNORE_SCRIPT_TABLE
     case DLMS_OBJECT_TYPE_SCRIPT_TABLE:
-        *value = 0x20;
+#endif
+        * value = 0x20;
         *count = 1;
         break;
     case DLMS_OBJECT_TYPE_SPECIAL_DAYS_TABLE:

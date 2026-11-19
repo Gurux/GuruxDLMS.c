@@ -257,7 +257,7 @@ extern "C" {
         unsigned char* count);
 #endif // DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
-    int dlms_generateChallenge(
+    int dlms_generateChallenge(DLMS_AUTHENTICATION auth,
         gxByteBuffer* challenge);
 
     /**

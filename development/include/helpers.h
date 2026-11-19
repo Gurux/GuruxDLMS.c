@@ -265,6 +265,7 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     int64_t hlp_stringToInt64(
         const char* str);
 
+#ifndef DLMS_SECURE_RANDOM_GENERATOR
     /**
     * Random generator using Linear-feedback shift register.
     * https://en.wikipedia.org/wiki/Linear-feedback_shift_register
@@ -272,6 +273,7 @@ static const unsigned char EMPTY_KEY[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     * @return Random number.
     */
     unsigned char hlp_rand(void);
+#endif //DLMS_SECURE_RANDOM_GENERATOR
 
     //Add bits from byte array to bit array.
     int hlp_add(

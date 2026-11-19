@@ -69,7 +69,7 @@ int ser_loadUInt8(gxSerializerSettings* serializeSettings, unsigned char* value)
 #if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
     return fread(value, sizeof(unsigned char), 1, serializeSettings->stream) != 1;
 #else
-    int ret = SERIALIZER_LOAD((uint16_t)serializeSettings->position, sizeof(unsigned char), (void*)value);
+    int ret = SERIALIZER_LOAD(serializeSettings->position, sizeof(unsigned char), (void*)value);
     if (ret == 0)
     {
         ++serializeSettings->position;
@@ -295,7 +295,7 @@ int ser_get(
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
 #else
-        if ((ret = SERIALIZER_LOAD((uint16_t)serializeSettings->position, count, value)) == 0)
+        if ((ret = SERIALIZER_LOAD(serializeSettings->position, count, value)) == 0)
         {
             serializeSettings->position += count;
         }
@@ -2015,6 +2015,7 @@ int saveTimeWindow(gxSerializerSettings* serializeSettings, gxArray* arr)
     return ret;
 }
 
+#if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA) && defined(DLMS_IGNORE_PUSH_SETUP) && defined(DLMS_IGNORE_PARAMETER_MONITOR))
 int saveObjectsInternal(gxSerializerSettings* serializeSettings, gxArray* objects)
 {
     uint16_t count, pos;
@@ -2069,6 +2070,7 @@ int saveObjectsInternal(gxSerializerSettings* serializeSettings, gxArray* object
     }
     return ret;
 }
+#endif
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int ser_savePushSetup(
@@ -5357,11 +5359,11 @@ int ser_saveObjects(
             return ret;
         }
 #if !defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
-            //Data size.
-            if ((ret = ser_saveUInt32(serializeSettings, 0)) != 0)
-            {
-                return ret;
-            }
+        //Data size.
+        if ((ret = ser_saveUInt32(serializeSettings, 0)) != 0)
+        {
+            return ret;
+        }
 #else
         //Data size is set after all data is serialized.
         serializeSettings->position += 4;
@@ -5408,7 +5410,7 @@ int ser_saveObjects(
         uint32_t size = (uint32_t)(index - 5);
 #else
         int index = serializeSettings->position;
-        uint32_t size = (uint16_t)serializeSettings->position - 5;
+        uint32_t size = serializeSettings->position - 5;
 #endif //#!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         if (dataSize == 0 || dataSize != size)
         {
@@ -5502,7 +5504,7 @@ int ser_saveObjects2(
         uint32_t size = (uint32_t)(index - 5);
 #else
         int index = serializeSettings->position;
-        uint32_t size = (uint16_t)serializeSettings->position - 5;
+        uint32_t size = serializeSettings->position - 5;
 #endif //#!defined(GX_DLMS_SERIALIZER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__))
         if (dataSize == 0 || dataSize != size)
         {
@@ -5787,6 +5789,7 @@ int ser_loadMBusMasterPortSetup(
 }
 #endif //DLMS_IGNORE_MBUS_MASTER_PORT_SETUP
 
+#if !(defined(DLMS_IGNORE_PROFILE_GENERIC) && defined(DLMS_IGNORE_COMPACT_DATA) && defined(DLMS_IGNORE_PUSH_SETUP) && defined(DLMS_IGNORE_PARAMETER_MONITOR))
 int ser_loadObjectsInternal(
     dlmsSettings* settings,
     gxSerializerSettings* serializeSettings,
@@ -5854,6 +5857,7 @@ int ser_loadObjectsInternal(
     }
     return ret;
 }
+#endif
 
 #ifndef DLMS_IGNORE_PUSH_SETUP
 int ser_loadPushSetup(

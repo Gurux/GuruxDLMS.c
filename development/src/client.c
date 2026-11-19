@@ -348,7 +348,7 @@ int cl_aarqRequest(
     // If authentication or ciphering is used.
     if (settings->authentication > DLMS_AUTHENTICATION_LOW && settings->customChallenges == 0)
     {
-        if ((ret = dlms_generateChallenge(&settings->ctoSChallenge)) != 0)
+        if ((ret = dlms_generateChallenge(settings->authentication, &settings->ctoSChallenge)) != 0)
         {
             return ret;
         }

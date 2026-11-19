@@ -258,3 +258,5 @@ GuruxDLMSClientExample/VS/.vs/
 *.hex
 /Espressif/GuruxDLMSServerExample/dlms/include
 /Espressif/GuruxDLMSServerExample/dlms/src
+/development/.vs
+/development/tests

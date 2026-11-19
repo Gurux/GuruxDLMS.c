@@ -913,7 +913,7 @@ int apdu_verifyUserInformation(
         {
             return ret;
         }
-    }   
+    }
     // Get DLMS version number.
     if ((ret = bb_getUInt8(data, &ch)) != 0)
     {
@@ -1695,14 +1695,18 @@ int apdu_parsePDU(
                 {
                     break;
                 }
+                //If system title is invalid.
+                if (len != sizeof(settings->sourceSystemTitle))
+                {
+#ifdef DLMS_DEBUG
+                    svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid source system title. "), -1);
+#endif //DLMS_DEBUG
+                    ret = DLMS_ERROR_CODE_INVALID_TAG;
+                    break;
+                }
                 if ((ret = bb_get(buff, settings->sourceSystemTitle, len)) != 0)
                 {
                     break;
-                }
-                //If system title is invalid.
-                if (len != 8)
-                {
-                    memset(settings->sourceSystemTitle, 0, 8);
                 }
             }
             break;

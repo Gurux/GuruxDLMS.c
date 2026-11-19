@@ -109,7 +109,7 @@ static int gxgcm_transformBlock(
 #else
         gxByteBuffer cbm, secret;
         BB_ATTACH(cbm, counterModeBlock, 0);
-        bb_attach(&secret, roundKeys, aes == DLMS_AES_128 ? 16 : 32, 
+        bb_attach(&secret, roundKeys, aes == DLMS_AES_128 ? 16 : 32,
             aes == DLMS_AES_128 ? 16 : 32);
         gx_hsmAesEncrypt(aes, &nonceAndCounter, &secret, &cbm);
 #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
@@ -202,7 +202,7 @@ static void gxgcm_getGHash(
     gxByteBuffer* value,
     uint32_t lenA,
     uint32_t lenC,
-    unsigned char* Y, 
+    unsigned char* Y,
     unsigned char* key)
 {
     unsigned char EMPTY[16] = { 0 };
@@ -259,11 +259,10 @@ static void gxgcm_getGHash(
         gxgcm_xor(Y, X);
         gxgcm_multiplyH(Y, H);
     }
-    for (pos = 0; pos < bb_available(value); pos += 16)
+    for (pos = 0; pos < bb_available(value);)
     {
         memset(X + available, 0, 16 - available);
-        cnt = bb_available(value);
-        cnt -= pos;
+        cnt = bb_available(value) - pos;
         if (cnt > 16 - available)
         {
             cnt = 16 - available;
@@ -271,11 +270,12 @@ static void gxgcm_getGHash(
         memcpy(X + available, value->data + value->position + pos, cnt);
         gxgcm_xor(Y, X);
         gxgcm_multiplyH(Y, H);
+        pos += cnt;
+        available = 0;
     }
-    if (bb_available(value) + available > pos)
+    if (available)
     {
         memset(X + available, 0, 16 - available);
-        memcpy(X, value->data + value->position + pos - available, available);
         gxgcm_xor(Y, X);
         gxgcm_multiplyH(Y, H);
     }

@@ -243,7 +243,7 @@ void time_init(
     {
         time->skip |= DATETIME_SKIPS_SECOND;
     }
-    if (millisecond < 1000)
+    if (millisecond >= 1000)
     {
         time->skip |= DATETIME_SKIPS_MS;
         millisecond = 0;
@@ -786,8 +786,8 @@ unsigned char date_daysInMonth(
 uint16_t date_getYearDay(uint8_t day, uint8_t mon, uint16_t year)
 {
     static const uint16_t days[2][13] = {
-        {0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334},
-        {0, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335}
+        { 0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 },
+        { 0, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 }
     };
     return days[date_isleap(year)][mon] + day;
 }

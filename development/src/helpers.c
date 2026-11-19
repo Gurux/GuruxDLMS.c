@@ -1198,14 +1198,16 @@ int64_t hlp_stringToInt64(const char* str)
     }
     return value;
 }
+
+#ifndef DLMS_SECURE_RANDOM_GENERATOR
 static uint16_t lfsr = 0xACE1u;
 unsigned bit;
-
 unsigned char hlp_rand(void)
 {
     bit = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5)) & 1;
     return (unsigned char)(lfsr = (uint16_t)((lfsr >> 1) | (bit << 15)));
 }
+#endif //DLMS_SECURE_RANDOM_GENERATOR
 
 unsigned char hlp_swapBits(unsigned char value)
 {
@@ -1282,7 +1284,7 @@ int hlp_load(const char* path, char* value, uint16_t* length)
         {
             break;
         }
-        uint16_t size = (uint16_t) strlen(s);
+        uint16_t size = (uint16_t)strlen(s);
         if (size == 0)
         {
             //If buffer is full.

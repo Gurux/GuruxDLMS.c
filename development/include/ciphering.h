@@ -214,6 +214,12 @@ extern "C" {
     extern uint16_t gx_hsmCrc(const unsigned char* data, const uint16_t length);
 #endif //DLMS_USE_CRC_HARDWARE_SECURITY_MODULE
 
+#ifdef DLMS_SECURE_RANDOM_GENERATOR
+    extern int gx_secureRandomBytes(
+        unsigned char* data,
+        unsigned short size);
+#endif // DLMS_SECURE_RANDOM_GENERATOR
+
 #ifdef  __cplusplus
 }
 #endif

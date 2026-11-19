@@ -63,7 +63,7 @@ void params_initSN(
 void params_initLN(
     gxLNParameters *target,
     dlmsSettings* settings,
-    unsigned char invokeId,
+    uint32_t invokeId,
     DLMS_COMMAND command,
     unsigned char commandType,
     gxByteBuffer* attributeDescriptor,

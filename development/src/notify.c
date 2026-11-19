@@ -413,6 +413,10 @@ int notify_parsePush(
             {
                 return ret;
             }
+            if (tmp->vt != DLMS_DATA_TYPE_OCTET_STRING || bb_size(tmp->byteArr) != 6)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
             if ((ret = oa_findByLN(&settings->objects, (DLMS_OBJECT_TYPE)classID, tmp->byteArr->data, &obj)) != 0)
             {
                 return ret;

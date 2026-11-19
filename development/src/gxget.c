@@ -4234,7 +4234,7 @@ int cosem_getG3PlcMacSetup(
 }
 #endif //DLMS_IGNORE_G3_PLC_MAC_SETUP
 
-#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
+#if !defined(DLMS_IGNORE_G3_PLC_6LO_WPAN) || defined(DLMS_ITALIAN_STANDARD)
 
 #if defined(DLMS_IGNORE_MALLOC) || defined(DLMS_COSEM_EXACT_DATA_TYPES)
 int cosem_getUInt16Array(gxArray* arr, gxByteBuffer* byteArr)
@@ -4284,6 +4284,8 @@ int cosem_getUInt16Array(variantArray* arr, gxByteBuffer* byteArr)
 }
 #endif //DLMS_IGNORE_MALLOC
 
+#endif
+#ifndef DLMS_IGNORE_G3_PLC_6LO_WPAN
 int cosem_getG3Plc6LoWPAN(
     gxValueEventArg* e)
 {

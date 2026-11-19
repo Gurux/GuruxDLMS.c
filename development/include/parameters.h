@@ -169,7 +169,7 @@ extern "C" {
         /**
         * Received invoke ID.
         */
-        unsigned char invokeId;
+        uint32_t invokeId;
         //Serialize data to this PDU.
         gxByteBuffer* serializedPdu;
     } gxLNParameters;
@@ -177,7 +177,7 @@ extern "C" {
     void params_initLN(
         gxLNParameters *target,
         dlmsSettings* settings,
-        unsigned char invokeId,
+        uint32_t invokeId,
         DLMS_COMMAND command,
         unsigned char commandType,
         gxByteBuffer* attributeDescriptor,

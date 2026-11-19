@@ -570,7 +570,7 @@ int var_getDateTime2(
 #else
     if ((dateTime->skip & DATETIME_SKIPS_MS) == 0)
     {
-        bb_setUInt8(ba, 0x00);
+        bb_setUInt8(ba, (unsigned char)(dateTime->millisecond / 10));
     }
     else
     {
@@ -748,7 +748,7 @@ int var_getTime(
 #else
     if ((dateTime->skip & DATETIME_SKIPS_MS) == 0)
     {
-        bb_setUInt8(ba, 0x00);
+        bb_setUInt8(ba, (unsigned char)(dateTime->millisecond / 10));
     }
     else
     {

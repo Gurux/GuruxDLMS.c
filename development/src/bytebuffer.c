@@ -257,14 +257,37 @@ int bb_allocate(
     uint16_t dataSize)
 #endif
 {
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    const uint32_t maxCapacity = 0x7FFFFFFFUL;
+    uint32_t required;
+#else
+    const uint16_t maxCapacity = 0x7FFF;
+    uint16_t required;
+#endif
+    //The top capacity bit is reserved for attached buffers.
+    //Check before adding so the required size cannot wrap around.
+    if (index > maxCapacity || dataSize > maxCapacity - index)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    required = index + dataSize;
 #ifndef DLMS_IGNORE_MALLOC
-    if (!bb_isAttached(arr) && (arr->capacity == 0 || index + dataSize > arr->capacity))
+    if (!bb_isAttached(arr) && (arr->capacity == 0 || required > arr->capacity))
     {
         unsigned char empty = arr->capacity == 0;
         //If data is append fist time.
         if (!(dataSize > VECTOR_CAPACITY || arr->capacity == 0))
         {
             dataSize = VECTOR_CAPACITY;
+        }
+        //Use the exact required size if spare capacity would exceed the limit.
+        if (dataSize > maxCapacity - arr->capacity)
+        {
+            dataSize = required - arr->capacity;
+        }
+        if (dataSize < required - arr->capacity)
+        {
+            dataSize = required - arr->capacity;
         }
         arr->capacity += dataSize;
         if (empty)
@@ -304,7 +327,7 @@ int bb_allocate(
         }
     }
 #endif //DLMS_IGNORE_MALLOC
-    if (bb_getCapacity(arr) < index + dataSize)
+    if (bb_getCapacity(arr) < required)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }

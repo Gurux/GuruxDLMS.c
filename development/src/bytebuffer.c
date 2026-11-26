@@ -79,6 +79,10 @@ uint32_t bb_getCapacity(gxByteBuffer* arr)
 uint16_t bb_getCapacity(gxByteBuffer* arr)
 #endif
 {
+    if (arr == NULL)
+    {
+        return 0;
+    }
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER)&& (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     //If byte buffer is attached.
     return arr->capacity & 0x7FFFFFFF;
@@ -100,6 +104,10 @@ uint16_t bb_size(gxByteBuffer* arr)
 int BYTE_BUFFER_INIT(
     gxByteBuffer* arr)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     arr->capacity = 0;
     arr->data = NULL;
     arr->position = 0;
@@ -117,6 +125,10 @@ int bb_capacity(
     uint16_t capacity)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
 #ifndef DLMS_IGNORE_MALLOC
     //Capacity can't change if it's attached.
     if (!bb_isAttached(arr))
@@ -152,7 +164,7 @@ int bb_capacity(
                     arr->data = old;
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
                 }
- #else
+#else
                 //If compiler doesn't support realloc.
                 arr->data = (unsigned char*)gxmalloc(capacity);
                 //If not enought memory available.
@@ -163,8 +175,8 @@ int bb_capacity(
                 }
                 memcpy(arr->data, old, arr->size);
                 gxfree(old);
- #endif // gxrealloc       
-            }    
+#endif // gxrealloc       
+            }
             if (arr->size > capacity)
             {
                 arr->size = capacity;
@@ -192,6 +204,10 @@ int bb_zero(
     uint16_t count)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret;
     if (index + count > arr->capacity)
     {
@@ -212,6 +228,10 @@ int bb_setUInt8(
     gxByteBuffer* arr,
     unsigned char item)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = bb_setUInt8ByIndex(arr, bb_size(arr), item);
     if (ret == 0)
     {
@@ -232,6 +252,10 @@ int bb_insertUInt8(
     unsigned char item)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret;
     if ((ret = bb_move(arr, index, index + 1, arr->size)) == 0)
     {
@@ -257,6 +281,10 @@ int bb_allocate(
     uint16_t dataSize)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     const uint32_t maxCapacity = 0x7FFFFFFFUL;
     uint32_t required;
@@ -362,6 +390,10 @@ int bb_setUInt16(
     gxByteBuffer* arr,
     uint16_t item)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = bb_setUInt16ByIndex(arr, arr->size, item);
     if (ret == 0)
     {
@@ -382,6 +414,10 @@ int bb_setUInt16ByIndex(
     uint16_t item)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = 0;
     if (index + 2 > arr->size)
     {
@@ -399,6 +435,10 @@ int bb_setUInt32(
     gxByteBuffer* arr,
     uint32_t item)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = bb_setUInt32ByIndex(arr, arr->size, item);
     if (ret == 0)
     {
@@ -419,6 +459,10 @@ int bb_setUInt32ByIndex(
     uint32_t item)
 #endif //defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = bb_allocate(arr, index, 4);
     if (ret == 0)
     {
@@ -431,6 +475,10 @@ int bb_setUInt64(
     gxByteBuffer* arr,
     uint64_t item)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = bb_allocate(arr, arr->size, 8);
     if (ret == 0)
     {
@@ -459,6 +507,10 @@ int bb_setFloat(
     gxByteBuffer* arr,
     float value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     typedef union
     {
         float value;
@@ -485,6 +537,10 @@ int bb_setDouble(
     gxByteBuffer* arr,
     double value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     typedef union
     {
         double value;
@@ -514,6 +570,10 @@ int bb_setInt8(
     gxByteBuffer* arr,
     char item)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return bb_setUInt8(arr, (unsigned char)item);
 }
 
@@ -521,6 +581,10 @@ int bb_setInt16(
     gxByteBuffer* arr,
     int16_t item)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return bb_setUInt16(arr, (uint16_t)item);
 }
 
@@ -528,6 +592,10 @@ int bb_setInt32(
     gxByteBuffer* arr,
     int32_t item)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return bb_setUInt32(arr, (uint32_t)item);
 }
 
@@ -535,6 +603,10 @@ int bb_setInt64(
     gxByteBuffer* arr,
     int64_t item)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return bb_setUInt64(arr, (uint64_t)item);
 }
 
@@ -550,6 +622,10 @@ int bb_set(
     uint16_t count)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (count != 0)
     {
         int ret = bb_allocate(arr, arr->size, count);
@@ -584,6 +660,10 @@ int bb_set2(
     uint16_t count)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (data != NULL && count != 0)
     {
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
@@ -600,7 +680,7 @@ int bb_set2(
             data->position += count;
         }
         return ret;
-}
+    }
     return 0;
 }
 
@@ -608,6 +688,10 @@ int bb_addString(
     gxByteBuffer* arr,
     const char* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (value != NULL)
     {
         int len = (int)strlen(value);
@@ -640,6 +724,10 @@ int bb_attach(
     uint16_t capacity)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     //If capacity is 1 value is cast t
     if (value == NULL || capacity < count)
     {
@@ -678,6 +766,10 @@ int bb_attachString2(
     uint16_t capacity)
 #endif
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return bb_attach(arr, (unsigned char*)value, count, capacity);
 }
 
@@ -686,6 +778,10 @@ int bb_attachString(
     gxByteBuffer* arr,
     char* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int len = (int)strlen(value);
     int ret = bb_set(arr, (const unsigned char*)value, (uint16_t)len);
     gxfree(value);
@@ -696,6 +792,10 @@ int bb_attachString(
 int bb_clear(
     gxByteBuffer* arr)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
 #ifndef DLMS_IGNORE_MALLOC
     //If byte buffer is attached.
     if (!bb_isAttached(arr))
@@ -716,6 +816,10 @@ int bb_clear(
 int bb_empty(
     gxByteBuffer* arr)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     arr->size = 0;
     arr->position = 0;
     return 0;
@@ -725,6 +829,10 @@ int bb_getUInt8(
     gxByteBuffer* arr,
     unsigned char* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (arr->position >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -738,6 +846,10 @@ int bb_getInt8(
     gxByteBuffer* arr,
     signed char* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (arr->position >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -752,6 +864,10 @@ int bb_getUInt8ByIndex(
     uint32_t index,
     unsigned char* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -765,6 +881,10 @@ int bb_getUInt16(
     gxByteBuffer* arr,
     uint16_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (arr->position + 2 > arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -779,6 +899,10 @@ int bb_getUInt32(
     gxByteBuffer* arr,
     uint32_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
 
     if (arr->position + 4 > arr->size)
     {
@@ -793,6 +917,10 @@ int bb_getInt16(
     gxByteBuffer* arr,
     int16_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
 
     if (arr->position + 2 > arr->size)
     {
@@ -808,6 +936,10 @@ int bb_getUInt24(
     gxByteBuffer* arr,
     uint32_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = bb_getUInt24ByIndex(arr, arr->position, value);
     arr->position += 3;
     return ret;
@@ -817,6 +949,10 @@ int bb_getInt32(
     gxByteBuffer* arr,
     int32_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
 
     int ret = bb_getUInt32ByIndex(arr, arr->position, (uint32_t*)value);
     arr->position += 4;
@@ -828,6 +964,10 @@ int bb_getUInt24ByIndex(
     uint32_t index,
     uint32_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (index + 3 > bb_size(arr))
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -843,6 +983,10 @@ int bb_getUInt32ByIndex(
     uint32_t index,
     uint32_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
 
     if (index + 4 > arr->size)
     {
@@ -856,6 +1000,10 @@ int bb_getInt64(
     gxByteBuffer* arr,
     int64_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = bb_getUInt64ByIndex(arr, arr->position, (uint64_t*)value);
     if (ret == 0)
     {
@@ -868,6 +1016,10 @@ int bb_getUInt64(
     gxByteBuffer* arr,
     uint64_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = bb_getUInt64ByIndex(arr, arr->position, value);
     if (ret == 0)
     {
@@ -881,6 +1033,10 @@ int bb_getUInt64ByIndex(
     uint32_t index,
     uint64_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (index + 8 > arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -899,6 +1055,10 @@ int bb_getUInt128ByIndex(
     uint32_t index,
     unsigned char* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret = bb_getUInt32ByIndex(arr, index, (uint32_t*)value);
     if (ret == 0)
     {
@@ -920,6 +1080,10 @@ int bb_getFloat(
     gxByteBuffer* arr,
     float* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     typedef union
     {
         float value;
@@ -945,6 +1109,10 @@ int bb_getDouble(
     gxByteBuffer* arr,
     double* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     typedef union
     {
         double value;
@@ -974,6 +1142,10 @@ int bb_getUInt16ByIndex(
     uint32_t index,
     uint16_t* value)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (index + 2 > arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -988,6 +1160,10 @@ int bb_addHexString(
     gxByteBuffer* arr,
     const char* str)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     uint16_t count;
     int ret;
     unsigned char* buffer = NULL;
@@ -1009,6 +1185,10 @@ int bb_addHexString2(
     gxByteBuffer* arr,
     const char* str)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     if (str == NULL)
     {
         return 0;
@@ -1051,6 +1231,10 @@ int bb_addLogicalName(
     gxByteBuffer* arr,
     const unsigned char* str)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret;
     char buffer[25];
     if ((ret = hlp_bytesToHex2(str, 6, buffer, sizeof(buffer))) == 0)
@@ -1065,6 +1249,10 @@ int bb_toHexString2(
     char* buffer,
     uint16_t size)
 {
+    if (arr == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return hlp_bytesToHex2(arr->data, (uint16_t)arr->size, buffer, size);
 }
 
@@ -1072,6 +1260,10 @@ int bb_toHexString2(
 char* bb_toString(
     gxByteBuffer* arr)
 {
+    if (arr == NULL)
+    {
+        return NULL;
+    }
     char* buff = (char*)gxmalloc(arr->size + 1);
     if (buff != NULL)
     {
@@ -1084,6 +1276,10 @@ char* bb_toString(
 char* bb_toHexString(
     gxByteBuffer* arr)
 {
+    if (arr == NULL)
+    {
+        return NULL;
+    }
     char* buff = hlp_bytesToHex(arr->data, arr->size);
     return buff;
 }
@@ -1092,6 +1288,10 @@ int bb_addDoubleAsString(
     gxByteBuffer* bb,
     double value)
 {
+    if (bb == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     char buff[20];
     //Show as integer value if there is no fractal part.
     if (value - (int32_t)value == 0)
@@ -1106,17 +1306,25 @@ int bb_addDoubleAsString(
         sprintf(buff, "%lf", value);
 #endif
         return bb_addString(bb, buff);
-}
+    }
 }
 #endif //!(defined(DLMS_IGNORE_STRING_CONVERTER) || defined(DLMS_IGNORE_MALLOC))
 
 int bb_addIntAsString(gxByteBuffer* bb, int value)
 {
+    if (bb == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return bb_addIntAsString2(bb, value, 0);
 }
 
 int bb_addIntAsString2(gxByteBuffer* bb, int value, unsigned char digits)
 {
+    if (bb == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret;
     char str[20];
     hlp_intToString(str, 20, value, 1, digits);
@@ -1141,6 +1349,10 @@ int bb_subArray(
     gxByteBuffer* target)
 #endif
 {
+    if (bb == NULL || target == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     bb_clear(target);
     bb_set2(target, bb, index, count);
     return 0;
@@ -1158,6 +1370,10 @@ int bb_insert(const unsigned char* src,
     uint16_t index)
 #endif
 {
+    if (target == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret;
     if (target->size == 0)
     {
@@ -1189,6 +1405,10 @@ int bb_move(
     uint16_t count)
 #endif
 {
+    if (bb == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     //If items are removed.
     if (srcPos > destPos)
     {
@@ -1229,6 +1449,10 @@ int bb_move(
 int bb_trim(
     gxByteBuffer* bb)
 {
+    if (bb == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     int ret;
     if (bb->size == bb->position)
     {
@@ -1258,6 +1482,10 @@ unsigned char bb_compare(
 #endif
 
 {
+    if (bb == NULL)
+    {
+        return 0;
+    }
     unsigned char equal;
     if (bb_available(bb) != length)
     {
@@ -1312,15 +1540,19 @@ uint32_t bb_indexOf(
 }
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-void bb_reverse(gxByteBuffer* bb,
+int bb_reverse(gxByteBuffer* bb,
     uint32_t index,
     uint32_t count)
 #else
-void bb_reverse(gxByteBuffer* bb,
+int bb_reverse(gxByteBuffer* bb,
     uint16_t index,
     uint16_t count)
 #endif
 {
+    if (bb == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     unsigned long pos;
     unsigned long endPos;
     if (index == 0)
@@ -1340,12 +1572,17 @@ void bb_reverse(gxByteBuffer* bb,
         bb->data[endPos] = tmp;
         --endPos;
     }
+    return 0;
 }
 
 #ifndef GX_DLMS_MICROCONTROLLER
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
 int bb_print(gxByteBuffer* bb)
 {
+    if (bb == NULL)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
     uint32_t pos;
     char hexChars[4];

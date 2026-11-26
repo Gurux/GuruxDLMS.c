@@ -250,7 +250,7 @@ int bi_toArray(bigInteger* arr, gxByteBuffer* data)
     }
     if (ret == 0)
     {
-        bb_reverse(data, 0, data->size);
+        ret = bb_reverse(data, 0, data->size);
     }
     return ret;
 }

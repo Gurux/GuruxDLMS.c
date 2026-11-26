@@ -2564,9 +2564,14 @@ int invoke_RegisterActivation(
     gxValueEventArg* e)
 {
     int ret = 0;
-    uint16_t count;
     gxRegisterActivationMask* k;
     uint16_t pos;
+
+#ifdef DLMS_IGNORE_MALLOC
+    uint16_t count;
+#else
+    gxKey* mask;
+#endif //DLMS_IGNORE_MALLOC
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
     gxObjectDefinition* it;
 #else
@@ -2608,47 +2613,44 @@ int invoke_RegisterActivation(
         }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #else
-        dlmsVARIANT* tmp, * tmp3;
-        if (e->parameters.Arr != NULL)
+        if (e->parameters.vt != DLMS_DATA_TYPE_STRUCTURE ||
+            e->parameters.Arr == NULL || e->parameters.Arr->size != 2)
         {
-            short type;
-            ret = va_getByIndex(e->parameters.Arr, 0, &tmp);
-            if (ret != DLMS_ERROR_CODE_OK)
-            {
-                return ret;
-            }
-            ret = va_getByIndex(tmp->Arr, 0, &tmp3);
-            if (ret != DLMS_ERROR_CODE_OK)
-            {
-                return ret;
-            }
-            type = var_toInteger(tmp3);
-            ret = va_getByIndex(tmp->Arr, 1, &tmp3);
-            if (ret != DLMS_ERROR_CODE_OK)
-            {
-                return ret;
-            }
-            const unsigned char* ln = tmp3->byteArr->data;
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        dlmsVARIANT* tmp;
+        short type;
+        ret = va_getByIndex(e->parameters.Arr, 0, &tmp);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        type = var_toInteger(tmp);
+        ret = va_getByIndex(e->parameters.Arr, 1, &tmp);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        const unsigned char* ln = tmp->byteArr->data;
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
-            it = (gxObjectDefinition*)gxmalloc(sizeof(gxObjectDefinition));
-            it->objectType = (DLMS_OBJECT_TYPE)type;
-            memcpy(it->logicalName, ln, 6);
+        it = (gxObjectDefinition*)gxmalloc(sizeof(gxObjectDefinition));
+        it->objectType = (DLMS_OBJECT_TYPE)type;
+        memcpy(it->logicalName, ln, 6);
 #else
-            if ((ret = oa_findByLN(&settings->base.objects, type, ln, &it)) != 0)
-            {
-                return ret;
-            }
-            if (it == NULL)
-            {
-                return DLMS_ERROR_CODE_OUTOFMEMORY;
-            }
+        if ((ret = oa_findByLN(&settings->base.objects, type, ln, &it)) != 0)
+        {
+            return ret;
+        }
+        if (it == NULL)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
 #endif //DLMS_IGNORE_OBJECT_POINTERS
 #if !defined(DLMS_IGNORE_OBJECT_POINTERS) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
-            oa_push(&object->registerAssignment, it);
+        oa_push(&object->registerAssignment, it);
 #else
-            arr_push(&object->registerAssignment, it);
+        arr_push(&object->registerAssignment, it);
 #endif //DLMS_IGNORE_OBJECT_POINTERS
-        }
 #ifdef DLMS_IGNORE_OBJECT_POINTERS
         if (ret != 0 && objectDefinition != NULL)
         {
@@ -2659,14 +2661,14 @@ int invoke_RegisterActivation(
     }
     else if (e->index == 2)
     {
+#ifdef DLMS_IGNORE_MALLOC
+        uint16_t size;
         count = arr_getCapacity(&object->maskList);
         if (!(object->maskList.size < count))
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
         ++object->maskList.size;
-#ifdef DLMS_IGNORE_MALLOC
-        uint16_t size;
         if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) == 0 &&
             (ret = arr_getByIndex(&object->maskList, object->maskList.size - 1, (void**)&k, sizeof(gxRegisterActivationMask))) == 0 &&
             (ret = cosem_getOctetString2(e->parameters.byteArr, k->name, sizeof(k->name), &size)) == 0)
@@ -2686,11 +2688,87 @@ int invoke_RegisterActivation(
             }
         }
 #else
-#endif //DLMS_IGNORE_OBJECT_POINTERS
+        dlmsVARIANT* name;
+        dlmsVARIANT* indexes;
+        dlmsVARIANT* index;
+        gxByteBuffer* maskName;
+        gxByteBuffer* maskIndexes;
+        if (e->parameters.vt != DLMS_DATA_TYPE_STRUCTURE ||
+            e->parameters.Arr == NULL || e->parameters.Arr->size != 2)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        if ((ret = va_getByIndex(e->parameters.Arr, 0, &name)) != 0 ||
+            (ret = va_getByIndex(e->parameters.Arr, 1, &indexes)) != 0)
+        {
+            return ret;
+        }
+        if (name->vt != DLMS_DATA_TYPE_OCTET_STRING || name->byteArr == NULL ||
+            indexes->vt != DLMS_DATA_TYPE_ARRAY || indexes->Arr == NULL)
+        {
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+#ifdef DLMS_COSEM_EXACT_DATA_TYPES
+        k = (gxRegisterActivationMask*)gxmalloc(sizeof(gxRegisterActivationMask));
+        if (k == NULL)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        maskName = &k->name;
+        maskIndexes = &k->indexes;
+#else
+        mask = (gxKey*)gxmalloc(sizeof(gxKey));
+        maskName = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        maskIndexes = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        if (mask == NULL || maskName == NULL || maskIndexes == NULL)
+        {
+            gxfree(mask);
+            gxfree(maskName);
+            gxfree(maskIndexes);
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        mask->key = maskName;
+        mask->value = maskIndexes;
+#endif //DLMS_COSEM_EXACT_DATA_TYPES
+        BYTE_BUFFER_INIT(maskName);
+        BYTE_BUFFER_INIT(maskIndexes);
+        if ((ret = bb_set(maskName, name->byteArr->data, name->byteArr->size)) == 0)
+        {
+            for (pos = 0; pos != indexes->Arr->size; ++pos)
+            {
+                if ((ret = va_getByIndex(indexes->Arr, pos, &index)) != 0 ||
+                    (ret = bb_setUInt8(maskIndexes, (unsigned char)var_toInteger(index))) != 0)
+                {
+                    break;
+                }
+            }
+        }
+        if (ret == 0)
+        {
+#ifdef DLMS_COSEM_EXACT_DATA_TYPES
+            ret = arr_push(&object->maskList, k);
+#else
+            ret = arr_push(&object->maskList, mask);
+#endif //DLMS_COSEM_EXACT_DATA_TYPES
+        }
+        if (ret != 0)
+        {
+            bb_clear(maskName);
+            bb_clear(maskIndexes);
+#ifdef DLMS_COSEM_EXACT_DATA_TYPES
+            gxfree(k);
+#else
+            gxfree(maskName);
+            gxfree(maskIndexes);
+            gxfree(mask);
+#endif //DLMS_COSEM_EXACT_DATA_TYPES
+        }
+#endif //DLMS_IGNORE_MALLOC
     }
     //Remove mask.
     else if (e->index == 3)
     {
+#if defined(DLMS_IGNORE_MALLOC)
         unsigned char ch;
         if ((ret = bb_getUInt8(e->parameters.byteArr, &ch)) == 0)
         {
@@ -2709,34 +2787,48 @@ int invoke_RegisterActivation(
                         {
                             break;
                         }
-#if defined(DLMS_IGNORE_MALLOC)
-                        if (bb_available(e->parameters.byteArr) == k->length &&
+                        if (count == k->length &&
                             memcmp(k->name, e->parameters.byteArr->data + e->parameters.byteArr->position, count) == 0)
                         {
                             //arr_removeByIndex is decreasing amount already.
                             ret = arr_removeByIndex(&object->maskList, pos, sizeof(gxRegisterActivationMask));
                             break;
                         }
-#else
-                        if (bb_available(e->parameters.byteArr) == k->name.size &&
-                            memcmp(k->name.data, e->parameters.byteArr->data + e->parameters.byteArr->position, count) == 0)
-                        {
-                            //arr_removeByIndex is decreasing amount already.
-                            if ((ret = arr_removeByIndex(&object->maskList, pos, (void**)&k)) == 0)
-                            {
-                                bb_clear(&k->name);
-                                bb_clear(&k->indexes);
-                                gxfree(k);
-                            }
-                            break;
-                        }
-#endif //defined(DLMS_IGNORE_MALLOC)
-                        e->parameters.byteArr->position += count;
                     }
                 }
             }
         }
         bb_clear(e->parameters.byteArr);
+#else
+        if (e->parameters.vt != DLMS_DATA_TYPE_OCTET_STRING)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        else
+        {
+            for (pos = 0; pos != object->maskList.size; ++pos)
+            {
+                if ((ret = arr_getByIndex2(&object->maskList, pos, (void**)&mask, sizeof(gxKey))) != 0)
+                {
+                    break;
+                }
+                gxByteBuffer* maskName = (gxByteBuffer*)mask->key;
+                gxByteBuffer* maskIndexes = (gxByteBuffer*)mask->value;
+                if (bb_size(e->parameters.byteArr) == maskName->size &&
+                    memcmp(maskName->data, e->parameters.byteArr->data, maskName->size) == 0)
+                {
+                    //arr_removeByIndex is decreasing amount already.
+                    if ((ret = arr_removeByIndex(&object->maskList, pos, (void**)&k)) == 0)
+                    {
+                        bb_clear(maskName);
+                        bb_clear(maskIndexes);
+                        gxfree(k);
+                    }
+                    break;
+                }
+            }
+        }
+#endif //defined(DLMS_IGNORE_MALLOC)
     }
     else
     {

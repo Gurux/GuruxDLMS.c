@@ -240,7 +240,10 @@ extern "C" {
         variantArray* arr,
         uint16_t capacity);
 
-    //Push new data to the variantArray.
+    //Push new data to the variantArray. For a non-attached array, ownership
+    //of item transfers to the array only on success; va_clear releases it.
+    //On failure the caller retains ownership. Do not insert an owned item
+    //into multiple owning array slots. Attached arrays borrow their items.
     int va_push(
         variantArray* arr,
         dlmsVARIANT* item);

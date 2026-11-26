@@ -651,6 +651,10 @@ int getString(gxByteBuffer* buff, gxDataInfo* info, unsigned char knownType, dlm
     if (len > 0)
     {
         value->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        if (value->strVal == NULL)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
         BYTE_BUFFER_INIT(value->strVal);
         ret = bb_set2(value->strVal, buff, buff->position, len);
     }
@@ -1531,100 +1535,62 @@ int getCompactArrayItem(
 {
     int ret = 0;
     gxDataInfo tmp;
-    di_init(&tmp);
-    tmp.type = dt;
+    dlmsVARIANT* value = NULL;
+    uint16_t initialSize = list->size;
     uint32_t start = buff->position;
-    if (dt == DLMS_DATA_TYPE_STRING)
+    //Own each new value locally until va_push succeeds. On failure, roll back
+    //only this call's additions; the caller retains ownership of the list.
+    while (buff->position - start < len)
     {
-        while (buff->position - start < len)
+        value = gxmalloc(sizeof(dlmsVARIANT));
+        if (value == NULL)
         {
-            dlmsVARIANT* value = gxmalloc(sizeof(dlmsVARIANT));
-            if (value == NULL)
-            {
-                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
-                break;
-            }
-            var_init(value);
-            di_init(&tmp);
-            tmp.type = dt;
-            if ((ret = getString(buff, &tmp, 0, value)) != 0)
-            {
-                gxfree(value);
-                break;
-            }
-            if (!tmp.complete)
-            {
-                gxfree(value);
-                break;
-            }
-            if ((ret = va_push(list, value)) != 0)
-            {
-                gxfree(value);
-                break;
-            }
+            ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+            break;
         }
-    }
-    else if (dt == DLMS_DATA_TYPE_OCTET_STRING)
-    {
-        while (buff->position - start < len)
+        var_init(value);
+        di_init(&tmp);
+        tmp.type = dt;
+        if (dt == DLMS_DATA_TYPE_STRING)
         {
-            dlmsVARIANT* value = gxmalloc(sizeof(dlmsVARIANT));
-            if (value == NULL)
-            {
-                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
-                break;
-            }
-            var_init(value);
-            di_init(&tmp);
-            tmp.type = dt;
-            if ((ret = getOctetString(buff, &tmp, 0, value)) != 0)
-            {
-                if ((ret = va_push(list, value)) != 0)
-                {
-                    gxfree(value);
-                    break;
-                }
-            }
-            if (!tmp.complete)
-            {
-                gxfree(value);
-                break;
-            }
-            if ((ret = va_push(list, value)) != 0)
-            {
-                gxfree(value);
-                break;
-            }
+            ret = getString(buff, &tmp, 0, value);
         }
-    }
-    else
-    {
-        while (buff->position - start < len)
+        else if (dt == DLMS_DATA_TYPE_OCTET_STRING)
         {
-            dlmsVARIANT* value = gxmalloc(sizeof(dlmsVARIANT));
-            if (value == NULL)
-            {
-                ret = DLMS_ERROR_CODE_OUTOFMEMORY;
-                break;
-            }
-            var_init(value);
-            di_init(&tmp);
-            tmp.type = dt;
-            if ((ret = dlms_getData(buff, &tmp, value)) != 0)
-            {
-                gxfree(value);
-                break;
-            }
-            if (!tmp.complete)
-            {
-                gxfree(value);
-                break;
-            }
-            if ((ret = va_push(list, value)) != 0)
-            {
-                gxfree(value);
-                break;
-            }
+            ret = getOctetString(buff, &tmp, 0, value);
+        }
+        else
+        {
+            ret = dlms_getData(buff, &tmp, value);
+        }
+        if (ret != 0)
+        {
+            break;
+        }
+        if (!tmp.complete)
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            break;
+        }
+        if ((ret = va_push(list, value)) != 0)
+        {
+            break;
+        }
+        value = NULL;
+    }
+    if (value != NULL)
+    {
+        var_clear(value);
+        gxfree(value);
+    }
+    if (ret != 0)
+    {
+        while (list->size > initialSize)
+        {
+            value = (dlmsVARIANT*)list->data[--list->size];
+            list->data[list->size] = NULL;
+            var_clear(value);
+            gxfree(value);
         }
     }
     return ret;
@@ -1648,6 +1614,7 @@ int getCompactArrayItem2(
     tmp->Arr = (variantArray*)gxmalloc(sizeof(variantArray));
     if (tmp->Arr == NULL)
     {
+        gxfree(tmp);
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
     va_init(tmp->Arr);
@@ -1678,8 +1645,13 @@ int getCompactArrayItem2(
             }
         }
     }
-    va_push(list, tmp);
-    return 0;
+    ret = va_push(list, tmp);
+    if (ret != 0)
+    {
+        var_clear(tmp);
+        gxfree(tmp);
+    }
+    return ret;
 }
 
 int getDataTypes(

@@ -243,6 +243,10 @@ int var_addBytes(dlmsVARIANT* data, const unsigned char* value, uint16_t count)
 #else
         var_clear(data);
         data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        if (data->byteArr == NULL)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
         BYTE_BUFFER_INIT(data->byteArr);
         data->vt = DLMS_DATA_TYPE_OCTET_STRING;
 #endif //DLMS_IGNORE_MALLOC
@@ -1292,7 +1296,7 @@ uint16_t va_size(variantArray* arr)
 
 uint16_t va_getCapacity(variantArray* arr)
 {
-    return arr->capacity & 0x7FFF;
+    return arr == NULL ? 0 : arr->capacity & 0x7FFF;
 }
 
 //Initialize variantArray.
@@ -1371,34 +1375,10 @@ int va_push(variantArray* arr, dlmsVARIANT* item)
     {
         if (arr->size >= arr->capacity)
         {
-            arr->capacity += VARIANT_ARRAY_CAPACITY;
-            if (arr->size == 0)
+            int ret;
+            if ((ret = va_capacity(arr, va_getCapacity(arr) + VARIANT_ARRAY_CAPACITY)) != 0)
             {
-                arr->data = (void**)gxmalloc(arr->capacity * sizeof(dlmsVARIANT*));
-            }
-            else
-            {
-#ifdef gxrealloc
-                //If compiler supports realloc.
-                void** tmp = (void**)gxrealloc(arr->data, arr->capacity * sizeof(dlmsVARIANT*));
-                if (tmp == NULL)
-                {
-                    return DLMS_ERROR_CODE_OUTOFMEMORY;
-                }
-                arr->data = tmp;
-#else
-                //If compiler doesn't support realloc.
-                void** old = arr->data;
-                arr->data = (void**)gxmalloc(arr->capacity * sizeof(dlmsVARIANT*));
-                //If not enought memory available.
-                if (arr->data == NULL)
-                {
-                    arr->data = old;
-                    return DLMS_ERROR_CODE_OUTOFMEMORY;
-                }
-                memcpy(arr->data, old, sizeof(dlmsVARIANT*) * arr->size);
-                gxfree(old);
-#endif // gxrealloc  
+                return ret;
             }
         }
     }
@@ -1464,7 +1444,7 @@ void va_attach2(
 //Get item from variant array by index.
 int va_getByIndex(variantArray* arr, int index, dlmsVARIANT_PTR* item)
 {
-    if (index >= arr->size)
+    if (arr == NULL || index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }

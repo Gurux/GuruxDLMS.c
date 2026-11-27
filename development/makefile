@@ -34,13 +34,13 @@ $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	@$(CC) $(CFLAGS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"
 
-.PHONEY: clean
+.PHONY: clean
 clean:
 	@$(rm) $(OBJECTS)
 	@echo "Cleanup complete!" 
 	@echo $(OBJECTS)
 
-.PHONEY: remove
+.PHONY: remove
 remove: clean
 	@$(rm) $(BINDIR)/$(TARGET)
 	@echo "Executable removed!"
